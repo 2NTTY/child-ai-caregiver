@@ -1,3 +1,4 @@
+import { feedingBookletId, fullBookletDefinitionHash, matchesPriorPdfRevision, selectedBookletDefinitionHash, pdfReadMethod, pdfReadback, type PdfRangeRequest } from './knowledge-reviewed-pdf.ts';
 import { randomUUID } from "node:crypto";
 import { createFirestoreKnowledgeOriginals, type KnowledgeOriginalBucket } from "./firestore-knowledge-originals.ts";
 import { FieldPath, type Firestore, type Transaction } from "@google-cloud/firestore";
@@ -28,10 +29,10 @@ const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), ti
 export function parseKnowledgeObservation(input: unknown): ObservedContent { return bodySchema.parse(input); }
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
-  lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
+  priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
   lease: z.strictObject({ jobId: z.uuid(), token: z.uuid(), until: date }).nullable() });
 const observationSchema = z.strictObject({ ...binding, sourceId: id, watchId: id, url: z.url(), contentHash: hash,
-  feedOriginalHash: hash.optional(),
+  feedOriginalHash: hash.optional(), pdfReadback: pdfReadback.optional(),
   bodyHash: hash, parts: z.number().int().min(1).max(40), fetchedAt: date, lastSuccessfulCheckAt: date, unavailable: z.boolean(),
   sourcePublishedAt: date.nullable(), approved: z.strictObject({ contentHash: hash, versionId: z.uuid(), watchRevision: z.uuid(),
     operator: z.string().min(1).max(80), at: date }).nullable() });
@@ -50,6 +51,7 @@ export interface FirestoreKnowledgeObservationPort {
   recentSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
+  recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
   approve(transaction: Transaction, context: FirestoreKnowledgeObservation, versionId: string, operator: string, at: string): void;
 }
 export interface FirestoreKnowledgeRefreshOptions {
@@ -131,6 +133,33 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       const document = bodySchema.parse(JSON.parse(text));
       if (observationHash(document) !== observed.contentHash || document.url !== observed.url) reject("knowledge_binding_invalid");
       return document;
+    },
+    async recordPdfReadback(tx, context, request, reviewHash, reviewedRevision) {
+      const { watch, observation } = context;
+      const snap = await tx.get(checkRef(request.checkId)), control = await options.readControl(tx);
+      const check = snap.exists ? parse(checkSchema, snap.data()) : null;
+      const method = pdfReadMethod.safeParse(check?.readMethod);
+      if (!observation?.approved || watch.definitionHash !== fullBookletDefinitionHash
+        || !matchesPriorPdfRevision(watch.priorPdfRevision, reviewedRevision, request.confirmedLegacyExpansion)
+        || !['changed', 'unchanged'].includes(watch.lastStatus ?? '') || !control.enabled || !check || !method.success || check.state !== 'recorded' || check.jobId !== request.checkId
+        || !['changed', 'unchanged'].includes(check.status ?? '') || check.watchId !== request.sourceId
+        || check.workerGeneration !== control.generation || check.revision !== watch.revision || check.originalHash !== request.pdfHash
+        || check.checkedAt !== observation.lastSuccessfulCheckAt || check.checkedAt !== watch.lastSuccessfulCheckAt
+        || check.itemHashes?.length !== 1 || check.itemHashes[0]?.sourceId !== request.sourceId
+        || check.itemHashes[0]?.contentHash !== request.observationHash) reject('knowledge_pdf_range_check_mismatch');
+      // The deployed collection only indexes checkedAt. Read one extra receipt to detect a truncated millisecond.
+      const receiptLimit = 8;
+      const concurrent = await tx.get(database.collection(namespace + '_knowledge_checks')
+        .where('checkedAt', '==', check.checkedAt).limit(receiptLimit + 1));
+      if (concurrent.size > receiptLimit) reject('knowledge_pdf_range_check_mismatch');
+      const sameWatch = concurrent.docs.filter(doc => {
+        const receipt = parse(checkSchema, doc.data());
+        if (receipt.jobId !== doc.id) reject('knowledge_binding_invalid');
+        return receipt.watchId === watch.id;
+      });
+      if (sameWatch.length !== 1 || sameWatch[0]?.id !== request.checkId) reject('knowledge_pdf_range_check_mismatch');
+      const proof = { ...request, watchRevision: watch.revision, reviewHash, readMethod: method.data, checkedAt: check.checkedAt };
+      tx.set(observationRef(request.sourceId), { ...observation, pdfReadback: proof });
     },
     approve(tx, context, versionId, by, at) {
       if (!context.observation || !context.watch.enabled || !context.catalogMatches || context.observation.unavailable) reject("knowledge_observation_review_mismatch");
@@ -218,8 +247,13 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     async register(id: string, by: string) {
       operator(by); const definition = catalog.get(id); if (!definition) reject("knowledge_watch_not_in_catalog");
       await database.runTransaction(async tx => {
-        const old = await watch(tx, id), unchanged = old?.enabled && old.definitionHash === definitionHash(definition);
-        const row: Watch = { ...scope, id, definition, definitionHash: definitionHash(definition), enabled: true,
+        const old = await watch(tx, id), nextHash = definitionHash(definition);
+        const unchanged = old?.enabled && old.definitionHash === nextHash;
+        const priorPdfRevision = unchanged ? old.priorPdfRevision
+          : nextHash === fullBookletDefinitionHash && old?.enabled && !old.confirmedGone && old.definitionHash === selectedBookletDefinitionHash
+            ? old.revision : null;
+        const row: Watch = { ...scope, id, definition, definitionHash: nextHash, enabled: true,
+          ...(id === feedingBookletId && priorPdfRevision !== undefined ? { priorPdfRevision } : {}),
           revision: unchanged ? old.revision : randomUUID(), registeredBy: by, registeredAt: new Date().toISOString(),
           lastAttemptAt: old?.lastAttemptAt ?? null, lastSuccessfulCheckAt: old?.lastSuccessfulCheckAt ?? null, lastStatus: old?.lastStatus ?? null,
           ...(old?.confirmedGone !== undefined ? { confirmedGone: old.confirmedGone } : {}),
@@ -232,7 +266,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       await database.runTransaction(async tx => {
         const row = await watch(tx, id); if (!row) reject("knowledge_watch_unknown");
         // A new revision invalidates every prior approval without an unbounded fan-out write.
-        tx.set(watchRef(id), { ...row, enabled: false, revision: randomUUID(), lease: null });
+        tx.set(watchRef(id), { ...row, ...(row.id === feedingBookletId ? { priorPdfRevision: null } : {}), enabled: false, revision: randomUUID(), lease: null });
       });
     },
     async inspect(sourceId: string) {
@@ -312,10 +346,22 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         }
         const at = new Date().toISOString(); let changed = 0;
         const writes: { ref: ReturnType<typeof observationRef>; value: unknown }[] = [];
+        if (eligible && row.definitionHash === fullBookletDefinitionHash && fetched.status === 'failed'
+          && (fetched.reason === 'parse' || fetched.reason === 'response')) {
+          const snapshot = await tx.get(observationRef(row.id));
+          const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;
+          if (observed?.pdfReadback) {
+            if (observed.watchId !== row.id || observed.sourceId !== row.id) reject('knowledge_binding_invalid');
+            const { pdfReadback: _invalidated, ...next } = observed;
+            writes.push({ ref: observationRef(row.id), value: next });
+          }
+        }
         if (eligible) for (const item of prepared) {
           const old = previous.get(item.sourceId), same = old?.contentHash === item.contentHash;
           if (!same || old.unavailable) changed++;
+          const proof = old?.pdfReadback;
           const next: Observation = { ...scope, sourceId: item.sourceId, watchId: job.watchId, url: item.document.url, contentHash: item.contentHash,
+            ...(same && !old.unavailable && proof && fetched.status === 'ok' && proof.readMethod === fetched.readMethod && proof.pdfHash === originalHash ? { pdfReadback: proof } : {}),
             ...(item.document.rssItem && originalHash ? { feedOriginalHash: same && old.feedOriginalHash ? old.feedOriginalHash : originalHash } : {}),
             bodyHash: item.bodyHash, parts: item.segments.length, fetchedAt: same ? old.fetchedAt : at, lastSuccessfulCheckAt: at, unavailable: false,
             sourcePublishedAt: item.document.sourcePublishedAt, approved: old?.approved ?? null };
@@ -334,6 +380,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
             // A single 404 or feed outage cannot withdraw its items. Explicit 410 on a document invalidates its revision.
             confirmedGone: fetched.status === "ok" ? false : fetched.status === "unavailable" && fetched.httpStatus === 410
               && row.definition.kind !== "rss" || (row.confirmedGone ?? row.lastStatus === "unavailable"),
+            ...(fetched.status === 'unavailable' && fetched.httpStatus === 410 && row.id === feedingBookletId ? { priorPdfRevision: null } : {}),
             revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
         for (const write of writes) tx.set(write.ref, write.value);

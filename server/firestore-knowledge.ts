@@ -9,7 +9,11 @@ import { knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./kn
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
-import { checkKnowledgeObservation } from "./knowledge-observation.ts";
+import { checkKnowledgeObservation, observationHash } from "./knowledge-observation.ts";
+import { extractKnowledgePdf } from './knowledge-pdf.ts';
+import { parsedKnowledgePdfContent } from './knowledge-source-parser.ts';
+import { parseKnowledgeObservation } from './firestore-knowledge-refresh.ts';
+import { fullBookletDefinitionHash, matchesPriorPdfRevision, priorBookletWatch, pdfRangeRequest, type PdfRangeRequest } from './knowledge-reviewed-pdf.ts';
 import type { FirestoreKnowledgeObservation, FirestoreKnowledgeObservationPort } from "./firestore-knowledge-refresh.ts";
 import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
@@ -42,6 +46,7 @@ export interface FirestoreKnowledgePublicationFence {
   }): Promise<() => void>;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  recheckPdfRange(input: PdfRangeRequest, readPdf: (id: string, sha256: string) => Promise<Buffer>): Promise<{ versionId: string; versionHash: string; pageStart: number; pageEnd: number }>;
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
@@ -231,11 +236,21 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       && observed.approved?.watchRevision === context.watch.revision && review?.watchRevision === context.watch.revision
       && review.assessment.observationHash === observed.contentHash;
   }
-  function publication(edition: Edition, now = Date.now()): boolean {
+  function verifiedPdfRange({ observed, document, version }: Edition): boolean {
+    const watch = observed?.watch, row = observed?.observation, proof = row?.pdfReadback;
+    return !!(proof && watch && row && observed.catalogMatches && watch.enabled && !(watch.confirmedGone ?? watch.lastStatus === 'unavailable')
+      && watch.definitionHash === fullBookletDefinitionHash && watch.revision === proof.watchRevision
+      && matchesPriorPdfRevision(watch.priorPdfRevision, version.review?.watchRevision, proof.confirmedLegacyExpansion)
+      && !row.unavailable && row.url === document.url && row.contentHash === proof.observationHash
+      && document.classification === 'official_guidance' && proof.sourceId === document.sourceId && proof.versionId === version.versionId
+      && proof.versionHash === version.versionHash && proof.pdfHash === document.extraction?.contentHash && proof.reviewHash === version.review?.assessmentHash);
+  }
+  function publication(edition: Edition, operation: 'read' | 'publish' = 'publish'): boolean {
+    const now = Date.now();
     const { source, version, document } = edition, review = version.review;
     return source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
       && version.publishedAt !== null && review !== null && review.assessment.decision === "approve" && review.assessment.growthRuleImpact !== "requires_review"
-      && (!document.validUntil || Date.parse(document.validUntil) > now) && observationCurrent(edition)
+      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && verifiedPdfRange(edition))
       && (options.audience === "internal" || !internalKnowledgeSource(document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial")
       && (document.classification !== "recent_information" || document.sourcePublishedAt !== null
         && Date.parse(document.sourcePublishedAt) <= now && Date.parse(document.sourcePublishedAt) >= now - 7 * 86400_000
@@ -246,7 +261,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     const selected = [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds) ?? []])].sort(compareId);
     for (const id of selected) {
       const source = await readSource(tx, id); sources.push({ id, source });
-      if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition)) editions.push(edition); }
+      if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition, 'read')) editions.push(edition); }
     }
     return { sources, editions };
   }
@@ -276,7 +291,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     return version.reviewState === 'reviewed' && !!version.publishedAt && !!version.checkedAt && version.review?.assessment.decision === 'approve'
       && version.review.assessment.growthRuleImpact !== 'requires_review' && document.classification === 'official_guidance'
       && active.document.classification === document.classification && active.document.url === document.url && active.document.termsUrl === document.termsUrl
-      && (version.review.watchRevision ?? null) === (watch?.revision ?? null) && (!document.validUntil || Date.parse(document.validUntil) > Date.now());
+      && ((version.review.watchRevision ?? null) === (watch?.revision ?? null) || verifiedPdfRange(pinned)) && (!document.validUntil || Date.parse(document.validUntil) > Date.now());
   }
   function candidate(edition: Edition, chunk: Chunk, filter: KnowledgeFilter): KnowledgeCandidate {
     const { document, version } = edition;
@@ -294,7 +309,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   function selectionEdition(edition: Edition) {
     const doc = edition.document, series = sourceSeries(doc), extraction = doc.extraction;
     const conditions = edition.version.chunks.map(chunk => chunk.applicability ?? null);
-    const watch = edition.observed?.watch.definition;
+    const registered = edition.observed?.watch.definition;
+    const watch = registered && verifiedPdfRange(edition) ? priorBookletWatch(registered) : registered;
     const scopeHash = (watchScope: unknown) => knowledgeHash(canonical([series.institutionId, doc.url, doc.termsUrl, doc.classification,
       watchScope, extraction?.format ?? null, extraction?.pageStart ?? null, extraction?.pageEnd ?? null,
       [...new Set(conditions.map(value => canonical(value)))].sort()]));
@@ -431,6 +447,50 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         return { source: edition.document, versionHash: edition.version.versionHash, embeddings, library };
       }, { readOnly: true });
     },
+    async recheckPdfRange(input, readPdf) {
+      const request = pdfRangeRequest.parse(input);
+      const { sourceId, versionId, versionHash, pdfHash, observationHash: currentHash } = request;
+      const definition = SOURCE_WATCHES.find(w => w.id === sourceId), prior = definition && priorBookletWatch(definition);
+      const gate = options.observations, recordReadback = gate?.recordPdfReadback;
+      if (!prior || !allowedId(sourceId) || !gate || !recordReadback) reject('knowledge_pdf_range_unavailable');
+      // The original store verifies object identity and generation. Reparse outside a retryable transaction.
+      const bytes = await readPdf(sourceId, pdfHash);
+      const { startPage, endPage } = prior.pdfPages;
+      const parsed = await extractKnowledgePdf(bytes, { expectedHash: pdfHash, startPage, pageLimit: endPage - startPage + 1 });
+      const old = parseKnowledgeObservation(parsedKnowledgePdfContent(prior, parsed)[0]);
+      const oldHash = observationHash(old);
+      return database.runTransaction(async tx => {
+        const edition = await load(tx, versionId), { source, version, document, observed } = edition;
+        const review = version.review, row = observed?.observation, approved = row?.approved;
+        if (!source.enabled || source.sourceId !== sourceId || source.activeVersionId !== versionId || version.versionHash !== versionHash
+          || !version.publishedAt || !version.checkedAt || version.reviewState !== 'reviewed' || review?.assessment.decision !== 'approve'
+          || review.assessment.growthRuleImpact === 'requires_review' || document.validUntil && Date.parse(document.validUntil) <= Date.now()
+          || !observed?.catalogMatches || !observed.watch.enabled || (observed.watch.confirmedGone ?? observed.watch.lastStatus === 'unavailable')
+          || observed.watch.definitionHash !== fullBookletDefinitionHash || !row || row.watchId !== sourceId || row.url !== prior.url || row.unavailable
+          || currentHash !== row.contentHash || !approved || !review.watchRevision || review.watchRevision === observed.watch.revision
+          || review.assessment.observationHash !== oldHash) reject('knowledge_pdf_range_unavailable');
+        if (approved.versionId === versionId) {
+          if (approved.contentHash !== oldHash || approved.watchRevision !== review.watchRevision) reject('knowledge_pdf_range_unavailable');
+        } else {
+          // An independent review may have approved the successor before its publication has switched the pointer.
+          const successor = await metadata(tx, approved.versionId, source), assessment = successor.version.review?.assessment;
+          if (!observationCurrent(successor) || successor.version.reviewState !== 'reviewed' || assessment?.decision !== 'approve'
+            || assessment.growthRuleImpact === 'requires_review' || assessment.comparedVersionId !== versionId
+            || assessment.comparedHash !== versionHash) reject('knowledge_pdf_range_unavailable');
+        }
+        if (document.chunks.some(c => c.pageStart === undefined || c.pageEnd === undefined || c.pageStart < startPage || c.pageEnd > endPage))
+          reject('knowledge_pdf_range_mismatch');
+        checkKnowledgeObservation(document, { enabled: true, definition: prior }, { document: old, content_hash: oldHash, url: old.url, unavailable: false }, oldHash);
+        const body = await gate.content(tx, row), full = body.extraction;
+        if (body.nativeWindowMethod || body.url !== old.url || full?.format !== 'text_pdf' || !full.complete
+          || full.contentHash !== pdfHash || full.totalPages !== parsed.totalPages || full.pageStart !== 1 || full.pageEnd !== parsed.totalPages
+          || body.pages?.length !== parsed.totalPages || !body.pages.every((p, index) => p.page === index + 1 && p.status === 'text')
+          || !parsed.pages.every(page => body.pages![page.page - 1]?.text === page.text))
+          reject('knowledge_pdf_range_mismatch');
+        await recordReadback(tx, observed, request, review.assessmentHash, review.watchRevision);
+        return { versionId, versionHash, pageStart: startPage, pageEnd: endPage };
+      });
+    },
     async citedPdf(citation) {
       // A historical citation can outlive the active edition. Current source permissions still apply.
       if (!allowedId(citation.sourceId)) return null;
@@ -543,7 +603,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       for (const sourceId of ids) {
         const source = allowedId(sourceId) ? await readSource(tx, sourceId) : null;
         const edition = source?.enabled && source.activeVersionId ? await metadata(tx, source.activeVersionId, source) : null;
-        const active = edition && publication(edition) && edition.document.classification === 'official_guidance' && !internalKnowledgeSource(edition.document.url);
+        const active = edition && publication(edition, 'read') && edition.document.classification === 'official_guidance' && !internalKnowledgeSource(edition.document.url);
         result.push(active ? { sourceId, versionId: edition.version.versionId, hash: edition.version.versionHash, available: true, assessment: edition.version.review!.assessment }
           : { sourceId, versionId: null, hash: null, available: false, assessment: null });
       }
@@ -554,7 +614,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       const source = await readSource(tx, id);
       if (!source?.enabled || !source.activeVersionId) reject('knowledge_source_unavailable', 409);
       const edition = await metadata(tx, source.activeVersionId, source);
-      if (!publication(edition)) reject('knowledge_source_unavailable', 409);
+      if (!publication(edition, 'read')) reject('knowledge_source_unavailable', 409);
     },
     async ruleCandidates(tx, rules, input) {
       const filter = parseKnowledgeFilter(input);
@@ -563,7 +623,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       for (const rule of rules) {
         if (!allowedId(rule.sourceId)) continue;
         const source = await readSource(tx, rule.sourceId); if (!source?.enabled || !source.activeVersionId) continue;
-        const edition = await metadata(tx, source.activeVersionId, source); if (!publication(edition)) continue;
+        const edition = await metadata(tx, source.activeVersionId, source); if (!publication(edition, 'read')) continue;
         const manifest = edition.version.chunks.find(chunk => chunk.key === rule.key); if (!manifest || manifest.excluded) continue;
         const snapshot = await tx.get(chunkRef(manifest.chunkId)); if (!snapshot.exists) reject('knowledge_chunk_missing', 503);
         const chunk = checkedChunk(edition, snapshot.data());

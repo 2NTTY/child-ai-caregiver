@@ -81,6 +81,22 @@ Firestore `embed` 只處理本次獲准上限內的缺失片段，回報剩餘�
 - 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。不提高現行平台／本人用量配置；本文件的舊驗收數字不作運行上限。
 - 公共片段／向量與私人加密資料分開；不向量化家庭聊天。用量只存 operation／actor、模型、維度、成功／失敗、已知 token／billable characters；只有公共文件記 hash，查詢正文不入日誌。實際帳單仍由 GCP 提供。
 
+<a id="published-pdf-range-recheck"></a>
+### 家庭健康服務小冊子由第 3 頁擴至全冊
+
+適用於 Firestore 的 `fhs-feeding-booklet-en`。API、worker 及維護 CLI 更新至支援此重驗的版本後，操作員可在全冊準備期間恢復已審第 3 頁供目錄和新查詢使用。先從發布紀錄取目前舊版 ID／hash，用 `node scripts/knowledge-refresh.mjs inspect fhs-feeding-booklet-en` 核對登記網址、條款及全冊觀察 hash，再從 `node scripts/knowledge-refresh.mjs list` 找同一 watch、修訂及最近成功時間的已完成收據，核對其 `jobId`、`originalHash` 及讀取方法。操作員核實來源和現行條款後，在維護環境執行下列指令，變數代入該次核得的值。
+
+```sh
+node scripts/knowledge-refresh.mjs recheck-pdf-range fhs-feeding-booklet-en \
+  --version "$OLD_VERSION_ID" --version-hash "$OLD_VERSION_HASH" \
+  --observation-hash "$FULL_OBSERVATION_HASH" --pdf-sha256 "$PDF_SHA256" \
+  --check-id "$CHECK_JOB_ID" --operator "$OPERATOR" --operator-confirmed --source-and-terms-checked
+```
+
+舊程式已完成的登記可能欠缺上一修訂。只有從操作紀錄核實期間持續啟用、權利及原件一致、唯一改動是由指定頁擴至全冊，才加 `--confirm-uninterrupted-registration`。無法核實便維持原有阻擋。程式已記錄的停用、重新啟用或撤回不能用此參數解除。
+
+成功收據 `knowledge_published_pdf_range_rechecked` 會列出舊版 ID、hash 及實際物理頁。用目錄和已獲准的查詢確認仍是該舊版；全冊沿原有獨立審核及發布流程切換。操作會從原件庫驗證 PDF 並重讀舊頁，只寫入該來源觀察的核查紀錄。舊版程式會拒讀含新欄位的紀錄，回退映像時須保留相容的 Firestore 讀取器。
+
 <a id="必要驗收與映像切換"></a>
 ## 原 S10-W01 驗收與映像切換（歷史方法）
 

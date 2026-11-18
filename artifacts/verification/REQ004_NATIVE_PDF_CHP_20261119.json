@@ -1,6 +1,6 @@
 {
   "schema": "req004-native-pdf-chp-verification/v1",
-  "observedAt": "2026-11-18T20:54:08.570Z",
+  "observedAt": "2026-11-18T21:42:20.836Z",
   "baseline": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
   "environment": {
     "node": "24.11.0",
@@ -250,7 +250,81 @@
       "at": "2026-11-18T19:40:07.496Z",
       "modelCalls": 0
     },
-    "scope": "保存與核對內部 RSS 原件及原有 item XML。沒有取得文章全文，沒有公開索引、公開摘要或模型呼叫。"
+    "scope": "保存與核對內部 RSS 原件及原有 item XML。沒有取得文章全文，沒有公開索引、公開摘要或模型呼叫。",
+    "scheduledWorker": {
+      "configuration": "登記 chp-recent 的同版範圍與條款，worker 開關及持久世代已啟用。系統每日香港 09:00 排定來源檢查；新登記由下一個合資格時段開始。",
+      "composition": "正式 worker services 的 tick → dispatch → background.process，隔離 Firestore／Storage 及本機投遞。測試登記時間設於時段前。未觸發正式站 OIDC／Cloud Tasks 或雲端作業。",
+      "familyReadableSourceIds": 5,
+      "publications": 0,
+      "modelCalls": 0,
+      "paidGate": "本作業 authorizationVersion 為 0；原有 FHS 付費整理的選源及出資方設定獨立。",
+      "valid": {
+        "at": "2026-11-18T21:42:20.836Z",
+        "environment": "Firestore and Storage emulators; official worker services with local task delivery",
+        "mode": "valid",
+        "namespace": "req004_sched_valid_1795038139230",
+        "generation": "63088f81-8abb-4b41-8a9d-8254cc9e3a46",
+        "registeredFixturePredatesSlot": true,
+        "scheduler": "POST /internal/task-dispatch",
+        "worker": "POST /internal/product-work",
+        "backgroundId": "8d87aa5357f234465bd6c9245384e70142ebdf5d2d25e378c25a5fe6322ac7d8",
+        "originalReference": "8d87aa53-57f2-4446-8bd6-c9245384e701",
+        "slot": "2026-11-18T01:00:00.000Z",
+        "watchRevision": "aa1cb43b-dfd3-41e1-ba3d-a3c10638c6a3",
+        "queueState": "completed",
+        "attempts": 1,
+        "replay": "completed",
+        "staleGeneration": "stopped",
+        "check": {
+          "id": "8d87aa53-57f2-4446-8bd6-c9245384e701",
+          "status": "changed",
+          "items": 10,
+          "changed": 10,
+          "attempts": 1
+        },
+        "original": {
+          "sourceId": "chp-recent-386f93a23d87ad608dcaaa96571bea14",
+          "itemHash": "c6503142be01ced477e6f758e7c4b4c1ad945e66a0ef1ca219257d325008e9e2",
+          "feedHash": "4e998f2649a054bb3dd32f73476b96635ccf71301a63ee54194843266a71093e",
+          "audience": "internal_noncommercial",
+          "retained": true,
+          "revokedReadDenied": true
+        },
+        "publiclyVisible": 0,
+        "modelCalls": 0
+      },
+      "revoked": {
+        "at": "2026-11-18T21:41:49.960Z",
+        "environment": "Firestore and Storage emulators; official worker services with local task delivery",
+        "mode": "revoked",
+        "namespace": "req004_sched_revoked_1795038108850",
+        "generation": "878fd00b-1716-4d61-9cf5-1c3bfb4fa079",
+        "registeredFixturePredatesSlot": true,
+        "scheduler": "POST /internal/task-dispatch",
+        "worker": "POST /internal/product-work",
+        "backgroundId": "ca7a6625d02eb7ae31f09b63e0f9a63e5d805ca9cbb18d3f059bfe203553073d",
+        "originalReference": "ca7a6625-d02e-47ae-81f0-9b63e0f9a63e",
+        "slot": "2026-11-18T01:00:00.000Z",
+        "watchRevision": "6531708f-c9e4-42d7-a951-1cb20c1f7665",
+        "queueState": "stopped",
+        "attempts": 1,
+        "replay": "stopped",
+        "staleGeneration": "stopped",
+        "check": null,
+        "original": null,
+        "publiclyVisible": 0,
+        "modelCalls": 0
+      },
+      "previousFailure": {
+        "at": "2026-11-18T21:41:26.037Z",
+        "backgroundId": "207428913ecd34f94e798c41a0c551fb736702d38407c55c23bf4b725c6d7281",
+        "queueState": "completed",
+        "check": null,
+        "observations": 0,
+        "reason": "撤權已阻止取源，外層佇列仍回報 completed。修正後原工作及重送均回報 stopped。"
+      },
+      "test": "tests/firestore-knowledge-scheduler.test.ts"
+    }
   },
   "storage": {
     "objects": [

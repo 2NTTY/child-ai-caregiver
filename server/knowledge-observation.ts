@@ -19,7 +19,9 @@ export function definitionHash(definition: SourceWatchDefinition): string {
 export function checkKnowledgeObservation(document: KnowledgeSourceInput,
   watch: { enabled: boolean; definition: SourceWatchDefinition } | undefined,
   observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null, windowedReview = false) {
-  if (document.chunks.some(chunk=>chunk.originalKind) && !windowedReview) throw Error("knowledge_window_review_required");
+  if (document.chunks.some(chunk => chunk.originalKind && !(chunk.originalKind === "page_excerpt"
+    && watch?.definition.kind === "pdf" && observed?.document.pages?.length))
+    && !windowedReview) throw Error("knowledge_window_review_required");
   if (!watch) {
     if (expectedHash !== null || document.classification === "recent_information") throw new Error("knowledge_observation_review_required");
     return;

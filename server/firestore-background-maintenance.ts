@@ -326,6 +326,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       }
       const result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
         firestoreBackgroundReference(job), fetcher, signal, job.basis.slice(37));
+      if (result.status === 'inactive' || result.status === 'superseded') return { state: 'stopped' as const };
       return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
     }
     if (job.kind === 'avatar-cleanup') {
