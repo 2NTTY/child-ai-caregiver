@@ -16,12 +16,24 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { sourceSeries } from '../src/shared/source-series.ts';
 import { liveSourceCitationSchema } from '../src/shared/live-source-citation.ts';
 import { parseKnowledgeSource, sourceVersionHash } from '../server/knowledge-inputs.ts';
-import { projectAgentRun } from '../frontend/src/production/agent-projection.ts';
+import { projectAgentCitation, projectAgentRun } from '../frontend/src/production/agent-projection.ts';
 import { readSeriesReferences, exportSeriesReferences } from '../frontend/src/production/library-package.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 
 const fixtures = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'));
 const booklet = parseKnowledgeSource(fixtures.find(item => item.sourceId === 'fhs-feeding-booklet-en'));
+
+test('a scanned quotation and an image description retain their evidence type and exact physical page', () => {
+  const evidence = { ...booklet, ...booklet.chunks[0], originalKind: 'visual_page', sourceExcerpt: '',
+    text: 'A diagram shows two stages.', pageStart: 4, pageEnd: 7, excerptPage: 6 };
+  const figure = projectAgentCitation(evidence);
+  assert.equal(figure.excerptKind, 'visual_page');
+  assert.equal(figure.excerpt, evidence.text);
+  assert.deepEqual([figure.pageStart, figure.pageEnd, figure.excerptPage], [4, 7, 6]);
+  const transcription = projectAgentCitation({ ...evidence, originalKind: 'page_transcription', sourceExcerpt: 'Label on scan' });
+  assert.equal(transcription.excerptKind, 'page_transcription');
+  assert.equal(transcription.excerpt, 'Label on scan');
+});
 
 test('source card actions preserve the displayed revision and only pinning adopts current editions', async () => {
   const { seriesPreferenceChange } = await import('../frontend/src/memory-reference-view-model.ts');

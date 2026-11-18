@@ -206,11 +206,13 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           <MotionEntrance preset="panel" triggerKey={expanded ? panelTrigger : null} scopeKey={groupId} enabled={expanded} testID="answer-source-content-motion" style={styles.details}>
             {selected ? <>
             <View testID="source-detail-group" style={styles.detailGroup}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
+              <Text accessibilityRole="header" style={styles.groupTitle}>{selected.excerptKind === 'visual_page' ? '圖像說明（助手整理）'
+                : selected.excerptKind === 'page_transcription' ? '從掃描頁辨讀的文字' : CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
               <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
                 <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
               <Detail label={CHAT_SOURCE_COPY.section} value={selected.section} />
               {selected.pageStart ? <Detail label="原文件頁碼" value={selected.pageEnd && selected.pageEnd !== selected.pageStart ? `第 ${selected.pageStart}–${selected.pageEnd} 頁` : `第 ${selected.pageStart} 頁`} /> : null}
+              {selected.excerptPage && selected.pageStart !== selected.pageEnd ? <Detail label="本次引用位置" value={`第 ${selected.excerptPage} 頁`} /> : null}
               <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
               {selected.classification === "synthetic" ? <Text style={styles.meta}>{CHAT_SOURCE_COPY.syntheticNotice}</Text> : null}
             </View>

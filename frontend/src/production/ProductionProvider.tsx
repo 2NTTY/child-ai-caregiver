@@ -179,7 +179,7 @@ function useProductionValue(owner: ProductionOwner) {
       return;
     }
     const load = () => readCitationPdf({ apiBaseUrl: owner.apiBaseUrl, fetcher: owner.fetcher, userId, childId, runId, chunkId: id, current: currentScope });
-    void openCitationPdf(load, citation.pageStart, currentScope).then(message => { if (currentScope()) setLocalNotice(message); },
+    void openCitationPdf(load, citation.excerptPage ?? citation.pageStart, currentScope).then(message => { if (currentScope()) setLocalNotice(message); },
       error => { if (currentScope()) setLocalNotice(error instanceof Error && /[\u3400-\u9fff]/u.test(error.message) ? error.message : '未能開啟當時的 PDF。'); });
   };
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);

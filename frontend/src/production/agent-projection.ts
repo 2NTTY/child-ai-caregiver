@@ -34,12 +34,13 @@ export function projectLiveCitation(source: import('../../../src/shared/live-sou
 export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationView {
   const age = source.applicability;
   const segments = citedOriginalSpans(source), quote = source.citedExcerpt ?? source.sourceExcerpt;
-  const excerpt = segments.some(part => part.includes(quote)) ? quote : segments[0]!.slice(0, 300);
+  const excerpt = source.originalKind === 'visual_page' ? [...source.text].slice(0, 300).join('')
+    : segments.some(part => part.includes(quote)) ? quote : segments[0]!.slice(0, 300);
   return {
     sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
     acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
     termsUrl: source.termsUrl, originalRange: source.readCoverage?.ranges?.map(range => String(range.start + 1) + '–' + range.end).join('、'),
-    readSegments: segments,
+    readSegments: segments.filter(Boolean), excerptPage: source.excerptPage, excerptKind: source.originalKind,
     id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt,
     classification: source.classification, versionId: source.versionId, versionHash: source.versionHash,
     checkedAt: source.checkedAt, fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: source.lastSuccessfulCheckAt ?? null,
