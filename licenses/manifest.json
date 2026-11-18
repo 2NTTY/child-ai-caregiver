@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "DEV-AGENT01",
-  "recordedOn": "2026-10-18",
-  "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
+  "workPackage": "S17-W04/P4",
+  "recordedOn": "2026-11-18",
+  "scope": "Direct runtime dependencies of the root and frontend packages, selected development and transitive packages, and their preserved notices. Lockfile declarations are also indexed.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "807f01e537b7147ff486c78ae47351ac4603e8468386c1cd1b984d32b538c816"
+    "sha256": "8a41ca18cc15664908469a0cde2e937f85738ad40c7e77f5954242e9b9f7b5ed"
   },
   "packages": [
     {
@@ -1205,35 +1205,294 @@
         }
       ],
       "recordedOn": "2026-10-28"
+    },
+    {
+      "name": "@react-pdf/renderer",
+      "version": "4.9.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/diegomura/react-pdf.git",
+        "directory": "packages/renderer"
+      },
+      "tarball": "https://registry.npmjs.org/@react-pdf/renderer/-/renderer-4.9.0.tgz",
+      "integrity": "sha512-RAbARMwjcSYEpqpaWoWXz0uOGF1HjAl5hdJr889r5mgkPhF9xhX4CXSvcEbLTgFVj+KWbcar31MzcXYoANk/Ag==",
+      "files": [
+        {
+          "path": "licenses/react-pdf/LICENSE",
+          "sha256": "0c96b643c00775e094e8daf2de5707013d740621b735b0e4ceb9fab7698ca2e4",
+          "source": "https://raw.githubusercontent.com/diegomura/react-pdf/2c0b6d4a5d9db397d8cf5de4215e43b08ad5a7ca/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "google-auth-library",
+      "version": "10.9.1",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "directory": "core/packages/google-auth-library-nodejs",
+        "url": "https://github.com/googleapis/google-cloud-node.git"
+      },
+      "tarball": "https://registry.npmjs.org/google-auth-library/-/google-auth-library-10.9.1.tgz",
+      "integrity": "sha512-i1ydyHrqcIxXkWh/uBmVkzCvIuq5yiK2ATndIe5XxKholrG/MTYP9xGYka4sQhrbIAgGjL2B6NOE7rFaiF3fXw==",
+      "files": [
+        {
+          "path": "licenses/google-auth-library/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "source": "node_modules/google-auth-library/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "jszip",
+      "version": "3.10.2",
+      "dependencyType": "dependency",
+      "license": "(MIT OR GPL-3.0-or-later)",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/Stuk/jszip.git"
+      },
+      "tarball": "https://registry.npmjs.org/jszip/-/jszip-3.10.2.tgz",
+      "integrity": "sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ==",
+      "files": [
+        {
+          "path": "licenses/jszip/LICENSE.markdown",
+          "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4",
+          "source": "node_modules/jszip/LICENSE.markdown"
+        }
+      ]
+    },
+    {
+      "name": "mammoth",
+      "version": "1.13.0",
+      "dependencyType": "dependency",
+      "license": "BSD-2-Clause",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/mwilliamson/mammoth.js.git"
+      },
+      "tarball": "https://registry.npmjs.org/mammoth/-/mammoth-1.13.0.tgz",
+      "integrity": "sha512-2cawcYFcP7ISfXbBcL9lmVgTNWo88v/52ND1gnywHtVT/pX0//puPnf0iMPV9ZgmuvNOE+zkIhDgZ9M2c2dDDg==",
+      "files": [
+        {
+          "path": "licenses/mammoth/LICENSE",
+          "sha256": "6663bbd049205d38a496ccacb412a151980b444627d38de218b3b809aef330f1",
+          "source": "node_modules/mammoth/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "sharp",
+      "version": "0.35.5",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/lovell/sharp.git"
+      },
+      "tarball": "https://registry.npmjs.org/sharp/-/sharp-0.35.5.tgz",
+      "integrity": "sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==",
+      "files": [
+        {
+          "path": "licenses/sharp/LICENSE",
+          "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+          "source": "node_modules/sharp/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "yauzl",
+      "version": "3.4.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/thejoshwolfe/yauzl.git"
+      },
+      "tarball": "https://registry.npmjs.org/yauzl/-/yauzl-3.4.0.tgz",
+      "integrity": "sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==",
+      "files": [
+        {
+          "path": "licenses/yauzl/LICENSE",
+          "sha256": "b303783d5eb7ca50b853ffa5f145e4e7998fab339831d848f507ca6cd970577a",
+          "source": "node_modules/yauzl/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "yazl",
+      "version": "3.3.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/thejoshwolfe/yazl.git"
+      },
+      "tarball": "https://registry.npmjs.org/yazl/-/yazl-3.3.1.tgz",
+      "integrity": "sha512-BbETDVWG+VcMUle37k5Fqp//7SDOK2/1+T7X8TD96M3D9G8jK5VLUdQVdVjGi8im7FGkazX7kk5hkU8X4L5Bng==",
+      "files": [
+        {
+          "path": "licenses/yazl/LICENSE",
+          "sha256": "b303783d5eb7ca50b853ffa5f145e4e7998fab339831d848f507ca6cd970577a",
+          "source": "node_modules/yazl/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@invertase/react-native-apple-authentication",
+      "version": "2.5.1",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/invertase/react-native-apple-authentication"
+      },
+      "tarball": "https://registry.npmjs.org/@invertase/react-native-apple-authentication/-/react-native-apple-authentication-2.5.1.tgz",
+      "integrity": "sha512-KPKKc0wtRYpH4J0RkDfHzoKSZ+dYPEHmCXhpPdgHsT2MbK5AIkW1cYurjhAgev/kL7nOHFmWITjY1At5WhFEMQ==",
+      "files": [
+        {
+          "path": "licenses/invertase-react-native-apple-authentication/LICENSE",
+          "sha256": "9d1200165d417ce68417864b4f62ae7196686f4ca205975f8fe4cf311742b99a",
+          "source": "node_modules/@invertase/react-native-apple-authentication/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "2.4.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/paulmillr/noble-hashes.git"
+      },
+      "tarball": "https://registry.npmjs.org/@noble/hashes/-/hashes-2.4.0.tgz",
+      "integrity": "sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==",
+      "files": [
+        {
+          "path": "licenses/noble-hashes/LICENSE",
+          "sha256": "4f221aee6e072336700c408c68ab3b96a3fc09f6aebe6f48f1bd99e5ef13faec",
+          "source": "node_modules/@noble/hashes/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@react-native-google-signin/google-signin",
+      "version": "16.1.5",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": "https://github.com/react-native-google-signin/google-signin",
+      "tarball": "https://registry.npmjs.org/@react-native-google-signin/google-signin/-/google-signin-16.1.5.tgz",
+      "integrity": "sha512-9rmMwACzHK9Cbd0Yp7efg5uWgiYoLwmNAJh4gRCuMcSQH+qplpK7E4d1Q4tbsD8M9jvvVtRX2Z0AP9wwBKmPrQ==",
+      "files": [
+        {
+          "path": "licenses/react-native-google-signin-google-signin/LICENSE",
+          "sha256": "3680a16525f40f4115c71d7f229ed134afb6946e31ae2af83aa35ce0bc58d539",
+          "source": "node_modules/@react-native-google-signin/google-signin/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-notifications",
+      "version": "57.0.21",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-notifications"
+      },
+      "tarball": "https://registry.npmjs.org/expo-notifications/-/expo-notifications-57.0.21.tgz",
+      "integrity": "sha512-CWBW6DxqRJ2MaYZW5+/WfEWwIwbiVk5UAPqx0kE676B4R1+PlAXARk/kuNeQBcVrcDNV6i9ihE9B0db8Cd2RXQ==",
+      "files": [
+        {
+          "path": "licenses/expo-notifications/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-notifications/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-splash-screen",
+      "version": "57.0.9",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-splash-screen"
+      },
+      "tarball": "https://registry.npmjs.org/expo-splash-screen/-/expo-splash-screen-57.0.9.tgz",
+      "integrity": "sha512-7cKDn7uBwg0RkcmY015/5j9st4msWJ4zQiPmQdVZoppW3cFSbv05n7xhM6CjUU466Tx4VRTqDF21HuIHkmnEtA==",
+      "files": [
+        {
+          "path": "licenses/expo-splash-screen/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-splash-screen/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-easy-crop",
+      "version": "6.2.4",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/ValentinH/react-easy-crop"
+      },
+      "tarball": "https://registry.npmjs.org/react-easy-crop/-/react-easy-crop-6.2.4.tgz",
+      "integrity": "sha512-OWdnFYctzUNlekjob+bQfloG9wyhIBkkmeISnM5XVE4Byqn0jmVxDF7oz85ovUF+EIPQyj0yAHbBEFtnxwGv4g==",
+      "files": [
+        {
+          "path": "licenses/react-easy-crop/LICENSE",
+          "sha256": "ccf945ed3947a9db3288fb5d9c18263be496492b7b5a1981f7de898b11ee8f04",
+          "source": "node_modules/react-easy-crop/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 1158,
+    "packageEntries": 1602,
     "declarations": {
+      "(BSD-2-Clause OR MIT OR Apache-2.0)": 1,
       "(BSD-3-Clause OR GPL-2.0)": 1,
+      "(MIT AND Zlib)": 1,
       "(MIT OR Apache-2.0)": 1,
-      "(MIT OR CC0-1.0)": 3,
+      "(MIT OR CC0-1.0)": 4,
+      "(MIT OR GPL-3.0-or-later)": 1,
       "0BSD": 2,
-      "Apache-2.0": 143,
-      "BSD-2-Clause": 14,
-      "BSD-3-Clause": 24,
-      "BlueOak-1.0.0": 11,
+      "Apache-2.0": 203,
+      "Apache-2.0 AND LGPL-3.0-or-later": 3,
+      "Apache-2.0 AND LGPL-3.0-or-later AND MIT": 1,
+      "BSD": 2,
+      "BSD-2-Clause": 22,
+      "BSD-3-Clause": 34,
+      "BlueOak-1.0.0": 18,
       "CC-BY-4.0": 1,
-      "CC0-1.0": 1,
-      "ISC": 50,
-      "MIT": 882,
+      "CC0-1.0": 2,
+      "ISC": 86,
+      "LGPL-3.0-or-later": 10,
+      "MIT": 1180,
       "MIT AND Apache-2.0": 1,
       "MIT-0": 1,
       "MPL-2.0": 14,
+      "Public Domain": 1,
       "Python-2.0": 1,
-      "Unlicense": 3
+      "Unlicense": 3,
+      "public domain": 1
     },
     "missingDeclarations": [
       "node_modules/buildcheck",
       "node_modules/cpu-features",
       "node_modules/limiter",
       "node_modules/png-js",
-      "node_modules/ssh2"
+      "node_modules/ssh2",
+      "node_modules/fuzzy",
+      "node_modules/valid-url"
     ]
   },
   "deploymentComponents": [
