@@ -1,3 +1,4 @@
+import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
 import type { DocumentReference, Transaction } from "@google-cloud/firestore";
@@ -7,7 +8,7 @@ import {
   type BackgroundKnowledgeRunRequest, type BackgroundKnowledgeRunResult, type BackgroundKnowledgeWorkBudget,
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, BackgroundKnowledgeDurableOperation, BackgroundKnowledgePublishReceipt } from "./background-knowledge-maintenance.ts";
-import { backgroundKnowledgeReviewMatchesCandidate } from "./background-knowledge-maintenance.ts";
+import { backgroundKnowledgeReviewMatchesCandidate, KnowledgeModelQuotaPending } from "./background-knowledge-maintenance.ts";
 import { nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
@@ -18,24 +19,32 @@ import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), time = z.number().int().positive();
 const receiptSchema = z.strictObject({ observationHash: hash, state: z.literal("committed") });
 const workSchema = z.strictObject({
-  request: backgroundKnowledgeRunRequestSchema, configHash: hash, reusedOrganizationFrom: hash.optional(), deadlineAtMs: time,
-  waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
+  request: backgroundKnowledgeRunRequestSchema, configHash: hash, publicationConfigHash:hash.optional(), reusedOrganizationFrom: hash.optional(), deadlineAtMs: time,
+  windowed: z.literal(true).optional(),
+  quotaPhase:z.literal('model').optional(), waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
   lease: z.strictObject({ token: z.uuid(), untilMs: time }).nullable(),
   budget: backgroundKnowledgeWorkBudgetSchema, result: backgroundKnowledgeRunResultSchema.nullable(),
   receipt: receiptSchema.nullable(), preparedHash: hash.nullable(),
 });
 type Work = z.infer<typeof workSchema>;
 const stageSchema = z.strictObject({
-  requestHash: hash, state: z.enum(["pending", "ready", "unknown"]), text: z.string().max(128000).nullable(),
+  rootRunId: hash.optional(), requestHash: hash, state: z.enum(["pending", "ready", "unknown"]), text: z.string().max(128000).nullable(),
 }).refine(row => (row.state === "ready") === (row.text !== null));
 const preparedSchema = z.strictObject({
   candidateHash: hash,
   prepared: z.strictObject({
     source: z.unknown().transform(parseKnowledgeSource), versionHash: hash,
     assessment: knowledgeReviewAssessmentSchema, review: backgroundKnowledgeReviewBindingSchema,
-    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional() }),
+    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
   }),
 });
+/** Restore keeps immutable evidence, binding and spent allowance across the snapshot boundary. */
+export const knowledgeWorkRecoverySchema = z.union([workSchema, stageSchema, preparedSchema, windowReadingSchema,
+  z.strictObject({key:z.string().min(1).max(180)}),
+  z.strictObject({sourceId:z.string().min(1).max(80),parentHash:hash,first:z.number().int().positive(),
+    count:z.number().int().positive().max(16),method:z.literal("pdfjs-dist/6.4.299-extractPages/1"),
+    total:z.number().int().positive(),contentHash:hash})]);
+
 export class FirestoreKnowledgeWorkError extends Error {
   readonly code: string;
   constructor(code: string) { super(code); this.name = "FirestoreKnowledgeWorkError"; this.code = code; }
@@ -119,15 +128,16 @@ export function createFirestoreKnowledgeWork(options: Options) {
       }, { readOnly: true });
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
-      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number }, reusedOrganizationFrom?: string) {
+      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       if (reusedOrganizationFrom && knowledgeOrganizationRepairId(reusedOrganizationFrom) !== request.operationFingerprint)
         reject("knowledge_work_repair_binding");
       z.uuid().parse(leaseToken); hash.parse(configHash);
-      z.object({ modelCalls: z.number().int().min(1).max(2), deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
+      z.object({ modelCalls: z.number().int().min(1).max(limits.windowed ? 64 : 2), windowed: z.literal(true).optional(), publicationConfigHash:hash.optional(), deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
       function verify(row: Work) {
-        if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom)
+        if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom || row.windowed !== limits.windowed
+          || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
           reject("knowledge_work_binding_changed");
         return row;
       }
@@ -150,11 +160,17 @@ export function createFirestoreKnowledgeWork(options: Options) {
         if (snapshot.exists) {
           const row = verify(open(workRef, snapshot.data(), workSchema));
           if (row.waitingForQuotaDay && row.waitingForQuotaDay < new Date().toISOString().slice(0, 10)
-            && row.preparedHash && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {
-            const { waitingForQuotaDay: _, ...rest } = row;
+            && (row.preparedHash || row.windowed && row.quotaPhase === 'model') && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {
+            const { waitingForQuotaDay: _, quotaPhase: _phase, ...rest } = row;
             const continued = { ...rest, deadlineAtMs: Date.now() + limits.deadlineMs, lease: null };
             tx.set(workRef, seal(workRef, continued));
             return continued;
+          }
+          if (row.windowed && !row.waitingForQuotaDay && row.deadlineAtMs <= Date.now() && !row.result && !row.receipt
+            && (!row.lease || row.lease.untilMs <= Date.now())) {
+            const resumed = { ...row, deadlineAtMs: Date.now()+limits.deadlineMs, lease: null };
+            tx.set(workRef,seal(workRef,resumed));
+            return resumed;
           }
           return row;
         }
@@ -170,7 +186,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
             reject("knowledge_work_repair_binding");
           priorBudget = old.budget;
         }
-        const row: Work = { request, configHash, ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
+        const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}), ...(limits.windowed ? { windowed:true as const } : {}), ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
           budget: priorBudget ?? { usedUnits: 0, maxUnits: limits.maxUnits ?? 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
         tx.create(workRef, seal(workRef, row)); return row;
       });
@@ -233,6 +249,33 @@ export function createFirestoreKnowledgeWork(options: Options) {
           try { return await database.runTransaction(async tx => { await current(tx); return true; }, { readOnly: true }); }
           catch (error) { if (error instanceof FirestoreKnowledgeWorkError) return false; throw error; }
         },
+        async readWindow(index: number) {
+          const reference = ref("reviewed-window", request.operationFingerprint, String(index));
+          return database.runTransaction(async tx => {
+            await current(tx);
+            const row = await tx.get(reference);
+            return row.exists ? open(reference, row.data(), windowReadingSchema) : null;
+          }, { readOnly: true });
+        },
+        async saveWindow(index: number, reading: WindowReading, yieldAfter: boolean) {
+          const reference = ref("reviewed-window", request.operationFingerprint, String(index));
+          const value = windowReadingSchema.parse(reading);
+          await database.runTransaction(async tx => {
+            const row = await current(tx), prior = await tx.get(reference);
+            if (!row.windowed || (prior.exists && knowledgeReviewHash(open(reference, prior.data(), windowReadingSchema)) !== knowledgeReviewHash(value)))
+              reject("knowledge_window_binding_changed");
+            if (!prior.exists) tx.create(reference, seal(reference, value));
+            if (yieldAfter) write(tx, { ...row, lease: null });
+          });
+        },
+        async verifyWindowedReview(tx: Transaction, versionHash: string) {
+          const row = await current(tx), snapshot = await tx.get(preparedRef);
+          if (!row.windowed || !snapshot.exists) return false;
+          const value = open(preparedRef, snapshot.data(), preparedSchema);
+          return row.preparedHash === knowledgeReviewHash(value) && value.prepared.versionHash === versionHash
+            && value.prepared.review.modelReviewCompleted && value.prepared.review.decision === "approve_candidate"
+            && Boolean(value.prepared.provenance.windows?.length);
+        },
         async waitForQuota() {
           await database.runTransaction(async tx => {
             const row = await current(tx);
@@ -277,7 +320,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
           }, { readOnly: true });
         },
         /** Reserve before dispatch. An unanswered reservation is lookup-only forever. */
-        async completeText(input: { system: string; user: string; attemptKey: string }, generate: () => Promise<string>) {
+        async completeText(input: { system: string; user: string; attemptKey: string }, generate: () => Promise<string>, canStart?: (tx:Transaction)=>Promise<boolean>) {
           const stageRef = ref("model", request.operationFingerprint, input.attemptKey);
           const requestHash = knowledgeReviewHash(input);
           const cached = await database.runTransaction(async tx => {
@@ -296,13 +339,19 @@ export function createFirestoreKnowledgeWork(options: Options) {
               tx.create(stageRef, seal(stageRef,prior));
               return prior.text;
             }
+            if (row.windowed && canStart && !await canStart(tx)) {
+              write(tx,{...row,lease:null,quotaPhase:"model",waitingForQuotaDay:new Date().toISOString().slice(0,10)});
+              return false as const;
+            }
             if (row.preparedHash) reject("knowledge_work_candidate_already_prepared");
             if (row.budget.modelCalls >= row.budget.maxModelCalls) reject("knowledge_work_model_limit");
-            tx.create(stageRef, seal(stageRef, { requestHash, state: "pending", text: null }));
+            const rootRunId = row.windowed ? knowledgeReviewHash([request.operationFingerprint,input.attemptKey]) : request.operationFingerprint;
+            tx.create(stageRef, seal(stageRef, { requestHash, rootRunId, state: "pending", text: null }));
             write(tx, { ...row, lease: { token: leaseToken, untilMs: Math.min(Date.now() + 120_000, row.deadlineAtMs) },
               budget: { ...row.budget, modelCalls: row.budget.modelCalls + 1 } });
             return null;
           });
+          if (cached === false) throw new KnowledgeModelQuotaPending();
           if (cached !== null) return cached;
           try {
             const text = await generate();
@@ -310,7 +359,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
               await current(tx);
               const snapshot = await tx.get(stageRef), stage = open(stageRef, snapshot.data(), stageSchema);
               if (stage.requestHash !== requestHash || stage.state !== "pending") reject("knowledge_work_model_binding_changed");
-              tx.set(stageRef, seal(stageRef, stageSchema.parse({ requestHash, state: "ready", text })));
+              tx.set(stageRef, seal(stageRef, stageSchema.parse({ ...stage, state: "ready", text })));
             });
             return text;
           } catch (error) {
@@ -319,7 +368,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
               await current(tx);
               const snapshot = await tx.get(stageRef), stage = open(stageRef, snapshot.data(), stageSchema);
               if (stage.state === "pending" && stage.requestHash === requestHash)
-                tx.set(stageRef, seal(stageRef, { requestHash, state: "unknown", text: null }));
+                tx.set(stageRef, seal(stageRef, { ...stage, state: "unknown", text: null }));
             }).catch(() => {});
             throw error;
           }

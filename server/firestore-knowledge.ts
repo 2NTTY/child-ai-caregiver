@@ -60,7 +60,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
-    expectedObservation?: { sourceId: string; contentHash: string }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
+    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<boolean> }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
   publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[],
     fence?: FirestoreKnowledgePublicationFence): Promise<{ status: "published" }>;
   disable(sourceId: string, reason: string): Promise<void>;
@@ -287,7 +287,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
       usageScope: internalKnowledgeSource(document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial" ? "internal_noncommercial" : "public_noncommercial",
       reviewState: "reviewed", ...(document.extraction ? { extraction: document.extraction } : {}),
-      originalCoverage: chunk.document.originalText ? "chunk_original" : "excerpt_only",
+      originalCoverage: chunk.document.originalText && !chunk.document.originalKind ? "chunk_original" : "excerpt_only",
       applicabilityStatus: chunk.document.applicability.ageBasis === "any" ? "applicable"
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
   }
@@ -648,8 +648,11 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (observed && (!observed.catalogMatches || (observed.watch.confirmedGone ?? observed.watch.lastStatus === "unavailable"))) reject("knowledge_observation_review_mismatch");
         if (options.audience !== "internal" && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial")) reject("knowledge_source_internal_review_required", 403);
         const original = observed?.observation ? await options.observations!.content(tx, observed.observation) : null;
+        const checkedWindows = Boolean(original?.nativeWindowMethod &&
+          (assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash ||
+            expectedObservation?.verifyWindowedReview && await expectedObservation.verifyWindowedReview(tx, expectedHash)));
         checkKnowledgeObservation(document, observed?.watch, original && observed?.observation ? {
-          document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash);
+          document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash,checkedWindows);
         if (version.reviewState === "reviewed" && version.review?.assessmentHash === assessmentHash
           && (version.review.watchRevision ?? null) === (observed?.watch.revision ?? null)
           && (!observed || observationCurrent(edition))
@@ -661,7 +664,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if ((version.reviewState === "withdrawn" || version.review && (version.review.watchRevision ?? null) !== (observed?.watch.revision ?? null))
           && document.chunks.some(chunk => !assessment.changes.some(change => change.key === chunk.key)))
           reject("knowledge_withdrawn_full_review_required");
-        if (original && assessment.changes.some(change => change.newQuote !== null && !original.text.includes(change.newQuote))) reject("knowledge_review_observation_quote_mismatch");
+        if (original && !checkedWindows && assessment.changes.some(change => change.newQuote !== null && !original.text.includes(change.newQuote))) reject("knowledge_review_observation_quote_mismatch");
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
           checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };

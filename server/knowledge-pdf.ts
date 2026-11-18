@@ -35,7 +35,7 @@ export async function extractKnowledgePdf(data: Uint8Array, options: KnowledgePd
     throw new Error("knowledge_pdf_invalid_size");
   }
   if (!Number.isSafeInteger(startPage) || startPage < 1
-    || !Number.isSafeInteger(pageLimit) || pageLimit < 1 || pageLimit > 8) {
+    || !Number.isSafeInteger(pageLimit) || pageLimit < 1 || pageLimit > (options.includePagePdf ? 16 : 8)) {
     throw new Error("knowledge_pdf_invalid_page_range");
   }
   if (expectedHash !== undefined && !/^[a-f0-9]{64}$/.test(expectedHash)) {

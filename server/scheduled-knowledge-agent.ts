@@ -33,13 +33,19 @@ export function createScheduledKnowledgeAgent(options: Omit<Parameters<typeof cr
         if (!['changed', 'unchanged', 'already_recorded'].includes(check.status))
           return { state: check.status === 'unknown' ? 'unknown' as const : 'stopped' as const };
         const pin = await options.refresh.resumeCheck(job, recordedCheckId);
-        if (pin?.items.length !== 1) return { state: 'stopped' as const };
+        if (pin?.status !== 'ok' || pin.items.length !== 1) return { state: 'stopped' as const };
         // Polls and restarts resume the same version and payer. A semantic hold or unknown charge
         // cannot acquire fresh generation allowance simply because the next weekly slot opened.
         operationFingerprint = firestoreDomainHash(["knowledge-native-edition/1", watchId, revision, binding, observationHash(pin.items[0]!)]);
       }
       const result = await runner.start({ watchId, workerGeneration, operationFingerprint,
         publishMode: options.config.backgroundKnowledgeLivePublish ? 'live' : 'dry_run' }, signal, revision, recordedCheckId);
+      if (result.code === 'knowledge_window_pending') return { state:'deferred' as const, nextAt:new Date(Date.now()+60000).toISOString() };
+      if (result.code === 'knowledge_embedding_daily_admission' || result.code === 'knowledge_model_daily_admission') {
+        const now = new Date();
+        const nextAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString();
+        return { state: 'deferred' as const, nextAt };
+      }
       const status = result.status === 'already_recorded' ? result.code : result.status;
       if (result.published || status === 'unchanged' || status === 'dry_run_ready' || status === 'candidate_held' && watchId !== 'fhs-feeding-booklet-en')
         return { state: 'completed' as const };

@@ -17,10 +17,13 @@ const definitionSchema = z.strictObject({ id, url: z.url(), kind: z.enum(["page"
   audience: z.enum(["public_noncommercial", "internal_noncommercial"]), itemHosts: z.array(z.string().min(1).max(255)).max(8).optional(),
   selector: z.string().min(1).max(500).optional() });
 const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), title: z.string().min(1).max(300),
-  text: z.string().min(1).max(256020).refine(text => text.isWellFormed()), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
+  text: z.string().max(256020).refine(text => text.isWellFormed()), nativeWindowMethod: z.literal("native-pdf-window/1").optional(), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
   rssItem: z.strictObject({ xml: z.string().min(1).max(48000), copyright: z.string().min(1).max(160) }).optional(),
-  pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() });
+  pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() }).refine(doc => doc.nativeWindowMethod
+    ? !doc.pages && doc.text === "" && doc.extraction?.format === "text_pdf" && doc.extraction.complete === false
+      && doc.extraction.pageStart === 1 && doc.extraction.pageEnd === doc.extraction.totalPages
+    : doc.text.length > 0);
 /** Hash the same normalized representation that the durable observation stores. */
 export function parseKnowledgeObservation(input: unknown): ObservedContent { return bodySchema.parse(input); }
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
@@ -37,7 +40,7 @@ const checkSchema = z.strictObject({ ...binding, jobId: z.uuid(), watchId: id, r
   state: z.enum(["running", "recorded", "unknown"]), attempts: z.number().int().min(1).max(2), checkedAt: date,
   status: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(), itemCount: z.number().int().min(0).max(50),
   changedCount: z.number().int().min(0).max(50), failureCode: z.enum(["network", "timeout", "response", "parse"]).nullable(),
-  originalHash: hash.optional(), itemHashes: z.array(z.strictObject({ sourceId: id, contentHash: hash })).max(50).optional(),
+  readMethod: z.string().min(1).max(80).optional(), originalHash: hash.optional(), itemHashes: z.array(z.strictObject({ sourceId: id, contentHash: hash })).max(50).optional(),
   httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() });
 const adminStatusCursorSchema = z.object({ checkedAt: date, jobId: z.uuid() }).strict();
 type Watch = z.infer<typeof watchSchema>;
@@ -159,8 +162,13 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         const snap = await tx.get(checkRef(jobId));
         if (!snap.exists) return null;
         const receipt = parse(checkSchema, snap.data());
-        if (receipt.watchId !== job.watchId || receipt.revision !== job.revision || receipt.workerGeneration !== job.workerGeneration
-          || !receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
+        if (receipt.watchId !== job.watchId || receipt.revision !== job.revision
+          || receipt.workerGeneration !== job.workerGeneration || receipt.state !== "recorded") return null;
+        if (receipt.status === "unavailable" && receipt.httpStatus)
+          return { status: "unavailable" as const, httpStatus: receipt.httpStatus };
+        if (receipt.status === "failed" && receipt.failureCode)
+          return { status: "failed" as const, reason: receipt.failureCode };
+        if (!receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
         const items: ObservedContent[] = [];
         for (const pin of receipt.itemHashes) {
           const current = await gate.read(tx, pin.sourceId);
@@ -319,7 +327,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           : fetched.status === "unavailable" ? "unavailable" as const : "failed" as const;
         const nextCheck = { ...receipt, state: "recorded" as const, status, itemCount: eligible ? prepared.length : 0, changedCount: changed,
           ...(eligible && fetched.status === "ok" ? { itemHashes: prepared.map(({ sourceId, contentHash }) => ({ sourceId, contentHash })),
-            ...(originalHash ? { originalHash } : {}) } : {}),
+            ...(fetched.readMethod ? { readMethod: fetched.readMethod } : {}), ...(originalHash ? { originalHash } : {}) } : {}),
           checkedAt: at, failureCode: eligible && fetched.status === "failed" ? fetched.reason : null, httpStatus: eligible && fetched.status === "unavailable" ? fetched.httpStatus : null };
         if (row?.lease?.token === token) writes.push({ ref: watchRef(row.id), value: { ...row, lease: null,
           ...(eligible ? { lastAttemptAt: at, lastStatus: status, lastSuccessfulCheckAt: fetched.status === "ok" ? at : row.lastSuccessfulCheckAt,

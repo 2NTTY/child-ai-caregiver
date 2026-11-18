@@ -53,7 +53,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   proactiveEvents?: Pick<ReturnType<typeof createProactiveEventSources>, 'prepareGlobal'>;
   knowledgeAgent?: { binding: string; accepts(watchId: string): boolean;
-    run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped'}> };
+    run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped' | 'deferred'; nextAt?: string}> };
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'> & Partial<Pick<ReturnType<typeof createFirestorePhotoStore>, 'expireImport'>>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;

@@ -7,7 +7,7 @@ import { firebaseBackupDocumentDigest, assertFirebaseBackupInventory, assertFire
 
 test('mixed backup domains append after the existing stable erasure stages', () => {
   assert.equal(FIREBASE_BACKUP_COLLECTION_SUFFIXES.indexOf('_private_summary_usage'), 143);
-  assert.deepEqual(FIREBASE_BACKUP_COLLECTION_SUFFIXES.slice(144), ['_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics', '_agent_budget_alerts', '_ai_usage_detail', '_knowledge_original_manifests', '_library_preferences']);
+  assert.deepEqual(FIREBASE_BACKUP_COLLECTION_SUFFIXES.slice(144), ['_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics', '_agent_budget_alerts', '_ai_usage_detail', '_knowledge_original_manifests', '_library_preferences', '_knowledge_work', '_knowledge_budget']);
 });
 
 test('native backup inventory preserves vectors and rejects changed, missing or extra documents', () => {
