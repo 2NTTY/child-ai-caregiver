@@ -1,7 +1,7 @@
 import { BackgroundSurface, useCustomBackground } from "../components/appearance/BackgroundSurface";
 import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
-import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
+import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import {
   AGENT_PROGRESS_LABELS,
   ALL_OFFICIAL_HELP_IDS,
@@ -103,7 +103,9 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     setDetailsOpen(false);
     navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
-  const replyRunning = chat.busy === "reply" || chat.remoteReply?.status === "running";
+  const remoteReplyStillRunning = chat.remoteReply?.status === "running"
+    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === chat.remoteReply?.messageId);
+  const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
   const childScopedChat = !!child && chat.selectedChildId === child.id;
   const scopedMessages = childScopedChat ? chat.messages : [];
   const scopedFeedback = childScopedChat ? chat.feedback : null;
@@ -121,7 +123,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         || isIncompleteModelReplyText(item.text);
     })
     || (chat.remoteReply?.messageId === latestUserMessage.id
-      && (chat.remoteReply.status === "running" || chat.remoteReply.status === "stopped" || chat.remoteReply.status === "unknown"))
+      && (remoteReplyStillRunning || chat.remoteReply.status === "stopped" || chat.remoteReply.status === "unknown"))
     || (draft?.savedUserMessageId === latestUserMessage.id
       && ["saving", "saved_unreplied", "save_unknown", "checked", "reply_failed"].includes(draft.phase))
     || (childScopedChat && !!chat.replyError)
@@ -148,8 +150,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   ];
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
-      : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
-  // Decided B-P5 dock: permanent toolbar entry + bounded non-scrolling dock directly above AgentComposer (outside ChatTimeline).
+      : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
+  // Fixed official help dock: permanent toolbar entry + bounded non-scrolling dock directly above AgentComposer (outside ChatTimeline).
   const maxHelpDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
   const officialHelpPanel = (autoHelpIds.length || activeHelpIds.length) ? <View testID="chat-official-help-dock" style={[styles.helpDock, { maxHeight: maxHelpDockHeight }]}>
     <ScrollView nestedScrollEnabled style={styles.helpDockScroll} contentContainerStyle={styles.helpDockContent}>
@@ -177,6 +179,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
+    {chat.busy === "reply" && chat.feedback?.sources.length ? <ProgressSourceCards sources={chat.feedback.sources} reviewing={chat.feedback.phase === "reviewing"} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
@@ -224,12 +227,14 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
         const stoppedWithoutQueue = run?.status === "stopped" && run.stopReasonLabel === agentStopMessage("busy")
           || chat.remoteReply?.messageId === message.id && chat.remoteReply.status === "stopped" && chat.remoteReply.stopReason === "busy";
+        const hasModelReply = chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const effectiveRunStatus = run?.status === "running" && (message.role === "model" || hasModelReply) ? "completed" : run?.status;
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
-          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id)
+          && !hasModelReply
           && !stoppedWithoutQueue;
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
-          phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
-          phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
+          phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
+          phaseLabel={effectiveRunStatus === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
             {message.photo?<ChatPhotoMessage key={`${scopeKey}:${message.photo.id}`} photo={message.photo}/>:null}
@@ -304,3 +309,4 @@ const styles = StyleSheet.create({
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
   disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
+

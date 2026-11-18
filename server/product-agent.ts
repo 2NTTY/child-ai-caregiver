@@ -120,6 +120,7 @@ export function createProductAgent(options: {
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   mixed?:{runs:Pick<ReturnType<typeof createFirestoreAgentRuns>,'claimMixed'|'authorizeMixed'|'mixedInput'|'mixedResult'|'finishMixed'>;
     online:Pick<FirestoreOnlineStore,'readTaskContext'>;
+    materials?:import('./firestore-selected-materials.ts').SelectedMaterials;
     care?:Pick<import('./firestore-care.ts').FirestoreCareStore,'readSelectedCare'>;
     batches:Pick<ReturnType<typeof import('./firestore-mixed-task-batches.ts').createMixedTaskBatches>,'propose'>};
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
@@ -131,7 +132,9 @@ export function createProductAgent(options: {
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
   runtime: AgentRuntimePort; store: ProductAgentStore;
   memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
+  contextCompaction?: boolean | { tokenThreshold?: number; eventRetentionSize?: number };
 }) {
+  const compactionConfig = options.contextCompaction ?? true;
   const activeReplies = new Map<string, AbortController>();
   const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
   return {
@@ -152,14 +155,18 @@ export function createProductAgent(options: {
         const review:{value:ChatDeliveryReviewBinding|null;text:string|null}={value:null,text:null};
         const result=await options.runtime.run({
           scope:claim.scope,runId:claim.runId,claimedRun:claim,deadlineAtMs:Date.parse(claim.expiresAt),
-          trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',authorize,signal:cancellation.signal,
-          availableInputs:['run','scope','conversation','context','evidence','capabilities'],
-          context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage,
-            instructionPolicy:'這是發起者的私人多孩對話。按問題查所選孩子的照護記錄或待辦，以孩子 ID 區分同名者。用讀取工具回傳的 citationId 引用所讀原資料；時間、單位或涵蓋範圍未明時保留原有精度。公共問題可搜尋官方資料。'},
+          trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',promptRecipeId:'product-selected-children',authorize,signal:cancellation.signal,
+          contextCompaction: compactionConfig,
+          availableInputs:['run','scope','conversation','context','evidence','capabilities','selectedChildren'],
+          context:{currentMessageId:messageId,selectedChildren:input.room.childIds.length,recentConversationCoverage:recent.coverage},
           messages:recent.messages.map(({role,text})=>({role,text})),
           tools:run=>{
             tools=createProductAgentTools({run,authorize,store:options.store,memory:options.memory,tasks:options.tasks,knowledge:options.knowledge,
               trustedUserMessage:input.messages.at(-1)!.text,
+              ...(mixed.materials ? {mixedMaterials:{
+                search:(query,limit)=>mixed.materials!.search(userId,roomId,messageId,query,limit),
+                read:ref=>mixed.materials!.read(userId,roomId,messageId,ref),
+              }} : {}),
               ...(mixed.care ? {mixedCare:async ({from,filters,cursor,limit,singleChild})=>{
                 // A small group fits a single tool turn while keeping decrypted records bounded.
                 const ids=input.room.childIds.slice(from,from+(cursor || singleChild ? 1 : 2));
@@ -214,6 +221,7 @@ export function createProductAgent(options: {
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim,
         deadlineAtMs: Date.parse(claim.expiresAt), trigger: { kind: "worker", reference: job.eventId }, recipeId: "product-work-followup",
+        contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context,
         messages: [{ role: "user", text: "這是 Server 已提交的純到期工作。只按原 context 及 read_work 作必要補問或記錄回述；不能給照護建議、讀其他資料、修改、外發或聲稱工作完成。" }],
         tools: run => { tools = createDueWorkContinuationTools(run, authorize, id => authority.readWork(job, claim, id)); return tools.tools; },
@@ -253,6 +261,7 @@ export function createProductAgent(options: {
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
         deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
+        contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
         ...(privateContinuation ? { toolCatalog: WORK_CONTINUATION_TOOL_CATALOG } : {}),
         messages: [{ role: "user", text: daily ? "家長已開啟主動助手。按本次線索讀取目前孩子所需的資料；僅值得家長現在知道或回答時才提交主聊天文字。最近沒有記錄，不代表沒有做過。有獨立提醒、已完成或沒有實質變化的事保持安靜，用 no_action 結束。公共消息先核原機構現行公告及適用範圍，不代家長建立待辦。"
@@ -336,8 +345,18 @@ export function createProductAgent(options: {
         return await isCurrentUser() ? original : null;
       }
       const shown = new Set<string>();
-      const publish = (phase: AgentProgress['phase'], card?: AgentProgress['card']) => {
-        try { onProgress?.({ runId: claim.runId, messageId, phase, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
+      let sequence = 0;
+      const publish = (phase: AgentProgress['phase'], extra?: { card?: AgentProgress['card']; sources?: AgentProgress['sources'] }) => {
+        try {
+          onProgress?.({
+            runId: claim.runId,
+            messageId,
+            phase,
+            sequence: ++sequence,
+            ...(extra?.card ? { card: extra.card } : {}),
+            ...(extra?.sources?.length ? { sources: extra.sources } : {}),
+          });
+        } catch { /* Observation cannot change execution. */ }
       };
       publish('started');
       const recent = selectRecentConversation(page.messages, index, { upstreamHasEarlierMessages: page.nextCursor != null });
@@ -357,6 +376,7 @@ export function createProductAgent(options: {
           else if (event.phase === "tool_end") publish("tool_finished");
         },
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
+        contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
         ...(options.memory.initialConversationSummary ? { readConversationSummary: async () => {
           if (!await authorize()) throw new AgentStopped("unauthorized");
@@ -393,7 +413,8 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
             trustedUserMessage: page.messages[index]!.text,
-            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } },
+            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
+            onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
           });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
@@ -424,6 +445,9 @@ export function createProductAgent(options: {
               // This Server-only receipt has no model draft to review and needs no fifth call.
               return AGENT_CONFIRMATION_PENDING_TEXT;
             }
+          }
+          if (!rendered.value && reason === "model_limit" && _context.deliveryReview?.required && _context.budget.remainingModelCalls <= 1) {
+            throw new AgentStopped("delivery_review_budget");
           }
           try {
             return await acceptReviewedDelivery(tools!, rendered, review, result, _context, () => publish("reviewing"));
@@ -496,3 +520,5 @@ export function createProductAgent(options: {
   };
 }
 export type ProductAgent = ReturnType<typeof createProductAgent>;
+
+

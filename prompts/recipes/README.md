@@ -34,6 +34,7 @@ P1 尚不需要組裝時可改用 [獨立文字入口](../p1/README.md)，不用
 | Recipe ID | 正式使用 |
 |---|---|
 | `product-interactive` | `server/product-agent.ts` 的本人對話工具循環 |
+| `product-selected-children` | 本人多孩／班級對話；按已選孩子查記憶、文件、照護及待辦，引用所讀原件 |
 | `product-background` | 同一服務的已授權家庭背景事件 |
 | `product-work-followup` | 同一服務的本人站內工作跟進；只讀能力目錄，不提供互動寫入或外部聯絡 |
 | `photo-capture` | `server/photo-agent.ts` 的照片處理入口 |

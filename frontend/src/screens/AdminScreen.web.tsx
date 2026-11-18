@@ -5,14 +5,16 @@ import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AGENT_RUN_LIMITS } from '../../../src/shared/agent-run-limits';
+import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from '../../../src/shared/agent-run-limits';
 import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt } from '../../../src/shared/admin';
+import { parseAdminSoftBudgetRatioInput } from '../components/model-settings/model-settings-form';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
 import { AppCheckbox } from '../components/AppCheckbox';
 import { useProduction } from '../production/ProductionProvider';
 import { colors, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
+import { indexGroupTargetLimit } from '../production/admin-knowledge-index';
 import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
 import { AdminProactiveDemo } from '../components/admin/AdminProactiveDemo';
 import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
@@ -53,14 +55,19 @@ export default function AdminScreen() {
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState('');
   const [indexDetails, setIndexDetails] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
+  const [softRatioText, setSoftRatioText] = useState(String(DEFAULT_SOFT_BUDGET_RATIO));
+  const [roleRatioTexts, setRoleRatioTexts] = useState<Record<'interactive' | 'background' | 'reviewer' | 'retriever', string>>({
+    interactive: '', background: '', reviewer: '', retriever: '',
+  });
   const currentUser = useRef(userId); currentUser.current = userId;
   const credentialRequest = useRef<AbortController | null>(null);
   const policyForm = useForm<Values>({ resolver: zodResolver(platformPolicyValuesSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
-    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); setGroupId(''); setSoftRatioText(String(DEFAULT_SOFT_BUDGET_RATIO)); setRoleRatioTexts({ interactive: '', background: '', reviewer: '', retriever: '' }); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -70,7 +77,20 @@ export default function AdminScreen() {
     const key = userId + ':' + (state.receipt?.opId ?? 'initial');
     if (!state.busy && loadedReceipt.current !== key) { loadedReceipt.current = key; void admin.load(day); }
   }, [visible, userId, state.busy, state.receipt?.opId]);
-  useEffect(() => { if (visible && state.overview) { const { version, updatedAt, ...values } = state.overview.policy; policyForm.reset(values); } }, [visible, state.overview?.policy.version]);
+  useEffect(() => {
+    if (visible && state.overview) {
+      const { version, updatedAt, ...values } = state.overview.policy;
+      policyForm.reset(values);
+      setSoftRatioText(String(values.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO));
+      const rr = values.roleSoftBudgetRatios ?? {};
+      setRoleRatioTexts({
+        interactive: rr.interactive === undefined ? '' : String(rr.interactive),
+        background: rr.background === undefined ? '' : String(rr.background),
+        reviewer: rr.reviewer === undefined ? '' : String(rr.reviewer),
+        retriever: rr.retriever === undefined ? '' : String(rr.retriever),
+      });
+    }
+  }, [visible, state.overview?.policy.version]);
   const locked = !online || state.busy || !!state.pending || reauthBusy || state.index.busy || !!state.index.pending;
   const indexWriteLocked = locked || state.index.versions.status === 'loading' || state.index.batches.status === 'loading';
   const submit = (command: AdminCommand) => { setLocalNotice(null); void admin.submit(command); };
@@ -139,6 +159,32 @@ export default function AdminScreen() {
             <AppTextField label={`${label}（${key === 'maxRunSeconds' ? AGENT_RUN_LIMITS.deadlineSeconds.min : key === 'modelRequestSeconds' ? AGENT_RUN_LIMITS.modelRequestSeconds.min : key === 'maxModelRetries' ? 0 : 1}–${max}）`} value={field.value === undefined ? '' : String(field.value)} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填允許範圍內的整數。</Text> : null}
           </View>} />)}
+          <Controller control={policyForm.control} name="softBudgetRatio" render={({ field, fieldState }) => <View>
+            <AppTextField label="軟預算目標比例（0.05–1.0，預設 0.25）" value={softRatioText} onChangeText={value => { setSoftRatioText(value); field.onChange(parseAdminSoftBudgetRatioInput(value)); }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
+            {fieldState.error ? <Text>請填 0.05 至 1.0 之間的數值，例如 0.25。</Text> : null}
+          </View>} />
+          {([
+            ['interactive', '互動對話軟預算覆寫（可選，0.05–1.0）'],
+            ['background', '背景工作軟預算覆寫（可選，0.05–1.0）'],
+            ['reviewer', '獨立核對員軟預算覆寫（可選，0.05–1.0）'],
+            ['retriever', '檢索角色軟預算覆寫（可選，0.05–1.0）'],
+          ] as const).map(([roleKey, roleLabel]) => <Controller key={roleKey} control={policyForm.control} name={`roleSoftBudgetRatios.${roleKey}`} render={({ field, fieldState }) => <View>
+            <AppTextField label={roleLabel} value={roleRatioTexts[roleKey]} onChangeText={value => {
+              const nextTexts = { ...roleRatioTexts, [roleKey]: value };
+              setRoleRatioTexts(nextTexts);
+              const trimmed = value.trim();
+              field.onChange(trimmed === '' ? undefined : parseAdminSoftBudgetRatioInput(trimmed));
+            }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
+            {fieldState.error ? <Text>請填 0.05 至 1.0 之間的小數，或留空沿用角色預設。</Text> : null}
+          </View>} />)}
+          {(() => {
+            const softTargets = deriveSoftBudgetTargets({
+              modelCalls: state.overview.policy.maxModelCalls,
+              toolCalls: state.overview.policy.maxToolCalls,
+              queryEmbeddings: state.overview.policy.maxQueryEmbeddings,
+            }, state.overview.policy.softBudgetRatio);
+            return <Text style={styles.note}>目前軟預算比例：{Math.round(softTargets.softBudgetRatio * 100)}%（軟目標：生成 {softTargets.modelCalls}／工具 {softTargets.toolCalls}／查詢向量 {softTargets.queryEmbeddings} 次，向下取整）。</Text>;
+          })()}
           <Text style={styles.note}>目前每輪：{state.overview.toolCalls} 次工具、{state.overview.deadlineMs / 1000} 秒。固定輸出容量：每次最多 {state.overview.outputTokens} tokens；互動文字最多 {state.overview.inputCharacters} 字元。</Text>
           <Text>每天按模型生成及查詢 embedding 嘗試計數，不是聊天句數。香港時間早上 8 時換日；調高限額可能增加費用。這不是 GCP 帳單或硬性停費保證。</Text>
           <Text style={styles.note}>重試只處理模型暫時性錯誤，沿同一運行計入生成及每日額度；不重做已完成操作。單次等待仍受整輪剩餘時間限制；照片、轉錄及背景工作亦受原工作期限限制。</Text>
@@ -203,7 +249,7 @@ export default function AdminScreen() {
             const selected = state.index.selected.some(target => target.versionId === version.id && target.versionHash === version.hash);
             return <View key={version.id} style={styles.row}>
               <AppCheckbox label={`${version.sourceId} · ${version.state === 'reviewed' ? '已審核' : version.state === 'draft' ? '草稿' : version.state === 'withdrawn' ? '已撤回' : version.state}`}
-                checked={selected} disabled={indexWriteLocked || version.state !== 'reviewed' || !selected && state.index.selected.length >= 50}
+                checked={selected} disabled={indexWriteLocked || version.state !== 'reviewed' || !selected && state.index.selected.length >= indexGroupTargetLimit}
                 onChange={value => admin.selectIndexVersion(version.id, value)} />
               <Text selectable style={styles.note}>版本：{version.id}</Text><Text selectable style={styles.note}>內容 hash：{version.hash}</Text>
               <Text style={styles.note}>{version.searchReady ? '此版本已有完整關鍵詞索引' : '此版本尚未完成關鍵詞索引'} · 發布時間：{knowledgeTime(version.publishedAt)}</Text>
@@ -211,8 +257,27 @@ export default function AdminScreen() {
           })}
           {state.index.versions.nextVersionId ? <AppButton label={state.index.versions.status === 'error' ? '重試載入更多版本' : '載入更多版本'} variant="secondary"
             disabled={!online || state.index.busy || state.index.versions.status === 'loading'} onPress={() => { void admin.loadIndexVersions(true); }} /> : null}
-          <Text>已選 {state.index.selected.length}／50 個已審核版本。建立後由背景工作處理；可暫停及查回。</Text>
+          <AppButton label="選取已載入的已審核版本" variant="secondary" disabled={indexWriteLocked || !state.index.versions.items.length}
+            onPress={() => admin.selectLoadedIndexVersions()} />
+          <Text>已選 {state.index.selected.length}／{indexGroupTargetLimit} 個版本。建立後可離開，背景會繼續處理。</Text>
           <AppButton label="確認建立所選版本的索引批次" disabled={indexWriteLocked || !state.index.selected.length} onPress={() => { void admin.createIndexBatch(); }} />
+          <AppTextField label="查回重建組（首批編號）" value={groupId} onChangeText={setGroupId} autoCapitalize="none" />
+          <AppButton label="讀取重建組" variant="quiet" disabled={!online || state.index.busy || !!state.index.pending || !groupId.trim()}
+            onPress={() => { void admin.refreshIndexGroup(groupId.trim()); }} />
+          {state.index.group ? <View style={styles.row}>
+            <Text selectable>重建組 {state.index.group.id}</Text>
+            {state.index.group.parts.map((part, i) => <View key={part.id}>
+              <Text>第 {i + 1} 批 · {indexBatchState[part.state]} · 共 {part.total} 個版本，完成 {part.completed}，失敗 {part.failed}</Text>
+              <AppButton label={`查看第 ${i + 1} 批逐項結果`} variant="quiet" disabled={!online || state.index.busy}
+                onPress={() => { setIndexDetails(part.id); void admin.refreshIndexBatch(part.id); }} />
+            </View>)}
+            <AppButton label="更新整組進度" variant="secondary" disabled={!online || state.index.busy || !!state.index.pending}
+              onPress={() => { if (state.index.group) void admin.refreshIndexGroup(state.index.group.id); }} />
+            {state.index.group.parts.some(part => part.state === 'running') ?
+              <AppButton label="暫停整組" disabled={indexWriteLocked} onPress={() => { void admin.controlIndexGroup('stop'); }} /> : null}
+            {state.index.group.parts.some(part => part.state === 'paused' || part.state === 'interrupted') ?
+              <AppButton label="繼續整組" disabled={indexWriteLocked} onPress={() => { void admin.controlIndexGroup('resume'); }} /> : null}
+          </View> : null}
           <Text accessibilityRole="header">索引批次</Text>
           <AppButton label="重新讀取批次列表" variant="secondary" disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.loadIndexBatches(); }} />
           {state.index.batches.status === 'loading' ? <Text accessibilityLiveRegion="polite">正在讀取索引批次…</Text> : null}

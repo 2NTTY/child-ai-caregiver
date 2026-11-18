@@ -85,11 +85,12 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   assert.deepEqual(history.messages.map(m=>m.text),[input.text]);
   assert.deepEqual((await (await call('')).json()).rooms.map(r=>r.id),[room.id]);
   const care=createFirestoreCareStore(options),memory=createFirestoreMemoryStore({...options,chat,care}),online=createFirestoreOnlineStore(options);
-  let generations=0, blockGeneration=false;
+  let generations=0, blockGeneration=false, firstInstructions;
   const started=Promise.withResolvers(), finish=Promise.withResolvers();
   product=await createFirestoreProductAgent({...options,chat,care,memory,online,
     config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId}),platformProvider:{async generate(request,signal){
       generations++;
+      if (generations === 1) firstInstructions = JSON.stringify(request.config?.systemInstruction);
       if (blockGeneration) {
         started.resolve(signal); await finish.promise;
         return {content:{role:'model',parts:[{text:'cancelled answer'}]},finishReason:'STOP'};
@@ -113,6 +114,9 @@ test('mixed messages are account-private, idempotent and lose disclosure when cl
   const question=(await (await call(path+'/messages',{operationId:randomUUID(),expectedVersion:2,text:'呢兩位同學有咩待辦？'})).json()).message;
   const replyPath=path+'/messages/'+question.id+'/reply';
   const answer=(await (await call(replyPath,{})).json()).result;
+  assert.doesNotMatch(firstInstructions, /read_memory_facts|propose_fact_revision/);
+  assert.match(firstInstructions, /search_selected_materials/);
+  assert.equal(answer.provenance?.recipeId,'product-selected-children');
   assert.equal(answer?.status,'completed',JSON.stringify(answer));
   assert.equal(answer.deliveryReview.decision,'pass');
   assert.equal((await (await call(replyPath)).json()).result.runId,answer.runId);

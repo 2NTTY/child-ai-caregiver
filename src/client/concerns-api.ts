@@ -27,7 +27,7 @@ export const requiresFreshConcernConfirmation = (error: ConcernApiError) => erro
 export interface ConcernsApi {
   getPage(childId: string, signal: AbortSignal, userId: string, options?: { limit?: number; cursor?: string | null }): Promise<ConcernPage>;
   change(childId: string, id: string, input: ConcernChange, signal: AbortSignal, userId: string): Promise<Concern>;
-  create(childId: string, input: ConcernValues, signal: AbortSignal, userId: string): Promise<Concern>;
+  create(childId: string, input: ConcernValues, signal: AbortSignal, userId: string, authorityVersion?: string): Promise<Concern>;
 }
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const timestamp = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(2147483647);
@@ -49,9 +49,9 @@ function checkedItem(value: unknown, childId: string, id?: string, status = 0): 
   if (!unique(parsed.data.events.map(event => event.id)) || !unique(parsed.data.attentionIds)) throw new ConcernApiError(0, null, { category: "duplicates", status, code: null });
   return parsed.data;
 }
-interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; reviewed: boolean; reconfirm: boolean }
+interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; authorityVersion?:string; reviewed: boolean; reconfirm: boolean }
 
-export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>): ConcernsApi {
+export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>, sharedActions = false): ConcernsApi {
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
   const spaceId = selection ? uuid.parse(selection.spaceId) : null;
   let pending: PendingWrite | null = null, activeScope: string | null = null;
@@ -61,7 +61,7 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, s
     if (activeScope !== next) { pending = null; activeScope = next; }
   }
   const path = (childId: string) => "/children/" + encodeURIComponent(childId) + "/concerns";
-  async function request(url: string, signal: AbortSignal, userId: string, body?: string, received?: (status: number) => void): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: string, received?: (status: number) => void, authorityVersion?:string): Promise<unknown> {
     const controller = new AbortController(), abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
     const timeout = setTimeout(abort, body === undefined ? 15_000 : 20_000);
@@ -69,7 +69,9 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, s
       if (controller.signal.aborted) throw new ConcernApiError();
       const selectedUrl = spaceId ? url + (url.includes('?') ? '&' : '?') + 'spaceId=' + encodeURIComponent(spaceId) : url;
       const response = await fetcher(apiUrl + selectedUrl, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
-        headers: { Accept: "application/json", "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+        headers: { Accept: "application/json", "x-expected-user-id": userId,
+          ...(spaceId && sharedActions ? { "x-concern-features":"shared-actions" } : {}),
+          ...(spaceId && sharedActions && authorityVersion ? { "x-concern-authority":authorityVersion } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         ...(body === undefined ? {} : { body }), signal: controller.signal });
       received?.(response.status);
       if (!response.ok) {
@@ -91,20 +93,20 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, s
     } catch (error) { if (error instanceof ConcernApiError) throw error; throw new ConcernApiError(); }
     finally { clearTimeout(timeout); signal.removeEventListener("abort", abort); }
   }
-  function begin(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: ConcernValues | ConcernChange) {
+  function begin(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: ConcernValues | ConcernChange, authorityVersion?:string) {
     const payload = JSON.stringify(input);
     if (pending) {
-      if (!pending.reviewed || pending.kind !== kind || pending.childId !== childId || pending.id !== id || pending.userId !== userId || pending.payload !== payload)
+      if (!pending.reviewed || pending.kind !== kind || pending.childId !== childId || pending.id !== id || pending.userId !== userId || pending.payload !== payload || pending.authorityVersion !== authorityVersion)
         throw new ConcernApiError(0, "check_original_concern");
       pending.reviewed = false; return pending;
     }
     const body = JSON.stringify({ opId: crypto.randomUUID(), confirmShared: true, [kind === "create" ? "values" : "change"]: input });
-    return pending = { kind, childId, id, userId, payload, body, reviewed: false, reconfirm: false };
+    return pending = { kind, childId, id, userId, payload, body, authorityVersion, reviewed: false, reconfirm: false };
   }
-  async function write(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: ConcernValues | ConcernChange, signal: AbortSignal) {
-    const attempt = begin(kind, childId, id, userId, input);
+  async function write(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: ConcernValues | ConcernChange, signal: AbortSignal, authorityVersion?:string) {
+    const attempt = begin(kind, childId, id, userId, input, authorityVersion);
     try {
-      const value = await request(path(childId) + (kind === "change" ? "/" + encodeURIComponent(id) + "/actions" : ""), signal, userId, attempt.body);
+      const value = await request(path(childId) + (kind === "change" ? "/" + encodeURIComponent(id) + "/actions" : ""), signal, userId, attempt.body, undefined, attempt.authorityVersion);
       const item = checkedItem(object(value) ? value.item : null, childId, kind === "change" ? id : undefined);
       const expected = "expectedVersion" in input ? input.expectedVersion + 1 : 1;
       if (item.version !== expected || ("action" in input && (input.action === "archive" && item.status !== "closed" || input.action === "restore" && item.status !== "following"))) throw new ConcernApiError();
@@ -147,10 +149,10 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, s
       if (!uuid.safeParse(id).success || !parsed.success) throw new ConcernApiError(400, "invalid_input");
       return write("change", childId, id, userId, parsed.data, signal);
     },
-    async create(childId, raw, signal, userId) {
+    async create(childId, raw, signal, userId, authorityVersion) {
       scope(childId, userId); const parsed = concernValuesSchema.safeParse(raw);
       if (!parsed.success) throw new ConcernApiError(400, "invalid_input");
-      return write("create", childId, "", userId, parsed.data, signal);
+      return write("create", childId, "", userId, parsed.data, signal, authorityVersion);
     },
   };
 }

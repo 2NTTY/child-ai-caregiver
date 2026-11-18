@@ -120,3 +120,25 @@ test('transfer ledger preserves paging, original-batch recovery and selection au
   assert.equal(owner.getSnapshot().transfers.detail.batch, null, 'Revoked read authority clears all ledger content');
   owner.dispose();
 });
+
+test('Web knowledge upload binds the selected ZIP to its digest and recovers the same batch after disconnect',async () => {
+  const digest = 'd'.repeat(64), file = new Blob(['public archive']);
+  const batch = { id:digest,total:2,next:2,revision:3,state:'completed',updatedAt:'2026-11-18T01:00:00Z',lastFailure:null };
+  const posts = []; let released = 0;
+  const owner = new AdminOwner('https://synthetic.invalid',async (url,init) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith('session')) return Response.json({administrator:true});
+    if (path.endsWith('/content')) {
+      posts.push(init); assert.equal(init.body,file); assert.equal(init.headers['Content-Type'],'application/zip');
+      throw new TypeError('connection dropped');
+    }
+    if (path.endsWith(digest)) return Response.json({batch,items:[],nextFrom:null});
+    return Response.json({items:[],nextCursor:null});
+  });
+  owner.setUser('test-admin'); await owner.checkAccess(); await owner.setTransfersOpen(true);
+  const pick = async () => ({filename:'public.zip',sha256:digest,body:file,bytes:file.size,release(){ released++; }});
+  await owner.uploadTransfer('e'.repeat(64),pick); assert.equal(posts.length,0);
+  await owner.uploadTransfer(digest,pick);
+  assert.equal(posts.length,1); assert.equal(released,2);
+  assert.equal(owner.getSnapshot().transfers.detail.batch.id,digest); assert.equal(owner.getSnapshot().transfers.detail.batch.state,'completed');
+});

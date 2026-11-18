@@ -1,5 +1,7 @@
 import { CHAT_FILE_UPLOAD_BODY_BYTES } from './firebase-chat-files-api.ts';
 import { VOICE_UPLOAD_BODY_BYTES } from './firebase-voice-api.ts';
+import { publicArchiveMaxBytes } from '../src/shared/admin-knowledge-transfer.ts';
+import { archiveContentPath } from './admin-knowledge-archive.ts';
 import { HANDOVER_UPLOAD_MAX_BYTES } from '../src/shared/handover-uploads.ts';
 import { HANDOVER_EXPORT_COMMAND_BYTES } from '../src/shared/handover-jobs.ts';
 import { domainReject } from './firestore-domain-data.ts';
@@ -85,8 +87,9 @@ export function createFirebaseNodeHandler(options: {
       if (webhook && (method !== 'POST' || !telegramWebhookAuthorized(headers.get('x-telegram-bot-api-secret-token'), options.telegramConfig ?? null))) {
         await write(failure('forbidden', 403), response); return;
       }
-      const streamingPackage = method === 'POST' && packageContent.test(pathname);
-      const maximum = streamingPackage ? HANDOVER_UPLOAD_MAX_BYTES : method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
+      const knowledgeArchive = method === 'POST' && archiveContentPath.test(pathname);
+      const streamingPackage = knowledgeArchive || method === 'POST' && packageContent.test(pathname);
+      const maximum = knowledgeArchive ? publicArchiveMaxBytes : streamingPackage ? HANDOVER_UPLOAD_MAX_BYTES : method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
         : method === 'POST' && voiceContent.test(pathname) ? VOICE_UPLOAD_BODY_BYTES
         : method === 'POST' && fileContent.test(pathname) ? CHAT_FILE_UPLOAD_BODY_BYTES
         : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES

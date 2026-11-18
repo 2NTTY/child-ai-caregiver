@@ -1,3 +1,4 @@
+import { createClassReminderPolicy, classDeviceTargetSchema } from './firestore-class-task-notification.ts';
 import { nativeChatPresenceInputSchema, nativePushReferenceSchema } from '../src/shared/native-push.ts';
 import { DeviceSessionError, type FirestoreDeviceSessions, type DeviceSessionKey } from './firestore-device-sessions.ts';
 import { chatStateSchema, chatTargetSchema, chatReasonSchema, presenceLifetimeMs, createChatNotificationPolicy } from './firestore-chat-notification-policy.ts';
@@ -19,9 +20,9 @@ import { checkedSubscription, pushProvider } from './web-push-gateway.ts';
 
 const uuid = z.uuid(), NIL = '00000000-0000-0000-0000-000000000000';
 export const firestorePushBindingSchema = z.object({ binding: pushBindingSchema, input: pushRegistrationInput.nullable(),
-  sessionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), chat: chatStateSchema.optional() }).strict();
+  sessionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), chat: chatStateSchema.optional(), classTaskConsent: uuid.optional() }).strict();
 export const firestorePushDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
-  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), chatTarget: chatTargetSchema.optional(), chatReason: chatReasonSchema.nullable().optional(),
+  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), chatTarget: chatTargetSchema.optional(), classTaskTarget: classDeviceTargetSchema.optional(), chatReason: chatReasonSchema.nullable().optional(),
   chatSession: z.string().regex(/^[a-f0-9]{64}$/u).optional(), message: notificationMessageContentSchema.optional() }).strict();
 const endpointSchema = z.object({ ownerUserId: z.string().min(1).max(256), bindingId: uuid, endpointHash: z.string().length(64) }).strict();
 export const firestorePushEndpointRecoverySchema = endpointSchema;
@@ -55,10 +56,11 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
     createdAt: saved.binding.createdAt, status: saved.binding.status,
     ...data.seal('push-binding', saved.binding.id, b.scope, firestorePushBindingSchema, saved, saved.binding.version) });
   const deliveryEnvelope = (b: Pick<Binding, 'scope'>, saved: SavedDelivery) => ({ ...data.tags(b.scope), deliveryId: saved.delivery.id,
-     ...(saved.chatTarget ? {chatCreatedAt:saved.delivery.createdAt} : {createdAt:saved.delivery.createdAt}), bindingId: saved.delivery.bindingId, status: saved.delivery.status,
+     ...(saved.classTaskTarget || saved.chatTarget ? {chatCreatedAt:saved.delivery.createdAt} : {createdAt:saved.delivery.createdAt}), bindingId: saved.delivery.bindingId, status: saved.delivery.status,
     ...messageSortMetadata(saved.message ? [saved.message] : []),
     ...data.seal('push-delivery', saved.delivery.id, b.scope, firestorePushDeliverySchema, saved) });
   const {chatMessageAvailable, chatEligibility} = createChatNotificationPolicy(data);
+  const classEligibility = createClassReminderPolicy(options,data);
   const validSubscription = (s: SavedBinding) => available() && s.binding.status === 'active' && s.input
     && s.binding.vapidPublicKey === options.gateway.publicKey && (!s.binding.expiresAt || Date.parse(s.binding.expiresAt) > Date.now());
 
@@ -76,18 +78,19 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
     if (session.userId !== b.actorUserId || !options.sessions) domainReject('unauthorized',401);
     return options.sessions.assertActiveIn(b.transaction,session);
   }
-  function presenceView(saved: SavedBinding, session: DeviceSessionKey) {
+  function presenceView(saved: SavedBinding, session: DeviceSessionKey, classTasks: boolean) {
     const ours = saved.sessionHash === session.sessionHash;
     return {bindingId:saved.binding.id, presenceVersion:saved.chat?.presenceVersion ?? 0,
+      ...(classTasks ? {classTaskNotificationsEnabled:ours && !!saved.classTaskConsent} : {}),
       chatNotificationsEnabled:ours && saved.chat?.notificationsEnabled === true,
       chatPreviewEnabled:ours && saved.chat?.previewEnabled === true, expiresAt:ours ? saved.chat?.expiresAt ?? null : null};
   }
-  async function readChatPresence(userId: string, session: DeviceSessionKey, id: string) {
+  async function readChatPresence(userId: string, session: DeviceSessionKey, id: string, classTasks = false) {
     return authority.runTransaction(userId,null,async b => {
       await requireSession(b,session);
       const saved = await binding(b,id);
       if (!validSubscription(saved)) domainReject('subscription_unavailable');
-      return presenceView(saved,session);
+      return presenceView(saved,session,classTasks);
     });
   }
   function hasProof(saved: SavedBinding, input: unknown) {
@@ -96,39 +99,44 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
   }
   const presenceInput = nativeChatPresenceInputSchema.extend({bindingId:uuid, expectedBindingVersion:z.number().int().positive(),
     expectedPresenceVersion:z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER-1), subscription:pushSubscriptionInput.optional()});
-  async function setChatPresence(userId: string, session: DeviceSessionKey, raw: unknown) {
+  async function setChatPresence(userId: string, session: DeviceSessionKey, raw: unknown, classTasks = false) {
     const input = domainParse(presenceInput,raw);
+    if (input.classTaskNotificationsEnabled !== undefined && !classTasks) domainReject('invalid_input',400);
     return authority.runTransaction(userId,null,async b => {
       await requireSession(b,session);
       const saved = await binding(b,input.bindingId);
       if (!validSubscription(saved) || saved.binding.version !== input.expectedBindingVersion) domainReject('subscription_changed');
       const version = saved.chat?.presenceVersion ?? 0, sameSession = saved.sessionHash === session.sessionHash;
       if (version !== input.expectedPresenceVersion) domainReject('presence_changed');
-      if ((!sameSession || input.chatNotificationsEnabled !== undefined || input.chatPreviewEnabled !== undefined) && !hasProof(saved,input.subscription))
+      if ((!sameSession || input.chatNotificationsEnabled !== undefined || input.chatPreviewEnabled !== undefined || input.classTaskNotificationsEnabled !== undefined) && !hasProof(saved,input.subscription))
         domainReject('installation_proof_required',409);
-      if (!sameSession && (input.chatNotificationsEnabled !== true || input.chatPreviewEnabled === undefined))
+      if (!sameSession && input.classTaskNotificationsEnabled !== true && (input.chatNotificationsEnabled !== true || input.chatPreviewEnabled === undefined))
         domainReject('installation_consent_required',409);
       if (input.childId && !await b.readChild(input.childId)) domainReject('not_found',404);
-      const enabled = input.chatNotificationsEnabled ?? saved.chat?.notificationsEnabled ?? false;
+      const enabled = input.chatNotificationsEnabled ?? (sameSession && !!saved.chat?.notificationsEnabled);
       if (input.chatPreviewEnabled && !enabled) domainReject('invalid_input',400);
-      const previewEnabled = enabled && (input.chatPreviewEnabled ?? saved.chat?.previewEnabled ?? false);
-      const preferenceChanged = !sameSession || enabled !== !!saved.chat?.notificationsEnabled || previewEnabled !== !!saved.chat?.previewEnabled;
+      const previewEnabled = enabled && (input.chatPreviewEnabled ?? (sameSession && !!saved.chat?.previewEnabled));
+      const previousConsent = saved.classTaskConsent;
+      if (!sameSession || input.classTaskNotificationsEnabled === false) delete saved.classTaskConsent;
+      if (input.classTaskNotificationsEnabled && !saved.classTaskConsent) saved.classTaskConsent = randomUUID();
+      const preferenceChanged = previousConsent !== saved.classTaskConsent || !sameSession || enabled !== !!saved.chat?.notificationsEnabled || previewEnabled !== !!saved.chat?.previewEnabled;
       const change = preferenceChanged ? await b.prepareChange(randomUUID(),'preferences',false) : null;
       saved.sessionHash = session.sessionHash;
       saved.chat = {notificationsEnabled:enabled, previewEnabled, brandedCard:true, presenceVersion:version+1,
         childId:enabled ? input.childId : null, expiresAt:enabled && input.childId ? new Date(Date.now()+presenceLifetimeMs).toISOString() : null};
       change?.commit();
       b.transaction.set(data.ref('push_bindings','push-binding',saved.binding.id),bindingEnvelope(b,saved));
-      return presenceView(saved,session);
+      return presenceView(saved,session,classTasks);
     });
   }
   const queue = createChatNotificationQueue(data, {
     kind:'push', bindings:'push_bindings', identity:'web-chat-delivery', deliveries:'push_deliveries', record:'push-delivery',
     dispatch:options.dispatchChatWork,
-    async recipient(b,id) {
+    async recipient(b,id,purpose) {
       const s = await binding(b,id);
-      return validSubscription(s) && s.chat?.notificationsEnabled && await sessionActive(b,s)
-        ? {...s.binding, sessionHash:s.sessionHash} : null;
+      const enabled = purpose==='chat' ? s.chat?.notificationsEnabled : !!s.classTaskConsent;
+      return validSubscription(s) && enabled && await sessionActive(b,s)
+        ? {...s.binding,sessionHash:s.sessionHash,classTaskConsent:s.classTaskConsent} : null;
     },
     read:(b,row,id)=>decode(b,row,'push-delivery',id,firestorePushDeliverySchema), envelope:deliveryEnvelope,
   });
@@ -137,18 +145,23 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
     return authority.runTransaction(userId,null,async b => {
       await requireSession(b,session);
       const subscribed = await binding(b,ref.bindingId);
-      if (ref.kind !== 'care' || !validSubscription(subscribed) || !subscribed.chat?.notificationsEnabled
+      if (ref.kind !== 'care' || !validSubscription(subscribed)
         || subscribed.binding.version !== ref.bindingVersion || !subscribed.sessionHash) domainReject('not_found',404);
       const row = await b.transaction.get(data.ref('push_deliveries','push-delivery',ref.deliveryId));
       const saved = decode(b,row,'push-delivery',ref.deliveryId,firestorePushDeliverySchema);
-      if (!saved.chatTarget || saved.delivery.id !== ref.deliveryId || saved.delivery.bindingId !== ref.bindingId || saved.bindingVersion !== ref.bindingVersion
+      if ((!saved.chatTarget && !saved.classTaskTarget) || saved.delivery.id !== ref.deliveryId || saved.delivery.bindingId !== ref.bindingId || saved.bindingVersion !== ref.bindingVersion
         || saved.generation !== b.generation || saved.authorizationVersion !== b.authorizationVersion || !['sending','unknown','accepted'].includes(saved.delivery.status)
         || !saved.chatSession || !await options.sessions!.canResumeIn(b.transaction,{userId,sessionHash:saved.chatSession})) domainReject('not_found',404);
       if (session.sessionHash !== saved.chatSession || session.sessionHash !== subscribed.sessionHash) {
         if (proof === undefined) domainReject('installation_proof_required',409);
         if (!hasProof(subscribed,proof)) domainReject('not_found',404);
       }
-      if (!await chatMessageAvailable(b,saved.chatTarget)) domainReject('not_found',404);
+      if (saved.classTaskTarget) {
+        if ((await classEligibility(b,saved.classTaskTarget,subscribed.classTaskConsent,'open')).reason) domainReject('not_found',404);
+        const {spaceId,childId,taskId} = saved.classTaskTarget;
+        return {kind:'class_task' as const,spaceId,childId,taskId};
+      }
+      if (!saved.chatTarget || !subscribed.chat?.notificationsEnabled || !await chatMessageAvailable(b,saved.chatTarget)) domainReject('not_found',404);
       return {kind:'chat' as const,...saved.chatTarget};
     });
   }
@@ -257,12 +270,12 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
         b.transaction.set(ref, deliveryEnvelope(b, saved)); return { terminal: 'unknown' as const };
       }
       const subscription = await binding(b, value.bindingId), control = await authority.readControl(b.transaction);
-      const reason: PushDelivery['reason'] = saved.chatTarget && (saved.chatSession !== subscription.sessionHash || !await sessionActive(b,subscription)) ? 'revoked' : !control.enabled ? 'worker_paused' : !options.gateway.publicKey ? 'configuration_unavailable'
+      const reason: PushDelivery['reason'] = (saved.chatTarget || saved.classTaskTarget) && (saved.chatSession !== subscription.sessionHash || !await sessionActive(b,subscription)) ? 'revoked' : !control.enabled ? 'worker_paused' : !options.gateway.publicKey ? 'configuration_unavailable'
         : subscription.binding.status !== 'active' || subscription.binding.version !== saved.bindingVersion || subscription.binding.vapidPublicKey !== options.gateway.publicKey
           || !subscription.input ? 'revoked' : subscription.binding.expiresAt && Date.parse(subscription.binding.expiresAt) <= Date.now() ? 'subscription_expired' : null;
       if (reason) { saved.delivery = { ...value, status: 'stopped', reason, finishedAt: new Date().toISOString() }; b.transaction.set(ref, deliveryEnvelope(b, saved)); return null; }
-      if (saved.chatTarget) {
-        const chat = await chatEligibility(b,saved,subscription);
+      if (saved.chatTarget || saved.classTaskTarget) {
+        const chat = saved.classTaskTarget ? await classEligibility(b,saved.classTaskTarget,subscription.classTaskConsent) : await chatEligibility(b,saved,subscription);
         saved.chatReason = chat.reason;
         if (chat.nextAt) { b.transaction.set(ref,deliveryEnvelope(b,saved)); return {deferred:chat.nextAt}; }
         if (chat.reason) {
@@ -290,15 +303,15 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
           && current.delivery.status === 'sending' && current.attempt === claimed.attempt && subscribed.status === 'active'
           && subscribed.version === current.bindingVersion && subscribed.vapidPublicKey === options.gateway.publicKey
           && (!subscribed.expiresAt || Date.parse(subscribed.expiresAt) > Date.now());
-        if (!active || !current.chatTarget) return active;
+        if (!active || (!current.chatTarget && !current.classTaskTarget)) return active;
         if (registration.sessionHash !== current.chatSession || !await sessionActive(b,registration)) return false;
-        authorization.chat = await chatEligibility(b,current,registration);
+        authorization.chat = current.classTaskTarget ? await classEligibility(b,current.classTaskTarget,registration.classTaskConsent) : await chatEligibility(b,current,registration);
         return !authorization.chat.reason;
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
     let result: PushSendResult;
     try { result = await options.gateway.send(targetSubscription, {
-      ...(claimed.chatTarget ? {v:2 as const,kind:'chat' as const} : {v:1 as const}),
+      ...(claimed.classTaskTarget ? {v:2 as const,kind:'class_task' as const} : claimed.chatTarget ? {v:2 as const,kind:'chat' as const} : {v:1 as const}),
       bindingId: claimed.delivery.bindingId,bindingVersion: claimed.bindingVersion,deliveryId:id
     },signal,authorized,() => authorization.chat?.previewText); }
     catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
@@ -314,7 +327,7 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
       const pointerRow = pointer ? await tx.get(pointer) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit();
-      if (saved.chatTarget && result.status === 'stopped' && authorization.chat?.reason) {
+      if ((saved.chatTarget || saved.classTaskTarget) && result.status === 'stopped' && authorization.chat?.reason) {
         saved.chatReason = authorization.chat.reason;
         if (authorization.chat.nextAt) {
           saved.attempt = null;

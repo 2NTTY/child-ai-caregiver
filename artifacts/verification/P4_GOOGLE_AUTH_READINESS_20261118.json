@@ -1,0 +1,31 @@
+{
+  "dateHongKong": "2026-11-18",
+  "project": "ai-caregivers-for-children",
+  "releaseApk": {
+    "androidPackage": "org.yuyoufang.app",
+    "versionCode": 8,
+    "sha256": "f89e454df48bb0568989f8c09f8289583a1a3774d6b3930677ef8069b6b342d7",
+    "signatureVerifier": "Google Android Build Tools 33.0.2 apksigner verify --print-certs",
+    "certificateSha1": "4d35b5f9e89c21cd51be2d51e71635447fb78aeb",
+    "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0"
+  },
+  "firebase": {
+    "androidAppId": "1:1064034424208:android:2eb6734d2fb288b056cf15",
+    "registeredSha1CountBefore": 0,
+    "registeredSha1CountAfter": 1,
+    "registeredSha1MatchesApk": true,
+    "androidClientTypesAfterRegistration": [],
+    "webSdkAuthDomain": "ai-caregivers-for-children.firebaseapp.com",
+    "siteReleaseAuthDomainMatches": true,
+    "handlerHeadHttp": 200,
+    "idpGetHttp": {
+      "google.com": 404,
+      "apple.com": 404
+    }
+  },
+  "pending": [
+    "Public Google OAuth support address, provider provisioning and client configuration",
+    "Actual user linking, UID preservation and provider reauthentication",
+    "Apple team configuration and relay invitation"
+  ]
+}

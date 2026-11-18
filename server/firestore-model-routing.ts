@@ -53,7 +53,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
         personalAvailable: config.enabled, personalGlobalLimit: current.personalDailyGlobalAttempts, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
-        effective: resolvePersonalModelLimits(state, current),
+        effective: resolvePersonalModelLimits(state, current, { role: 'interactive', applyAdminRoleOverride: true }),
         usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
     },
     async currentUsage(userId: string) {
@@ -109,12 +109,33 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const source = personal ? 'personal' as const : 'platform' as const;
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
+      let activePolicyVersion = current.version;
+      const readPolicyTransition = async () => {
+        if (!enabled) return { enabled: false as const };
+        const latest = await policy.readPolicy();
+        if (!personal && !latest.enabled) return { enabled: false as const };
+        if (latest.version === activePolicyVersion) return null;
+        activePolicyVersion = latest.version;
+        const nextLimits = resolvePersonalModelLimits(state, latest);
+        return {
+          enabled: true as const,
+          maxModelCalls: nextLimits.maxModelCalls,
+          maxToolCalls: nextLimits.maxToolCalls,
+          maxQueryEmbeddings: nextLimits.maxQueryEmbeddings,
+          deadlineMs: nextLimits.maxRunSeconds * 1000,
+          softBudgetRatio: nextLimits.softBudgetRatio,
+          roleSoftBudgetRatios: latest.roleSoftBudgetRatios ?? {},
+        };
+      };
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
         usage: requireDurableUsage, billingSource: source });
       return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
-        dailyUsage: usage[source], authorize,
+        dailyUsage: usage[source], authorize, readPolicyTransition,
+        softBudgetSource: limits.limitSources?.softBudgetRatio,
+        ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),
         runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings,
-          toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000 },
+          toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000,
+          softBudgetRatio: limits.softBudgetRatio },
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');

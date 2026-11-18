@@ -1,7 +1,8 @@
+import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
-import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
+import { officialHelpIdSchema, toAgentProgressSource, type AgentProgressSource, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import { assistantTaskContextRequestSchema, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
 import { selectedCareFiltersSchema, selectedCareCursorSchema, type SelectedCarePage, type SelectedCareRequest } from '../src/shared/assistant-care-context.ts';
@@ -13,9 +14,10 @@ import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/pr
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
-import { agentActionToolNames, type AgentDirectAction } from "../src/shared/agent-actions.ts";
+import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
 import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
+import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowledge-query-context.ts";
 import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descriptions.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
@@ -108,6 +110,10 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
+  mixedMaterials?: {
+    search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;
+    read(ref:MaterialRef):Promise<MaterialCitationPage>;
+  };
   mixedCare?:(input:{from:number;limit:number;singleChild?:boolean;filters:SelectedCareRequest['filters'];cursor?:SelectedCareRequest['cursor']})=>
     Promise<{children:SelectedCarePage[];nextFrom:number|null}>;
   mixedTasks?: (input:{from:number; childId?:string; cursor?:{afterId:string;basis:string}}) =>
@@ -115,6 +121,7 @@ export function createProductAgentTools(options: {
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: ChatFileAgentReader;
   onOfficialHelp?: (id: OfficialHelpId) => void;
+  onKnowledgeSources?: (sources: AgentProgressSource[], stage: AgentProgressSource['stage']) => void;
   includeDocuments?: boolean;
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   includeConcerns?: boolean; includePrivateSources?: boolean; ordinaryToolNames?: readonly string[];
@@ -132,8 +139,16 @@ export function createProductAgentTools(options: {
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
+  /** Optional household/child display identifiers kept out of external search queries. */
+  knownPrivateIdentifiers?: readonly string[];
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
+  const knownPrivateIdentifiers = new Set<string>();
+  const noteKnownPrivateIdentifier = (value: string | null | undefined) => {
+    const trimmed = typeof value === "string" ? value.trim() : "";
+    if (trimmed) knownPrivateIdentifiers.add(trimmed);
+  };
+  for (const identifier of options.knownPrivateIdentifiers ?? []) noteKnownPrivateIdentifier(identifier);
   const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
@@ -159,35 +174,68 @@ export function createProductAgentTools(options: {
   let proposedBatch:MixedTaskBatch|null=null;
   let selectedMemoryFacts: MemoryFact[] = [];
   let selectedVerifiedOperations: ChatDeliveryVerifiedOperation[] = [];
-  const executedActions = new Map<string, { recordKind?: string; summary?: string; eventTime?: string }>();
-  const recordedProposals = new Map<string, { proposalId: string; proposalRunId: string; proposalVersion: number; toolName: string; summary: string }>();
+  type DirectActionSummary = Omit<ChatDeliveryVerifiedOperation, "kind" | "id" | "tool" | "state" | "notification" | "confirmationQuestion">;
+  const executedActions = new Map<string, DirectActionSummary>();
+  const recordedProposals = new Map<string, {
+    proposalId: string; proposalRunId: string; proposalVersion: number; toolName: string; summary: string; dueAt?: string;
+  }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
-  function summarizeDirectAction(action: AgentDirectAction): { recordKind?: string; summary: string; eventTime?: string } {
+  function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
+    const resource = receipt.resource ? { ...receipt.resource } : undefined;
     if (action.kind === "save_record" || action.kind === "revise_record") {
-      const time = groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime.rawText;
-      return { recordKind: action.details.kind, summary: action.text.slice(0, 300), ...(time ? { eventTime: time } : {}) };
+      const grounded = groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime;
+      const time = grounded.rawText || grounded.at || "";
+      const quantity = receipt.quantityGrounding?.status === "removed" ? null : action.details.quantity;
+      return {
+        ...(resource ? { resource } : {}),
+        recordKind: action.details.kind,
+        summary: action.text,
+        ...(time ? { eventTime: time } : {}),
+        ...(grounded.at ? { eventAt: grounded.at } : {}),
+        ...(grounded.timeZone ? { eventTimeZone: grounded.timeZone } : {}),
+        ...(quantity !== undefined ? { quantity } : {}),
+        ...(receipt.quantityGrounding ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
+      };
     }
     if (action.kind === "save_private_note" || action.kind === "revise_private_note") {
-      return { summary: `${action.title}: ${action.text}`.slice(0, 300) };
+      return {
+        ...(resource ? { resource } : {}),
+        summary: `${action.title}: ${action.text}`,
+        actionDetailText: action.text,
+      };
     }
-    if (action.kind === "create_self_task") return { summary: `${action.title} (${action.dueAt})`.slice(0, 300) };
-    return { summary: `${action.action}: ${action.note}`.slice(0, 300) };
+    if (action.kind === "create_self_task") {
+      return {
+        ...(resource ? { resource } : {}),
+        summary: `${action.title} (${action.dueAt})`,
+        dueAt: action.dueAt,
+        eventTimeZone: action.timeZone,
+        ...(action.details.trim() ? { actionDetailText: action.details } : {}),
+      };
+    }
+    return {
+      ...(resource ? { resource } : {}),
+      summary: `${action.action}: ${action.note}`,
+      actionDetailText: action.note,
+      ...(action.dueAt ? { dueAt: action.dueAt } : {}),
+      ...(action.timeZone ? { eventTimeZone: action.timeZone } : {}),
+    };
   }
-  function summarizeProposal(value: AgentProposalValue): { toolName: string; summary: string } {
+  function summarizeProposal(value: AgentProposalValue): { toolName: string; summary: string; dueAt?: string } {
     switch (value.kind) {
-      case "memory_fact": return { toolName: "propose_fact", summary: value.content.slice(0, 300) };
-      case "memory_fact_revise": return { toolName: "propose_fact_revision", summary: value.content.slice(0, 300) };
-      case "memory_fact_deactivate": return { toolName: "propose_fact_deactivation", summary: value.reason.slice(0, 300) };
-      case "task_create": return { toolName: "propose_task", summary: `${value.values.title} (${value.values.dueAt})`.slice(0, 300) };
-      case "task_change": return { toolName: "propose_task_change", summary: `${value.change.action}: ${value.change.note}`.slice(0, 300) };
-      case "concern_create": return { toolName: "propose_concern", summary: value.values.title.slice(0, 300) };
+      case "memory_fact": return { toolName: "propose_fact", summary: value.content };
+      case "memory_fact_revise": return { toolName: "propose_fact_revision", summary: value.content };
+      case "memory_fact_deactivate": return { toolName: "propose_fact_deactivation", summary: value.reason };
+      case "task_create": return { toolName: "propose_task", summary: `${value.values.title} (${value.values.dueAt})`, dueAt: value.values.dueAt };
+      case "task_change": return { toolName: "propose_task_change", summary: `${value.change.action}: ${value.change.note}`, ...(value.change.action === "reschedule" ? { dueAt: value.change.dueAt } : {}) };
+      case "concern_create": return { toolName: "propose_concern", summary: value.values.title };
       case "concern_change": return { toolName: "propose_concern_change", summary: value.change.action };
       case "family_document_change": return { toolName: "propose_family_document_change", summary: value.documentId };
-      case "private_source_create": return { toolName: "propose_private_source", summary: value.input.sourceLabel.slice(0, 300) };
+      case "private_source_create": return { toolName: "propose_private_source", summary: value.input.sourceLabel };
       case "private_source_change": return { toolName: "propose_private_source_change", summary: value.inputId };
     }
   }
@@ -211,7 +259,7 @@ export function createProductAgentTools(options: {
     ...options.actions,
     async execute(targetScope, targetRunId, callId, action) {
       const receipt = await options.actions!.execute(targetScope, targetRunId, callId, action);
-      if (receipt) executedActions.set(receipt.id, summarizeDirectAction(action));
+      if (receipt) executedActions.set(receipt.id, summarizeDirectAction(action, receipt));
       return receipt;
     },
   } : undefined;
@@ -225,16 +273,45 @@ export function createProductAgentTools(options: {
       const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
       if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
       for (const receipt of receipts) {
-        const local = executedActions.get(receipt.id);
+        let local = executedActions.get(receipt.id);
+        if (receipt.resource?.kind === "care_record" && typeof options.actions.recordById === "function") {
+          const persisted = await options.actions.recordById(scope.userId, scope.childId, receipt.resource.id);
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          if (persisted && persisted.id === receipt.resource.id && persisted.version === receipt.resource.version) {
+            const eventTime = persisted.details.eventTime.rawText || persisted.details.eventTime.at || "";
+            local = {
+              ...local,
+              resource: { ...receipt.resource },
+              recordKind: persisted.details.kind,
+              summary: persisted.text,
+              ...(eventTime ? { eventTime } : {}),
+              ...(persisted.details.eventTime.at ? { eventAt: persisted.details.eventTime.at } : {}),
+              ...(persisted.details.eventTime.timeZone ? { eventTimeZone: persisted.details.eventTime.timeZone } : {}),
+              quantity: persisted.details.quantity,
+              ...(receipt.quantityGrounding ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
+            };
+          }
+        } else if (receipt.resource?.kind === "private_note" && typeof options.actions.noteById === "function") {
+          const persisted = await options.actions.noteById(scope.userId, scope.childId, receipt.resource.id);
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          if (persisted && persisted.id === receipt.resource.id && persisted.version === receipt.resource.version) {
+            local = {
+              ...local,
+              resource: { ...receipt.resource },
+              summary: `${persisted.title}: ${persisted.text}`,
+              actionDetailText: persisted.text,
+            };
+          }
+        }
         verified.push({
+          ...(local ?? {}),
           kind: "action_receipt",
           id: receipt.id,
           tool: agentActionToolNames[receipt.kind],
           state: receipt.state,
           notification: receipt.notification,
-          ...(local?.recordKind ? { recordKind: local.recordKind } : {}),
-          ...(local?.summary ? { summary: local.summary } : {}),
-          ...(local?.eventTime ? { eventTime: local.eventTime } : {}),
+          ...(receipt.resource && !local?.resource ? { resource: { ...receipt.resource } } : {}),
+          ...(receipt.quantityGrounding && !local?.quantityGroundingStatus ? { quantityGroundingStatus: receipt.quantityGrounding.status } : {}),
         });
       }
     }
@@ -252,6 +329,7 @@ export function createProductAgentTools(options: {
           tool: entry.toolName,
           state: "pending_confirmation",
           summary: entry.summary,
+          ...(entry.dueAt ? { dueAt: entry.dueAt } : {}),
           confirmationQuestion: questions[0],
         });
       }
@@ -353,6 +431,7 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪／原則／禁忌 etc.), NOT a request to save a new memory fact. Do NOT call propose_fact again. Read confirmed facts with read_memory_facts({}) (omit keys) or official guidance with search_knowledge if needed, then present_answer cleanly (keeping budget for delivery review)." } };
       if (error instanceof FamilyError && error.code === "memory_fact_source_mismatch") return { status: "rejected", data: { code: error.code, nextAction: "Do not include trailing questions or unrelated clauses inside propose_fact.content, and do not propose unrequested facts from past messages. Keep only the explicitly requested durable fact from the allowed user statement, or skip proposing and answer the user's question." } };
       if ((error instanceof FamilyError || error instanceof FirestoreDomainError) && error.code === "fact_key_conflict") return { status: "conflict", data: { code: error.code, nextAction: "已有相同 key 的有效確認事實或本輪重複候選，直接建立會在確認時衝突。請先用 read_memory_facts 查明現有事實 ID 與版本：若是更正同一事實請用 propose_fact_revision；若是另一獨立新事實請改用具體不重複的新 key（例如 allergy-egg、nap-schedule）再 propose_fact。" } };
+      if (error instanceof FamilyError && error.code === "public_query_required") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", message: "外部搜尋 query 只可傳去識別的公共主題條件（保留年齡段、症狀、持續時間及粗粒度地區如香港／沙田區）；必須移除姓名、完整生日、具體街道／屋苑樓宇地址、聯絡方式及整段私人對話後重試，內部記憶與權限不受影響。" } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -360,12 +439,14 @@ export function createProductAgentTools(options: {
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer) {
     const candidateDraft: ChatDeliveryDraft = {
+      ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
       visibility: options.visibility === "family" ? "family" : "private",
       serverSubstitutedSourceText: false,
       ...(selectedVerifiedOperations.length ? { verifiedOperations: selectedVerifiedOperations.map(item => ({ ...item })) } : {}),
       paragraphs: parsed.paragraphs,
-      sources: [],
+      sources: [...new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds))]
+        .map(deliverySource).filter((source): source is ChatDeliverySource => source !== null),
       scope,
       ...(run.images?.references().length ? { images: run.images.references() } : {}),
       ...(run.voice ? { voice: run.voice } : {}),
@@ -485,8 +566,7 @@ export function createProductAgentTools(options: {
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
       execute: (args, context) => guard(async () => {
-        const query = args.query as string;
-        if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
+        const query = assertPublicKnowledgeQuery(args.query as string, [...knownPrivateIdentifiers]);
         const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
           { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
             budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
@@ -500,6 +580,12 @@ export function createProductAgentTools(options: {
         }
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+        if (result.chunks.length > 0) deliveryReview.require("review");
+        const progressSources = result.chunks
+          .map(chunk => toAgentProgressSource(chunk, "found"))
+          .filter((item): item is AgentProgressSource => item !== null)
+          .slice(0, 6);
+        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
         return result;
       }) },
     { name: "read_knowledge_context", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
@@ -513,6 +599,12 @@ export function createProductAgentTools(options: {
         for (const chunk of result.chunks) {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
+        if (result.chunks.length > 0) deliveryReview.require("review");
+        const progressSources = result.chunks
+          .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
+          .filter((item): item is AgentProgressSource => item !== null)
+          .slice(0, 6);
+        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "read");
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
@@ -618,6 +710,7 @@ export function createProductAgentTools(options: {
           run.images!.add({ image, authorize: () => options.photos!.authorizeImage(scope.userId, scope.childId, reference) });
         }
         if (!await permitted()) throw new AgentStopped('unauthorized');
+        deliveryReview.require("review");
         return { photo: reference, originalProvided: true, visibility: 'private', sourceKind: 'user_attachment' };
       }) });
   if (options.readChatFile && !options.background && options.visibility !== "family") tools.splice(tools.length - 1, 0, {
@@ -648,6 +741,7 @@ export function createProductAgentTools(options: {
     name:"read_care_summary",effect:"read",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
       const value=await options.summary!.get(scope.userId,scope.childId,summaryQuery.parse(args));if(!value)throw new AgentStopped("unauthorized");
+      noteKnownPrivateIdentifier(value.childName);
       return {childId:value.childId,childName:value.childName,profile:value.profile,period:value.period,endDayExclusive:value.endDayExclusive,
         generatedAt:value.generatedAt,basisVersion:value.basisVersion,counts:value.counts,metrics:value.metrics,missing:value.missing,
         sources:value.records.map(r=>({recordId:r.id,version:r.version,kind:r.details.kind,eventTime:r.details.eventTime,source:r.source,confirmationBasis:r.confirmationBasis??"explicit",corrected:r.version>1})),
@@ -685,9 +779,34 @@ export function createProductAgentTools(options: {
             break;
           }
           children.push(item);
+          noteKnownPrivateIdentifier(child.childName);
           selectedEvidence.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
         }
         return {children,nextFrom};
+      })});
+  }
+  if (options.mixedMaterials) {
+    const reader = options.mixedMaterials;
+    tools.push({name:'search_selected_materials',effect:'read',authorize:permitted,parameters:materialQuery,
+      description:'在這段對話已選的孩子中查有效記憶（memory）或文件（document）。from 從 0 開始，只讀該孩子的一頁。可按字詞 query 找片段；同一孩子續頁沿原 query 和 nextCursor，下一個孩子用 nextFrom。引用返回的 citationId，留意部分讀取。',
+      execute:args=>guard(async()=>{
+        const query = materialQuery.parse(args);
+        const allowance = budget.toolResponseCharacters - 256;
+        let page = await reader.search(query,allowance < 4000 ? 1 : 3);
+        if (JSON.stringify(page).length > allowance && page.items.length > 1) page = await reader.search(query,1);
+        if (JSON.stringify(page).length > allowance) throw new FamilyError(400,'response_limit');
+        if (!await authorize()) throw new AgentStopped('unauthorized');
+        for (const item of page.items) {
+          const text = JSON.stringify(item);
+          selectedEvidence.set(item.citationId,{citationId:item.citationId,version:String(item.version),
+            contentHash:chatDeliveryContentHash(text),classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+          householdEvidence.set(item.citationId,{label:'',async isCurrent() {
+            const original = await reader.read({kind:item.kind,from:query.from,id:item.id,version:item.version,offset:item.offset});
+            return original.childId === item.childId && original.childName === item.childName && original.title === item.title
+              && original.source === item.source && original.text.slice(0,item.text.length) === item.text;
+          }});
+        }
+        return page;
       })});
   }
   if (options.mixedCare) {
@@ -734,6 +853,7 @@ export function createProductAgentTools(options: {
             break;
           }
           children.push(item);
+          noteKnownPrivateIdentifier(item.childName);
           for (const source of sources) selectedEvidence.set(source.citationId,source);
         }
         return {children,nextFrom};
@@ -751,7 +871,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
@@ -819,7 +939,10 @@ export function createProductAgentTools(options: {
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const careReferences=selectedCareRecordCitations(selectedSources);
+      const materialReferences=selectedMaterialCitations(selectedSources);
       function citationLabel(id:string) {
+        const material=materialReferences.findIndex(ref=>ref.citationId===id);
+        if (material!==-1) return `[孩子資料 ${material+1}]`;
         const household = householdEvidence.get(id);
         if (household) return household.label;
         const index=careReferences.findIndex(reference=>reference.citationId===id);
@@ -830,7 +953,8 @@ export function createProductAgentTools(options: {
       }
       const rendered = paragraphs.map(paragraph => {
         // Only labels appended from reviewed IDs should become interactive care links.
-        const text=careReferences.length ? paragraph.text.replace(/\[照護記錄 (\d+)\]/gu,'［照護記錄 $1］') : paragraph.text;
+        const text=paragraph.text.replace(/\[(照護記錄|孩子資料) (\d+)\]/gu,(mark,kind,ordinal)=>
+          (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
@@ -864,3 +988,6 @@ export function createProductAgentTools(options: {
     },
   };
 }
+
+
+

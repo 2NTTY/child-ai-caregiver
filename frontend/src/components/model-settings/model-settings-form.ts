@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
-import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
+import { DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE, deriveSoftBudgetTargets } from "../../../../src/shared/agent-run-limits.ts";
+import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider, PolicyLimitSource } from "../../../../src/shared/model-settings.ts";
 import { personalBaseUrlSchema, personalEmbeddingShape, personalModelIdSchema, personalProviderSchema } from "../../../../src/shared/model-settings-schema.ts";
 
 /** Only project the server's selected-provider catalog; never substitute a model. */
@@ -30,7 +31,8 @@ export function modelSettingsDraft(settings: ModelSettings, effective?: Effectiv
     toolCallsText: String(settings.maxToolCalls ?? effective?.maxToolCalls ?? personalLimits.toolCalls.default),
     runSecondsText: String(settings.maxRunSeconds ?? effective?.maxRunSeconds ?? personalLimits.deadlineSeconds.default),
     requestSecondsText: String(settings.modelRequestSeconds ?? effective?.modelRequestSeconds ?? personalLimits.modelRequestSeconds.default),
-    retriesText: String(settings.maxModelRetries ?? effective?.maxModelRetries ?? personalLimits.modelRetries.default) };
+    retriesText: String(settings.maxModelRetries ?? effective?.maxModelRetries ?? personalLimits.modelRetries.default),
+    softBudgetRatioText: settings.softBudgetRatio !== undefined ? String(settings.softBudgetRatio) : "" };
 }
 export type ModelSettingsDraft = ReturnType<typeof modelSettingsDraft>;
 export function modelEmbeddingRouteChanged(draft: Pick<ModelSettingsDraft, "embeddingProvider" | "embeddingProject" | "embeddingLocation">, settings?: ModelSettings) {
@@ -45,6 +47,7 @@ export function modelSettingsSchema(keyConfigured: boolean, savedProvider: Model
     removeEmbeddingKey: z.boolean(), consent: z.boolean(), backgroundEnabled: z.boolean(),
     dailyText: z.string(), modelCallsText: z.string(), queryEmbeddingsText: z.string(), toolCallsText: z.string(),
     runSecondsText: z.string(), requestSecondsText: z.string(), retriesText: z.string(),
+    softBudgetRatioText: z.string(),
   }).superRefine((draft, context) => {
     if (draft.mode !== "personal") return;
     if (!personalModelIdSchema.safeParse(draft.model).success || /^[a-z][a-z\d+.-]*:\/\//iu.test(draft.model))
@@ -78,10 +81,20 @@ export function modelSettingsSchema(keyConfigured: boolean, savedProvider: Model
       if (!/^\d+$/u.test(draft[path]) || !Number.isInteger(number) || number < range.min || number > range.max)
         context.addIssue({ code: "custom", path: [path], message: `請輸入 ${range.min}–${range.max} 的整數。` });
     }
+    const softText = (draft.softBudgetRatioText ?? "").trim();
+    if (softText !== "") {
+      const parsedRatio = parseAdminSoftBudgetRatioInput(softText);
+      if (!Number.isFinite(parsedRatio) || parsedRatio < SOFT_BUDGET_RATIO_RANGE.min || parsedRatio > SOFT_BUDGET_RATIO_RANGE.max) {
+        context.addIssue({ code: "custom", path: ["softBudgetRatioText"],
+          message: `請輸入 ${SOFT_BUDGET_RATIO_RANGE.min}–${SOFT_BUDGET_RATIO_RANGE.max} 之間的小數，或留空沿用管理員比例。` });
+      }
+    }
   });
 }
 export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: ModelSettings): ModelSettingsCommand {
   const personal = draft.mode === "personal";
+  const softText = (draft.softBudgetRatioText ?? "").trim();
+  const parsedSoftRatio = softText === "" ? Number.NaN : parseAdminSoftBudgetRatioInput(softText);
   return { expectedVersion: settings.version, mode: draft.mode,
     backgroundEnabled: personal && draft.backgroundEnabled, consent: personal && draft.consent,
     dailyLimit: personal ? Number(draft.dailyText) : settings.dailyLimit,
@@ -89,6 +102,7 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
     maxQueryEmbeddings: personal ? Number(draft.queryEmbeddingsText) : settings.maxQueryEmbeddings,
     ...(personal ? { provider: draft.provider, model: draft.model, maxToolCalls: Number(draft.toolCallsText), maxRunSeconds: Number(draft.runSecondsText),
       modelRequestSeconds: Number(draft.requestSecondsText), maxModelRetries: Number(draft.retriesText) } : {}),
+    ...(personal && Number.isFinite(parsedSoftRatio) ? { softBudgetRatio: parsedSoftRatio } : {}),
     ...(personal && draft.keyText.trim() ? { apiKey: draft.keyText } : {}),
     ...(personal && draft.provider === "openai-compatible" ? { baseUrl: personalBaseUrlSchema.parse(draft.baseUrl) } : {}),
     ...(personal ? { embeddingProvider: draft.embeddingProvider } : {}),
@@ -100,4 +114,33 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
 export function removeModelKeyCommand(settings: ModelSettings): ModelSettingsCommand {
   return { expectedVersion: settings.version, mode: "disabled", removeKey: true, backgroundEnabled: false, consent: false,
     dailyLimit: settings.dailyLimit, maxModelCalls: settings.maxModelCalls, maxQueryEmbeddings: settings.maxQueryEmbeddings };
+}
+
+export function formatPolicyLimitSourceLabel(source?: PolicyLimitSource): string {
+  if (source === "personal") return "個人設定";
+  if (source === "administrator") return "管理員政策";
+  return "系統預設";
+}
+
+export function formatEffectiveSoftBudgetLine(effective: EffectiveModelLimits): string {
+  const ratio = effective.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO;
+  const targets = effective.softTargets ?? deriveSoftBudgetTargets({
+    modelCalls: effective.maxModelCalls,
+    toolCalls: effective.maxToolCalls,
+    queryEmbeddings: effective.maxQueryEmbeddings,
+  }, ratio);
+  return `軟預算目標（${Math.round(ratio * 100)}%，向下取整）：生成 ${targets.modelCalls}／工具 ${targets.toolCalls}／查詢向量 ${targets.queryEmbeddings} 次`;
+}
+
+export function formatEffectiveLimitSourcesLine(effective: EffectiveModelLimits): string | null {
+  if (!effective.limitSources) return null;
+  const s = effective.limitSources;
+  return `規則來源：生成${formatPolicyLimitSourceLabel(s.maxModelCalls)} · 工具${formatPolicyLimitSourceLabel(s.maxToolCalls)} · 期限${formatPolicyLimitSourceLabel(s.maxRunSeconds)} · 軟比例${formatPolicyLimitSourceLabel(s.softBudgetRatio)}`;
+}
+
+export function parseAdminSoftBudgetRatioInput(raw: string): number {
+  const trimmed = raw.trim();
+  if (!/^\d+(?:\.\d+)?$/u.test(trimmed)) return Number.NaN;
+  const value = Number(trimmed);
+  return Number.isFinite(value) ? value : Number.NaN;
 }

@@ -43,7 +43,7 @@ export const webPushContent = Object.freeze({
 const pushReference = { bindingId: uuid, bindingVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), deliveryId: uuid };
 export const pushPayloadSchema = z.discriminatedUnion("v", [
   z.object({ v: z.literal(1), kind: z.enum(["test", "care"]).optional(), ...pushReference }).strict(),
-  z.object({ v: z.literal(2), kind: z.literal("chat"), ...pushReference }).strict(),
+  z.object({ v: z.literal(2), kind: z.enum(["chat","class_task"]), ...pushReference }).strict(),
 ]);
 export type PushPayload = z.infer<typeof pushPayloadSchema>;
 export interface PushBrowserBinding { userId: string; id: string; version: number }

@@ -5997,6 +5997,362 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 同日把每日主時鐘移交現有 GCP Cloud Scheduler。舊 run 於香港 09:04:28 建立及開始，09:05:35 完成；倉庫未取得 GitHub 內部延遲的具體原因。新流程在 04:17 直接送出固定 master 檢查，GCS 的每日 claim 抵禦重複喚醒。已用受控時鐘驗證 04:17 的第一秒可送出及重投遞只生效一次；操作員狀態辨認專用 App 的執行紀錄。
 
+### 2026-11-16　REQ-005 PR-A R2 審核整改（A01 並行收緊鎖、A02 個人與平台有效比例對齊、A03 原子水位持久化）
+
+依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R2.md`（A01–A03）於本地 forward-only 新提交修復（未 push、未開 PR）：
+1）**A01（收緊 query embedding hard 後並行派發屏障）**：於 [agent-budget.ts](server/agent-budget.ts) 新增 `durableAdmission` 序列鎖，令 `admit()` 先重讀最新 `RootBudgetSnapshot`、核對是否為已承諾之重試（`alreadyReserved`），僅於未承諾且不超過收緊後 `selectedLimits` 時才呼叫 `adapter.reserve`；兩個不同並行 query 競爭已降至 1 之上限時只有 1 次派發、第 2 次明確以 `embedding_limit` 停止且重試／重讀不再另領額度或清零計數。
+2）**A02（個人／平台設定有效軟預算比例與 runtime 一致性）**：[personal-model-policy.ts](server/personal-model-policy.ts) 與 [firestore-model-routing.ts](server/firestore-model-routing.ts) 在平台／留空模式解析與 `view()` 顯示套用同一角色計算，並將 `softBudgetSource` 經 [firestore-product-agent.ts](server/firestore-product-agent.ts) 與 [agent-runtime.ts](server/agent-runtime.ts) 傳入 `AgentBudget.configurePersonal`；個人明確設定 `softBudgetRatio`（如 0.35）時，不再被管理員 `roleSoftBudgetRatios.interactive`（0.30）暗中壓低。
+3）**A03（多實例 HighWatermark 原子追加與可觀測持久失敗）**：[agent-high-watermark.ts](server/agent-high-watermark.ts) 新增 `sampleId`（由 runtime 傳入 `runId`）、`mergeHighWatermarkSamples`、`appendDurableSample`、`onPersistenceError` 與 `persistenceStatus`；`loadWindow`／`persistWindow` 改為每次重讀合併而不倚賴陳舊快取；[firestore-product-agent.ts](server/firestore-product-agent.ts) 改以單筆 Firestore transaction read-merge-trim-write（保持 `recordVersion = 1` 相容 restore codec），持久化失敗記錄為可觀測 `degraded` 狀態且不中斷產品 run。
+4）於 [agent-policy-rounding-alerts 測試](tests/agent-policy-rounding-alerts.test.ts) 新增 A01–A03 實證測試（9→12 cases），已確認三項於 `67ac1c91` 舊碼皆失敗、修復後全數通過；`tests/firestore-backup.test.ts` 相對於 `origin/master` 基線仍維持既存尾項差異揭露（基線漏 `_proactive_state`，PR-A 新增 `_agent_metrics` 供備份清單納入）。
+
+## 2026-11-16　REQ-005 PR-C 成長歷史 cursor offset 正規化與降序複合索引補齊（R2 C01–C02）
+
+- 目標／需求：修復審計 R2 指出的 C01（帶 offset 或不同小數秒精度的合法 ISO-8601 `createdAt` 導致 Firestore 字串序與真實 UTC 時間序錯位而漏頁）及 C02（`deploy/firebase/firestore.indexes.json` 缺少 `yuban_authority_growth_attention` 降序複合索引）。
+- 變更：
+  - `server/growth-rules.ts`：新增 `canonicalGrowthTimestamp` 統一轉換為固定寬度 UTC `.sssZ`，並於 `growthHistoryKeyAt`、`encodeGrowthHistoryCursor`、`decodeGrowthHistoryCursor` 及匯出 `compareGrowthHistoryDesc` 採用同一比較基準。
+  - `server/firestore-growth.ts`：`write` 與 `prepareImportedAttention` 寫入前正規化 `createdAt`；`inspectOriginal` 兼容瞬時相等比對；`readPageRecords` 在無 cursor 首頁改按真實時間排序保留最新 `pageSize + 1` 筆並收集全部 active，帶 cursor 續頁時將 `startAfter` 與早停邊界納入 ±25h/48h offset 緩衝以兼容既有未正規化 Firestore 舊文件，`all` 亦補齊真實時間排序。
+  - `deploy/firebase/firestore.indexes.json`：於 `yuban_authority_growth_attention` 新增 `workspaceTag ASC, epochTag ASC, userTag ASC, childTag ASC, createdAt DESC, attentionId DESC` 複合索引。
+  - `tests/growth-history-cursor.test.ts`、`tests/firestore-indexes-comparator.test.ts`、`scripts/ci/verify-growth-cursor-offline.sh`：補齊 `+08:00`/`.000Z`/`Z`/`-05:00` 混合與匯入回歸及降序索引契約測試，並納入離線 gate；先驗證兩項新斷言在修復前 `7e9145ae` 失敗（`32 !== 43` 與缺少索引失敗），修復後全部通過（含 `G1–G5` mutation 與 3x `tsc`）。
+- 限制（依 R2 §4.1 校準）：本變更只修復成長閱讀分頁與 cursor keyset 路徑對既有／新寫資料之排序及索引宣告；`all()`、匯入及背景 `evaluate()` 既有 500 筆上限仍保留未改，且雲端 Cloud Firestore 索引實際建立／`READY` 與 Hosted Actions 仍待獲授權 owner 操作。
+
+## 2026-11-16　REQ-005 PR-D 匯出 ZIP 去重對齊與穩定 revision 身份防衝突（R2 D01–D02）
+
+- 目標／需求：修復審計 R2 指出的 D01（`handover-export.ts` 只更新 `advanceResumableExportBatch` 狀態卻直接 yield 原始 `page`，使 ZIP JSON entries 與 `coverage` 仍出現重複項目）及 D02（history item identity 摻入 `pageOffset + index` 與位置 `anon-*`，繞過跨頁同 `(section, id, version)` 內容衝突檢查）。
+- 變更：
+  - `server/handover-export.ts`：
+    - 新增 `exportItemIdentity(section, childId, raw, payloadHash)`，按結構與 `handover-provenance.ts` 來源／版本語義擷取穩定識別鍵（`id`、growth `item.id`、task `task.id`、`yuyoufang-source-revision:1` provenance 複合鍵、`documentId+snapshotId`、`inputId`、`topicId`、媒體 ID、`target`、`childId`、singleton 或最後以 canonical `payloadHash` 作非位置 fallback），history/version 區段加上版本標籤，移除 `pageOffset + index` 與位置 `anon-*`。
+    - `pages` 在 `advanceResumableExportBatch` 驗證通過後，依同一去重集合（跨頁 `seenBeforePage` 與頁內 `seenInCurrentPage`）過濾重複項目再 yield，確保 ZIP 實際輸出項目與 manifest `coverage` 完全一致。
+  - `tests/handover-export.test.ts`：修正既有測試三處同一 `(id, version)` 不同內容的合成 fixture 重號（lines 56、59、148/161 改為合法不同版本號 `v1`/`v2` 與 head `v3`），並新增跨頁重複 head 去重、多版本 history 保留、以及 `memory_fact_history` 與無頂層 `id` 之 `growth_topic_history` 同版本跨頁內容衝突拒絕（`export_scope_changed`）測試（共 8 cases）；先確認新測試在修復前 `69629509` 失敗（`3 !== 2`），修復後全部通過。
+- 限制（依 R2 §4.2 校準）：`pages` 仍按每個 section 獨立建立 `ResumableExportState`（非跨重啟全局 manifest），且 `family-document-report-core.ts` 之 payload hash 檢查不取代原始 sealed-envelope 解密／live watermark／撤權或 Hosted Actions 驗證。
+
+### 2026-11-16　REQ-005 PR-A R3 審核整改（A04 在途角色軟預算清除／調低即時更新 provider 指令、備份清單測試同步）
+
+依 `REQ005_COMPLETION_SPLIT_IMPLEMENTATION_AUDIT_R3.md`（A04）與備份清單測試審查於本地 forward-only 新提交修復（未 push、未開 PR）：
+1）**A04（在途 admin `roleSoftBudgetRatios` 清除與調低即時同步至下一 provider 呼叫 `systemInstruction`）**：於 [firestore-model-routing.ts](server/firestore-model-routing.ts) 顯式傳遞 `roleSoftBudgetRatios: latest.roleSoftBudgetRatios ?? {}` 使清空管理員角色覆蓋不致保留舊 map；於 [agent-runtime.ts](server/agent-runtime.ts) 將 `syncPolicy` 提前在 `renderInstruction` 開頭等待執行，並新增 `refreshPolicyConfig` callback（同步更新 `systemInstruction` 與 finish 階段工具遮罩）傳入 [agent-model-gateway.ts](server/agent-model-gateway.ts)；於 `AgentGatewayModel.syncRequestPolicy` 與 `completeText`（補上 `checkAuthorizeAndPolicy()`）確保每次主回合與 reviewer 呼叫均先載入最新政策並更新送出 `outgoing` `systemInstruction` 的 `budget.softBudgetRatio`；同步修正 [personal-model-policy.ts](server/personal-model-policy.ts) 平台模式 `limitSources.softBudgetRatio` 來源判斷。
+2）**`tests/firestore-backup.test.ts` 與 CI 門檻**：補齊 `_proactive_state` 與 `_agent_metrics` 至混用備份集合尾項預期（`['_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics']`），並納入 [verify-policy-rounding-offline.sh](scripts/ci/verify-policy-rounding-offline.sh)（11 檔）；新增 A04 測試（12→13 cases），先確認舊碼於第 13 案取得過期 `[0.8, 0.8]` 失敗，修復後精準取得 `[0.8, 0.4]` 與 `[0.8, 0.05]`（13/13 通過）。
+3）**在途請求身分參照保護**：於 [agent-model-gateway.ts](server/agent-model-gateway.ts) `generateBounded` 入口保存原始 `anchorRequest` 參照並用於查詢 `modelAttemptKey`（避免 `syncRequestPolicy`、`audio` 或 `images` 建立淺拷貝時失落 `modelAnchors` `WeakMap` 鍵值而導致 durable 語音回合回傳 `unavailable`），`tests/firestore-voice.test.ts` 通過。
+
+
+## 2026-11-16　REQ-005 PR-C R3 審核整改（C03 移除 500 筆成長歷史讀取／評估／匯入阻斷）
+
+- **目標／需求**：修復審計 R3 指出的 **C03**（`server/firestore-growth.ts` `all(b)` `.limit(501)`、`evaluate()` 與 `prepareImportedAttention()` 因 `records.length >= 500` 拋出 `400 growth_history_requires_review`，導致累積超過 500 筆歷史後背景成長評估、話題開關及資料包匯入全面癱瘓）。
+- **變更**：
+  - [firestore-growth.ts](server/firestore-growth.ts)：將 `all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈（設 `maxPages = 100` 上限並在達頁限時 fail-closed 拋出 `growth_history_requires_review`，避免靜默截斷）並以 `compareGrowthHistoryDesc` 按真實時間排序；同步移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷，保留單輪 `removed.length > 4`、`changes.length > 16` 與授權撤銷檢查。
+  - [growth-history-cursor.test.ts](tests/growth-history-cursor.test.ts)：新增 C03 回歸測試（6→7 cases），先確認舊碼於第 7 案（506 筆歷史下執行 `evaluate()`、`setTopicEnabled()`、匯入及撤銷失敗關閉）失敗，修復後 `growth-history-cursor.test.ts`（7/7）與 `handover-growth-import.test.ts`（1/1）及 3x `tsc` 全數通過。
+
+
+<a id="log-20261116-req005-c03-resume"></a>
+## LOG-20261116-REQ005-C03-RESUME
+
+- Recorded At：2026-11-16 22:09 HKT
+- Work Date：2026-11-16（HKT）
+- Step / Package：REQ-005／C03；只修正 growth 全史累積及固定 20,000 拒絕。
+- Executor：Grok Bot 協助；Git 單一署名沿用 CheungHiuTung-2526。
+- Goal：以有界分頁／可續跑處理取代固定總量牆，不提高新業務總額或截斷報成功。
+- AI Assistance：定位、局部實作、測試及離線 fixture 核對。
+- Human Verification：未進行產品或人工驗收。
+
+### Actual Work
+- 共用全史陣列改為 scoped keyset visitor，每頁仍為既有 200 筆；evaluate 保留既有 100 頁作每次 dispatch 工作預算，未到 EOF 則以原 deferred 協定接續，不再作總容量拒絕。
+- 沿用 encrypted growth_checks 保存四個規則的有界 reducer／cursor，不增平行 store 或明文正文索引。scope／generation／權限、changeSeq 或輸入 basis 改變即重掃；只在真正 EOF 原子發表 attention 改動。
+- 以 bounded reference 重讀版本；保留既有 16 changes／4 topic changes 安全 guard。舊 check record 可讀；cold store 可續跑。跨 dispatch 成熟的 snooze 先重評，不漏當已完成。
+
+### Changes
+- server/firestore-growth.ts；tests/growth-history-cursor.test.ts 加入 20,000、20,001、20,002、cold resume、prefix mutation、舊 generation／加密 checkpoint 綁定及無局部發表回歸。
+
+### Verification
+- Requirement / Acceptance：REQ-005 §8／§9：取消小型總量牆、有界記憶體、完整才報完成、授權與版本一致。
+- Method：無網 network namespace＋setpriv／network guard；真實 Firestore store 方法配合成序列 transaction fixture。
+- Environment / Revision：以原 2672553d 為基底的隔離本機工作樹；未連接正式 Firestore。
+- Result：修正前 20,000 案因 growth_history_requires_review 失敗；修正後完整檔曾為 8 pass／0 fail／0 skip。最終加強 20,001 完成及 prefix revision 後，以原 gate 的 Node options 重跑指定大型回歸 1 pass／0 fail／0 skip；server tsc 通過。完整 gate 尚待此 commit 後執行。
+- Evidence：外部交付 REQ005_A04_C03_FIX_VERIFICATION.md 及離線收據；大型回歸另驗 checkpoint 小於 32KB、deferred 時不發表 attention 變更，以及每個 dispatch 最多 100 queries。
+
+### Limitations / Blockers
+- 最初大型測試曾錯用 initializeControl 重設既存控制而遭 control_conflict；已修 fixture，改驗有效舊 generation job／加密 checkpoint，不改控制機制或放寬來源／計數斷言。
+- 同步 topic／import／task 授權檢查改為流式，仍可能按需掃描全史；沒有真 Firestore 吞吐、費用或交易期限量測。新工作依原 worker deferred 接點，未宣稱已跑 hosted queue。
+- 不宣稱全 REQ-005 完成／可啟用；A／B／D／E 的治理與 live gate 仍保留。
+
+### Plan Update
+- 只有 C03 修正候選，未擴大產品或發布範圍。
+
+### Next Action
+- 跑 C 原完整離線 gate，與 A04 forward-only 合併至原始整合候選再驗證；不 push。
+
+## 2026-11-16　REQ-005 PR-D R3 審核整改（D03 task_history 移除可變 at 時間戳以對齊主鍵）
+
+- **目標／需求**：修復審計 R3 指出的 **D03**（`server/handover-export.ts` `exportItemIdentity()` 對 `task_history` 附加 `:at:${stringField(record, 'at')}`，使同 `[task.id, task.version]` 在兩頁帶不同 `at` 時間戳時繞過去重與跨頁內容衝突檢查）。
+- **變更**：
+  - [handover-export.ts](server/handover-export.ts)：移除 `exportItemIdentity()` 中 `task_history` 之 `:at:...` 後綴，改為單純對齊 Firestore `[task.id, task.version]`（或對應 provenance/payloadHash）主鍵。
+  - [handover-export.test.ts](tests/handover-export.test.ts)：新增 D03 回歸測試（7→8 cases），先驗證舊碼於跨頁相同 `(task.id, version)`、不同 `at` 與不同內容時漏判，修復後失敗關閉拋出 `export_scope_changed`（8/8 通過）。
+
+### 2026-11-17　REQ005 PR-A：A04 準入及重試後動態政策指引修復
+
+- 基於 `4b412a24` 正向修復；保留原 root／attempt／完整初始 request fingerprint、日用量及 unknown 保留語義。良性角色 soft ratio 更新不再以停止／unavailable 代替完成；首次 provider-only render 與重試按有效政策同步，獨立 config WeakMap 不改寫 ADK 原生 instruction anchor。
+- 原有 root／daily 加密帳本增設可選 `preparedFingerprint`：唯一新準入 execute 持有人以不對 read／lookup 暴露的 preparation permit 作 CAS，綁定實際更新後完整 payload；不改原 request、不加一次呼叫、不退款、不另建持久儲存。派送前再次核權限／政策，有新更新則重新準備；permit 在本程序開始派送時消耗，冷讀／複本／lost reply 不得重播。摘要 terminal verifier 同時核 root／daily 的實際準備指紋。
+- 準備期間只對當次模型預留作純 metadata 投影，沒有重設共享 used 計數；政策降至已用 hard ceiling 以下即中止，等於 ceiling 的合法最後一呼叫仍保留。
+- `tests/agent-policy-preparation.test.ts` 新增 15 項正式 runtime／實際 Firestore adapters 配合記憶體交易替身的離線回歸：`.05`／`.23`／清除覆蓋、503 重試、root／daily 準備期間再改政策、撤權、lost acknowledgement、hard ceiling 在第二次準入後降至 1、owner／CAS／跨 child／model 與派送 permit 防重。原始透明完成斷言保留；舊手寫 wrapper 僅補代理新增 adapter 方法。
+- 當輪 Linux `unshare --net`＋無權限 `setpriv`、network guard：新 15 項及原 policy／root／daily 合計 **56/56、0 skip**；原 `.05`／`.17`／`.23` 準入／重試／撤權反例 **10/10**。完整五包 gates、整合與型別收據於交付時另外核對，不以本條先行冒稱。未推送、開 PR、部署、啟用 `#447` 或呼叫真模型／正式資料庫。
+
+- **同日 Gate 後續校準：**首次 canonical PR-A gate 的 79 項測試通過，隨後 S3 source-injection pattern 因新純 metadata view 改名而未匹配，故該次 gate 為 **FAIL**，不是 PASS。僅將既有 S3／S4 變異目標對齊 `usedBeforeThisCall.modelCalls`；保留漏扣已用量／關閉 exceeded 的相同破壞與失敗斷言，再以新 HEAD 完整重跑 gate。
+
+- **同日 reviewer 與變異補證：**以同一正式 runtime 的 `finalize.completeText` 補兩項持久 reviewer 準入／503 重試案例，interactive 維持 `.8` 而 reviewer 改 `.23`，確認不是錯用互動角色覆蓋；新回歸檔 **17/17、0 skip**。在另一可丟棄樹實際注入 9 個缺陷（不重繪、假 daily 綁定、root／daily owner、root／daily CAS、略過再核、hard 降額及錯扣本次預留），9/9 均由目標斷言捕獲，未把載入／語法錯誤或未選中的 skipped cases 當捕獲。原 `9f33e3d` canonical gate **79/79＋S1–S5／P1–P4＋三組 tsc PASS**；本次新增兩項後再按新 HEAD 重跑，不把舊 HEAD 收據冒稱新版本。
+
+## 2026-11-18 家庭附件庫直接上傳
+
+P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
+
+
+## 2026-11-15　REQ-005 補完拆分 PR（PR-A～PR-E，本地提交未推送／R1 修補與 CI 強化）
+
+- **基線／規範**：從 `origin/master`（`b48ba8804918b71757df1445b0a7790dd13f2fd7`）開出 5 個獨立、單一目的工作樹與本地分支（署名 `CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`，嚴格 forward-only commit，未執行 `git push`、未開啟 GitHub PR），並針對 R1 審核強化為離線雙層隔離 CI workflow 與腳本（`pull_request` 對應精確 head branch、`unshare --net` + `setpriv` + network-guard + 三配置 `tsc`）。所有測試均屬離線合成／記憶體 store 子集，不代表真實 Vertex Gemini、生產 Firestore 壓測、GCP 帳單／外部告警端、多 worker 切換或託管 Actions 已通過；`#447` 持久跨輪摘要維持未啟用／未部署，關聯 Slice B `B-P5`（`codex/search-help-entry`, `edf5f1a5`）維持 `LOCAL HOLD` 待 Owner（`2NTTY`）定奪。
+- **PR-A（`codex/req005-policy-rounding-alerts`，`67ac1c91e68b525b38b5c78dccc6a44ffae93f96`）**：接入 `roleSoftBudgetRatios`（`src/shared/admin.ts`、`model-settings` 表單及管理／個人 UI、`firestore-model-routing.ts`、`firestore-product-agent.ts`）、`readPolicyTransition` 在途檢查點屏障、`_agent_metrics` 備份與還原編解碼對齊、`HighWatermarkMonitor`（`agent_metrics` 持久讀寫與 `onHighWatermarkAlert` hook）、取整契約及 mutation 子程序網路隔離；離線 10 檔 58/58 通過、soft（S1–S5）與 policy-rounding（P1–P4）mutation guards 全數捕獲、`tsc` 三配置通過。
+- **PR-B（`codex/req005-compaction-integration`，`55cfaa0fc843db708d2c7fe9f3cfe2f478774cce`）**：修補 runtime `appendEvent` 單調次毫秒時間戳消除間歇競態並穩定複測 10 次（60/60），維持單輪瞬態 `contextCompaction` 預設啟用（`#447` 持久跨輪摘要維持關閉）、`modelAttemptKey` 過濾 system compacted event、`initialConversationSummary` 隔離與 `reserveDeliveryReview` 保留；離線 5 檔 54/54 通過、強化離線 CI 並捕獲 C1–C6／I1–I4 變異與 `tsc` 三配置通過。
+- **PR-C（`codex/req005-growth-cursor-ui`，`7e9145ae0a9a43e4f23083138c10cc4149d277f9`）**：統一 `(createdAt, id)` keyset cursor 元組、`firestore-growth.ts` `readPageRecords` `.orderBy('createdAt','desc').orderBy('attentionId','desc').startAfter(...)` 繞過 cursor 請求之 500 筆掃描限制，以及前端「載入較早建議」／`usePhotoInputSources loadMore`；修補 CI `--experimental-test-module-mocks` 參數使 `tests/growth-read-boundary.test.ts` (10/10) 正常納入執行，離線 7 檔 30/30 通過並捕獲 G1–G5 變異、`tsc` 三配置通過（基線既有失敗 `frontend/scripts/qa-growth-candidates.test.mjs`、`frontend/scripts/growth-refresh.test.mjs`、`tests/product-agent-reviewed-growth.test.ts` 屬未修改 `origin/master` 既有狀態，不列入本門檻）。
+- **PR-D（`codex/req005-cross-domain-snapshots`，`69629509f9653bc44438b46c592cfd88577cbfbe`）**：將 `server/cross-domain-snapshot.ts` 正式接入 `server/firestore-voice-transcripts.ts`（`reconcileVoiceTranscriptRevision` 與分段／NaN 邊界）、`server/family-document-report-core.ts`（`accumulateEncryptedStatisticsFailClosed` 密文摘要去重／完整性／`Number.isSafeInteger` 溢位與 `evaluateCrossDomainSnapshot` 授權漂移阻斷）與 `server/handover-export.ts`（`advanceResumableExportBatch` 嚴格階段序 `expectedStages`、拒跳階／跨頁同鍵雜湊篡改、`done` 僅限最終階段）；強化離線 CI，離線 7 檔 17/17 全過、S1–S8 變異全數捕獲、`tsc` 三配置通過（基線既有失敗 `tests/firestore-backup.test.ts` 屬未修改 `origin/master` 既有狀態，不列入本門檻）。
+- **PR-E（`codex/req005-acceptance-closeout`）**：於 `b48ba880` 基線獨立驗證 `tests/req005-acceptance-scenarios.test.ts` 及相關 6 檔（合計 36/36 全過、`0` 失敗／`0` 跳過、`blockedAttempts: 0`，`tsc` 三配置通過；僅屬單分支離線子集，未合併 A–D），更新 `PLAN.md#req005-closeout01`／`#req005-compaction01` 與本 `WORKLOG.md` 退回預先關項並對齊真實覆蓋與 `B-P5` `LOCAL HOLD`，同時強化離線 CI 模板（基線既有失敗 `tests/agent-input-limit.test.ts`、`tests/agent-capability-reserve.test.ts` 及含 live fenced skip 之 `tests/background-knowledge-maintenance.test.ts` 屬未修改 `origin/master` `b48ba880` 既有狀態，不列入本門檻）。所有跨分支功能一致性、多節點負載、GCP 帳單／外部告警端、實體 Firestore／Storage 壓測與真 Vertex Gemini 評測仍維持待辦或未執行。
+
+## 2026-11-16　REQ-005 審計 R2 整改與跨包收束校準（A01–A03、C01–C02、D01–D02 及 E 文件校正）
+
+- **整改範圍與更新提交（均僅本地 forward-only 提交，未推送／未開 GitHub PR）**：
+  - **PR-A（`codex/req005-policy-rounding-alerts`，更新為 `9eb72ce2b8b932a2c823862abc24a611a9708ec0`）**：修復 R2 A01（`AgentBudget.admit()` 以 `durableAdmission` 序列化並先對 `adapter.read(context)` 依即時有效 `selectedLimits` 預檢後始呼叫 `adapter.reserve`）、A02（`resolvePersonalModelLimits` 與 `firestore-model-routing` / `agent-runtime` 僅於顯式個人覆蓋時設 `softBudgetSource = 'personal'`，平台模式沿用管理員角色覆蓋而不互蓋）、A03（`agent-high-watermark.ts` 每次 `recordSample` / `evaluateCategory` 重讀最新持久視窗、`firestore-product-agent.ts` 改用單筆 transaction `appendDurableSample` 讀合併寫入並於寫失敗標 `degraded`＋上報而不阻斷業務回覆）；離線 gate 10 檔 61/61、S1–S5／P1–P4 與 3x `tsc` 全過。
+  - **PR-B（`codex/req005-compaction-integration`，維持 `55cfaa0fc843db708d2c7fe9f3cfe2f478774cce`）**：依 R2 §4.3 校正 `appendEvent` 描述為「嚴格單調毫秒邊界（`previous + 1` ms）」，確認 `contextCompaction` 僅單輪瞬態預設啟用、`16,000` / `retention = 4` 為工程起始值、`#447` durable 摘要維持未啟用；離線 gate 5 檔 54/54、10 次複測 60/60、C1–C6／I1–I4 與 3x `tsc` 全過。
+  - **PR-C（`codex/req005-growth-cursor-ui`，更新為 `0310313d6ae46a2fc8004be91648fa96655adbe9`）**：修復 R2 C01（`canonicalGrowthTimestamp` 統一 `.sssZ` UTC、`write`／`prepareImportedAttention`／`decodeGrowthHistoryCursor` 正規化、`readPageRecords` 首頁依真實時間序保留最新 `pageSize + 1` 且續頁加入 ±25h/48h offset 緩衝以兼容既有未正規化 Firestore 舊資料）與 C02（`deploy/firebase/firestore.indexes.json` 新增 `yuban_authority_growth_attention` DESC 複合索引及 `tests/firestore-indexes-comparator.test.ts` 納入 CI gate）；依 R2 §4.1 明確保留 `all()`／匯入／`evaluate()` 既有 500 上限與首頁掃描特性；離線 gate 8 檔 39/39、G1–G5 與 3x `tsc` 全過。
+  - **PR-D（`codex/req005-cross-domain-snapshots`，更新為 `7160b45cbb66ea014d0785a0dcebdfc9d84b689c`）**：修復 R2 D01（`handover-export.ts` `pages` 依同一去重集合過濾重複項目使 ZIP entries 與 `coverage` 一致）與 D02（`exportItemIdentity` 改以結構鍵／provenance／版本識別並移除 `pageOffset+index` 與位置 `anon-*`；修正 `tests/handover-export.test.ts:56, 59, 148/161` 重號 fixture 並補 ZIP 去重／無頂層 `id` 跨頁衝突拒絕）；依 R2 §4.2 明確註記按 section 建立 `ResumableExportState` 及 payload hash 檢查邊界；離線 gate 7 檔 18/18、S1–S8 與 3x `tsc` 全過。
+  - **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md`（對齊 PR-A／C／D 新 SHA 與測試數、修正 `appendEvent` 毫秒措辭、校準 §4.1–§4.4 範圍、更新 `B-P5` `LOCAL HOLD` SHA 為 `7a5306a2`）與本 `WORKLOG.md`；基線 8 檔既有失敗／略過（含 `tests/firestore-backup.test.ts` 於 `b48ba880` 缺 `_proactive_state` 及 PR-A 新增 `_agent_metrics` 後之集合尾端差異）維持如實揭露。
+
+## 2026-11-16　REQ-005 審計 R3 整改與文件校準（A04、C03、D03 及 R3 §5.1 修正）
+
+- **更新提交與離線驗證範圍（均僅本地 forward-only 提交，未推送／未開 GitHub PR）**：
+  - **PR-A（`codex/req005-policy-rounding-alerts`，`4b412a24aa0720bc9b5f6b4b88887dbdbb1407f1`）**：修復 R3 A04（在途 `roleSoftBudgetRatios` 清除與調低經 `syncPolicy` 提前至 `renderInstruction`、`refreshPolicyConfig`、`AgentGatewayModel.syncRequestPolicy` 與 `completeText` 即時更新下一 provider `systemInstruction`，並保留 `anchorRequest` 保護 durable `modelAttemptKey`）與 `tests/firestore-backup.test.ts` 預期同步（`_proactive_state`＋`_agent_metrics`，納入 CI）；離線 gate **11 檔 64/64**、S1–S5／P1–P4 與 3x `tsc` 全過。
+  - **PR-B（`codex/req005-compaction-integration`，維持 `55cfaa0fc843db708d2c7fe9f3cfe2f478774cce`）**：離線 gate **5 檔 54/54**、10 次複測 **60/60**、C1–C6／I1–I4 與 3x `tsc` 全過；補充澄清 `#447` durable 摘要維持未啟用之同時 legacy 摘要通路依 `firestore-private-summary-cutover.ts` 保留。
+  - **PR-C（`codex/req005-growth-cursor-ui`，`2672553dadbc64edcc3ba8e6edd3510c725e0fae`）**：修復 R3 C03（`all(b)` 改為 `.orderBy('createdAt').orderBy('attentionId').limit(200)` 分頁迴圈設 `maxPages = 100` fail-closed，並移除 `prepareImportedAttention()` 與 `evaluate()` 之 `>= 500` 阻斷同時保留 `removed.length > 4`／`changes.length > 16` 與撤銷檢查）；離線 gate **8 檔 40/40**、G1–G5 與 3x `tsc` 全過（無 cursor 首頁仍屬有界掃描且雲端索引 `READY` 未驗）。
+  - **PR-D（`codex/req005-cross-domain-snapshots`，`c65624a6ad33fd73a7d321a5ada10302b70ace2a`）**：修復 R3 D03（`exportItemIdentity()` 移除 `task_history` 可變 `:at:` 時間戳以對齊 `[task.id, task.version]` 主鍵）；離線 gate **7 檔 18/18**、S1–S8 與 3x `tsc` 全過。
+  - **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md` 與本 `WORKLOG.md`，校準 `B-P5` `LOCAL HOLD` SHA 為 `76cfbff9c1a0efbb35dfb3b81b0a78027cd1933d`；更正 R3 §5.1 所指出之文件措辭邊界（並註記 R2 A02 原實證為 `view 0.35 / runtime 0.30`），其餘基線 7 檔既有失敗／略過（`tests/firestore-backup.test.ts` 已由 PR-A 修復納入 CI）維持如實揭露。
+
+## 2026-11-16　關聯 B-P5 設計定案同步校準（維持技術 LOCAL HOLD，暫不推送／不開 PR）
+
+- **PR-E（`codex/req005-acceptance-closeout`）**：同步更新 `PLAN.md` 關聯 `B-P5`（`codex/search-help-entry`）紀錄至新本地提交 `e502c5fadc489c6a7fbf8074ebb86a1f2a5bdcc2`，註明 `REQ-001 §4.3:184` 之介面位置與觸發規則已由團隊拍板定案（不再以「等 Owner 批准」為前置阻塞），並因行動端實機鍵盤／放大字體遮擋驗收未執行而維持技術 **LOCAL HOLD**；其餘 PR-A～PR-D 程式碼維持不變，所有分支仍處於 `NOT_PUSHED`。
+
+### 2026-11-17　PR-E（`codex/req005-acceptance-closeout`）同步關聯 `B-P5` 新本地提交 `07ddddd4`
+
+- 同步 `PLAN.md` 關聯 `B-P5` (`codex/search-help-entry`) 引用至 `07ddddd43c85a60c1dc39a0c76c4889d4a420299`（納入 H1 雙向意識／反應喪失詞組與 H2 `ChatController`／`chatScreen.tsx` 失敗／中止保留 Server SSE `help` 卡修復，並校準行動端測試口徑為「結構有界（`maxHeight`）及 `AgentComposer` 仍 render」），維持技術 **LOCAL HOLD**；PR-A～PR-E 其餘程式不變，全部維持 `NOT_PUSHED`。
+
+
+### 2026-11-17　REQ005 PR-E：校準 A04 修復及 C03 真正可接續容量的當前收束紀錄
+
+- 保留截至 `0959837a` 的全部歷史與已定案 B-P5 設計；只修當前 PLAN 及追加本條。A 以 `50ecd8c3068e3a53f1161f75dc48e12fabad1476` 為準：`411cdf9` 修準入／重試透明更新、`9f33e3d` 對齊原變異目標、`50ecd8c` 補持久 reviewer；當輪 canonical **12 檔 81/81＋S1–S5／P1–P4＋server／root／frontend 三組 tsc 全 PASS**，新增準備期間再變政策、撤權、hard 降至已用量以下、lost reply、root／daily owner／CAS 與完整實際 payload 指紋校驗，不以停止取代良性更新。
+- C03 引用由舊 `2672553d`／40 cases／100 頁總牆改為既有 `b3aba8d7`／**41/41＋三組 tsc PASS**：200 筆 keyset 頁、100 頁只是每次派送預算，原加密 growth_checks 保存 authority／basis／cursor，回 `deferred/nextAt` 由正式 queue 重排冷啟接續；精確 20,000 筆亦可能需要下一派送確認 EOF，不假稱單次完成。保留真正變更數／撤權與 mutation fences，未改 C 的程式或提交。
+- B `55cfaa0f` **54/54**、D `c65624a6` **18/18** 及各三組 tsc 同輪重跑通過。原作者 `a7dbb06b` 加 A04 首次修復的實際整合 `7616ee55` **215/215**、摘要 **102/102**、壓縮 10 次 **60/60**、三組 tsc、growth import **1/1** 與 coupling **13/13** 通過；最終補齊兩項 reviewer 的 A 及本 E 文件後，另按最終整合 HEAD 重跑並交付 manifest，不把本條的舊 HEAD 收據當新版本收據。
+- PLAN 凍結程式輸入明列 `2239ea37`／tree `dbcc5e6c293cb3c438f6833ac112953a81da2795`，最終含本文件的 HEAD／tree 見外附本地 manifest；不修改舊 frozen artifacts 或原報告的歷史 bytes。原 R6 的「A–D 程式碼與 aed10603 逐位元一致」不適用 C：實際 `firestore-growth.ts`／growth-history-cursor 測試已有 b3aba8d7 差異。
+- PR-E 本身仍只包含 8 項合成場景（獨立 gate 6 檔共 36 cases）；官方 26 項矩陣維持 offline subset／partial／not run，不寫全案驗收完成。真模型、Firestore／Storage、索引 READY、Actions、實機／視覺、外部告警、帳單與多實例壓測未跑，`#447` 持久摘要未啟用。可供 review 不等於 Owner `2NTTY` 已合併或獲准啟用；沒有推送／開 PR／部署或修改 SliceB。
+
+## REQ-005 收束：核對 A、B、D 已入主線，C 與 E 分開待驗
+
+以 master `9463f452` 的歷史核實 #591、#592、#594 已合併。#593 的本地候選 `a50c3327` 不在該主線；#595 的文件及離線門檻以 `cdaf0a36` 為輸入，不藉 E 引入 C 的程式。C 與 E 的合成整合只用作離線核對；正式關項仍須對準新的主線及 PR head 重跑，另列託管及實際環境未驗項。既有各輪收據保留，沒有將舊結果算到新候選。
+
+## REQ-005 收束門檻：跳過的案例不算通過
+
+舊門檻只看 Node 的返回碼；跳過全部案例也能返回成功。現對每個選定測試檔同時核對檔案及整輪摘要，必須執行至少一項、全部通過，且沒有失敗、取消、跳過或待辦。合成回歸涵蓋正常通過、全跳過、全待辦、部分跳過、空檔和真正失敗。這是離線收束門檻修正，不改產品行為或擴大實際環境的驗收範圍。
+
+## REQ-005 場景 9：合成帳本綁定當前提示包
+
+主線 `fc96aed8` 的聊天提示包為 `0.1.60`。場景 9 固定填寫舊版本 `0.1.59`，因此運行按規則在第一次模型嘗試前停止，根本沒有驗到重試與帳本。測試現從同一個本地聊天配方讀取版本；保留嘗試次數、同一根帳本與副作用不重播等原有斷言。不更改產品驗權或計量，也不調用真模型。
+
+## REQ-005 收束：成長游標前置已合併
+
+#593 已合入主線 `cb974524`。#595 保留主線與本分支原有工作紀錄，再以這一版主線觸發新的分支及整合檢查；不沿用合併前因缺少成長游標測試而停止的整合收據。此項交接不代表真模型、正式環境或所有 26 項場景已驗收。
+
+## 2026-11-14　Slice B（B-P7）語義審核邊界防繞過與回合中審核義務預算收斂 (`codex/search-review-boundaries`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P7（REQ-008 §3.2、§9）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：加固交付審核對表面問句改寫（用藥、劑量、操作主張）的失敗關閉邊界，並確保回合中因檢索證據而產生的審核義務在同一根預算（root `AgentBudget`）內完成預留或以 `delivery_review_budget` 安全停止。
+- Actual Work：
+  - 更新 `server/chat-delivery-review.ts`，將 `餵藥`、`食藥`、`吃藥`、`藥水`、`毫升`、`毫克`、數值劑量（`ml`/`mg`）及書面／粵語口語操作宣告（「已刪晒」、「記低咗」、「改咗」、「幫你...」）納入審核觸發條件。
+  - 更新 `server/product-agent-tools.ts`（`search_knowledge`、`read_knowledge_context`、`read_chat_photo`）、`server/agent-source-tools.ts`（`read_private_source`）與 `server/product-agent.ts`，在回合中取得證據時立即啟用 `deliveryReview.require("review")`（依 `REQ-008 §3.2` 鎖定後續 `present_answer` 並預留同根 `AgentBudget` 審核額度，同時保留無引用嚴格有界澄清與純寒暄短路徑，且於剩餘預算僅 1 次時以 `delivery_review_budget` 安全收斂）。
+  - 新增 `tests/search-review-boundaries.test.ts`、`scripts/ci/verify-search-review-boundaries-offline.sh` 與 `.github/workflows/search-review-boundaries-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/search-review-boundaries.test.ts tests/agent-review-obligation.test.ts tests/chat-delivery-review.test.ts tests/agent-budget.test.ts tests/product-agent-execution-contract.test.ts`（5 個完整測試檔共 **81/81** 通過：3 + 17 + 44 + 9 + 8，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P7 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）補強 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」，收窄 `每次(?:餵|食|吃|服|\s*\d)` 避免無關語境誤判，並對齊 `BOUNDED_CLARIFICATION` 前置時間副詞與粵語句式（與 B-P2、B-P6 保持跨分支一致性）及於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 補測。
+2）修正 `PLAN.md` 誤植（`短パス` → `短路徑`），並明確釐清 `deliveryReview.require("review")` 之黏性義務、root budget Call 3/Call 4 鎖定與 `REQ-008 §3.2` 有界澄清短路徑之關係。
+3）對齊 [CI workflow](.github/workflows/search-review-boundaries-offline.yml) 與 [verify-search-review-boundaries-offline.sh](scripts/ci/verify-search-review-boundaries-offline.sh) 至 B-P2 安全離線範本（`pull_request` / `permissions: contents: read` / pinned SHAs / `--ignore-scripts` / `unshare --net` + `setpriv` / `summary-progress-contract.mjs` / `patch-package` / 三份 `tsconfig` 檢查，移除未經授權之 `push` 觸發與 bare `npm ci`）。
+
+### 2026-11-16　B-P7 R3 審核整改（結構性封堵完成語態與非問藥劑量）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R3.md` F2–F3，於本地 forward-only 新提交處理（R1／R2 歷史條目維持原文）：
+1）同步更新 [chat-delivery-review.ts](server/chat-delivery-review.ts)：擴充 `OPERATION_CLAIM_PATTERN` 完成態詞尾及動詞，並新增綁定 `userRequest` 的 `draftClaimsUnverifiedOperation`（無 verified receipt 且非向用戶發問時強制送審）；
+2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE` 併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，涵蓋分數／半粒／每晚／每幾小時／茶匙等具體劑量表達而無須依賴用戶問題出現「藥」字；
+3）於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases）與純寒暄／反問對照，並同步更新 [CI 腳本](scripts/ci/verify-search-review-boundaries-offline.sh)。
+本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。
+
+### 2026-11-16　B-P7 R4 審核整改（結尾問號防繞過與完整劑量形態同步）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免）並擴充 `DOSE_AMOUNT_SOURCE`（涵蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
+2）於 [search-review-boundaries.test.ts](tests/search-review-boundaries.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
+
+### 2026-11-16　B-P7 結構性交付審核與收據對應整改（同步 B-P2／B-P6）
+
+依審查意見於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**`server/chat-delivery-review.ts` 保留尾閘 `return obligation?.required ?? false`**：以子句層級識別「結果／狀態聲稱＋追問」（如「提醒時間而家係八點，想改邊一項？」及裸草稿），同時保留合理參數選擇（「你想改成八點定九點？」）與普通說明（「這個清單分為三個部分。」）豁免。
+2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：核對收據狀態（不可拿 `pending_confirmation`／`failed` 當已完成）、動作家族與目標對象／數值。
+3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持已具來源家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
+4）於 `tests/search-review-boundaries.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 結構性深化整改（內嵌前提問句、代名詞物理降溫／趴睡指令、全欄位收據核對）
+
+依外部審核 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R7.md` 及 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 同步結構性整改至 `server/chat-delivery-review.ts`（與 `B-P2` 一致，保留尾閘 `obligation?.required ?? false`）並於本地 forward-only 提交（未 push／未開 PR）：
+1）**F1 內嵌從屬狀態前提問句**：攔截含 `now that`、`since`、`既然` 及括號現況前提之操作問句，並保留純參數選擇問句免誤判。
+2）**F2 任務錨定照護與代名詞物理降溫／趴睡指令**：擴充 `CLINICAL_CARE_DIRECTIVE_PATTERN` 及 `draftHasTaskAnchoredCareObligation`，同時維持 `SPEC.md:301-304` 三類無需公共官方引用之回覆。
+3）**F3 全數值／全時段／全對象收據對應**：收據比對改為全量數值、時間錨點（如 `今朝 8 點` vs `今晚 9 點`）及連接詞拆解後每個目標片段皆須命中已執行收據。
+4）於 `tests/search-review-boundaries.test.ts` 增補 R7 F1–F3 斷言並完成離線全套測試與三份 `tsc --noEmit`。
+
+### 2026-11-17　B-P7 依審計 R1 與共識邊界同步 N1–N3 結構性修復
+
+依外部審核 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261117_R1.md` 及審核員補充邊界同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）與 `server/product-agent-tools.ts`（未 push／未開 PR）：
+1）**N1 英文健康詞界與普通求助語境**：為獨立英文健康詞加上 `\b...\b`（修正 `Will` 誤中 `ill`，不將中英文一齊包 `\b`），普通求助句要求健康／育兒護理語境，同時維持既有照護語境與 `obligation?.required ?? false` 黏性義務。
+2）**N2 移除純前綴豁免、覆蓋 `nil-by-mouth` 及兩階段私人來源核對**：移除 `NON_DIRECTIVE_RECORD_REPORT_PATTERN`，補齊禁飲食／禁食指令正則，並於草稿早期與最終階段同時核對私人來源真實支持關係，防止無關家庭紀錄為臨床指令背書，同時保留 `SPEC.md:301-304` 分離。
+3）**N3 Server 未截斷動作結果與逐項結構化收據綁定**：移除 `product-agent-tools.ts` 300 字截斷並傳遞完整動作／結構化時間與數量欄位，對 `(對象, 份量, 單位, 時間)` 作 1 對 1 配對，封堵單筆／多筆收據互換、重複項超報、解析不清與 `quantityGrounding=removed`。
+4）於 `tests/search-review-boundaries.test.ts`（6→9 cases）增補 N1–N3 正反成對真實運行與閘門測試，同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`，並跑過 5 檔 guarded manifest（87／87）＋ verified-ops／photo／voice（4／4）＋ 三配置 `tsc --noEmit`。
+
+### 2026-11-17　B-P7 R8 邊界修復（N1-R formula 語境分離、N2-R 私人來源逐子句核對、N3-R ISO 完整日期對位）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（N1-R／N2-R／N3-R）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**N1-R**：移除 `USER_CARE_HEALTH_CONTEXT_PATTERN` 裸詞 `formula`、`treat` 與無主詞 `cool down`，改以明確嬰兒配方奶／護理語境觸發，同時保留 `obligation?.required ?? false` 黏性義務。
+2）**N2-R**：移除 `memoryFactReferencedByParagraph` 提前返回，改對段落每個原子子句核對極性、主體及完整詞項／數字。
+3）**N3-R**：於 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 保存並比對 `epochMs` 及解析後本地年月日與個別 `eventTimeZone`。
+4）於 `tests/search-review-boundaries.test.ts`（9→10 cases）新增 `N1-R / N2-R / N3-R` 成對實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 新增邊界測試 R1 修復（BND-1 跨段假私人事實逐段內容核對）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**BND-1**：移除 `privateSourcesSupportDraft` 依 `record_restatement`/`private_reference` 標籤篩選段落而漏檢 `clarification` 段落的漏洞，抽出 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及收緊後之 `isPureScopeRefusalOrLimitationText`，攔截跨段／混合引用／拒答夾帶未獲支持之私人過敏說法並保留正例及 `obligation?.required ?? false` 黏性義務。
+2）於 `tests/search-review-boundaries.test.ts`（10→11 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES=(11 17 44 9 8)`。
+
+### 2026-11-18　B-P7 實作覆核 R1 修復（N18-1 純拒答／待確認整句錨定驗證與精確數字分詞、N18-2 純結構句豁免）
+
+依 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261118_R1.md`（N18-1／N18-2）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 完全一致，維持 `obligation?.required ?? false` 尾閘）：
+1）**N18-1**：改以 `splitPrivateAssertionClauses` 逐子句套用整句錨定（`isPureScopeRefusalClause`／`isPurePendingConfirmationClause`），並於 `privateSourceClauseSupportsClaimClause` 強制精確數字 token（修復 `"120"` 以 `.includes("20")` 錯認 `"20"`）與英文字詞邊界，徹底封堵逗號、連接詞及單子句夾帶未授權私人事實。
+2）**N18-2**：新增無兒童實體與無數量之純結構句檢查 `isPureStructuralFramingClause`／`isPureStructuralFramingText`（於 `classifyParagraphPrivateSupport` 回傳 `"structural"`），恢復搭配有據紀錄或官方引用的「以上是整理後的內容。」正常交付，同時維持獨立無支持結構句或夾帶數量詞之阻斷。
+3）於 `tests/search-review-boundaries.test.ts`（11→12 cases）新增 `N18-1 & N18-2` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES=(12 17 44 9 8)`。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P4）SSE 進度收斂、同機重連原執行狀態恢復與訊息同步 (`codex/search-run-recovery`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P4（REQ-001 §4.2、REQ-002 §4.3、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：消除 SSE 重試／亂序造成的重複進度閃爍，支援同機網路閃斷後沿原背景 run 恢復狀態，並在背景回覆完成時即時更新訊息列表。
+- Actual Work：
+  - 於 `src/shared/agent-feedback.ts` 實作 `reconcileAgentProgress`，確保同 `runId`/`messageId` 的進度階段單調前進且求助卡去重。
+  - 於 `src/client/chat-controller.ts` 強化 `requestReply` 的串流中斷降級檢查（若 `getOriginalReply` 回報 `status === "running"` 則保留 `remoteReply` 狀態供 `refreshOriginalReply` 接手），並於 `readOriginal` 偵測到 `completed` 時立即刷新 `listMessages`。
+  - 於 `frontend/src/screens/chatScreen.tsx` 避免在對應回覆訊息已送達時繼續顯示執行中狀態橫幅。
+  - 新增 `tests/chat-run-recovery.test.ts`、`scripts/ci/verify-search-run-recovery-offline.sh` 與 `.github/workflows/search-run-recovery-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/chat-run-recovery.test.ts tests/chat-web-sources-copy.test.ts tests/chat-busy-stop-feedback.test.ts tests/chat-stop-feedback.test.ts tests/agent-work-continuation-recovery.test.ts`（5 個完整測試檔共 **17/17** 通過：4 + 7 + 1 + 2 + 3，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P4 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` (`B-P4-1`) 進行 forward-only 修復：
+1）將 `reconcileAgentProgress` 的階段保護由特例（僅保護 `reviewing` 與 `started`）升級為完整單調階序 `AGENT_PROGRESS_PHASE_RANK`（`started: 0, model: 1, help: 1, working: 2, searching: 2, reading: 2, tool_finished: 3, reviewing: 4`），確保遲到 `searching`/`reading`/`working`/`model`/`started` 絕不覆寫 `tool_finished` 或高階階段，同時維持 `help` 卡片累積與 `card` schema 一致性。
+2）於 [chat-run-recovery 測試](tests/chat-run-recovery.test.ts) 增補 `tool_finished` 拒退回 `searching`/`model` 與 `searching` 拒退回 `model` 斷言；將 CI workflow 與 `scripts/ci/verify-search-run-recovery-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 與 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-18　B-P4 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-run-recovery`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P4 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P3）檢索中官方來源卡片即時串流與對話預覽 (`codex/search-source-progress`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P3（REQ-002 §§5.1–5.2、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：在正式回覆完成前，將已檢索與已精讀的官方來源卡片即時串流至前端對話視窗，讓照顧者在等待期間可先行點擊查閱官方指引。
+- Actual Work：
+  - 更新 `src/shared/agent-feedback.ts`（新增 `agentProgressSourceSchema` 與 `mergeAgentProgressSources`）、`server/agent-feedback-stream.ts`、`server/product-agent-tools.ts` 及 `server/product-agent.ts`，於 `search_knowledge` 與 `read_knowledge_context` 完成時發布 `stage: "found" | "read"` 的官方來源預覽卡。
+  - 更新 `src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx` 與 `frontend/src/screens/chatScreen.tsx`，在 `chat.busy === "reply"` 期間顯示 `ProgressSourceCards`。
+  - 新增 `tests/agent-feedback-sources.test.ts`、`scripts/ci/verify-search-source-progress-offline.sh` 與 `.github/workflows/search-source-progress-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/agent-feedback-sources.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts tests/chat-web-sources-copy.test.ts`（4 個完整測試檔共 **64/64** 通過：5 + 44 + 8 + 7，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server，無法於 `unshare --net` 或 socket guard 下執行）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P3 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）`B-P3-1`：`mergeAgentProgressSources` 現保證遲到的 `found` 不會以較舊／局部 `excerpt`、`title`、`section`、`publisher` 或 `applicabilityStatus` 覆寫已 `read` 條目（僅補全缺失 metadata），超過 `AGENT_PROGRESS_MAX_SOURCES = 6` 時優先保留 `read` 卡片並統一截斷於 6 筆（對齊後端、schema 與 UI）。
+2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）。
+3）測試與 CI 對齊：`tests/agent-feedback-sources.test.ts` 改用 in-memory injected `fetch` 驗證完整 `createChatApi` → `handleChatRequest`/`handleProductAgentRequest` SSE 串流（無 loopback port、`blockedAttempts: 0`），並於 CI workflow 與 `scripts/ci/verify-search-source-progress-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約；`PLAN.md` 同步更正欄位名稱（`publisher`）與實測數字（64 離線 + 4 loopback）。
+
+### 2026-11-17　B-P3 R8 文件更正（D1 append-only 恢復）
+
+- **更正說明**：依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（D1）與 `AGENTS.md:125` 嚴格 append-only 規範，以 forward-only 方式恢復 `2b29f39` 既有紀錄（`2026-11-14　B-P3 R1 審核修復補充` 第 2 點原句），並於此另起獨立紀錄補述同一決策，不重寫歷史。
+- **補充決策紀錄（`applicabilityStatus`）**：未經獨立交付審核之即時進度來源（`AgentProgressSource`），其 `applicabilityStatus` 嚴格限制為警示性質之 `'conditional' | 'requires_clarification'`，不在獨立審核完成前於進度事件傳遞 `'applicable'`。
+
+### 2026-11-18　B-P3 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-source-progress`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P3 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+
+
+### 2026-11-18　#601 與已合併 #602 正向整合
+
+保留來源卡、因果 sequence、原運行恢復及已完成回覆草稿修復；合併共享進度收斂，遲到 read 可提升同一來源 found 狀態，但不倒退全局 phase／sequence、不覆寫較新 metadata 或恢復被屏蔽 URL。新增 7 項整合測試；#601 CI 納入兩 PR 去重後 10 個整檔、預期 86 案及三組既有型別檢查。隔離本機 11 項與獨立補充 9 個斷言通過；完整 exact-head CI 需推送後核實，不代表真模型、正式資料或畫面驗收。
+
+### 2026-11-12　B-P1 外部知識檢索 query 最小化（codex/search-query-minimization，審核修正並 rebase 至 255082b3）
+
+在基線 `origin/master`（`255082b3`）完成本地 `codex/search-query-minimization` 分支並依獨立審核收窄規則，按 [REQ-001 §4.1／§7](docs/REQUIREMENTS_BACKLOG.md#req-001) 落實外部搜尋 query 最小化守衛：新增 [query 最小化檢查模組](server/knowledge-query-minimization.ts)，於 [`search_knowledge`](server/product-agent-tools.ts) 及 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（在快取、embedding 扣額及候選檢索前）攔截 email／URL／UUID／明確通訊帳號、8 位以上號碼或香港電話格式（保留多位體溫如 `37.5 38.5 39` 及 `2024-2025` 指引年份區間）、完整生日（含官方完整曆日如 `2025年3月14日`）、香港街道／屋苑座數／樓層門牌地址（放行 `住喺沙田區` 等粗粒度地區、公共設施、`3樓`、`Room 1`、`Flat head` 等照護名詞及 `大城市BB上落樓梯`）、雙輪以上私人對話轉錄與明確姓名／證件標籤（放行單行 `媽媽：`、純詞題 `護照 BB`、粵語動詞／親屬稱呼如 `BB叫唔停`／`寶寶叫媽媽`），以及本次由 `read_care_summary`、`read_selected_tasks`、`search_selected_care` 載入的非泛稱孩子姓名（拉丁名加詞界以免誤傷 `planning`/`Annex`），並於 [`search_knowledge` 描述](server/agent-knowledge-tool-descriptions.ts) 與工具 `public_query_required` 恢復提示明確指引移除私密識別後重試，不增開分類 LLM，也不宣稱完整匿名化。
+
+本機離線驗證（含 [網路阻斷 guard](frontend/scripts/family-cleanup-network-guard.mjs)）：[search-query-minimization 測試](tests/search-query-minimization.test.ts)（5/5，涵蓋全 3 個兒童資料讀取工具載入姓名攔截、`createAgentRuntime` 阻斷後無額外分類模型重試並保留內部 `memoryFacts`、`createKnowledgeRetriever` 直呼與 `family` 可見度檢查及多項防誤報反例）及知識／產品代理執行契約／prompt／Vertex contract／runtime 測試共 9 個測試檔（73/73 全過），配合 [離線驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh) 與 [CI workflow](.github/workflows/search-query-minimization-offline.yml) 與兩份 `tsc --noEmit` 全數通過。同時核對未修改之 `origin/master`（`255082b3`）已存在上游失敗：`tests/product-agent.test.ts`（6 例中 1 例 `growth Runner` 失敗，故自本包阻塞清單移出）、`tests/avatar-runtime.test.ts`（1/1 失敗於 `server/firebase-runtime.ts:214` `mixedTranscriptPage`）及 `tests/product-agent-assignee-recovery.test.ts`（3 例中 1 例失敗於 `agent-confirmation-store.ts` `access_version::text,storage_epoch::text` SQL fixture），均確認不屬本包範圍。本階段尚無真 Gemini 模型實測、臨時聊天專名端到端測試或線上部署（未 push／未開 PR）。
+
+### 2026-11-12　B-P1 第二輪審核補正（codex/search-query-minimization）
+
+依第二輪審核意見完成三項必改及建議收斂：1）移走 `住喺／屋企住／家住／住在` 規則尾部裸 `\d+` 與裸 `號／樓`，改僅於具體屋苑、街道路名或數字／字母座室樓單位配對時攔截，放行 `住喺沙田6個月BB打針`、`住喺沙田區6個月BB打針`、`BB喺屋企住3日`、`屋企住咗2星期隔離`、`住在1歲`、`住在2樓 醫院`、`住喺1號風球` 等已測反例（同時補擋 `12樓C`／`12樓C座`／`C座12樓`，並放行 `Apt 2 months`／`Unit 2 vaccine schedule`）；2）統一 `叫做／名叫／叫` 與 `個名／名字` 共用非姓名動詞與疑問詞排除清單，放行 `我叫做啲咩好`、`我名叫咩名好`、`BB名叫唔出嚟`、`BB叫做乜好`、`BB叫幾聲 發燒`；3）移除「叫＋姓名」後方必須帶空白或標點限制，補攔 `我個仔叫陳小明持續發燒3日`、`BB叫張保仔發燒`、`BB叫張保仔加固食物`、`6個月BB叫張保仔發燒`，並於 `Line／IG／Signal` 冒號後補攔含底線或數字之 handle（`IG: mother_hk`、`Signal: hello_user`，保留 `Line: 嬰兒` 與 `First line: infant fever`；無底線／數字之純英文字如 `Line: chanbb` 及中文名如 `WhatsApp：陳大文` 仍歸入已知文字規則限制）。以上反例均已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試及兩份 `tsc --noEmit` 全過；真模型、臨時聊天獨立 mock 及線上部署仍未跑）。
+
+### 2026-11-12　B-P1 第三輪審核建議收斂並 rebase 至 7b7d7e98（codex/search-query-minimization）
+
+依第三輪審核並重整至最新 `origin/master`（`7b7d7e98`）：1）於 `CALLING_NON_NAME_PREFIXES` 補入常見多字病徵、飲食與照顧動作詞（如 `發燒`/`咳嗽`/`嘔吐`/`黃疸`/`肺炎`/`感冒`/`開飯`/`喝奶`/`奶粉`/`陳皮`/`退燒`），避免誤傷 `BB叫陳小明` / `BB叫黃大文` 等姓氏同時放行相關口語查詢；2）收斂 `住喺` 規則以避免 `唔知道`、`高速公路`、`屋企喺花園附近`、`中環街市` 誤報，並補齊 `麗港城`／`海怡半島` 一致性及 `Rm 2 of cough` 非房室語境放行（同時維持 `Rm 2 of Block 3` 攔截）；3）重寫 `Line／IG／Signal` handle 查驗 regex 以消除長字串重複 `_` 之多項式回溯。新反例已納入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過）。
+
+### 2026-11-13　B-P1 第四輪審核細節收尾（codex/search-query-minimization）
+
+依第四輪審核第 3／5 節建議完成三項細節收尾：1）將房室與劑量排除規則改用 `/iu` 全大小寫比對（`Rm 2 of BLOCK 3`、`fLaT A`、`uNiT 3` 攔截；`Rm 2 OF cough`、`Unit 2 MONTHS`、`Apt 2 WEEKS`、`Unit 2 VACCINE schedule`、`Unit 2 MCG`、`Unit 2 DOSES` 放行）；2）將 `公路` lookbehind 收窄為 `高速公路`／`快速公路`，補攔 `住喺青山公路` 等香港公路地址；3）於 `CALLING_NON_NAME_PREFIXES` 補入 `鼻敏感`/`哮喘`/`腸胃炎`/`手足口`/`中耳炎`/`過敏`/`開燈`/`開窗`/`疫苗`/`加固`/`打針`/`飲茶`。全部新測試已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR）。
+
+### 2026-11-13　B-P1 第五輪審核建議收尾（codex/search-query-minimization）
+
+依第五輪審核第 3 節建議完成收尾：1）收斂 `公路` lookbehind 為 `(?<!高速公|快速公|高速|快速|大|馬)路`，同時放行「高速公路」與「高速路」（`住喺高速路附近`、`住喺快速路附近` 放行，`住喺青山公路`、`住喺青山路` 仍攔截）；2）於 `CALLING_NON_NAME_PREFIXES` 補入 `水痘`/`麻疹`/`腮腺炎`/`結膜炎`/`熱痱`/`尿布疹`/`支氣管炎`/`口腔潰瘍`/`鼻鼾`/`流汗`/`大人` 11 個多字口語病徵詞，放行相應照護查詢（`BB叫陳小明`、`BB叫黃大文` 仍攔截）；3）單元測試補齊 `BB叫打針`、`BB叫飲茶`、`住喺高速路附近`、`住喺快速路附近` 及全部 11 個新病徵斷言。維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR。
+
+### 2026-11-18　B-P1 rebase 至最新 origin/master（cd1193b2）並對齊開立 PR
+
+依使用者明確指示將 `codex/search-query-minimization` 8 個既有提交 rebase 至最新 `origin/master`（`cd1193b2`，含 `#596`–`#598`），並於此另加正向提交將 `PLAN.md` 基線標記對齊 `cd1193b2`，保持 `WORKLOG.md` 歷史嚴格 append-only，準備開立 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
 ## 2026-11-14　Slice B（B-P5）不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry`)
 
 - Recorded At：2026-11-14（Asia/Hong_Kong）
@@ -6065,3 +6421,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-2）完成本地 forward-only 修復並**繼續維持技術 LOCAL HOLD**（未 push／未開 PR）：
 1）**BND-2 [agent-feedback.ts](src/shared/agent-feedback.ts)**：於 `matchOfficialHelpForText` 新增 `NON_URGENT_EMERGENCY_MODIFIER_PATTERN`（涵蓋 `non-emergency`、`not an emergency`、`no emergency`、`非急症`／`不是急症` 等限定詞組），僅自急症判斷文字切走該否定修飾詞組而不全域豁免整句，使 `"Can I book a non-emergency medicine review?"` 僅觸發 `['medical-consult-hk-v1']`（只顯溫和用藥諮詢提示、`urgent: false, consult: true`），同時維持 `"A non-emergency medicine question, but BB is unresponsive."` 及混合窒息／呼吸困難／抽搐之 `'emergency-hk-v1'` 優先警示。
 2）於 `tests/official-help-entry.test.ts`（5→6 cases）新增 `BND-2` `matchOfficialHelpForText` 與真 `ChatPage` render 成對正反實測，並更新 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES=(6 7 44)`；行動裝置實機鍵盤／視覺 E2E 仍未驗，維持技術 **LOCAL HOLD**。
+
+### 2026-11-18　正向合併最新 origin/master（a3b6a24f）
+
+將最新 origin/master（3b6a24f，含已合併之 #600、#601、#602、#608、#630）正向無改歷史合併至 codex/search-help-entry，整合 src/shared/agent-feedback.ts、src/client/chat-controller.ts 與 rontend/src/screens/chatScreen.tsx。

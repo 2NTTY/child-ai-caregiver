@@ -12,7 +12,7 @@ import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
-import type { AgentModelPurpose, AgentReviewReserve } from "./agent-budget.ts";
+import type { AgentModelPurpose, AgentReviewReserve, AgentSoftBudgetProfileRole } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { PersonalProviderError } from './personal-provider-error.ts';
@@ -104,6 +104,9 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
+    syncPolicy?: () => Promise<boolean | void>;
+    refreshPolicyConfig?: (request: LlmRequest, modelCallAlreadyReserved?: boolean) => Promise<LlmRequest["config"] | undefined>;
+    roleProfileOverrides?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
     reserveDeliveryReview?: AgentReviewReserve;
     purpose?: AgentModelPurpose;
     onProviderStart?: () => void;
@@ -121,9 +124,23 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
+  private async checkAuthorizeAndPolicy(): Promise<boolean> {
+    if (!await this.options.budget.wait(this.options.authorize)) throw new AgentStopped("unauthorized");
+    if (this.options.syncPolicy) return Boolean(await this.options.budget.wait(this.options.syncPolicy));
+    return false;
+  }
+  private async syncRequestPolicy(request: LlmRequest, force = false, renderedPolicy?: string, modelCallAlreadyReserved = false): Promise<LlmRequest> {
+    const changed = await this.checkAuthorizeAndPolicy();
+    if ((changed || force || renderedPolicy !== undefined && renderedPolicy !== this.options.budget.policyFingerprint) && this.options.refreshPolicyConfig) {
+      const nextConfig = await this.options.budget.wait(() => this.options.refreshPolicyConfig!(request, modelCallAlreadyReserved));
+      if (nextConfig) return { ...request, config: nextConfig };
+    }
+    return request;
+  }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
   async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
     purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
+    await this.checkAuthorizeAndPolicy();
     let audio: AgentAudioInput | undefined;
     if (input.voice) {
       if (!this.options.voice || !this.options.reloadAudio
@@ -132,20 +149,32 @@ export class AgentGatewayModel extends BaseLlm {
       if (Object.entries(audio.metadata).some(([key, value]) => input.voice![key as keyof VoiceMessageReference] !== value))
         throw new AgentStopped('unauthorized');
     }
-    const planning = this.options.budget.planningSnapshot(false, { reserveDeliveryReview: this.options.reserveDeliveryReview });
+    const roleOverride: AgentSoftBudgetProfileRole | undefined =
+      input.purpose === "delivery_review" || input.purpose === "delivery_repair" || input.purpose === "compose_review"
+        ? "reviewer"
+        : undefined;
+    const roleInstruction = (modelCallAlreadyReserved = false) => input.system
+      + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
+      + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
+      + JSON.stringify({ limits: { ...this.options.budget.limits,
+        outputTokens: agentGenerationConfig(this.options.config, undefined)!.maxOutputTokens },
+        budget: this.options.budget.planningSnapshot(false, {
+          modelCallAlreadyReserved,
+          reserveDeliveryReview: this.options.reserveDeliveryReview,
+          ...(roleOverride ? { role: roleOverride } : {}),
+          ...(this.options.roleProfileOverrides ? { profileOverrides: this.options.roleProfileOverrides } : {}),
+        }) });
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }, ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
-      config: { systemInstruction: input.system
-        + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
-        + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
-        + JSON.stringify({ limits: { ...this.options.budget.limits,
-          outputTokens: agentGenerationConfig(this.options.config, undefined)!.maxOutputTokens }, budget: planning }) },
+      config: { systemInstruction: roleInstruction() },
       toolsDict: {},
       liveConnectConfig: {},
     };
     // Share accounting and authority, never the generator's summary or tool context.
-    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
+    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage, syncPolicy, roleProfileOverrides } = this.options;
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
+      syncPolicy, roleProfileOverrides,
+      refreshPolicyConfig: async (request, reserved) => ({ ...request.config, systemInstruction: roleInstruction(reserved) }),
       durableDailyUsage, audio, modelAttemptKey: () => input.attemptKey,
       reserveDeliveryReview: this.options.reserveDeliveryReview, purpose: input.purpose, onProviderStart: input.onProviderStart,
       ...(input.imageIds?.length ? { images: () => {
@@ -169,6 +198,7 @@ export class AgentGatewayModel extends BaseLlm {
     }
   }
   private async *generateBounded(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
+    const anchorRequest = request;
     const { config, provider, usage, budget, userId, childId, authorize } = this.options;
     const images = this.options.images?.() ?? [];
     // Include the same generation config the native provider adds, even before quota admission.
@@ -179,7 +209,7 @@ export class AgentGatewayModel extends BaseLlm {
     if (daily && (!budget.durable || daily.context.binding.ownerId !== userId || daily.context.binding.childId !== childId))
       throw new AgentStopped("unavailable");
     if (!config.enabled) throw new AgentStopped("unavailable");
-    if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+    request = await this.syncRequestPolicy(request);
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
     let requestCharacters = requestSize(request);
     if (requestCharacters > budget.limits.inputCharacters) {
@@ -213,11 +243,15 @@ export class AgentGatewayModel extends BaseLlm {
       requestCharacters = requestSize(base);
       if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
     }
-    let outgoing = base;
     const initial = this.options.readConversationSummary
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
-    if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+    // A different barrier may already have consumed the transition flag. Bind current guidance
+    // before projection and immutable admission, not only when this caller observes a change.
+    base = await this.syncRequestPolicy(base, true);
+    requestCharacters = requestSize(base);
+    if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+    let outgoing = base;
     const fits = (context: LlmRequest['contents'][number]) =>
       requestSize({ ...base, contents: [...base.contents, context] })
         + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters;
@@ -231,15 +265,26 @@ export class AgentGatewayModel extends BaseLlm {
       return fits(marker) ? { ...base, contents: [...base.contents, marker] } : base;
     };
     if (initial && !includesSummary) outgoing = omittedSummary();
-    // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
-    const originalModelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
+    // Keep content and summary fixed after admission; server policy guidance is separately bound before dispatch.
+    const originalModelKey = budget.durable ? this.options.modelAttemptKey?.(anchorRequest) : undefined;
     const retries = config.agentMaxRetries ?? 0;
     if (!Number.isSafeInteger(retries) || retries < 0 || retries > AGENT_RUN_LIMITS.modelRetries.max) throw new AgentStopped("unavailable");
+    let renderedPolicy = budget.policyFingerprint;
     for (let retry = 0; ; retry++) {
+      // Preserve identical retry payloads unless policy changed, including a transition consumed elsewhere.
+      if (retry > 0) {
+        base = await this.syncRequestPolicy(base, false, renderedPolicy);
+        renderedPolicy = budget.policyFingerprint;
+        outgoing = { ...outgoing, config: base.config };
+        requestCharacters = requestSize(base);
+      }
+      let preparedFingerprint: string | undefined;
+      let modelAttempt: import("./durable-root-budget.ts").BudgetAttempt | undefined;
       const modelKey = retry && originalModelKey ? originalModelKey + ":retry:" + retry : originalModelKey;
       let retryDelay: number | undefined;
       let providerFailure: unknown;
       let dailyRequest: DurableAiUsageRequest | undefined;
+      let dailyPreparationToken: string | undefined;
       if (budget.durable) {
         if (!modelKey) throw new AgentStopped("unavailable");
         outgoing = { ...outgoing, contents: structuredClone(outgoing.contents),
@@ -256,12 +301,15 @@ export class AgentGatewayModel extends BaseLlm {
             modelAttemptKey: modelKey, requestFingerprint, originalDailyRequest: dailyRequest! })) !== 'execute')
             throw new AgentStopped('unavailable');
         }
-        await budget.admitModel(this.options, { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
+        modelAttempt = { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 };
+        await budget.admitModel(this.options, modelAttempt);
+        preparedFingerprint = requestFingerprint;
       } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
         const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
         if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
         if (admission.decision !== "execute") throw new AgentStopped("unavailable");
+        dailyPreparationToken = admission.preparationToken;
       } else if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
         throw new AgentStopped("quota_exceeded");
       }
@@ -271,7 +319,7 @@ export class AgentGatewayModel extends BaseLlm {
       let response: LlmResponse | undefined;
       try {
         if (includesSummary) {
-          if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+          await this.checkAuthorizeAndPolicy();
           if (Date.now() >= validUntil) {
             if (budget.durable) throw new AgentStopped("unavailable");
             outgoing = omittedSummary();
@@ -281,9 +329,36 @@ export class AgentGatewayModel extends BaseLlm {
           await budget.checkDurable();
           if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
         }
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
         if (this.options.privateSummaryAdmission && !await budget.wait(() => this.options.privateSummaryAdmission!.revalidate()))
           throw new AgentStopped('unauthorized');
+        // Admission may await an administrative policy change. Preserve its immutable original
+        // identity and accounting, while binding the exact refreshed payload in the same ledgers.
+        // Only this caller owns execute; neither preparation nor a cold lookup grants dispatch.
+        for (;;) {
+          await this.checkAuthorizeAndPolicy();
+          if (budget.policyFingerprint !== renderedPolicy) {
+            base = await this.syncRequestPolicy(base, true, renderedPolicy, true);
+            renderedPolicy = budget.policyFingerprint;
+            outgoing = { ...outgoing, config: agentGenerationConfig(config, base.config) };
+            requestCharacters = requestSize(base);
+          }
+          if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
+          const fingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
+          if (modelAttempt && fingerprint !== preparedFingerprint) {
+            await budget.prepareModelDispatch(modelAttempt, preparedFingerprint!, fingerprint);
+            if (daily && dailyRequest) {
+              if (!daily.adapter.prepareModelDispatch || !dailyPreparationToken) throw new AgentStopped('unavailable');
+              const receipt = await budget.wait(() => daily.adapter.prepareModelDispatch!(dailyRequest!, preparedFingerprint!, fingerprint, dailyPreparationToken!));
+              if (receipt.preparedFingerprint !== fingerprint) throw new AgentStopped('unavailable');
+            }
+            preparedFingerprint = fingerprint;
+          }
+          if (budget.durable) await budget.checkDurable();
+          if (this.options.privateSummaryAdmission && !await budget.wait(() => this.options.privateSummaryAdmission!.revalidate()))
+            throw new AgentStopped('unauthorized');
+          await this.checkAuthorizeAndPolicy();
+          if (budget.policyFingerprint === renderedPolicy) break;
+        }
         response = await budget.wait(() => {
           // The final authorization await can cross an expiry boundary too.
           if (includesSummary && Date.now() >= validUntil) {
@@ -292,6 +367,7 @@ export class AgentGatewayModel extends BaseLlm {
           }
           if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
           // Preparation, rejected quota and input checks do not consume the first-call opportunity.
+          if (modelAttempt) budget.beginModelDispatch(modelAttempt);
           this.providerCalled = true;
           // Observations cannot reject, delay or retry an admitted provider call.
           try { void Promise.resolve(this.options.onProviderStart?.()).catch(() => {}); } catch { /* Observation only. */ }
@@ -301,7 +377,7 @@ export class AgentGatewayModel extends BaseLlm {
         if (response.finishReason === 'MAX_TOKENS') throw new AgentStopped('model_output_limit');
         if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
           || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        await this.checkAuthorizeAndPolicy();
         // ADK normally assigns missing call IDs after the gateway returns. Fix those
         // same native IDs before charging this private batch so persisted evidence
         // and its original complete fingerprint cannot disagree after a crash.
@@ -357,7 +433,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (retryDelay !== undefined) {
         await budget.wait(() => delay(retryDelay, undefined, { signal: budget.signal }));
         budget.check();
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        await this.checkAuthorizeAndPolicy();
         continue;
       }
       budget.check();

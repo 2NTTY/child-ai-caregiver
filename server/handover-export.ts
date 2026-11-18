@@ -6,6 +6,7 @@ import type { HandoverClassExportCommand } from '../src/shared/handover-jobs.ts'
 import { HANDOVER_SECTIONS, handoverHeaderSchema, handoverNotificationPreferencesSchema, validHandoverDocumentPins, type HandoverHeader, type HandoverDocumentChoice, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarTransferSchema } from './handover-import.ts';
+import { createStreamingExportSession, type ExportBatchStage } from './cross-domain-snapshot.ts';
 import { canonicalJson } from './online-routing.ts';
 import { datedParent, handoverPeriodMatch, supportsHandoverPeriod } from './handover-period.ts';
 import { datedConcernPages } from './handover-concern-period.ts';
@@ -16,7 +17,7 @@ import { DatedPackageMedia, isAttachmentHead, isAttachmentSupplement, type Packa
 
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
-export interface PackagePageOptions { includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
+export interface PackagePageOptions { includeOriginalChatPosition?: boolean; includeSummaryPeriod?: boolean; documentFilter?: PackageDocumentFilter; documentPreviewPeriod?: HandoverHeader['selection']['period'] }
 export interface HandoverExportSource {
   accountAvatarAvailable?: boolean;
   notificationPreferencesAvailable?: boolean;
@@ -78,19 +79,126 @@ export async function writePersonalHandoverPackage(input: {
   const datedMedia = header.selection.modules.includes('attachments') && (header.selection.period || choices.some(pin => isAttachmentHead(pin.section))) ? new DatedPackageMedia() : null;
   let ordinal = 0, pageCount = 0;
   const path = (kind: 'data' | 'attachments') => `${kind}/${String(++ordinal).padStart(8, '0')}.${kind === 'data' ? 'json' : 'bin'}`;
+function sectionExportStage(section: string): ExportBatchStage {
+  if (section === 'care' || section === 'care_history' || section === 'records' || section.startsWith('memory_') || section === 'instructions' || section === 'summary_history' || section.startsWith('chat')) return 'care_records';
+  if (section === 'tasks' || section === 'task_history' || section.startsWith('visit_preparation') || section.startsWith('document')) return 'tasks';
+  if (section.startsWith('growth')) return 'growth';
+  if (section.startsWith('concern')) return 'concerns';
+  if (section.startsWith('voice') || section.startsWith('photo') || section.startsWith('file')) return 'voice';
+  return 'profile';
+}
+
+function stringField(record: Record<string, unknown> | null, key: string): string | null {
+  const value = record?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function versionTag(record: Record<string, unknown> | null): string {
+  if (!record) return '';
+  for (const key of ['version', 'snapshotVersion', 'entityVersion'] as const) {
+    const value = record[key];
+    if (typeof value === 'number' || typeof value === 'string') return `:v${value}`;
+  }
+  return '';
+}
+
+function exportItemIdentity(section: string, childId: string | undefined, raw: unknown, payloadHash: string): string {
+  const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+  if (!record) return `${section}:scalar:${payloadHash}`;
+  const isHistorySection = section.includes('history') || section.includes('version');
+
+  if (record.format === 'yuyoufang-source-revision:1') {
+    const resource = record.resource && typeof record.resource === 'object' ? record.resource as Record<string, unknown> : null;
+    const evidence = record.evidence && typeof record.evidence === 'object' ? record.evidence as Record<string, unknown> : null;
+    const prov = evidence?.source && typeof evidence.source === 'object' ? evidence.source as Record<string, unknown> : null;
+    const currentProv = prov?.current && typeof prov.current === 'object' ? prov.current as Record<string, unknown> : null;
+    const src = currentProv?.source && typeof currentProv.source === 'object' ? currentProv.source as Record<string, unknown> : null;
+    const resId = stringField(resource, 'id') ?? stringField(src, 'resourceId') ?? childId ?? 'unknown';
+    const resVer = versionTag(resource) || (typeof src?.resourceVersion === 'number' ? `:v${src.resourceVersion}` : '');
+    const pkgId = stringField(currentProv, 'packageId') ?? '';
+    const manifestSha = stringField(currentProv, 'manifestSha256') ?? '';
+    const importedAt = stringField(currentProv, 'importedAt') ?? '';
+    return `${section}:source-rev:${resId}${resVer}:${pkgId}:${manifestSha}:${stringField(src, 'section') ?? ''}:${importedAt}`;
+  }
+
+  const innerGrowth = record.item && typeof record.item === 'object' && !Array.isArray(record.item)
+    ? record.item as Record<string, unknown>
+    : null;
+  const innerTask = record.task && typeof record.task === 'object' && !Array.isArray(record.task)
+    ? record.task as Record<string, unknown>
+    : null;
+  const entity = innerGrowth ?? innerTask ?? record;
+
+  let baseId =
+    stringField(entity, 'id')
+    ?? (stringField(entity, 'documentId') && stringField(entity, 'snapshotId')
+      ? `doc:${stringField(entity, 'documentId')}:snap:${stringField(entity, 'snapshotId')}`
+      : null)
+    ?? (stringField(entity, 'inputId') ? `input:${stringField(entity, 'inputId')}` : null)
+    ?? (stringField(entity, 'topicId') ? `topic:${stringField(entity, 'topicId')}` : null)
+    ?? (stringField(entity, 'photoId') ? `photo:${stringField(entity, 'photoId')}` : null)
+    ?? (stringField(entity, 'voiceId') ? `voice:${stringField(entity, 'voiceId')}` : null)
+    ?? (stringField(entity, 'fileId') ? `file:${stringField(entity, 'fileId')}` : null);
+
+  if (!baseId && entity.target && typeof entity.target === 'object') {
+    const target = entity.target as Record<string, unknown>;
+    const kind = stringField(target, 'kind');
+    if (kind) baseId = `target:${kind}:${stringField(target, 'childId') ?? childId ?? 'self'}`;
+  }
+  if (!baseId && stringField(entity, 'childId')) {
+    baseId = `child:${stringField(entity, 'childId')}`;
+  }
+  if (!baseId && (section === 'manifest' || section === 'account' || section === 'notification_preferences')) {
+    baseId = `singleton:${childId ?? 'owner'}`;
+  }
+  if (!baseId) baseId = `anon:${payloadHash}`;
+
+  const ver = isHistorySection ? versionTag(entity) : '';
+  return `${section}:${baseId}${ver}`;
+}
+
   async function* pages(section: string, childId?: string, documentFilter?: PackageDocumentFilter) {
     let cursor: string | undefined;
     const mediaFilter: PackageMediaFilter | undefined = datedMedia && childId && (isAttachmentHead(section) || isAttachmentSupplement(section))
       ? (kind, id) => datedMedia.permitsBytes(childId, kind, id) : undefined;
+    const exportStage = sectionExportStage(section);
+    const batchSession = createStreamingExportSession({
+      scopeVersion,
+      stage: exportStage,
+      afterId: null,
+      done: false,
+      expectedStages: [exportStage],
+    });
+    let batchDone = false;
     do {
       signal.throwIfAborted(); if (++pageCount > 10000) fail('package_size_exceeded');
       const page = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section, ...(childId ? { childId } : {}), scopeVersion, ...(cursor ? { cursor } : {}) }, mediaFilter,
-        { includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
+        { ...(section === 'chat' && header.purpose === 'backup' ? { includeOriginalChatPosition:true } : {}), includeSummaryPeriod: section === 'summary_history' && Boolean(header.selection.period), documentFilter }), signal);
       if (page.scopeVersion !== scopeVersion || page.section !== section || page.complete !== (page.nextCursor === null)
         || page.nextCursor && page.nextCursor === cursor) fail('export_scope_changed');
-      yield page;
+      const batchItems = page.items.map(raw => {
+        const payloadHash = createHash('sha256').update(canonicalJson(raw)).digest('hex');
+        return {
+          id: exportItemIdentity(section, childId, raw, payloadHash),
+          stage: exportStage,
+          payloadHash,
+        };
+      });
+      const advanced = batchSession.advance({
+        scopeVersion: page.scopeVersion,
+        stage: exportStage,
+        items: batchItems,
+        nextAfterId: page.nextCursor,
+        nextStage: null,
+        hasMore: Boolean(page.nextCursor),
+      });
+      if (advanced.status === 'invalidated') fail('export_scope_changed');
+      const uniqueItems = advanced.acceptedIndices.map(index => page.items[index]);
+      batchDone = advanced.state.done;
+      yield uniqueItems.length === page.items.length ? page : { ...page, items: uniqueItems };
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
+    if (!batchDone) fail('export_scope_changed');
   }
   async function* entries(): AsyncGenerator<HandoverEntryInput> {
     const children: unknown[] = [], wanted = new Set(header.selection.childIds);

@@ -34,6 +34,8 @@ function fixture({shared=true,role='caregiver',modules=['attachments']}={}){
   mocks['../platform/photo-bytes']={photoPreview:()=>({uri:'synthetic',dispose(){}}),photoSha256(){}};
   mocks['../components/photos/PhotosView']={PhotosView:'PhotosView'};
   mocks['../components/shared-inputs/SourcesView']={SourcesView:'SourcesView'};
+  // This fixture mounts the read/delete hooks, not the native upload UI.
+  mocks['./FamilyLibraryUpload']={FamilyLibraryUpload:()=>assert.fail('Upload UI must not run in the photo hook fixture')};
   mocks['../components/ui']={AppButton:'Button',SectionCard:'SectionCard',SectionHeader:'SectionHeader'};
   mocks['./useAttachmentReview']={useAttachmentReview:()=>({})};
   mocks['./usePhotoInputSources']={};

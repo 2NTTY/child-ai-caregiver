@@ -92,6 +92,47 @@ async function fixture() {
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
 
+test('shared concern actions and due follow-ups use the original timeline and the live grant', async () => {
+  const f = await fixture(), childId = f.child.child.id;
+  const space = await f.sharing.share('parent', { spaceId:f.space.id, childId, modules:['concerns'],
+    expectedVersion:f.space.version, operationId:randomUUID() });
+  const store = createFirestoreConcernStore(f.options), feature = store.forSharedSpace(space.id, { sharedActions:true });
+  const page = await feature.list('carer', childId);
+  assert.equal(page.canManage, true);
+  assert.equal((await feature.list('viewer', childId)).canManage, false);
+  const writer = store.forSharedSpace(space.id, { sharedActions:true, authorityVersion:page.authorityVersion });
+  const now = Date.now(), at = new Date(now + 60_000).toISOString();
+  const values = { title:'交接後觀察', reason:'測試', observation:'今日記錄', observedAt:new Date(now).toISOString(),
+    links:{ recordId:null, taskId:null, attentionId:null }, followUpAt:at };
+  const op = randomUUID(), saved = await writer.create('carer', childId, values, op);
+  assert.equal(saved.events[0].actorUserId, 'carer');
+  assert.deepEqual(await writer.create('carer', childId, values, op), saved);
+  await assert.rejects(writer.create('viewer', childId, values, randomUUID()), code('read_only'));
+  await assert.rejects(writer.create('carer', childId, { ...values, links:{...values.links, recordId:randomUUID()} }, randomUUID()), code('module_not_shared'));
+  const second = await writer.create('carer', childId, values, randomUUID());
+  const data = new FirestoreDomainData(f.options);
+  const jobs = await f.authority.runTransaction('parent', childId, async b => {
+    const rows = await b.transaction.get(data.collection('background_work').where('childTag','==',data.tags(b.scope).childTag));
+    return rows.docs.map(row => data.open('background-work', row.get('id'), b.scope, firestoreBackgroundWorkSchema, row));
+  });
+  const scheduled = jobs.filter(job => job.kind === 'shared-concern');
+  assert.equal(scheduled.length, 2);
+  assert.equal(jobs.some(job => job.kind === 'concern'), false);
+  const run = (id:string) => store.processSharedFollowup(scheduled.find(job => job.resourceId === id)!, async uid => uid === 'carer', now + 61_000);
+  assert.equal((await run(saved.id)).state, 'completed');
+  await run(saved.id);
+  const completed = await feature.get('viewer', childId, saved.id);
+  assert.equal(completed!.followUp!.state, 'completed');
+  assert.equal(completed!.events.length, saved.events.length + 1);
+  assert.equal(completed!.events.at(-1)!.runId, undefined);
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(entry => /_(concern_events|concern_operations|background_work)\//u.test(entry.path))) codec.decode(row);
+  assert.equal(JSON.stringify(completed).includes('changedViaShare'), false);
+  await f.sharing.share('parent', { spaceId:space.id, childId, modules:['care'], expectedVersion:space.version, operationId:randomUUID() });
+  assert.equal((await run(second.id)).state, 'stopped');
+  assert.equal((await store.get('parent',childId,second.id))!.events.length, second.events.length);
+});
+
 test('shared growth and concerns read original resources without widening live input or private run access', async () => {
   const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
   const care = createFirestoreCareStore(f.options), chat = createFirestoreChatStore(f.options);
@@ -170,6 +211,14 @@ test('shared growth and concerns read original resources without widening live i
   space = await f.sharing.share('parent', { spaceId:space.id, childId, modules:['concerns'],
     expectedVersion:space.version, operationId:randomUUID() });
   const restricted = await concernClient.getPage(childId, signal, actor);
+  const endpoint = origin + '/api/children/' + childId + '/concerns?spaceId=' + space.id;
+  const headers = { 'x-expected-user-id':actor, 'x-concern-features':'shared-actions', 'Content-Type':'application/json' };
+  const capable = await fetcher(endpoint + '&limit=1', { headers });
+  assert.equal(capable.status, 200);
+  assert.equal((await capable.json()).page.canManage, true);
+  const body = JSON.stringify({ opId:randomUUID(), confirmShared:true, values:{...values,links:{ recordId:null,taskId:null,attentionId:null }} });
+  assert.equal((await fetcher(endpoint, { method:'POST', headers:{...headers,'x-concern-authority':concernPage.authorityVersion}, body })).status, 409);
+  assert.equal((await fetcher(endpoint, { method:'POST', headers:{...headers,'x-concern-authority':restricted.authorityVersion}, body })).status, 200);
   assert.deepEqual(restricted.items[0].attentionIds, []);
   assert.equal(restricted.items[0].events[0].attentionId, undefined);
   await assert.rejects(growthClient.getPage(childId, signal, actor), code('module_not_shared'));
@@ -1038,4 +1087,101 @@ test('shared attachment reads preserve objects, hide private chat links and stop
   await assert.rejects(sharedFiles.content('viewer',childId,file2.id));afterRead=undefined;
   await assert.rejects(sharedFiles.list('viewer',childId,{cursor:page.nextCursor}));
   await assert.rejects(transcripts.forSharedSpace(selection).get('viewer',childId,voice.id));
+});
+
+test('a caregiver saves a family library original without chat and a revoked upload stays unpublished', async () => {
+  const f = await fixture(), childId = f.child.child.id, spaceId = f.space.id;
+  const changeModules = async (modules: ('attachments' | 'care')[]) => {
+    const { version } = await f.sharing.get('parent', spaceId);
+    await f.sharing.share('parent', { spaceId, childId, modules, expectedVersion: version, operationId: randomUUID() });
+  };
+  await changeModules(['attachments']);
+  const bytes = Buffer.from('a family original'), sha256 = createHash('sha256').update(bytes).digest('hex');
+  const address = (_scope: unknown, id: string) => 'chat-file/v1/' + 'a'.repeat(64) + '/' + id;
+  let writes = 0, afterWrite: (() => Promise<void>) | undefined;
+  const files = createFirestoreChatFilesStore({ ...f.options, objects: {
+    address, async write(scope, id) {
+      ++writes;
+      assert.equal(scope.ownerUserId, 'parent');
+      await afterWrite?.();
+      return { objectName: address(scope, id), bytes: bytes.length, sha256, cipherSha256: 'c'.repeat(64), mimeType: 'text/plain', generation: '1' };
+    },
+    async read(_scope, _id, descriptor) { return { buffer: bytes, base64: bytes.toString('base64'), descriptor }; },
+    async inspect() { return null; }, async remove() { throw Error('unexpected removal'); }
+  }, journal: { async writeOnce() { throw Error('unexpected erase'); }, async read() { throw Error('unexpected journal read'); } } });
+  const select = async (actor: string) => files.forSharedSpace({ spaceId, expectedBasis: (await f.sharing.childView(actor, spaceId, childId)).basis });
+  const writer = await select('carer'), reader = await select('viewer');
+  const basis = (await f.sharing.childView('carer', spaceId, childId)).basis;
+  const selection = { spaceId, expectedBasis: basis };
+  const journal = { async writeOnce() { throw Error('unexpected deletion'); }, async read() { throw Error('unexpected journal read'); } };
+  const png = Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]), Buffer.alloc(4), Buffer.from('IHDR'), Buffer.alloc(8)]);
+  const hash = (value: Uint8Array) => createHash('sha256').update(value).digest('hex');
+  let photoObject: import('../server/firebase-photo-objects.ts').FirebasePhotoObjectDescriptor | null = null;
+  let photoWrites = 0;
+  const photos = createFirestorePhotoStore({ ...f.options, journal, objects: {
+    async write(scope, id, input) {
+      const tag = hash(Buffer.from(JSON.stringify(['yuban-photo-object', 1, f.options.projectId, f.options.namespace, {
+        ownerUserId: scope.ownerUserId, workspaceId: scope.workspaceId, childId: scope.childId, storageEpoch: scope.storageEpoch,
+      }])));
+      ++photoWrites;
+      photoObject = { objectName: 'photos/v1/' + tag + '/' + id, generation: '1', cipherSha256: 'c'.repeat(64),
+        mimeType: input.mimeType, bytes: png.length, sha256: hash(png) };
+      throw Error('Simulated loss of the Storage write response');
+    },
+    async inspect() { return photoObject; },
+    async read() { throw Error('unexpected read'); }, async recover() { throw Error('unexpected recovery'); },
+  } });
+  const voiceAddress = (_scope: unknown, id: string) => 'voice/v1/' + 'a'.repeat(64) + '/' + id;
+  const voices = createFirestoreVoiceStore({ ...f.options, journal, objects: {
+    address: voiceAddress, async write(scope, id) {
+      return { objectName: voiceAddress(scope, id), bytes: bytes.length, sha256, cipherSha256: 'c'.repeat(64), mimeType: 'audio/wav', durationMs: 1000, generation: '1' };
+    },
+    async inspect() { return null; }, async read() { throw Error('unexpected read'); }, async remove() { throw Error('unexpected removal'); },
+  } });
+  let actor = 'carer';
+  const origin = 'https://library.example.test';
+  const auth = { async handler() { return new Response(null, { status: 404 }); },
+    async getSession(options: { returnHeaders?: boolean }) {
+      const session = { user: { id: actor, email: actor+'@example.test' } };
+      return options.returnHeaders ? { response: session, headers: new Headers() } : session;
+    } } as unknown as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority: f.authority, auth, publicOrigin: origin, mailConfigured: false,
+    files, photos, voice: { ...voices, transcripts: createFirestoreVoiceTranscripts({ ...f.options, voices }) } });
+  const fetcher: typeof fetch = async (url, init) => {
+    const headers = new Headers(init?.headers); headers.set('origin', origin);
+    return handler(new Request(url, { ...init, headers }));
+  };
+  const signal = new AbortController().signal, client = createChatFileApi(fetcher, origin, undefined, selection);
+  const input = { opId: randomUUID(), fileName: 'shared.txt', mimeType: 'text/plain', bytes: bytes.length, sha256 };
+  await assert.rejects(reader.reserve('viewer', childId, input), code('read_only'));
+  const reserved = await client.reserve(childId, input, signal, actor);
+  assert.deepEqual((await reader.list('viewer', childId)).items, []);
+  const saved = await client.upload(reserved, bytes.toString('base64'), signal, actor);
+  assert.equal(saved.messageId, null);
+  assert.equal((await client.reserve(childId, input, signal, actor)).id, reserved.id);
+  assert.equal((await client.resolve(childId, reserved.id, signal, actor)).state, 'ready');
+  actor = 'viewer';
+  const readClient = createChatFileApi(fetcher, origin, async value => hash(value), { spaceId });
+  const listed = await readClient.list(childId, {}, signal, actor);
+  assert.deepEqual(listed.items.map(item => item.id), [saved.id]);
+  assert.deepEqual(Buffer.from((await readClient.content(listed.items[0]!, signal, actor)).bytes), bytes);
+  assert.equal(writes, 1);
+  actor = 'carer';
+  const photoApi = createPhotoApi(origin, fetcher, undefined, selection), photoId = randomUUID();
+  const photoMeta = { source: 'library', fileName: 'original.png', mimeType: 'image/png' as const, bytes: png.length, sha256: hash(png) };
+  const photo = await photoApi.reserveLibrary(childId, photoId, photoMeta, signal, actor);
+  await assert.rejects(photoApi.upload(photo, png.toString('base64'), signal, actor), (e: unknown) => e instanceof PhotoApiError && e.status === 503);
+  const recovered = await photoApi.resolveLibrary(childId, photoId, signal, actor);
+  assert.equal(recovered.id, photoId); assert.equal(recovered.state, 'ready'); assert.equal(photoWrites, 1);
+  const voiceApi = createVoiceApi(fetcher, origin, undefined, selection);
+  const clip = await voiceApi.reserve(childId, { ...input, opId: randomUUID(), mimeType: 'audio/wav', fileName: 'original.wav' }, signal, actor);
+  assert.equal((await voiceApi.upload(clip, bytes.toString('base64'), signal, actor)).state, 'ready');
+  assert.equal((await voices.forSharedSpace({ spaceId }).list('viewer', childId)).items[0]?.id, clip.id);
+  const next = await writer.reserve('carer', childId, { ...input, opId: randomUUID() });
+  afterWrite = () => changeModules(['care']);
+  await assert.rejects(writer.upload('carer', childId, next.id, next.version, bytes.toString('base64')));
+  await changeModules(['attachments']);
+  const renewed = await select('carer');
+  await assert.rejects(renewed.reconcile('carer', childId, next.id));
+  assert.deepEqual((await renewed.list('carer', childId)).items.map(item => item.id), [saved.id]);
 });

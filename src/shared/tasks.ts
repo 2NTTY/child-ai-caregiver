@@ -52,6 +52,8 @@ export interface TaskWorkState {
 }
 export interface TaskPage {
   items: CareTask[]; eligibleAssignees: TaskAssignee[]; nextAfterId: string | null;
+  /** The existing paginated members endpoint supplies other assignable teachers. */
+  classAssigneeSpaceId?: string;
   reminders?: TaskReminder[]; work?: TaskWorkState[]; workerEnabled?: boolean;
 }
 export interface TaskHistory { revisions: TaskRevision[]; nextBeforeVersion: number | null }

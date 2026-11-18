@@ -1,6 +1,15 @@
 import { createHash } from 'node:crypto';
 import type { CareCursor } from '../src/shared/care.ts';
 import type { DocumentRequest, DocumentSource, DocumentSnapshot, DocumentSection, ReportCoverage } from '../src/shared/family-documents.ts';
+import {
+  accumulateEncryptedStatisticsFailClosed,
+  createCrossDomainWatermark,
+  evaluateCrossDomainSnapshot,
+  type CrossDomainSnapshotEntry,
+  type DecryptedMetric,
+  type SealedStatisticEnvelope,
+  type SnapshotDomain,
+} from './cross-domain-snapshot.ts';
 import { FamilyError } from './family-access.ts';
 import { buildFamilyDocumentSnapshot, hkDay, labels, type FamilyDocumentSources } from './family-document-snapshot.ts';
 
@@ -63,24 +72,104 @@ export function newReportAccumulator(request: DocumentRequest, sourceRevision: s
     buckets: reportBuckets(effective.period),
     counts: { recordsInPeriod: 0, recordsUnknownTime: 0, tasksInPeriod: 0, observationsInPeriod: 0, confirmedFacts: 0, recordKinds: {} } };
 }
+function toSnapshotDomain(kind: DocumentSource["kind"]): SnapshotDomain {
+  if (kind === "task") return "tasks";
+  if (kind === "concern") return "concerns";
+  return "care_records";
+}
+
 /** Counts cover every scanned page; only the selected wording remains in the encrypted accumulator. */
 export function accumulateReportInputs(state: ReportAccumulator, inputs: ReportInput[], scanned = inputs.length): void {
-  state.processedSources += scanned;
+  if (!Number.isSafeInteger(scanned) || scanned < 0) throw new FamilyError(409, "source_changed");
+  const nextScanned = state.processedSources + scanned;
+  if (!Number.isSafeInteger(nextScanned)) throw new FamilyError(409, "source_changed");
+
+  const envelopes: SealedStatisticEnvelope[] = [];
+  const metricsByCipher = new Map<string, DecryptedMetric>();
+  const seenBatchInputs = new Set<string>();
+  const bucketIncrements: Array<{ day: string; field: "records" | "tasks" | "observations" }> = [];
+  const nextValidUntilCandidates: number[] = [];
+  const candidateSelected: ReportInput[] = [];
+
   for (const input of inputs) {
     const { source } = input, day = source.at === null ? null : hkDay(source.at);
     const inPeriod = day !== null && day >= state.request.period.from && day <= state.request.period.to;
-    const bucket = inPeriod ? state.buckets?.find(value => day! >= value.from && day! <= value.to) : undefined;
-    if (input.validUntil && (state.validUntil === null || Date.parse(input.validUntil) < Date.parse(state.validUntil)))
-      state.validUntil = new Date(input.validUntil).toISOString();
+    if (input.validUntil) nextValidUntilCandidates.push(Date.parse(input.validUntil));
+    const batchKey = `${source.kind}:${source.id}:${inPeriod ? "in" : source.at === null ? "unknown" : "out"}`;
+    const isDuplicateInBatch = seenBatchInputs.has(batchKey);
+    seenBatchInputs.add(batchKey);
+
+    const pushMetric = (metricKind: string, value: number) => {
+      const payload = JSON.stringify({ kind: metricKind, value, sourceKind: source.kind, id: source.id });
+      const ciphertextSha256 = createHash("sha256").update(payload, "utf8").digest("hex");
+      metricsByCipher.set(payload, { kind: metricKind, value });
+      envelopes.push({
+        recordId: `${source.kind}:${source.id}:${metricKind}`,
+        domain: toSnapshotDomain(source.kind),
+        ciphertext: payload,
+        ciphertextSha256,
+      });
+    };
+
     if (source.kind === "record") {
-      if (source.at === null) state.counts.recordsUnknownTime++;
-      else if (inPeriod) { state.counts.recordsInPeriod++; if (bucket) bucket.records++;
-        const kind = input.recordKind ?? "note"; state.counts.recordKinds[kind] = (state.counts.recordKinds[kind] ?? 0) + 1; }
-    } else if (source.kind === "task" && inPeriod) { state.counts.tasksInPeriod++; if (bucket) bucket.tasks++; }
-    else if (source.kind === "concern" && source.at !== null && inPeriod) { state.counts.observationsInPeriod++; if (bucket) bucket.observations++; }
-    else if (source.kind === "fact") state.counts.confirmedFacts++;
-    if (inPeriod || source.at === null && (source.kind !== "concern" || input.activeConcern)) state.selected.push(input);
+      if (source.at === null) pushMetric("recordsUnknownTime", 1);
+      else if (inPeriod) {
+        pushMetric("recordsInPeriod", 1);
+        const kind = input.recordKind ?? "note";
+        pushMetric(`kind:${kind}`, 1);
+        if (!isDuplicateInBatch) bucketIncrements.push({ day: day!, field: "records" });
+      }
+    } else if (source.kind === "task" && inPeriod) {
+      pushMetric("tasksInPeriod", 1);
+      if (!isDuplicateInBatch) bucketIncrements.push({ day: day!, field: "tasks" });
+    } else if (source.kind === "concern" && source.at !== null && inPeriod) {
+      pushMetric("observationsInPeriod", 1);
+      if (!isDuplicateInBatch) bucketIncrements.push({ day: day!, field: "observations" });
+    } else if (source.kind === "fact") {
+      pushMetric("confirmedFacts", 1);
+    }
+
+    if (!isDuplicateInBatch && (inPeriod || source.at === null && (source.kind !== "concern" || input.activeConcern))) candidateSelected.push(input);
   }
+
+  const verifiedBatch = accumulateEncryptedStatisticsFailClosed(
+    envelopes,
+    envelope => (envelope.ciphertext ? metricsByCipher.get(envelope.ciphertext) ?? null : null),
+  );
+  if (verifiedBatch.status !== "complete") throw new FamilyError(409, "source_changed");
+
+  const addChecked = (current: number, delta: number | undefined): number => {
+    const next = current + (delta ?? 0);
+    if (!Number.isSafeInteger(next)) throw new FamilyError(409, "source_changed");
+    return next;
+  };
+  const nextCounts: ReportCoverage["counts"] = {
+    recordsInPeriod: addChecked(state.counts.recordsInPeriod, verifiedBatch.totalsByKind.recordsInPeriod),
+    recordsUnknownTime: addChecked(state.counts.recordsUnknownTime, verifiedBatch.totalsByKind.recordsUnknownTime),
+    tasksInPeriod: addChecked(state.counts.tasksInPeriod, verifiedBatch.totalsByKind.tasksInPeriod),
+    observationsInPeriod: addChecked(state.counts.observationsInPeriod, verifiedBatch.totalsByKind.observationsInPeriod),
+    confirmedFacts: addChecked(state.counts.confirmedFacts, verifiedBatch.totalsByKind.confirmedFacts),
+    recordKinds: { ...state.counts.recordKinds },
+  };
+  for (const [key, delta] of Object.entries(verifiedBatch.totalsByKind)) {
+    if (!key.startsWith("kind:")) continue;
+    const kind = key.slice(5);
+    nextCounts.recordKinds[kind] = addChecked(nextCounts.recordKinds[kind] ?? 0, delta);
+  }
+
+  state.processedSources = nextScanned;
+  state.counts = nextCounts;
+  for (const candidateMs of nextValidUntilCandidates) {
+    if (Number.isFinite(candidateMs) && (state.validUntil === null || candidateMs < Date.parse(state.validUntil))) {
+      state.validUntil = new Date(candidateMs).toISOString();
+    }
+  }
+  for (const inc of bucketIncrements) {
+    const bucket = state.buckets?.find(value => inc.day >= value.from && inc.day <= value.to);
+    if (bucket) bucket[inc.field]++;
+  }
+  state.selected.push(...candidateSelected);
+
   const dated = state.selected.filter(input => input.source.at !== null).sort((a, b) => Date.parse(b.source.at!) - Date.parse(a.source.at!) || a.source.id.localeCompare(b.source.id)).slice(0, 80);
   const timeless = state.selected.filter(input => input.source.at === null && input.source.kind !== "record").sort((a, b) => a.source.id.localeCompare(b.source.id)).slice(0, 40);
   const unknown = state.selected.filter(input => input.source.at === null && input.source.kind === "record").slice(0, 20);
@@ -90,6 +179,29 @@ export function accumulateReportInputs(state: ReportAccumulator, inputs: ReportI
 }
 export function completeReportSnapshot(state: ReportAccumulator, version: number, previous: DocumentSnapshot | null, referenceSources?: FamilyDocumentSources): DocumentSnapshot {
   if (state.stage !== "done" || !state.profile) throw new FamilyError(409, "report_incomplete");
+  if (referenceSources?.sourceRevision) {
+    const evalEntries: CrossDomainSnapshotEntry[] = state.selected.map(input => {
+      const parsedAt = input.source.at === null ? 0 : Date.parse(input.source.at);
+      const ts = Number.isFinite(parsedAt) ? Math.max(0, parsedAt) : Number.NaN;
+      return {
+        id: input.source.id,
+        domain: toSnapshotDomain(input.source.kind),
+        version: input.source.version,
+        createdAtMs: ts,
+        updatedAtMs: ts,
+        summary: input.source.label,
+      };
+    });
+    const maxTs = evalEntries.reduce((max, item) => (Number.isFinite(item.updatedAtMs) && item.updatedAtMs > max ? item.updatedAtMs : max), 0);
+    const watermark = createCrossDomainWatermark({
+      childId: state.profile.childId,
+      authorityVersion: state.sourceRevision,
+      snapshotAtMs: Math.max(Date.now(), maxTs),
+      maxPerDomain: Math.max(100, evalEntries.length),
+    });
+    const verification = evaluateCrossDomainSnapshot(watermark, referenceSources.sourceRevision, evalEntries);
+    if (verification.status !== "consistent") throw new FamilyError(409, "source_changed");
+  }
   const loaded: FamilyDocumentSources = { profile: state.profile, sourceRevision: state.sourceRevision, limited: false,
     entries: state.selected.map(input => input.source), domains: new Map(state.selected.map(input => [input.source.id, input.domain])), questions: new Set(),
     activeConcernIds: new Set(state.selected.filter(input => input.activeConcern).map(input => input.source.id)),
