@@ -24,7 +24,8 @@ export function privateInstructionErasureOperationId(scope: ContentOwner, id: st
   return contentErasureId(['private-instruction-content-erasure:1', scope.ownerUserId, scope.workspaceId, scope.childId, id]);
 }
 const contentIntent = z.discriminatedUnion('kind', [
-  z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict(),
+  z.object({ kind: z.enum(['care', 'profile', 'topic']), throughVersion: z.number().int().positive() }).strict(),
+  z.object({ kind: z.literal('fact'), throughVersion: z.number().int().positive(), sourceMessageId: z.uuid().optional() }).strict(),
   z.object({ kind: z.literal('private_source'), throughVersion: z.number().int().positive(), sourceOperationId: z.uuid() }).strict(),
   z.object({ kind: z.literal('private_instruction'), throughVersion: z.number().int().positive(), sourceOperationId: z.uuid() }).strict(),
 ]);

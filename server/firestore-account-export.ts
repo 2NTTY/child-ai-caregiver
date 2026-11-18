@@ -232,9 +232,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             domainReject('export_scope_changed');
           if (section === 'children') {
             const child = await binding.readChild(context.scope.childId); if (child) items.push(child);
-          } else if (section === 'chat' && packageOptions?.includeOriginalChatPosition && !classRequest) {
-            items.push({ ...firestoreChatMessageSchema.parse(value), originalPosition:{ workspaceId:binding.scope.workspaceId,
-              sortKey:domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'export_scope_changed', 409) } });
+          } else if (section === 'chat') {
+            const message = firestoreChatMessageSchema.parse(value);
+            items.push(packageOptions?.includeOriginalChatPosition && !classRequest ? { ...message, originalPosition:{ workspaceId:binding.scope.workspaceId,
+              sortKey:domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'export_scope_changed', 409) } } : message);
           } else if (section === 'agent_work') {
             const work = await binding.readWork(context.id); if (!work) domainReject('export_scope_changed'); items.push(work);
           } else if (section === 'document_content' || section === 'document_versions') {

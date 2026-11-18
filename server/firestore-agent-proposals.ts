@@ -70,9 +70,9 @@ export function createFirestoreAgentProposals(options: {
     if (rows.size > 8) domainReject('agent_proposal_limit');
     return rows.docs.map(row => decode(b, domainParse(uuid, row.get('proposalId'), 'proposal_binding', 500), row));
   }
-  async function source(b: Binding, run: FirestoreAgentRun, messageId: string) {
+  async function source(b: Binding, run: FirestoreAgentRun, messageId: string, purpose?: 'memory') {
     if (!run.sourceMessageId) domainReject('source_changed');
-    const message = await chat.readMessage(b, b.scope.childId, messageId), root = await chat.readMessage(b, b.scope.childId, run.sourceMessageId);
+    const message = await chat.readMessage(b, b.scope.childId, messageId, purpose), root = await chat.readMessage(b, b.scope.childId, run.sourceMessageId);
     if (!message || message.role !== 'user' || message.authorUserId !== b.scope.ownerUserId || !root) domainReject('source_changed');
     const [itemRow, rootRow] = await Promise.all([
       b.transaction.get(data.ref('chat_messages', 'chat-message', messageId)),
@@ -95,14 +95,14 @@ export function createFirestoreAgentProposals(options: {
       return { label: task.title + ' · 本人', visibility: 'family', sourceBasis: null };
     }
     if (value.kind === 'memory_fact') {
-      await source(b, run, value.sourceMessageId ?? run.sourceMessageId!);
+      await source(b, run, value.sourceMessageId ?? run.sourceMessageId!, 'memory');
       if (await memory.hasConfirmedFactKey?.(b, value.intendedVisibility, value.key)) domainReject('fact_key_conflict');
       return { label: null, visibility: value.intendedVisibility, sourceBasis: null };
     }
     if (value.kind === 'memory_fact_revise' || value.kind === 'memory_fact_deactivate') {
       const fact = await memory.readFact(b, value.factId);
       if (!fact || fact.version !== value.expectedVersion || fact.status === 'inactive') domainReject('version_conflict');
-      if (value.kind === 'memory_fact_revise') await source(b, run, value.sourceMessageId);
+      if (value.kind === 'memory_fact_revise') await source(b, run, value.sourceMessageId, 'memory');
       return { label: fact.key, visibility: fact.visibility, sourceBasis: null };
     }
     const extension = options.extensions?.find(item => item.supports(value));
@@ -177,14 +177,14 @@ export function createFirestoreAgentProposals(options: {
         if (run.trigger.kind !== 'interactive') domainReject('confirmation_requires_interactive_scope', 400);
         let proposalValue = value;
         if (value.kind === 'memory_fact') {
-          const message = await source(b, run, value.sourceMessageId ?? run.sourceMessageId!);
+          const message = await source(b, run, value.sourceMessageId ?? run.sourceMessageId!, 'memory');
           const intent = message.id === run.sourceMessageId ? message : await source(b, run, run.sourceMessageId!);
           requireMemoryFactSource(intent.text, value.content);
           requireMemoryFactSource(message.text, value.content);
           proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content),
             validUntil: sanitizeDurableMemoryFactValidUntil(value.content, value.validUntil, now(), message.text) };
         } else if (value.kind === 'memory_fact_revise') {
-          const message = await source(b, run, value.sourceMessageId);
+          const message = await source(b, run, value.sourceMessageId, 'memory');
           proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content) };
         }
         const previous = await inRun(b, runId), fingerprint = firestoreDomainHash(proposalValue);

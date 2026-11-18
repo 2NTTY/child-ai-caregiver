@@ -28,6 +28,7 @@ export function privateSummaryInventoryGenesis(scope: WorkRecoveryScope, authori
     authority.authorizationVersion.parse(authorizationVersion), z.uuid().parse(workerGeneration), uint.min(1).parse(inventoryVersion)]);
 }
 export const privateSummaryScanSchema = z.object({ format: z.literal('private-summary-scan/v1'), id: digest, ...authority,
+  retiredChatPrefix: z.object({ after: sortKey.nullable(), through: sortKey, changeSeq: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u) }).strict().optional(),
   repairAfterSortKey: sortKey.nullable(), repairAfterId: z.uuid().nullable(), cycleUpperSortKey: sortKey.nullable(),
   repairWorkAfterId: digest.nullable(), prefer: z.enum(['fresh', 'repair']), cycle: z.object({ number: uint,
     state: z.enum(['idle', 'scanning', 'complete']), sourceBasis: digest.nullable(), sourceExhausted: z.boolean(),
