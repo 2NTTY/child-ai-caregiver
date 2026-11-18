@@ -30,7 +30,7 @@ export const handoverImportResolutionSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('replace_current'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
   z.object({ mode: z.literal('restore_deleted'), targetId: uuid, expectedVersion: resourceVersion }).strict(),
 ]);
-export const originalBackupModuleSchema = z.enum(['care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns', 'memory', 'growth']);
+export const originalBackupModuleSchema = z.enum(['chat', 'care', 'profile', 'tasks', 'sources', 'documents', 'attachments', 'concerns', 'memory', 'growth']);
 export const originalGrowthSectionSchema = z.enum(['growth_attention', 'growth_topics']);
 export const originalGrowthBlockReasonSchema = z.enum(['original_unavailable', 'growth_terminal_state', 'growth_topic_disabled',
   'growth_link_changed', 'growth_source_changed', 'growth_snooze_changed']);
@@ -83,6 +83,8 @@ export const handoverImportCommandSchema = z.object({ opId: uuid, uploadId: uuid
       || row.section === 'child_avatar' && row.resourceId === row.sourceChildId && row.resolution.mode !== 'preserve' && row.resolution.targetId === row.sourceChildId
       || isOriginalAttachment(row.section) && row.resolution.mode !== 'preserve' && row.resolution.expectedVersion > 0
         && (row.resolution.targetId === row.resourceId || row.useRestoredTarget === true))
+    && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'chat' || row.section === 'chat'
+      && row.resolution.mode === 'replace_current' && row.resolution.targetId === row.resourceId && [0,1].includes(row.resolution.expectedVersion))
     && value.resolutions.every(row => handoverImportModuleOf(row.section) !== 'growth'
       || row.resolution.mode === 'replace_current' && row.resolution.targetId === row.resourceId && row.resolution.expectedVersion > 0)
     && value.targets.every(row =>

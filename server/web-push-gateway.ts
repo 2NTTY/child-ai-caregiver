@@ -120,12 +120,12 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
           if (!await bounded(stillAuthorized())) return stopped("revoked");
         } catch { return stopped(signal.aborted ? "worker_interrupted" : "request_invalid"); }
         if (signal.aborted) return stopped("worker_interrupted");
-        const content = { ...webPushContent[payload.kind === "chat" ? "chat" : payload.kind === "care" ? "care" : "test"] };
+        const content = { ...webPushContent[payload.kind === "chat" ? "chat" : payload.kind === "care" || payload.kind === "class_task" ? "care" : "test"] };
         let wireContent = content;
         let details: ReturnType<typeof webPush.generateRequestDetails>;
         try {
           // The callback reads the authorization refresh above. Previews never enter receipt metadata.
-          if (payload.v === 2 && getPreviewText) {
+          if (payload.v === 2 && payload.kind === "chat" && getPreviewText) {
             const text = getPreviewText(), preview = typeof text === "string" ? previewExcerpt(text) : "";
             if (preview) wireContent = { ...content, contentVersion: "web-push-chat-preview-v1", body: preview };
           }

@@ -6,11 +6,12 @@ import { harness } from './scope-transition-harness.mjs';
 test('native settings only writes explicit preview consent for the active bound Android handset', async () => {
   const bindingId = 'phone', calls = [];
   let current = true, generation = 1, finish;
-  let preference = { bindingId, chatNotificationsEnabled: false };
+  let preference = { bindingId, chatNotificationsEnabled: false, classTaskNotificationsEnabled: false };
   const status = { currentBindingId: bindingId, available: true, bindings: [{ id: bindingId, status: 'active', version: 1 }], deliveries: [] };
   const api = { status: async () => status, resetOnline() {}, hasPendingOnline: () => false };
   const presence = {
     read: async () => preference,
+    async setClassTasksEnabled(enabled, id) { calls.push(['class', enabled, id]); preference = { ...preference, classTaskNotificationsEnabled: enabled }; return preference; },
     setEnabled(enabled, id, preview) {
       calls.push(['chat', enabled, id, preview]);
       return new Promise(resolve => { finish = () => { preference = { bindingId: id, chatNotificationsEnabled: enabled, chatPreviewEnabled: preview ?? preference.chatPreviewEnabled }; resolve(preference); }; });
@@ -35,6 +36,9 @@ test('native settings only writes explicit preview consent for the active bound 
   render(); result.actions.refresh(); await settle();
   assert.equal(result.model.chatPreviewEnabled, false, 'An older response without preview consent stays generic');
   result.actions.setChatPreviewEnabled(true); assert.deepEqual(calls, [], 'Chat must be enabled first');
+  result.actions.setClassTasksEnabled(true); await settle();
+  assert.deepEqual(calls.splice(0), [['class',true,bindingId]]);
+  assert.equal(result.model.classTaskNotificationsEnabled, true); assert.equal(result.model.chatNotificationsEnabled, false);
   result.actions.setChatNotificationsEnabled(true); result.actions.setChatNotificationsEnabled(true);
   assert.deepEqual(calls, [['chat', true, bindingId, true]], 'One explicit enable includes preview and ignores a same-turn double tap');
   finish(); await settle(); assert.equal(result.model.chatPreviewEnabled, true);

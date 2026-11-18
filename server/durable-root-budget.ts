@@ -28,7 +28,7 @@ export type BudgetAttempt = { key: string; fingerprint: string } & (
 );
 /** A reference is not proof that a business effect committed or can still be read. */
 export type BudgetSettlement = { status: 'known'; reference: string } | { status: 'unknown' };
-export type BudgetAttemptSnapshot = BudgetAttempt & { outcome: { status: 'reserved' } | BudgetSettlement };
+export type BudgetAttemptSnapshot = BudgetAttempt & { preparedFingerprint?: string; outcome: { status: 'reserved' } | BudgetSettlement };
 export interface RootBudgetSnapshot {
   generation: number;
   deadlineAtMs: number;
@@ -40,6 +40,8 @@ export interface RootBudgetSnapshot {
 export interface BudgetAdmission {
   /** Only a newly committed reservation returns execute. A duplicate is lookup-only. */
   decision: 'execute' | 'lookup';
+  /** Returned only to the original execute owner, never exposed by read/lookup. */
+  preparationToken?: string;
   attempt: BudgetAttemptSnapshot;
   snapshot: RootBudgetSnapshot;
 }
@@ -51,6 +53,10 @@ export interface DurableRootBudget {
   open(context: RootBudgetContext): Promise<RootBudgetSnapshot>;
   read(context: RootBudgetContext): Promise<RootBudgetSnapshot>;
   reserve(context: RootBudgetContext, attempt: BudgetAttempt): Promise<BudgetAdmission>;
+  /** Bind current server-rendered guidance before dispatch; never changes the original request or counters.
+   * Only the holder of this process's newly returned execute decision may call this.
+   * This does not grant execution, takeover, refund, or permission to repeat a provider request. */
+  prepareModelDispatch?(context: RootBudgetContext, attempt: BudgetAttempt, expectedFingerprint: string, nextFingerprint: string, preparationToken: string): Promise<RootBudgetSnapshot>;
   settle(context: RootBudgetContext, attempt: BudgetAttempt, result: BudgetSettlement): Promise<RootBudgetSnapshot>;
   stop(context: RootBudgetContext): Promise<RootBudgetSnapshot>;
 }

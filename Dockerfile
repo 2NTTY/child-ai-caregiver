@@ -100,5 +100,10 @@ FROM server-runtime AS server
 
 # Compatibility target for the existing Firestore VM deployment.
 FROM server-runtime AS firebase-server
-ENV STORAGE_BACKEND=firestore
+USER root
+RUN install -d -m 0700 -o node -g node /var/tmp/yuban-knowledge
+USER node
+# Writable image-local scratch on a read-only rootfs. No host directory or credentials are mounted.
+VOLUME ["/var/tmp/yuban-knowledge"]
+ENV STORAGE_BACKEND=firestore KNOWLEDGE_ARCHIVE_TMPDIR=/var/tmp/yuban-knowledge
 CMD ["node", "server/main.ts"]

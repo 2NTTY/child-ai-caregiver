@@ -6,6 +6,7 @@ import { canonicalJson } from './online-routing.ts';
 import { accountBackupComparisonQuerySchema, accountPreferencesComparisonSchema, originalBackupComparisonQuerySchema, originalBackupComparisonSchema,
   originalMemorySectionSchema, originalAttachmentSectionSchema, originalGrowthSectionSchema, isOriginalAttachment, selfAvatarComparisonSchema,
   type OriginalBackupComparison } from '../src/shared/handover-imports.ts';
+import { inspectOriginalChat } from './handover-original-chat.ts';
 import { readOriginalAttachment } from './handover-original-attachments.ts';
 import { createNotificationPreferencesData, sameNotificationPreferences } from './firestore-notification-preferences.ts';
 import type { AvatarState } from '../src/shared/avatars.ts';
@@ -149,6 +150,12 @@ export function createOriginalBackupComparison(options: FirestoreDomainOptions &
         const items: OriginalBackupComparison['items'] = [];
         for (const [rowIndex, row] of page.rows.entries()) {
           if (row.childId !== input.childId) domainReject('invalid_package_scope', 400);
+          if (section === 'chat') {
+            const result = await inspectOriginalChat(data,binding,row);
+            items.push({ id:result.message.id, ...(input.includeRestoreTarget && result.state !== 'unavailable' ? {targetId:result.message.id} : {}),
+              state:result.state, backupVersion:1, localVersion:result.localVersion, changedFields:result.reason ? [result.reason] : [] });
+            continue;
+          }
           if (section === 'growth') {
             const checked = await growth.inspectOriginal(binding, row);
             const state = checked.reason ? 'unavailable' : !checked.changedFields.length ? 'unchanged'

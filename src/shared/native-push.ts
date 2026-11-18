@@ -13,17 +13,19 @@ export const nativePushReferenceSchema = z.object({
   v: z.literal(1), kind: z.enum(["test", "care"]), bindingId: z.uuid(),
   bindingVersion: z.number().int().positive(), deliveryId: z.uuid(),
 }).strict();
+export const classTaskPushTargetSchema = z.object({ kind: z.literal("class_task"), spaceId: z.uuid(), childId: z.uuid(), taskId: z.uuid() }).strict();
+export type ClassTaskPushTarget = z.infer<typeof classTaskPushTargetSchema>;
 export type NativePushReference = z.infer<typeof nativePushReferenceSchema>;
 export const nativeChatDestinationSchema = z.object({ screen: z.literal("chat"), childId: z.uuid(), messageId: z.uuid() }).strict();
 export type NativeChatDestination = z.infer<typeof nativeChatDestinationSchema>;
 export const nativeChatPresenceInputSchema = z.object({
   childId: z.uuid().nullable(), bindingId: z.uuid().optional(), expectedBindingVersion: z.number().int().positive().optional(),
   expectedPresenceVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER - 1).optional(),
-  chatNotificationsEnabled: z.boolean().optional(), chatPreviewEnabled: z.boolean().optional(),
+  chatNotificationsEnabled: z.boolean().optional(), chatPreviewEnabled: z.boolean().optional(), classTaskNotificationsEnabled: z.boolean().optional(),
 }).strict();
 export type NativeChatPresenceInput = z.infer<typeof nativeChatPresenceInputSchema>;
 export const nativeChatPresenceSchema = z.object({ bindingId: z.uuid().nullable(),
-  presenceVersion: z.number().int().nonnegative(), chatNotificationsEnabled: z.boolean(), chatPreviewEnabled: z.boolean().optional(),
+  presenceVersion: z.number().int().nonnegative(), chatNotificationsEnabled: z.boolean(), chatPreviewEnabled: z.boolean().optional(), classTaskNotificationsEnabled: z.boolean().optional(),
   expiresAt: z.iso.datetime().nullable().optional(),
 }).strict();
 export type NativeChatPresence = z.infer<typeof nativeChatPresenceSchema>;

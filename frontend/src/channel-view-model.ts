@@ -12,7 +12,7 @@ export type ChannelDeliveryView = PushDeliveryView | TelegramDeliveryView;
 export interface ChannelReview {
   kind: "enable" | "begin" | "confirm" | "revoke" | "test";
   targetLabel: string; expectedVersion: number | null; confirmed: boolean;
-  chatNotificationMode?: "generic" | "preview" | null;
+  chatNotificationMode?: "generic" | "preview" | "class-tasks" | null;
 }
 interface ChannelSettingsBase {
   online: boolean; readState: ChannelReadState; locked: boolean; conflict: boolean;
@@ -28,6 +28,7 @@ export interface PushSettingsModel extends ChannelSettingsBase {
   available: boolean; browserSupported: boolean; permission: ChannelPermission;
   currentBindingId: string | null; bindings: PushBindingView[];
   deliveries: PushDeliveryView[]; testsRemaining: number; nextTestAt: string | null;
+  classTaskNotificationsEnabled?: boolean | null;
   chatNotificationsEnabled?: boolean | null;
   chatPreviewEnabled?: boolean | null;
   chatNotificationsBusy?: boolean;
@@ -40,9 +41,10 @@ interface ChannelReviewActions {
 }
 export interface PushSettingsActions extends ChannelReviewActions {
   stageEnable(label: string): void; stageRevoke(id: string): void; stageTest(id: string): void;
+  setClassTasksEnabled?(enabled: boolean): void;
   setChatNotificationsEnabled?(enabled: boolean): void;
   setChatPreviewEnabled?(enabled: boolean): void;
-  setChatNotificationMode?(mode: "generic" | "preview"): void;
+  setChatNotificationMode?(mode: "generic" | "preview" | "class-tasks"): void;
 }
 export interface TelegramBindingView {
   id: string; version: number; label: string; chatIdHint: string;

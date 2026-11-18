@@ -99,6 +99,8 @@ export interface FirestoreMemoryStore extends MemoryStore, SummarySourceReader {
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
   readTopic(binding: Binding, id: string): Promise<MemoryTopic | null>;
   readExportRevision(binding: Binding, kind: Kind, row: DocumentSnapshot): Promise<MemoryFact | MemoryTopic | null>;
+  /** Current facts in the selected child and visibility scope, with the original page continuation. */
+  readSelectedFactPage(binding: Binding, after: string | undefined, limit: number): Promise<import("../src/shared/memory.ts").MemoryPage<MemoryFact>>;
   /** Current confirmed family facts by their existing uniqueness keys; no private corpus scan. */
   readFamilyFacts(binding: Binding, keys: readonly string[]): Promise<MemoryFact[]>;
   /** Check whether an active applicable confirmed fact already owns this uniqueness key. */
@@ -1068,6 +1070,10 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       return candidates.length ? { ...candidates[0], alternatives: candidates.slice(1) } : null;
     }),
     recall: (u, c, keys) => authority.runTransaction(u, c, binding => recall(binding, keys)),
+    async readSelectedFactPage(binding, after, limit) {
+      const result = await page(binding, 'facts', after, limit, !!binding.sharedAccess);
+      return { ...result, items: (result.items as MemoryFact[]).filter(fact => fact.applicable && fact.status === 'confirmed' && fact.sourceState === 'current') };
+    },
     async readFamilyFacts(binding, keys) {
       domainParse(z.array(z.string().min(1).max(80)).max(8), keys);
       const facts: MemoryFact[] = [];

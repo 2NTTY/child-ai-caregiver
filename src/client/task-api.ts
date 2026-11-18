@@ -44,7 +44,7 @@ const reminderSchema = z.object({ id: z.uuid(), batchId: z.uuid(), taskId: z.uui
 const workSchema = z.object({ taskId: z.uuid(), taskVersion: version,
   status: z.enum(["pending", "processed", "stopped", "failed", "unknown"]), nextAt: dateTime,
   failures: z.number().int().min(0).max(2147483647) });
-const pageSchema = z.object({ items: z.array(taskSchema),
+const pageSchema = z.object({ items: z.array(taskSchema), classAssigneeSpaceId: z.uuid().optional(),
   eligibleAssignees: z.array(z.object({ userId: z.string().min(1).max(128), name: z.string() })), nextAfterId: z.uuid().nullable(),
   reminders: z.array(reminderSchema).optional(), work: z.array(workSchema).optional(), workerEnabled: z.boolean().optional() });
 const historySchema = z.object({ revisions: z.array(z.object({ task: taskSchema,
@@ -152,7 +152,8 @@ export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch, selec
     },
     async tasks(childId, afterId, signal) {
       const parsed = pageSchema.safeParse(await request(`${child(childId)}${cursor("afterId", afterId)}`, signal));
-      if (!parsed.success || parsed.data.items.some(item => item.childId !== childId)) throw new TaskApiError();
+      if (!parsed.success || parsed.data.items.some(item => item.childId !== childId)
+        || parsed.data.classAssigneeSpaceId !== undefined && parsed.data.classAssigneeSpaceId !== selection?.spaceId) throw new TaskApiError();
       const tasks = new Map(parsed.data.items.map(item => [item.id, item]));
       if (parsed.data.reminders?.some(reminder => {
         const task = tasks.get(reminder.taskId);

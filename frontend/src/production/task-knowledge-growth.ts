@@ -5,14 +5,14 @@ import { createGrowthApi, GrowthApiError, requiresFreshGrowthConfirmation } from
 import { createConcernsApi, ConcernApiError, requiresFreshConcernConfirmation } from "../../../src/client/concerns-api";
 import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernPage } from "../../../src/shared/concerns";
 import { growthActionSchema, growthTopicActionSchema } from "../../../src/shared/growth";
-import { growthActionable, growthConcernCanRestore, growthRefreshNotice, type GrowthAttempt, type GrowthConcernChange, type GrowthPage, type GrowthPending, type GrowthViewModel } from "../growth-view-model";
+import { growthModuleWritable, growthActionable, growthConcernCanRestore, growthRefreshNotice, type GrowthAttempt, type GrowthConcernChange, type GrowthPage, type GrowthPending, type GrowthViewModel } from "../growth-view-model";
 import type { GrowthWorkspaceValue } from "../workspaces/GrowthWorkspace";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWorkspaceValue {
   const api = useMemo(() => createGrowthApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
-  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
+  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl, env.owner.fetcher, env.sharing, !!env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const runtime = useTaskKnowledgeRuntime(env, "growth");
   const [page, setPage] = useState<GrowthPage | null>(null), [load, setLoad] = useState<GrowthViewModel["load"]>("loading");
   const [busy, setBusy] = useState(false), [pending, setPending] = useState<GrowthPending | null>(null), [originalConsent, setOriginalConsent] = useState(false);
@@ -20,6 +20,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
   const [dirtyKeys, setDirtyKeys] = useState<string[]>([]), [discardAsked, setDiscardAsked] = useState(false), [epoch, setEpoch] = useState(0);
   const [resetCounts, setResetCounts] = useState<Record<string, number>>({}), [refreshPending, setRefreshPending] = useState(false), [missingTargets, setMissingTargets] = useState<string[]>([]);
   const [lastConcernChange, setLastConcernChange] = useState<GrowthConcernChange | null>(null);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false), [historyLoadError, setHistoryLoadError] = useState("");
   const inFlight = useRef(false), original = useRef<GrowthPending | null>(null), dirty = dirtyKeys.length > 0;
   useEffect(() => () => { inFlight.current = false; }, []);
   const canManage = env.role === "owner" || env.role === "caregiver";
@@ -27,7 +28,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
   const readPage = async (signal: AbortSignal): Promise<GrowthPage> => {
     const [growth, concerns] = await readGrowthPages(
       env.allows('growth') ? () => runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal) : null,
-      env.allows('concerns') ? () => runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal) : null, signal, undefined, runtime.live,
+      env.allows('concerns') ? () => runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal) : null, signal, undefined, runtime.live, !!env.sharing,
     );
     return projected(growth, concerns);
   };
@@ -35,7 +36,8 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     if (!growth && !concerns) throw new GrowthApiError(403, 'module_not_shared');
     const value: GrowthPage = growth ?? { authorityVersion: concerns!.authorityVersion, items: [], topics: [], historyHasMore: false,
       notices: ['成長建議未加入此共享範圍。'], eligibleAssignees: [], canManage: false };
-    return { ...value, canManage: growth && concerns ? value.canManage : false,
+    const moduleWrites = { growth:growth?.canManage ?? false, concerns:concerns?.canManage ?? false };
+    return { ...value, moduleWrites, canManage: moduleWrites.growth || moduleWrites.concerns,
       concerns: concerns ? { state: "ready", items: concerns.items, ...cursorBoundary(concerns), label: "持續關注及已載入的跟進記錄。" }
         : { state: "unavailable", items: [], label: "持續關注未加入此共享範圍。" },
       archive: { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: value.authorityVersion, state: "unavailable", snapshot: null,
@@ -47,12 +49,13 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     const oldTopics = page?.topics.filter(topic => dirtyKeys.includes(`topic:${topic.id}`) && `topic:${topic.id}` !== settledKey && !value.topics.some(latest => latest.id === topic.id)) ?? [];
     const missing = [...oldItems.map(item => `item:${item.id}`), ...oldTopics.map(topic => `topic:${topic.id}`)];
     setMissingTargets(missing);
+    setHistoryLoadError("");
     setPage({ ...value, items: [...value.items, ...oldItems.map(item => ({ ...item, sourceAvailable: false }))], topics: [...value.topics, ...oldTopics],
       notices: missing.length ? [...value.notices, "本次候選視窗沒有部分草稿對象；保留原草稿及資料供核對，相關新操作暫停。"] : value.notices });
   };
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
-    original.current = null; setPending(null); setPage(null); setLastConcernChange(null); setDirtyKeys([]); setOriginalConsent(false); setEpoch(value => value + 1); return true;
+    original.current = null; setPending(null); setPage(null); setLastConcernChange(null); setDirtyKeys([]); setOriginalConsent(false); setLoadingMoreHistory(false); setHistoryLoadError(""); setEpoch(value => value + 1); return true;
   };
   const refresh = (manual = true) => {
     if (!env.online || !runtime.live()) return;
@@ -86,14 +89,15 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
   };
   useTaskKnowledgeRefresh(() => refresh(false), env.online && !!env.childId && !runtime.lost, busy);
   const write = (attempt: GrowthAttempt, retry = false) => {
-    if (inFlight.current || !runtime.live() || !env.online || !canManage || !page?.canManage || load !== "ready" || !retry && !env.canStartWrite()) return;
+    const module = attempt.kind === 'item' || attempt.kind === 'topic' ? 'growth' : 'concerns';
+    if (inFlight.current || !runtime.live() || !env.online || !canManage || !growthModuleWritable(page,module) || load !== "ready" || !retry && !env.canStartWrite()) return;
     const entry: GrowthPending = { attempt, reviewed: false, reconfirm: false };
     inFlight.current = true; original.current = entry; setPending(entry); setBusy(true); setOriginalConsent(false); setOperation("saving");
     void runtime.request(async (signal, current) => {
       try {
         const result = attempt.kind === "item" ? await api.decideAttention(env.childId!, attempt.id, attempt.input, signal, env.userId!)
           : attempt.kind === "topic" ? await api.updateTopic(env.childId!, attempt.id, attempt.input, signal, env.userId!)
-            : attempt.kind === "concern_create" ? await concernsApi.create(env.childId!, attempt.input, signal, env.userId!)
+            : attempt.kind === "concern_create" ? await concernsApi.create(env.childId!, attempt.input, signal, env.userId!, attempt.authorityVersion)
             : await concernsApi.change(env.childId!, attempt.id, concernChangeSchema.parse(attempt.input), signal, env.userId!);
         if (!current()) return;
         if (attempt.kind === "item") {
@@ -150,7 +154,41 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     online: env.online, access: runtime.lost ? "lost" : canManage && visible?.canManage !== false ? "editable" : "read_only", load,
     page: visible, busy, locked, pending: runtime.lost ? null : pending, originalConsent, operation, notice,
     dirty: !runtime.lost && dirty, discardAsked, epoch, resetCounts, refreshPending, missingTargets, lastConcernChange: runtime.lost ? null : lastConcernChange,
+    loadingMoreHistory, historyLoadError: runtime.lost ? "" : historyLoadError,
   }, actions: {
+    loadMoreHistory() {
+      const basis = page, cursor = basis?.historyNextCursor;
+      if (inFlight.current || busy || loadingMoreHistory || dirty || original.current || !env.online || !runtime.live() || !env.allows("growth") || !basis?.historyHasMore || !cursor) return;
+      inFlight.current = true; setBusy(true); setLoadingMoreHistory(true); setHistoryLoadError("");
+      void runtime.request(async (signal, current) => {
+        try {
+          const next = await runtime.read(["growth-history", cursor], nextSignal => api.getPage(env.childId!, nextSignal, env.userId!, { historyCursor: cursor }), signal);
+          if (!current()) return;
+          if (next.authorityVersion !== basis.authorityVersion) {
+            throw new GrowthApiError(409, "growth_changed");
+          }
+          setPage(before => before === basis ? {
+            ...before,
+            items: appendCursorItems(before.items, next.items),
+            historyHasMore: next.historyHasMore,
+            historyNextCursor: next.historyNextCursor ?? null,
+          } : before);
+          setHistoryLoadError("");
+        } catch (error) {
+          if (!current() || clearAccess(error)) return;
+          const authorityChanged = error instanceof GrowthApiError && error.code === "growth_changed";
+          setHistoryLoadError(authorityChanged
+            ? "成長紀錄版本已更新，已載入內容保留；請重新讀取以對齊最新清單。"
+            : "未能載入較早成長建議，已載入內容保留。請重試；權限基準改變時請重新讀取。");
+        } finally {
+          if (current()) {
+            inFlight.current = false;
+            setBusy(false);
+            setLoadingMoreHistory(false);
+          }
+        }
+      });
+    },
     loadMoreConcerns() {
       const basis = page, cursor = basis?.concerns?.nextCursor;
       if (inFlight.current || busy || dirty || original.current || !env.online || !runtime.live() || !env.allows('concerns') || !basis?.concerns?.hasMore || !cursor) return;
@@ -159,7 +197,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
         try {
           const next = await runtime.read(["concerns", cursor], nextSignal => concernsApi.getPage(env.childId!, nextSignal, env.userId!, { limit: 50, cursor }), signal);
           if (!current()) return;
-          if (next.authorityVersion !== basis.authorityVersion) throw new Error('page_authority_changed');
+          if (next.authorityVersion !== basis.authorityVersion || next.canManage !== growthModuleWritable(basis, 'concerns')) throw new Error('page_authority_changed');
           const boundary = cursorBoundary(next, cursor);
           setPage(before => before === basis && before.concerns ? { ...before, concerns: { ...before.concerns,
             items: appendCursorItems(before.concerns.items, next.items), ...boundary, pageError: undefined } } : before);

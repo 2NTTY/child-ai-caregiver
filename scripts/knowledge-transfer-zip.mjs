@@ -10,7 +10,9 @@ import * as yauzl from 'yauzl';
 import { z } from 'zod';
 import { waitForHandoverStep } from '../server/handover-archive.ts';
 
-const MAX_ENTRY = 2 * 1024 * 1024, MAX_TOTAL = 512 * 1024 * 1024, MAX_ENTRIES = 4096;
+import { publicArchiveMaxBytes as MAX_TOTAL } from '../src/shared/admin-knowledge-transfer.ts';
+
+const MAX_ENTRY = 2 * 1024 * 1024, MAX_ENTRIES = 4096;
 const MAX_DURATION = 300000, stamp = new Date('1980-01-01T00:00:00.000Z');
 const sourceId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u), hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const selectedSchema = z.object({ sourceId, versionHash: hash }).strict();
@@ -90,7 +92,7 @@ export async function writeKnowledgeArchive(path, selection, readEdition) {
 }
 
 /** A separately trusted fingerprint authenticates this file; no caller receives material before the full inventory passes. */
-export async function openKnowledgeArchive(path, expectedSha256) {
+export async function openKnowledgeArchive(path, expectedSha256, signal) {
   if (!hash.safeParse(expectedSha256).success) reject();
   const fd = await openFd(path, 'r');
   let zip, closed = false, closing, zipError, active = null;
@@ -108,6 +110,7 @@ export async function openKnowledgeArchive(path, expectedSha256) {
     const snapshot = await statFd(fd, { bigint: true });
     if (!snapshot.isFile() || snapshot.size < 1n || snapshot.size > BigInt(MAX_TOTAL)) throw sized();
     async function unchanged() {
+      signal?.throwIfAborted();
       if (closed) reject('knowledge_archive_closed');
       const current = await statFd(fd, { bigint: true });
       if (['size', 'dev', 'ino', 'mtimeNs', 'ctimeNs'].some(key => current[key] !== snapshot[key])) throw integrity();
@@ -115,7 +118,7 @@ export async function openKnowledgeArchive(path, expectedSha256) {
     const fingerprint = createHash('sha256'), buffer = Buffer.allocUnsafe(64 * 1024), deadline = AbortSignal.timeout(MAX_DURATION);
     let compressed = 0;
     while (compressed < Number(snapshot.size)) {
-      deadline.throwIfAborted();
+      deadline.throwIfAborted(); signal?.throwIfAborted();
       const { bytesRead } = await readFd(fd, buffer, 0, Math.min(buffer.length, Number(snapshot.size) - compressed), compressed);
       if (!bytesRead) throw integrity();
       fingerprint.update(buffer.subarray(0, bytesRead)); compressed += bytesRead;
@@ -127,6 +130,7 @@ export async function openKnowledgeArchive(path, expectedSha256) {
     if (zip.entryCount < 2 || zip.entryCount > MAX_ENTRIES + 1) throw sized();
     const physical = new Map(); let total = 0, metadataBytes = 0;
     for await (const entry of zip.eachEntry()) {
+      signal?.throwIfAborted();
       const name = entry.fileName, mode = (entry.externalFileAttributes >>> 16) & 0o170000;
       if (physical.has(name) || name !== 'manifest.json' && !/^editions\/[a-z0-9][a-z0-9-]{0,79}\.json$/u.test(name)
         || entry.isEncrypted() || mode !== 0 && mode !== 0o100000 || ![0, 8].includes(entry.compressionMethod)) reject();
@@ -139,13 +143,13 @@ export async function openKnowledgeArchive(path, expectedSha256) {
     }
     if (physical.size !== zip.entryCount || !physical.has('manifest.json')) reject();
     async function read(entry) {
-      if (closed) reject('knowledge_archive_closed'); if (zipError) throw zipError;
+      signal?.throwIfAborted(); if (closed) reject('knowledge_archive_closed'); if (zipError) throw zipError;
       const local = await zip.readLocalFileHeaderPromise(entry);
       if (!local.fileName.equals(Buffer.from(entry.fileName)) || local.compressionMethod !== entry.compressionMethod
         || local.generalPurposeBitFlag !== entry.generalPurposeBitFlag) reject();
       let stream;
       try {
-        stream = await zip.openReadStreamPromise(entry); active = stream; addAbortSignal(AbortSignal.timeout(MAX_DURATION), stream);
+        stream = await zip.openReadStreamPromise(entry); active = stream; addAbortSignal(signal ? AbortSignal.any([signal,AbortSignal.timeout(MAX_DURATION)]) : AbortSignal.timeout(MAX_DURATION), stream);
         const chunks = [], hash = createHash('sha256'); let bytes = 0;
         for await (const chunk of stream) {
           bytes += chunk.length; if (bytes > MAX_ENTRY || bytes > entry.uncompressedSize) throw sized();

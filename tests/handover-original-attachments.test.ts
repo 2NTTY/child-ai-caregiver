@@ -8,6 +8,9 @@ import { Readable, Writable } from 'node:stream';
 import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
+import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
+import type { ChatMessage } from '../src/shared/chat.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
@@ -68,7 +71,17 @@ test('signed original attachment backups retain immutable live assets and restor
       const reserved = await files.reserve('parent', childId, { opId: randomUUID(), fileName, mimeType: 'text/plain', bytes: fileBytes.length, sha256: hash(fileBytes) });
       return files.upload('parent', childId, reserved.id, reserved.version, fileBytes.toString('base64'), controller.signal);
     }
-    const live = await file('PRIVATE_LIVE_FILE.txt'), deleted = await file('PRIVATE_DELETED_FILE.txt');
+    const live = await file('PRIVATE_LIVE_FILE.txt');
+    let deleted = await file('PRIVATE_DELETED_FILE.txt');
+    const chat = createFirestoreChatStore({...options,files,photos}), online = createFirestoreOnlineStore({...options,mutations:[chat.mutation]});
+    const path = '/api/children/' + childId + '/messages';
+    async function send(payload:object) {
+      const result = await online.submit('parent',{path,payload,operation:{...await online.context('parent',{path,payload}),opId:randomUUID(),deviceId:randomUUID()}});
+      return (result.result as {message:ChatMessage}).message;
+    }
+    const attached = await send({text:'原來的附件',file:{id:deleted.id,expectedVersion:deleted.version}});
+    const recent = await send({text:'後來的訊息'});
+    deleted = await files.get('parent',childId,deleted.id);
     const missing = await file('PRIVATE_MISSING_FILE.txt'), unsettled = await file('PRIVATE_UNSETTLED_FILE.txt');
     // The same valid one-second PCM fixture used by the attachment pipeline.
     const voiceBytes = Buffer.alloc(44 + 16000);
@@ -92,10 +105,11 @@ test('signed original attachment backups retain immutable live assets and restor
     const photoBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+kv1sAAAAASUVORK5CYII=', 'base64');
     const photoReserved = await photos.reserve('parent', childId, randomUUID(), { fileName: 'PRIVATE_ORIGINAL_PHOTO.png', source: 'fixture', mimeType: 'image/png', bytes: photoBytes.length, sha256: hash(photoBytes) });
     const photo = await photos.upload('parent', childId, photoReserved.id, photoBytes.toString('base64'));
+    const photoMessage = await send({text:'保留訊息的原照片',photo:{id:photo.id,expectedVersion:photo.version}});
     const serverId = 'https://original-attachments.example.test', keys = generateKeyPairSync('ed25519');
     const exporter = createFirestoreAccountExport({ ...options, photos, files, voices, transcripts });
     const archive = await writePersonalHandoverPackage({ exporter, directory, ownerUserId: 'parent', serverId, packageId: randomUUID(), createdAt: new Date().toISOString(),
-      purpose: 'backup', signingKey: keys.privateKey, selection: { childIds: [childId], modules: ['attachments'], period: null } });
+      purpose: 'backup', signingKey: keys.privateKey, selection: { childIds: [childId], modules: ['attachments','chat'], period: null } });
     const stored = new Map<string, { body: Buffer; metadata: unknown }>();
     const objects = createFirebaseHandoverObjects({ config: config('synthetic-original-packages'), files: cipher.files,
       bucket: { async metadata(name) { return stored.get(name)?.metadata ?? null; },
@@ -111,6 +125,9 @@ test('signed original attachment backups retain immutable live assets and restor
     await uploads.create('parent', { opId: uploadId, filename: 'own-attachments.zip', bytes: bytes.length, sha256: hash(bytes) });
     const upload = await uploads.receive('parent', uploadId, Readable.from([bytes]), controller.signal);
     assert.equal(upload.state, 'ready', upload.error ?? JSON.stringify(upload)); assert.equal(upload.preview!.integrity, 'trusted');
+    const historicPath = data.ref('chat_messages','chat-message',attached.id).path;
+    const originalPosition = fixture.records.get(historicPath)!.sortKey;
+    fixture.records.delete(historicPath); // Simulate a single missing message in this isolated store.
     await files.delete('parent', childId, deleted.id, deleted.version, randomUUID());
     await voices.delete('parent', childId, voice.id, voice.version, randomUUID());
     const photoDeleteOp = randomUUID(); await photos.delete('parent', childId, photo.id, photo.version, photoDeleteOp);
@@ -222,6 +239,24 @@ test('signed original attachment backups retain immutable live assets and restor
     assert.equal(repeatedResults.complete, true); assert.ok(repeatedResults.items.length >= rows.length);
     for (const result of repeatedResults.items) assert.equal(result.outcome, 'skipped');
     assert.deepEqual([fileBucket.writes(), voiceBucket.writes(), photoBucket.writes(), journalBucket.writes()], writes);
+    const chatQuery = {uploadId,expectedUploadVersion:upload.version,childId,module:'chat',includeRestoreTarget:true};
+    const chatPreview = await service.compareOriginal('parent',chatQuery,controller.signal);
+    assert.equal(chatPreview.items.find(row=>row.id===attached.id)?.state,'backup_newer');
+    const chatCommand = {...base,opId:randomUUID(),targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['chat']}],
+      resolutions:[{sourceChildId:childId,section:'chat',resourceId:attached.id,resolution:{mode:'replace_current',targetId:attached.id,expectedVersion:0}},
+        {sourceChildId:childId,section:'chat',resourceId:photoMessage.id,resolution:{mode:'replace_current',targetId:photoMessage.id,expectedVersion:1}}]};
+    assert.equal(chatPreview.items.find(row=>row.id===photoMessage.id)?.state,'different');
+    const restoredChat = await execute(chatCommand);
+    assert.equal(restoredChat.counts.updated,1);
+    const relinkedPhoto = await chat.getOriginalMessageForUser('parent',childId,photoMessage.id);
+    assert.deepEqual(relinkedPhoto,{...photoMessage,photo:{...photoMessage.photo,id:newIds.get(photo.id),version:relinkedPhoto?.photo?.version}});
+    assert.equal(restoredChat.counts.created,1);
+    const saved = await chat.getOriginalMessageForUser('parent',childId,attached.id);
+    assert.ok(saved?.file); assert.equal(saved.file.id,newIds.get(deleted.id));
+    assert.equal((await files.contentForMessage('parent',childId,saved.id,saved.file)).base64,fileBytes.toString('base64'));
+    assert.equal(fixture.records.get(historicPath)!.sortKey,originalPosition);
+    assert.ok(String(originalPosition)<String(fixture.records.get(data.ref('chat_messages','chat-message',recent.id).path)!.sortKey));
+    assert.equal((await service.compareOriginal('parent',chatQuery,controller.signal)).items.find(row=>row.id===attached.id)?.state,'unchanged');
     const workKinds = [...fixture.records].filter(([path]) => path.includes('_background_work/'))
       .map(([path, raw]) => (codec.decode({ path, data: raw }).value as { kind: string }).kind);
     assert.equal(workKinds.includes('voice-transcription'), false); assert.equal(avatarBucket.writes(), 0);

@@ -17,7 +17,7 @@ import { publicAnswerSources } from '../agent-view-model';
 import { useDomainWriteGuard } from './useDomainEnvironment';
 import { useProductionMixedChats } from './useProductionMixedChats';
 import { useProduction } from './ProductionProvider';
-import { mixedCareRecordCitations, type MixedChatController, type MixedChatState } from './MixedChatController';
+import { mixedCareRecordCitations, mixedMaterialReferences, type MixedChatController, type MixedChatState } from './MixedChatController';
 import type { SharingController, SharingState } from './SharingController';
 import { MixedConversationExport } from './MixedConversationExport';
 
@@ -42,6 +42,9 @@ function MixedReply({ result, at, controller, messageId, careCitation }: {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const help = officialHelpFromTools(result.tools);
   const careCitationCount = mixedCareRecordCitations(result).length;
+  const materialCount = mixedMaterialReferences(result).length;
+  const material = careCitation?.citation && 'kind' in careCitation.citation ? careCitation.citation : null;
+  const label = careCitation?.group === 'material' ? '孩子資料' : '照護記錄';
   return <View style={styles.group}>
     {help.length ? <OfficialHelpCards ids={help} /> : null}
     <ChatMessage message={{ id: run.id, role: 'assistant', text: run.text, sources: publicAnswerSources(run),
@@ -50,18 +53,23 @@ function MixedReply({ result, at, controller, messageId, careCitation }: {
       activities: run.tools.map(tool => ({ id: tool.id, label: tool.nameLabel,
         state: tool.status === 'succeeded' ? 'succeeded' : tool.status === 'unknown' ? 'unknown' : 'failed' })) }}
       degraded={run.retrievalMode === 'keyword_degraded'} careCitationCount={careCitationCount}
+      materialCount={materialCount} onOpenMaterial={materialCount ? ordinal=>{void controller.readMaterialCitation(messageId,ordinal);} : undefined}
       onOpenCareCitation={careCitationCount ? ordinal => { void controller.readCareCitation(messageId, ordinal); } : undefined} />
     {careCitation?.messageId === messageId ? <View testID="mixed-care-citation-original" style={styles.group}>
-      <SectionHeader title={`照護記錄 ${careCitation.ordinal} 原文`} subtitle="私人照護記錄；每次開啟均重新核對目前存取權限及原版本。" />
-      {careCitation.loading ? <Text accessibilityLiveRegion="polite" style={styles.body}>正在讀取照護原文…</Text> : null}
+      <SectionHeader title={`${label} ${careCitation.ordinal} 原文`} />
+      {careCitation.loading ? <Text accessibilityLiveRegion="polite" style={styles.body}>正在讀取原文…</Text> : null}
       {careCitation.error ? <><Text accessibilityLiveRegion="polite" style={styles.body}>{careCitation.error}</Text>
-        <AppButton label="重新讀取照護原文" variant="quiet" onPress={() => { void controller.readCareCitation(messageId, careCitation.ordinal); }} /></> : null}
+        <AppButton label="重新讀取原文" variant="quiet" onPress={() => { void (careCitation.group === 'material' ? controller.readMaterialCitation(messageId,careCitation.ordinal,careCitation.offset) : controller.readCareCitation(messageId,careCitation.ordinal)); }} /></> : null}
       {careCitation.citation ? <>
         <Text style={styles.body}>{careCitation.citation.childName} · 版本 {careCitation.citation.version}</Text>
-        <Text style={styles.body}>來源：{careCitation.citation.source} · {careCitation.citation.eventTimeLabel ?? '未有記載事件日期'}</Text>
+        <Text style={styles.body}>來源：{careCitation.citation.source} · {'eventTimeLabel' in careCitation.citation ? careCitation.citation.eventTimeLabel ?? '未有記載事件日期' : careCitation.citation.title}</Text>
         <Text selectable style={styles.body}>{careCitation.citation.text}</Text>
       </> : null}
-      <AppButton label="收起照護原文" variant="quiet" onPress={controller.closeCareCitation} />
+      {material && material.offset>0 ? <AppButton label="從原文開頭讀取" variant="quiet"
+        onPress={()=>{void controller.readMaterialCitation(messageId,careCitation.ordinal,0);}} /> : null}
+      {material && material.nextOffset!==null ? <AppButton label="繼續讀原文" variant="quiet"
+        onPress={()=>{void controller.readMaterialCitation(messageId,careCitation.ordinal,material.nextOffset!);}} /> : null}
+      <AppButton label="收起原文" variant="quiet" onPress={controller.closeCareCitation} />
     </View> : null}
     {run.privateSourceCitations?.length ? <>
       <AppButton label="查看私人參考" variant="quiet" expanded={sourcesOpen} onPress={() => setSourcesOpen(value => !value)} />

@@ -61,7 +61,8 @@ export function createPrivateSummaryTerminalVerifier(options: {
     const modelKey = 'model:' + agentBudgetFingerprint([run.id, run.trigger, 'first-model']);
     if (model.originalAttemptKey !== modelKey || model.requestFingerprint !== attempt.plan.requestFingerprint
       || root.used.modelCalls !== 1 || !root.attempts.some(entry => entry.kind === 'model' && entry.key === modelKey
-        && entry.fingerprint === model.requestFingerprint && entry.units === 1)) return { kind: 'unknown' };
+        && entry.fingerprint === model.requestFingerprint && entry.units === 1
+        && (entry.preparedFingerprint ?? entry.fingerprint) === (daily.preparedFingerprint ?? model.requestFingerprint))) return { kind: 'unknown' };
     const evidenceHash = agentBudgetFingerprint({ root, daily, session, grantRecordId: attempt.grantRecordId, plan: attempt.plan });
     if (events.length === 2 && !tool && response.turnComplete === true && response.content.parts?.length === 1
       && typeof response.content.parts[0].text === 'string' && response.content.parts[0].text.trim()

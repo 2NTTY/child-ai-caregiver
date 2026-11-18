@@ -38,12 +38,16 @@ export interface DurableAiUsageReceipt {
   reservedAtMs: number;
   /** Null is unknown/unrecorded; it is never permission to repeat the provider request. */
   record: DurableAiUsageRecord | null;
+  /** Exact current prepared payload; original requestFingerprint remains immutable. */
+  preparedFingerprint?: string;
 }
-export type DurableAiUsageAdmission = { decision: 'execute' | 'lookup'; receipt: DurableAiUsageReceipt }
+export type DurableAiUsageAdmission = { decision: 'execute' | 'lookup'; receipt: DurableAiUsageReceipt; preparationToken?: string }
   | { decision: 'quota_exceeded' };
 export interface DurableAiUsage {
   readonly billingSource: ModelBillingSource;
   reserve(request: DurableAiUsageRequest): Promise<DurableAiUsageAdmission>;
+  /** Preparation only, by the newly admitted caller before its one provider dispatch. No quota changes. */
+  prepareModelDispatch?(request: DurableAiUsageRequest, expectedFingerprint: string, nextFingerprint: string, preparationToken: string): Promise<DurableAiUsageReceipt>;
   read(request: DurableAiUsageRequest): Promise<DurableAiUsageReceipt | null>;
   /** Accounting only: may settle late, never resumes a root or grants dispatch. */
   record(request: DurableAiUsageRequest, record: DurableAiUsageRecord): Promise<DurableAiUsageReceipt>;
