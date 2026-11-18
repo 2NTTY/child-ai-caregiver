@@ -1,3 +1,5 @@
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { createSharingApi } from "../../../src/client/sharing-api";
 import { readLoadedIdWindow } from "./task-knowledge-read-window";
 import { projectConfirmedTask } from "./task-projection.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +31,34 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const clock = useRef(new Date().toISOString());
   const queuedSelection = useRef<{ id: string; intent: TaskSelectionIntent } | null>(null), selectLatest = useRef<(id: string, intent: TaskSelectionIntent) => void>(() => {});
   const canManage = env.role === "owner" || env.role === "caregiver";
+  const sharing = useMemo(() => createSharingApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const classId = page?.classAssigneeSpaceId === env.sharing?.spaceId ? page?.classAssigneeSpaceId : undefined;
+  const rosterKey = ["production", env.scopeKey, "tasks", "class-members", classId] as const;
+  const roster = useInfiniteQuery({
+    queryKey: rosterKey, enabled: !!classId && !!env.userId && env.online && !runtime.lost,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam, signal }) => sharing.members(classId!, env.userId!, signal, pageParam),
+    getNextPageParam: last => last.nextCursor ?? undefined, retry: false,
+  }, env.queryClient);
+  const rosterError = roster.error;
+  useEffect(() => {
+    if (rosterError && env.current()) runtime.accessError(rosterError);
+  }, [rosterError]);
+  const classAssignees = !classId || runtime.lost ? undefined : roster.isError ? "error" as const
+    : roster.isFetching || !roster.data ? "loading" as const : roster.hasNextPage ? "more" as const : "ready" as const;
+  const eligibleAssignees = useMemo(() => {
+    if (runtime.lost) return [];
+    const people = new Map((page?.eligibleAssignees ?? []).map(person => [person.userId, person]));
+    if (classId && !roster.isError) {
+      for (const batch of roster.data?.pages ?? []) {
+        for (const member of batch.items) {
+          if (member.role !== "viewer" && !people.has(member.userId))
+            people.set(member.userId, { userId: member.userId, name: member.label });
+        }
+      }
+    }
+    return [...people.values()];
+  }, [runtime.lost, page?.eligibleAssignees, classId, roster.isError, roster.data]);
   const pending = operation.state === "saving" || operation.state === "unknown";
   useDomainWriteGuard(!runtime.lost && !!draft, !runtime.lost && pending);
   useEffect(() => () => { busy.current = false; api.resetOnline(); }, [api]);
@@ -176,13 +206,18 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     child: { id: env.childId!, name: env.childName }, access: runtime.lost ? "lost" : canManage ? "editable" : "read_only",
     online: env.online, reading, readState: runtime.lost || !env.online && !page ? "error" : !env.online && page ? "stale" : readState, dataLabel: "家庭共享事項",
     scheduleContext: { asOf: clock.current, timeZone: "Asia/Hong_Kong" }, items,
-    eligibleAssignees: runtime.lost ? [] : page?.eligibleAssignees ?? [], selected, detailRead,
+    eligibleAssignees, classAssignees, selected, detailRead,
     hasMoreTasks: !!page?.nextAfterId && !runtime.lost, loadingMoreTasks: loadingMore,
     workerEnabled: page?.workerEnabled, work: runtime.lost ? [] : page?.work ?? [], reminders: runtime.lost ? [] : page?.reminders ?? [],
     history: runtime.lost || !selected ? [] : histories[selected.id]?.items ?? [], historyOpen,
     hasMoreHistory: !!selected && !!histories[selected.id]?.cursor, draft: runtime.lost ? null : draft,
     latest: runtime.lost ? null : latest, operation: runtime.lost ? none : operation,
   }, actions: {
+    loadMoreAssignees() {
+      if (!classId || !env.online || !runtime.live() || roster.isFetching) return;
+      if (roster.isError) void env.queryClient.resetQueries({ queryKey: rosterKey, exact: true });
+      else if (roster.hasNextPage) void roster.fetchNextPage();
+    },
     selectTask,
     closePanel() { if (!pending) { setSelectedId(null); setLinkedTask(null); setDraft(null); setLatest(null); setHistoryOpen(false); setOperation(none); } },
     startCreate() {
@@ -195,12 +230,12 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       setSelectedId(id); setDraft({ key: crypto.randomUUID(), mode, basis: structuredClone(basis), initialValues: taskFormFromBasis(basis), reviewedValues: null }); setLatest(null); setOperation(none);
     },
     reviewDraft(values) {
-      if (locked || !draft || !taskFormSchema(draft.mode, page?.eligibleAssignees ?? []).safeParse(values).success) return;
+      if (locked || !draft || !taskFormSchema(draft.mode, eligibleAssignees).safeParse(values).success) return;
       setDraft({ ...draft, reviewedValues: structuredClone(values) }); setOperation({ state: "needs_confirmation", message: "已核對草稿；請明確確認家庭共享安排。", reference: null });
     },
     editDraft() { if (!locked && draft) { setDraft({ ...draft, reviewedValues: null }); setOperation(none); } },
     submitReviewed() {
-      if (locked || !canManage || !draft?.reviewedValues || !taskFormSchema(draft.mode, page?.eligibleAssignees ?? []).safeParse(draft.reviewedValues).success) return;
+      if (locked || !canManage || !draft?.reviewedValues || !taskFormSchema(draft.mode, eligibleAssignees).safeParse(draft.reviewedValues).success) return;
       if (draft.mode === "create") {
         const parsed = taskValuesSchema.safeParse(taskValuesFromForm(draft.reviewedValues));
         if (parsed.success) write({ kind: "create", input: { values: parsed.data, confirm: true } });

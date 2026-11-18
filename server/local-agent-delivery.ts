@@ -18,7 +18,7 @@ export interface LocalDeliveryAdapters {
 }
 const messageSchema = z.strictObject({
   id: z.string().regex(/^[a-f0-9]{64}$/u), createdAt: z.iso.datetime(),
-  channel: z.enum(['web_push', 'native_push', 'telegram']), kind: z.enum(['test', 'care', 'chat']),
+  channel: z.enum(['web_push', 'native_push', 'telegram']), kind: z.enum(['test', 'care', 'chat', 'class_task']),
   delivery: z.literal('local-only-not-sent'), targetTag: z.string().regex(/^[a-f0-9]{64}$/u),
   reference: z.union([nativePushReferenceSchema, pushPayloadSchema]).nullable(),
 });

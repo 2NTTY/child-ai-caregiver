@@ -4,6 +4,8 @@ This project uses the packages below as npm dependencies. The limited Expo Shari
 
 The exact dependency tree and registry integrity values are recorded in [package-lock.json](package-lock.json). [The license inventory](licenses/manifest.json) records selected package versions, tarballs, original notice paths, and SHA-256 hashes. License texts are preserved without modification.
 
+The current selected-package manifest contains 72 direct packages, 2 explicitly inventoried transitive packages, and 77 original license/notice file entries. The inventory includes every direct runtime dependency declared by the root and frontend packages.
+
 | Package | Installed version | Declared license | Preserved text |
 |---|---|---|---|
 | firebase | 13.0.0 | Apache-2.0 | [LICENSE](licenses/firebase/LICENSE) |
@@ -17,6 +19,19 @@ The exact dependency tree and registry integrity values are recorded in [package
 | base64-js | 1.5.1 | MIT | [LICENSE](licenses/base64-js/LICENSE) |
 | expo-file-system | 57.0.7 | MIT | [LICENSE](licenses/expo-file-system/LICENSE) |
 | expo-image-picker | 57.0.19 | MIT | [LICENSE](licenses/expo-image-picker/LICENSE) |
+| @react-pdf/renderer | 4.9.0 | MIT | [LICENSE](licenses/react-pdf/LICENSE) |
+| google-auth-library | 10.9.1 | Apache-2.0 | [LICENSE](licenses/google-auth-library/LICENSE) |
+| jszip | 3.10.2 | (MIT OR GPL-3.0-or-later) | [LICENSE.markdown](licenses/jszip/LICENSE.markdown) |
+| mammoth | 1.13.0 | BSD-2-Clause | [LICENSE](licenses/mammoth/LICENSE) |
+| sharp | 0.35.5 | Apache-2.0 | [LICENSE](licenses/sharp/LICENSE) |
+| yauzl | 3.4.0 | MIT | [LICENSE](licenses/yauzl/LICENSE) |
+| yazl | 3.3.1 | MIT | [LICENSE](licenses/yazl/LICENSE) |
+| @invertase/react-native-apple-authentication | 2.5.1 | Apache-2.0 | [LICENSE](licenses/invertase-react-native-apple-authentication/LICENSE) |
+| @noble/hashes | 2.4.0 | MIT | [LICENSE](licenses/noble-hashes/LICENSE) |
+| @react-native-google-signin/google-signin | 16.1.5 | MIT | [LICENSE](licenses/react-native-google-signin-google-signin/LICENSE) |
+| expo-notifications | 57.0.21 | MIT | [LICENSE](licenses/expo-notifications/LICENSE) |
+| expo-splash-screen | 57.0.9 | MIT | [LICENSE](licenses/expo-splash-screen/LICENSE) |
+| react-easy-crop | 6.2.4 | MIT | [LICENSE](licenses/react-easy-crop/LICENSE) |
 | expo-sharing | 57.0.21 | MIT | [LICENSE](licenses/expo-sharing/LICENSE) |
 | patch-package | 8.0.1 | MIT | [LICENSE](licenses/patch-package/LICENSE) |
 | expo-network | 57.0.2 | MIT | [LICENSE](licenses/expo-network/LICENSE) |
@@ -77,7 +92,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. The current selected-package manifest contains 47 direct packages, 2 explicitly inventoried transitive packages, and 52 original license/notice file entries. This is not complete coverage of every direct or transitive dependency; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. Earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 

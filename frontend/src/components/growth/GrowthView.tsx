@@ -1,3 +1,4 @@
+import { growthModuleWritable } from "../../growth-view-model";
 import { GROWTH_KNOWLEDGE_NOTICES } from "../../../../src/shared/growth";
 import { GrowthConcernPagination } from "./GrowthConcernPagination";
 import { useContainerWidth } from "../useContainerWidth";
@@ -88,13 +89,13 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
             </BackgroundSurface> : null}
             <BackgroundSurface padded style={wide && listedConcerns.length ? s.main : s.full} testID="growth-detail-surface">
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
-              <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && page.canManage)}
+              <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && growthModuleWritable(page,"concerns"))}
                 primary={<>
                   {onChat && (concern || page.concerns?.state === "ready" && model.load !== "error" && model.online) ? <AppButton label={concern ? "與助手跟進" : "與助手討論"} variant="primary" density="compact" disabled={!model.online} onPress={onChat} /> : null}
                   <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
                 </>}>
                 {managementTools}
-                {concern && page.canManage ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
+                {concern && growthModuleWritable(page,"concerns") ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
                   disabled={model.locked || model.dirty || page.concerns?.state !== "ready"}
                   onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
               </GrowthConcernActions>

@@ -56,7 +56,7 @@ const mutations = [
     name: "Guard S3: omit used counts subtraction in softRemaining calculation",
     mutate: () => {
       applyBudgetMutation(
-        "modelCalls: Math.max(0, softBudget.modelCalls - this.used.modelCalls),",
+        "modelCalls: Math.max(0, softBudget.modelCalls - usedBeforeThisCall.modelCalls),",
         "modelCalls: softBudget.modelCalls,",
         "S3"
       );
@@ -67,7 +67,7 @@ const mutations = [
     name: "Guard S4: suppress softExceeded detection by always returning false",
     mutate: () => {
       applyBudgetMutation(
-        "modelCalls: this.used.modelCalls >= softBudget.modelCalls,",
+        "modelCalls: usedBeforeThisCall.modelCalls >= softBudget.modelCalls,",
         "modelCalls: false,",
         "S4"
       );

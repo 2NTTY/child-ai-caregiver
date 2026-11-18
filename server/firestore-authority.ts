@@ -68,7 +68,7 @@ export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPrepa
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
   readonly actorUserId: string;
-  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write';
+  readonly sharedAccess?: Readonly<{ spaceId: string; membershipId?: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write';
     classMember?: Readonly<import('./shared-write-attribution.ts').ClassTaskAssignment> }>;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
@@ -80,6 +80,7 @@ export interface FirestoreAuthorityTransaction {
   /** Best-effort outbox dispatch only after this SDK transaction attempt commits. */
   afterCommit?(dispatch: () => Promise<unknown>): void;
   readChild(childId: string): Promise<Child | null>;
+  prepareHistoricalChatChange?(operationId:string, originalSortKey:string): Promise<FirestoreAuthorityPreparedChange>;
   prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
   prepareChildCreation(raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild>;
   /** Admission barrier only. Independent journal and bounded physical cleanup belong to erasure service. */
@@ -295,7 +296,7 @@ export class FirestoreAuthority {
   private changeId(scope: WorkRecoveryScope, operationId: string) {
     return JSON.stringify([scope.workspaceId, scope.storageEpoch, scope.ownerUserId, scope.childId, operationId, 'authority']);
   }
-  private async change(tx: Transaction, scope: WorkRecoveryScope, workspace: Workspace, operationId: string, kind: OnlineChange['kind'], deleted: boolean): Promise<FirestoreAuthorityPreparedChange> {
+  private async change(tx: Transaction, scope: WorkRecoveryScope, workspace: Workspace, operationId: string, kind: OnlineChange['kind'], deleted: boolean, originalChatSequence?:string): Promise<FirestoreAuthorityPreparedChange> {
     const id = this.changeId(scope, operationId), ref = this.ref('change', id);
     if ((await tx.get(ref)).exists) fail('change_conflict');
     // Domain writes enqueue their event atomically; projections/background explanation changes do not wake themselves.
@@ -303,7 +304,10 @@ export class FirestoreAuthority {
       ? await this.readControl(tx) : null;
     const wake = control ? await prepareFirestoreBackgroundWork(this.domain, tx, { kind: 'child-change', scope, resourceId: scope.childId,
       basis: kind + ':' + operationId, generation: control.generation, authorizationVersion: workspace.accessVersion }, new Date(this.now()).toISOString()) : null;
-    const changeSeq = increment(workspace.changeSeq);
+    // A verified personal restore can reinstate a chat position newer than a recovered workspace.
+    // Reserve that position before assigning this change so subsequent messages still sort after it.
+    const floor = originalChatSequence && BigInt(originalChatSequence) > BigInt(workspace.changeSeq) ? originalChatSequence : workspace.changeSeq;
+    const changeSeq = increment(floor);
     const workspaceEnvelope = this.seal('workspace', workspace.id, scope, { ...workspace, changeSeq });
     const changeEnvelope = this.seal('change', id, scope, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch, changeSeq,
       kind, childId: scope.childId === NIL ? null : scope.childId, privateUserId: scope.ownerUserId, ownerOnly: true, deleted,
@@ -385,6 +389,12 @@ export class FirestoreAuthority {
             const change = await this.change(tx, changeScope, workspace, operationId, kind, deleted); assertActive();
             return Object.freeze({ changeSeq: change.changeSeq, commit: guardCommit(change.commit) });
           },
+          prepareHistoricalChatChange: async (operationId:string, originalSortKey:string) => {
+            if (!childId) fail('transaction_child_scope');
+            parse(uuid, operationId); parse(z.string().regex(/^[0-9]{19}$/u), originalSortKey); reserve();
+            const change = await this.change(tx, scope, workspace, operationId, 'chat', false, BigInt(originalSortKey).toString());
+            assertActive(); return Object.freeze({ changeSeq:change.changeSeq, commit:guardCommit(change.commit) });
+          },
           prepareChildCreation: async (raw: { operationId: string; displayName: string }) => {
             assertActive(); if (childId !== null || childCandidateId === null) fail('transaction_child_scope'); reserve();
             const child = await this.prepareChild(tx, workspace, userId, childCandidateId, raw); assertActive();
@@ -458,6 +468,7 @@ export class FirestoreAuthority {
     const check = () => { if (!active) fail('transaction_closed'); };
     const denied = async (): Promise<never> => { check(); fail('shared_private_scope', 403); };
     const binding: FirestoreAuthorityTransaction = Object.freeze({ ...actor, scope: Object.freeze({ ...source }),
+      prepareHistoricalChatChange:denied,
       sharedAccess: Object.freeze({ ...access }), authorizationVersion: current.workspace.accessVersion,
       childAccessVersion: current.workspace.childAccessVersion ?? '0', changeSeq: current.workspace.changeSeq,
       workspaceCreatedAt: current.owner.workspaceCreatedAt ?? null,
@@ -472,7 +483,7 @@ export class FirestoreAuthority {
         if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
         // Attachments and concerns use existing feed kinds; the grant still fences the operation's module.
         const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care'
-          : access.module === 'concerns' ? !!access.classMember && kind === 'growth' : kind === access.module;
+          : access.module === 'concerns' ? kind === 'growth' : kind === access.module;
         if (!allowedKind || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
         if (prepared) fail('transaction_change_conflict'); prepared = true;
         if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);

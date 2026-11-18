@@ -56,7 +56,7 @@ test('account restore compares selected settings and submits both pinned differe
 
 test('original restore maps module selections to their existing resource section',()=>{
   assert.equal(originalRestoreResourceSection('sources'),'private_sources');
-  for (const module of ['care','profile','tasks'] as const) assert.equal(originalRestoreResourceSection(module),module);
+  for (const module of ['care','profile','tasks','chat'] as const) assert.equal(originalRestoreResourceSection(module),module);
   assert.equal(originalRestoreResourceSection('memory'),null);
 });
 
@@ -609,4 +609,26 @@ test('negotiated original attachments restore only proven deleted assets and kee
   modern = true; owner.syncContext('owner', 'owner:2', true); await owner.openUpload(id(1));
   const identityReads = queries.length;
   await owner.compareOriginal(id(2), 'attachments'); assert.equal(queries.length, identityReads, 'Identity changes clear negotiated asset support');
+});
+
+test('personal chat restoration selects missing messages and attested attachment repairs', async () => {
+  const id = (n:number) => '00000000-0000-4000-8000-' + String(n).padStart(12,'0');
+  const upload = inspectionUpload(id(1),id(2),['chat']), sent:HandoverImportCommand[] = [];
+  const api:Partial<HandoverApi> = {
+    setIdentity() {}, getUpload:async () => upload,
+    importCapabilities:async () => ({classEnrolment:false,originalModules:['chat']}),
+    compareOriginal:async () => ({uploadId:id(1),childId:id(2),module:'chat',manifestSha256:'a'.repeat(64),nextCursor:null,items:[
+      {id:id(3),targetId:id(3),state:'backup_newer',backupVersion:1,localVersion:0,changedFields:[]},
+      {id:id(4),targetId:id(4),state:'different',backupVersion:1,localVersion:1,changedFields:['restored_attachment_link']},
+      {id:id(5),state:'unavailable',backupVersion:1,localVersion:0,changedFields:['original_position_in_use']},
+    ]}),
+    createImport:async (_user,command) => { sent.push(command); return inspectionBatch(command.opId,id(1)); },
+  };
+  const owner = new HandoverImportOwner(api as HandoverApi);
+  owner.syncContext('owner','owner:1',true); await owner.readImportCapabilities(); await owner.openUpload(id(1));
+  await owner.compareOriginal(id(2),'chat'); owner.selectReadComparison('replace_current',true); await owner.restoreComparison();
+  assert.equal(sent.length,1); assert.equal(sent[0].restoreOriginal,true);
+  assert.deepEqual(sent[0].resolutions,[0,1].map((expectedVersion,index) => ({
+    sourceChildId:id(2),section:'chat',resourceId:id(3+index),resolution:{mode:'replace_current',targetId:id(3+index),expectedVersion}
+  })));
 });

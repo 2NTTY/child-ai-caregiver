@@ -13,6 +13,7 @@ import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readAdminUid } from './admin-api.ts';
 import { createKnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
+import { createKnowledgeArchiveReceiver } from './admin-knowledge-archive.ts';
 import { createKnowledgeTransfers } from './firestore-knowledge-transfers.ts';
 import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -167,6 +168,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const proactiveData = new FirestoreDomainData(domain);
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth,
+      prepareClassTaskDeliveries: chatNotifications.prepareClassTaskDeliveries,
       async prepareParentContact(b,{opId,text}) {
         if (!(await readProactivePolicy(proactiveData,b)).enabled) return null;
         return chat.prepareParentContact(b,{opId,text,origin:'task'});
@@ -254,7 +256,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
-    const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers);
+    const admin = createFirestoreAdmin(domain, aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
+      knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
       proactiveDemo: createProactiveDemo(env,authority,chat,chatNotifications), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
         async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),

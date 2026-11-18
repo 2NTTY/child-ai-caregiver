@@ -14,7 +14,12 @@ concurrency:
 
 jobs:
   verify-req005-closeout:
-    name: REQ-005 closeout offline
+    name: ${{ matrix.candidate == 'head' && 'REQ-005 closeout offline' || 'REQ-005 closeout offline (merge)' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        candidate: [head, merge]
     if: >-
       github.repository == '2NTTY/child-ai-caregiver' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
@@ -25,23 +30,30 @@ jobs:
       run:
         shell: bash
     env:
-      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      CANDIDATE_MODE: ${{ matrix.candidate }}
+      EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      EXPECTED_SHA: ${{ matrix.candidate == 'head' && github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ env.EXPECTED_SHA }}
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 2
           submodules: false
           lfs: false
 
       - name: Check candidate identity and helper syntax
         run: |
           set -euo pipefail
-          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          bash scripts/ci/check-req005-closeout-candidate.sh | tee -a "$GITHUB_STEP_SUMMARY"
+          bash -n scripts/ci/check-req005-closeout-candidate.sh
           bash -n scripts/ci/verify-req005-closeout-offline.sh
+
+      - name: Reject stale integration event before testing
+        if: matrix.candidate == 'merge'
+        run: bash scripts/ci/check-req005-closeout-freshness.sh | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Select exact Node runtime without cache
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -87,6 +99,10 @@ jobs:
               HOME="$OFFLINE_HOME" TMPDIR="$OFFLINE_HOME" \
               CI=true TZ=UTC LC_ALL=C.UTF-8 \
               EXPECTED_SHA="$EXPECTED_SHA" PARENT_NETNS="$PARENT_NETNS" \
-              NODE_BIN="$NODE_BIN" \
+              NODE_BIN="$NODE_BIN" CANDIDATE_MODE="$CANDIDATE_MODE" \
             /usr/bin/bash --noprofile --norc \
               "$GITHUB_WORKSPACE/scripts/ci/verify-req005-closeout-offline.sh"
+
+      - name: Recheck integration event freshness after testing
+        if: matrix.candidate == 'merge'
+        run: bash scripts/ci/check-req005-closeout-freshness.sh | tee -a "$GITHUB_STEP_SUMMARY"

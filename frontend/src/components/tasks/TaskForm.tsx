@@ -50,13 +50,13 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
     </View>} />;
   }
   const canRebase = !!model.latest && draft.mode !== "create" && taskChangeAllowed(model.latest, draft.mode);
-  const confirmationLabel = "我已核對內容、負責人、時間及版本，確認這次家庭共享安排";
+  const confirmationLabel = model.classAssignees ? "我已核對內容、負責老師、時間及版本，確認這次班級安排" : "我已核對內容、負責人、時間及版本，確認這次家庭共享安排";
   return <SectionCard surface="plain"><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
     <FormErrorSummary entries={errorEntries} onFocus={name => {
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);
     }} />
-    {draft.basis ? <TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} /> : null}
+    {draft.basis ? <TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} rosterState={model.classAssignees} /> : null}
     {draft.mode === "create" ? <>
       {field("title", "事項標題")}{field("details", "詳細內容（可選）", undefined, true)}
       <Controller name="kind" control={control} render={({ field: input, fieldState }) => <View><AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("kind")} label="事項種類" value={input.value}
@@ -68,10 +68,14 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
       <Controller name="assigneeUserId" control={control} render={({ field: input, fieldState }) => <View>
         <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("assigneeUserId")} label="負責人" value={model.eligibleAssignees.some(item => item.userId === input.value) ? input.value : ""}
           invalid={!!fieldState.error} describedBy={`${fieldId("assigneeUserId")}-message`}
-          options={[{ value: "", label: "請選擇合資格家庭成員" }, ...model.eligibleAssignees.map(item => ({ value: item.userId, label: item.name }))]}
+          options={[{ value: "", label: model.classAssignees ? "請選擇負責老師" : "請選擇合資格家庭成員" }, ...model.eligibleAssignees.map(item => ({ value: item.userId, label: item.name }))]}
           disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
-        <FormFieldMessage id={`${fieldId("assigneeUserId")}-message`} error={fieldState.error?.message} help="只可指派本家庭目前有權照顧孩子的成員；檢視者不在清單內。" />
+        <FormFieldMessage id={`${fieldId("assigneeUserId")}-message`} error={fieldState.error?.message} help={model.classAssignees ? "可指派有班級寫入權的老師。" : "只可指派本家庭目前有權照顧孩子的成員；檢視者不在清單內。"} />
       </View>} />
+      {model.classAssignees === "loading" ? <Text style={styles.meta}>正在讀取老師名單…</Text> : null}
+      {model.classAssignees === "more" || model.classAssignees === "error" ? <AppButton
+        label={model.classAssignees === "error" ? "重新讀取老師名單" : "載入更多老師"} variant="secondary"
+        disabled={locked || !model.online} onPress={() => actions.loadMoreAssignees?.()} /> : null}
       <Controller name="timeZone" control={control} render={({ field: input, fieldState }) => <View>
         <AppTimeZoneSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("timeZone")} invalid={!!fieldState.error}
           describedBy={fieldState.error?.message ? `${fieldId("timeZone")}-message` : undefined} value={input.value} disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
@@ -88,7 +92,7 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
     </View>} /> : null}
     {draft.mode !== "create" ? field("note", draft.mode === "complete" ? "完成備註（可選）" : "原因（必填）", undefined, true) : null}
     <Text style={styles.meta}>離線時可整理本次草稿；關閉、重新載入、切換孩子或撤權會清除。沒有跨關閉草稿保存。</Text>
-    <AppButton label="預覽家庭共享內容" disabled={locked} onPress={handleSubmit(values => { setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
+    <AppButton label={model.classAssignees ? "預覽班級待辦" : "預覽家庭共享內容"} disabled={locked} onPress={handleSubmit(values => { setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
       const first = visibleFields.find(item => invalidFields[item.name]?.message);
       if (first) setFocus(first.name);
     })} />
@@ -101,8 +105,8 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
       <AppButton label="繼續修改草稿" variant="quiet" disabled={locked} onPress={edited} />
     </View> : null}
     {model.operation.state === "conflict" && model.latest && draft.basis ? <View style={styles.review}>
-      <Text style={styles.label}>版本衝突 · 原操作沒有保存</Text><Text style={styles.label}>原基準 · 版本 {draft.basis.version}</Text><TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} />
-      <Text style={styles.label}>最新 · 版本 {model.latest.version}</Text><TaskSnapshot task={model.latest} assignees={model.eligibleAssignees} />
+      <Text style={styles.label}>版本衝突 · 原操作沒有保存</Text><Text style={styles.label}>原基準 · 版本 {draft.basis.version}</Text><TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} rosterState={model.classAssignees} />
+      <Text style={styles.label}>最新 · 版本 {model.latest.version}</Text><TaskSnapshot task={model.latest} assignees={model.eligibleAssignees} rosterState={model.classAssignees} />
       <Text style={styles.label}>你的未保存草稿</Text><TaskDraftSummary mode={draft.mode} values={getValues()} assignees={model.eligibleAssignees} />
       <AppButton label="保留草稿並使用最新版本" disabled={!model.online || model.reading || !canRebase} onPress={() => { setConfirmed(false); actions.useLatestVersion(); }} />
       <Text style={styles.meta}>{canRebase ? "只有明確選擇才換基準；草稿保留，之後仍須重新預覽及確認。" : "最新狀態已不接受這項操作。請放棄草稿，再按最新狀態選擇適用操作；不能重開已結束事項。"}</Text>

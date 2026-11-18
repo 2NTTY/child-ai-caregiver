@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { PERSONAL_MODEL, PERSONAL_RUN_LIMITS } from './model-settings.ts';
-import { AGENT_RUN_LIMITS } from './agent-run-limits.ts';
+import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from './agent-run-limits.ts';
 
 const tools = z.number().int().min(AGENT_RUN_LIMITS.toolCalls.min).max(AGENT_RUN_LIMITS.toolCalls.max);
 const seconds = z.number().int().min(AGENT_RUN_LIMITS.deadlineSeconds.min).max(AGENT_RUN_LIMITS.deadlineSeconds.max);
 
 const requestSeconds = z.number().int().min(AGENT_RUN_LIMITS.modelRequestSeconds.min).max(AGENT_RUN_LIMITS.modelRequestSeconds.max);
 const retries = z.number().int().min(AGENT_RUN_LIMITS.modelRetries.min).max(AGENT_RUN_LIMITS.modelRetries.max);
+const softRatio = z.number().finite().min(SOFT_BUDGET_RATIO_RANGE.min).max(SOFT_BUDGET_RATIO_RANGE.max);
 
 export const platformPolicyValuesSchema = z.object({
   enabled: z.boolean(), model: z.literal(PERSONAL_MODEL),
@@ -17,6 +18,13 @@ export const platformPolicyValuesSchema = z.object({
   // Optional on commands so legacy operation fingerprints and clients remain compatible.
   maxToolCalls: tools.optional(), maxRunSeconds: seconds.optional(),
   modelRequestSeconds: requestSeconds.optional(), maxModelRetries: retries.optional(),
+  softBudgetRatio: softRatio.optional(),
+  roleSoftBudgetRatios: z.object({
+    interactive: softRatio.optional(),
+    background: softRatio.optional(),
+    reviewer: softRatio.optional(),
+    retriever: softRatio.optional(),
+  }).strict().optional(),
 }).strict();
 // Missing fields in stored policies/receipts retain their historical effective values.
 // New installations supply the current defaults explicitly in the Server bootstrap.
@@ -24,7 +32,9 @@ export const platformPolicySchema = platformPolicyValuesSchema.extend({
   modelRequestSeconds: requestSeconds.default(30),
   maxModelRetries: retries.default(0),
   maxToolCalls: tools.default(AGENT_RUN_LIMITS.toolCalls.default),
-  maxRunSeconds: seconds.default(90), version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
+  maxRunSeconds: seconds.default(90),
+  softBudgetRatio: softRatio.default(DEFAULT_SOFT_BUDGET_RATIO),
+  version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
 export type PlatformPolicy = z.infer<typeof platformPolicySchema>;
 const operation = { opId: z.uuid() }, address = z.email().max(320).transform(value => value.toLowerCase());
 export const adminCommandSchema = z.discriminatedUnion('kind', [

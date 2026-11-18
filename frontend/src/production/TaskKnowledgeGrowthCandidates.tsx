@@ -1,3 +1,4 @@
+import { growthModuleWritable } from "../growth-view-model";
 import { useEffect, useState } from "react";
 import { Linking, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -93,7 +94,7 @@ function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention
     </SummaryDisclosure>
     {item.taskId ? <><Text style={s.meta}>已有連結事項；讀取時狀態：{item.taskState ?? "未能核對"}，不代表已完成。</Text><AppButton label="核對連結事項" variant="secondary" onPress={() => onTask(item.taskId!)} /></> : null}
     {stale ? <Text style={s.warning}>原草稿及版本保留；最新依據已改變。放棄草稿後再明確核對，不能默換版本。</Text> : null}
-    {model.access === "editable" ? <>
+    {model.access === "editable" && growthModuleWritable(page, "growth") ? <>
       <Controller name="action" control={control} render={({ field }) => <AppSelect label="這次決定" value={field.value} options={[{ value: "accept", label: "接受並記錄知悉" }, { value: "snooze", label: "延後核對" }, { value: "dismiss", label: "關閉候選" }]} disabled={disabled} onChange={value => { edited(); field.onChange(value); }} />} />
       {fields.action === "accept" ? <>
         <Controller name="mode" control={control} render={({ field }) => <AppSelect label="接受後如何安排" value={field.value} options={[{ value: "none", label: "只記錄已知悉" }, { value: "create", label: "明確建立待處理事項" }]} disabled={disabled || !!item.taskId} onChange={value => { edited(); field.onChange(value); }} />} />
@@ -147,9 +148,9 @@ function TopicForm({ topic, model, actions }: { topic: GrowthTopic; model: Growt
     <Text style={s.meta}>只保存這次明確選擇的近況；不知道或未選欄位保持原狀。近況會成為獲授權家庭成員可見的已確認資料。</Text>
     {stale || model.missingTargets.includes(`topic:${topic.id}`) ? <Text style={s.warning}>主題、依據或已確認資料有變／未在目前視窗；原草稿保留，不能默換版本。</Text> : null}
     {topic.inputs.map(input => <View key={input.key} style={s.smallStack}><Text style={s.meta}>{input.label} · 目前：{input.conflict ? "資料有衝突，須在記憶管理覆核" : input.choices.find(choice => choice.value === input.value)?.label ?? "尚未確認"}</Text>
-      {model.access === "editable" ? <Controller name={`values.${input.key}`} control={control} render={({ field }) => <AppSelect label={`這次確認：${input.label}`} value={field.value ?? ""} options={[{ value: "", label: "這次不確認此項" }, ...input.choices]} disabled={disabled || input.conflict} onChange={value => { markDraft(); field.onChange(value); setShared(false); setError(""); }} />} /> : null}
+      {model.access === "editable" && growthModuleWritable(page, "growth") ? <Controller name={`values.${input.key}`} control={control} render={({ field }) => <AppSelect label={`這次確認：${input.label}`} value={field.value ?? ""} options={[{ value: "", label: "這次不確認此項" }, ...input.choices]} disabled={disabled || input.conflict} onChange={value => { markDraft(); field.onChange(value); setShared(false); setError(""); }} />} /> : null}
     </View>)}
-    {model.access === "editable" ? <>
+    {model.access === "editable" && growthModuleWritable(page, "growth") ? <>
       <AppCheckbox label="我已核對所選近況，明確同意保存為家庭共享已確認資料" checked={shared} disabled={disabled || conflict || !selected.length} onChange={value => { markDraft(); setShared(value); }} />
       <AppButton label="確認保存所選近況" disabled={disabled || conflict || !shared || !selected.length} onPress={submit} />
       <AppCheckbox label={topic.disabled ? "我明確同意重新啟用這個主題" : "我明確同意永久停用這個主題"} checked={enabledConsent} disabled={disabled} onChange={value => { markDraft(); setEnabledConsent(value); }} />

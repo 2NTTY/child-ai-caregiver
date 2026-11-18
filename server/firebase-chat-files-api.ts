@@ -32,7 +32,7 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/files(?:\/([^/]+)(?:\/(content|resolve|delete))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
-  const selection = attachmentReadSelection(request, url, true);
+  const selection = attachmentReadSelection(request, url, true, !match[2] || ['content', 'resolve'].includes(match[3] ?? ''));
   const reads = selection ? chatFile.forSharedSpace?.(selection) : chatFile;
   if (!reads) domainReject('shared_attachment_unavailable', 503);
   const listing = request.method === 'GET' && !match[2];
@@ -46,14 +46,14 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
     response = Response.json(await reads.list(userId, childId, listQuery));
   } else if (request.method === 'POST' && !id) {
     const input = domainParse(chatFileReservationSchema, await json(request)); await active();
-    response = Response.json({ file: await chatFile.reserve(userId, childId, input) }, { status: 201 });
+    response = Response.json({ file: await reads.reserve(userId, childId, input) }, { status: 201 });
   } else if (request.method === 'GET' && id && !action) response = Response.json({ file: await reads.get(userId, childId, id) });
   else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await json(request, CHAT_FILE_UPLOAD_BODY_BYTES)); await active();
-    response = Response.json({ file: await chatFile.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
+    response = Response.json({ file: await reads.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
   } else if (request.method === 'POST' && id && action === 'resolve') {
     domainParse(z.object({}).strict(), await json(request)); await active();
-    response = Response.json({ file: await chatFile.reconcile(userId, childId, id) });
+    response = Response.json({ file: await reads.reconcile(userId, childId, id) });
   } else if (request.method === 'POST' && id && action === 'delete') {
     const input = domainParse(z.object({ expectedVersion: version, opId: z.uuid() }).strict(), await json(request)); await active();
     response = Response.json(await reads.delete(userId, childId, id, input.expectedVersion, input.opId));

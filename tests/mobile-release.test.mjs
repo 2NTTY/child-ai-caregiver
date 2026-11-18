@@ -4,6 +4,17 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { classifyChanges, decideRelease, verifyBuild, verifyRollback } from '../scripts/mobile-release-policy.mjs';
 
+test('classifies hosted builds separately and verifies runtime for shared checkout changes', () => {
+  const hosted = classifyChanges(['Dockerfile', '.dockerignore', '.github/workflows/site-release.yml']);
+  assert.deepEqual(hosted, { web:true, android:false, ios:false, server:true, nativeInputs:false, review:[] });
+  assert.equal(decideRelease(classifyChanges(['.github/workflows/compaction-integration-offline.yml']), null, null), 'none');
+  const baseline = { runtime:'installed' };
+  const shared = classifyChanges(['.gitattributes', 'frontend/src/App.tsx', 'Dockerfile']);
+  assert.equal(decideRelease(shared, 'installed', baseline), 'update');
+  assert.equal(decideRelease(shared, 'changed', baseline), 'build');
+  assert.equal(decideRelease(classifyChanges(['.github/workflows/new-publisher.yml']), 'installed', baseline), 'review-required');
+});
+
 test('release plan preserves shared delivery, runtime compatibility and scoped rollback without cloud calls', () => {
   const config = { projectId: 'project', owner: 'owner', applicationId: 'org.yuyoufang.app' };
   const build = { id: 'build', status: 'FINISHED', platform: 'ANDROID', app: { id: 'project', ownerAccount: { name: 'owner' } },

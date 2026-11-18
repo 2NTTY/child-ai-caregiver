@@ -29,7 +29,7 @@ export const handoverImportMappingSchema = z.object({ source: handoverSourceIden
 }).strict().refine(value => !value.retiredInstructionOpId || value.restoreOriginal === true
   && value.source.section === 'instructions' && value.target.id !== value.source.resourceId);
 export type HandoverImportMapping = z.infer<typeof handoverImportMappingSchema>;
-const originalSections = new Set<HandoverSourceIdentity['section']>(['care', 'profile', 'tasks', 'private_sources',
+const originalSections = new Set<HandoverSourceIdentity['section']>(['chat', 'care', 'profile', 'tasks', 'private_sources',
   'documents', 'visit_preparation', 'child_avatar', 'concerns', 'instructions', 'memory_facts', 'memory_topics', ...originalAttachmentSectionSchema.options, ...originalGrowthSectionSchema.options]);
 export function supportsOriginalSection(section: HandoverSourceIdentity['section']) { return originalSections.has(section); }
 export function validOriginalMapping(scope: WorkRecoveryScope, { source, target, retiredInstructionOpId }: HandoverImportMapping): boolean {

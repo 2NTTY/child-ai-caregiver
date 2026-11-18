@@ -21,6 +21,7 @@ import {
 } from "../server/agent-model-gateway.ts";
 import { createAgentRuntime, type AgentTool } from "../server/agent-runtime.ts";
 import { readAiConfig } from "../server/ai-config.ts";
+import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION,
   backgroundKnowledgeOperationFingerprint,
@@ -266,6 +267,8 @@ test("Scenario #8: expanded output, input, and deadline ceilings stay within leg
 });
 
 test("Scenario #9: retries charge once per attempt on the same durable root ledger and active vs inactive review obligations allocate correctly", async () => {
+  const recipeId = "p1-chat" as const;
+  const prompt = await loadAgentPrompt(recipeId, "tool_cycle", ["run", "scope", "conversation", "capabilities"]);
   const usageFixture = firestoreUsageFixture(Date.now());
   const root = new FirestoreRootBudget({ ...usageFixture.options, namespace: "req005_s9_root" });
   const service = usageFixture.service;
@@ -289,7 +292,7 @@ test("Scenario #9: retries charge once per attempt on the same durable root ledg
       storageEpoch: "epoch",
       trigger: { kind: "interactive", reference: "msg-1" },
       workflowVersion: "w1",
-      promptPackVersion: "0.1.59",
+      promptPackVersion: prompt.packVersion,
       settingsVersion: "s1",
       billingVersion: "b1",
       limits: { modelCalls: 6, toolCalls: 4, queryEmbeddings: 2 },
@@ -338,7 +341,7 @@ test("Scenario #9: retries charge once per attempt on the same durable root ledg
       dataVersion: "epoch:1",
     },
     trigger: { kind: "interactive" as const, reference: "msg-1" },
-    recipeId: "p1-chat" as const,
+    recipeId,
     messages: [{ role: "user" as const, text: "Retry cleanly without duplicating tool side effects." }],
     authorize: async () => true,
     tools: [{

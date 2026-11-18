@@ -6,6 +6,7 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreBackgroundQueue, type FirestoreBackgroundDelivery, type FirestoreBackgroundWork } from '../server/firestore-background-work.ts';
 import { createKnowledgeIndexBatches } from '../server/firestore-knowledge-index-batches.ts';
+import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { FirestoreKnowledgeError } from '../server/firestore-knowledge.ts';
 
 test('admin rebuild stops between pages, fences the old lease and preserves partial results across resume and replay', async () => {
@@ -64,4 +65,37 @@ test('admin rebuild stops between pages, fences the old lease and preserves part
     assert.deepEqual((await store.list(null)).items, [latest]);
     assert.equal((await store.get(randomUUID())).batch, null);
   } finally { Date.now = original; }
+});
+
+
+test('large rebuild fixes all pages atomically and resumes the same jobs after a lost response', async()=>{
+  const options={database:serialFirestoreFixture().database,cipher:createStorageCipher(Buffer.alloc(32,118)),projectId:'demo-bulk',namespace:'bulk'};
+  const auth=createFirestoreAuthority(options), actor='admin';
+  await auth.initializeControl({enabled:true,generation:randomUUID()});
+  const store=createKnowledgeIndexBatches(options,{listVersions:async()=>({items:[],nextVersionId:null}),rebuildSearchPageIn:async()=>{throw Error('unexpected');}},tx=>auth.readControl(tx),actor);
+  const input={opId:randomUUID(),targets:Array.from({length:151},()=>({versionId:randomUUID(),versionHash:'a'.repeat(64)}))};
+  await assert.rejects(store.createGroup('outsider',input));
+  const origin='https://example.test';
+  const session={user:{id:actor}};
+  const handle=createFirebaseRequestHandler({authority:auth,publicOrigin:origin,mailConfigured:false,adminUid:actor,
+    auth:{getSession:async()=>session,assertRecentReauthentication:async()=>session,handler:()=>{throw Error('unexpected auth request');}},
+    admin:{knowledgeIndexes:()=>store}} as unknown as Parameters<typeof createFirebaseRequestHandler>[0]);
+  const url=origin+'/api/admin/knowledge-index-groups', body=JSON.stringify(input);
+  assert.ok(Buffer.byteLength(body)>16384);
+  const req=(requestOrigin:string)=>new Request(url,{method:'POST',headers:{origin:requestOrigin,'content-type':'application/json','x-expected-user-id':actor},body});
+  assert.equal((await handle(req('https://other.example.test'))).status,403);
+  const response=await handle(req(origin));assert.equal(response.status,200);
+  const {group}=await store.getGroup(input.opId);assert.ok(group);
+  assert.deepEqual((await response.json()).group,group);
+  assert.deepEqual(group.parts.map(x=>x.total),[50,50,50,1]);
+  assert.deepEqual((await store.createGroup(actor,input)).group,group);
+  assert.deepEqual((await store.getGroup(group.id)).group,group);
+  await assert.rejects(store.createGroup(actor,{...input,targets:[...input.targets.slice(0,-1),{...input.targets.at(-1)!,versionHash:'b'.repeat(64)}]}));
+  const payload={opId:randomUUID(),versions:group.parts.map(x=>x.controlVersion)};
+  const paused=(await store.controlGroup(actor,group.id,'stop',payload)).group;
+  assert.ok(paused.parts.every(x=>x.state==='paused'));
+  assert.deepEqual((await store.controlGroup(actor,group.id,'stop',payload)).group,paused);
+  await assert.rejects(store.controlGroup(actor,group.id,'resume',{opId:randomUUID(),versions:payload.versions}));
+  assert.ok((await store.controlGroup(actor,group.id,'resume',{opId:randomUUID(),versions:paused.parts.map(x=>x.controlVersion)})).group.parts.every(x=>x.state==='running'));
+  assert.equal((await store.get(group.parts[1].id)).batch?.targets[0].versionId,input.targets[50].versionId);
 });

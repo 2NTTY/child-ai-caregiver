@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { adminIndexBatchSchema, indexTargetLimit, indexVersionTargetSchema } from '../src/shared/admin-knowledge-index.ts';
+import { adminIndexBatchSchema, indexGroupParts, indexTargetLimit, indexVersionTargetSchema } from '../src/shared/admin-knowledge-index.ts';
 import { KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS } from './knowledge-lexical-index.ts';
 
 const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -25,8 +25,9 @@ export const indexBatchSchema = adminIndexBatchSchema.extend({
     && (v.state !== 'failed' || v.targets.some(t => t.state === 'failed')));
 export const indexBatchReceiptSchema = z.strictObject({
   opId: uuid, batchId: uuid, actorId: z.string().min(1).max(128),
-  action: z.enum(['create', 'stop', 'resume']), fingerprint: hash, controlVersion: positive, at: timestamp
-});
+  action: z.enum(['create', 'stop', 'resume']), fingerprint: hash, controlVersion: positive, at: timestamp,
+  parts:z.array(uuid).min(2).max(indexGroupParts).optional()
+}).refine(r=>!r.parts || r.action==='create' && r.opId===r.batchId && r.parts[0]===r.batchId && new Set(r.parts).size===r.parts.length);
 export type IndexBatch = z.infer<typeof indexBatchSchema>;
 export function indexBatchView(batch: IndexBatch): z.infer<typeof adminIndexBatchSchema> {
   const { id, state, controlVersion, createdAt, updatedAt, targets } = batch;

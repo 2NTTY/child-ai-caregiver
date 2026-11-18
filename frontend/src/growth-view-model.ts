@@ -72,7 +72,10 @@ export type GrowthArchiveProjection = {
   // Several partial period views may refer to one snapshot; period labels do not prove coverage.
   periods?: GrowthArchivePeriod[]; history?: GrowthArchiveSnapshot[];
 };
-export type GrowthPage = { archive?: GrowthArchiveProjection; concerns?: GrowthConcernProjection; authorityVersion:string;items:GrowthAttention[];historyHasMore:boolean;topics:GrowthTopic[];notices:string[];eligibleAssignees:TaskAssigneeView[];canManage:boolean };
+export type GrowthPage = { moduleWrites?: { growth:boolean; concerns:boolean }; archive?: GrowthArchiveProjection; concerns?: GrowthConcernProjection; authorityVersion:string;items:GrowthAttention[];historyHasMore:boolean;topics:GrowthTopic[];notices:string[];eligibleAssignees:TaskAssigneeView[];canManage:boolean };
+export function growthModuleWritable(page: GrowthPage | null | undefined, module: 'growth' | 'concerns'): boolean {
+  return page?.moduleWrites?.[module] ?? page?.canManage ?? false;
+}
 type Basis = {authorityVersion:string;expectedVersion:number;confirm:true};
 export type GrowthDecision = Basis & ({action:"accept";task:{kind:"none"}|{kind:"create";values:TaskValues}|{kind:"existing";id:string;expectedVersion:number}}|{action:"snooze";until:string}|{action:"dismiss";note:string});
 export type GrowthTopicDecision = Basis & ({action:"set_enabled";enabled:boolean}|{action:"confirm_context";expectedFacts:GrowthFactRef[];values:Record<string,string>;confirmShared:true});

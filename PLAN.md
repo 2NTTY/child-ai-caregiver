@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. [主動通知](#proactive-notifications)已交付，當前入口為 [REQ-001 的首個 Web 搜索流程](#agent-search-first)。恢復 P4 時從[接手清單](docs/P4_RESUME.md)選包，再按 [P4 原有依賴](#p4-execution)接續。[P3](#phase-3)餘項沿原包追蹤。
+2. [主動通知](#proactive-notifications)已交付，本輪目標為整個 P4。家庭附件庫直接上傳已合併。班級待辦由老師在每部裝置啟用一次，接收指派給自己的到期事項。其餘五包、正式交付及待驗項從[P4 接手清單](docs/P4_RESUME.md)接續。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -81,7 +81,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="agent-search-first"></a>
 **主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
 
-**P4 暫停於 Web 示範交付。** 優先沿用現有檢索與引用接點，只有上述查詢遇到具體阻塞才接回對應的 P4 工作。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
+**P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
 **REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。原候選的離線驗證與 11 月 11 日整合修正分別列出；真模型驗收與正式發布仍待核對。
 
@@ -101,7 +101,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **匯出文件清單已交付原站 Web。** [共用畫面](frontend/verification/P4_HANDOVER_EXPORT_CHECKLIST_20261104.json)按名稱列出會加入或略過的文件、原因及已知日期。跨期、日期不明及完全在期間外均可手選整份當前版本；[實際 ZIP 核對](artifacts/verification/P4_HANDOVER_DOCUMENT_SELECTION_20261104.json)涵蓋手選報告、取消附件與其他模組保持原期間。Android 版本號 5 的原生 runtime 指紋在本機與 EAS 不一致，本次未產出 APK。下次需要批量安裝時，先核對同一建置封包與依賴位置，再建置、驗簽及覆蓋安裝。[原建置紀錄](https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/e2c42bee-fcc6-4c99-8aa8-4d30616c8591)
 
-**當前入口（2026-11-08）為 [P4-HANDOVER01](#p4-handover01)。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
+**11 月 8 日的 [P4-HANDOVER01](#p4-handover01) 交付基線。** 原站已接本人記憶、照片、錄音、檔案及帳戶通知偏好的差異還原。沒有孩子亦可單選通知偏好，或與本人頭像同批還原。下一步補其餘本人原件的覆蓋範圍，包括成長整理與私人聊天。Android 共用表單待批量發布，原生大型包與分享待設備驗收。D 的接點等相關接口穩定。[帳戶偏好發布](artifacts/verification/P4_ACCOUNT_PREFERENCES_20261108.json)／[附件發布](artifacts/verification/P4_ORIGINAL_ATTACHMENTS_20261108.json)／[記憶還原](artifacts/verification/P4_ORIGINAL_MEMORY_20261105.json)／[本人還原契約](docs/API.md#p4-personal-restore)
 
 測試階段持續交付後端與 Web。Android 共用改動累積後，在實際需要安裝或驗證原生功能時集中建置 APK；個別功能包可先完成共用接線，交付紀錄另列尚未在手機驗收的部分。
 
@@ -199,9 +199,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 #### 1. 11 月 8 日候選版本與證據
 
-為貫徹專案「零污染、高內聚、單一目的」之審查規範，REQ-005 完整工作已解耦拆分為獨立、低風險且具備明確斷言邊界之 Pull Request。各套件之真實對應關係、範圍與最新交付狀態如下：
+為貫徹專案「零污染、高內聚、單一目的」之審查規範，REQ-005 完整工作已解耦拆分為獨立、低風險且具備明確斷言邊界之 Pull Request。以下保留各套件在該次記錄中的對應關係、範圍及交付狀態：
 
-| 套件編號 | PR 分支名 | GitHub PR | 覆蓋章節 | 核心職責與實際變更範圍 | 驗證收據 | 最新交付狀態 |
+| 套件編號 | PR 分支名 | GitHub PR | 覆蓋章節 | 核心職責與實際變更範圍 | 驗證收據 | 當時交付狀態 |
 |---|---|---|---|---|---|---|
 | **PR 1** | `codex/req005-interactive-budget` | #408 | §4.1 | 互動工具路徑解除 8k 假牆，動態適配至工具真實字元預算（基線） | 既有基線 | ✅ Merged |
 | **PR 2** | `codex/req005-projection-consistency` | #409 | §4.1 | 3k 投影視窗與 6k 儲存一致性，連續後綴保全與容量省略標記（基線） | 既有基線 | ✅ Merged |
@@ -215,7 +215,17 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | **PR 10** | `codex/req005-cursor-pagination` | [#513](https://github.com/2NTTY/child-ai-caregiver/pull/513) | §8 | 累積資料規模化：移除 50 文件、50 來源、200 關注小型業務牆；實作有界 Keyset Cursor 分頁、端到端 API／Agent 游標傳遞（HTTP、client schema 與 options、list_private_sources、read_concerns 20 筆邊界對齊無跳漏）、雙遍索引／舊資料查重與單項 200 事件時間線硬拒絕防線；前端畫面控制器續頁待接（實施 feature commit `20b08990`, CI SUCCESS run `42409849290`） | `REQ005_CURSOR_PAGINATION_20261107.json` | 🚀 OPEN (tip `8873734f`) |
 | **PR 11** | `codex/req005-closeout-validation` | [#514](https://github.com/2NTTY/child-ai-caregiver/pull/514) | §9 | 全量收束核對清單、官方 26 項驗收場景實測對照、待決清單完整化與真模型驗收標準確立（整合至 PLAN.md#req005-closeout01，依 AGENTS.md 移除獨立文件） | `REQ005_CLOSEOUT_VALIDATION_20261107.json` | 🔄 本次校準交付 (HEAD) |
 
-**2026-11-15 建立、2026-11-17 校準之本地單一目的拆分補完 PR（基於 `origin/master` `b48ba8804918b71757df1445b0a7790dd13f2fd7`，僅本地提交、未推遠端／未開 GitHub PR）：**
+**補完 PR 的主線狀態（以 master `fc96aed8`、#629 為準）**
+
+| 工作包 | 此基線的狀態與下一步 |
+|---|---|
+| A／[#591](https://github.com/2NTTY/child-ai-caregiver/pull/591)、B／[#592](https://github.com/2NTTY/child-ai-caregiver/pull/592)、D／[#594](https://github.com/2NTTY/child-ai-caregiver/pull/594) | 已分別合入主線 `8ae2e653`、`59e167a8`、`c28f8a09`。合併不等於已部署或通過真實環境驗收。 |
+| C／[#593](https://github.com/2NTTY/child-ai-caregiver/pull/593) | 尚未納入此 master，主線亦未包含成長歷史游標回歸測試。先前的本地候選與冷啟測試收據屬歷史證據，不能代替 #593 最新 PR head 的託管 CI。 |
+| E／[#595](https://github.com/2NTTY/child-ai-caregiver/pull/595) | 文件與離線門檻延續 `46c21b37`；每個測試檔都須證明有執行，不能以跳過或待辦冒充通過。E 不夾帶未合併的 C；C 未合併前可驗 E 自身，但正式整合門檻仍須等 C 合併後在新 master／PR head 上重跑。 |
+
+官方 26 項場景未全案驗收。下方矩陣只記各版本的離線子集；本地合成、託管 CI、真模型、正式儲存與實機驗收分開記錄。`#447` 持久跨輪摘要仍未啟用。
+
+**歷史快照：**以下保留 11 月 15 日以 `b48ba880` 拆分及後續校準時的版本、測試及當時發布狀態；不是目前的 PR 狀態。
 
 | 套件編號 | 分支名 | 覆蓋章節／未決 | 核心職責與實際變更範圍 | 固定 Commit / 分支狀態 |
 |---|---|---|---|---|
@@ -229,7 +239,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 #### 2. REQ-005 §9 官方實施階段（Stages 0 - 4）交付狀態校準
 
-對照 `REQUIREMENTS_BACKLOG.md` §9 明訂之 5 大實施階段，嚴格區分「已映射／離線已驗子集／待跨分支整合或 Owner 合併／未執行真模型或生產環境」：
+以下階段表記錄當時基線及候選的狀態，不是目前 PR 狀態。對照 `REQUIREMENTS_BACKLOG.md` §9 明訂之 5 大實施階段，嚴格區分「已映射／離線已驗子集／待跨分支整合或 Owner 合併／未執行真模型或生產環境」：
 
 | 階段 | 規格所定工作 | 交付門檻要求 | 實際落地狀態與實證 | 判定狀態 |
 |---|---|---|---|---|
@@ -241,7 +251,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 #### 3. REQ-005 §9 二十六項官方驗收場景實測矩陣 (Official 26 Acceptance Scenarios Matrix)
 
-本矩陣嚴格對照 `docs/REQUIREMENTS_BACKLOG.md:1004–1031` 官方 26 項驗收場景原文與單位，逐格核對 repo 現存測試與各獨立候選 commit（附固定 SHA），嚴格區分「離線已驗子集（Offline Subset Verified）」、「部分實證（Partial）」、「規格映射（Mapped in Spec）」及「未執行／待決（Not Run / Pending）」；**在本 PR-E 自身僅於 `b48ba880` 執行 6 檔 36/36（見 `WORKLOG.md`），A–D 均為各自獨立本地分支候選，須於統一整合測試與 Owner 合併後始作整合定案**：
+本矩陣是當時各獨立候選的歷史快照。原紀錄嚴格對照 `docs/REQUIREMENTS_BACKLOG.md:1004–1031` 官方 26 項驗收場景原文與單位，逐格核對 repo 現存測試與各獨立候選 commit（附固定 SHA），嚴格區分「離線已驗子集（Offline Subset Verified）」、「部分實證（Partial）」、「規格映射（Mapped in Spec）」及「未執行／待決（Not Run / Pending）」；**當時本 PR-E 自身僅於 `b48ba880` 執行 6 檔 36/36（見 `WORKLOG.md`），A–D 均為各自獨立本地分支候選，須於統一整合測試與 Owner 合併後始作整合定案**：
 
 | # | 官方驗收場景原文 | 規格應驗證的結果原文 | 實施套件／檔案 | 真實測試與斷言證據 | 驗收結論 |
 |---|---|---|---|---|---|
@@ -314,8 +324,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
    - 本地／VM 環境接通 Vertex ADC 時，調用 Gemini 2.5 介面；若發生 403 / 429 錯誤，依既有契約標準化為 `PersonalProviderError`，如實保留失敗日誌，絕不暗中吞沒。
 3. **保存成功不代表進上下文（Saved != Projected）**：
    - 記憶與摘要儲存至資料庫後，前端初始投影視窗依然維持安全截斷與省略標註（`headBatchOmittedForCapacity`），確保模型永遠獲得一致且未受污染的水位資訊。
-4. **本輪驗收限制聲明**：
-   - 本 PR-E 僅於 `origin/master` (`b48ba880`) 基線執行自身 6 檔離線合成測試並校準 PR-A～PR-D 獨立分支紀錄（另於獨立合併工作樹覆核跨包整合測試與 `handover-concern-snapshot`）；**未執行真實 Gemini API 調用、實體 Cloud Firestore／Storage 壓測、GCP 帳單配額接線、外部維護者告警接收端、多實例崩潰重啟壓測或託管 GitHub Actions**；`#447` 持久跨輪摘要仍維持未啟用／未部署，且關聯 Slice B `B-P5` (`codex/search-help-entry`, `07ddddd4`) 已完成設計定案與 H1／H2 修復但因實機與行動裝置驗收未完維持技術 **LOCAL HOLD**。
+4. **當時驗收的限制（歷史快照）**：
+   - 當時本 PR-E 僅於 `origin/master` (`b48ba880`) 基線執行自身 6 檔離線合成測試並校準 PR-A～PR-D 獨立分支紀錄（另於獨立合併工作樹覆核跨包整合測試與 `handover-concern-snapshot`）；**未執行真實 Gemini API 調用、實體 Cloud Firestore／Storage 壓測、GCP 帳單配額接線、外部維護者告警接收端、多實例崩潰重啟壓測或託管 GitHub Actions**；`#447` 持久跨輪摘要仍維持未啟用／未部署，且關聯 Slice B `B-P5` (`codex/search-help-entry`, `07ddddd4`) 已完成設計定案與 H1／H2 修復但因實機與行動裝置驗收未完維持技術 **LOCAL HOLD**。
 
 #### 6. 治理規範確認與 Owner 審批指引 (Governance & Owner Approval Path)
 
@@ -1007,7 +1017,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 首批在現有 Web 管理後台按需顯示指定來源的註冊／停用狀態、最近成功檢查時間，以及可續讀的檢查紀錄。來源內容是否核准發布沿既有發布流程另行判斷。
 - 關鍵詞索引批次以已核准版本及 hash 固定目標。每頁在同一交易保存索引與進度，停止後保留逐項結果；恢復只接續未完成範圍。這項操作不會重新產生 embedding 或切換發布版本。
 - 主機操作者可按來源 ID／版本 hash 選擇已發布且可分享的版本匯出 ZIP。逐版草稿與收據同筆保存；停止後可從原批次續跑。相容向量須在接收方核准版本後才可用於發布。指令與限制見[維護入口](docs/P2_KNOWLEDGE.md#公共知識版本的批量移轉)。
-  - Web 管理入口接同一匯入台帳：分頁列出批次、按 ZIP 指紋找回舊批次、讀逐版收據與失敗位置，以目前 revision 停止或恢復接收工作。恢復後沿同一包接續；建立草稿、核准及公開發布各有自己的結果。
+  - Web 管理員可依交付指紋選擇 ZIP，上載後沿 CLI 的逐版草稿及收據接續。原站發布與容量驗收見 [P4 接手清單](docs/P4_RESUME.md)。同一匯入台帳分頁列出批次、按 ZIP 指紋找回舊批次、讀逐版收據與失敗位置，以目前 revision 停止或恢復接收工作。恢復後沿同一包接續；建立草稿、核准及公開發布各有自己的結果。
 - 保留大型管理頁、大規模導入／批量重建、進度／停止／恢復／失敗、效能、維運及知識資料遷移。已前移的官方 PDF、語義換版及必要發布維護不重做。
 - 公共知識包與 HANDOVER01 私人資料包分清；完整跨 Server 權威搬遷屬 P5，不取消 P4 知識資料導入／移轉能力。
 
@@ -1017,8 +1027,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置 S12-W01／S12-W04 的草稿／附件及受影響平台 adapter，不等所有 P3。
 - 保留系統分享及其餘既定平台接點、來源／確認／權限與失敗處理，接回現有草稿／附件，不另建業務副本。
 - Android 首包沿 Expo Sharing 原生 `getSharedPayloads`／config plugin 及 Router intent 接點；不用會自動解析網址的 resolver。文字／網址保留原文，照片／音訊／其他檔案沿現有本機副本與大小／格式檢查；只把用戶選中的項目加入目前個人孩子草稿，每則一份附件規則保持。登入、孩子切換、已有草稿、取消與遲到讀取要有明確狀態，不自動上載或觸發 Agent。
-- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。Swift 編譯、兩個 target 的簽署與 iPhone 系統分享仍待驗。
-- Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併，隨下次需要使用的 APK 批量交付，實機待驗。iOS 套件已核對到專案生成，尚欠原生編譯及收件接線。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
+- iOS 分享在來源 App 內保存至裝置，返回來源。使用者開啟育有方後選擇加入聊天草稿或把 ZIP 交給既有匯入入口。本機已生成 Xcode 工程並檢查收件、帳戶切換及清理。正式 Swift 接收器已編譯成 iPhone arm64 物件。兩個 target 的簽署與 iPhone 系統分享仍待驗。[iPhone SDK 編譯收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44198716579/job/134446904604)。
+- Android 收到第二份資料包時，可從分享頁返回目前的匯入工作，離頁取消或切換身份會保留原來的防護。畫面按已安裝版本顯示匯入上限。#482 已合併。第 8 版 APK 的原生分享入口及 11 月 18 日相容 OTA 已核對，外部 App 分享到草稿／ZIP 待真機驗收。[Android 交付收據](artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)。iOS 收件與草稿已接線；接收器編譯、App／extension 簽署及真機驗收分別追蹤。[套件核對](docs/TECH_REUSE.md#s12-sharing-reuse)
 - **2026-10-28 Android 首包：**本機接線、定向檢查及 Android JS 匯出完成，未建置／發布新版 APK。獨立 review 的原附件離頁保護、孩子 A→B→A 遲到讀取，以及 SDK 文字檔案解析均已修正；沿固定 Expo Sharing 加標準版本補丁，不重寫原生模組。必要失敗、型別限制及真機待驗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。後續只補新 binary／外部 App 分享接收，不重驗既有附件保存；其餘 P4 可繼續。
 
 <a id="s07-w02"></a>
@@ -1030,7 +1040,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - **P5 跨 Server：**前置 S06-W04 及本包 P4 契約；核身份、快取、附件、未完成操作及舊世代邊界，不再依賴 S08-W01。
 
 <a id="s14-w02"></a>
-#### S14-W02：報告與分析（P4，分期統計已發布，其餘待交付）
+#### S14-W02：報告與分析（P4，分期統計及同版預覽已發布，實機分享待驗）
 
 - 前置 P2-A05／現行報告與來源有效性接口；分享只等 S12-W02 對應 adapter，多孩分析只等 CLASS01 範圍，不以全部知識管理作前置。
 - 保留原生分享、雙端預覽、趨勢及非核心分析，使用可追溯資料、期間統計、變化與缺漏；不新增診斷、發展評分或排名。日常成長、季度／年度及同版 PDF 已前移。
@@ -1040,7 +1050,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 #### S15-W02：備份／恢復（P4／P5 父包，分項未完成）
 
 <a id="s15-w02-p4"></a>
-- **P4 集中服務：**前置現有 Firestore／Storage 備份、刪除日誌及工作世代接口。保留配對備份、保留期限、隔離災難恢復、刪除重放及保留新寫入回退，不等跨 Server 遷移或報告 UI。原真備份還原待驗維持原歸屬；用戶文檔包不替代此機制。
+- **P4 集中服務：**前置現有 Firestore／Storage 備份、刪除日誌及工作世代接口。保留配對備份、保留期限、隔離災難恢復、刪除重放及保留新寫入回退，不等跨 Server 遷移或報告 UI。[香港隔離還原紀錄](artifacts/verification/P4_CENTRAL_RECOVERY_20261118.json)已驗配對附件、刪除重放及回到保有新寫入的原來源。較早的失敗與其他包的還原待驗保留原歸屬。
 <a id="s15-w02-p5"></a>
 - **P5 跨 Server：**前置 S15-W01 及本包 P4 恢復契約；完成通用遷移／災備及不丟新寫入的 rollback，不復活已撤權身份或終態工作。
 
@@ -1073,15 +1083,15 @@ QR／短碼、已登入裝置批准配對及臨時電腦會話取消，不移至
 前置 S13-W03、S17-W05；核對資料、身份、附件、知識及工作，確認後切換權威，失敗不提早停用來源。和跨人獨立副本不同；處理 unknown、切單主，回退保存新寫入。
 
 <a id="s16-w04"></a>
-### S16-W04：P4／P5 驗收父包（未開始）
+### S16-W04：P4／P5 驗收父包（P4 進行中，P5 待啟動）
 
 <a id="s16-w04-p4"></a>
-- **P4 子包：**等 P4 各功能的相應交付，不等 P5；追溯原有效 REQ／AC 與 [AC-P4](SPEC.md#ac-p4-p5)。同批合成資料覆蓋登入／共享、班級批次、交接／備份往返及新增營運接點；保留有效故障範圍、復用已有證據。按下表已確認決定驗證；真 Agent 等 D 相應接口／自查，設備或本人操作留待驗。
+- **P4 子包：**等 P4 各功能的相應交付，不等 P5；逐項證據及待驗入口見 [P4 驗收索引](docs/P4_RESUME.md#p4-acceptance)。追溯原有效 REQ／AC 與 [AC-P4](SPEC.md#ac-p4-p5)。同批合成資料覆蓋登入／共享、班級批次、交接／備份往返及新增營運接點；保留有效故障範圍、復用已有證據。按下表已確認決定驗證；真 Agent 等 D 相應接口／自查，設備或本人操作留待驗。
 <a id="s16-w04-p5"></a>
 - **P5 子包：**等 P5 功能；按 [AC-P5](SPEC.md#ac-p5-01) 驗自選／自部署、搬遷／恢復、完整性、單主及保留新寫入的回退。P4 通過不代表本子包通過。
 
 <a id="s17-w04"></a>
-### S17-W04：P4／P5 交付父包（未開始）
+### S17-W04：P4／P5 交付父包（P4 進行中，P5 待啟動）
 
 <a id="s17-w04-p4"></a>
 - **P4 子包：**前置 S16-W04/P4；集中服務 Web／App、源碼／配置、知識、分享／分析、文檔包、備份恢復、許可、操作文件及證據，另一組員可重現。P3 APK／iOS 未驗仍未完成，Windows 不列本子包門檻。
