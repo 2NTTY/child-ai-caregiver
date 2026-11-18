@@ -67,7 +67,12 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
   const currentHelpScope = `${scopeKey ?? ""}:${child?.id ?? ""}`;
+  const [paneHeight, setPaneHeight] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false), [helpState, setHelpState] = useState<{ open: boolean; scope: string }>({ open: false, scope: currentHelpScope });
+  const handlePaneLayout = (event: LayoutChangeEvent) => {
+    setPaneHeight(event.nativeEvent.layout.height);
+    onPaneLayout?.(event);
+  };
   const helpOpen = helpState.scope === currentHelpScope && helpState.open;
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
@@ -151,8 +156,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
       : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
-  // Fixed official help dock: permanent toolbar entry + bounded non-scrolling dock directly above AgentComposer (outside ChatTimeline).
-  const maxHelpDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
+  // Fixed official help dock: permanent toolbar entry + bounded dock directly above AgentComposer (outside ChatTimeline), compensating for composerOverlap and measured paneHeight so the composer stays visible on short viewports.
+  const measuredPaneHeight = paneHeight > 0 ? paneHeight : Math.max(0, (viewportHeight || 640) - 180);
+  const preferredDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
+  const maxHelpDockHeight = Math.min(preferredDockHeight, Math.max(56, measuredPaneHeight - 168));
   const officialHelpPanel = (autoHelpIds.length || activeHelpIds.length) ? <View testID="chat-official-help-dock" style={[styles.helpDock, { maxHeight: maxHelpDockHeight }]}>
     <ScrollView nestedScrollEnabled style={styles.helpDockScroll} contentContainerStyle={styles.helpDockContent}>
       <BackgroundSurface testID="chat-official-help-panel" style={styles.feedback}>
@@ -215,7 +222,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
       </View>
     </BackgroundSurface>
-    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
+    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={handlePaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
     <ChatTimeline items={scopedMessages} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
       onVisibleItems={ids => setVisibleIds(previous => previous.join(",") === ids.join(",") ? previous : ids)}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
@@ -294,7 +301,7 @@ const styles = StyleSheet.create({
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
-  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", overflow: "hidden" },
+  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", overflow: "hidden", marginBottom: chatLayout.composerOverlap },
   helpDockScroll: { flexGrow: 0 }, helpDockContent: { paddingVertical: 4 },
   statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },

@@ -361,10 +361,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ### 固定官方求助入口（`codex/search-help-entry` — Draft PR / HOLD MERGE）
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
-- **治理狀態（設計定案／Draft PR 待真機實測後轉 Ready）**：依 `REQ-001 §4.3:184`，入口位置與觸發方式已定案，現正補充瀏覽器 Playwright Web DOM E2E 並對齊最新 `origin/master`（含已合併之來源進度與斷線恢復功能），以 **Draft PR（HOLD MERGE）** 供審核及 Hosted 離線 CI 查閱；Android／iOS 實機軟鍵盤彈出、原生系統 `fontScale`、螢幕閱讀器（TalkBack／VoiceOver）與真機 E2E 仍待真機補驗。
+- **治理狀態（Draft PR / HOLD MERGE — 已完成 Web DOM E2E，待實機與真機補助檢後轉 Ready）**：
+  - 依 `REQ-001 §4.3:184`，入口位置與觸發規則已實作完成並已正向合併最新 `origin/master`（`a3b6a24f`，含已合併之 `#600`、`#601`、`#602`、`#608`、`#630`），現以 **Draft PR（HOLD MERGE）** 提交審核與執行 Hosted 離線 CI。
+  - **已補強之 Web 實測範圍（Microsoft Edge Playwright DOM E2E）**：於匯出之 Expo Web `frontend/dist` 執行 `frontend/scripts/official-help-entry.browser.test.mjs`（3/3 通過，配對合成 `/api/**` 回應與 SSE 串流），涵蓋無孩子選擇時鍵盤 `Enter` 切換、ARIA `alert`／`button` 角色、桌機 `1440x900` 與手機 `390x844`／`360x640`／`320x720`、縮矮視窗 `390x420`／`360x380`、CSS 200% 放大文字，以及 `503`／停止回合保留與切換孩子隔離，零水平捲動、零元件重疊與零控制台錯誤。
+  - **仍未覆蓋（HOLD MERGE 原因）**：桌面瀏覽器 CSS 縮放與縮矮視窗**不能代替** Android／iOS 實機軟鍵盤彈出與 insets、原生系統 `PixelRatio.getFontScale()`、真實螢幕閱讀器（TalkBack／VoiceOver）、真機原生打包或真實 Gemini／生產資料庫端對端驗證。
 - **定案設計與技術實作摘要**：
-  1. **入口位置與有界結構**：於 `chat-top-toolbar` 保留常駐「官方求助入口」切換按鈕（`accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel}`），並將 `officialHelpPanel` 掛載於 `<AgentComposer>` 上方之有界非捲動區域 `chat-official-help-dock`（附 `ScrollView` 及依 `viewportHeight` / `compact` / `fontScale` 計算之有界 `maxHeight`），無論是否已選孩子（`!child`）、發生錯誤或離線皆可即時顯示且與時間軸分離。
-  2. **觸發與狀態隔離規則**：於 `src/shared/agent-feedback.ts`（`NFKC` 正規化 `matchOfficialHelpForText`）雙向覆蓋 `失去意識`／`意識喪失`／`知覺喪失`／`反應全無`／`失知覺`／`暈倒`／`無晒反應` 等急症線索並優先高於純玩笑排除，一般用藥問題（如 `退燒藥每次食 5ml？`、`Administer thirteen drops`）則僅命中 `medical-consult-hk-v1` 並顯示溫和用藥提示 `chat-official-help-consult-notice` 而不誤升為急症警告；`src/client/chat-controller.ts`（`performReply` / `reloadMessages`）與 `chatScreen.tsx` 以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋狀態，於最新回合仍在處理或 `stopped`／`failed`／`reply_failed`／`replyError`／「這次回覆未完成」後保留用戶求助觸發與 Server SSE `feedback.cards`（並在後續已完成回覆載入或送出新訊息後清除）。
+  1. **入口位置與有界結構**：於 `chat-top-toolbar` 保留常駐「官方求助入口」切換按鈕（`accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel}`），並將 `officialHelpPanel` 掛載於 `<AgentComposer>` 正上方之有界非捲動區域 `chat-official-help-dock`（附 `ScrollView`、`marginBottom: chatLayout.composerOverlap` 以抵銷 `<AgentComposer>` 既有負 `marginTop` 重疊，以及依實測 `paneHeight` 與 `viewportHeight`／`compact`／`fontScale` 自適應上限之 `maxHeight`），無論是否已選孩子（`!child`）、發生錯誤或離線皆可即時顯示且不遮擋輸入欄與時間軸。
+  2. **觸發與狀態隔離規則**：於 `src/shared/agent-feedback.ts`（`NFKC` 正規化 `matchOfficialHelpForText`）雙向覆蓋 `失去意識`／`意識喪失`／`知覺喪失`／`反應全無`／`失知覺`／`暈倒`／`無晒反應` 等急症線索並優先高於純玩笑排除，且於非急症修飾詞組（如 `non-emergency`、`not an emergency`、`非急症`）僅切走修飾片段而不豁免混有危急症狀之語句；一般用藥問題僅命中 `medical-consult-hk-v1` 並顯示溫和用藥提示 `chat-official-help-consult-notice`；`src/client/chat-controller.ts`（`performReply` / `reloadMessages`）與 `chatScreen.tsx` 以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋狀態，於最新回合仍在處理或 `stopped`／`failed`／`reply_failed`／`replyError`／「這次回覆未完成」後保留用戶求助觸發與 Server SSE `feedback.cards`（並在後續已完成回覆載入或送出新訊息後清除）。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 

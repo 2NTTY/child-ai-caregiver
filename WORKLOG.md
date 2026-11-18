@@ -6425,3 +6425,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-18　正向合併最新 origin/master（a3b6a24f）
 
 將最新 origin/master（3b6a24f，含已合併之 #600、#601、#602、#608、#630）正向無改歷史合併至 codex/search-help-entry，整合 src/shared/agent-feedback.ts、src/client/chat-controller.ts 與 rontend/src/screens/chatScreen.tsx。
+
+### 2026-11-18　官方求助 dock 版面重疊修復與 Edge Playwright Web DOM E2E（Draft PR / HOLD MERGE）
+
+1）**真實瀏覽器版面重疊修復（rontend/src/screens/chatScreen.tsx）**：新增 Edge Playwright Web DOM E2E 時實測發現，<AgentComposer> 帶有 marginTop: -chatLayout.composerOverlap（-32），會將輸入區與工具列往上拉進緊鄰其上方的 chat-official-help-dock（桌機縮放實測重疊約 $.8px），且矮視窗（90x420／ðx380）下固定 Zpx 最小高度會將輸入框推至視口外。現於 styles.helpDock 補加 marginBottom: chatLayout.composerOverlap，並改以 onPaneLayout 實測之 paneHeight 與 iewportHeight 自適應收斂 maxHelpDockHeight（矮視窗下限收窄至 .px），實測所有測試視窗下 dock 與輸入欄零重疊且完整留在視窗內。
+2）**Edge Playwright Web DOM E2E（rontend/scripts/official-help-entry.browser.test.mjs，3/3 通過）**：以匯出之 Expo Web rontend/dist 搭配 W.0.0.1 合成 /api/** 與 SSE 測試後端實測 Edge 瀏覽器 DOM 行為，驗證未選孩子鍵盤 Enter 切換、ARIA 角色、桌機與窄手機／縮矮視窗／CSS 200% 放大文字版面幾何，以及 (3 SSE 求助卡保留、切換孩子隔離與完成回覆清除，全程零控制台錯誤與零 404。
+3）**維持 Draft PR（HOLD MERGE）口徑**：本次 Web Playwright DOM E2E 未涵蓋 Android／iOS 實機軟鍵盤彈出 insets、原生系統 PixelRatio.getFontScale()、TalkBack／VoiceOver 螢幕閱讀器、真機打包與真實 Gemini／生產資料庫調用；以 **Draft PR + HOLD MERGE** 提交，保留實機補助驗後再轉 Ready。
