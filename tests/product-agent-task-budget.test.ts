@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { FinishReason } from "@google/genai";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
-import { PRODUCT_AGENT_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
+import { COMPACT_PRODUCT_AGENT_TOOL_CATALOG, PRODUCT_AGENT_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import type { AgentProposal, ProductAgentResult } from "../src/shared/product-agent.ts";
 
@@ -30,18 +30,31 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
   const messageId = messages.at(-1)!.id;
   const task = { title: "[合成驗收 T7] 整理繪本袋", details: "純合成驗收：把繪本放入交接袋", kind: "ordinary",
     assigneeUserId: userId, dueAt: "2026-10-12T11:30:00Z", timeZone: "Asia/Hong_Kong" };
-  let calls = 0, proposalsWritten = 0, saved: ProductAgentResult | null = null;
+  let calls = 0, reviews = 0, proposalsWritten = 0, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [], sizes: number[] = [], responseSizes: number[] = [];
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: String(inputLimit) }),
+    chatDeliveryReviewModelCalls: 6,
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
       const size = JSON.stringify({ contents: request.contents, config: request.config }).length;
       sizes.push(size); assert.ok(size < inputLimit, String(size));
+      const prompt = request.contents[0]?.parts?.[0]?.text ?? '';
+      if (prompt.startsWith('Server evidence payload for chat-delivery-review.')) {
+        reviews++;
+        const payload = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1));
+        assert.equal(calls, 4);
+        return { finishReason: FinishReason.STOP, content: { role: 'model', parts: [
+          { text: JSON.stringify({ draftHash: payload.draftHash, decision: 'pass', issues: [] }) },
+        ] } };
+      }
       const index = calls++;
       const tools = Object.keys(request.toolsDict);
-      const taskTools = PRODUCT_AGENT_TOOL_CATALOG.groups.find(group => group.id === "tasks")!.toolNames;
-      assert.deepEqual(tools.sort(), [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, PRODUCT_AGENT_TOOL_CATALOG.loader.name,
-        ...(index > 0 ? taskTools : [])].sort());
-      if (index > 0) for (const required of ["read_context", "propose_task", "propose_task_change", "create_ordinary_reminder", "change_ordinary_reminder", "present_answer"])
+      const catalog = inputLimit === 32000 ? COMPACT_PRODUCT_AGENT_TOOL_CATALOG : PRODUCT_AGENT_TOOL_CATALOG;
+      const taskTools = catalog.groups.find(group => group.id === "tasks")!.toolNames;
+      const media = new Set<string>(['read_chat_file', 'read_chat_photo', 'list_chat_photos']); // No attachment store in this fixture.
+      const finishOnly = request.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames?.every(n => n === 'present_answer');
+      assert.deepEqual(tools.sort(), finishOnly ? ['present_answer'] : [...catalog.coreToolNames.filter(n => !media.has(n)),
+        catalog.loader.name, ...(index > 0 ? taskTools : [])].sort());
+      if (index > 0 && !finishOnly) for (const required of ["read_context", "propose_task", "propose_task_change", "create_ordinary_reminder", "change_ordinary_reminder", "present_answer"])
         assert.ok(tools.includes(required), required);
       for (const unrelated of ["read_family_documents", "generate_family_document", "change_family_document", "save_ordinary_record", "revise_ordinary_record"])
         assert.ok(!tools.includes(unrelated), unrelated);
@@ -81,8 +94,8 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
       execute: async () => assert.fail("This test only saves an unconfirmed candidate") }, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: { list: async () => null },
   } as unknown as Parameters<typeof createProductAgent>[0]);
   const result = await service.reply(userId, childId, messageId, async () => true);
-  assert.equal(result?.status, "completed", JSON.stringify(result)); assert.equal(calls, 4); assert.equal(proposalsWritten, 1);
-  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 5, queryEmbeddings: 0 });
+  assert.equal(result?.status, "completed", JSON.stringify(result)); assert.equal(calls, 4); assert.equal(reviews, 1); assert.equal(proposalsWritten, 1);
+  assert.deepEqual(result.counts, { modelCalls: 5, toolCalls: 5, queryEmbeddings: 0 });
   assert.equal(result.proposals[0].status, "pending"); assert.equal(result.proposals[0].result, null);
   assert.equal(result.tools.find(tool => tool.name === "propose_task")?.status, "rejected");
   context.diagnostic(JSON.stringify({ policy: policy ? "observed_v1_controls_mapped_to_contract" : "none", logicalCharacters: sizes, rejectedResponseCharacters: responseSizes[0], limit: inputLimit }));

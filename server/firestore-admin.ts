@@ -1,4 +1,5 @@
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
+import { createFirestoreBudgetAlerts } from './firestore-budget-alerts.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
 import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AGENT_INTERACTIVE_INPUT, PLATFORM_AGENT_RUN_LIMITS } from './agent-budget.ts';
@@ -7,6 +8,7 @@ import { adminCommandSchema, adminInvitationSchema, adminReceiptSchema, platform
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { FirestoreAiUsage } from './firestore-ai-usage.ts';
+import type { DayFinancialEvidence } from './ai-financial-evidence.ts';
 import type { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 const NIL = '00000000-0000-0000-0000-000000000000';
 const scope = { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL };
@@ -15,7 +17,7 @@ const cursorSchema = z.string().regex(/^[a-f0-9]{64}$/);
 import type { KnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
 import type { createKnowledgeTransfers } from './firestore-knowledge-transfers.ts';
 /** Control-plane data only. No family records, keys, or arbitrary Firestore access. */
-export function createFirestoreAdmin(options: FirestoreDomainOptions, config: AiConfig,
+export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFinancialEvidence?: () => DayFinancialEvidence[] | undefined }, config: AiConfig,
   knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches,
   transfers?: Pick<ReturnType<typeof createKnowledgeTransfers>, 'list' | 'page' | 'control'>,
   receiveArchive?: ReturnType<typeof import('./admin-knowledge-archive.ts').createKnowledgeArchiveReceiver>) {
@@ -41,7 +43,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
       if (saved.actorId !== actorId) domainReject('forbidden', 403); return saved;
     }, { readOnly: true });
   }
-  return { readPolicy, readPolicyIn, receiveArchive,
+  return { readPolicy, readPolicyIn, receiveArchive, budgetAlerts: createFirestoreBudgetAlerts(data, readPolicyIn),
     knowledgeTransfers() { return transfers ?? domainReject('knowledge_transfers_unavailable', 503); },
     knowledgeIndexes() { return indexBatches ?? domainReject('knowledge_indexes_unavailable', 503); },
     knowledgeStatus(cursor: string | null = null) {
@@ -104,7 +106,9 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     },
     async usage(day: string) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) domainReject('invalid_day', 400);
-      const usage = (source: 'platform' | 'personal') => new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: source }).getGlobal(day);
+      const financialEvidence = options.usageFinancialEvidence?.();
+      const usage = (source: 'platform' | 'personal') => new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: source })
+        .getGlobal(day, financialEvidence?.find(row => row.payer === source && row.day === day));
       return { platform: await usage('platform'), personal: await usage('personal') };
     },
   };

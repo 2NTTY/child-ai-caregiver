@@ -85,7 +85,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
-**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。原候選的離線驗證與 11 月 11 日整合修正分別列出；真模型驗收與正式發布仍待核對。
+**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。11 月 18 日真模型已找回最後更正的原句並通過獨立審核，正式站三個服務已同步更新至 `0a47c9b3`。
 
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
@@ -180,7 +180,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+
+2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
@@ -194,6 +196,18 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 <a id="req005-closeout01"></a>
 ### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
+
+**2026-11-18 更正原文查詢**　從 `codex/req005-history-query` 以 `node scripts/verify-agent-local.mjs --real-history-query` 驗一個合成孩子。第一次真 Vertex 執行 `4f71c7ee` 沒有查回原話。第二次 `bb96c47a` 找到原地點，漏了省略主題的更正。接入同一孩子的相鄰原訊息並整合 #608 後，`7ff33001` 的正式回覆為「根據之前的記錄，學校簡介會最後改為在『青竹室』舉行。」共四次模型、三次工具及零次向量呼叫，沒有混入另一個孩子或寫入業務資料。該次收據欠更正原句的引用綁定。其後修正連續家長訊息的本輪歸屬，並讓原話與助手新操作的收據分開核對。新會話 686ce07b 已用真 Vertex 正式交付「你當時說：「改咗去青竹室」」，獨立審核通過，引用綁至更正原句。共三次生成、兩次工具、零次向量查詢；隔離帳本由 85 至 88，已恢復上限 20。見[隔離實測收據](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json)。
+
+本機用專案支援的 Node 24.22.3 完成 Emulator 檢查點匯出及重開，沿用原帳本。先前 Windows Node 24.11.0 的 `dest already exists` 失敗仍保留。這份證據只涵蓋開發資料保存。
+
+11 月 18 日續驗：香港 Firestore 同時間的 32 筆合成資料按原游標分成 30／2，無遺漏或重複，已清除該隔離範圍。本機實際 Web 續頁曾因正式 HTTP 入口拒收游標而回 400；修正後 Edge 點「載入較早建議」顯示 32 筆且按鈕消失。[分頁收據](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [兩個 worker 收緊政策與重啟收據](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json)
+
+預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
+
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。正式站維護者親自收件、正式摘要啟用及供應商未提供的結算／配額各自待核。
+
+**正式發布**　11 月 18 日 22:01（香港），原站收據 `r44317583446-1` 確認 Web、API 及 worker 均執行 `0a47c9b36f1384610af413dec72dc226cda263a0`。站外讀取 `/site-version.json` 及 `/api/version` 取得相同版本，`/api/health` 回報 Firestore 正常。下次接手先看管理後台「助手用量告警」的實際收件紀錄；如要擴大摘要，再按[出資與切換手冊](docs/summary-durable-integration-handoff.md#funded-pilot)指定帳戶、範圍及出資上限。正式每日金額及供應商用量以營運核實值為準。[正式發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44317583446)
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
@@ -362,7 +376,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **對應需求**：REQ-001 §4.3 (`:178-184`)。
 - **治理狀態（Draft PR / HOLD MERGE — 已完成 Web DOM E2E，待實機與真機補助檢後轉 Ready）**：
-  - 依 `REQ-001 §4.3:184`，入口位置與觸發規則已實作完成並已正向合併最新 `origin/master`（`39f2f322`，含已合併之 `#600`、`#601`、`#602`、`#606`、`#608`、`#630`），現以 **Draft PR（HOLD MERGE）** 提交審核與執行 Hosted 離線 CI。
+  - 依 `REQ-001 §4.3:184`，入口位置與觸發規則已實作完成並已正向合併最新 `origin/master`（`b70ebfb8`，含已合併之 `#600`–`#602`、`#606`–`#608`、`#630`–`#637`），現以 **Draft PR（HOLD MERGE）** 提交審核與執行 Hosted 離線 CI。
   - **已補強之 Web 實測範圍（Microsoft Edge Playwright DOM E2E）**：於匯出之 Expo Web `frontend/dist` 執行 `frontend/scripts/official-help-entry.browser.test.mjs`（3/3 通過，配對合成 `/api/**` 回應與 SSE 串流），涵蓋無孩子選擇時鍵盤 `Enter` 切換、ARIA `alert`／`button` 角色、桌機 `1440x900` 與手機 `390x844`／`360x640`／`320x720`、縮矮視窗 `390x420`／`360x380`、CSS 200% 放大文字，以及 `503`／停止回合保留與切換孩子隔離，零水平捲動、零元件重疊與零控制台錯誤。
   - **仍未覆蓋（HOLD MERGE 原因）**：桌面瀏覽器 CSS 縮放與縮矮視窗**不能代替** Android／iOS 實機軟鍵盤彈出與 insets、原生系統 `PixelRatio.getFontScale()`、真實螢幕閱讀器（TalkBack／VoiceOver）、真機原生打包或真實 Gemini／生產資料庫端對端驗證。
 - **定案設計與技術實作摘要**：
@@ -1517,3 +1531,19 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 
 
 - **官方來源檢索、適用核對與結構化引用（`codex/search-official-evidence`，基線 `origin/master` `f2d347cd`）：** 已推進離線契約與記憶體 Firestore 適用性驗證；提問側已收窄泛指共通詞（`正常`、`醫生`、`求診`、單獨`講嘢`／`食嘢`）並恢復「BB幾時可以食嘢？」對加固之召回，同時將「食藥／餵藥／藥水／10ml」及口語完成主張、多段私人來源核對與純結構句邊界納入交付審查；目前官方種子仍限五份（未覆蓋發燒／嘔吐／疫苗／腹瀉／尿布疹），另缺真模型評測與線上實行，尚待外部審核及合併批准。[離線驗證 workflow](.github/workflows/search-official-evidence-offline.yml) · [驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)
+
+
+### Slice B（B-P6）：純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- **對應需求**：REQ-002 §3.3 (`:381-388`)、§7.2 (`:506`)、REQ-005 §9 #5、REQ-008 §9 (`:1437`)。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review.ts` 擴充整句有界寒暄／禮貌回覆白名單（涵蓋粵語、國語及英語之 `早晨`、`早唞`、`謝謝`、`多謝`、`多謝晒`、`唔該`、`唔該晒`、`不用謝`、`唔使客氣`、`拜拜`、`再見`、`thank you`、`thanks`、`you're welcome`、`good night`、`bye` 等），並補強 `OPERATION_CLAIM_PATTERN`（涵蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱），確保任何夾帶照護建議、用藥、原始證據或操作宣告之混合句一律失敗關閉（fail-closed）進入審核。
+  - 於 `server/product-agent-tools.ts` 及 `server/product-agent.ts` 在確認本輪使用者輸入與 `present_answer` 輸出皆為純寒暄／禮貌回覆時，略過冗餘的 `initialConversationSummary` 預讀與 `ensureConfirmedMemoryGrounding` 記憶分頁展開，同時完整保留 `present_answer` 終端工具契約與權限重驗。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+
+
+### PR #607 integration clarification
+
+Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
+
+The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.

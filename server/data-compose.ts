@@ -204,7 +204,7 @@ async function spendText(context: AgentRunContext, attemptKey: string, system: s
   if (!context.completeText) throw new AgentStopped("unavailable");
   if (context.budget.remainingModelCalls < 1) throw new AgentStopped("compose_review_incomplete");
   try {
-    return await context.completeText({ system, user, attemptKey, ...(purpose ? { purpose } : {}) });
+    return await context.completeText({ system, user, attemptKey, purpose: purpose ?? "compose" });
   } catch (error) {
     if (error instanceof AgentStopped
       && ["cancelled", "deadline", "unauthorized", "quota_exceeded", "input_limit"].includes(error.reason)) {

@@ -26,10 +26,11 @@ test("personal settings require consent and valid integer budgets before any dir
   const draft = { ...modelSettingsDraft(settings), consent: true };
   assert.equal(modelSettingsSchema(true).safeParse(draft).success, true);
   assert.equal(modelSettingsSchema(true).safeParse({ ...draft, consent: false }).success, false);
-  for (const [field, value] of [["dailyText", "1001"], ["modelCallsText", "13"], ["queryEmbeddingsText", "1.5"]]) {
+  for (const [field, value] of [["dailyText", "1001"], ["modelCallsText", "65"], ["queryEmbeddingsText", "1.5"]]) {
     assert.equal(modelSettingsSchema(true).safeParse({ ...draft, [field]: value }).success, false);
   }
   assert.equal(modelSettingsSchema(false).safeParse(draft).success, false);
+  assert.equal(modelSettingsSchema(true).safeParse({ ...draft, modelCallsText: "64", toolCallsText: "256", queryEmbeddingsText: "32" }).success, true);
   const changed = { ...draft, provider: "vertex", model: "gemini-future-chat", toolCallsText: "12",
     runSecondsText: "240", requestSecondsText: "120", retriesText: "3" };
   assert.equal(modelSettingsSchema(true, "gemini").safeParse(changed).success, false);

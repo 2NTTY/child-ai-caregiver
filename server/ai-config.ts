@@ -19,6 +19,8 @@ export interface AiConfig {
   agentMaxRetries?: number;
   timeoutMs: number;
   maxInputCharacters: number;
+  /** Opts into loading the SDK's hash-verified public tokenizer dictionary. */
+  localContextTokenizer?: boolean;
   agentMaxInputCharacters?: number;
   agentThinkingLevel?: AgentThinkingLevel;
   maxOutputTokens: number;
@@ -102,6 +104,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     maxAttempts: readInteger(env.AI_MAX_ATTEMPTS, "AI_MAX_ATTEMPTS", 2, 1, 2),
     timeoutMs: readInteger(env.AI_TIMEOUT_MS, "AI_TIMEOUT_MS", 90000, 1000, 300000),
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
+    ...(readBoolean(env.AI_LOCAL_CONTEXT_TOKENIZER, "AI_LOCAL_CONTEXT_TOKENIZER", false) ? { localContextTokenizer: true } : {}),
     agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
     agentThinkingLevel: resolveModelThinkingLevel(model, env.AI_AGENT_THINKING_LEVEL),

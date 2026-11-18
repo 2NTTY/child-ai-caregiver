@@ -5,7 +5,7 @@ import { createGrowthApi, GrowthApiError } from "../src/client/growth-api.ts";
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import type { GrowthAttention, GrowthPage } from "../src/shared/growth.ts";
 import type { HandoverIntegrity } from "../src/shared/handover.ts";
-import { handleGrowthRequest } from "../server/growth-api.ts";
+import { createFirebaseRequestHandler, type FirebaseRequestHandlerOptions } from "../server/firebase-app.ts";
 import {
   decodeGrowthHistoryCursor,
   encodeGrowthHistoryCursor,
@@ -28,58 +28,7 @@ import { createFirestoreSharingStore } from "../server/firestore-sharing.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { serialFirestoreFixture } from "./helpers/firestore-session-memory.ts";
 
-function makeGrowthItem(options: {
-  id?: string;
-  childId: string;
-  state: GrowthAttention["state"];
-  createdAt?: string;
-  updatedAt: string;
-  title?: string;
-}): GrowthAttention {
-  const createdAt = options.createdAt ?? options.updatedAt;
-  return {
-    id: options.id ?? randomUUID(),
-    childId: options.childId,
-    topicId: "solid_food",
-    version: 1,
-    state: options.state,
-    title: options.title ?? `Growth ${options.state}`,
-    kind: "arrange",
-    whyNow: "Synthetic whyNow",
-    advice: "Synthetic advice",
-    limits: "Synthetic limits",
-    basis: { stage: "6-12", ruleRevision: "rev-1", sourceHash: "a".repeat(64), values: {} },
-    evidence: { profileVersion: 1, facts: [] },
-    source: {
-      sourceId: "source-1",
-      versionId: randomUUID(),
-      chunkId: randomUUID(),
-      contentHash: "b".repeat(64),
-      url: "https://www.fhs.gov.hk/synthetic",
-      title: "Synthetic source",
-      section: "section-1",
-      checkedAt: "2026-10-01T00:00:00.000Z",
-      excerpt: "Synthetic excerpt",
-    },
-    sourceAvailable: true,
-    createdAt,
-    updatedAt: options.updatedAt,
-    snoozeUntil: options.state === "snoozed" ? "2027-01-01T00:00:00.000Z" : null,
-    previousId: null,
-    newReason: "Synthetic reason",
-    taskId: null,
-    taskState: null,
-    lastAction: options.state === "dismissed"
-      ? "dismiss"
-      : options.state === "accepted"
-        ? "accept"
-        : options.state === "snoozed"
-          ? "snooze"
-          : "",
-    actorUserId: options.state === "proposed" ? null : "synthetic-user",
-    note: "",
-  };
-}
+import { makeGrowthItem } from "./helpers/growth-item.ts";
 
 test("selectGrowthHistoryWindow paginates history cleanly without repeating active items or looping on mutated anchors", () => {
   const childId = randomUUID();
@@ -182,10 +131,14 @@ test("handleGrowthRequest and createGrowthApi support ?historyCursor= pagination
     topic: async () => null,
   };
 
-  const routeFetch: typeof fetch = async (input, init) => {
-    const req = new Request(String(input), init);
-    return handleGrowthRequest(req, userId, store, async id => id === userId);
-  };
+  const unused = () => { throw new Error("unexpected API operation"); };
+  const handleRequest = createFirebaseRequestHandler({
+    publicOrigin: "https://synthetic.invalid", mailConfigured: false,
+    authority: { accountStatus: unused, acknowledge: unused },
+    auth: { getSession: async () => ({ user: { id: userId } }), handler: unused } as unknown as FirebaseRequestHandlerOptions["auth"],
+    growth: { ...store, forSharedSpace: () => store } as unknown as FirebaseRequestHandlerOptions["growth"],
+  });
+  const routeFetch: typeof fetch = (input, init) => handleRequest(new Request(String(input), init));
 
   const api = createGrowthApi("https://synthetic.invalid", routeFetch);
   const page1 = await api.getPage(childId, new AbortController().signal, userId);
@@ -211,6 +164,10 @@ test("handleGrowthRequest and createGrowthApi support ?historyCursor= pagination
     headers: { "x-expected-user-id": userId },
   });
   assert.equal(emptyCursorRes.status, 400);
+  for (const suffix of ["historyCursor=a&historyCursor=b", "other=x"]) {
+    assert.equal((await routeFetch(`https://synthetic.invalid/api/children/${childId}/growth?${suffix}`,
+      { headers: { "x-expected-user-id": userId } })).status, 400);
+  }
 
   await assert.rejects(
     () => api.getPage(childId, new AbortController().signal, userId, { historyCursor: "invalid***cursor" }),

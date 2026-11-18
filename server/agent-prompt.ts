@@ -21,6 +21,7 @@ export async function assembleAgentPrompt(options: {
   mode: AgentOutputMode;
   availableInputs: readonly string[];
   additionalModuleIds?: readonly string[];
+  deferredRecipeModules?: readonly string[];
   readModule: (path: string) => Promise<string>;
 }): Promise<AssembledPrompt> {
   const { manifest, recipeId, mode, availableInputs, readModule } = options;
@@ -30,7 +31,8 @@ export async function assembleAgentPrompt(options: {
   if (!recipe || !recipe.outputModes.includes(mode)) throw invalid();
   const required = [...recipe.requiredInputs, ...(manifest.outputModeRequirements[mode] ?? [])];
   if (required.some(input => !availableInputs.includes(input))) throw invalid();
-  const ids = [...new Set([...manifest.baseModules, ...manifest.domain.requiredModules, ...recipe.additionalModules,
+  const eager = recipe.additionalModules.filter(id => !options.deferredRecipeModules?.includes(id));
+  const ids = [...new Set([...manifest.baseModules, ...manifest.domain.requiredModules, ...eager,
     ...(options.additionalModuleIds ?? [])])];
   const modules = new Map(manifest.modules.map(item => [item.id, item]));
   if (modules.size !== manifest.modules.length || new Set(manifest.recipes.map(item => item.id)).size !== manifest.recipes.length) throw invalid();
@@ -55,9 +57,9 @@ export async function assembleAgentPrompt(options: {
 }
 
 export async function loadAgentPrompt(recipeId: string, mode: AgentOutputMode, availableInputs: readonly string[],
-  additionalModuleIds?: readonly string[]) {
+  additionalModuleIds?: readonly string[], deferredRecipeModules?: readonly string[]) {
   // This manifest and the module files are shipped with the server, never supplied by a client.
   const manifest = JSON.parse(await readFile(new URL("../prompts/manifest.json", import.meta.url), "utf8")) as PromptManifest;
-  return assembleAgentPrompt({ manifest, recipeId, mode, availableInputs, additionalModuleIds,
+  return assembleAgentPrompt({ manifest, recipeId, mode, availableInputs, additionalModuleIds, deferredRecipeModules,
     readModule: path => readFile(new URL(`../prompts/${path}`, import.meta.url), "utf8") });
 }

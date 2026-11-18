@@ -100,7 +100,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           userId: actor.actorId, childId: daily.context.binding.childId, model: KNOWLEDGE_EMBEDDING.model,
           deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: limit, globalLimit: config.dailyGlobalAttempts };
         try {
-          const admission = await daily.adapter.reserve(dailyRequest);
+          const admission = await daily.adapter.reserve(dailyRequest, actor.kind);
           if (admission.decision === 'quota_exceeded') throw new AgentStopped('quota_exceeded');
           if (admission.decision !== 'execute') throw new AgentStopped('unavailable');
         } catch (error) {

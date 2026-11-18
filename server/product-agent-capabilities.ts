@@ -1,6 +1,6 @@
 /** Server-authored capability descriptions; user text never selects this catalog. */
 export const PRODUCT_AGENT_TOOL_CATALOG = {
-  coreToolNames: ["read_chat_file", "read_chat_photo", "list_chat_photos", "show_official_help", "read_context", "read_memory_facts", "propose_fact", "propose_fact_revision", "propose_fact_deactivation", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation"],
+  coreToolNames: ["read_chat_file", "read_chat_photo", "list_chat_photos", "show_official_help", "read_context", "read_memory_facts", "propose_fact", "propose_fact_revision", "propose_fact_deactivation", "search_history", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation"],
   loader: {
     name: "load_capabilities",
     description: "依目前對話、前文指向及工具結果，載入所需的產品能力。可一次選多個能力；載入只提供工具及指引，不執行業務操作或取得授權。需要讀上下文／知識時可在同一輪分別調用讀取與載入；載入成功後才使用新增工具。只載入相關能力，不必按固定順序或把每種能力都載入。",
@@ -9,8 +9,8 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
   groups: [
     { id: "work", description: "保存或更新已讀的同一工作、待答問題及有依據的站內跟進，並查閱背景結果；不是執行業務操作或外發授權。",
       toolNames: ["save_work", "read_background_result"], promptModuleIds: ["module.product-work"] },
-    { id: "history", description: "按本人目前可見範圍搜尋、分段讀取前文，區分本人原話與模型；舊內容不能授權重做操作。",
-      toolNames: ["search_history", "read_history"], promptModuleIds: ["module.product-history"] },
+    { id: "history", description: "回想之前聊過的事、核對最後一次改口。可搜尋對話原句及附近時段的訊息，按 ID 讀原文及取得私人引用。",
+      toolNames: ["read_history"], promptModuleIds: ["module.product-history"] },
     { id: "care_records", description: "按家長交代保存或更正普通照護記錄；由 Server 檢查本人預授權及原資源。",
       toolNames: ["read_care_records", "save_ordinary_record", "revise_ordinary_record"], promptModuleIds: ["module.capture-confirmation", "module.product-ordinary-actions"] },
     { id: "private_instructions", description: "讀取、保存或更正本人普通私人交代；按有效預授權及原版本執行，不當作已確認健康事實或家庭通知。",
@@ -33,6 +33,27 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
       toolNames: ["list_private_sources", "read_private_source", "propose_private_source", "propose_private_source_change"], promptModuleIds: ["module.product-private-sources"] },
     { id: "contact", description: "核對已確認事項的聯絡資格，僅在既有有效授權內安排聯絡；入列與送達／完成分開。",
       toolNames: ["read_contact_options", "contact_caregiver"], promptModuleIds: ["module.authorized-contact"] },
+  ],
+} as const;
+
+/** Sites retaining a smaller request limit can load the same schemas and methods by domain. */
+export const COMPACT_PRODUCT_AGENT_TOOL_CATALOG = {
+  loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
+  coreToolNames: ['read_context', 'present_answer', 'show_official_help', 'request_confirmation'],
+  deferredRecipeModules: ['domain.childcare-hk.care-workflows', 'module.knowledge-answering', 'module.product-tools'],
+  groups: [
+    ...PRODUCT_AGENT_TOOL_CATALOG.groups.map(group => {
+      if (group.id === 'history') return { ...group, toolNames: ['search_history', ...group.toolNames] };
+      if (group.id === 'work') return { ...group, toolNames: ['read_work', ...group.toolNames] };
+      return group;
+    }),
+    { id: 'knowledge', description: '搜尋公共知識及續讀原文。', toolNames: ['search_knowledge', 'read_knowledge_context'],
+      promptModuleIds: ['domain.childcare-hk.care-workflows', 'module.knowledge-answering'] },
+    { id: 'memory_facts', description: '讀取、準備新增、更正或停用孩子事實。',
+      toolNames: ['read_memory_facts', 'propose_fact', 'propose_fact_revision', 'propose_fact_deactivation'],
+      promptModuleIds: ['module.knowledge-answering', 'module.product-tools'] },
+    { id: 'chat_media', description: '讀取這段聊天已有的附件或照片。',
+      toolNames: ['read_chat_file', 'read_chat_photo', 'list_chat_photos'], promptModuleIds: [] },
   ],
 } as const;
 

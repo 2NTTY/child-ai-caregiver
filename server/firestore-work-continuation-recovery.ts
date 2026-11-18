@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import type { Firestore, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { agentWorkValuesSchema } from '../src/shared/agent-work.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import type { StorageCipher } from './storage-crypto.ts';
@@ -44,11 +45,11 @@ const eventPayloadSchema = z.object({ works: z.array(z.object({ workId: uuid, wo
 }).strict()).min(1).max(5).refine(items => new Set(items.map(item => item.workId)).size === items.length) }).strict();
 const receiptSchema = z.object({ runId: uuid, status: z.enum(['completed', 'stopped', 'unknown']), stopReason: bounded(128).nullable(),
   provenance: z.object({ packVersion: id, recipeId: z.literal('product-work-followup'), model: id }).strict().nullable(),
-  countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: integer.max(12), toolCalls: integer.max(8), queryEmbeddings: integer.max(6) }).strict(),
+  countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: integer.max(AGENT_RUN_LIMITS.modelCalls.max), toolCalls: integer.max(AGENT_RUN_LIMITS.toolCalls.max), queryEmbeddings: integer.max(AGENT_RUN_LIMITS.queryEmbeddings.max) }).strict(),
   outcome: z.literal('no_action').optional(),
   text: z.string().max(64000), citations: z.array(z.unknown()).max(6), privateSourceCitations: z.array(z.unknown()).max(8).optional(),
   retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
-  tools: z.array(z.object({ name: id, status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: id.optional() }).strict()).max(8),
+  tools: z.array(z.object({ name: id, status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: id.optional() }).strict()).max(AGENT_RUN_LIMITS.toolCalls.max),
   proposals: z.array(z.never()).max(0),
 }).strict().refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
   && value.citations.length === 0 && !value.privateSourceCitations?.length && value.retrievalMode === 'not_used');

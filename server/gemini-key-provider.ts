@@ -7,6 +7,9 @@ import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from 
 import { personalModelCatalog, personalModelEntry } from './personal-model-catalog.ts';
 import { personalModelIdSchema } from '../src/shared/model-settings-schema.ts';
 import { AGENT_LIMITS, AGENT_OUTPUT_LIMITS, AgentStopped } from "./agent-budget.ts";
+import { nativeContextPreflight, nativeTokenCounter } from './model-context-preflight.ts';
+import type { LlmRequest } from '@google/adk';
+import type { ModelInput } from './model-gateway.ts';
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
@@ -82,15 +85,22 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         ? { status: 'accessible' } : { status: 'unavailable', reason: signal.aborted ? 'timeout' : 'model_unavailable' };
     } catch (error) { return { status: 'unavailable', reason: reason(error, signal) }; }
   };
+  const countTokens = nativeTokenCounter(config.model, config.localContextTokenizer);
+  const build = (request: Pick<LlmRequest, 'contents' | 'config'>, max = config.maxOutputTokens) => ({
+    model: config.model, contents: request.contents, config: { ...request.config, httpOptions, candidateCount: 1,
+      maxOutputTokens: Math.min(max, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive), thinkingConfig },
+  });
+  const plain = (input: ModelInput) => ({ contents: input.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+    config: { systemInstruction: input.systemInstruction } });
   return {
     agent: {
+      preflight: (request, duration, counted) => nativeContextPreflight(build(request), duration, counted),
+      ...(countTokens ? { countInput: (request: LlmRequest) => countTokens(build(request)) } : {}),
       async generate(request, signal) {
         if (signal.aborted) throw new ProviderFailure("unavailable");
         try {
-          const response = await client.models.generateContent({ model: config.model, contents: request.contents,
-            config: { ...request.config, httpOptions, candidateCount: 1,
-              maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
-              thinkingConfig, abortSignal: signal } });
+          const payload = build(request);
+          const response = await client.models.generateContent({ ...payload, config: { ...payload.config, abortSignal: signal } });
           const candidate = response.candidates?.[0];
           // Preserve native parts and opaque signatures for the next ADK turn.
           return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
@@ -109,14 +119,13 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
       },
     },
     model: {
+      preflight: (input, max, counted) => nativeContextPreflight(build(plain(input), max), undefined, counted),
+      ...(countTokens ? { countInput: (input: ModelInput, max: number) => countTokens(build(plain(input), max)) } : {}),
       async generate(input, options) {
         if (options.signal.aborted) throw new ProviderFailure("unavailable");
         try {
-          const response = await client.models.generateContent({ model: config.model,
-            contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
-            config: { systemInstruction: input.systemInstruction, httpOptions,
-              maxOutputTokens: Math.min(options.maxOutputTokens, config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
-              candidateCount: 1, thinkingConfig, abortSignal: options.signal } });
+          const payload = build(plain(input), options.maxOutputTokens);
+          const response = await client.models.generateContent({ ...payload, config: { ...payload.config, abortSignal: options.signal } });
           return readVertexReply(response);
         } catch (error) {
           if (error instanceof ProviderFailure) throw error;

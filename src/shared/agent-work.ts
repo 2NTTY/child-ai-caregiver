@@ -63,6 +63,9 @@ export interface AgentWorkPage { items: AgentWork[]; nextCursor: string | null; 
 export interface HistoryMatch {
   id: string; kind: z.infer<typeof historySearchSchema>["kind"]; version: number; createdAt: string;
   role: "user" | "model" | null; excerpt: string;
+  /** Optional context from the same authorized scan, in chronological order. Only requested by the chat tool. */
+  excerptRange?: Pick<AgentHistoryMessage, "offset" | "totalCharacters" | "contentVersion">;
+  followingMessages?: Array<Pick<AgentHistoryMessage, "id" | "role" | "version" | "createdAt" | "text" | "totalCharacters" | "contentVersion">>;
 }
 export interface AgentHistoryPage {
   matches: HistoryMatch[]; scanned: number; scanLimit: number; complete: boolean; nextCursor: string | null;

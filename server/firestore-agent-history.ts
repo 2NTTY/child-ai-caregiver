@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { historyNeighbors } from './agent-history-neighbors.ts';
 import { historySearchSchema, historyReadSchema, type AgentHistoryPage, type AgentHistoryMessage } from '../src/shared/agent-work.ts';
 import type { FirestoreAgentRuns } from './firestore-agent-runs.ts';
 import type { FirestoreAgentActions } from './firestore-agent-actions.ts';
@@ -58,7 +59,7 @@ export function createFirestoreAgentHistory(options: {
       voice: { ...original.voice, id: current.id, version: current.version } }, true);
   }
   return {
-    async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>): Promise<AgentHistoryPage> {
+    async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>, includeNeighbors = false): Promise<AgentHistoryPage> {
       const input = domainParse(historySearchSchema, raw);
       let cursor: z.infer<typeof cursorSchema> | null = null;
       if (input.cursor !== null) {
@@ -82,15 +83,16 @@ export function createFirestoreAgentHistory(options: {
         query = query.orderBy('createdAt', 'desc').orderBy(idField, 'desc').limit(101);
         if (cursor) query = query.startAfter(cursor.createdAt, cursor.id);
         const rows = await b.transaction.get(query), matches: AgentHistoryPage['matches'] = [];
+        const neighbors = includeNeighbors && input.kind === 'message' && input.query.trim() ? historyNeighbors() : null;
         let scanned = 0, last: { createdAt: string; id: string } | null = null;
         for (const row of rows.docs.slice(0, 100)) {
           const id = domainParse(z.uuid(), row.get(idField), 'history_binding', 500);
           const createdAt = domainParse(z.iso.datetime({ offset: true }), row.get('createdAt'), 'history_binding', 500);
-          let text: string, version: number, role: 'user' | 'model' | null = null;
+          let text: string, version: number, role: 'user' | 'model' | null = null, contentVersion: string | undefined;
           if (input.kind === 'message') {
             const value = await options.chat.readMessage(b, childId, id);
             if (!value || value.createdAt !== createdAt) domainReject('history_binding', 500);
-            text = (await content(b, value)).text; version = 1; role = value.role;
+            ({ text, contentVersion } = await content(b, value)); version = 1; role = value.role;
           } else if (input.kind === 'imported_message') {
             const value = await options.chat.readImportedMessage(b, childId, id);
             if (!value || value.message.createdAt !== createdAt) domainReject('history_binding', 500);
@@ -108,7 +110,10 @@ export function createFirestoreAgentHistory(options: {
           }
           scanned++; last = { id, createdAt };
           const index = text.toLocaleLowerCase('zh-HK').indexOf(input.query.toLocaleLowerCase('zh-HK'));
-          if (index >= 0) matches.push({ id, kind: input.kind, version, createdAt, role, excerpt: text.slice(Math.max(0, index - 80), Math.max(0, index - 80) + 400) });
+          const offset = Math.max(0, index - 80);
+          if (index >= 0) matches.push({ id, kind: input.kind, version, createdAt, role, excerpt: text.slice(offset, offset + 400),
+            ...(neighbors ? { excerptRange: { offset, totalCharacters: text.length, contentVersion }, followingMessages: neighbors.following() } : {}) });
+          if (role) neighbors?.observe({ id, version, createdAt, role, text, contentVersion });
           if (matches.length === 10) break;
         }
         const complete = rows.size === scanned;

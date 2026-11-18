@@ -25,7 +25,7 @@ import { firestorePushBindingSchema, firestorePushDeliverySchema } from './fires
 import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema } from './firestore-native-push.ts';
 
 // New domains join the existing backup registry and must carry authenticated recovery scope.
-const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage', '_private_summary_usage'].includes(suffix)
+const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_erasures', '_erasure_receipts', '_sessions', '_adk', '_root_budget', '_ai_usage', '_ai_usage_detail', '_private_summary_usage'].includes(suffix)
   && !suffix.startsWith('_knowledge_'));
 const BATCH = 25;
 export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions {
