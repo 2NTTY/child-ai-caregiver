@@ -6101,6 +6101,7 @@ Server／測試 TypeScript 檢查首輪因 Node 預設約 2 GB heap 用盡退出
 
 P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授權及原操作收據。使用同一個合成家庭走正式 HTTP，核對照顧者保存、唯讀成員讀回原件、舊草稿隔離、途中撤權及原操作重試。照片和錄音只補各自的上傳接點。資料來自記憶體 Firestore 與合成物件服務；正式交付及設備證據見接手清單。
 
+
 ## 2026-11-15　REQ-005 補完拆分 PR（PR-A～PR-E，本地提交未推送／R1 修補與 CI 強化）
 
 - **基線／規範**：從 `origin/master`（`b48ba8804918b71757df1445b0a7790dd13f2fd7`）開出 5 個獨立、單一目的工作樹與本地分支（署名 `CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`，嚴格 forward-only commit，未執行 `git push`、未開啟 GitHub PR），並針對 R1 審核強化為離線雙層隔離 CI workflow 與腳本（`pull_request` 對應精確 head branch、`unshare --net` + `setpriv` + network-guard + 三配置 `tsc`）。所有測試均屬離線合成／記憶體 store 子集，不代表真實 Vertex Gemini、生產 Firestore 壓測、GCP 帳單／外部告警端、多 worker 切換或託管 Actions 已通過；`#447` 持久跨輪摘要維持未啟用／未部署，關聯 Slice B `B-P5`（`codex/search-help-entry`, `edf5f1a5`）維持 `LOCAL HOLD` 待 Owner（`2NTTY`）定奪。
