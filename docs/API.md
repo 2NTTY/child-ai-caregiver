@@ -968,9 +968,9 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 
 對帳設定中的 `settlement.reference` 識別一筆可歸屬至單次供應商呼叫的帳單明細。若帳單只提供局部行號，請連同帳戶及帳單編號組成唯一識別。同一份設定跨日期或出資方重用一筆明細會被拒絕。只有整日或整張帳單總額時，保留各次結算未知。
 
-用量中的 `platform.attempts` 保留平台技術總數。一般平台的 `finance` 與公共知識維護的 `maintenanceFinance` 各自計算金額，維護生成、審核及文件向量根據原收據的系統身份歸帳。管理員向原 operations 入口提交 `money_budget`，以 UTC 帳日、`general` 或 `maintenance`、該項 `expectedVersion` 及原 `opId` 保存。金額欄 `amount` 包含幣別和整數微單位，明確傳 `null` 清除。當日或未來日期可調，過往日可讀。受保護配置可提供日期預算，管理員對同一日及範圍的決定優先。
+用量中的 `platform.attempts` 保留平台技術總數。平台和個人分別提供 `finance`（一般用途）及 `maintenanceFinance`。維護生成、審核和文件向量以原收據的出資方及用途歸帳。管理員向原 operations 入口提交 `money_budget`，以 UTC 帳日、`general` 或 `maintenance`、該項 `expectedVersion` 及原 `opId` 保存。金額欄 `amount` 包含幣別和整數微單位，明確傳 `null` 清除。當日或未來日期可調，過往日可讀。受保護配置可提供日期預算，管理員對同一日及範圍的決定優先。
 
-個人模型 v4 接口可用 `Prefer: include-personal-finance` 取得本人當日費用。更新 `dailyMoneyBudget` 時沿原設定版本及收據保存，每個 UTC 日使用同一份本人設定，傳 `null` 清除。舊客戶端保留其設定。個人帳單列可帶 `ownerUserId` 以縮小讀取範圍。新舊帳單都按原嘗試的付款身份歸屬，明示的身份必須吻合；個人回應只含本人的小計及未對帳次數。財務餘額由已核准金額和可核對的帳單推導，原派送仍按各自的呼叫數與供應商限制執行。
+個人模型 v4 接口可用 `Prefer: include-personal-finance` 取得本人當日費用。本人分開設定 `dailyMoneyBudget`（一般）及 `maintenanceMoneyBudget`（維護）的對帳預算，更新時沿原設定版本及收據保存，每個 UTC 日使用同一份本人設定，傳 `null` 清除。舊客戶端保留其設定。個人帳單列可帶 `ownerUserId` 以縮小讀取範圍。新舊帳單都按原嘗試的付款身份歸屬，明示的身份必須吻合；個人回應只含本人的小計及未對帳次數。財務餘額由已核准金額和可核對的帳單推導，原派送仍按各自的呼叫數與供應商限制執行。
 
 <a id="admin-usage-quota"></a>
 

@@ -54,7 +54,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   return {
     async start(request: BackgroundKnowledgeRunRequest, signal = new AbortController().signal, expectedRevision?: string) {
       const current = await policy.readPolicy(), base = options.config;
-      if (!base.enabled || !current.enabled || !base.backgroundKnowledgeMaintenanceEnabled)
+      if (!base.enabled || (!options.sponsor && !current.enabled) || !base.backgroundKnowledgeMaintenanceEnabled)
         return { status: "not_enabled" as const, code: "background_knowledge_disabled", published: false };
       const definition = SOURCE_WATCHES.find(item => item.id === request.watchId);
       const registration = (await options.refresh.jobs()).find(job => job.definition.id === request.watchId);
@@ -117,9 +117,12 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
               { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs });
-            const authorize = async () => !signal.aborted && await session.authorize() && (await policy.readPolicy()).enabled
-              && (!sponsor || Boolean(personal && await sponsor.identityActive() && await personal.authorize()
-                && (await policy.readPolicy()).version === current.version));
+            const authorize = async () => {
+              if (signal.aborted || !await session.authorize()) return false;
+              const latest = await policy.readPolicy();
+              return sponsor ? Boolean(personal && latest.version === current.version && await sponsor.identityActive() && await personal.authorize())
+                : latest.enabled;
+            };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
             let model: AgentGatewayModel | undefined;
             const completeText = async (input: { system: string; user: string; attemptKey: string }) =>

@@ -205,6 +205,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 公共知識維護採獨立貨幣預算。後端依原收據的出資方及用途分開聊天與維護金額，管理員可按 UTC 日分開設定。個人 key 使用者可在本人設定保存每日金額及查閱能綁定其身份的對帳小計。這些入口預設金額未設定，正式首宗告警、出資方金額及帳單仍按實際證據追蹤。[財務契約](docs/API.md#admin-usage-quota)
 
+已用 Firestore Emulator 和正式個人供應商接線驗過整理、獨立審核、文件向量各一次。維護帳三筆，聊天及平台零筆。重送沿原收據，撤回授權後停止。供應商網絡由替身接管，實際費用仍待帳單。[重現驗證](tests/firestore-knowledge-maintenance-emulator.mjs)
+
 | 交付 | 已取得的證據 | 適用範圍 |
 |---|---|---|
 | 跨會話摘要與真查詢 | 真 Vertex 回答「青竹室」並引用更正原句。正式站單一合成孩子保存兩批短摘要，讀回零生成。長來源在獨立程序分兩段完成，重送零新增用量。[查詢](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json) · [正式摘要](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json) · [分段](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) | 正式試行出資已結束，其他家庭維持原政策。 |

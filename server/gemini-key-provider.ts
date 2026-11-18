@@ -138,8 +138,8 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         if (signal.aborted) throw new EmbeddingFailure("cancelled");
         // Express mode has no documented embedding method. Never use platform ADC as a substitute.
         if (vertex) throw new EmbeddingFailure('unavailable');
-        // Only trusted operator composition enables document embeddings. Personal
-        // routing stays query-only; the gateway still checks authority and usage.
+        // Only a maintenance composition enables document embeddings. Interactive
+        // personal queries retain their original query-only contract.
         const document = input.task === "RETRIEVAL_DOCUMENT" && options.documentEmbeddings === true;
         if (typeof input.text !== "string" || !input.text.trim()
           || (document ? typeof input.title !== "string" || !input.title.trim() || input.title.length > 600
