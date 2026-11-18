@@ -15,6 +15,7 @@ export const PERSONAL_MODEL = "gemini-3.1-flash-lite";
 export const MODEL_SETTINGS_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v2+json';
 export const MODEL_SETTINGS_V3_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v3+json';
 export const MODEL_SETTINGS_V4_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v4+json';
+export const MODEL_SETTINGS_MONTH_PREFERENCE = 'include-monthly-finance';
 export const MODEL_SETTINGS_FINANCE_PREFERENCE = 'include-personal-finance';
 export interface DailyMoneyBudget { currency: string; micros: number }
 export const PERSONAL_DAILY_LIMIT = { default: 100, min: 1, max: 1000 } as const;
@@ -40,6 +41,8 @@ export interface PersonalAdvancedLimits {
 export interface ModelSettings extends PersonalAdvancedLimits, PersonalEmbeddingSettings {
   publicMaintenanceEnabled?: boolean;
   maintenanceMoneyBudget?: DailyMoneyBudget;
+  monthlyMoneyBudget?: DailyMoneyBudget;
+  monthlyMaintenanceBudget?: DailyMoneyBudget;
   dailyMoneyBudget?: DailyMoneyBudget;
   limitPolicyVersion?: 2;
   version: number;
@@ -59,6 +62,8 @@ export interface ModelSettingsCommand extends PersonalAdvancedLimits, PersonalEm
   /** Omit to preserve the owner's budget; null explicitly clears it. */
   publicMaintenanceEnabled?: boolean;
   maintenanceMoneyBudget?: DailyMoneyBudget | null;
+  monthlyMoneyBudget?: DailyMoneyBudget | null;
+  monthlyMaintenanceBudget?: DailyMoneyBudget | null;
   dailyMoneyBudget?: DailyMoneyBudget | null;
   /** New clients use a secret-free operation lookup after a lost response. */
   opId?: string;

@@ -205,6 +205,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 公共知識維護採獨立貨幣預算。後端依原收據的出資方及用途分開聊天與維護金額，管理員可按 UTC 日分開設定。個人 key 使用者可在本人設定保存每日金額及查閱能綁定其身份的對帳小計。這些入口預設金額未設定，正式首宗告警、出資方金額及帳單仍按實際證據追蹤。[財務契約](docs/API.md#admin-usage-quota)
 
+11 月 19 日，個人出資的公共知識維護及獨立次數守門已發布。API／worker 為 `d343a26d`，Web 為 `f694736b`。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44363247741)。月度對帳接回原 UTC 日帳，以出資者及用途分開查閱。
+
 已用 Firestore Emulator 和正式個人供應商接線驗過整理、獨立審核、文件向量各一次。維護帳三筆，聊天及平台零筆。重送沿原收據，撤回授權後停止。供應商網絡由替身接管，實際費用仍待帳單。[重現驗證](tests/firestore-knowledge-maintenance-emulator.mjs)
 
 | 交付 | 已取得的證據 | 適用範圍 |

@@ -38,7 +38,7 @@ test('only the owner can update their daily money budget; older clients preserve
     await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   }
   const routing = createFirestoreModelRouting(options, config);
-  const include = 'include-personal-finance', legacy = '';
+  const include = 'include-personal-finance', month = include + ', include-monthly-finance', legacy = '';
   function call(user: string, prefer: string, body?: object, suffix = '') {
     return handleModelSettingsRequest(new Request('https://local.test/api/ai/settings' + suffix, {
       method: body ? 'POST' : 'GET', headers: { accept: 'application/vnd.yuyoufang.model-settings.v4+json', prefer, 'content-type': 'application/json', 'x-expected-user-id': user },
@@ -47,13 +47,19 @@ test('only the owner can update their daily money budget; older clients preserve
   }
   const base = { mode: 'personal', dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, consent: true, backgroundEnabled: false };
   const budget = { currency: 'HKD', micros: 2500000 };
-  const first = { ...base, opId: randomUUID(), expectedVersion: 0, apiKey: key, dailyMoneyBudget: budget };
+  const first = { ...base, opId: randomUUID(), expectedVersion: 0, apiKey: key, dailyMoneyBudget: budget, monthlyMaintenanceBudget: budget };
   assert.equal((await call('owner', legacy, first)).status, 409);
-  assert.equal((await call('owner', include, first)).status, 200);
+  assert.equal((await call('owner', include, first)).status, 409);
+  assert.equal((await call('owner', month, first)).status, 200);
+  assert.equal((await (await call('owner', include)).json()).settings.monthlyMaintenanceBudget, undefined);
   assert.deepEqual((await (await call('owner', include, undefined, '/operations/' + first.opId)).json()).settings.dailyMoneyBudget, budget);
   assert.equal((await (await call('owner', legacy)).json()).settings.dailyMoneyBudget, undefined);
   assert.equal((await call('owner', legacy, { ...base, opId: randomUUID(), expectedVersion: 1 })).status, 200);
-  const view = await (await call('owner', include)).json();
+  const view = await (await call('owner', month)).json();
+  assert.deepEqual(view.settings.monthlyMaintenanceBudget, budget);
+  const ownerMonth = await (await call('owner', month, undefined, '/usage/month')).json();
+  assert.equal(ownerMonth.through.slice(0, 7), view.usage.personal.day.slice(0, 7));
+  assert.deepEqual(ownerMonth.maintenance.settlements, []);
   assert.deepEqual(view.settings.dailyMoneyBudget, budget);
   assert.equal(view.usage.personal.finance.unsettledAttempts, 0);
   assert.equal((await (await call('other', include)).json()).settings.dailyMoneyBudget, undefined);

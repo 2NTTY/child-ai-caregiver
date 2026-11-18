@@ -972,6 +972,8 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 
 個人模型 v4 接口可用 `Prefer: include-personal-finance` 取得本人當日費用。本人分開設定 `dailyMoneyBudget`（一般）及 `maintenanceMoneyBudget`（維護）的對帳預算，更新時沿原設定版本及收據保存，每個 UTC 日使用同一份本人設定，傳 `null` 清除。舊客戶端保留其設定。個人帳單列可帶 `ownerUserId` 以縮小讀取範圍。新舊帳單都按原嘗試的付款身份歸屬，明示的身份必須吻合；個人回應只含本人的小計及未對帳次數。財務餘額由已核准金額和可核對的帳單推導，原派送仍按各自的呼叫數與供應商限制執行。
 
+月結按需讀取同一帳本的原 UTC 帳日，每次最多讀一個月，四日一批。管理員以 `GET /api/admin/usage/month?month=YYYY-MM` 讀取平台兩項支出，`money_budget.day` 可指定該月。用戶加上 `Prefer: include-personal-finance, include-monthly-finance`，可在 v4 設定保存 `monthlyMoneyBudget` 及 `monthlyMaintenanceBudget`，並從 `GET /api/ai/settings/usage/month` 讀取本人本月的小計。估算按幣別和價目分列，結算按幣別分列。月底後才收到的帳單以原嘗試日期歸帳。
+
 <a id="admin-usage-quota"></a>
 
 平台向量配額也可按 UTC 日期單獨登記。營運者用已登入的 Cloud SDK 執行下面第一行，再於原站主機將同一份輸出交給 worker 容器。讀取器採用 Service Usage 對本站專案、模型或地區及單位返回的有限 `effectiveLimit`。背景服務沿原有 IAM。相同觀測可以重送，較早的觀測不能覆蓋較新的資料。當日已有明確配置的配額時優先採用配置。

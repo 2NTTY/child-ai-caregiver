@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { utcMonthSchema } from './monthly-finance.ts';
 import { highWatermarkPolicySchema } from './budget-alerts.ts';
 import { PERSONAL_MODEL, PERSONAL_RUN_LIMITS } from './model-settings.ts';
 import { dailyMoneyBudgetSchema } from './model-settings-schema.ts';
@@ -43,10 +44,10 @@ const operation = { opId: z.uuid() }, address = z.email().max(320).transform(val
 const moneyPool = z.enum(['general', 'maintenance']);
 export const approvedMoneyBudgetSchema = dailyMoneyBudgetSchema.extend({ approvalReference: z.string().trim().min(1).max(128),
   approvedAt: z.iso.datetime({ offset: true }) });
-export const adminDayBudgetSchema = z.object({ day: z.iso.date(), pool: moneyPool, version: z.number().int().positive(),
+export const adminDayBudgetSchema = z.object({ day: z.union([z.iso.date(), utcMonthSchema]), pool: moneyPool, version: z.number().int().positive(),
   approved: approvedMoneyBudgetSchema.nullable() }).strict();
 export const adminCommandSchema = z.discriminatedUnion('kind', [
-  z.object({ ...operation, kind: z.literal('money_budget'), day: z.iso.date(), pool: moneyPool, expectedVersion: z.number().int().nonnegative(), amount: dailyMoneyBudgetSchema.nullable() }).strict(),
+  z.object({ ...operation, kind: z.literal('money_budget'), day: z.union([z.iso.date(), utcMonthSchema]), pool: moneyPool, expectedVersion: z.number().int().nonnegative(), amount: dailyMoneyBudgetSchema.nullable() }).strict(),
   z.object({ ...operation, kind: z.literal('policy'), expectedVersion: z.number().int().nonnegative(), values: platformPolicyValuesSchema }).strict(),
   z.object({ ...operation, kind: z.literal('invite'), email: address, expiresAt: z.iso.datetime({ offset: true }) }).strict(),
   z.object({ ...operation, kind: z.literal('revoke'), email: address }).strict(),

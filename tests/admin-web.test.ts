@@ -140,6 +140,16 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   await assert.rejects(admin.savePlatformQuotaObservation({ ...observation, providerQuota: [{ ...quota, project: 'another-project' }] }),
     { code: 'invalid_quota_observation' });
   assert.equal((await admin.usage('2000-01-01')).platform.finance.providerQuota, null);
+  const month = day.slice(0, 7);
+  const monthly = { kind: 'money_budget', opId: randomUUID(), pool: 'maintenance', day: month,
+    amount: { currency: 'HKD', micros: 1200000 }, expectedVersion: 0 };
+  assert.equal((await http('operations', monthly)).status, 200);
+  const monthlyView = await (await http('usage/month?month=' + month)).json();
+  assert.deepEqual(monthlyView.budgets.maintenance.approved.micros, 1200000);
+  assert.equal(monthlyView.budgets.general, null);
+  assert.equal(monthlyView.report.general.unsettledAttempts, 0);
+  assert.deepEqual(monthlyView.report.general.settlements, [{ currency: 'HKD', micros: '0', attempts: 1 }]);
+  assert.equal(monthlyView.report.maintenance.unsettledAttempts, 0);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
   assert.deepEqual(totals.platform.finance.providerQuota, [quota]); assert.equal(totals.personal.finance.providerQuota, null);
   assert.equal(totals.platform.breakdown.model, 1);
