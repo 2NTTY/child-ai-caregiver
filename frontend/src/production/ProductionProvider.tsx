@@ -1,3 +1,5 @@
+import { readCitationPdf } from '../../../src/client/citation-original';
+import { openCitationPdf } from '../platform/file-export';
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useNativeChatPresence } from "./useNativeChatPresence";
 import { useWebChatPresence } from "./useWebChatPresence";
@@ -166,6 +168,20 @@ function useProductionValue(owner: ProductionOwner) {
     },
     completeGuidePreview() { setLocalNotice("引導完成狀態尚未接線；你可以繼續使用已接通的入口。"); },
   };
+  const openOriginal = (runId: string | undefined, id: string) => {
+    const childId = snapshot.activeChild?.id, userId = snapshot.records.user?.id;
+    if (!currentScope() || !runId || !childId || !userId) return;
+    const citation = owner.agentOwner.getSnapshot().runs[runId]?.citations.find(item => item.id === id);
+    if (!citation) return;
+    if (!citation.savedPdf) {
+      const url = owner.agentOwner.sourceUrl(id, runId);
+      if (url) void Linking.openURL(url).catch(() => { if (currentScope()) setLocalNotice('未能開啟原網站。'); });
+      return;
+    }
+    const load = () => readCitationPdf({ apiBaseUrl: owner.apiBaseUrl, fetcher: owner.fetcher, userId, childId, runId, chunkId: id, current: currentScope });
+    void openCitationPdf(load, citation.pageStart, currentScope).then(message => { if (currentScope()) setLocalNotice(message); },
+      error => { if (currentScope()) setLocalNotice(error instanceof Error && /[\u3400-\u9fff]/u.test(error.message) ? error.message : '未能開啟當時的 PDF。'); });
+  };
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
@@ -244,9 +260,9 @@ function useProductionValue(owner: ProductionOwner) {
       setSharedConfirmation: (id: string, checked: boolean) => { if (currentScope()) owner.agentOwner.setSharedConfirmation(id, checked); },
       decide: (id: string, decision: "accept" | "dismiss") => { if (currentScope()) owner.agentOwner.decide(id, decision); },
       retryOriginal: () => { if (currentScope()) owner.agentOwner.retryOriginal(); },
-      openSource: (id: string) => { if (!currentScope()) return; const url = owner.agentOwner.sourceUrl(id); if (url) void Linking.openURL(url).catch(() => { if (currentScope()) setLocalNotice("未能開啟來源連結。"); }); } },
+      openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id) },
     selectAgentRun: (id: string) => { if (currentScope()) owner.agentOwner.selectRun(id); },
-    openAgentSource: (runId: string, id: string) => { if (!currentScope()) return; const url = owner.agentOwner.sourceUrl(id, runId); if (url) void Linking.openURL(url).catch(() => { if (currentScope()) setLocalNotice("未能開啟來源連結。"); }); },
+    openAgentSource: openOriginal,
     agentInboxActions: { refresh: () => { if (currentScope()) void owner.agentOwner.readInbox(); },
       select: (id: string) => { if (currentScope()) owner.agentOwner.selectRun(id, true); },
       collapse: () => { if (currentScope()) owner.agentOwner.collapseInbox(); } },

@@ -1,5 +1,8 @@
 // Display projections only. Formal source payloads remain owned by the existing APIs.
 export interface ChatCitationView {
+  sourceId?: string; seriesId?: string; seriesName?: string; acquisition?: 'library' | 'live';
+  termsUrl?: string | null; originalRange?: string;
+  pageStart?: number; pageEnd?: number; savedPdf?: boolean; readSegments?: string[];
   id: string; title: string; section: string; publisher: string; excerpt: string;
   classification: "official_guidance" | "recent_information" | "synthetic";
   versionId: string; versionHash: string; checkedAt: string; fetchedAt: string;

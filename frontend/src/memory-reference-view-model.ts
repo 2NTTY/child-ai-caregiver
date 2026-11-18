@@ -56,6 +56,7 @@ export interface KnowledgeReferencesView {
   readonly audience: "public" | "internal";
   readonly items: readonly KnowledgeReferenceView[];
   readonly catalog?: readonly PersonalLibraryItem[];
+  readonly registered?: readonly import('../../src/shared/personal-library').RegisteredLibrarySource[];
   readonly hasMore: boolean;
 }
 export interface MemoryReferenceModel {
@@ -78,6 +79,7 @@ export interface MemoryReferenceWorkspaceValue {
     readFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreReferences?(): void;
+    setLibraryPreference?(change: import('../../src/shared/source-series').LibraryPreferenceChange): void;
     loadMoreWork?(): void;
     readWorkMessage?(id: string): void;
     loadMoreWorkMessage?(): void;
