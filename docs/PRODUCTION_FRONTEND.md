@@ -220,6 +220,27 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 原生 SDK 更新必須新 binary，沿既有 fingerprint／`mobile:release --plan` 判斷，不向舊 runtime 發 OTA。純 Web 仍使用原生 Firebase popup adapter；共同 owner、同 UID 檢查、明確 linking／取消讀回及裝置撤銷不變。套件已裝、config introspection 或 JS 匯出均不代表真機登入／簽署已通過。
 
+#### 正式 Google 登入首次啟用
+
+1. 正式 Firebase 專案為 `ai-caregivers-for-children`。在專案設定核對現有 Web App、Android 套件 `org.yuyoufang.app` 及實際 APK 簽署。版本 8 的公開 SHA-1 已登記並讀回。更換簽署時用 `apksigner verify --print-certs` 取得新指紋。[正式登記收據](../artifacts/verification/P4_GOOGLE_AUTH_READINESS_20261118.json) · [Firebase Android 配置](https://firebase.google.com/docs/auth/android/google-signin)
+2. 取得營運方指定、可公開顯示的支援電郵，在工程外的 `firebase-auth.json` 填入以下設定，把佔位文字換成該地址。正式 Web 的 Firebase Auth 回調已核對。既有專案若已有 Google provider，先檢查現行品牌及回調，保留仍在使用的地址。
+
+   ```json
+   {
+     "auth": {
+       "providers": {
+         "googleSignIn": {
+           "oAuthBrandDisplayName": "育有方",
+           "supportEmail": "<公開支援電郵>",
+           "authorizedRedirectUris": ["https://ai-caregivers-for-children.firebaseapp.com/__/auth/handler"]
+         }
+       }
+     }
+   }
+   ```
+3. 在已安裝倉庫依賴的根目錄，使用有 Firebase 專案配置權限的身份執行 `npm exec --offline -- firebase deploy --only auth --project ai-caregivers-for-children --config <工程外的設定檔路徑>`。倉庫固定的 Firebase CLI 15.34.0 可為既有專案配置 Google 登入。這份設定只指定 Google。啟用後在 Firebase Auth 核對 `google.com` 已啟用，並重新取得該 Android App 的 SDK 設定。核對 Android OAuth client 的套件與簽署，另取 Web 類型的 client ID 配給 `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`。[Firebase 官方 CLI 指引](https://firebase.google.com/docs/auth/configure-providers-cli)
+4. 在供應商配置齊備的平台，將 `google.com` 加入現有 `EXPO_PUBLIC_AUTH_PROVIDERS`。Web 變數在建置時讀取，按[原站發布](DEPLOYMENT.md)核對包含新設定的 Web 產物；Android 按 runtime 決定 OTA 或新版本。用原測試帳號連結 Google、重新驗證並核對 UID，再將相應平台記為可用。
+
 Android launcher 使用既有 `assets/brand/app-icon-ios.png` 品牌圖；共用原生啟動畫面由 Expo SDK 57 對應的 `expo-splash-screen@57.0.9`（MIT）plugin 設定，使用 `favicon.png` 透明標記與白底。沿[官方配置](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)及已安裝版本核對；這些設定進入下一個新 binary，不能用 OTA 更新舊版的 launcher／原生 splash，也不能手填舊 fingerprint。JS 首屏仍沿現有 FirstScreenGate，不新增啟動等待或重做畫面。
 
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。
