@@ -6,7 +6,9 @@ P4 已於 11 月 18 日恢復，目標涵蓋 S16 驗收與 S17 交付。[開啟�
 
 ## 下次從哪開始
 
-香港原站 Web、API、worker 在 11 月 18 日 07:49 同步到 `b17fa999`。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461)。新版多孩對話以所選孩子的工具查詢，一條真 Gemini 問題經審核後，兩段記憶均由原文接口讀回正確孩子及版本。[實測](../artifacts/verification/P4_SELECTED_MATERIALS_VERTEX_20261118.json)。Android 第 8 版已有相容的 preview OTA。Expo 以該版 APK 的 runtime 和通道回傳更新 `01a1ebc6`。裝置是否已下載，要在裝置上確認。[Android 交付收據](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)
+香港原站 Web、API、worker 在 11 月 18 日 07:49 同步到 `b17fa999`。其後 Web 的[授權清單發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44206313694)更新至 `2b238aae`，API 與 worker 仍為 `b17fa999`。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461)。新版多孩對話以所選孩子的工具查詢，一條真 Gemini 問題經審核後，兩段記憶均由原文接口讀回正確孩子及版本。[實測](../artifacts/verification/P4_SELECTED_MATERIALS_VERTEX_20261118.json)。Android 第 8 版已有相容的 preview OTA。Expo 以該版 APK 的 runtime 和通道回傳更新 `01a1ebc6`。裝置是否已下載，要在裝置上確認。[Android 交付收據](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)
+
+**從乾淨副本重現 P4。** 11 月 18 日在 Windows 按 [README](../README.md#running-and-testing) 完成安裝，啟動 Web 與本機 API，讀回原班級操作。要覆核附件：用本機管理員在後台邀請第二個測試電郵；用獨立瀏覽器設定檔註冊，從[本機收件箱](AGENT_LOCAL.md)完成電郵驗證。再由管理員在家庭空間邀請對方為 viewer。對方接受邀請後，管理員將孩子的附件模組加入家庭。上傳一份文件，讓 viewer 讀回；撤回共享後重開原附件。本次用兩個獨立登入及正式 API 驗得檔案一致、撤權回應 403。[乾淨 checkout 與收據](../artifacts/verification/P4_CLEAN_CHECKOUT_20261118.json)。本次由開發環境執行，保留另一位組員的獨立操作及正式裝置驗收。
 
 **下一次驗收用同一組測試資料。** 先備兩個有權使用的測試帳號、一部 Android 和一份無私人資料的文件；下面只補真人步驟。每項記錄結果、原操作或資源識別及平台即可。
 
