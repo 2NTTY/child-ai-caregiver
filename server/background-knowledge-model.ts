@@ -86,7 +86,7 @@ export interface PreparedKnowledgeMaintenance {
   versionHash: string;
   assessment: KnowledgeReviewAssessment;
   review: BackgroundKnowledgeReviewBinding;
-  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string; nativePdf?: z.infer<typeof nativePdfProvenanceSchema> };
+  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string; nativePdf?: z.infer<typeof nativePdfProvenanceSchema>; windows?: import("./knowledge-pdf-windows.ts").WindowReading[] };
 }
 export class KnowledgeMaintenanceModelError extends Error {
   readonly code: string;
