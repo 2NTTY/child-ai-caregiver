@@ -27,10 +27,23 @@ export const portableSeriesSchema = z.strictObject({
 });
 export type PortableSeries = z.infer<typeof portableSeriesSchema>;
 
-function describeSeries(source: KnowledgeSourceInput, context: FirestoreKnowledgeObservation | null): PortableSeries {
+function observedPdfRange(source: KnowledgeSourceInput, content: ObservedContent | null, configured?: { startPage: number; endPage: number }) {
+  const edition = source.extraction, read = content?.extraction, pages = content?.pages;
+  if (edition?.format !== 'text_pdf' || read?.format !== 'text_pdf' || edition.contentHash !== read.contentHash
+    || edition.totalPages !== read.totalPages || edition.pageStart !== read.pageStart || edition.pageEnd !== read.pageEnd
+    || edition.complete !== read.complete || !read.pageStart || !read.pageEnd || !pages) return null;
+  const { pageStart: startPage, pageEnd: endPage } = read;
+  if (configured ? startPage !== configured.startPage || endPage !== configured.endPage
+    : !read.complete || startPage !== 1 || endPage !== read.totalPages) return null;
+  if (pages.length !== endPage - startPage + 1 || !pages.every((page, i) => page.page === startPage + i && page.status === 'text')) return null;
+  return { startPage, endPage };
+}
+
+function describeSeries(source: KnowledgeSourceInput, context: FirestoreKnowledgeObservation | null, content: ObservedContent | null): PortableSeries {
   const watch = context?.watch.definition, observed = context?.observation;
-  const reader = watch?.kind === 'pdf' && watch.pdfPages
-    ? { kind: 'pdf' as const, ...watch.pdfPages, parser: 'pdfjs-dist' as const, version: parserVersions.pdf }
+  const range = watch?.kind === 'pdf' && (watch.pdfPages || watch.leafletPage) ? observedPdfRange(source, content, watch.pdfPages) : null;
+  const reader = range
+    ? { kind: 'pdf' as const, ...range, parser: 'pdfjs-dist' as const, version: parserVersions.pdf }
     : watch?.kind === 'page' && watch.selector === '#content'
       ? { kind: 'page' as const, selector: '#content' as const, parser: 'cheerio' as const, version: parserVersions.page } : null;
   const sample = source.chunks.find(chunk => chunk.sourceExcerpt && chunk.treatment?.kind !== 'excluded');
@@ -42,9 +55,11 @@ function describeSeries(source: KnowledgeSourceInput, context: FirestoreKnowledg
       sample: { key: sample.key, excerptHash: knowledgeHash(sample.sourceExcerpt) }, checks: ['registered_url', 'title', 'original_excerpt'] } : null });
 }
 
-export function portableSeries(source: KnowledgeSourceInput, context: FirestoreKnowledgeObservation | null) {
-  const info = describeSeries(source, context);
-  if (!context?.observation?.approved || context.observation.approved.contentHash !== context.observation.contentHash) info.method = null;
+export function portableSeries(source: KnowledgeSourceInput, context: FirestoreKnowledgeObservation | null, content: ObservedContent | null) {
+  const info = describeSeries(source, context, content);
+  if (info.method && content?.title) info.method.sample.titleHash = knowledgeHash(content.title);
+  if (!context?.observation?.approved || context.observation.approved.contentHash !== context.observation.contentHash
+    || verifyPortableMethod(info, source, context, content) !== 'verified_locally') info.method = null;
   return info;
 }
 
@@ -77,12 +92,12 @@ export function checkPortableSeries(source: KnowledgeSourceInput, value: unknown
 // Local approval and a fresh parser result remain authoritative even for a byte-identical import.
 export function verifyPortableMethod(info: PortableSeries, source: KnowledgeSourceInput, local: FirestoreKnowledgeObservation | null, content: ObservedContent | null) {
   if (!info.method) return 'not_supplied' as const;
-  const expected = describeSeries(source, local).method;
+  const expected = describeSeries(source, local, content).method;
   const sample = source.chunks.find(chunk => chunk.key === info.method!.sample.key);
   if (!expected || !sample || !content || !content.title.trim() || content.url !== source.url) return 'pending_local_check' as const;
   const actualTitle = info.method.sample.titleHash ? knowledgeHash(content.title) === info.method.sample.titleHash : content.title === source.title;
   const original = info.method.reader.kind === 'pdf' ? content.pages?.filter(page => page.status === 'text'
-    && page.page >= (sample.pageStart ?? Infinity) && page.page <= (sample.pageEnd ?? 0)).map(page => page.text).join('\n') : content.text;
+    && page.page >= (sample.pageStart ?? Infinity) && page.page <= (sample.pageEnd ?? 0)).map(page => page.text).join('\n\n') : content.text;
   if (!actualTitle || !original?.includes(sample.sourceExcerpt) || expected.observationHash !== info.method.observationHash
       || canonical(expected.reader) !== canonical(info.method.reader)) return 'pending_local_check' as const;
   return 'verified_locally' as const;

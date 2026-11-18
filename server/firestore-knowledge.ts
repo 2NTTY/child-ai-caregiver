@@ -424,13 +424,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           return { chunkKey: chunk.document.key, inputHash: chunk.embeddingHash, ...KNOWLEDGE_EMBEDDING,
             values: vectorValues(chunk.embedding.toArray()) };
         });
-        const library = portableSeries(edition.document, edition.observed);
+        const observation = edition.observed?.observation;
+        const body = observation?.approved && options.observations ? await options.observations.content(tx, observation) : null;
+        const library = portableSeries(edition.document, edition.observed, body);
         checkPortableSeries(edition.document, library);
-        if (library.method && edition.observed?.observation && options.observations) {
-          const body = await options.observations.content(tx, edition.observed.observation);
-          if (body?.title) library.method.sample.titleHash = knowledgeHash(body.title);
-          if (verifyPortableMethod(library, edition.document, edition.observed, body) !== 'verified_locally') library.method = null;
-        }
         return { source: edition.document, versionHash: edition.version.versionHash, embeddings, library };
       }, { readOnly: true });
     },
