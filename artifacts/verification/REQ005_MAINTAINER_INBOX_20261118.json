@@ -1,0 +1,14 @@
+{
+  "scenario": "REQ-005 sustained background budget alert",
+  "environment": "isolated Firebase Auth and Firestore emulators, production session and admin API",
+  "command": "node scripts/verify-agent-local.mjs --maintainer-inbox",
+  "run": "71813f17-70bb-45e2-8201-78739aeee8e6",
+  "incident": "40bef346-e6dc-442e-a3e5-0e6ec9caaedc",
+  "receivedAt": "2026-11-18T13:43:15.634Z",
+  "sampleCategory": "background",
+  "newIncidents": 1,
+  "repeatedAcknowledgementReturnedOriginalReceipt": true,
+  "modelCalls": 0,
+  "externalDelivery": "not_sent",
+  "productionHumanReceipt": "unverified"
+}

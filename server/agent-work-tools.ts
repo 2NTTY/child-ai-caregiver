@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { readAgentWorkSchema, saveAgentWorkSchema, historySearchSchema, historyReadSchema, memoryFactReadSchema, requestAgentConfirmationSchema } from "../src/shared/agent-work.ts";
+import { readAgentWorkSchema, saveAgentWorkSchema, historySearchSchema, historyReadSchema, memoryFactReadSchema, requestAgentConfirmationSchema, type AgentHistoryMessage } from "../src/shared/agent-work.ts";
 import { agentProposalSchema, type AgentProposal } from "../src/shared/product-agent.ts";
 import { AGENT_WORK_TOOL_DESCRIPTIONS } from "./agent-work-tool-descriptions.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
@@ -10,6 +10,13 @@ import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { normalizedFactKey } from "./memory-policy.ts";
 import type { MemoryFact } from "../src/shared/memory.ts";
+
+// In an ordinary chat search, an omitted cursor means the first page.
+// The store and public API still receive the explicit discriminator and cursor.
+const chatHistorySearchSchema = z.strictObject({ ...historySearchSchema.shape,
+  kind: historySearchSchema.shape.kind.default('message'),
+  cursor: historySearchSchema.shape.cursor.default(null),
+});
 
 /** Bind the confirmation question immediately so pending receipts stay complete without a duplicate tool call. */
 export async function prepareProposalConfirmation(
@@ -29,7 +36,9 @@ export async function prepareProposalConfirmation(
 }
 
 export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>,
-  onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void): AgentTool[] {
+  onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void,
+  onHistoryRead?: (message: AgentHistoryMessage, reread: () => Promise<AgentHistoryMessage | null>, precedingMatch?: string) =>
+    { citationId: string; quoteHistory: string }, currentMessageId?: string): AgentTool[] {
   const { userId, childId } = run.scope;
   const guard = async (fn: () => Promise<unknown>): Promise<AgentToolResult> => {
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
@@ -74,8 +83,38 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         budgetLimited: available < input.limit && end < value.text.length };
     })),
     make("save_work", saveAgentWorkSchema, (args, call) => guard(() => store.saveWork(run.scope, run.runId, call.callId, saveAgentWorkSchema.parse(args)))),
-    make("search_history", historySearchSchema, args => guard(() => store.searchHistory(userId, childId, historySearchSchema.parse(args)))),
-    make("read_history", historyReadSchema, args => guard(() => store.readHistory(userId, childId, historyReadSchema.parse(args)))),
+    make("search_history", chatHistorySearchSchema, args => guard(async () => {
+      const input = historySearchSchema.parse(chatHistorySearchSchema.parse(args));
+      const page = await store.searchHistory(userId, childId, input, true);
+      if (!page || !onHistoryRead) return page;
+      const cite = (slice: Omit<AgentHistoryMessage, 'childId' | 'nextOffset'>, precedingMatch?: string): { citationId?: string; quoteHistory?: string } => {
+        if (!slice.text || slice.role !== 'user') return {};
+        const end = slice.offset + slice.text.length;
+        const reread = () => store.readHistory(userId, childId, { messageId: slice.id, offset: slice.offset,
+          limit: slice.text.length, ...(slice.contentVersion ? { contentVersion: slice.contentVersion } : {}) });
+        return onHistoryRead({ ...slice, childId, nextOffset: end < slice.totalCharacters ? end : null }, reread, precedingMatch);
+      };
+      return { ...page, matches: page.matches.filter(match => match.id !== currentMessageId).map(({ excerptRange, ...match }) => {
+        if (!excerptRange || !match.role) return match;
+        const anchor = cite({ id: match.id, role: match.role, version: match.version, createdAt: match.createdAt, text: match.excerpt, ...excerptRange });
+        return { ...match, ...anchor, followingMessages: match.followingMessages?.filter(neighbor => neighbor.id !== currentMessageId).map(neighbor =>
+          ({ ...neighbor, ...cite({ ...neighbor, offset: 0 }, anchor.citationId) })) };
+      }), ...(page.matches.some(match => match.excerptRange) ? {
+        answerGuidance: '選能回答問題的家長原句，把該句的 quoteHistory 原樣填入 present_answer 的 paragraphs，kind 用 private_reference。缺片段才需續讀。'
+      } : {}) };
+    })),
+    make("read_history", historyReadSchema, async args => {
+      let reference: string | undefined;
+      const response = await guard(async () => {
+        const input = historyReadSchema.parse(args);
+        const reread = () => store.readHistory(userId, childId, input);
+        const message = await reread();
+        if (!message || !message.text || message.importedSource || !onHistoryRead) return message;
+        reference = message.id;
+        return { ...message, ...onHistoryRead(message, reread) };
+      });
+      return reference && response.status === 'succeeded' ? { ...response, reference } : response;
+    }),
     make("read_memory_facts", memoryFactReadSchema, args => guard(async () => {
       const parsed = memoryFactReadSchema.parse(args);
       const input = { factId: parsed.factId ?? null, afterId: parsed.afterId ?? null, ...(parsed.keys?.length ? { keys: parsed.keys } : {}) };

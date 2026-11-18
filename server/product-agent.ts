@@ -17,7 +17,7 @@ import { enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDelivery
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
-import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
+import { COMPACT_PRODUCT_AGENT_TOOL_CATALOG, PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
 import { scopeTaskChildrenPerRead } from '../src/shared/assistant-task-context.ts';
@@ -407,15 +407,17 @@ export function createProductAgent(options: {
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
-          instructionPolicy: options.actions ? "本次清楚的普通交代可按 operationPolicy 使用對應普通操作工具；但普通操作工具（如 save_ordinary_record／revise_ordinary_record 屬 care_records，save_private_instruction 屬 private_instructions，create_ordinary_reminder 屬 tasks）並非預設核心工具，必須先呼叫 load_capabilities({ capabilities: [...] }) 載入對應能力後才可呼叫。日常進食／換片／體溫觀察等在 operationPolicy.recordKinds 內的紀錄應先按政策記錄再回報，不因未查知識或字句含口語而改為拒寫或略過 load_capabilities。政策不足、重要健康資料、AI 主動建議、刪除及擴大共享依原確認流程；含糊指向先補問，未消歧前不得任選目標建立候選或要求批准該猜測。需要孩子資料、原任務或舊版本時先 read_context；每次執行由 Server 重查政策。結果依收據，不把站內安排稱為外發通知。" : null,
+          instructionPolicy: "只辦目前訊息所交代的事。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若家長問之前講過甚麼，而當前視窗沒有答案，用 search_history 查目前孩子的對話；未提供該工具時先載入 history。查詢詞選事情本身。搜尋結果的 followingMessages 是當時緊接的原話，可能省略主題；按意思核對更正。若原句已能回答，present_answer 用 private_reference 並選 paragraphs=[{quoteHistory: 該句的 H 編號}]。需要另寫回答時，每段引用支持該段的原話。需要按 ID 續讀才載入 history，再用 read_history。"
+            + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
         messages: recent.messages.map(item => ({ role: item.role, text: (item.text || (item.voice ? item.id === messageId ? "[本次使用者語音，原音訊隨本輪提供]" : "[較早語音；本輪未載入原音訊，勿猜內容]" : "")) + (item.file ? "\n[私人附件 " + JSON.stringify(item.file) + "; 使用 read_chat_file 讀取，不能由檔名猜內容]" : "") + (item.photo ? "\n[私人照片 " + JSON.stringify(item.photo) + (item.id === messageId ? "; 原圖隨本輪提供]" : "; 用 read_chat_photo 讀原圖，不猜內容]") : "") })),
         toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
+        compactToolCatalog: COMPACT_PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
-            trustedUserMessage: page.messages[index]!.text,
+            trustedUserMessage: page.messages[index]!.text, currentMessageId: messageId,
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
             onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
           });

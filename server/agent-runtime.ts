@@ -222,6 +222,7 @@ export interface AgentRunInput {
   onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
   toolCatalog?: AgentToolCatalog;
+  compactToolCatalog?: AgentToolCatalog & { deferredRecipeModules: readonly string[] };
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -429,7 +430,20 @@ export function createAgentRuntime(options: {
               || typeof fixedOptions.nativeSessionService?.cleanupCreatedSession !== 'function') throw new AgentStopped('invalid_response');
             privateSummaryFastEnabled = true;
           }
-          const originalParts = initialTextParts({ text: input.messages.at(-1)!.text, context: input.context });
+          const earlier = input.messages.slice(0, -1);
+          // Back-to-back parent messages have no intervening assistant turn. Keep their original wording,
+          // but establish which message owns this run before the model chooses a tool.
+          const historyEnd = input.trigger.kind === 'interactive'
+            ? earlier.findLastIndex(message => message.role === 'model') + 1 : earlier.length;
+          const pendingHistory = earlier.slice(historyEnd);
+          const partsFor = (candidate: AgentInitialTextInput) => {
+            const initial = initialTextParts(candidate);
+            if (!pendingHistory.length) return initial;
+            return [{ text: '以下是較早的對話原文，只供理解本輪的指向和背景。' },
+              ...pendingHistory.map(message => ({ text: message.text })), ...initial.slice(1),
+              { text: '本輪家長訊息（只處理這一則交代）：' }, initial[0]!];
+          };
+          const originalParts = partsFor({ text: input.messages.at(-1)!.text, context: input.context });
           let fittedParts: ReturnType<typeof initialTextParts> | undefined;
           if (input.image && (input.loadAudio || input.loadImage)) throw new AgentStopped("input_limit");
           const audio = input.loadAudio ? checkedAgentAudio(await budget.wait(() => input.loadAudio!(budget.signal))) : undefined;
@@ -446,17 +460,19 @@ export function createAgentRuntime(options: {
           const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
-          if (privateSummaryEnabled && (input.toolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
+          if (privateSummaryEnabled && (input.toolCatalog || input.compactToolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
             || configuredTools[0].name !== 'stage_private_summary' || configuredTools[0].terminal !== true))
             throw new AgentStopped('invalid_tool');
-          const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
+          const compact = budget.limits.inputCharacters < AGENT_INTERACTIVE_INPUT.default ? input.compactToolCatalog : undefined;
+          const catalog = compact ?? input.toolCatalog;
+          const capabilitySelection = catalog ? new AgentCapabilitySelection(configuredTools, catalog) : undefined;
           const promptCache = new Map<string, ReturnType<typeof loadAgentPrompt>>();
           const getPrompt = (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
             const key = JSON.stringify(ids);
             let pending = promptCache.get(key);
             if (!pending) {
               pending = loadAgentPrompt(input.promptRecipeId ?? input.recipeId, "tool_cycle",
-                input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids));
+                input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids), compact?.deferredRecipeModules);
               promptCache.set(key, pending);
             }
             return pending;
@@ -745,7 +761,7 @@ export function createAgentRuntime(options: {
                   const contents = (parts: ReturnType<typeof initialTextParts>) => request.contents.map((content, position) =>
                     position === index ? { ...content, parts } : content);
                   const fits = (candidate: AgentInitialTextInput) => agentRequestCharacters({
-                    contents: contents(initialTextParts(candidate)),
+                    contents: contents(partsFor(candidate)),
                     config: agentGenerationConfig(selected.config, request.config),
                   }) <= budget.limits.inputCharacters;
                   const continuationFits = privateSummaryEnabled ? (candidate: AgentInitialTextInput) => {
@@ -770,7 +786,7 @@ export function createAgentRuntime(options: {
                     }
                     if (!fitted.text.trim() || !fitted.text.isWellFormed() || fitted.text.includes("\0") || !fits(fitted))
                       throw new AgentStopped("input_limit");
-                    fittedParts = initialTextParts(fitted);
+                    fittedParts = partsFor(fitted);
                   }
                   request.contents = contents(fittedParts);
                 } catch (error) {
@@ -882,7 +898,7 @@ export function createAgentRuntime(options: {
           try {
             const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });
             sessionCreated = true;
-            for (const message of input.messages.slice(0, -1)) {
+            for (const message of earlier.slice(0, historyEnd)) {
               await sessionService.appendEvent({ session, event: createEvent({ invocationId: runId,
                 author: message.role === "user" ? "user" : agent.name, content: { role: message.role, parts: [{ text: message.text }] } }) });
             }

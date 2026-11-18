@@ -806,8 +806,25 @@ function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string):
   return Boolean(draft.userRequest && USER_OPERATION_REQUEST_PATTERN.test(draft.userRequest));
 }
 
-function hasLiveUnverifiedOperationClaim(draft: ChatDeliveryDraft, text: string): boolean {
+/** Explicit attribution distinguishes a parent's recollection from an action performed by the assistant. */
+export function attributedChatQuote(source: ChatDeliverySource): string | undefined {
+  if (source.classification !== 'private' || !source.citationId.startsWith('chat:') || !source.excerptComplete) return undefined;
+  try {
+    const original = JSON.parse(source.excerpt);
+    if (original?.role === 'user' && typeof original.text === 'string' && original.text.trim())
+      return '你當時說：「' + original.text.replaceAll('「', '『').replaceAll('」', '』') + '」';
+  } catch { /* Other evidence formats cannot establish an attributed chat quote. */ }
+  return undefined;
+}
+
+function hasLiveUnverifiedOperationClaim(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedReceiptText) return false;
+  const text = draft.paragraphs.filter(p => {
+    if ((p.kind ?? draft.kind) !== 'private_reference' || p.citationIds.length !== 1) return true;
+    const source = draft.sources.find(s => s.citationId === p.citationIds[0]);
+    return !source || attributedChatQuote(source) !== p.text;
+  }).map(p => p.text).join('\n').trim();
+  if (!text) return false;
   if (draft.verifiedOperations?.length) return !verifiedOperationsCorrespond(draft, text);
   if (PENDING_OPERATION_DISCLAIMER.test(text)
     && !/(?:已正式保存|已經刪除|已經取消|已經清空|一筆不留|已經完成)/iu.test(text)) {
@@ -1034,6 +1051,7 @@ function privateSourcesSupportParagraph(
   allowMetaClauses = false,
 ): boolean {
   if (candidates.length === 0) return false;
+  if (candidates.length === 1 && attributedChatQuote(candidates[0]!) === paragraphText) return true;
   const clauses = splitPrivateAssertionClauses(paragraphText);
   if (clauses.length === 0) return false;
   const textDisallowsMeta = CARE_ADVISORY_PATTERN.test(paragraphText)
@@ -1545,7 +1563,7 @@ export async function enforceChatDeliveryReview(input: {
   ) => {
     if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
     if (chatDeliveryPassNeedsSources(judged, obligation)) throw new AgentStopped("delivery_review_no_sources");
-    if (hasLiveUnverifiedOperationClaim(judged, joinedDraftText(judged))) throw new AgentStopped("delivery_review_rejected");
+    if (hasLiveUnverifiedOperationClaim(judged)) throw new AgentStopped("delivery_review_rejected");
     // Re-check live source retract / version change before binding a pass or keeping the wording.
     let livePresentation: AgentPresentation | null = null;
     try {
@@ -1561,7 +1579,7 @@ export async function enforceChatDeliveryReview(input: {
     const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion, repairContext)) throw new AgentStopped("delivery_review_incomplete");
     if (chatDeliveryPassNeedsSources(liveDraft, obligation)) throw new AgentStopped("delivery_review_no_sources");
-    if (hasLiveUnverifiedOperationClaim(liveDraft, joinedDraftText(liveDraft))) throw new AgentStopped("delivery_review_rejected");
+    if (hasLiveUnverifiedOperationClaim(liveDraft)) throw new AgentStopped("delivery_review_rejected");
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     return { presentation: livePresentation, review };
   };
