@@ -1,4 +1,6 @@
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
+import { z } from 'zod';
+import { budgetAlertSchema, type BudgetAlert } from '../../../src/shared/budget-alerts.ts';
 import { emptyIndex, indexTargetLimit, indexGroupTargetLimit, indexGroupReplySchema, matchesGroupTargets, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
   type AdminIndexState, type AdminIndexBatch, type AdminIndexPending } from './admin-knowledge-index.ts';
 import { indexGroupViewSchema } from '../../../src/shared/admin-knowledge-index.ts';
@@ -13,12 +15,14 @@ export class AdminApiError extends Error {
 }
 export interface AdminKnowledgeState { open: boolean; status: 'unread' | 'loading' | 'ready' | 'error'; page: AdminKnowledgeStatus | null; notice: string | null }
 const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unread', page: null, notice: null });
+const alertPage = z.object({ items: z.array(budgetAlertSchema).max(20), nextCursor: z.string().nullable() }).strict();
+const emptyAlerts = () => ({ items: [] as BudgetAlert[], nextCursor: null as string | null, busy: false, loaded: false, notice: null as string | null });
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
-  usage: { platform: AdminUsage; personal: AdminUsage } | null; lookup: AdminInvitation | null | undefined;
+  usage: { platform: AdminUsage; personal: AdminUsage } | null; alerts: ReturnType<typeof emptyAlerts>; lookup: AdminInvitation | null | undefined;
   pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState; transfers: AdminTransferState; demo: AdminDemoState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
-  invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, lookup: undefined,
+  invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, alerts: emptyAlerts(), lookup: undefined,
   pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex(), transfers: emptyTransfers(), demo: emptyDemo() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
@@ -47,7 +51,7 @@ export class AdminOwner {
   private clearReadAccess(error: unknown, access: 'error' | 'denied' = 'error') {
     this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
     this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
-      usage: null, lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
+      usage: null, alerts: emptyAlerts(), lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
       transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, demo: { ...emptyDemo(), pending: this.state.demo.pending, recoveryStored: this.state.demo.recoveryStored }, notice: adminError(error) });
   }
   setUser(userId: string | null) {
@@ -119,6 +123,29 @@ export class AdminOwner {
       const denied = error instanceof AdminApiError && ([401, 403].includes(error.status) || error.status === 409 && error.code === 'identity_changed');
       if (denied) this.clearReadAccess(error);
       else this.update({ knowledge: { ...this.state.knowledge, status: 'error', notice: adminError(error) } });
+    }
+  }
+  async budgetAlerts(action: 'refresh' | 'more' | Pick<BudgetAlert, 'id' | 'category'> = 'refresh') {
+    if (this.state.access !== 'allowed' || this.state.alerts.busy) return;
+    const generation = this.generation, previous = this.state.alerts;
+    if (action === 'more' && !previous.nextCursor) return;
+    this.update({ alerts: { ...previous, busy: true, notice: null } });
+    try {
+      if (typeof action === 'object') {
+        const received = budgetAlertSchema.parse(await this.request('/admin/budget-alerts/ack', { id: action.id, category: action.category }));
+        if (received.id !== action.id || received.category !== action.category || !received.receivedAt) throw Error('Unmatched incident');
+        if (this.indexCurrent(generation)) this.update({ alerts: { ...previous, busy: false, notice: null,
+          items: previous.items.map(alert => alert.id === received.id ? received : alert) } });
+      } else {
+        const cursor = action === 'more' ? previous.nextCursor : null;
+        const page = alertPage.parse(await this.request('/admin/budget-alerts' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '')));
+        const items = cursor ? [...new Map([...previous.items, ...page.items].map(alert => [alert.id, alert])).values()] : page.items;
+        if (this.indexCurrent(generation)) this.update({ alerts: { ...page, items, busy: false, loaded: true, notice: null } });
+      }
+    } catch (error) {
+      if (!this.indexCurrent(generation)) return;
+      const needsReauth = error instanceof AdminApiError && error.code === 'recent_reauthentication_required';
+      if (needsReauth || !this.indexAccessError(error)) this.update({ alerts: { ...previous, busy: false, notice: adminError(error) } });
     }
   }
   private updateDemo(change: Partial<AdminDemoState>) {

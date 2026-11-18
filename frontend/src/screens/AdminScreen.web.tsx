@@ -5,8 +5,8 @@ import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from '../../../src/shared/agent-run-limits';
-import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt } from '../../../src/shared/admin';
+import { AGENT_HIGH_WATERMARK_DEFAULTS, AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from '../../../src/shared/agent-run-limits';
+import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin';
 import { parseAdminSoftBudgetRatioInput } from '../components/model-settings/model-settings-form';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
@@ -29,6 +29,31 @@ const fields = [
 type Values = z.infer<typeof platformPolicyValuesSchema>;
 const inviteForm = z.object({ email: z.email().max(320), days: z.number().int().min(1).max(90) });
 const when = (value: string) => new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false });
+function displayMoney(currency: string, micros: string) {
+  const [whole, fraction = ''] = micros.split('.');
+  const digits = whole.padStart(7, '0');
+  const decimals = (digits.slice(-6) + fraction).replace(/0+$/u, '');
+  return currency + ' ' + digits.slice(0, -6) + (decimals ? '.' + decimals : '');
+}
+function UsageDetails({ usage }: { usage: AdminUsage }) {
+  const { breakdown, finance } = usage;
+  const tokenSubtotal = (value: number) => value === 0 && usage.unknownUsageAttempts > 0 ? '未確認' : String(value);
+  return <>
+    <Text>已預留 {usage.attempts} 次嘗試。已回報輸入 {tokenSubtotal(usage.inputTokens)}、輸出 {tokenSubtotal(usage.outputTokens)}、快取 {tokenSubtotal(usage.cachedTokens)} tokens。用量未完整 {usage.unknownUsageAttempts} 次。</Text>
+    {breakdown ? <Text>生成 {breakdown.model} 次，查詢向量 {breakdown.queryEmbedding} 次，文件向量 {breakdown.documentEmbedding} 次。其他向量 {breakdown.otherEmbedding} 次，未分類 {breakdown.unclassified} 次。
+      {breakdown.embeddingCharacters !== null ? `向量計費字元已回報 ${breakdown.embeddingCharacters}（${breakdown.embeddingCharacterReports} 次）。` : '向量計費字元未有回報。'}</Text> : null}
+    {finance?.estimates.length ? finance.estimates.map(item => <Text key={item.priceVersion}>估算小計 {displayMoney(item.currency, item.micros)}（{item.attempts} 次，價目 {item.priceVersion}）</Text>)
+      : <Text>費用估算未知。</Text>}
+    {finance?.settlement.status === 'settled' ? <Text>已結算小計 {displayMoney(finance.settlement.currency, finance.settlement.micros)}（{finance.settlement.attempts} 次）</Text>
+      : <Text>已結算金額未知。</Text>}
+    {finance && (finance.unestimatedAttempts > 0 || finance.unsettledAttempts > 0) ? <Text>尚無估價 {finance.unestimatedAttempts} 次，尚無帳單對照 {finance.unsettledAttempts} 次。</Text> : null}
+    {finance?.approvedDailyBudget ? <Text>當日核准預算 {displayMoney(finance.approvedDailyBudget.currency, String(finance.approvedDailyBudget.micros))}
+      （{finance.approvedDailyBudget.approvalReference}，香港時間 {when(finance.approvedDailyBudget.approvedAt)} 批准）</Text>
+      : <Text>當日貨幣預算未知。</Text>}
+    {finance?.providerQuota?.map((quota, index) => <Text key={index}>{quota.provider} 配額 {quota.limit} {quota.unit}（{quota.project}／{quota.model}／{quota.tier}，{quota.source} 於香港時間 {when(quota.observedAt)} 核對）</Text>)
+      ?? <Text>供應商實際配額未知。</Text>}
+  </>;
+}
 const stateLabel = (item: AdminInvitation) => item.state === 'consumed' ? '已註冊' : item.state === 'revoked' ? '已撤銷'
   : Date.parse(item.expiresAt) <= Date.now() ? '已過期' : '待使用';
 const knowledgeRegistration: Record<string, string> = { not_registered: '未註冊監測', enabled: '監測已啟用', disabled: '監測已停用', definition_changed: '來源定義已變更，註冊待核對' };
@@ -73,6 +98,9 @@ export default function AdminScreen() {
   }, [admin, userId, auth]);
   const loadedReceipt = useRef<string | null>(null);
   useEffect(() => {
+    if (visible && focused && online) void admin.budgetAlerts();
+  }, [admin, visible, focused, online, userId]);
+  useEffect(() => {
     if (!visible) { loadedReceipt.current = null; return; }
     const key = userId + ':' + (state.receipt?.opId ?? 'initial');
     if (!state.busy && loadedReceipt.current !== key) { loadedReceipt.current = key; void admin.load(day); }
@@ -80,7 +108,7 @@ export default function AdminScreen() {
   useEffect(() => {
     if (visible && state.overview) {
       const { version, updatedAt, ...values } = state.overview.policy;
-      policyForm.reset(values);
+      policyForm.reset({ ...values, highWatermark: values.highWatermark ?? { ...AGENT_HIGH_WATERMARK_DEFAULTS } });
       setSoftRatioText(String(values.softBudgetRatio ?? DEFAULT_SOFT_BUDGET_RATIO));
       const rr = values.roleSoftBudgetRatios ?? {};
       setRoleRatioTexts({
@@ -159,6 +187,20 @@ export default function AdminScreen() {
             <AppTextField label={`${label}（${key === 'maxRunSeconds' ? AGENT_RUN_LIMITS.deadlineSeconds.min : key === 'modelRequestSeconds' ? AGENT_RUN_LIMITS.modelRequestSeconds.min : key === 'maxModelRetries' ? 0 : 1}–${max}）`} value={field.value === undefined ? '' : String(field.value)} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填允許範圍內的整數。</Text> : null}
           </View>} />)}
+          <Text>用量告警門檻</Text>
+          {([
+            ['thresholdRatio', '接近上限的比例（%）'],
+            ['windowSize', '要觀察的執行次數'],
+            ['minHighRuns', '窗口內最少達到門檻的次數'],
+            ['consecutiveHighStreak', '連續達到門檻的次數'],
+            ['repeatedSignatureStreak', '連續相同消耗的次數'],
+          ] as const).map(([key, label]) => <Controller key={key} control={policyForm.control} name={`highWatermark.${key}`} render={({ field, fieldState }) => {
+            const scale = key === 'thresholdRatio' ? 100 : 1;
+            return <AppTextField label={label} keyboardType="numeric" disabled={locked} error={!!fieldState.error}
+              value={Number.isFinite(field.value) ? String(Number((Number(field.value) * scale).toFixed(6))) : ''}
+              onChangeText={value => field.onChange(value.trim() ? Number(value) / scale : NaN)} />;
+          }} />)}
+          {policyForm.formState.errors.highWatermark ? <Text>請核對告警門檻。觸發所需的次數須在觀察窗口內。</Text> : null}
           <Controller control={policyForm.control} name="softBudgetRatio" render={({ field, fieldState }) => <View>
             <AppTextField label="軟預算目標比例（0.05–1.0，預設 0.25）" value={softRatioText} onChangeText={value => { setSoftRatioText(value); field.onChange(parseAdminSoftBudgetRatioInput(value)); }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填 0.05 至 1.0 之間的數值，例如 0.25。</Text> : null}
@@ -305,10 +347,21 @@ export default function AdminScreen() {
         </> : null}
       </View>
       <View style={styles.card}><SectionHeader title="實際用量與管理紀錄" />
+        <Text>助手用量告警</Text>
+        {state.alerts.notice ? <Text>{state.alerts.notice}</Text> : null}
+        {state.alerts.loaded && !state.alerts.items.length && !state.alerts.notice ? <Text>目前沒有用量告警。</Text> : null}
+        {state.alerts.items.map(alert => <View key={alert.id} style={styles.row}>
+          <Text>{alert.category === 'interactive' ? '互動對話' : '背景工作'} · {when(alert.openedAt)} · 最近 {alert.windowCount} 次有 {alert.highWatermarkCount} 次接近上限</Text>
+          <Text>政策版本 {alert.policyVersion} · {alert.triggeredDimensions.map(key => ({ modelCalls: '生成', toolCalls: '工具', queryEmbeddings: '查詢向量' })[key]).join('、')}</Text>
+          {alert.receivedAt ? <Text>已於 {when(alert.receivedAt)} 確認收到</Text> : <AppButton label="確認收到告警" variant="secondary"
+            disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts(alert); }} />}
+        </View>)}
+        <AppButton label="重新讀取用量告警" variant="secondary" disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts(); }} />
+        {state.alerts.nextCursor ? <AppButton label="更多用量告警" variant="secondary" disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts('more'); }} /> : null}
         <AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} />
         <AppButton label="重新讀取設定、列表及用量" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.load(day); }} />
-        {state.usage ? (['platform', 'personal'] as const).map(source => <View key={source} style={styles.row}><Text>{source === 'platform' ? '平台' : '本人 key 共用'} · {state.usage![source].day}（UTC）</Text>
-          <Text>呼叫 {state.usage![source].attempts}；輸入 {state.usage![source].inputTokens}／輸出 {state.usage![source].outputTokens}／快取 {state.usage![source].cachedTokens} tokens；用量未明 {state.usage![source].unknownUsageAttempts} 次。</Text></View>) : null}
+        {state.usage ? (['platform', 'personal'] as const).map(source => <View key={source} style={styles.row}><Text>{source === 'platform' ? '平台出資' : '個人 key 出資合計'} · {state.usage![source].day}（UTC）</Text>
+          <UsageDetails usage={state.usage![source]} /></View>) : null}
         {state.audit.items.map(item => <AuditItem key={item.opId} item={item} />)}
         {state.audit.nextCursor ? <AppButton label="更多管理紀錄" variant="secondary" disabled={state.busy} onPress={() => { void admin.more('audit'); }} /> : null}
       </View>
