@@ -400,6 +400,9 @@ test('a registered whole PDF carries its measured page range and independently v
   for (let n = 0; n < 4; n++) if ((await producer.store.prepareSearch(version.versionId, version.hash)).complete) break;
   await producer.store.review(version.versionId, version.hash, 'fixture-operator', { ...assessment(sourceInput), observationHash: observationHash(doc) });
   await producer.store.publish(version.versionId, version.hash, embeddings(sourceInput));
+  const catalogItem = (await producer.store.catalog()).items.find(item => item.sourceId === id);
+  assert.ok(catalogItem?.methods?.includes('已登記 PDF 原件讀取'));
+  assert.equal(catalogItem?.coverage, '第 1–2 頁 / 共 2 頁');
   const dir = await mkdtemp(join(tmpdir(), 'whole-booklet-')); t.after(() => rm(dir, { recursive: true, force: true }));
   const path = join(dir, 'booklet.zip');
   const bundle = await writeKnowledgeArchive(path, [{ sourceId: id, versionHash: version.hash }], row => producer.store.exportPublishedEdition(row.sourceId, row.versionHash));

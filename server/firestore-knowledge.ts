@@ -354,7 +354,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           coverage: extraction?.format === 'text_pdf' ? `第 ${extraction.pageStart}–${extraction.pageEnd} 頁 / 共 ${extraction.totalPages ?? '未知'} 頁` : `已收錄 ${version.chunks.length} 個段落`,
           methods: [...(version.chunks.every(row => row.treatment) ? [...new Set(version.chunks.map(row => row.treatment!))].map(kind =>
             ({ detailed: '精細保留', overview: '概括整理', structured: '結構化保存', excluded: '不進問答索引' })[kind] + ' · ' + version.chunks.filter(row => row.treatment === kind).length + ' 段') : []),
-            ...(observed?.catalogMatches ? [observed.watch.definition.kind === 'pdf' ? '已登記 PDF 文字讀取' : '已登記網頁讀取'] : []),
+            ...(observed?.catalogMatches ? [observed.watch.definition.kind === 'pdf' ? '已登記 PDF 原件讀取' : '已登記網頁讀取'] : []),
             ...(version.imported ? [`ZIP 匯入 · ${({ not_supplied: '沒有附讀法', pending_local_check: '讀法待本機樣本驗證', verified_locally: '本機已核對讀法及原文樣本' })[version.imported.methodState]}`] : [])],
           sourceUpdatedAt: document.sourceUpdatedAt, validUntil: document.validUntil ?? null });
       }));
