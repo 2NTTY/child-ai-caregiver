@@ -11,6 +11,9 @@ test("personal money amounts preserve six decimal places and clear only on an ex
   const saved = { ...settings, dailyMoneyBudget: { currency: "HKD", micros: 7 } };
   const draft = { ...modelSettingsDraft(saved), consent: true };
   assert.equal(draft.moneyText, "0.000007");
+  const monthly = modelCommandFromDraft({ ...draft, monthlyText: "0.000003", monthlyMaintenanceText: "1.25", monthlyMaintenanceCurrency: "USD" }, saved);
+  assert.deepEqual(monthly.monthlyMoneyBudget, { currency: "HKD", micros: 3 });
+  assert.deepEqual(monthly.monthlyMaintenanceBudget, { currency: "USD", micros: 1250000 });
   assert.equal(modelCommandFromDraft(draft, saved).publicMaintenanceEnabled, undefined);
   const sponsor = modelCommandFromDraft({ ...draft, backgroundEnabled: true, publicMaintenanceEnabled: true,
     maintenanceText: "2.50", maintenanceCurrency: "USD" }, saved);

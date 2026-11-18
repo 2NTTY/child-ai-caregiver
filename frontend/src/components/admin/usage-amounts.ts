@@ -20,7 +20,7 @@ export function parseMoneyBudget(amount: string, currency: string) {
 }
 
 export function budgetBalanceLabel(finance?: Pick<AdminUsageFinance, 'settlement' | 'unsettledAttempts'> & {
-  approvedDailyBudget?: { currency: string; micros: number } | null }) {
+  approvedDailyBudget?: { currency: string; micros: number } | null }, period = '當日') {
   if (!finance?.approvedDailyBudget) return null;
   const { approvedDailyBudget: budget, settlement, unsettledAttempts } = finance;
   const pending = unsettledAttempts > 0 ? `仍有 ${unsettledAttempts} 次未對帳，餘額待確認。` : null;
@@ -32,6 +32,6 @@ export function budgetBalanceLabel(finance?: Pick<AdminUsageFinance, 'settlement
     const over = displayMoney(budget.currency, (-difference).toString());
     return `已結算金額超出預算${unsettledAttempts ? '至少' : ''} ${over}`;
   }
-  if (difference === BigInt(0)) return '已用盡當日預算';
+  if (difference === BigInt(0)) return '已用盡' + period + '預算';
   return pending ?? `已對帳餘額 ${displayMoney(budget.currency, difference.toString())}`;
 }

@@ -326,10 +326,11 @@ export class FirestoreAiUsage implements DurableAiUsage {
         maintenanceFinance: projectFinance(true, maintenanceAttempts) };
     }, { readOnly: true });
   }
-  async getForUser(input: string, financialEvidence?: readonly DayFinancialEvidence[]): Promise<ModelSettingsUsage & { billingSource: ModelBillingSource }> {
+  async getForUser(input: string, financialEvidence?: readonly DayFinancialEvidence[], ledgerDay?: string): Promise<ModelSettingsUsage & { billingSource: ModelBillingSource }> {
     const userId = parse(id, input, 'invalid_user');
     return this.#database.runTransaction(async transaction => {
-      const day = this.#day(this.#now()), id = this.#counterId(day, userId), state = this.#counter(id, await transaction.get(this.#ref(id)));
+      const day = ledgerDay === undefined ? this.#day(this.#now()) : parse(daySchema, ledgerDay, 'invalid_day');
+      const id = this.#counterId(day, userId), state = this.#counter(id, await transaction.get(this.#ref(id)));
       const usage = { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
         cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source };
       if (financialEvidence === undefined || this.#source !== 'personal') return usage;

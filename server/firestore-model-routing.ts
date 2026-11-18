@@ -1,3 +1,4 @@
+import { monthlyFinance } from './monthly-finance.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import type { DayFinancialEvidence } from './ai-financial-evidence.ts';
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from '../src/shared/agent-run-limits.ts';
@@ -80,6 +81,14 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
         effective: resolvePersonalModelLimits(state, current, { role: 'interactive', applyAdminRoleOverride: true }),
         usage: { platform: await usage.platform.getForUser(userId),
           personal: await usage.personal.getForUser(userId, includePersonalFinance ? options.usageFinancialEvidence?.() ?? [] : undefined) } };
+    },
+    async monthUsage(userId: string) {
+      const today = new Date().toISOString().slice(0, 10);
+      await allowed(userId);
+      const evidence = options.usageFinancialEvidence?.() ?? [];
+      const report = await monthlyFinance(today.slice(0, 7), today, day => usage.personal.getForUser(userId, evidence, day));
+      await allowed(userId);
+      return report;
     },
     async currentUsage(userId: string) {
       const state = await settings.get(userId); return usage[state.mode === 'personal' ? 'personal' : 'platform'].getForUser(userId);

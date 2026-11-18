@@ -1,3 +1,5 @@
+import { monthlyFinance } from './monthly-finance.ts';
+import { utcMonthSchema } from '../src/shared/monthly-finance.ts';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { createFirestoreBudgetAlerts } from './firestore-budget-alerts.ts';
 import { z } from 'zod';
@@ -81,7 +83,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFi
           before = current; result = domainParse(platformPolicySchema, { ...current, ...command.values, version: current.version + 1, updatedAt: at });
           tx.set(policyRef, data.seal('platform-policy', 'current', scope, platformPolicySchema, result));
         } else if (command.kind === 'money_budget') {
-          if (command.day < at.slice(0, 10)) domainReject('invalid_day', 400);
+          if (command.day < at.slice(0, command.day.length)) domainReject('invalid_day', 400);
           const key = command.day + '/' + command.pool;
           before = await readBudget(tx, key);
           if ((before?.version ?? 0) !== command.expectedVersion) domainReject('version_conflict');
@@ -138,6 +140,17 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFi
         }
         tx.set(quotaRef(value.day), data.seal(quotaKind, value.day, scope, quotaSnapshotSchema, value));
       });
+    },
+    async monthUsage(rawMonth: string) {
+      const month = domainParse(utcMonthSchema, rawMonth), today = new Date().toISOString().slice(0, 10);
+      if (month > today.slice(0, 7)) domainReject('invalid_month', 400);
+      const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' });
+      const evidence = options.usageFinancialEvidence?.() ?? [];
+      const [report, budgets] = await Promise.all([
+        monthlyFinance(month, today, day => usage.getGlobal(day, evidence.find(row => row.payer === 'platform' && row.day === day))),
+        options.database.runTransaction(tx => Promise.all([readBudget(tx, month + '/general'), readBudget(tx, month + '/maintenance')]), { readOnly: true }),
+      ]);
+      return { report, budgets: { general: budgets[0], maintenance: budgets[1] } };
     },
     async usage(day: string) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) domainReject('invalid_day', 400);

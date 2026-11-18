@@ -78,6 +78,7 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     }
     else if (url.pathname === '/api/admin/invitations') result = await admin.invitations(cursor);
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
+    else if (url.pathname === '/api/admin/usage/month') result = await admin.monthUsage(url.searchParams.get('month') ?? '');
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));
     else if (url.pathname === '/api/admin/audit') result = await admin.audit(cursor);
     else if (url.pathname === transfersBase || (transferPath && !transferPath[2])) {

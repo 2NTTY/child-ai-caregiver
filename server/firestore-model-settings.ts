@@ -10,6 +10,7 @@ import { dailyMoneyBudgetSchema, modelSettingsOperationSchema, personalAdvancedS
 
 const savedSchema = z.object({
   publicMaintenanceEnabled: z.boolean().optional(),
+  monthlyMoneyBudget: dailyMoneyBudgetSchema.optional(), monthlyMaintenanceBudget: dailyMoneyBudgetSchema.optional(),
   maintenanceMoneyBudget: dailyMoneyBudgetSchema.optional(),
   dailyMoneyBudget: dailyMoneyBudgetSchema.optional(),
   limitPolicyVersion: z.literal(2).optional(),
@@ -33,6 +34,8 @@ function publicSettings(value: Saved | null): ModelSettings {
   return { ...(value?.limitPolicyVersion ? { limitPolicyVersion: value.limitPolicyVersion } : {}),
     ...(value?.publicMaintenanceEnabled ? { publicMaintenanceEnabled: true } : {}),
     ...(value?.maintenanceMoneyBudget ? { maintenanceMoneyBudget: value.maintenanceMoneyBudget } : {}),
+    ...(value?.monthlyMoneyBudget && { monthlyMoneyBudget: value.monthlyMoneyBudget }),
+    ...(value?.monthlyMaintenanceBudget && { monthlyMaintenanceBudget: value.monthlyMaintenanceBudget }),
     ...(value?.dailyMoneyBudget ? { dailyMoneyBudget: value.dailyMoneyBudget } : {}),
     version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: value?.provider ?? 'gemini', model: value?.model ?? PERSONAL_MODEL,
     keyConfigured: value?.apiKey != null, backgroundEnabled: value?.backgroundEnabled ?? false,
@@ -111,11 +114,14 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         if (embeddingChanged && !(command.removeKey || command.removeEmbeddingKey) && (!command.embeddingApiKey || !command.consent))
           throw new ModelSettingsError('key_required');
         const maintenanceMoneyBudget = command.maintenanceMoneyBudget === undefined ? current?.maintenanceMoneyBudget : command.maintenanceMoneyBudget;
+        const monthlyMoneyBudget = command.monthlyMoneyBudget === undefined ? current?.monthlyMoneyBudget : command.monthlyMoneyBudget;
+        const monthlyMaintenanceBudget = command.monthlyMaintenanceBudget === undefined ? current?.monthlyMaintenanceBudget : command.monthlyMaintenanceBudget;
         const dailyMoneyBudget = command.dailyMoneyBudget === undefined ? current?.dailyMoneyBudget : command.dailyMoneyBudget;
         const saved = savedSchema.parse({ version: command.expectedVersion + 1, mode: command.mode, backgroundEnabled: command.backgroundEnabled,
           ...(command.mode === 'personal' && command.backgroundEnabled && (command.publicMaintenanceEnabled ?? current?.publicMaintenanceEnabled)
             ? { publicMaintenanceEnabled: true } : {}),
           ...(maintenanceMoneyBudget ? { maintenanceMoneyBudget } : {}),
+          ...(monthlyMoneyBudget && { monthlyMoneyBudget }), ...(monthlyMaintenanceBudget && { monthlyMaintenanceBudget }),
           ...(dailyMoneyBudget ? { dailyMoneyBudget } : {}),
           dailyLimit: command.dailyLimit, maxModelCalls: command.maxModelCalls, maxQueryEmbeddings: command.maxQueryEmbeddings,
           ...(command.opId || current?.limitPolicyVersion ? { limitPolicyVersion: 2 } : {}),

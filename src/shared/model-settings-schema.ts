@@ -29,6 +29,7 @@ export const personalAdvancedShape = {
 };
 export const publicModelSettingsSchema = z.object({
   publicMaintenanceEnabled: z.boolean().optional(),
+  monthlyMoneyBudget: dailyMoneyBudgetSchema.optional(), monthlyMaintenanceBudget: dailyMoneyBudgetSchema.optional(),
   maintenanceMoneyBudget: dailyMoneyBudgetSchema.optional(),
   dailyMoneyBudget: dailyMoneyBudgetSchema.optional(),
   limitPolicyVersion: z.literal(2).optional(),

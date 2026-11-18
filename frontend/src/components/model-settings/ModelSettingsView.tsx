@@ -1,3 +1,4 @@
+import { MonthlyFinanceDetails } from '../admin/MonthlyFinanceDetails';
 import { budgetBalanceLabel, displayMoney } from '../admin/usage-amounts';
 import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
@@ -270,11 +271,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
               <Controller control={control} name="publicMaintenanceEnabled" render={({ field }) => <AppCheckbox
                 label="允許使用我的密鑰支付公共知識整理、審核及文件向量費用" checked={watch('backgroundEnabled') && field.value}
                 onChange={field.onChange} disabled={locked || !available || !watch('backgroundEnabled')} />} />
-              {([['moneyText', 'moneyCurrency', '一般使用'], ['maintenanceText', 'maintenanceCurrency', '公共知識維護']] as const)
+              {([['moneyText', 'moneyCurrency', '一般使用每日'], ['maintenanceText', 'maintenanceCurrency', '公共知識維護每日'],
+                ['monthlyText', 'monthlyCurrency', '一般使用每月'], ['monthlyMaintenanceText', 'monthlyMaintenanceCurrency', '公共知識維護每月']] as const)
                 .map(([amount, currency, title]) => <View key={amount} style={styles.limitField}>
                   <Controller control={control} name={currency} render={({ field }) => <AppTextField label={title + '幣別'} value={field.value}
                     maxLength={3} autoCapitalize="characters" onChangeText={value => field.onChange(value.toUpperCase())} disabled={locked || !available} />} />
-                  <Controller control={control} name={amount} render={({ field }) => <AppTextField label={title + '每日對帳預算'} value={field.value}
+                  <Controller control={control} name={amount} render={({ field }) => <AppTextField label={title + '對帳預算'} value={field.value}
                     keyboardType="decimal-pad" placeholder="留空表示未設定" onChangeText={field.onChange} disabled={locked || !available} error={!!errors[amount]} />} />
                   <FormFieldMessage id={fieldId(amount) + '-message'} error={errors[amount]?.message} />
                 </View>)}
@@ -310,6 +312,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
         </SectionCard> : null}
       </View>
       <View style={[styles.column, narrow && styles.fullColumn]}>
+        {actions.readMonth ? <SectionCard><SectionHeader density="compact" title="個人密鑰月度對帳" />
+          <AppButton label="查看本月對帳" variant="secondary" disabled={!!model.busy || !model.online || model.needsRead} onPress={() => actions.readMonth?.()} />
+          {model.monthReport ? <View><Text>截至 {model.monthReport.through}（UTC）</Text>
+            <MonthlyFinanceDetails title="一般使用" pool={model.monthReport.general} budget={settings.monthlyMoneyBudget} />
+            <MonthlyFinanceDetails title="公共知識維護" pool={model.monthReport.maintenance} budget={settings.monthlyMaintenanceBudget} />
+          </View> : null}</SectionCard> : null}
         <UsageCard label="平台服務用量" usage={snapshot.usage.platform} /><UsageCard label="個人服務用量" usage={snapshot.usage.personal} settings={snapshot.settings} />
         <SectionCard><SectionHeader density="compact" title="用量與安全上限" />
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>

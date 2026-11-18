@@ -2,10 +2,11 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import { parseModelSettingsCommand } from "./model-settings.ts";
 import type { ModelRouting } from "./model-routing.ts";
-import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, MODEL_SETTINGS_V4_MEDIA_TYPE, MODEL_SETTINGS_FINANCE_PREFERENCE, PERSONAL_MODEL, type ModelSettings, type ModelSettingsView, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
+import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, MODEL_SETTINGS_V4_MEDIA_TYPE, MODEL_SETTINGS_FINANCE_PREFERENCE, MODEL_SETTINGS_MONTH_PREFERENCE, PERSONAL_MODEL, type ModelSettings, type ModelSettingsView, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 
 type SettingsRouting = Pick<ModelRouting, 'settings' | 'check'> & {
   view(userId: string, includePersonalFinance?: boolean): Promise<ModelSettingsView>;
+  monthUsage?(userId: string): Promise<import('../src/shared/monthly-finance.ts').MonthlyFinance>;
   catalog?(userId: string, version: number, refresh: boolean, signal: AbortSignal, provider?: PersonalModelProvider): Promise<PersonalModelCatalog>;
 };
 const v3Fields = ['baseUrl', 'embeddingApiKey', 'removeEmbeddingKey'];
@@ -51,9 +52,12 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
   const url = new URL(request.url), path = url.pathname, accept = request.headers.get('accept');
   const v4 = accept === MODEL_SETTINGS_V4_MEDIA_TYPE;
   const includeFinance = v4 && request.headers.get('prefer')?.split(',').some(value => value.trim() === MODEL_SETTINGS_FINANCE_PREFERENCE) === true;
+  const includeMonth = includeFinance && request.headers.get('prefer')?.split(',').some(value => value.trim() === MODEL_SETTINGS_MONTH_PREFERENCE);
   const v3 = v4 || accept === MODEL_SETTINGS_V3_MEDIA_TYPE, v2 = accept === MODEL_SETTINGS_MEDIA_TYPE, versioned = v2 || v3;
   const publicSettings = (value: ModelSettings) => {
-    if (includeFinance) return value;
+    const { monthlyMoneyBudget, monthlyMaintenanceBudget, ...daily } = value;
+    if (includeFinance) return includeMonth ? value : daily;
+    value = daily;
     const { dailyMoneyBudget, maintenanceMoneyBudget, publicMaintenanceEnabled, ...compatible } = value;
     return v4 ? compatible : v3 ? v3Settings(compatible) : v2 ? v2Settings(compatible) : legacySettings(compatible);
   };
@@ -62,6 +66,8 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
     if (url.search && !(versioned && request.method === 'GET' && path === '/api/ai/settings/models'
       && [...url.searchParams].length === 1 && (catalogProvider === 'gemini' || catalogProvider === 'vertex' || v3 && catalogProvider === 'openai-compatible')))
       throw new ModelSettingsError('invalid_input');
+    if (request.method === 'GET' && path === '/api/ai/settings/usage/month' && routing.monthUsage && includeMonth)
+      return jsonResponse(await routing.monthUsage(userId));
     if (request.method === "GET" && path === "/api/ai/settings") {
       const view = await routing.view(userId, includeFinance);
       if (versioned) return jsonResponse({ ...view, settings: publicSettings(view.settings) });
@@ -86,6 +92,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
     try { input = await request.json(); } catch { throw new ModelSettingsError("invalid_input"); }
     if (path === "/api/ai/settings") {
       const command = parseModelSettingsCommand(input);
+      if (!includeMonth && (Object.hasOwn(command, 'monthlyMoneyBudget') || Object.hasOwn(command, 'monthlyMaintenanceBudget'))) throw new ModelSettingsError('client_update_required', 409);
       if (!includeFinance && (Object.hasOwn(command, 'dailyMoneyBudget') || Object.hasOwn(command, 'publicMaintenanceEnabled') || Object.hasOwn(command, 'maintenanceMoneyBudget'))) throw new ModelSettingsError('client_update_required', 409);
       if (!v4 && v4Fields.some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('client_update_required', 409);
       if (!v3) {
