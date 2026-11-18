@@ -1,3 +1,4 @@
+import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import type { Transaction } from "@google-cloud/firestore";
 import type { BackgroundKnowledgeRunRequest } from "../src/shared/background-knowledge-maintenance.ts";
 import type { AiConfig } from "./ai-config.ts";
@@ -15,7 +16,7 @@ import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
 import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError } from "./firestore-knowledge-work.ts";
 import { createBackgroundKnowledgeMaintenanceRunner, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
-import { createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline } from "./background-knowledge-model.ts";
+import { createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
@@ -25,7 +26,7 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 function reject(code: string): never { throw new FirestoreKnowledgeWorkError(code); }
-function operationId(scope: string, fingerprint: string) {
+export function knowledgeOperationId(scope: string, fingerprint: string) {
   const id = knowledgeReviewHash([scope, fingerprint]);
   return `${id.slice(0, 8)}-${id.slice(8, 12)}-5${id.slice(13, 16)}-8${id.slice(17, 20)}-${id.slice(20, 32)}`;
 }
@@ -41,6 +42,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
   fetch: SourceFetcher;
   fixtureFetch?: SourceFetcher;
+  pdfQuestion?: KnowledgePdfQuestion;
   isolatedFixturePublish?: boolean;
 }) {
   if (options.isolatedFixturePublish && (!options.projectId.startsWith("demo-")
@@ -52,7 +54,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   const root = new FirestoreRootBudget({ ...options, namespace: options.namespace + "_knowledge_budget" });
   const platformDaily = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: "platform" });
   return {
-    async start(request: BackgroundKnowledgeRunRequest, signal = new AbortController().signal, expectedRevision?: string) {
+    async start(request: BackgroundKnowledgeRunRequest, signal = new AbortController().signal, expectedRevision?: string, recordedCheckId?: string) {
       const current = await policy.readPolicy(), base = options.config;
       if (!base.enabled || (!options.sponsor && !current.enabled) || !base.backgroundKnowledgeMaintenanceEnabled)
         return { status: "not_enabled" as const, code: "background_knowledge_disabled", published: false };
@@ -77,8 +79,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const config: AiConfig = { ...(personal?.config ?? { ...base, model: base.localModelOverride ?? current.model,
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
         timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
-      const configHash = knowledgeReviewHash({ config, limits, policyVersion: current.version,
-        credentialBinding, promptPack: prompt.packVersion, watchRevision: registration.data.revision });
+      const configHash = knowledgeReviewHash({ config, limits, ...(definition.leafletPage ? { reader: NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
+        credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision });
       let budget: AgentBudget | undefined;
       let baseline: KnowledgeMaintenanceBaseline | null | undefined;
       const readBaseline = async () => {
@@ -91,7 +93,13 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       };
       const fetchThroughObservation = (fetcher: SourceFetcher): SourceFetcher => async (watch, abort) => {
         let fetched: Awaited<ReturnType<SourceFetcher>> | undefined;
-        const result = await options.refresh.process(registration.data, operationId("knowledge-observation/1", request.operationFingerprint),
+        if (recordedCheckId) {
+          const pinned = await options.refresh.resumeCheck(registration.data, recordedCheckId);
+          if (!pinned) reject("knowledge_observation_superseded");
+          return pinned;
+        }
+        const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
+        const result = await options.refresh.process(registration.data, checkId,
           async (registered, boundedSignal) => {
             const result = await fetcher(registered, boundedSignal);
             fetched = result.status === "ok" ? { ...result, items: result.items.map(parseKnowledgeObservation) } : result;
@@ -100,9 +108,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         if (result.status === "already_recorded") {
           // A later source check may have replaced the current observation. Do
           // not bind this original operation to that newer body on restart.
-          reject("knowledge_observation_outcome_unknown");
+          const pinned = await options.refresh.resumeCheck(registration.data, checkId);
+          if (!pinned) reject("knowledge_observation_outcome_unknown");
+          return pinned;
         }
-        if (!fetched) reject("knowledge_observation_incomplete");
+        if (!fetched || !["changed", "unchanged", "failed", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
         return fetched;
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({
@@ -116,7 +126,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         durable: {
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
-              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs });
+              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, ...(definition.leafletPage ? {
+                maxUnits: 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) });
             const authorize = async () => {
               if (signal.aborted || !await session.authorize()) return false;
               const latest = await policy.readPolicy();
@@ -125,8 +136,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
             };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
             let model: AgentGatewayModel | undefined;
-            const completeText = async (input: { system: string; user: string; attemptKey: string }) =>
-              session.completeText(input, async () => {
+            const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) =>
+              session.completeText({ system: input.system, user: input.user, attemptKey: input.attemptKey }, async () => {
                 if (!model) {
                   const context: RootBudgetContext = { generation: 1, binding: {
                     rootRunId: request.operationFingerprint, ownerId: payerId, workspaceId: NIL, childId: NIL,
@@ -147,11 +158,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 }
                 return model.completeText(input);
               });
-            const reviewer = createModelKnowledgeReviewPort({ completeText, baseline: readBaseline, growthRules: GROWTH_RULES,
+            const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, baseline: readBaseline, growthRules: GROWTH_RULES,
               async fetchedAt(candidate) {
                 const observed = await options.refresh.inspect(candidate.watchId);
                 if (observed.observation?.contentHash !== candidate.observationHash) reject("knowledge_observation_changed");
-                return observed.observation.lastSuccessfulCheckAt;
+                return observed.observation.fetchedAt;
               },
               savePrepared: session.savePrepared,
             });
@@ -184,10 +195,13 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                   await options.knowledge.embedDocument(document, () => embedding.embed({
                     text: document.text, title: document.title, task: "RETRIEVAL_DOCUMENT",
                   }, { kind: "corpus_maintenance", actorId: "operator:knowledge-maintenance",
-                    operationId: operationId("knowledge-embedding/1", knowledgeReviewHash([request.operationFingerprint, document.hash])) }, signal, authorize));
+                    operationId: knowledgeOperationId("knowledge-embedding/1", knowledgeReviewHash([request.operationFingerprint, document.hash])) }, signal, authorize));
                 }
                 if (!await authorize()) reject("knowledge_work_lease_lost");
                 await options.knowledge.publish(imported.versionId, imported.hash, undefined, session.publicationFence(candidate, prepared));
+                const edition = await options.knowledge.publishedEdition(candidate.watchId);
+                if (!edition?.enabled || edition.versionId !== imported.versionId || edition.versionHash !== imported.hash
+                  || edition.observationHash !== candidate.observationHash) reject("knowledge_publication_readback_mismatch");
                 return { published: true };
               },
             };

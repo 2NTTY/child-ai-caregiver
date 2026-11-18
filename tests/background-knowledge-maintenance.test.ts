@@ -218,8 +218,8 @@ test("unchanged hash skips organize and stays unpublished", async () => {
 test("PDF fixture follows reviewed page window; unreadable page stays candidate", async () => {
   const bad: ObservedContent = {
     ...pdfItem(),
-    pages: [{ page: 3, text: "", status: "unreadable" }],
-    extraction: pdfItem().extraction,
+    pages: [{ page: 1, text: "", status: "unreadable" }],
+    extraction: { ...pdfItem().extraction!, pageStart: 1, pageEnd: 1, totalPages: 1, complete: true },
   };
   const runner = createBackgroundKnowledgeMaintenanceRunner(
     { enabled: true, liveFetch: false, livePublish: false },

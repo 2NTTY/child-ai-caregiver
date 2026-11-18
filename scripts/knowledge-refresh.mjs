@@ -1,3 +1,4 @@
+import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 
@@ -65,7 +66,7 @@ try {
       persistence = await openFirebasePersistence(process.env);
       const { database, cipher, config, authority } = persistence;
       const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
-      const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
+      const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
       store = { ...refresh, async approve(sourceId, contentHash, versionId, versionHash, by, assessment) {
         if (!config.knowledgeSourceIds) throw new Error("knowledge_source_not_configured");
         const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience: "internal" });

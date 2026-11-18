@@ -1,3 +1,4 @@
+import { knowledgeOriginalBackup } from './firebase-knowledge-original-recovery.ts';
 import { avatarBindingSchema, avatarObjectDescriptorSchema } from './avatar-data.ts';
 import { avatarBackupDescriptorSchema } from './firebase-avatar-recovery.ts';
 import { chatFileBackupDescriptorSchema } from './firebase-chat-file-recovery.ts';
@@ -72,6 +73,7 @@ export const firebaseBackupManifestPayloadSchema = z.object({
   keyVersionRef: z.string().max(1024).regex(/^projects\/[a-zA-Z0-9-]{1,64}\/secrets\/[a-zA-Z0-9_-]{1,255}\/versions\/[1-9][0-9]{0,19}$/u),
   retainedUntil: at, nativeExport: z.object({ outputUriPrefix: z.string().min(1).max(1500), objects: nativeObjectsSchema }).strict(),
   inventory: firebaseBackupInventorySchema, photos: z.array(photoSchema).max(PHOTO_LIMITS.totalCount),
+  knowledgeOriginals: z.array(knowledgeOriginalBackup).max(MAX_DOCUMENTS).optional(),
   voices: z.array(firebaseBackupVoiceEntrySchema).max(MAX_DOCUMENTS).optional(),
   chatFiles: z.array(firebaseBackupChatFileEntrySchema).max(MAX_DOCUMENTS).optional(),
   avatars: z.array(firebaseBackupAvatarEntrySchema).max(MAX_DOCUMENTS).optional(),
@@ -273,6 +275,14 @@ export function createFirebaseBackupArtifacts(options: FirebaseBackupArtifactsOp
         fail('backup_artifact_integrity',503);
       voiceIds.add(voice.voiceId);voiceBytes+=voice.backup.bytes;
       if(voiceBytes>FIREBASE_NATIVE_EXPORT_MAX_BYTES)fail('backup_artifact_limit',413);
+    }
+    const knowledgePaths = new Set<string>();
+    for (const item of payload.knowledgeOriginals ?? []) {
+      const m = item.original;
+      if (m.namespace !== config.namespace || m.projectId !== config.projectId || knowledgePaths.has(item.path)
+        || item.path !== m.namespace + '_knowledge_original_manifests/' + m.sourceId + '-' + m.contentHash || !paths.includes(item.path))
+        fail('backup_artifact_integrity',503);
+      knowledgePaths.add(item.path);
     }
     return payload;
   }

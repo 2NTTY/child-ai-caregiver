@@ -1,0 +1,46 @@
+import { z } from "zod";
+import { knowledgeChunkInputSchema } from "./knowledge-inputs.ts";
+
+export const NATIVE_PDF_READER_VERSION = "native-pdf-physical-pages/2";
+
+const { section, text, keywords, applicability } = knowledgeChunkInputSchema.shape;
+const { region, topics, conditions } = applicability.shape;
+const group = z.strictObject({ section, keywords, region, topics, conditions,
+  ageRange: z.strictObject({ basis: z.enum(["actual", "corrected"]), minMonths: z.number().min(0).max(120),
+    maxMonths: z.number().min(0).max(120), exclusiveEnd: z.boolean() }).nullable(),
+});
+
+export const nativeCoverageSchema = z.strictObject({
+  pages: z.array(z.strictObject({ page: z.number().int().min(1).max(32), finding: z.string().trim().min(1).max(240) })).min(1).max(32),
+  unreadablePages: z.array(z.number().int().min(1).max(32)).max(32),
+  layoutAnswer: z.string().trim().min(1).max(500).nullable(),
+});
+
+/** The response grammar requires every server-assigned range, including image/table pages. */
+export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[]) {
+  const ranges = units.map((unit, i) => {
+    const first = unit.page!, last = unit.pageEnd!;
+    const pages = Array.from({length:last - first + 1}, (_, offset) => "physicalPage" + (first + offset));
+    return { key: "fromPage" + first + "Through" + last + "Unit" + (i + 1), unitId: unit.id, first, last, pages };
+  });
+  const shape = z.strictObject({ ranges: z.strictObject(Object.fromEntries(ranges.map(r => [r.key, group.extend({
+    pageText: z.strictObject(Object.fromEntries(r.pages.map(key => [key, text]))),
+  })]))), nativeCoverage: nativeCoverageSchema });
+  return { ranges, schema: nativeResponseSchema(shape), parse(raw: unknown) {
+    const value = shape.parse(raw);
+    return { nativeCoverage: value.nativeCoverage, units: ranges.map(({ key, unitId, first, pages }) => {
+      const { region, topics, conditions, ageRange, pageText, ...content } = value.ranges[key]!;
+      const text = pages.length === 1 ? pageText[pages[0]!]! : pages.map((page, offset) => "第 " + (first + offset) + " 頁　" + pageText[page]).join("\n");
+      return { ...content, text, unitId, applicability: { region, topics, conditions,
+        ageBasis: ageRange?.basis ?? "any", minAgeMonths: ageRange?.minMonths ?? null, maxAgeMonths: ageRange?.maxMonths ?? null,
+        ...(ageRange?.exclusiveEnd ? { maxAgeMonthsExclusive: true } : {}) } };
+    }) };
+  } };
+}
+
+export function nativeResponseSchema(shape: z.ZodType) {
+  const { $schema: _dialect, ...schema } = z.toJSONSchema(shape, { io: "input", reused: "ref" });
+  // Keep the provider grammar small. The original Zod schema still enforces every local bound.
+  return JSON.parse(JSON.stringify(schema, (key, value) =>
+    ["minLength", "maxLength", "pattern", "minItems", "maxItems", "maximum", "minimum"].includes(key) ? undefined : value)) as Record<string, unknown>;
+}

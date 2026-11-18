@@ -211,7 +211,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     const context = edition.observed, review = edition.version.review;
     if (!context) return !review?.assessment.observationHash && !review?.watchRevision && edition.document.classification !== "recent_information";
     const observed = context.observation;
-    return context.catalogMatches && context.watch.enabled && context.watch.lastStatus !== "unavailable" && observed !== null && !observed.unavailable
+    return context.catalogMatches && context.watch.enabled && !(context.watch.confirmedGone ?? context.watch.lastStatus === "unavailable") && observed !== null && !observed.unavailable
       && observed.approved?.contentHash === observed.contentHash && observed.approved?.versionId === edition.version.versionId
       && observed.approved?.watchRevision === context.watch.revision && review?.watchRevision === context.watch.revision
       && review.assessment.observationHash === observed.contentHash;
@@ -511,7 +511,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (expectedObservation && (expectedObservation.sourceId !== source.sourceId || expectedObservation.contentHash !== assessment.observationHash))
           reject("knowledge_observation_review_mismatch");
         const observed = edition.observed;
-        if (observed && (!observed.catalogMatches || observed.watch.lastStatus === "unavailable")) reject("knowledge_observation_review_mismatch");
+        if (observed && (!observed.catalogMatches || (observed.watch.confirmedGone ?? observed.watch.lastStatus === "unavailable"))) reject("knowledge_observation_review_mismatch");
         if (options.audience !== "internal" && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial")) reject("knowledge_source_internal_review_required", 403);
         const original = observed?.observation ? await options.observations!.content(tx, observed.observation) : null;
         checkKnowledgeObservation(document, observed?.watch, original && observed?.observation ? {
