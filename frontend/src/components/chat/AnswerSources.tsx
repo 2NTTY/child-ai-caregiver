@@ -232,7 +232,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
                 void Linking.openURL(external).catch(() => setLinkError(selected.id));
               }} /> : <Text style={styles.meta}>{CHAT_SOURCE_COPY.noOpenableUrl}</Text>}
               {linkError === selected.id ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
-              {selected.seriesId ? <PreviewLink href={{ pathname: '/memory', params: { series: selected.seriesId } }}>
+              {selected.seriesId ? <PreviewLink href={{ pathname: '/memory', params: { series: selected.seriesId, sourceDocument: selected.sourceId } }}>
                 <Pressable accessibilityRole="link" style={styles.libraryLink}><Text style={styles.tabText}>查看來源庫</Text></Pressable>
               </PreviewLink> : null}
             </View>

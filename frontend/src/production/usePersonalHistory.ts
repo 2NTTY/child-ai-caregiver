@@ -1,4 +1,6 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { shareLibraryArchive } from './library-package';
+import { exportLibraryPackage } from '../platform/file-export';
 import { createProductAgentApi } from "../../../src/client/product-agent-api";
 import { createNotificationMessagesApi } from "./notification-messages-api";
 import type { AgentWork } from "../../../src/shared/agent-work";
@@ -221,6 +223,10 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       readMessage: (id: string) => readMessage(id), moreMessage: () => { const id = latest.current.message.data?.id; if (id) readMessage(id, true); },
       closeMessage, moreWork: () => readWork(true), loadNotifications: () => readNotifications(),
       moreNotifications: () => readNotifications(true), moreReferences: () => readReferences(true),
+      exportLibraryArchive: (selection: import('../../../src/shared/source-series').LibraryArchiveSelection) => runtime.request(async (signal, current) => {
+        if (!current() || !env.childId || !env.userId || !env.online || !env.allows('private')) throw Error('請重新確認登入及目前的孩子。');
+        return shareLibraryArchive({ baseUrl: env.apiBaseUrl, fetcher: env.owner.fetcher, childId: env.childId, userId: env.userId, selection, signal, current }, exportLibraryPackage);
+      }),
       setLibraryPreference: (change: import('../../../src/shared/source-series').LibraryPreferenceChange) => readReferences(false, change),
     },
   };

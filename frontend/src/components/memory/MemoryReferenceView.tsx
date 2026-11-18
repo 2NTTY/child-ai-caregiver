@@ -8,7 +8,7 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { sourceSeries } from "../../../../src/shared/source-series";
 import { useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
-import type { PersonalLibraryItem } from "../../../../src/shared/personal-library";
+import { selectedLibraryEditions, type PersonalLibraryItem } from "../../../../src/shared/personal-library";
 import { historyMessageQuestion, personalWorkQuestion } from "../../history-view-model";
 import { PersistentWorkCards } from "../history/PersistentWorkCards";
 import { HistoryMessageDetail } from "../history/HistoryMessageDetail";
@@ -161,6 +161,8 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
   useEffect(() => { if (initialOpen) setDetails(true); }, [initialOpen]);
   const [exportNotice, setExportNotice] = useState(''), active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  const [exporting, setExporting] = useState(false), [fingerprint, setFingerprint] = useState('');
+  const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
   const first = items[0]!, series = first.series ?? sourceSeries(first), preference = first.preference;
   const busy = workspace.reads?.referencesBusy || !workspace.model.online || workspace.model.references.state !== 'ready';
   const change = (enabled: boolean, mode: 'fixed' | 'follow', adopt = false) => workspace.reads?.setLibraryPreference?.({
@@ -186,10 +188,27 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
       {item.preference?.selectedVersionId && item.preference.mode === 'fixed' ? <Metadata label="已選快照">{item.preference.selectedVersionId}</Metadata> : null}
       <Metadata label="最近成功取得">{memoryDateLabel(item.lastSuccessfulCheckAt ?? item.fetchedAt ?? null)}</Metadata>
       <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt ?? null)}</Metadata>
-      <Metadata label="讀取方法">{item.methods?.join('、') || '未有已核對的方法'}</Metadata>
+      <Metadata label="讀取及整理方式">{item.methods?.join('、') || '未有已核對的方法'}</Metadata>
       <AppButton label="查看現行網站" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(item.url).catch(() => setLinkFailed(true)); }} />
     </View>)}
     {linkFailed ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
+    {workspace.reads?.exportLibraryArchive && !workspace.model.references.data?.hasMore ? <View style={styles.actions}>
+      <Text style={styles.meta}>知識包包含選用版本的可分享原文、來源、已驗讀法及相容索引。供註明出處的非商業分享。</Text>
+      <AppButton label={exporting ? '正在匯出知識包…' : '匯出及分享來源庫 ZIP'} variant="secondary"
+        disabled={busy || exporting || !selectedLibraryEditions(items).length} onPress={async () => {
+          if (exportLock.current || !workspace.reads?.exportLibraryArchive) return;
+          exportLock.current = true; setExporting(true); setExportNotice(''); setFingerprint(''); setShareFile(null);
+          try {
+            const result = await workspace.reads.exportLibraryArchive({ seriesId: series.id, editions: selectedLibraryEditions(items) });
+            if (active.current && result) { setExportNotice(result.message); setFingerprint(result.sha256); setShareFile(() => result.share ?? null); }
+          } catch (error) { if (active.current) setExportNotice(error instanceof Error ? error.message : '暫未能匯出知識包。'); }
+          finally { exportLock.current = false; if (active.current) setExporting(false); }
+        }} />
+      {shareFile ? <AppButton label="分享這個 ZIP" variant="quiet" disabled={busy || exporting} onPress={() => {
+        void shareFile().catch(error => { if (active.current && error?.name !== 'AbortError') setExportNotice('未能開啟系統分享選單。'); });
+      }} /> : null}
+      {fingerprint ? <Metadata label="供接收者核對的 ZIP SHA-256">{fingerprint}</Metadata> : null}
+    </View> : null}
     {items.every(item => item.versionHash) && !workspace.model.references.data?.hasMore ? <AppButton label="匯出版本參照 ZIP" variant="quiet" disabled={busy}
       onPress={() => { void exportSeriesReferences(items).then(bytes => exportAttachment(new Uint8Array(bytes), 'application/zip', series.id + '.zip', () => active.current))
         .then(message => { if (active.current) setExportNotice(message); }, () => { if (active.current) setExportNotice('未能匯出版本參照。'); }); }} /> : null}
@@ -221,7 +240,7 @@ function ImportLibrary({ catalog, workspace }: { catalog: readonly PersonalLibra
       } finally { file.release(); }
     } catch (error) {
       if (!controller.signal.aborted) setNotice(error instanceof Error && error.message === 'library_reference_unavailable'
-        ? '此包包含本目錄尚未發布的文件，須先由維護者匯入及核對。'
+        ? '此包包含本目錄尚未發布的文件。請把完整知識包及發送者提供的 SHA-256 交給管理員，在管理後台「公共知識 ZIP 匯入台帳」匯入。發布後才可在此選用。'
         : '未能核對這個 ZIP。請選一個來源庫的完整版本參照包。');
     } finally { if (!controller.signal.aborted) setReading(false); }
   };
@@ -238,7 +257,9 @@ const referenceFilters: Record<string, string> = { official_guidance: '官方指
   feeding: '餵食', development: '兒童發展', play: '遊戲', vision: '視力', checkup: '健康檢查' };
 function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue }) {
   const sources = visibleKnowledgeReferences(model.references), catalog = model.references.data?.catalog;
-  const { series: requested } = useLocalSearchParams<{ series?: string }>();
+  const { series: originalSeries, sourceDocument } = useLocalSearchParams<{ series?: string; sourceDocument?: string }>();
+  const currentDocument = sourceDocument && catalog?.find(item => item.sourceId === sourceDocument);
+  const requested = currentDocument ? (currentDocument.series ?? sourceSeries(currentDocument)).id : originalSeries;
   const [filter, setFilter] = useState('all');
   const tags = [...new Set((catalog ?? []).flatMap(item => [item.classification, ...(item.topics ?? [])]))];
   const registered = model.references.data?.registered ?? [];
@@ -253,6 +274,7 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
     series: [...institution.series].filter(([, documents]) => filter === 'all' || documents.some(item => item.classification === filter || item.topics?.includes(filter))) }))
     .filter(institution => institution.series.length);
   return <View style={styles.section}>
+    {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{(currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
     {tags.length > 1 ? <AppSelect label="篩選來源庫" value={filter} onChange={setFilter} options={[{ value: 'all', label: '全部來源庫' },
       ...tags.map(value => ({ value, label: referenceFilters[value] ?? value }))]} /> : null}
     {model.references.state !== 'ready' ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}

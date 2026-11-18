@@ -1,9 +1,11 @@
 import JSZip from 'jszip';
+import { fetchLibraryArchive } from '../../../src/client/library-archive.ts';
+import type { LibraryArchiveSelection } from '../../../src/shared/source-series.ts';
 import { z } from 'zod';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { readBlobBytes } from '../../../src/client/blob-bytes.ts';
-import type { PersonalLibraryItem } from '../../../src/shared/personal-library';
+import { selectedLibraryEditions, type PersonalLibraryItem } from '../../../src/shared/personal-library.ts';
 import { sourceSeries } from '../../../src/shared/source-series.ts';
 import type { SelectedPackage } from './HandoverImportOwner';
 
@@ -13,14 +15,21 @@ const manifest = z.strictObject({ format: z.literal('yuyoufang-public-knowledge'
 const reference = z.strictObject({ kind: z.literal('published_reference'), sourceId: id, versionHash: hash });
 export const libraryPickLimit = 8 * 1024 * 1024;
 
+export async function shareLibraryArchive(input: {
+  baseUrl: string; fetcher: typeof fetch; childId: string; userId: string; selection: LibraryArchiveSelection;
+  signal: AbortSignal; current(): boolean;
+}, save: (response: Response, filename: string, bytes: number, current: () => boolean) => Promise<{ message: string; share?: () => Promise<void> }>) {
+  const { selection, signal, current } = input;
+  if (!current()) throw Error('登入或孩子已改變。');
+  const archive = await fetchLibraryArchive(input.baseUrl, input.fetcher, input.childId, input.userId, selection, signal);
+  const result = await save(archive.response, selection.seriesId + '.zip', archive.bytes, current);
+  return { ...result, sha256: archive.sha256 };
+}
+
 export async function exportSeriesReferences(items: readonly PersonalLibraryItem[]) {
   const zip = new JSZip(), entries = [];
-  for (const item of items) {
-    const selection = item.preference;
-    if (selection?.eligible === false) continue;
-    const versionHash = selection?.mode === 'fixed' && selection.revision > 0 ? selection.selectedVersionHash : item.versionHash;
-    if (!versionHash) continue;
-    const ref = reference.parse({ kind: 'published_reference', sourceId: item.sourceId, versionHash });
+  for (const item of selectedLibraryEditions(items)) {
+    const ref = reference.parse({ kind: 'published_reference', ...item });
     const bytes = new TextEncoder().encode(JSON.stringify(ref));
     entries.push({ sourceId: ref.sourceId, versionHash: ref.versionHash, sha256: bytesToHex(sha256(bytes)) });
     zip.file('editions/' + ref.sourceId + '.json', bytes, { createFolders: false });

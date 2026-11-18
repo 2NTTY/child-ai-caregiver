@@ -51,6 +51,13 @@ export async function exportPackage(response: Response, filename: string, bytes:
   try { return await share({ stream, bytes }, filename, 'application/zip', isCurrent, 256 * 1024 * 1024); }
   finally { if (!stream.locked) await stream.cancel().catch(() => {}); }
 }
+export async function exportLibraryPackage(response: Response, filename: string, bytes: number, current: () => boolean): Promise<{ message: string; share?: () => Promise<void> }> {
+  if (response.body) return { message: await exportPackage(response, filename, bytes, current) };
+  const blob = await response.blob();
+  if (!current() || blob.size !== bytes) throw Error('知識包未完整讀取。');
+  return { message: await share(await readBlobBytes(blob), filename, 'application/zip', current, bytes) };
+}
+
 export async function exportBlob(blob: Blob, filename: string, isCurrent: () => boolean = () => true): Promise<string> {
   if (!isCurrent()) throw new Error("Export scope changed");
   if (blob.size > 16 * 1024 * 1024) throw new Error("Export too large");

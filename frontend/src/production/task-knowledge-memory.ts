@@ -150,6 +150,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
       asOf, data: { childId: env.childId!, facts, hasMoreFacts: cursor !== null, summary, histories } }
       : { scopeKey: env.scopeKey, state: failed ? "error" : "loading", revision: null, data: null, asOf: null },
   }, reads: {
+    exportLibraryArchive: personalHistory?.actions.exportLibraryArchive,
     setLibraryPreference: personalHistory?.actions.setLibraryPreference,
     loadMoreReferences: personalHistory?.actions.moreReferences, loadMoreWork: personalHistory?.actions.moreWork,
     readWorkMessage: personalHistory?.actions.readMessage, loadMoreWorkMessage: personalHistory?.actions.moreMessage,

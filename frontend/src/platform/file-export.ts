@@ -34,6 +34,18 @@ export async function exportPackage(response: Response, filename: string, bytes:
   return exportBlob(blob, filename, isCurrent);
 }
 
+export async function exportLibraryPackage(response: Response, filename: string, bytes: number, current: () => boolean) {
+  const blob = await new Response(boundedPackageStream(response, bytes, current), { headers: { 'content-type': 'application/zip' } }).blob();
+  const message = await exportBlob(blob, filename, current);
+  const file = new File([blob], filename, { type: 'application/zip' });
+  if (!navigator.canShare?.({ files: [file] })) return { message };
+  // A separate press supplies fresh user activation after the asynchronous download.
+  return { message, share: async () => {
+    if (!current()) throw Error('登入或孩子已改變。');
+    await navigator.share({ files: [file] });
+  } };
+}
+
 export async function exportAttachment(bytes: Uint8Array<ArrayBuffer>, mimeType: string, filename: string, isCurrent: () => boolean) {
   if (bytes.byteLength > 20 * 1024 * 1024) throw new Error("Export too large");
   return exportBlob(new Blob([bytes], { type: mimeType }), filename, isCurrent);
