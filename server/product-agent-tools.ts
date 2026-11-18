@@ -24,7 +24,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -670,7 +670,12 @@ export function createProductAgentTools(options: {
           throw new FamilyError(400, "propose_fact_required");
         }
         // Always hydrate confirmed memory before delivery so caregiving/mixed answers mentioning personal facts stay grounded alongside official sources.
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action") {
+        // Pure greetings and pure bounded clarifying questions without citations need no memory fact hydration (REQ-002 §3.3).
+        const joinedAnswerText = parsed.kind === "no_action" ? "" : parsed.paragraphs.map(item => item.text).join("\n").trim();
+        const skipMemoryHydration = parsed.kind !== "no_action"
+          && parsed.paragraphs.every(item => item.citationIds.length === 0)
+          && (isPureGreetingOrSmallTalk(joinedAnswerText) || isPureClarifyingQuestion(joinedAnswerText));
+        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && !skipMemoryHydration) {
           await ensureConfirmedMemoryGrounding();
         }
         if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && executedActions.size > 0) {
@@ -988,6 +993,7 @@ export function createProductAgentTools(options: {
     },
   };
 }
+
 
 
 

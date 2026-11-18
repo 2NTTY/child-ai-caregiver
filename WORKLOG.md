@@ -6434,3 +6434,89 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+## 2026-11-14　Slice B（B-P6）純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P6（REQ-002 §3.3、§7.2、REQ-005 §9 #5、REQ-008 §9）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：補齊粵語／國語／英語純寒暄與道謝短回合的無冗餘審核路徑，避免在純禮貌互動時執行無關的歷史摘要預讀與記憶分頁，並確保混合宣稱嚴格失敗關閉。
+- Actual Work：
+  - 更新 `server/chat-delivery-review.ts` 的 `PURE_GREETING_UTTERANCE` 與 `OPERATION_CLAIM_PATTERN`（涵蓋標準書面及「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣告），支援「早晨」、「唔該晒」、「謝謝」、「多謝晒」、「早唞」、「拜拜」、「Thank you」、「Good night」等整句寒暄與道謝，並阻擋任何夾帶操作主張之混合句子。
+  - 更新 `server/product-agent-tools.ts` 與 `server/product-agent.ts`，當輸入與輸出均為純寒暄／道謝且無引用時，略過 `initialConversationSummary` 與 `ensureConfirmedMemoryGrounding()`。
+  - 新增 `tests/search-short-path-gaps.test.ts`、`scripts/ci/verify-search-short-path-gaps-offline.sh` 與 `.github/workflows/search-short-path-gaps-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/search-short-path-gaps.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts`（3 個完整測試檔共 **55/55** 通過：3 + 44 + 8，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P6 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）擴充 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱，並於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增「多謝，已刪晒所有記錄。」與「唔該，記低咗啦。」失敗關閉斷言。
+2）將 CI workflow 與 `scripts/ci/verify-search-short-path-gaps-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-16　B-P6 R3 審核整改（結構性封堵完成語態與非問藥劑量）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R3.md` F2–F3，於本地 forward-only 新提交處理（R1／R2 歷史條目維持原文）：
+1）同步更新 [chat-delivery-review.ts](server/chat-delivery-review.ts)：擴充 `OPERATION_CLAIM_PATTERN` 完成態詞尾（`好|妥|完|晒|曬|咗|左|了|喇|啦|嘞|囉|成功`）及動詞，並新增綁定 `userRequest` 的 `draftClaimsUnverifiedOperation`，無 verified receipt 時不因模型自標 `kind` 而直交；
+2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE`（時段／頻率或動詞或分數／醫療單位＋數量）併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，不再依賴用戶問題出現「藥」字（涵蓋「BB發燒點算？」→「每次四分之一粒。」「每晚半粒，連續三日。」「四分一粒。」「每4小時四分之一粒。」）；
+3）於 [search-short-path-gaps 測試](tests/search-short-path-gaps.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases），保留純寒暄／有界補問／向用戶反問免審對照，並同步更新 [CI 腳本](scripts/ci/verify-search-short-path-gaps-offline.sh)。
+本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。
+
+### 2026-11-16　B-P6 R4 審核整改（結尾問號防繞過與完整劑量形態同步）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：保留本分支固有 `BOUNDED_CLARIFICATION` 與 `PURE_GREETING_UTTERANCE` 邊界，同步導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免，攔截「提醒時間現為晚上八點。仲有其他事？」等混合斷言直交）及擴充 `DOSE_AMOUNT_SOURCE`（覆蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與療程表述「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
+2）於 [search-short-path-gaps.test.ts](tests/search-short-path-gaps.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
+
+### 2026-11-16　B-P6 結構性交付審核與收據對應整改（同步 B-P2／B-P7；保留短路徑模板）
+
+依審查意見於本地 forward-only 新提交修復（未 push／未開 PR；保留本分支 `BOUNDED_CLARIFICATION` 與 `PURE_GREETING_UTTERANCE`）：
+1）**`server/chat-delivery-review.ts` 保留尾閘 `return obligation?.required ?? false`**：拆解「結果／狀態聲稱＋追問」（含逗號與句號及裸草稿，如「提醒時間而家係八點，想改邊一項？」）與合理參數選擇反問（「你想改成八點定九點？」），強制前者進審而後者免誤傷。
+2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：嚴格核對狀態（執行完成 vs `pending_confirmation`／`failed`）、動作家族（保存／修改／刪除）與目標對象／數值，阻斷錯配或未完成收據放行。
+3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
+4）於 `tests/search-short-path-gaps.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P6 結構性深化整改（內嵌前提問句、代名詞物理降溫／趴睡指令、全欄位收據核對）
+
+依外部審核 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R7.md` 及 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 同步結構性整改至 `server/chat-delivery-review.ts`（保留 `B-P6` 之純問候／純釐清邊界與尾閘 `obligation?.required ?? false`）並於本地 forward-only 提交（未 push／未開 PR）：
+1）**F1 內嵌從屬狀態前提問句**：攔截含 `now that`、`since`、`既然` 及括號現況前提之操作問句，並保留純參數選擇問句免誤判。
+2）**F2 任務錨定照護與代名詞物理降溫／趴睡指令**：擴充 `CLINICAL_CARE_DIRECTIVE_PATTERN` 及 `draftHasTaskAnchoredCareObligation`，同時維持 `SPEC.md:301-304` 三類無需公共官方引用之回覆。
+3）**F3 全數值／全時段／全對象收據對應**：收據比對改為全量數值、時間錨點（如 `今朝 8 點` vs `今晚 9 點`）及連接詞拆解後每個目標片段皆須命中已執行收據。
+4）於 `tests/search-short-path-gaps.test.ts` 增補 R7 F1–F3 斷言並完成離線全套測試與三份 `tsc --noEmit`。
+
+### 2026-11-17　B-P6 依審計 R1 與共識邊界同步 N1–N3 結構性修復
+
+依外部審核 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261117_R1.md` 及審核員補充邊界同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候／純澄清邊界）與 `server/product-agent-tools.ts`（未 push／未開 PR）：
+1）**N1 英文健康詞界與普通求助語境**：為獨立英文健康詞加上 `\b...\b`（修正 `Will` 誤中 `ill`，不將中英文一齊包 `\b`），普通求助句要求健康／育兒護理語境，同時維持既有照護語境與黏性義務。
+2）**N2 移除純前綴豁免、覆蓋 `nil-by-mouth` 及兩階段私人來源核對**：移除 `NON_DIRECTIVE_RECORD_REPORT_PATTERN`，補齊禁飲食／禁食指令正則，並確保草稿（`sources: []`）與最終階段均不得以私人來源或無關家庭紀錄替臨床指令或未證實說法背書，同時維持 `SPEC.md:301-304` 分離。
+3）**N3 Server 未截斷動作結果與逐項結構化收據綁定**：移除 `product-agent-tools.ts` 300 字截斷並傳遞完整動作／結構化時間與數量欄位，於 `chat-delivery-review.ts` 對 `(對象, 份量, 單位, 時間)` 作 1 對 1 配對，對數值／時段互換、重複項超報、模糊分組與 `quantityGrounding=removed` 一律 fail-closed。
+4）於 `tests/search-short-path-gaps.test.ts`（6→9 cases）增補 N1–N3 正反成對真實運行與閘門測試，同步 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES`，並跑過 3 檔 guarded manifest（61／61）＋ verified-ops／photo／voice（4／4）＋ 三配置 `tsc --noEmit`。
+
+### 2026-11-17　B-P6 R8 邊界修復（N1-R formula 語境分離、N2-R 私人來源逐子句核對、N3-R ISO 完整日期對位）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（N1-R／N2-R／N3-R）同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候邊界）：
+1）**N1-R**：移除 `USER_CARE_HEALTH_CONTEXT_PATTERN` 裸詞 `formula`、`treat` 與無主詞 `cool down`，改以明確嬰兒配方奶／護理語境觸發。
+2）**N2-R**：移除 `memoryFactReferencedByParagraph` 提前返回，改對段落每個原子子句核對極性、主體及完整詞項／數字。
+3）**N3-R**：於 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 保存並比對 `epochMs` 及解析後本地年月日與個別 `eventTimeZone`，封堵跨日 ISO／錯 offset 確認並維持同時間點合法 offset。
+4）於 `tests/search-short-path-gaps.test.ts`（9→10 cases）新增 `N1-R / N2-R / N3-R` 成對實測，並更新 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P6 新增邊界測試 R1 修復（BND-1 跨段假私人事實逐段內容核對）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候邊界）：
+1）**BND-1**：移除 `privateSourcesSupportDraft` 依 `record_restatement`/`private_reference` 標籤篩選段落而漏檢 `clarification` 段落的漏洞，抽出 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及收緊後之 `isPureScopeRefusalOrLimitationText`，攔截跨段／混合引用／拒答夾帶未獲支持之私人過敏說法並保留正例與純補問。
+2）於 `tests/search-short-path-gaps.test.ts`（10→11 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES=(11 44 8)`。
+
+### 2026-11-18　B-P6 實作覆核 R1 修復（N18-1 純拒答／待確認整句錨定驗證與精確數字分詞、N18-2 純結構句豁免）
+
+依 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261118_R1.md`（N18-1／N18-2）同步修復至 `server/chat-delivery-review.ts`（保留 `B-P6` 擴充純問候邊界）：
+1）**N18-1**：改以 `splitPrivateAssertionClauses` 逐子句套用整句錨定（`isPureScopeRefusalClause`／`isPurePendingConfirmationClause`），並於 `privateSourceClauseSupportsClaimClause` 強制精確數字 token（修復 `"120"` 以 `.includes("20")` 錯認 `"20"`）與英文字詞邊界，徹底封堵逗號、連接詞及單子句夾帶未授權私人事實（如 `BB每日午睡20分鐘`、`BB通常在學校午睡`）。
+2）**N18-2**：新增無兒童實體與無數量之純結構句檢查 `isPureStructuralFramingClause`／`isPureStructuralFramingText`（於 `classifyParagraphPrivateSupport` 回傳 `"structural"`），恢復搭配有據紀錄或官方引用的「以上是整理後的內容。」正常交付，同時維持獨立無支持結構句或夾帶數量詞之阻斷。
+3）於 `tests/search-short-path-gaps.test.ts`（11→12 cases）新增 `N18-1 & N18-2` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-short-path-gaps-offline.sh` `TEST_CASES=(12 44 8)`。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+

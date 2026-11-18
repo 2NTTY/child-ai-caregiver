@@ -1506,3 +1506,19 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 
 
 - **官方來源檢索、適用核對與結構化引用（`codex/search-official-evidence`，基線 `origin/master` `f2d347cd`）：** 已推進離線契約與記憶體 Firestore 適用性驗證；提問側已收窄泛指共通詞（`正常`、`醫生`、`求診`、單獨`講嘢`／`食嘢`）並恢復「BB幾時可以食嘢？」對加固之召回，同時將「食藥／餵藥／藥水／10ml」及口語完成主張、多段私人來源核對與純結構句邊界納入交付審查；目前官方種子仍限五份（未覆蓋發燒／嘔吐／疫苗／腹瀉／尿布疹），另缺真模型評測與線上實行，尚待外部審核及合併批准。[離線驗證 workflow](.github/workflows/search-official-evidence-offline.yml) · [驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)
+
+
+### Slice B（B-P6）：純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- **對應需求**：REQ-002 §3.3 (`:381-388`)、§7.2 (`:506`)、REQ-005 §9 #5、REQ-008 §9 (`:1437`)。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review.ts` 擴充整句有界寒暄／禮貌回覆白名單（涵蓋粵語、國語及英語之 `早晨`、`早唞`、`謝謝`、`多謝`、`多謝晒`、`唔該`、`唔該晒`、`不用謝`、`唔使客氣`、`拜拜`、`再見`、`thank you`、`thanks`、`you're welcome`、`good night`、`bye` 等），並補強 `OPERATION_CLAIM_PATTERN`（涵蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱），確保任何夾帶照護建議、用藥、原始證據或操作宣告之混合句一律失敗關閉（fail-closed）進入審核。
+  - 於 `server/product-agent-tools.ts` 及 `server/product-agent.ts` 在確認本輪使用者輸入與 `present_answer` 輸出皆為純寒暄／禮貌回覆時，略過冗餘的 `initialConversationSummary` 預讀與 `ensureConfirmedMemoryGrounding` 記憶分頁展開，同時完整保留 `present_answer` 終端工具契約與權限重驗。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+
+
+### PR #607 integration clarification
+
+Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
+
+The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
