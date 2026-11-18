@@ -5,7 +5,7 @@ import { FinishReason } from "@google/genai";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { createAgentRuntime, type AgentTool } from "../server/agent-runtime.ts";
 import { AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped } from "../server/agent-budget.ts";
-import { agentRequestCharacters } from "../server/agent-model-gateway.ts";
+import { agentRequestCharacters, createVertexAgentPayloadBuilder } from "../server/agent-model-gateway.ts";
 import { AgentCapabilitySelection } from "../server/agent-tool-capabilities.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 
@@ -20,11 +20,15 @@ const catalog = { coreToolNames: ["read_context"], loader, groups: [
 function fixture(mode: "growth" | "same_batch" | "overflow" | "terminal" | "invalid" | "boundary", limit = 32000, boundaryCharacters = 1, initialSummary = false) {
   let budget: AgentBudget, accepted = false, reads = 0, writes = 0, records = 0;
   const requests: LlmRequest[] = [], modelSizes: number[] = [], allowances: number[] = [], providerErrors: string[] = [];
-  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: String(limit) }),
+  const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: String(limit) });
+  const buildPayload = createVertexAgentPayloadBuilder(config);
+  const runtime = createAgentRuntime({ config,
     usage: { reserve: async () => true, record: async () => { records++; } }, provider: { generate: async request => {
       try {
-        const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} }));
-        assert.ok(agentRequestCharacters(request) <= limit);
+        const index = requests.length;
+        const payload = buildPayload(request);
+        requests.push(structuredClone({ ...request, contents: payload.contents, config: payload.config, toolsDict: {} }));
+        assert.ok(agentRequestCharacters(payload) <= limit);
         let value: LlmResponse;
         if (index === 0) {
           assert.equal(Object.hasOwn(request.toolsDict, "write_alpha"), false);

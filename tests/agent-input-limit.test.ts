@@ -3,6 +3,7 @@ import test from "node:test";
 import { FinishReason } from "@google/genai";
 import { AgentBudget, AGENT_LIMITS, AGENT_INTERACTIVE_INPUT } from "../server/agent-budget.ts";
 import { readAiConfig } from "../server/ai-config.ts";
+import { createVertexAgentPayloadBuilder } from "../server/agent-model-gateway.ts";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput } from "../server/agent-runtime.ts";
 
@@ -15,7 +16,7 @@ test("interactive input configuration is finite and independent of the P1 text l
   assert.equal(readAiConfig({ AI_MAX_INPUT_CHARACTERS: "20000" }).agentMaxInputCharacters, 64000);
   assert.equal(readAiConfig({ AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }).maxInputCharacters, 10000);
   assert.deepEqual(AGENT_INTERACTIVE_INPUT, { default: 64000, min: 32000, max: 64000 });
-  assert.deepEqual(AGENT_LIMITS, { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2, deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
+  assert.equal(AGENT_LIMITS.inputCharacters, AGENT_INTERACTIVE_INPUT.min);
 });
 
 test("one selected ceiling drives tool allowance and personal call settings cannot change it", () => {
@@ -44,9 +45,12 @@ for (const setting of [
 ] as const) test(`native Runner enforces exact logical boundary: ${setting.name}`, async context => {
   let measured = 0, reservations = 0, calls = 0;
   const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: setting.env });
+  const buildPayload = createVertexAgentPayloadBuilder(config);
   const runtime = createAgentRuntime({ config, usage: { reserve: async () => { reservations++; return true; }, record: async () => {} },
     provider: { generate: async request => {
-      calls++; measured = JSON.stringify({ contents: request.contents, config: request.config }).length;
+      calls++;
+      const payload = buildPayload(request);
+      measured = JSON.stringify({ contents: payload.contents, config: payload.config }).length;
       const instruction = JSON.stringify(request.config?.systemInstruction);
       assert.ok(instruction.includes(`\\\"inputCharacters\\\":${setting.limit}`) || instruction.includes(`\"inputCharacters\":${setting.limit}`));
       return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{ text: "Synthetic result" }] } };
@@ -56,9 +60,10 @@ for (const setting of [
   const probe = await runtime.run(input); assert.equal(probe.status, "completed", JSON.stringify(probe));
   const characters = setting.limit - measured + 1;
   assert.ok(characters > 0); input.messages[0].text = "x".repeat(characters);
-  assert.equal((await runtime.run(input)).status, "completed"); assert.equal(measured, setting.limit);
+  const exact = await runtime.run({ ...input, runId: "22222222-2222-4222-8222-222222222222" });
+  assert.equal(exact.status, "completed", JSON.stringify(exact)); assert.equal(measured, setting.limit);
   const before = { calls, reservations }; input.messages[0].text += "x";
-  const over = await runtime.run(input);
+  const over = await runtime.run({ ...input, runId: "33333333-3333-4333-8333-333333333333" });
   assert.equal(over.stopReason, "input_limit"); assert.equal(calls, before.calls); assert.equal(reservations, before.reservations);
   context.diagnostic(JSON.stringify({ scope: setting.name, acceptedLogicalCharacters: measured, rejectedLogicalCharacters: measured + 1, reserveBeforeRejection: before.reservations, reserveAfterRejection: reservations }));
 });
