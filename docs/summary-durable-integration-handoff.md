@@ -1,5 +1,14 @@
 # 私人摘要單一整合交接
 
+<a id="funded-pilot"></a>
+## 出資與單一範圍切換
+
+API／worker 共用 `PRIVATE_SUMMARY_SPONSOR_JSON`。由營運設定指定一個 `scope`（ownerUserId、workspaceId、childId、storageEpoch）、authorizationVersion、generation、payer、model、expiresAt 及累積 limits（modelCalls、toolCalls）。私人 key 仍由原模型設定服務讀取。每次接續均核對原工作、現行權限、付款路由及政策版本。缺配置的既有 durable 工作保留原帳與停止狀態。
+
+先用本機 Agent 的 `demo-` 專案及它的 loopback Firestore Emulator 設定執行 `node scripts/verify-summary-pilot.mjs`。腳本建立獨立資料範圍，等舊程序退出，再執行 inventory 切換。兩次增量和兩次冷啟動分別在新程序執行。撤權後再開一次讀取會被拒絕。[實際收據](../artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json)
+
+正式環境另需在 inventory 期間持續證明所有可寫舊格式的 worker 均已退出，核對當前授權、世代和索引，再逐個範圍啟用。單靠設定出資資料不會切換工作。這次隔離驗收使用 scripted provider，正式站仍沿現行寫入者。
+
 本文件只記 #410 後續修復與 #447 整合的接口選擇及啟用前置，不取代 API／資料契約或另建待辦。候選狀態、分項證據及最終驗收 gate 只見 [PLAN](../PLAN.md#req005-summary01)。基底已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`。原 #447 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 僅 rebase，原四項 blocker 未修，本包改採下述單一 durable 方案。
 
 驗收分開記錄：`88ce04f` 封定候選的完整型別及 554 項本地驗收、`235ddd3` 的完整型別與 13 整檔／44 項定向補驗均保留；最新 `f0149b` 同源候選再通過完整型別及 21 整檔／87 項定向補驗（含 CI 契約 6 項）。三批不相加，也不稱最新基線全套已重跑。最新 registry 為 87 檔／555 項＋CI 6 項，遠端精確 head 預期 561 項仍須成功；尚未正式啟用或部署。

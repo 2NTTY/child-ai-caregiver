@@ -10,6 +10,7 @@ import { createVoiceTranscription } from './voice-transcription.ts';
 import type { AgentDiagnostic } from './agent-observer.ts';
 import { createPrivateSummaryMaintenance } from './private-summary-maintenance.ts';
 import { createFirestorePrivateSummaryScan } from './firestore-private-summary-scan.ts';
+import { createFundedSummaryPolicy, type SummarySponsor } from './summary-funded-policy.ts';
 import { preparePrivateSummarySuppressedSource } from './firestore-private-summary-suppressed.ts';
 import { readSummaryFastOwnedUnknown } from './firestore-private-summary-ownership.ts';
 import { readFirestoreBackgroundClaim } from './firestore-background-work.ts';
@@ -75,6 +76,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   sendMaintainerBudgetAlert?: import('./firestore-budget-alerts.ts').MaintainerAlertSender;
   /** Trusted work policy only. Existing per-dispatch limits never supply missing cumulative grants. */
   summaryWorkPolicy?: SummaryWorkPolicyPort;
+  summarySponsor?: SummarySponsor;
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
 }) {
   const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8')) as { version?: unknown };
@@ -164,9 +166,24 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   // Cold settlement reads the original billing source, not today's selected settings.
   const summaryDaily = routing.usage;
   const summaryData = new FirestoreDomainData(options), summaryAuthority = createFirestoreAuthority(options);
-  const summaryPolicy = options.summaryWorkPolicy ? { ...options.summaryWorkPolicy,
-    readLegacyAdmission: (binding: Parameters<SummaryWorkPolicyPort['readLegacyAdmission']>[0], input: Parameters<SummaryWorkPolicyPort['readLegacyAdmission']>[1]) =>
-      readPrivateSummaryLegacyAdmission(summaryData, binding, input) } : undefined;
+  const readLegacyAdmission: SummaryWorkPolicyPort['readLegacyAdmission'] =
+    (b, input) => readPrivateSummaryLegacyAdmission(summaryData, b, input);
+  const summaryPolicy = options.summaryWorkPolicy ? { ...options.summaryWorkPolicy, readLegacyAdmission }
+    : options.summarySponsor && createFundedSummaryPolicy({
+      sponsor: options.summarySponsor, promptPackVersion, readProfile: routing.readWorkerProfileIn, readLegacyAdmission,
+      bind(b, run, selected, deadline) {
+        const claim = services.runs.projectClaim(b, run, true);
+        const runLimits = { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) };
+        const binder = claimedRunAssembly(selected.selectedConfig, {
+          rootBudget, nativeSessionService, dailyUsage: summaryDaily[selected.billingSource],
+          profile: { config: selected.selectedConfig, workflowVersion: 'firestore-product-v1', promptPackVersion,
+            settingsVersion: 'firestore:' + selected.settingsVersion, billingSource: selected.billingSource,
+            billingVersion: selected.billingSource + ':v1', runLimits },
+        }, undefined, true, true, true);
+        return binder.bindDurableRun({ runId: claim.runId, claimedRun: claim, scope: claim.scope,
+          trigger: run.trigger, recipeId: run.recipeId, deadlineAtMs: Date.parse(run.expiresAt) }, promptPackVersion, runLimits, deadline).context;
+      },
+    });
   const summaryWork = createFirestorePrivateSummaryWork({ ...options, memory: options.memory, runs: services.runs,
     policy: summaryPolicy, fastNoDispatchVerifier: createPrivateSummaryFastNoDispatchVerifier({ root: rootBudget, sessions: nativeSessionService }), terminalVerifier: { verify(binding, input) {
       return createPrivateSummaryTerminalVerifier({ root: rootBudget,

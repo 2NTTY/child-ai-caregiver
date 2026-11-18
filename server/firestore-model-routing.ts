@@ -2,6 +2,8 @@ import { createFirestoreAdmin } from './firestore-admin.ts';
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
+import type { PlatformPolicy } from '../src/shared/admin.ts';
+import type { ModelSettings } from '../src/shared/model-settings.ts';
 import { AGENT_INTERACTIVE_INPUT, AgentStopped } from './agent-budget.ts';
 import { type ModelKeyCheck, type ModelSettingsView, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
@@ -34,6 +36,19 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
   const policy = createFirestoreAdmin(options, config);
   const allowed = (userId: string) => authority.runTransaction(userId, null, async () => true);
+  function profileFor(state: ModelSettings, current: PlatformPolicy, trigger: 'interactive' | 'worker') {
+    const personal = state.mode === 'personal', limits = resolvePersonalModelLimits(state, current);
+    const enabled = config.enabled && state.mode !== 'disabled' && (personal
+      ? state.keyConfigured && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
+    const selectedConfig: AiConfig = { ...config, enabled, model: config.localModelOverride ?? current.model,
+      timeoutMs: limits.modelRequestSeconds * 1000, agentMaxRetries: limits.maxModelRetries,
+      dailyUserAttempts: limits.dailyLimit, dailyGlobalAttempts: limits.dailyGlobalLimit,
+      ...(personal ? { maxAttempts: 1, model: state.model } : {}) };
+    const billingSource = personal ? 'personal' as const : 'platform' as const;
+    return { personal, enabled, limits, selectedConfig, billingSource, settingsVersion: state.version + ':policy:' + current.version,
+      runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings, toolCalls: limits.maxToolCalls,
+        deadlineMs: limits.maxRunSeconds * 1000, softBudgetRatio: limits.softBudgetRatio } };
+  }
   async function reserveMetadataCheck(userId: string) {
     await authority.runTransaction(userId, null, async b => {
       const ref = data.ref('model_key_checks', 'model-key-checks', 'active'), row = await b.transaction.get(ref), now = Date.now();
@@ -45,6 +60,11 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
   }
   return {
     settings, budgetAlerts: policy.budgetAlerts, usage,
+    async readWorkerProfileIn(b: FirestoreAuthorityTransaction) {
+      const state = await settings.readIn({ transaction: b.transaction,
+        scope: { ...b.scope, childId: '00000000-0000-0000-0000-000000000000' } });
+      return profileFor(state, await policy.readPolicyIn(b.transaction), 'worker');
+    },
     async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction, scope: FirestoreAuthorityTransaction['scope']) {
       const current = await policy.readPolicyIn(tx);
       const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });
@@ -95,20 +115,14 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
     },
     async resolve(userId: string, trigger: 'interactive' | 'worker') {
       const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal', current = await policy.readPolicy();
-      const limits = resolvePersonalModelLimits(state, current);
-      const enabled = config.enabled && state.mode !== 'disabled' && (personal
-        ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
-      const selectedConfig: AiConfig = { ...config, enabled, model: config.localModelOverride ?? current.model,
-        timeoutMs: limits.modelRequestSeconds * 1000, agentMaxRetries: limits.maxModelRetries,
-        dailyUserAttempts: limits.dailyLimit, dailyGlobalAttempts: limits.dailyGlobalLimit,
-        ...(personal ? { maxAttempts: 1, model: state.model } : {}) };
+      const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } = profileFor(state, current, trigger);
+      if (enabled && personal && !snapshot.apiKey) throw new AgentStopped('unavailable');
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
       const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } }
         : personal && snapshot.apiKey ? createPersonalModelProviders(selectedConfig, snapshot.apiKey, state.provider,
           { baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
             embeddingProvider: state.embeddingProvider, embeddingProject: state.embeddingProject, embeddingLocation: state.embeddingLocation })
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
-      const source = personal ? 'personal' as const : 'platform' as const;
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
       let activePolicyVersion = current.version;
       const readPolicyTransition = async () => {
@@ -134,13 +148,11 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         usage: requireDurableUsage, billingSource: source });
       return { config: selectedConfig, provider: providers.agent, policyVersion: current.version,
         repeatedSignatureStreak: current.highWatermark?.repeatedSignatureStreak ?? AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak,
-        settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
+        settingsVersion, billingSource: source,
         dailyUsage: usage[source], authorize, readPolicyTransition,
         softBudgetSource: limits.limitSources?.softBudgetRatio,
         ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),
-        runLimits: { modelCalls: limits.maxModelCalls, queryEmbeddings: limits.maxQueryEmbeddings,
-          toolCalls: limits.maxToolCalls, deadlineMs: limits.maxRunSeconds * 1000,
-          softBudgetRatio: limits.softBudgetRatio },
+        runLimits,
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');
