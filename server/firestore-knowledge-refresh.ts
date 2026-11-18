@@ -147,10 +147,17 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         || check.checkedAt !== observation.lastSuccessfulCheckAt || check.checkedAt !== watch.lastSuccessfulCheckAt
         || check.itemHashes?.length !== 1 || check.itemHashes[0]?.sourceId !== request.sourceId
         || check.itemHashes[0]?.contentHash !== request.observationHash) reject('knowledge_pdf_range_check_mismatch');
-      // Earlier receipts identify the latest success by timestamp. Reject two checks for the same watch in that millisecond.
+      // The deployed collection only indexes checkedAt. Read one extra receipt to detect a truncated millisecond.
+      const receiptLimit = 8;
       const concurrent = await tx.get(database.collection(namespace + '_knowledge_checks')
-        .where('watchId', '==', watch.id).where('checkedAt', '==', check.checkedAt).limit(2));
-      if (concurrent.size !== 1 || concurrent.docs[0]?.id !== request.checkId) reject('knowledge_pdf_range_check_mismatch');
+        .where('checkedAt', '==', check.checkedAt).limit(receiptLimit + 1));
+      if (concurrent.size > receiptLimit) reject('knowledge_pdf_range_check_mismatch');
+      const sameWatch = concurrent.docs.filter(doc => {
+        const receipt = parse(checkSchema, doc.data());
+        if (receipt.jobId !== doc.id) reject('knowledge_binding_invalid');
+        return receipt.watchId === watch.id;
+      });
+      if (sameWatch.length !== 1 || sameWatch[0]?.id !== request.checkId) reject('knowledge_pdf_range_check_mismatch');
       const proof = { ...request, watchRevision: watch.revision, reviewHash, readMethod: method.data, checkedAt: check.checkedAt };
       tx.set(observationRef(request.sourceId), { ...observation, pdfReadback: proof });
     },

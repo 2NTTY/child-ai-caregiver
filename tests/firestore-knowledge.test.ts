@@ -487,6 +487,18 @@ test('a verified PDF range remains readable while a full edition of the same ori
   ambiguous.records.set(receiptPrefix + otherJobId, { ...ambiguous.records.get(receiptPrefix + latest.checkId), jobId: otherJobId, readMethod: 'different-parser' });
   await assert.rejects(ambiguous.knowledge.recheckPdfRange(request, ambiguous.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
 
+  const concurrent = copyState();
+  function otherReceipt(watchId: string) {
+    const jobId = crypto.randomUUID();
+    concurrent.records.set(receiptPrefix + jobId, { ...concurrent.records.get(receiptPrefix + latest.checkId), jobId, watchId,
+      itemHashes: [{ sourceId: watchId, contentHash: request.observationHash }] });
+  }
+  otherReceipt('unrelated-watch');
+  await concurrent.knowledge.recheckPdfRange(request, concurrent.refresh.originals.readPdf);
+  assert.equal((await concurrent.knowledge.catalog()).items[0]?.versionId, version.versionId);
+  for (let i = 0; i < 7; i++) otherReceipt('unrelated-watch-' + i);
+  await assert.rejects(concurrent.knowledge.recheckPdfRange(request, concurrent.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
+
   const legacy = copyState(), watchPath = f.options.namespace + '_knowledge_watches/' + id;
   delete legacy.records.get(watchPath)!.priorPdfRevision; // Registration created by the previous release.
   await assert.rejects(legacy.knowledge.recheckPdfRange(request, legacy.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
@@ -500,6 +512,26 @@ test('a verified PDF range remains readable while a full edition of the same ori
   await assert.rejects(legacy.knowledge.recheckPdfRange({ ...legacyRequest, checkId: reenabled.checkId }, legacy.refresh.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
   await assert.rejects(store.recheckPdfRange({ ...request, checkId: original.checkId }, expanded.originals.readPdf), /knowledge_pdf_range_check_mismatch/);
   await store.recheckPdfRange(request, expanded.originals.readPdf);
+
+  const corrected = copyState();
+  const correction = await observe(corrected.refresh, async (definition, signal) => {
+    const result = await fetcher(definition, signal);
+    assert.equal(result.status, 'ok');
+    const items = result.items.map(item => {
+      const pages = item.pages!.map(page => page.page === 4 ? { ...page, text: 'Corrected fourth physical page text.' } : page);
+      return { ...item, pages, text: pages.map(page => page.text).join('\n\n') };
+    });
+    return { ...result, items };
+  });
+  assert.equal(correction.document.extraction?.contentHash, request.pdfHash);
+  assert.notEqual(correction.observation?.contentHash, request.observationHash);
+  assert.deepEqual((await corrected.knowledge.catalog()).items, []);
+  await assert.rejects(corrected.knowledge.recheckPdfRange(request, corrected.refresh.originals.readPdf), /knowledge_pdf_range_unavailable/);
+  await corrected.knowledge.recheckPdfRange({
+    ...request, checkId: correction.checkId, observationHash: correction.observation!.contentHash,
+  }, corrected.refresh.originals.readPdf);
+  assert.deepEqual((await corrected.knowledge.catalog()).items.map(item => item.versionId), [version.versionId]);
+  assert.deepEqual((await corrected.knowledge.candidates(filter, null, { query: 'needle' })).map(hit => hit.pageStart), [3]);
 
   const changed = copyState();
   const edited = readOriginal(Buffer.concat([bytes, Buffer.from('\n% different original')]));
