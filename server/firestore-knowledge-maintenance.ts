@@ -50,9 +50,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
   focusedPage?: { priorWork: string; priorVersionHash: string; priorReader: string; priorQuestion: KnowledgePdfQuestion };
+  isolatedComparison?: { destination: string; baseline: KnowledgeMaintenanceBaseline;
+    previousVisual?: { priorWork: string; priorVersionHash: string } };
   isolatedFixturePublish?: boolean;
 }) {
-  if (options.isolatedFixturePublish && (!options.projectId.startsWith("demo-")
+  if ((options.isolatedFixturePublish || options.isolatedComparison) && (!options.projectId.startsWith("demo-")
     || !/^127\.0\.0\.1:[0-9]+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? "")
     || process.env.YUYF_LOCAL_DEVELOPMENT !== "1")) reject("knowledge_fixture_publication_scope");
   if (!options.credentialBinding) reject("knowledge_maintenance_credential_binding");
@@ -103,9 +105,16 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const configBinding = { config, limits, ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
       const focus = options.focusedPage;
-      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}) });
+      const comparison = options.isolatedComparison;
+      const previousVisual = comparison?.previousVisual;
+      const comparisonBinding = comparison ? { destination: comparison.destination, comparedVersionId: comparison.baseline.versionId,
+        comparedHash: comparison.baseline.versionHash, comparedObservationHash: comparison.baseline.observationHash,
+        ...(previousVisual ? { previousVisual } : {}) } : undefined;
+      if (comparison && (windowed || focus || !definition.leafletPage || comparison.baseline.source.sourceId !== request.watchId
+        || comparison.baseline.versionHash !== sourceVersionHash(comparison.baseline.source))) reject("knowledge_destination_baseline_conflict");
+      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}), ...(comparisonBinding ? { comparisonBinding } : {}) });
       const publicationConfigHash = knowledgeReviewHash({ config, limits, policyVersion:current.version, credentialBinding,
-        watchRevision:registration.data.revision, question:options.pdfQuestion ?? null, focus:focus ?? null });
+        watchRevision:registration.data.revision, question:options.pdfQuestion ?? null, focus:focus ?? null, ...(comparisonBinding ? { comparisonBinding } : {}) });
       if (focus && (!options.pdfQuestion || !recordedCheckId || !definition.leafletPage
         || (reusedOrganizationFrom ?? request.operationFingerprint) !== focusedKnowledgeWorkId(focus.priorWork, focus.priorVersionHash, options.pdfQuestion))) reject("knowledge_focus_binding_mismatch");
       // A completed, sealed review may finish indexing after a prompt update under the identical publication grant.
@@ -194,6 +203,15 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 return model.completeText(input);
               }, windowed ? tx=>quotaReader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts) : undefined);
             const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
+              comparison,
+              ...(previousVisual ? { async previousVisual(candidate: BackgroundKnowledgeCandidate) {
+                const old = await work.inspect({ ...request, operationFingerprint: previousVisual.priorWork });
+                const proof = old?.prepared?.provenance.nativePdf;
+                if (old?.prepared?.versionHash !== previousVisual.priorVersionHash || !proof?.focus || !proof.layoutQuestion
+                  || proof.contentHash !== candidate.observed.extraction?.contentHash
+                  || proof.focus.parentHash !== proof.contentHash) reject("knowledge_focus_binding_mismatch");
+                return { focus: proof.focus, layoutQuestion: proof.layoutQuestion };
+              } } : {}),
               async fetchedAt(candidate) {
                 const observed = await options.refresh.inspect(candidate.watchId);
                 if (observed.observation?.contentHash !== candidate.observationHash) reject("knowledge_observation_changed");
