@@ -1,7 +1,7 @@
 import { BackgroundSurface, useCustomBackground } from "../components/appearance/BackgroundSurface";
 import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
-import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
+import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -94,10 +94,12 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     setDetailsOpen(false);
     navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
-  const replyRunning = chat.busy === "reply" || chat.remoteReply?.status === "running";
+  const remoteReplyStillRunning = chat.remoteReply?.status === "running"
+    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === chat.remoteReply?.messageId);
+  const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
-      : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
+      : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
     {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
@@ -116,6 +118,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
     {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
+    {chat.busy === "reply" && chat.feedback?.sources.length ? <ProgressSourceCards sources={chat.feedback.sources} reviewing={chat.feedback.phase === "reviewing"} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
@@ -160,12 +163,14 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
         const stoppedWithoutQueue = run?.status === "stopped" && run.stopReasonLabel === agentStopMessage("busy")
           || chat.remoteReply?.messageId === message.id && chat.remoteReply.status === "stopped" && chat.remoteReply.stopReason === "busy";
+        const hasModelReply = chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const effectiveRunStatus = run?.status === "running" && (message.role === "model" || hasModelReply) ? "completed" : run?.status;
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
-          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id)
+          && !hasModelReply
           && !stoppedWithoutQueue;
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
-          phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
-          phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
+          phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
+          phaseLabel={effectiveRunStatus === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
             {message.photo?<ChatPhotoMessage key={`${scopeKey}:${message.photo.id}`} photo={message.photo}/>:null}
@@ -237,3 +242,4 @@ const styles = StyleSheet.create({
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
   disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
+

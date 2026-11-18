@@ -696,3 +696,4 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
 
 export const firestoreKnowledgeSchemas = { source: sourceSchema, version: versionSchema, chunk: chunkSchema, lexical: lexicalSchema, vector: cachedVectorSchema } as const;
 
+

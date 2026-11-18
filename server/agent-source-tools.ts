@@ -33,6 +33,7 @@ export function createAgentSourceTools(sources:SharedInputStore,store:ProductAge
         if(management.modelExcerpt.length>6000)throw new FamilyError(400,"source_excerpt_too_large");
         const citation:PrivateSourceCitation={citationId:`private:${input.id}:${input.version}`,inputId:input.id,version:input.version,label:input.sourceLabel,excerpt:management.modelExcerpt,sha256:input.sha256,nature:management.nature};
         evidence.set(citation.citationId,citation);
+        run.deliveryReview?.require("review");
         return {citation,purpose:management.purpose,timeScope:management.timeScope,validityText:management.validityText,verifiedOfficial:false};})},
     {name:"propose_private_source",description:"按本人提供的連結或原文提出私人來源設定候選，確認後才保存到同一來源清單。不要編造正文；用途、選取原文交模型及家庭共享是不同授權。modelExcerpt 預設 null，只有本人核對選取原文後才授權；不擷取網址、不加入公共知識庫。",parameters:z.object({input:sharedInputCreateSchema.options[0],management:sourceManagementSchema}).strict(),authorize,
       execute:(args,context)=>guarded(()=>store.propose(scope,runId,context.callId,{kind:"private_source_create",input:sharedInputCreateSchema.options[0].parse(args.input),management:sourceManagementSchema.parse(args.management)}))},

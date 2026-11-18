@@ -6162,6 +6162,197 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 #593 已合入主線 `cb974524`。#595 保留主線與本分支原有工作紀錄，再以這一版主線觸發新的分支及整合檢查；不沿用合併前因缺少成長游標測試而停止的整合收據。此項交接不代表真模型、正式環境或所有 26 項場景已驗收。
 
+## 2026-11-14　Slice B（B-P7）語義審核邊界防繞過與回合中審核義務預算收斂 (`codex/search-review-boundaries`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P7（REQ-008 §3.2、§9）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：加固交付審核對表面問句改寫（用藥、劑量、操作主張）的失敗關閉邊界，並確保回合中因檢索證據而產生的審核義務在同一根預算（root `AgentBudget`）內完成預留或以 `delivery_review_budget` 安全停止。
+- Actual Work：
+  - 更新 `server/chat-delivery-review.ts`，將 `餵藥`、`食藥`、`吃藥`、`藥水`、`毫升`、`毫克`、數值劑量（`ml`/`mg`）及書面／粵語口語操作宣告（「已刪晒」、「記低咗」、「改咗」、「幫你...」）納入審核觸發條件。
+  - 更新 `server/product-agent-tools.ts`（`search_knowledge`、`read_knowledge_context`、`read_chat_photo`）、`server/agent-source-tools.ts`（`read_private_source`）與 `server/product-agent.ts`，在回合中取得證據時立即啟用 `deliveryReview.require("review")`（依 `REQ-008 §3.2` 鎖定後續 `present_answer` 並預留同根 `AgentBudget` 審核額度，同時保留無引用嚴格有界澄清與純寒暄短路徑，且於剩餘預算僅 1 次時以 `delivery_review_budget` 安全收斂）。
+  - 新增 `tests/search-review-boundaries.test.ts`、`scripts/ci/verify-search-review-boundaries-offline.sh` 與 `.github/workflows/search-review-boundaries-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/search-review-boundaries.test.ts tests/agent-review-obligation.test.ts tests/chat-delivery-review.test.ts tests/agent-budget.test.ts tests/product-agent-execution-contract.test.ts`（5 個完整測試檔共 **81/81** 通過：3 + 17 + 44 + 9 + 8，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P7 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）補強 `OPERATION_CLAIM_PATTERN` 覆蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」，收窄 `每次(?:餵|食|吃|服|\s*\d)` 避免無關語境誤判，並對齊 `BOUNDED_CLARIFICATION` 前置時間副詞與粵語句式（與 B-P2、B-P6 保持跨分支一致性）及於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 補測。
+2）修正 `PLAN.md` 誤植（`短パス` → `短路徑`），並明確釐清 `deliveryReview.require("review")` 之黏性義務、root budget Call 3/Call 4 鎖定與 `REQ-008 §3.2` 有界澄清短路徑之關係。
+3）對齊 [CI workflow](.github/workflows/search-review-boundaries-offline.yml) 與 [verify-search-review-boundaries-offline.sh](scripts/ci/verify-search-review-boundaries-offline.sh) 至 B-P2 安全離線範本（`pull_request` / `permissions: contents: read` / pinned SHAs / `--ignore-scripts` / `unshare --net` + `setpriv` / `summary-progress-contract.mjs` / `patch-package` / 三份 `tsconfig` 檢查，移除未經授權之 `push` 觸發與 bare `npm ci`）。
+
+### 2026-11-16　B-P7 R3 審核整改（結構性封堵完成語態與非問藥劑量）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R3.md` F2–F3，於本地 forward-only 新提交處理（R1／R2 歷史條目維持原文）：
+1）同步更新 [chat-delivery-review.ts](server/chat-delivery-review.ts)：擴充 `OPERATION_CLAIM_PATTERN` 完成態詞尾及動詞，並新增綁定 `userRequest` 的 `draftClaimsUnverifiedOperation`（無 verified receipt 且非向用戶發問時強制送審）；
+2）新增獨立劑量形態 `DOSE_AMOUNT_SOURCE` 併入 `CARE_ADVISORY_PATTERN` 與 `MEDICAL_CLAIM_PATTERN`，涵蓋分數／半粒／每晚／每幾小時／茶匙等具體劑量表達而無須依賴用戶問題出現「藥」字；
+3）於 [search-review-boundaries 測試](tests/search-review-boundaries.test.ts) 新增 R4 真 `ProductAgent` + runtime 回歸（4→5 cases）與純寒暄／反問對照，並同步更新 [CI 腳本](scripts/ci/verify-search-review-boundaries-offline.sh)。
+本輪仍屬離線實證，無真 Gemini／Vertex、無真機畫面 E2E、無 hosted Actions 收據，且未 push／開 PR。
+
+### 2026-11-16　B-P7 R4 審核整改（結尾問號防繞過與完整劑量形態同步）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F2–F3 與 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R5.md` F2–F3 於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**F2–F3 [chat-delivery-review.ts](server/chat-delivery-review.ts)**：導入 `isPureOperationClarifyingQuestion`（移除結尾 `?`/`？` 寬鬆豁免）並擴充 `DOSE_AMOUNT_SOURCE`（涵蓋英文拼寫數量、`小匙`/`大匙`/`微克` 與「每餐一小匙，連續三日。」／「Take one tablet at bedtime.」）。
+2）於 [search-review-boundaries.test.ts](tests/search-review-boundaries.test.ts)（5/5）補齊 F2–F3 端到端回歸與純反問免審對照。
+
+### 2026-11-16　B-P7 結構性交付審核與收據對應整改（同步 B-P2／B-P6）
+
+依審查意見於本地 forward-only 新提交修復（未 push／未開 PR）：
+1）**`server/chat-delivery-review.ts` 保留尾閘 `return obligation?.required ?? false`**：以子句層級識別「結果／狀態聲稱＋追問」（如「提醒時間而家係八點，想改邊一項？」及裸草稿），同時保留合理參數選擇（「你想改成八點定九點？」）與普通說明（「這個清單分為三個部分。」）豁免。
+2）**收據對應校驗（`verifiedOperationsCorrespond`）同步進 `isPureVerifiedOperationSummary`、`draftClaimsUnverifiedOperation` 與 `acceptLivePass`**：核對收據狀態（不可拿 `pending_confirmation`／`failed` 當已完成）、動作家族與目標對象／數值。
+3）**任意英文複合數詞＋零數字停水／禁食／醫療指令擴充與 `SPEC.md:301-304` 分離**：涵蓋 `Administer thirteen drops`、`Administer two thousand drops`、「退燒前停止飲水」、「嘔吐後禁止進食」、「Withhold fluids」等指令並維持已具來源家庭紀錄回述、對應操作確認與純拒答免被迫附官方引用。
+4）於 `tests/search-review-boundaries.test.ts`（5→6 cases）新增結構性回歸並同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 結構性深化整改（內嵌前提問句、代名詞物理降溫／趴睡指令、全欄位收據核對）
+
+依外部審核 `SLICE_B_BP2_IMPLEMENTATION_AUDIT_R7.md` 及 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 同步結構性整改至 `server/chat-delivery-review.ts`（與 `B-P2` 一致，保留尾閘 `obligation?.required ?? false`）並於本地 forward-only 提交（未 push／未開 PR）：
+1）**F1 內嵌從屬狀態前提問句**：攔截含 `now that`、`since`、`既然` 及括號現況前提之操作問句，並保留純參數選擇問句免誤判。
+2）**F2 任務錨定照護與代名詞物理降溫／趴睡指令**：擴充 `CLINICAL_CARE_DIRECTIVE_PATTERN` 及 `draftHasTaskAnchoredCareObligation`，同時維持 `SPEC.md:301-304` 三類無需公共官方引用之回覆。
+3）**F3 全數值／全時段／全對象收據對應**：收據比對改為全量數值、時間錨點（如 `今朝 8 點` vs `今晚 9 點`）及連接詞拆解後每個目標片段皆須命中已執行收據。
+4）於 `tests/search-review-boundaries.test.ts` 增補 R7 F1–F3 斷言並完成離線全套測試與三份 `tsc --noEmit`。
+
+### 2026-11-17　B-P7 依審計 R1 與共識邊界同步 N1–N3 結構性修復
+
+依外部審核 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261117_R1.md` 及審核員補充邊界同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）與 `server/product-agent-tools.ts`（未 push／未開 PR）：
+1）**N1 英文健康詞界與普通求助語境**：為獨立英文健康詞加上 `\b...\b`（修正 `Will` 誤中 `ill`，不將中英文一齊包 `\b`），普通求助句要求健康／育兒護理語境，同時維持既有照護語境與 `obligation?.required ?? false` 黏性義務。
+2）**N2 移除純前綴豁免、覆蓋 `nil-by-mouth` 及兩階段私人來源核對**：移除 `NON_DIRECTIVE_RECORD_REPORT_PATTERN`，補齊禁飲食／禁食指令正則，並於草稿早期與最終階段同時核對私人來源真實支持關係，防止無關家庭紀錄為臨床指令背書，同時保留 `SPEC.md:301-304` 分離。
+3）**N3 Server 未截斷動作結果與逐項結構化收據綁定**：移除 `product-agent-tools.ts` 300 字截斷並傳遞完整動作／結構化時間與數量欄位，對 `(對象, 份量, 單位, 時間)` 作 1 對 1 配對，封堵單筆／多筆收據互換、重複項超報、解析不清與 `quantityGrounding=removed`。
+4）於 `tests/search-review-boundaries.test.ts`（6→9 cases）增補 N1–N3 正反成對真實運行與閘門測試，同步 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`，並跑過 5 檔 guarded manifest（87／87）＋ verified-ops／photo／voice（4／4）＋ 三配置 `tsc --noEmit`。
+
+### 2026-11-17　B-P7 R8 邊界修復（N1-R formula 語境分離、N2-R 私人來源逐子句核對、N3-R ISO 完整日期對位）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（N1-R／N2-R／N3-R）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**N1-R**：移除 `USER_CARE_HEALTH_CONTEXT_PATTERN` 裸詞 `formula`、`treat` 與無主詞 `cool down`，改以明確嬰兒配方奶／護理語境觸發，同時保留 `obligation?.required ?? false` 黏性義務。
+2）**N2-R**：移除 `memoryFactReferencedByParagraph` 提前返回，改對段落每個原子子句核對極性、主體及完整詞項／數字。
+3）**N3-R**：於 `parseTimeAnchorInfo` 與 `timeAnchorMatches` 保存並比對 `epochMs` 及解析後本地年月日與個別 `eventTimeZone`。
+4）於 `tests/search-review-boundaries.test.ts`（9→10 cases）新增 `N1-R / N2-R / N3-R` 成對實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P7 新增邊界測試 R1 修復（BND-1 跨段假私人事實逐段內容核對）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-1）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 一致）：
+1）**BND-1**：移除 `privateSourcesSupportDraft` 依 `record_restatement`/`private_reference` 標籤篩選段落而漏檢 `clarification` 段落的漏洞，抽出 `classifyParagraphPrivateSupport`、`paragraphIsExemptWithoutCitation` 及收緊後之 `isPureScopeRefusalOrLimitationText`，攔截跨段／混合引用／拒答夾帶未獲支持之私人過敏說法並保留正例及 `obligation?.required ?? false` 黏性義務。
+2）於 `tests/search-review-boundaries.test.ts`（10→11 cases）新增 `BND-1` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES=(11 17 44 9 8)`。
+
+### 2026-11-18　B-P7 實作覆核 R1 修復（N18-1 純拒答／待確認整句錨定驗證與精確數字分詞、N18-2 純結構句豁免）
+
+依 `SLICE_B_BP2_BP6_BP7_IMPLEMENTATION_AUDIT_20261118_R1.md`（N18-1／N18-2）同步修復至 `server/chat-delivery-review.ts`（與 `B-P2` 完全一致，維持 `obligation?.required ?? false` 尾閘）：
+1）**N18-1**：改以 `splitPrivateAssertionClauses` 逐子句套用整句錨定（`isPureScopeRefusalClause`／`isPurePendingConfirmationClause`），並於 `privateSourceClauseSupportsClaimClause` 強制精確數字 token（修復 `"120"` 以 `.includes("20")` 錯認 `"20"`）與英文字詞邊界，徹底封堵逗號、連接詞及單子句夾帶未授權私人事實。
+2）**N18-2**：新增無兒童實體與無數量之純結構句檢查 `isPureStructuralFramingClause`／`isPureStructuralFramingText`（於 `classifyParagraphPrivateSupport` 回傳 `"structural"`），恢復搭配有據紀錄或官方引用的「以上是整理後的內容。」正常交付，同時維持獨立無支持結構句或夾帶數量詞之阻斷。
+3）於 `tests/search-review-boundaries.test.ts`（11→12 cases）新增 `N18-1 & N18-2` 真 `createProductAgent` 成對正反實測，並更新 `scripts/ci/verify-search-review-boundaries-offline.sh` `TEST_CASES=(12 17 44 9 8)`。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P4）SSE 進度收斂、同機重連原執行狀態恢復與訊息同步 (`codex/search-run-recovery`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P4（REQ-001 §4.2、REQ-002 §4.3、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：消除 SSE 重試／亂序造成的重複進度閃爍，支援同機網路閃斷後沿原背景 run 恢復狀態，並在背景回覆完成時即時更新訊息列表。
+- Actual Work：
+  - 於 `src/shared/agent-feedback.ts` 實作 `reconcileAgentProgress`，確保同 `runId`/`messageId` 的進度階段單調前進且求助卡去重。
+  - 於 `src/client/chat-controller.ts` 強化 `requestReply` 的串流中斷降級檢查（若 `getOriginalReply` 回報 `status === "running"` 則保留 `remoteReply` 狀態供 `refreshOriginalReply` 接手），並於 `readOriginal` 偵測到 `completed` 時立即刷新 `listMessages`。
+  - 於 `frontend/src/screens/chatScreen.tsx` 避免在對應回覆訊息已送達時繼續顯示執行中狀態橫幅。
+  - 新增 `tests/chat-run-recovery.test.ts`、`scripts/ci/verify-search-run-recovery-offline.sh` 與 `.github/workflows/search-run-recovery-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/chat-run-recovery.test.ts tests/chat-web-sources-copy.test.ts tests/chat-busy-stop-feedback.test.ts tests/chat-stop-feedback.test.ts tests/agent-work-continuation-recovery.test.ts`（5 個完整測試檔共 **17/17** 通過：4 + 7 + 1 + 2 + 3，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P4 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` (`B-P4-1`) 進行 forward-only 修復：
+1）將 `reconcileAgentProgress` 的階段保護由特例（僅保護 `reviewing` 與 `started`）升級為完整單調階序 `AGENT_PROGRESS_PHASE_RANK`（`started: 0, model: 1, help: 1, working: 2, searching: 2, reading: 2, tool_finished: 3, reviewing: 4`），確保遲到 `searching`/`reading`/`working`/`model`/`started` 絕不覆寫 `tool_finished` 或高階階段，同時維持 `help` 卡片累積與 `card` schema 一致性。
+2）於 [chat-run-recovery 測試](tests/chat-run-recovery.test.ts) 增補 `tool_finished` 拒退回 `searching`/`model` 與 `searching` 拒退回 `model` 斷言；將 CI workflow 與 `scripts/ci/verify-search-run-recovery-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 與 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-18　B-P4 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-run-recovery`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P4 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P3）檢索中官方來源卡片即時串流與對話預覽 (`codex/search-source-progress`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P3（REQ-002 §§5.1–5.2、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：在正式回覆完成前，將已檢索與已精讀的官方來源卡片即時串流至前端對話視窗，讓照顧者在等待期間可先行點擊查閱官方指引。
+- Actual Work：
+  - 更新 `src/shared/agent-feedback.ts`（新增 `agentProgressSourceSchema` 與 `mergeAgentProgressSources`）、`server/agent-feedback-stream.ts`、`server/product-agent-tools.ts` 及 `server/product-agent.ts`，於 `search_knowledge` 與 `read_knowledge_context` 完成時發布 `stage: "found" | "read"` 的官方來源預覽卡。
+  - 更新 `src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx` 與 `frontend/src/screens/chatScreen.tsx`，在 `chat.busy === "reply"` 期間顯示 `ProgressSourceCards`。
+  - 新增 `tests/agent-feedback-sources.test.ts`、`scripts/ci/verify-search-source-progress-offline.sh` 與 `.github/workflows/search-source-progress-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/agent-feedback-sources.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts tests/chat-web-sources-copy.test.ts`（4 個完整測試檔共 **64/64** 通過：5 + 44 + 8 + 7，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server，無法於 `unshare --net` 或 socket guard 下執行）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P3 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）`B-P3-1`：`mergeAgentProgressSources` 現保證遲到的 `found` 不會以較舊／局部 `excerpt`、`title`、`section`、`publisher` 或 `applicabilityStatus` 覆寫已 `read` 條目（僅補全缺失 metadata），超過 `AGENT_PROGRESS_MAX_SOURCES = 6` 時優先保留 `read` 卡片並統一截斷於 6 筆（對齊後端、schema 與 UI）。
+2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）。
+3）測試與 CI 對齊：`tests/agent-feedback-sources.test.ts` 改用 in-memory injected `fetch` 驗證完整 `createChatApi` → `handleChatRequest`/`handleProductAgentRequest` SSE 串流（無 loopback port、`blockedAttempts: 0`），並於 CI workflow 與 `scripts/ci/verify-search-source-progress-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約；`PLAN.md` 同步更正欄位名稱（`publisher`）與實測數字（64 離線 + 4 loopback）。
+
+### 2026-11-17　B-P3 R8 文件更正（D1 append-only 恢復）
+
+- **更正說明**：依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（D1）與 `AGENTS.md:125` 嚴格 append-only 規範，以 forward-only 方式恢復 `2b29f39` 既有紀錄（`2026-11-14　B-P3 R1 審核修復補充` 第 2 點原句），並於此另起獨立紀錄補述同一決策，不重寫歷史。
+- **補充決策紀錄（`applicabilityStatus`）**：未經獨立交付審核之即時進度來源（`AgentProgressSource`），其 `applicabilityStatus` 嚴格限制為警示性質之 `'conditional' | 'requires_clarification'`，不在獨立審核完成前於進度事件傳遞 `'applicable'`。
+
+### 2026-11-18　B-P3 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-source-progress`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P3 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+
+
+### 2026-11-18　#601 與已合併 #602 正向整合
+
+保留來源卡、因果 sequence、原運行恢復及已完成回覆草稿修復；合併共享進度收斂，遲到 read 可提升同一來源 found 狀態，但不倒退全局 phase／sequence、不覆寫較新 metadata 或恢復被屏蔽 URL。新增 7 項整合測試；#601 CI 納入兩 PR 去重後 10 個整檔、預期 86 案及三組既有型別檢查。隔離本機 11 項與獨立補充 9 個斷言通過；完整 exact-head CI 需推送後核實，不代表真模型、正式資料或畫面驗收。
+
+### 2026-11-12　B-P1 外部知識檢索 query 最小化（codex/search-query-minimization，審核修正並 rebase 至 255082b3）
+
+在基線 `origin/master`（`255082b3`）完成本地 `codex/search-query-minimization` 分支並依獨立審核收窄規則，按 [REQ-001 §4.1／§7](docs/REQUIREMENTS_BACKLOG.md#req-001) 落實外部搜尋 query 最小化守衛：新增 [query 最小化檢查模組](server/knowledge-query-minimization.ts)，於 [`search_knowledge`](server/product-agent-tools.ts) 及 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（在快取、embedding 扣額及候選檢索前）攔截 email／URL／UUID／明確通訊帳號、8 位以上號碼或香港電話格式（保留多位體溫如 `37.5 38.5 39` 及 `2024-2025` 指引年份區間）、完整生日（含官方完整曆日如 `2025年3月14日`）、香港街道／屋苑座數／樓層門牌地址（放行 `住喺沙田區` 等粗粒度地區、公共設施、`3樓`、`Room 1`、`Flat head` 等照護名詞及 `大城市BB上落樓梯`）、雙輪以上私人對話轉錄與明確姓名／證件標籤（放行單行 `媽媽：`、純詞題 `護照 BB`、粵語動詞／親屬稱呼如 `BB叫唔停`／`寶寶叫媽媽`），以及本次由 `read_care_summary`、`read_selected_tasks`、`search_selected_care` 載入的非泛稱孩子姓名（拉丁名加詞界以免誤傷 `planning`/`Annex`），並於 [`search_knowledge` 描述](server/agent-knowledge-tool-descriptions.ts) 與工具 `public_query_required` 恢復提示明確指引移除私密識別後重試，不增開分類 LLM，也不宣稱完整匿名化。
+
+本機離線驗證（含 [網路阻斷 guard](frontend/scripts/family-cleanup-network-guard.mjs)）：[search-query-minimization 測試](tests/search-query-minimization.test.ts)（5/5，涵蓋全 3 個兒童資料讀取工具載入姓名攔截、`createAgentRuntime` 阻斷後無額外分類模型重試並保留內部 `memoryFacts`、`createKnowledgeRetriever` 直呼與 `family` 可見度檢查及多項防誤報反例）及知識／產品代理執行契約／prompt／Vertex contract／runtime 測試共 9 個測試檔（73/73 全過），配合 [離線驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh) 與 [CI workflow](.github/workflows/search-query-minimization-offline.yml) 與兩份 `tsc --noEmit` 全數通過。同時核對未修改之 `origin/master`（`255082b3`）已存在上游失敗：`tests/product-agent.test.ts`（6 例中 1 例 `growth Runner` 失敗，故自本包阻塞清單移出）、`tests/avatar-runtime.test.ts`（1/1 失敗於 `server/firebase-runtime.ts:214` `mixedTranscriptPage`）及 `tests/product-agent-assignee-recovery.test.ts`（3 例中 1 例失敗於 `agent-confirmation-store.ts` `access_version::text,storage_epoch::text` SQL fixture），均確認不屬本包範圍。本階段尚無真 Gemini 模型實測、臨時聊天專名端到端測試或線上部署（未 push／未開 PR）。
+
+### 2026-11-12　B-P1 第二輪審核補正（codex/search-query-minimization）
+
+依第二輪審核意見完成三項必改及建議收斂：1）移走 `住喺／屋企住／家住／住在` 規則尾部裸 `\d+` 與裸 `號／樓`，改僅於具體屋苑、街道路名或數字／字母座室樓單位配對時攔截，放行 `住喺沙田6個月BB打針`、`住喺沙田區6個月BB打針`、`BB喺屋企住3日`、`屋企住咗2星期隔離`、`住在1歲`、`住在2樓 醫院`、`住喺1號風球` 等已測反例（同時補擋 `12樓C`／`12樓C座`／`C座12樓`，並放行 `Apt 2 months`／`Unit 2 vaccine schedule`）；2）統一 `叫做／名叫／叫` 與 `個名／名字` 共用非姓名動詞與疑問詞排除清單，放行 `我叫做啲咩好`、`我名叫咩名好`、`BB名叫唔出嚟`、`BB叫做乜好`、`BB叫幾聲 發燒`；3）移除「叫＋姓名」後方必須帶空白或標點限制，補攔 `我個仔叫陳小明持續發燒3日`、`BB叫張保仔發燒`、`BB叫張保仔加固食物`、`6個月BB叫張保仔發燒`，並於 `Line／IG／Signal` 冒號後補攔含底線或數字之 handle（`IG: mother_hk`、`Signal: hello_user`，保留 `Line: 嬰兒` 與 `First line: infant fever`；無底線／數字之純英文字如 `Line: chanbb` 及中文名如 `WhatsApp：陳大文` 仍歸入已知文字規則限制）。以上反例均已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試及兩份 `tsc --noEmit` 全過；真模型、臨時聊天獨立 mock 及線上部署仍未跑）。
+
+### 2026-11-12　B-P1 第三輪審核建議收斂並 rebase 至 7b7d7e98（codex/search-query-minimization）
+
+依第三輪審核並重整至最新 `origin/master`（`7b7d7e98`）：1）於 `CALLING_NON_NAME_PREFIXES` 補入常見多字病徵、飲食與照顧動作詞（如 `發燒`/`咳嗽`/`嘔吐`/`黃疸`/`肺炎`/`感冒`/`開飯`/`喝奶`/`奶粉`/`陳皮`/`退燒`），避免誤傷 `BB叫陳小明` / `BB叫黃大文` 等姓氏同時放行相關口語查詢；2）收斂 `住喺` 規則以避免 `唔知道`、`高速公路`、`屋企喺花園附近`、`中環街市` 誤報，並補齊 `麗港城`／`海怡半島` 一致性及 `Rm 2 of cough` 非房室語境放行（同時維持 `Rm 2 of Block 3` 攔截）；3）重寫 `Line／IG／Signal` handle 查驗 regex 以消除長字串重複 `_` 之多項式回溯。新反例已納入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過）。
+
+### 2026-11-13　B-P1 第四輪審核細節收尾（codex/search-query-minimization）
+
+依第四輪審核第 3／5 節建議完成三項細節收尾：1）將房室與劑量排除規則改用 `/iu` 全大小寫比對（`Rm 2 of BLOCK 3`、`fLaT A`、`uNiT 3` 攔截；`Rm 2 OF cough`、`Unit 2 MONTHS`、`Apt 2 WEEKS`、`Unit 2 VACCINE schedule`、`Unit 2 MCG`、`Unit 2 DOSES` 放行）；2）將 `公路` lookbehind 收窄為 `高速公路`／`快速公路`，補攔 `住喺青山公路` 等香港公路地址；3）於 `CALLING_NON_NAME_PREFIXES` 補入 `鼻敏感`/`哮喘`/`腸胃炎`/`手足口`/`中耳炎`/`過敏`/`開燈`/`開窗`/`疫苗`/`加固`/`打針`/`飲茶`。全部新測試已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR）。
+
+### 2026-11-13　B-P1 第五輪審核建議收尾（codex/search-query-minimization）
+
+依第五輪審核第 3 節建議完成收尾：1）收斂 `公路` lookbehind 為 `(?<!高速公|快速公|高速|快速|大|馬)路`，同時放行「高速公路」與「高速路」（`住喺高速路附近`、`住喺快速路附近` 放行，`住喺青山公路`、`住喺青山路` 仍攔截）；2）於 `CALLING_NON_NAME_PREFIXES` 補入 `水痘`/`麻疹`/`腮腺炎`/`結膜炎`/`熱痱`/`尿布疹`/`支氣管炎`/`口腔潰瘍`/`鼻鼾`/`流汗`/`大人` 11 個多字口語病徵詞，放行相應照護查詢（`BB叫陳小明`、`BB叫黃大文` 仍攔截）；3）單元測試補齊 `BB叫打針`、`BB叫飲茶`、`住喺高速路附近`、`住喺快速路附近` 及全部 11 個新病徵斷言。維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR。
+
+### 2026-11-18　B-P1 rebase 至最新 origin/master（cd1193b2）並對齊開立 PR
+
+依使用者明確指示將 `codex/search-query-minimization` 8 個既有提交 rebase 至最新 `origin/master`（`cd1193b2`，含 `#596`–`#598`），並於此另加正向提交將 `PLAN.md` 基線標記對齊 `cd1193b2`，保持 `WORKLOG.md` 歷史嚴格 append-only，準備開立 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
 ### 2026-11-13　B-P2 官方原文檢索、適用核對與結構化引用（codex/search-official-evidence，本地未開 PR）
 
 在基線 `origin/master`（`b48ba880`）之上以本地分支 `codex/search-official-evidence`（未 push／未開 PR）推進 [REQ-001 §7](docs/REQUIREMENTS_BACKLOG.md#7-建議驗收清單) 離線檢查與補口修補：
@@ -6242,3 +6433,4 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+

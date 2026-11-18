@@ -335,3 +335,4 @@ test("Firestore lexical ranking applies topic-gated age specificity before rankS
   assert.deepEqual(await f.store.candidates(filter, null, { query: "六個月" }), []);
   assert.deepEqual(await f.store.candidates(filter, null, { query: "六個月發燒" }), []);
 });
+

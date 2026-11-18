@@ -16,7 +16,12 @@ export function agentFeedbackStream(execute: (publish: (progress: AgentProgress)
       const publish = (progress: AgentProgress) => {
         if (closed || count++ >= 48) return;
         pending = pending.then(async () => {
-          if (!closed && await isCurrentUser()) send({ type: 'progress', progress }, progress.phase === 'help' || progress.phase === 'started');
+          if (!closed && await isCurrentUser()) {
+            send(
+              { type: 'progress', progress },
+              progress.phase === 'help' || progress.phase === 'started' || Boolean(progress.sources?.length),
+            );
+          }
         }).catch(() => {});
       };
       heartbeat = setInterval(() => { if (!closed && (controller.desiredSize ?? 0) > 0) controller.enqueue(encoder.encode(': keepalive\n\n')); }, 15000);
@@ -37,3 +42,4 @@ export function agentFeedbackStream(execute: (publish: (progress: AgentProgress)
   });
   return new Response(body, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'private, no-store, no-transform', 'x-accel-buffering': 'no' } });
 }
+
