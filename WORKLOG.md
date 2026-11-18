@@ -6236,3 +6236,33 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-18　#601 與已合併 #602 正向整合
 
 保留來源卡、因果 sequence、原運行恢復及已完成回覆草稿修復；合併共享進度收斂，遲到 read 可提升同一來源 found 狀態，但不倒退全局 phase／sequence、不覆寫較新 metadata 或恢復被屏蔽 URL。新增 7 項整合測試；#601 CI 納入兩 PR 去重後 10 個整檔、預期 86 案及三組既有型別檢查。隔離本機 11 項與獨立補充 9 個斷言通過；完整 exact-head CI 需推送後核實，不代表真模型、正式資料或畫面驗收。
+
+### 2026-11-12　B-P1 外部知識檢索 query 最小化（codex/search-query-minimization，審核修正並 rebase 至 255082b3）
+
+在基線 `origin/master`（`255082b3`）完成本地 `codex/search-query-minimization` 分支並依獨立審核收窄規則，按 [REQ-001 §4.1／§7](docs/REQUIREMENTS_BACKLOG.md#req-001) 落實外部搜尋 query 最小化守衛：新增 [query 最小化檢查模組](server/knowledge-query-minimization.ts)，於 [`search_knowledge`](server/product-agent-tools.ts) 及 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（在快取、embedding 扣額及候選檢索前）攔截 email／URL／UUID／明確通訊帳號、8 位以上號碼或香港電話格式（保留多位體溫如 `37.5 38.5 39` 及 `2024-2025` 指引年份區間）、完整生日（含官方完整曆日如 `2025年3月14日`）、香港街道／屋苑座數／樓層門牌地址（放行 `住喺沙田區` 等粗粒度地區、公共設施、`3樓`、`Room 1`、`Flat head` 等照護名詞及 `大城市BB上落樓梯`）、雙輪以上私人對話轉錄與明確姓名／證件標籤（放行單行 `媽媽：`、純詞題 `護照 BB`、粵語動詞／親屬稱呼如 `BB叫唔停`／`寶寶叫媽媽`），以及本次由 `read_care_summary`、`read_selected_tasks`、`search_selected_care` 載入的非泛稱孩子姓名（拉丁名加詞界以免誤傷 `planning`/`Annex`），並於 [`search_knowledge` 描述](server/agent-knowledge-tool-descriptions.ts) 與工具 `public_query_required` 恢復提示明確指引移除私密識別後重試，不增開分類 LLM，也不宣稱完整匿名化。
+
+本機離線驗證（含 [網路阻斷 guard](frontend/scripts/family-cleanup-network-guard.mjs)）：[search-query-minimization 測試](tests/search-query-minimization.test.ts)（5/5，涵蓋全 3 個兒童資料讀取工具載入姓名攔截、`createAgentRuntime` 阻斷後無額外分類模型重試並保留內部 `memoryFacts`、`createKnowledgeRetriever` 直呼與 `family` 可見度檢查及多項防誤報反例）及知識／產品代理執行契約／prompt／Vertex contract／runtime 測試共 9 個測試檔（73/73 全過），配合 [離線驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh) 與 [CI workflow](.github/workflows/search-query-minimization-offline.yml) 與兩份 `tsc --noEmit` 全數通過。同時核對未修改之 `origin/master`（`255082b3`）已存在上游失敗：`tests/product-agent.test.ts`（6 例中 1 例 `growth Runner` 失敗，故自本包阻塞清單移出）、`tests/avatar-runtime.test.ts`（1/1 失敗於 `server/firebase-runtime.ts:214` `mixedTranscriptPage`）及 `tests/product-agent-assignee-recovery.test.ts`（3 例中 1 例失敗於 `agent-confirmation-store.ts` `access_version::text,storage_epoch::text` SQL fixture），均確認不屬本包範圍。本階段尚無真 Gemini 模型實測、臨時聊天專名端到端測試或線上部署（未 push／未開 PR）。
+
+### 2026-11-12　B-P1 第二輪審核補正（codex/search-query-minimization）
+
+依第二輪審核意見完成三項必改及建議收斂：1）移走 `住喺／屋企住／家住／住在` 規則尾部裸 `\d+` 與裸 `號／樓`，改僅於具體屋苑、街道路名或數字／字母座室樓單位配對時攔截，放行 `住喺沙田6個月BB打針`、`住喺沙田區6個月BB打針`、`BB喺屋企住3日`、`屋企住咗2星期隔離`、`住在1歲`、`住在2樓 醫院`、`住喺1號風球` 等已測反例（同時補擋 `12樓C`／`12樓C座`／`C座12樓`，並放行 `Apt 2 months`／`Unit 2 vaccine schedule`）；2）統一 `叫做／名叫／叫` 與 `個名／名字` 共用非姓名動詞與疑問詞排除清單，放行 `我叫做啲咩好`、`我名叫咩名好`、`BB名叫唔出嚟`、`BB叫做乜好`、`BB叫幾聲 發燒`；3）移除「叫＋姓名」後方必須帶空白或標點限制，補攔 `我個仔叫陳小明持續發燒3日`、`BB叫張保仔發燒`、`BB叫張保仔加固食物`、`6個月BB叫張保仔發燒`，並於 `Line／IG／Signal` 冒號後補攔含底線或數字之 handle（`IG: mother_hk`、`Signal: hello_user`，保留 `Line: 嬰兒` 與 `First line: infant fever`；無底線／數字之純英文字如 `Line: chanbb` 及中文名如 `WhatsApp：陳大文` 仍歸入已知文字規則限制）。以上反例均已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試及兩份 `tsc --noEmit` 全過；真模型、臨時聊天獨立 mock 及線上部署仍未跑）。
+
+### 2026-11-12　B-P1 第三輪審核建議收斂並 rebase 至 7b7d7e98（codex/search-query-minimization）
+
+依第三輪審核並重整至最新 `origin/master`（`7b7d7e98`）：1）於 `CALLING_NON_NAME_PREFIXES` 補入常見多字病徵、飲食與照顧動作詞（如 `發燒`/`咳嗽`/`嘔吐`/`黃疸`/`肺炎`/`感冒`/`開飯`/`喝奶`/`奶粉`/`陳皮`/`退燒`），避免誤傷 `BB叫陳小明` / `BB叫黃大文` 等姓氏同時放行相關口語查詢；2）收斂 `住喺` 規則以避免 `唔知道`、`高速公路`、`屋企喺花園附近`、`中環街市` 誤報，並補齊 `麗港城`／`海怡半島` 一致性及 `Rm 2 of cough` 非房室語境放行（同時維持 `Rm 2 of Block 3` 攔截）；3）重寫 `Line／IG／Signal` handle 查驗 regex 以消除長字串重複 `_` 之多項式回溯。新反例已納入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過）。
+
+### 2026-11-13　B-P1 第四輪審核細節收尾（codex/search-query-minimization）
+
+依第四輪審核第 3／5 節建議完成三項細節收尾：1）將房室與劑量排除規則改用 `/iu` 全大小寫比對（`Rm 2 of BLOCK 3`、`fLaT A`、`uNiT 3` 攔截；`Rm 2 OF cough`、`Unit 2 MONTHS`、`Apt 2 WEEKS`、`Unit 2 VACCINE schedule`、`Unit 2 MCG`、`Unit 2 DOSES` 放行）；2）將 `公路` lookbehind 收窄為 `高速公路`／`快速公路`，補攔 `住喺青山公路` 等香港公路地址；3）於 `CALLING_NON_NAME_PREFIXES` 補入 `鼻敏感`/`哮喘`/`腸胃炎`/`手足口`/`中耳炎`/`過敏`/`開燈`/`開窗`/`疫苗`/`加固`/`打針`/`飲茶`。全部新測試已寫入 [search-query-minimization 測試](tests/search-query-minimization.test.ts)（維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR）。
+
+### 2026-11-13　B-P1 第五輪審核建議收尾（codex/search-query-minimization）
+
+依第五輪審核第 3 節建議完成收尾：1）收斂 `公路` lookbehind 為 `(?<!高速公|快速公|高速|快速|大|馬)路`，同時放行「高速公路」與「高速路」（`住喺高速路附近`、`住喺快速路附近` 放行，`住喺青山公路`、`住喺青山路` 仍攔截）；2）於 `CALLING_NON_NAME_PREFIXES` 補入 `水痘`/`麻疹`/`腮腺炎`/`結膜炎`/`熱痱`/`尿布疹`/`支氣管炎`/`口腔潰瘍`/`鼻鼾`/`流汗`/`大人` 11 個多字口語病徵詞，放行相應照護查詢（`BB叫陳小明`、`BB叫黃大文` 仍攔截）；3）單元測試補齊 `BB叫打針`、`BB叫飲茶`、`住喺高速路附近`、`住喺快速路附近` 及全部 11 個新病徵斷言。維持 9 檔共 73 例離線 guard 測試與兩份 `tsc --noEmit` 全過；分支維持本地未 push、未開 PR。
+
+### 2026-11-18　B-P1 rebase 至最新 origin/master（cd1193b2）並對齊開立 PR
+
+依使用者明確指示將 `codex/search-query-minimization` 8 個既有提交 rebase 至最新 `origin/master`（`cd1193b2`，含 `#596`–`#598`），並於此另加正向提交將 `PLAN.md` 基線標記對齊 `cd1193b2`，保持 `WORKLOG.md` 歷史嚴格 append-only，準備開立 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。

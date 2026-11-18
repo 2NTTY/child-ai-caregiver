@@ -4,6 +4,7 @@ import { FamilyError } from "./family-access.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingActor, EmbeddingGateway } from "./embedding-gateway.ts";
 import { parseKnowledgeFilter, parseKnowledgeQuery } from "./knowledge-inputs.ts";
+import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { rankKnowledge } from "./knowledge-ranking.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
@@ -33,7 +34,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
       }
       return {
         async search(input: string, applicability: KnowledgeFilter, queryEmbeddingAttemptKey?: string): Promise<KnowledgeResult> {
-          const query = parseKnowledgeQuery(input);
+          const query = assertPublicKnowledgeQuery(parseKnowledgeQuery(input));
           const filter = parseKnowledgeFilter(applicability);
           budget.check();
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
