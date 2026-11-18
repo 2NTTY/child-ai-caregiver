@@ -130,7 +130,7 @@
     "firstHold": "第一次整理回應的年齡與頁段結構不合契約。",
     "secondHold": "第二次整理交回 20 項逐頁觀察，其候選段落有實體頁碼錯配。獨立審核答對圖表問題，但只交回第 1、6 頁的閱讀證據，並誤稱和舊版一致。該來源並無已發布舊版。",
     "providerDecision": "approve",
-    "acceptedDecision": "prepared_waiting_daily_admission",
+    "acceptedDecision": "held_after_destination_comparison",
     "activeEditionId": null,
     "liveRetrieval": false,
     "revisedMethod": "來源原件按實體頁判讀，分別記錄整理與覆核。爭議頁沿用同版原頁，兩份單頁生成互不提供視覺答案。驗收標準只在測試及本紀錄使用。",
@@ -191,6 +191,73 @@
         "providerDispatchesForPriorWork": 11
       },
       "nextQuotaBoundary": "2026-11-19T00:00:00Z"
+    },
+    "sourceCorrection": {
+      "observedAt": "2026-11-18T22:39:16.366Z",
+      "implementation": "994e0baf8d248855c976157f29903631337c6d61",
+      "reader": "native-pdf-physical-pages/4",
+      "promptPack": "0.1.64",
+      "held": {
+        "versionId": "bb6fdf8a-8dd8-5dd6-a7d5-97b455bc02af",
+        "versionHash": "7a367bce0329af1bf8f649b0bd04dd4fd11607f673daf6087653c90da20a5ec5",
+        "work": "1bb19ed678fcac239647d389ecc45ec8d2724b4815cde9cb30bf5cfed8aa3e71",
+        "at": "2026-11-18T22:24:28.384Z",
+        "review": "operator_hold",
+        "publicResults": 0,
+        "priorState": "prepared_waiting_daily_admission",
+        "oldCheckResumable": false
+      },
+      "destination": {
+        "site": "https://ex-machina.eu.org",
+        "previousVersionId": "a9f9f85a-b91d-502e-b13b-f41b7829bb96",
+        "previousVersionHash": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98",
+        "previousObservationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "baselineSnapshotSha256": "4c07782789ea59e886e44b134717bfa5796b57e84956d5c960d2b7c79bd20bab"
+      },
+      "isolated": {
+        "priorPublishedEdition": null,
+        "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+        "work": "cc662a7f5fec95bf4b00a4ff9ed3a2c4c1d5399f1ce7475c6e2fa7e58c4568c5",
+        "check": "b157126c-5f9e-5341-8268-cb313d5ed499",
+        "pdfSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "bytes": 7944671,
+        "physicalPages": 20
+      },
+      "quotes": {
+        "pages4And10": "30 minutes before the usual feeding",
+        "page5": "3 to 4 days",
+        "method": "Unique matching embedded outlines from the same typeface; unmatched or ambiguous glyphs stay uncertain. Quoted excerpts must be contiguous and traceable to the observed pages."
+      },
+      "rendering": {
+        "method": "PDFium from the retained original",
+        "scale": 1.8,
+        "sha256ByPhysicalPage": {
+          "3": "c6f3b7f5e9f0c33e35a1f06dda863eb18d5ceb0f4869c66c6251996b7664584a",
+          "4": "7d71d10c5ba36039b105e78a82e6240a7a40c8153b236576cd94653a9779bc57",
+          "5": "d8168d6d7b653d0e21e9962876376a69065c980b28adf6f5ff3db3d8494e4e84",
+          "10": "2fc87af2620f01a97b2da2469b7c2d24752dce7941b019b1213030f4a8c08c3c",
+          "17": "1d01710594d56ee64c29600dd6651afaa8f137a3fc70bf5589dd7bb56a913b6c",
+          "19": "a8ae32412e704f3fda87538a4476ac00b90f807c02c240aa86f0952c3e4fa856"
+        }
+      },
+      "structuralReplay": {
+        "paidCalls": 0,
+        "roles": 2,
+        "originalPages": 20,
+        "chunks": 13,
+        "partialTextQuotations": 7,
+        "destinationChangedKeys": 14,
+        "isolatedAddedKeys": 13,
+        "decision": "synthetic_hold"
+      },
+      "tests": {
+        "node": "24.22.1",
+        "passed": 13,
+        "tsc": "targeted server and PDF worker passed",
+        "firstAttempt": "Node 24.11.0 failed the existing DNS mock outside the declared engine range. The project-supported runtime passed the same test."
+      },
+      "paidAcceptance": "waiting_for_authorized_2026-11-19_UTC_ledger_day",
+      "productionReleasePerformedHere": false
     }
   },
   "chp": {
