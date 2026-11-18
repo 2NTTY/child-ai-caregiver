@@ -8,7 +8,7 @@ import { adminCommandSchema, adminInvitationSchema, adminReceiptSchema, platform
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createFirestoreAuthority } from './firestore-authority.ts';
 import { FirestoreAiUsage } from './firestore-ai-usage.ts';
-import type { DayFinancialEvidence } from './ai-financial-evidence.ts';
+import { quotaSnapshotSchema, type DayFinancialEvidence } from './ai-financial-evidence.ts';
 import type { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 const NIL = '00000000-0000-0000-0000-000000000000';
 const scope = { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL };
@@ -23,6 +23,12 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFi
   receiveArchive?: ReturnType<typeof import('./admin-knowledge-archive.ts').createKnowledgeArchiveReceiver>) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
+  const quotaKind = 'platform-quota-observation';
+  const quotaRef = (day: string) => data.ref('admin_policy', quotaKind, day);
+  async function readQuota(tx: import('@google-cloud/firestore').Transaction, day: string) {
+    const row = await tx.get(quotaRef(day));
+    return row.exists ? data.open(quotaKind, day, scope, quotaSnapshotSchema, row) : null;
+  }
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
     dailyUserAttempts: config.dailyUserAttempts, dailyGlobalAttempts: config.dailyGlobalAttempts,
     personalDailyGlobalAttempts: config.personalDailyGlobalAttempts ?? 1000,
@@ -104,12 +110,31 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFi
           nextCursor: rows.length > 20 ? page.at(-1)!.get('sortKey') as string : null };
       }, { readOnly: true });
     },
+    // Operator-only, outside the public API. Quota observations never modify admission policy.
+    async savePlatformQuotaObservation(raw: unknown) {
+      const value = domainParse(quotaSnapshotSchema, raw);
+      if (Date.parse(value.observedAt) > Date.now() || value.providerQuota.some(q => q.project !== options.projectId)) {
+        domainReject('invalid_quota_observation', 400);
+      }
+      return options.database.runTransaction(async tx => {
+        const prior = await readQuota(tx, value.day);
+        if (prior && Date.parse(prior.observedAt) >= Date.parse(value.observedAt)) {
+          if (firestoreDomainHash(prior) === firestoreDomainHash(value)) return;
+          domainReject('quota_observation_conflict');
+        }
+        tx.set(quotaRef(value.day), data.seal(quotaKind, value.day, scope, quotaSnapshotSchema, value));
+      });
+    },
     async usage(day: string) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) domainReject('invalid_day', 400);
       const financialEvidence = options.usageFinancialEvidence?.();
-      const usage = (source: 'platform' | 'personal') => new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: source })
-        .getGlobal(day, financialEvidence?.find(row => row.payer === source && row.day === day));
-      return { platform: await usage('platform'), personal: await usage('personal') };
+      const platform = financialEvidence?.find(row => row.payer === 'platform' && row.day === day);
+      const personal = financialEvidence?.find(row => row.payer === 'personal' && row.day === day);
+      const observed = platform?.providerQuota ? null : await options.database.runTransaction(tx => readQuota(tx, day), { readOnly: true });
+      const usage = (source: 'platform' | 'personal', evidence?: DayFinancialEvidence) =>
+        new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: source }).getGlobal(day, evidence);
+      const withQuota = observed ? { day, payer: 'platform' as const, attempts: [], ...platform, providerQuota: observed.providerQuota } : platform;
+      return { platform: await usage('platform', withQuota), personal: await usage('personal', personal) };
     },
   };
 }
