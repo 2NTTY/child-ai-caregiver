@@ -1,5 +1,8 @@
 // Explicit local integration command, never part of automatic startup or unit discovery.
 import assert from 'node:assert/strict';
+import React from 'react';
+import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
+import { Document, Page, Text, renderToBuffer } from '@react-pdf/renderer';
 import { Firestore } from '@google-cloud/firestore';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -27,41 +30,46 @@ const authority = createFirestoreAuthority(domain), generation = randomUUID();
 // Use the catalog source without an executable growth-rule dependency. The
 // HTML rule source is covered by the model test's mandatory hold assertion.
 const definition = SOURCE_WATCHES.find(item => item.id === 'fhs-feeding-booklet-en');
-const text = '到診前帶上孩子的健康記錄，並先寫下希望詢問的問題。';
+const text = 'Bring the health record and a list of questions to the visit.';
+const pdf = await renderToBuffer(React.createElement(Document, {}, React.createElement(Page, {}, React.createElement(Text, {}, text))));
 const observed = { url: definition.url, title: 'Synthetic local preparation', text,
   sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null,
-  extraction: { format: 'text_pdf', contentHash: createHash('sha256').update(text).digest('hex'),
-    pageStart: 3, pageEnd: 3, totalPages: 20, complete: false },
-  pages: [{ page: 3, text, status: 'text' }] };
+  extraction: { format: 'text_pdf', contentHash: createHash('sha256').update(pdf).digest('hex'),
+    pageStart: 1, pageEnd: 1, totalPages: 1, complete: true },
+  pages: [{ page: 1, text, status: 'text' }] };
 const vector = [1, ...Array(1023).fill(0)];
 const calls = [];
 let embeddings = 0, fetches = 0;
 try {
   await authority.initializeControl({ enabled: true, generation });
   const readControl = tx => authority.readControl(tx);
-  const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl });
+  const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: { bucketName: "demo-originals", bucket: avatarMemoryBucket("demo-originals").port }, definitions: SOURCE_WATCHES, readControl });
   await refresh.register(definition.id, 'synthetic-local-verification');
   const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: [definition.id], observations: refresh.gate });
   const config = { ...readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-model-project' }),
     backgroundKnowledgeMaintenanceEnabled: true, backgroundKnowledgeLiveFetch: false, backgroundKnowledgeLivePublish: true };
   const options = { ...domain, config, credentialBinding: 'scripted-no-network', knowledge, refresh, readControl, isolatedFixturePublish: true,
     fetch: async () => { throw Error('No external fetch allowed'); },
-    fixtureFetch: async () => { fetches++; return { status: 'ok', items: [observed] }; },
+    fixtureFetch: async () => { fetches++; return { status: 'ok', original: {mimeType:'application/pdf',bytes:pdf}, items: [observed] }; },
     providers: () => ({
       agent: { async generate(request) {
         const input = JSON.parse(request.contents[0].parts[0].text);
         calls.push(input.role);
+        const originalPart = request.contents[0].parts[1].inlineData;
+        assert.equal(originalPart.mimeType, "application/pdf");
+        assert.ok(Buffer.from(originalPart.data, "base64").equals(pdf));
+        const nativeCoverage = { pages: [{page:1, finding:"Synthetic visit checklist"}], unreadablePages:[], layoutAnswer:null };
         let output;
         if (input.role === 'background-knowledge-maintenance') output = {
-          units: input.originalUnits.map(unit => ({ unitId: unit.id, section: '到診準備',
-            text: '帶備健康記錄及問題清單。', keywords: ['到診', '記錄'],
-            applicability: { region: 'HK', ageBasis: 'any', minAgeMonths: null, maxAgeMonths: null, topics: ['preparation'], conditions: [] } })),
+          ranges: Object.fromEntries(input.ranges.map(range => [range.key, {section:'到診準備',
+            pageText: {physicalPage1:'帶備健康記錄及問題清單。'}, keywords:['到診', '記錄'], region:'HK', ageRange:null, topics:['preparation'], conditions:[]} ])),
+          nativeCoverage,
         };
         else {
           assert.equal(input.role, 'knowledge-semantic-review');
           output = {
-            changes: input.candidate.chunks.map(chunk => ({ key: chunk.key,
-              meaning: 'new', explanation: 'The supplied original supports the preparation.' })),
+            nativeCoverage: { pageFindings: {page1:"Synthetic visit checklist"}, unreadablePages: [], layoutAnswer: null }, changes: Object.fromEntries(input.candidate.chunks.map(chunk => [chunk.key,
+              {meaning: 'new', explanation: 'The supplied original supports the preparation.'}])),
             checks: { age: 'No age claim', numbersAndUnits: 'No numbers', timing: 'Before visit', conditions: 'Preserved',
               exceptions: 'None supplied', prohibitions: 'None supplied', withdrawal: 'No previous edition' },
             questions: [{ query: '到診帶甚麼？', expectedKeys: input.candidate.chunks.map(chunk => chunk.key), reason: 'Original supports both items' }],

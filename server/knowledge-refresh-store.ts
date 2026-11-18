@@ -117,7 +117,7 @@ export function createKnowledgeRefreshStore(pool: Pool, definitions: readonly So
             status = changed ? "changed" : "unchanged";
           } else if (fetched.status === "unavailable") {
             status = "unavailable";
-            await client.query(`UPDATE knowledge_observations SET unavailable=true,approved_hash=NULL,approved_version_id=NULL,approved_by=NULL,approved_at=NULL WHERE watch_id=$1`, [data.watchId]);
+            if (fetched.httpStatus === 410 && current.definition.kind !== "rss") await client.query(`UPDATE knowledge_observations SET unavailable=true,approved_hash=NULL,approved_version_id=NULL,approved_by=NULL,approved_at=NULL WHERE watch_id=$1`, [data.watchId]);
           } else status = "failed";
           await client.query(`UPDATE knowledge_watches SET last_attempt_at=now(),last_status=$2,
             last_successful_check_at=CASE WHEN $3 THEN now() ELSE last_successful_check_at END WHERE id=$1`, [data.watchId, status, fetched.status === "ok"]);

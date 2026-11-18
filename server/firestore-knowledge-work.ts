@@ -6,7 +6,7 @@ import {
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, BackgroundKnowledgeDurableOperation, BackgroundKnowledgePublishReceipt } from "./background-knowledge-maintenance.ts";
 import { backgroundKnowledgeReviewMatchesCandidate } from "./background-knowledge-maintenance.ts";
-import type { PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
+import { nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
@@ -30,7 +30,7 @@ const preparedSchema = z.strictObject({
   prepared: z.strictObject({
     source: z.unknown().transform(parseKnowledgeSource), versionHash: hash,
     assessment: knowledgeReviewAssessmentSchema, review: backgroundKnowledgeReviewBindingSchema,
-    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150) }),
+    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional() }),
   }),
 });
 export class FirestoreKnowledgeWorkError extends Error {
@@ -85,10 +85,10 @@ export function createFirestoreKnowledgeWork(options: Options) {
       }, { readOnly: true });
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
-      limits: { modelCalls: number; deadlineMs: number }) {
+      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number }) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       z.uuid().parse(leaseToken); hash.parse(configHash);
-      z.object({ modelCalls: z.number().int().min(1).max(2), deadlineMs: z.number().int().min(1000).max(300_000) }).strict().parse(limits);
+      z.object({ modelCalls: z.number().int().min(1).max(2), deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
       function verify(row: Work) {
         if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash)
@@ -113,7 +113,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
         if (!control.enabled || control.generation !== request.workerGeneration) reject("knowledge_work_disabled");
         if (snapshot.exists) return verify(open(workRef, snapshot.data(), workSchema));
         const row: Work = { request, configHash, deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
-          budget: { usedUnits: 0, maxUnits: 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
+          budget: { usedUnits: 0, maxUnits: limits.maxUnits ?? 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
         tx.create(workRef, seal(workRef, row)); return row;
       });
       const requireId = (fingerprint: string) => { if (fingerprint !== request.operationFingerprint) reject("knowledge_work_binding_changed"); };
@@ -259,6 +259,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
                 || saved.candidateHash !== knowledgeReviewHash(candidate)
                 || knowledgeReviewHash(saved.prepared) !== knowledgeReviewHash(prepared)
                 || publication.sourceId !== candidate.watchId || publication.versionHash !== prepared.versionHash
+                || publication.previousVersionId !== prepared.assessment.comparedVersionId && publication.previousVersionId !== publication.versionId
                 || publication.previousVersionId !== null && !publication.sourceEnabled
                 || publication.observationHash !== candidate.observationHash
                 || prepared.review.decision !== "approve_candidate" || !prepared.review.modelReviewCompleted)
