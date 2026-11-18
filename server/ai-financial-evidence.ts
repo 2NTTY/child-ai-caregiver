@@ -21,6 +21,11 @@ const rate = z.discriminatedUnion('kind', [
 ]);
 const lineSchema = z.object({ rootRunId: identifier, attemptKey: identifier, model: identifier, rate: rate.optional(),
   settlement: z.object({ reference: label, micros: count }).strict().optional() }).strict().refine(row => row.rate || row.settlement);
+
+function invoiceReferences(attempts: readonly z.infer<typeof lineSchema>[]): string[] {
+  return attempts.flatMap(line => line.settlement ? [line.settlement.reference] : []);
+}
+
 export const dayFinancialEvidenceSchema = z.object({ day: z.iso.date(), payer: z.enum(['platform', 'personal']),
   currency: currencyCode.optional(), attempts: z.array(lineSchema).max(100),
   approvedDailyBudget: z.object({ currency: currencyCode, micros: count, approvalReference: label,
@@ -28,7 +33,7 @@ export const dayFinancialEvidenceSchema = z.object({ day: z.iso.date(), payer: z
   providerQuota: z.array(quota).min(1).max(24).optional(),
 }).strict().refine(row => {
   const ids = row.attempts.map(line => JSON.stringify([line.rootRunId, line.attemptKey]));
-  const invoiceLines = row.attempts.flatMap(line => line.settlement ? [line.settlement.reference] : []);
+  const invoiceLines = invoiceReferences(row.attempts);
   return (row.attempts.length === 0 || row.currency !== undefined)
     && (!row.approvedDailyBudget || (row.payer === 'platform'
       && new Date(row.approvedDailyBudget.approvedAt).toISOString().slice(0, 10) <= row.day))
@@ -44,6 +49,8 @@ export function readFinancialEvidence(raw: string | undefined): DayFinancialEvid
     if (Buffer.byteLength(raw) > 128 * 1024) throw new Error();
     const days = z.array(dayFinancialEvidenceSchema).max(32).parse(JSON.parse(raw));
     if (new Set(days.map(day => day.payer + '/' + day.day)).size !== days.length) throw new Error();
+    const references = days.flatMap(day => invoiceReferences(day.attempts));
+    if (new Set(references).size !== references.length) throw new Error();
     return days;
   } catch { throw new Error('Invalid AI_USAGE_RECONCILIATION_JSON configuration'); }
 }
