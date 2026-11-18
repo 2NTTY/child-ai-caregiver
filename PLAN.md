@@ -1505,4 +1505,4 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 | <a id="ac-s00-m09"></a>`ac-s00-m09` | [歷史原文](_archive/plans/P1-P2-20261018.md#ac-s00-m09) |
 
 
-
+- **官方來源檢索、適用核對與結構化引用（`codex/search-official-evidence`，基線 `origin/master` `f2d347cd`）：** 已推進離線契約與記憶體 Firestore 適用性驗證；提問側已收窄泛指共通詞（`正常`、`醫生`、`求診`、單獨`講嘢`／`食嘢`）並恢復「BB幾時可以食嘢？」對加固之召回，同時將「食藥／餵藥／藥水／10ml」及口語完成主張、多段私人來源核對與純結構句邊界納入交付審查；目前官方種子仍限五份（未覆蓋發燒／嘔吐／疫苗／腹瀉／尿布疹），另缺真模型評測與線上實行，尚待外部審核及合併批准。[離線驗證 workflow](.github/workflows/search-official-evidence-offline.yml) · [驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)
