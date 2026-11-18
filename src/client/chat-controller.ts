@@ -368,7 +368,7 @@ export class ChatController {
         if (!this.current(scope)) return;
       } else this.update({ remoteReply: null, replyError: null });
       const draft = this.state.drafts[childId];
-      if (draft?.savedUserMessageId && page.messages.some(item => item.role === "model" && item.inReplyTo === draft.savedUserMessageId)) {
+      if (draft?.savedUserMessageId && this.state.messages.some(item => item.role === "model" && item.inReplyTo === draft.savedUserMessageId)) {
         this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
           notice: "已在聊天記錄找到 AI 回覆。", knownIds: [] });
       }
@@ -730,3 +730,4 @@ export class ChatController {
     this.listeners.clear();
   }
 }
+

@@ -30,12 +30,13 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/chat-run-recovery.test.ts
+  tests/chat-recovered-draft.test.ts
   tests/chat-web-sources-copy.test.ts
   tests/chat-busy-stop-feedback.test.ts
   tests/chat-stop-feedback.test.ts
   tests/agent-work-continuation-recovery.test.ts
 )
-TEST_CASES=(6 7 1 2 3)
+TEST_CASES=(6 3 7 1 2 3)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -85,3 +86,4 @@ git diff --exit-code HEAD
 test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 printf 'PASS candidate=%s complete-test-files=%s cases=%s strict-type-configs=tsconfig.server.json,tsconfig.json,frontend/tsconfig.json\n' \
   "$EXPECTED_SHA" "${#TEST_FILES[@]}" "$total_cases"
+
