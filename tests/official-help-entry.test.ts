@@ -1032,7 +1032,7 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
   const failApi: ChatApi = {
     async getSession() { return { id: 'parent-1', name: '家長', email: 'p@example.test' }; },
     async listMessages() {
-      if (denyNextReload) throw new ChatApiError(403, 'forbidden');
+      if (denyNextReload) throw new ChatApiError(403, 'not_found');
       return { messages: completeOnReload ? [userMessage, completedReply] : [userMessage], limit: 20, nextCursor: null };
     },
     async saveMessage() { return userMessage; },
@@ -1041,7 +1041,7 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
       onProgress?.({ runId, messageId: mid, sequence: 1, phase: 'searching', sources: [{ ...sourceItem, stage: 'found' }] });
       onProgress?.({ runId, messageId: mid, sequence: 2, phase: 'reading', sources: [sourceItem] });
       onProgress?.({ runId, messageId: mid, sequence: 3, phase: 'reviewing' });
-      throw new ChatApiError(503, undefined, 'ai_unavailable');
+      throw new ChatApiError(503, 'ai_unavailable');
     },
     async getOriginalReply() {
       if (!replyAttempted) return null;
