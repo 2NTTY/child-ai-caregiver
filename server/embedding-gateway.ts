@@ -13,10 +13,8 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 export interface EmbeddingInput { text: string; task: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"; title?: string }
 export interface EmbeddingReply { values: number[]; inputTokens: number | null; billableCharacters: number | null }
 export interface EmbeddingProvider { embed(input: EmbeddingInput, signal: AbortSignal): Promise<EmbeddingReply> }
-export class EmbeddingFailure extends Error {
-  readonly code: "unavailable" | "invalid_response" | "invalid_input" | "cancelled" | "quota_exceeded" | "unauthorized" | "disabled";
-  constructor(code: EmbeddingFailure["code"]) { super(`Embedding ${code}`); this.code = code; }
-}
+export { EmbeddingFailure } from "./embedding-failure.ts";
+import { EmbeddingFailure, EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 export interface EmbeddingActor {
   kind: "query_embedding" | "corpus_maintenance";
   actorId: string;
@@ -107,7 +105,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           // Missing or uncertain durable permission is never a SQL or keyword fallback.
           throw error instanceof AgentStopped ? error : new AgentStopped('unavailable');
         }
-      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingFailure("quota_exceeded");
+      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingAdmissionDeferred();
       const started = Date.now();
       const controller = new AbortController();
       const onAbort = () => controller.abort(new EmbeddingFailure("cancelled"));

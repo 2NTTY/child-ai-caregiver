@@ -4662,6 +4662,11 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "yuban_authority_library_preferences",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
       "collectionGroup": "yuban_authority_knowledge_original_manifests",
       "fieldPath": "*",
       "indexes": []

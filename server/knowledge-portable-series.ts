@@ -48,6 +48,13 @@ export function portableSeries(source: KnowledgeSourceInput, context: FirestoreK
   return info;
 }
 
+// The FHS documents in the registered public corpus have a reviewed noncommercial redistribution grant.
+export function familySharingAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'classification'>) {
+  return SOURCE_WATCHES.some(watch => watch.id === source.sourceId && watch.url === source.url && watch.termsUrl === source.termsUrl
+    && watch.classification === source.classification && watch.audience === 'public_noncommercial'
+    && watch.termsUrl === 'https://www.fhs.gov.hk/english/notice/notice.html');
+}
+
 export function checkPortableSource(source: KnowledgeSourceInput) {
   for (const url of [source.url, source.termsUrl]) {
     if (new URL(url).search) throw Error('knowledge_transfer_url_not_shareable');
@@ -60,7 +67,7 @@ export function checkPortableSource(source: KnowledgeSourceInput) {
 export function checkPortableSeries(source: KnowledgeSourceInput, value: unknown) {
   checkPortableSource(source);
   const info = portableSeriesSchema.parse(value), local = sourceSeries(source);
-  if (info.series.institutionId !== local.institutionId || info.termsUrl !== source.termsUrl) throw Error('knowledge_transfer_series_binding_invalid');
+  if (info.series.institutionId !== local.institutionId || source.series && (info.series.id !== local.id || info.series.name !== local.name) || info.termsUrl !== source.termsUrl) throw Error('knowledge_transfer_series_binding_invalid');
   const sample = info.method && source.chunks.find(chunk => chunk.key === info.method!.sample.key);
   if (info.method && (!sample || knowledgeHash(sample.sourceExcerpt) !== info.method.sample.excerptHash))
     throw Error('knowledge_transfer_sample_invalid');

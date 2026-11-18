@@ -33,6 +33,15 @@ export const personalLibraryPageSchema = z.object({
 export type PersonalLibraryItem = z.infer<typeof personalLibraryItemSchema>;
 export type PersonalLibraryPage = z.infer<typeof personalLibraryPageSchema>;
 
+export function selectedLibraryEditions(items: readonly PersonalLibraryItem[]) {
+  return items.flatMap(item => {
+    const selection = item.preference;
+    if (selection?.eligible === false) return [];
+    const versionHash = selection?.mode === 'fixed' && selection.revision > 0 ? selection.selectedVersionHash : item.versionHash;
+    return versionHash ? [{ sourceId: item.sourceId, versionHash }] : [];
+  }).sort((a, b) => a.sourceId.localeCompare(b.sourceId, 'en'));
+}
+
 // Existing app versions use strict item and page schemas. Only send fields they understand.
 export function legacyLibraryPage({ items, nextCursor, complete }: PersonalLibraryPage) {
   return { items: items.map(item => legacyLibraryItem.parse(item)), nextCursor, complete };

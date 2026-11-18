@@ -2,11 +2,12 @@ import type { Pool } from "pg";
 import { z } from "zod";
 import { legacyLibraryPage, librarySeriesMediaType, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
+import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
-import { libraryPreferenceChangeSchema, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import { libraryArchiveSelectionSchema, libraryPreferenceChangeSchema, type LibraryArchiveSelection, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({
   v: z.literal(1), userId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), childId: z.uuid(),
@@ -43,6 +44,7 @@ export function createPersonalLibrary(pool: Pool, cipher: StorageCipher) {
   };
 }
 export type PersonalLibrary = ReturnType<typeof createPersonalLibrary> & {
+  exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<{ bytes: Uint8Array<ArrayBuffer>; sha256: string }>;
   save?(userId: string, childId: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
 };
 export async function handlePersonalLibraryRequest(request: Request, userId: string | null, options: {
@@ -55,6 +57,14 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
   const url = new URL(request.url), match = /^\/api\/children\/([a-f0-9-]{36})\/library$/i.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success) return apiError("not_found", "找不到資料。", 404);
   try {
+    if (request.method === 'POST' && url.search === '?export=zip') {
+      if (!options.library.exportArchive || !options.readJson) return apiError('library_unavailable', '此來源庫暫未提供可攜匯出。', 503);
+      const selection = libraryArchiveSelectionSchema.parse(await options.readJson(request, 24 * 1024));
+      const { bytes, sha256 } = await options.library.exportArchive(userId, match[1].toLowerCase(), selection, request.signal);
+      if (!await options.isCurrentUser(userId)) throw new FamilyError(409, 'session_changed');
+      return new Response(bytes, { headers: { 'content-type': 'application/zip', 'content-length': String(bytes.byteLength),
+        'content-disposition': 'attachment; filename="' + selection.seriesId + '.zip"', 'x-archive-sha256': sha256, 'cache-control': 'private, no-store' } });
+    }
     if (request.method === 'POST' && options.library.save && options.readJson) {
       if (url.search) throw new FamilyError(400, 'invalid_input');
       const change = libraryPreferenceChangeSchema.parse(await options.readJson(request, 24 * 1024));
@@ -74,6 +84,7 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     response.headers.append('vary', 'Accept');
     return response;
   } catch (error) {
+    if (error instanceof FirestoreKnowledgeError) return apiError(error.code, error.status === 403 ? '此來源未獲准轉發內容。' : '來源版本現時未能匯出。', error.status);
     if (error instanceof FamilyError) return apiError(error.code, "資料範圍已改變，請重新讀取。", error.status);
     if (error instanceof z.ZodError) return apiError("invalid_input", "請重新讀取參考目錄。", 400);
     return apiError("library_unavailable", "暫時讀不到參考目錄，請稍後重新讀取。", 503);

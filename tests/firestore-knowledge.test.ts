@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -11,7 +11,10 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
-import { writeKnowledgeArchive, openKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
+import { fetchLibraryArchive } from '../src/client/library-archive.ts';
+import { createKnowledgeArchiveReceiver } from '../server/admin-knowledge-archive.ts';
+import { createKnowledgeTransfers } from '../server/firestore-knowledge-transfers.ts';
+import { openKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
 import { readPortableEdition } from '../scripts/knowledge-transfer-operations.mjs';
 import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
@@ -143,6 +146,29 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
 });
 
+test('reviewed source versions rename an institution and split and merge a series without rebinding historical citations', async () => {
+  const series = { id: 'shared-series', name: 'Original series', institutionId: 'www.fhs.gov.hk' };
+  const f = fixture(['one', 'two', 'other-institution']), clientStore = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 17)) });
+  const first = await f.publish({ ...source('one'), series }), second = await f.publish({ ...source('two'), series });
+  const original = (await clientStore.candidates(filter, null, { libraryUserId: 'reader' })).find(row => row.sourceId === 'two')!;
+  assert.equal(original.series?.name, series.name);
+  const renamed = { ...series, name: 'Renamed series' }, publisher = 'Renamed institution';
+  const one = await f.publish({ ...first.document, publisher, series: renamed }, first);
+  const split = await f.publish({ ...second.document, publisher, series: { ...renamed, id: 'split-series', name: 'Split series' } }, second);
+  const catalog = (await clientStore.catalogForUser('reader', null)).items;
+  assert.deepEqual(catalog.map(row => [row.sourceId, row.series?.id, row.publisher]), [['one', series.id, publisher], ['two', 'split-series', publisher]]);
+  assert.equal(catalog[1]!.preference?.eligible, false);
+  const restored = await f.publish({ ...split.document, series: renamed }, split);
+  const joined = (await clientStore.catalogForUser('reader', null)).items;
+  assert.deepEqual(joined.map(row => row.series?.id), [series.id, series.id]);
+  assert.deepEqual(joined.map(row => row.versionId), [one.versionId, restored.versionId]);
+  const pinned = (await clientStore.candidates(filter, null, { libraryUserId: 'reader' })).find(row => row.sourceId === 'two')!;
+  assert.equal(pinned.versionId, original.versionId); assert.equal(pinned.series?.name, 'Original series'); assert.equal(pinned.publisher, original.publisher);
+  assert.throws(() => parseKnowledgeSource({ ...second.document, series: { ...series, institutionId: 'unrelated.example' } }));
+  await assert.rejects(f.publish({ ...source('other-institution'), url: 'https://www.dh.gov.hk/other', series: { ...series, institutionId: 'www.dh.gov.hk' } }),
+    { code: 'knowledge_series_institution_conflict' });
+});
+
 test('REQ-006 registered live pages check per-user opt-out and watch withdrawal without creating a subscription or requiring an index', async () => {
   const html = SOURCE_WATCHES.find(item => item.id === 'fhs-solid-food')!;
   const pdf = parseKnowledgeSource(JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'))
@@ -183,6 +209,7 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
     } };
   }
   const src = await environment(), dest = await environment();
+  const cipher = createStorageCipher(Buffer.alloc(32, 31));
   await src.observe();
   const first = await src.knowledge.importSource(pdf), review = { ...assessment(pdf), observationHash: observationHash(observed) };
   for (let n = 0; n < 4; n++) await src.knowledge.prepareSearch(first.versionId, first.hash);
@@ -190,8 +217,20 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
   await src.knowledge.publish(first.versionId, first.hash, embeddings(pdf));
   const dir = await mkdtemp(join(tmpdir(), 'req006-pdf-')); t.after(() => rm(dir, { recursive: true, force: true }));
   const path = join(dir, 'feeding.zip'), selected = [{ sourceId: pdf.sourceId, versionHash: first.hash }];
-  const written = await writeKnowledgeArchive(path, selected, row => src.knowledge.exportPublishedEdition(row.sourceId, row.versionHash));
-  const archive = await openKnowledgeArchive(path, written.sha256); t.after(() => archive.close());
+  const user = 'family-user', childId = '22222222-2222-4222-8222-222222222222', scope = {
+    ownerUserId: user, workspaceId: crypto.randomUUID(), childId, storageEpoch: crypto.randomUUID() };
+  const library = createFirestorePersonalLibrary({ ...src.options, cipher, knowledge: src.knowledge, authority: { async readScope(owner, child) {
+    assert.equal(owner, user); assert.equal(child, childId); return { scope, authorizationVersion: '1' };
+  } } });
+  const selection = { seriesId: 'fhs-infant-feeding', editions: selected };
+  const download = (request: typeof selection) => fetchLibraryArchive('https://local.test', (url, init) =>
+    handlePersonalLibraryRequest(new Request(url, init), user, { library, isCurrentUser: async () => true, readJson: input => input.json() }),
+    childId, user, request, new AbortController().signal);
+  await assert.rejects(download({ ...selection, editions: [{ ...selected[0]!, versionHash: 'f'.repeat(64) }] }));
+  const exported = await download(selection), bytes = new Uint8Array(await exported.response.arrayBuffer());
+  assert.equal(bytes.length, exported.bytes); assert.equal(createHash('sha256').update(bytes).digest('hex'), exported.sha256);
+  await writeFile(path, bytes);
+  const archive = await openKnowledgeArchive(path, exported.sha256); t.after(() => archive.close());
   const raw = await archive.readEdition(0) as Awaited<ReturnType<typeof src.knowledge.exportPublishedEdition>>;
   const portable = readPortableEdition(raw, archive.entries[0]!);
   assert.deepEqual(portable.source, pdf); assert.equal(portable.library!.method!.reader.kind, 'pdf');
@@ -201,7 +240,16 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
   const mismatch = readPortableEdition({ ...raw, library: { ...raw.library, vectorSpace: 'unrelated-space' } }, archive.entries[0]!);
   assert.deepEqual(mismatch.embeddings, []); assert.deepEqual(mismatch.source, pdf);
   assert.throws(() => readPortableEdition({ ...raw, library: { ...raw.library, method: { ...raw.library!.method, execute: 'untrusted' } } }, archive.entries[0]!));
-  const local = await dest.knowledge.importSource(portable.source, undefined, portable.library);
+  assert.equal(await dest.knowledge.publishedEdition(pdf.sourceId), null);
+  const ledger = createKnowledgeTransfers({ ...dest.options, cipher }, async () => ({ enabled: true, generation: scope.storageEpoch }));
+  const receive = createKnowledgeArchiveReceiver(ledger, dest.knowledge, dir);
+  const batch = await receive(new Request('https://local.test/api/admin/knowledge-transfers/' + exported.sha256 + '/content', {
+    method: 'POST', headers: { 'content-type': 'application/zip', 'x-archive-bytes': String(bytes.length) }, body: bytes,
+  }), exported.sha256, 'isolated-admin', async () => {});
+  assert.equal(batch.state, 'completed');
+  const imported = (await ledger.results(exported.sha256, 0, 1))[0]!;
+  assert.equal(imported.editionState, 'draft');
+  const local = { versionId: imported.versionId, hash: first.hash };
   const state = () => dest.records.get(dest.options.namespace + '_knowledge_versions/' + local.versionId)!.imported.methodState;
   assert.equal(state(), 'pending_local_check');
   await dest.observe();
@@ -219,18 +267,23 @@ test('the archived page-three FHS seed and its parser evidence round-trip throug
 
 test('REQ-006 structural identifiers match exactly, excluded rows stay archived and detailed exceptions remain retrievable', async () => {
   const detailed = chunk('safety', { treatment: { kind: 'detailed', policyVersion: 1 } });
-  const structured = chunk('batch', { originalText: 'Confirmed batch HK-640 on 2026-01-14.', treatment: {
+  const structured = chunk('batch', { text: 'Exact batch listing', originalText: 'Confirmed batch HK-640 on 2026-01-14.', treatment: {
     kind: 'structured', policyVersion: 1, fields: [{ label: 'Batch', value: 'HK-640' }, { label: 'Date', value: '2026-01-14' }] } });
+  const overview = chunk('overview', { text: 'Background programme introduction', treatment: { kind: 'overview', policyVersion: 1 } });
   const noise = chunk('navigation', { treatment: { kind: 'excluded', policyVersion: 1, reason: 'Navigation' } });
-  const f = fixture(), doc = source('synthetic-guidance', [detailed, structured, noise]);
+  const f = fixture(), doc = source('synthetic-guidance', [detailed, overview, structured, noise]);
   const input = await f.store.importSource(doc); await f.store.review(input.versionId, input.hash, 'operator', assessment(doc));
-  assert.equal((await f.store.missingDocuments(input.versionId)).length, 1, 'identical embedding inputs are shared');
-  await f.store.publish(input.versionId, input.hash, embeddings(doc).filter(item => item.chunkKey !== 'navigation'));
+  assert.deepEqual((await f.store.missingDocuments(input.versionId)).map(row => row.text).sort(), [detailed.text, overview.text].sort());
+  await f.store.publish(input.versionId, input.hash, embeddings(doc).filter(item => ['safety', 'overview'].includes(item.chunkKey)));
+  assert.equal((await f.store.candidates(filter, null, { query: 'programme' }))[0]?.treatment?.kind, 'overview');
   assert.equal((await f.store.candidates(filter, null, { query: 'HK-640' }))[0]?.key, 'batch');
   assert.ok(!(await f.store.candidates(filter, vector, { query: 'HK-641' })).some(row => row.key === 'batch'));
-  assert.deepEqual((await f.store.candidates(filter, null)).map(hit => hit.key).sort(), ['batch', 'safety']);
+  assert.ok(!(await f.store.candidates(filter, null, { query: 'Batch 13' })).some(row => row.key === 'batch'));
+  assert.deepEqual((await f.store.candidates(filter, null)).map(hit => hit.key).sort(), ['batch', 'overview', 'safety']);
+  const methods = (await f.store.catalog()).items[0]!.methods!;
+  assert.deepEqual(methods, ['精細保留 · 1 段', '概括整理 · 1 段', '結構化保存 · 1 段', '不進問答索引 · 1 段']);
   const packet = await f.store.exportPublishedEdition(doc.sourceId, input.hash);
-  assert.ok(packet.source.chunks.some(row => row.key === 'navigation')); assert.equal(packet.embeddings.length, 2);
+  assert.ok(packet.source.chunks.some(row => row.key === 'navigation')); assert.deepEqual(packet.embeddings.map(row => row.chunkKey).sort(), ['overview', 'safety']);
 });
 
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;

@@ -1,7 +1,7 @@
 # 背景知識整理
 
 - ID：`module.knowledge-organize`
-- 版本：`0.1.2`
+- 版本：`0.1.3`
 - 使用條件：獨立知識維護工作已取得指定來源及固定原文單元，準備同一候選版本時使用。
 - 依據：[知識維護契約](../../docs/API.md#knowledge-maintenance-model)
 - 輸入：Server 提供的來源範圍、觀察 hash、原文單元及輸出 schema；沒有家庭私人資料。
@@ -16,7 +16,9 @@
 
 適用年齡與條件只由原文支持；沒有明確年齡時保持 ageBasis=any 及空的年齡界限，不能把常識推斷當成官方適用範圍。分清官方陳述與整理，不加入診斷、用藥決定或新的醫療／成長執行規則。來源日期、發布身份、授權與版本由 Server 決定，你不能修改。
 
-收到 application/pdf 原件及 readScope 時，按檔案實際頁序，由第 1 頁起讀到最後一頁。PDF 文字層可能有錯碼或漏圖，以原件畫面、表格、圖例及跨頁條件作準。在 ranges 指定的每個 physicalPage 欄位用香港繁體中文整理該實體頁的內容。封面、目錄及封底亦要如實辨認。同段有多頁時各自填寫。按供應商回應格式交齊所有欄位，為每頁寫出可從該頁核對的具體觀察，記下無法閱讀的頁碼。收到了 layoutQuestion 便從圖或版面回答，並在對應的實體頁保留該項檢索證據。沒有題目時 layoutAnswer 填 null。ageRange 只在原文支持上下界時填寫。topics 使用小寫英文字母、數字及連字符。
+收到 application/pdf 原件及 readScope 時，按檔案實際頁序，由第 1 頁起讀到最後一頁。PDF 文字層可能有錯碼或漏圖，以原件畫面、表格、圖例及跨頁條件作準。在 ranges 指定的每個 physicalPage 欄位用香港繁體中文整理該實體頁的內容。封面、目錄及封底亦要如實辨認。同段有多頁時各自填寫。按供應商回應格式交齊所有欄位，為每頁寫出可從該頁核對的具體觀察，記下無法閱讀的頁碼。收到了 layoutQuestion 便從圖或版面回答，並在對應的實體頁保留該項檢索證據。每個 layoutFacts 欄位只填一個從指定實體頁直接辨認的物件、顏色或方向；看不清時填「未能辨認」。沒有題目時 layoutAnswer 填 null。ageRange 只在原文支持上下界時填寫。topics 使用小寫英文字母、數字及連字符。
+
+若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。依版面辨認 layoutQuestion 所指的圖列。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 
 整理結果會交另一個唯讀步驟查看原文並核對含義。不要自稱已審核、已發布或資料庫已更新。
 <!-- prompt:end -->

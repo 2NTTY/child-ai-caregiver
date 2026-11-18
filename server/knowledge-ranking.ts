@@ -91,7 +91,7 @@ function matches(query: ReadonlySet<string>, text: string): number {
 export function structuredQueryMatches(query: string, treatment: KnowledgeCandidate['treatment']) {
   if (treatment?.kind !== 'structured') return true;
   const identifiers = (text: string) => (text.normalize('NFKC').toLowerCase().match(/[a-z0-9]+(?:[-/.][a-z0-9]+)*/gu) ?? [])
-    .filter(word => /\d/u.test(word) && (/[a-z/.-]/u.test(word) || word.length >= 3));
+    .filter(word => /\d/u.test(word));
   const required = identifiers(query);
   const values = new Set(treatment.fields.flatMap(field => identifiers(field.value)));
   return required.every(word => values.has(word));

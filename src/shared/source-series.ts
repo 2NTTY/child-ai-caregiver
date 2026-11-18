@@ -14,11 +14,17 @@ const fhsSeries: Record<string, readonly [string, string]> = {
   'fhs-preschool-development': ['fhs-child-development', '兒童發展'],
   'fhs-child-vision': ['fhs-vision-screening', '學前兒童視力普查'],
 };
-export function sourceSeries(source: { sourceId: string; title: string; url: string }): SourceSeries {
+export function sourceSeries(source: { sourceId: string; title: string; url: string; series?: SourceSeries }): SourceSeries {
   const institutionId = new URL(source.url).hostname;
+  if (source.series && source.series.institutionId === institutionId) return source.series;
   const entry = institutionId === 'www.fhs.gov.hk' && Object.hasOwn(fhsSeries, source.sourceId) ? fhsSeries[source.sourceId] : undefined;
   return { institutionId, id: entry?.[0] ?? source.sourceId, name: entry?.[1] ?? source.title };
 }
+
+export const libraryArchiveSelectionSchema = z.strictObject({ seriesId: id,
+  editions: z.array(z.strictObject({ sourceId: id, versionHash: z.string().regex(/^[a-f0-9]{64}$/u) })).min(1).max(100),
+}).refine(value => new Set(value.editions.map(row => row.sourceId)).size === value.editions.length);
+export type LibraryArchiveSelection = z.infer<typeof libraryArchiveSelectionSchema>;
 
 export const libraryPreferenceChangeSchema = z.strictObject({
   seriesId: id, imported: z.literal(true).optional(), adopt: z.boolean().optional(), expectedRevision: z.int().nonnegative(), enabled: z.boolean(), mode: z.enum(['fixed', 'follow']),
@@ -38,3 +44,6 @@ export const chunkTreatmentSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('excluded'), policyVersion: z.literal(1), reason: z.string().min(1).max(240) }),
 ]);
 export type ChunkTreatment = z.infer<typeof chunkTreatmentSchema>;
+export function needsKnowledgeVector(treatment?: ChunkTreatment) {
+  return treatment?.kind !== 'structured' && treatment?.kind !== 'excluded';
+}

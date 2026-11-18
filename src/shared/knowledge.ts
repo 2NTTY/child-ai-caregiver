@@ -45,6 +45,7 @@ export interface KnowledgeChunkInput {
   applicability: KnowledgeApplicability;
 }
 export interface KnowledgeSourceInput {
+  series?: import('./source-series.ts').SourceSeries;
   sourceId: string;
   url: string;
   title: string;
