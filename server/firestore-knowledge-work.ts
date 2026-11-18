@@ -9,7 +9,7 @@ import {
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, BackgroundKnowledgeDurableOperation, BackgroundKnowledgePublishReceipt } from "./background-knowledge-maintenance.ts";
 import { backgroundKnowledgeReviewMatchesCandidate, KnowledgeModelQuotaPending } from "./background-knowledge-maintenance.ts";
-import { nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
+import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
@@ -35,7 +35,7 @@ const preparedSchema = z.strictObject({
   prepared: z.strictObject({
     source: z.unknown().transform(parseKnowledgeSource), versionHash: hash,
     assessment: knowledgeReviewAssessmentSchema, review: backgroundKnowledgeReviewBindingSchema,
-    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
+    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional(), destinationReview: destinationReviewSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
   }),
 });
 /** Restore keeps immutable evidence, binding and spent allowance across the snapshot boundary. */
