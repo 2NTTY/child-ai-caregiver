@@ -134,6 +134,16 @@ npm run agent:local -- --inspect-knowledge
 
 若首次以 `--no-model` 啟動後保存了關閉的管理政策，之後提供憑證不會自行取消該政策。先在同一本機 `/admin` 明確啟用平台 AI，再執行維護；`background_knowledge_disabled` 是開關阻止執行，不代表 key 或模型不支援。不要重設資料或清零用量來排除此情況。
 
+### 查回小冊子的已發布原件
+
+完成家庭健康服務英文加固小冊子的整本整理及獨立審核後，可用同一個本地環境驗一次聊天點讀。啟動本地網站時將 `fhs-feeding-booklet-en` 列入 `FIREBASE_KNOWLEDGE_SOURCE_IDS`，從本次維護收據取已發布的版本雜湊和原始 PDF 的 SHA-256。這兩個值在合規匯出匯入後仍可核對，每個資料庫的本地版本 ID 可不同。在另一個終端執行：
+
+```sh
+node --experimental-strip-types scripts/verify-agent-local.mjs --real-booklet-query <published-version-hash> <original-pdf-sha256>
+```
+
+命令先確認該版在帳戶的來源庫可見，再發一則關於圖解的自然問話。它讀回保存的回答、來源頁碼及原件，核對 PDF 位元組。已停止的 run 保留原收據；這個命令每次明確執行才會發送一則新問題。
+
 ## 保存、停止與重設
 
 輸入 `stop` 或按 Ctrl+C：停止本機 API／worker，完成 emulator 配對匯出後退出。每分鐘另做一次 checkpoint。正常重開會匯入最後完整快照；突然斷電／強殺可能丟失最近一個 checkpoint 之後的本地修改，不宣稱 emulator 等同正式資料庫的崩潰持久性。
