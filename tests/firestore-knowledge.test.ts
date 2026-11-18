@@ -1,6 +1,18 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createFirestoreAuthority } from '../server/firestore-authority.ts';
+import { createFirestorePersonalLibrary } from '../server/firestore-personal-library.ts';
+import { handlePersonalLibraryRequest } from '../server/personal-library-api.ts';
+import { createStorageCipher } from '../server/storage-crypto.ts';
+import { createProductAgentApi } from '../src/client/product-agent-api.ts';
+import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
+import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
+import { writeKnowledgeArchive, openKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
+import { readPortableEdition } from '../scripts/knowledge-transfer-operations.mjs';
 import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from "@google-cloud/firestore";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
 import { embeddingDocument, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
@@ -84,6 +96,141 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
   }
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
+test('REQ-006 two authenticated library owners independently pin, follow, adopt and withdraw the same public edition', async () => {
+  const f = fixture(), cipher = createStorageCipher(Buffer.alloc(32, 19));
+  const store = createFirestoreKnowledgeStore({ ...f.options, cipher });
+  const authority = createFirestoreAuthority({ ...f.options, cipher });
+  const library = createFirestorePersonalLibrary({ ...f.options, cipher, knowledge: store, authority });
+  await authority.initializeControl({ generation: crypto.randomUUID(), enabled: true });
+  const signal = new AbortController().signal;
+  async function account(user: string) {
+    const email = user + '@example.test';
+    await authority.issueInvitation({ email, expiresAt: new Date(Date.now() + 600000).toISOString(), operationId: crypto.randomUUID() });
+    await authority.admitIdentity({ userId: user, email, emailVerified: true });
+    await authority.acknowledge({ userId: user, operationId: crypto.randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    const child = await authority.createChild({ userId: user, operationId: crypto.randomUUID(), displayName: 'Synthetic' });
+    const client = createProductAgentApi('https://local.test', (url, init) => handlePersonalLibraryRequest(new Request(url, init), user,
+      { library, isCurrentUser: async id => id === user, readJson: request => request.json() }));
+    return { catalog: async () => (await client.getLibrary(child.scope.childId, signal, user)).items[0]!,
+      change: (value: import('../src/shared/source-series.ts').LibraryPreferenceChange) => client.setLibraryPreference!(child.scope.childId, signal, user, value),
+      search: async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: user })).map(hit => hit.versionId) };
+  }
+  const a = await account('synthetic-alice'), b = await account('synthetic-bob');
+  const one = await f.publish(), old = await a.catalog(), original = (await store.candidates(filter, null))[0]!;
+  const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
+    editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
+  assert.equal(old.preference?.mode, 'fixed'); assert.equal(old.preference?.selectedVersionId, one.versionId);
+  await b.change({ ...change, expectedRevision: (await b.catalog()).preference!.revision, mode: 'follow' });
+  const two = await f.publish({ ...one.document, title: 'Renamed selected guidance' }, one);
+  assert.deepEqual(await a.search(), [one.versionId]); assert.deepEqual(await b.search(), [two.versionId]);
+  const latest = await a.catalog();
+  assert.equal(latest.series!.id, old.series!.id); assert.equal(latest.preference!.selectedVersionHash, one.hash);
+  assert.equal(original.title, old.title); assert.equal(original.series!.name, old.series!.name);
+  const next = { ...change, expectedRevision: latest.preference!.revision, editions: [{ sourceId: old.sourceId, versionId: two.versionId }] };
+  await a.change({ ...next, enabled: false, mode: 'fixed' });
+  assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), [two.versionId]);
+  await assert.rejects(a.change({ ...next, enabled: true, mode: 'fixed' }), { status: 409 });
+  const revision = (await a.catalog()).preference!.revision;
+  const imported = { ...change, expectedRevision: revision, imported: true as const, mode: 'fixed' as const,
+    editions: [{ sourceId: old.sourceId, versionHash: one.hash }] };
+  await assert.rejects(a.change({ ...imported, editions: [{ sourceId: old.sourceId, versionHash: 'f'.repeat(64) }] }), { status: 409 });
+  await a.change(imported);
+  const widened = { ...two.document, chunks: [chunk('first', { applicability: { ...chunk('first').applicability, topics: ['care', 'new-scope'] } })] };
+  await f.publish(widened, two);
+  assert.deepEqual(await b.search(), [], 'Following requires acceptance of a scope change');
+  assert.deepEqual(await a.search(), [one.versionId]);
+  await store.disable(old.sourceId, 'Synthetic withdrawal');
+  assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
+});
+
+test('REQ-006 registered live pages check per-user opt-out and watch withdrawal without creating a subscription or requiring an index', async () => {
+  const html = SOURCE_WATCHES.find(item => item.id === 'fhs-solid-food')!;
+  const pdf = parseKnowledgeSource(JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'))
+    .find((item: KnowledgeSourceInput) => item.sourceId === 'fhs-feeding-booklet-en'));
+  const f = fixture([pdf.sourceId, html.id, 'chp-recent']);
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [html],
+    async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+  const store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 13)), observations: refresh.gate });
+  assert.equal(await store.mayReadLivePage('alice', html.id), true);
+  assert.equal(await store.mayReadLivePage('alice', 'chp-recent'), false);
+  assert.equal(await store.mayReadLivePage('alice', 'other-page'), false);
+  assert.equal(await store.publishedLiveSeries(html.id, html.url), null); assert.equal(f.records.size, 0);
+  await f.publish(pdf);
+  const first = (await store.catalogForUser('alice', null)).items[0]!;
+  assert.equal((await store.publishedLiveSeries(html.id, html.url))?.id, first.series?.id);
+  await f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'alice', { mode: 'fixed', enabled: false, expectedRevision: first.preference!.revision,
+    seriesId: first.series!.id, editions: [{ sourceId: pdf.sourceId, versionId: first.versionId }] }));
+  assert.equal(await store.mayReadLivePage('alice', html.id), false);
+  assert.equal(await store.mayReadLivePage('bob', html.id), true);
+  await refresh.register(html.id, 'synthetic-operator'); await refresh.disable(html.id);
+  assert.equal(await store.mayReadLivePage('bob', html.id), false);
+});
+
+test('REQ-006 real FHS PDF edition and parser evidence round-trip through the public ZIP into a separately reviewed index', async t => {
+  const seed: unknown[] = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'));
+  const pdf = seed.map(parseKnowledgeSource).find(source => source.sourceId === 'fhs-feeding-booklet-en')!;
+  const definition = SOURCE_WATCHES.find(source => source.id === pdf.sourceId)!;
+  const observed = { url: pdf.url, title: 'Original PDF publication title', text: pdf.chunks[0]!.originalText!, extraction: pdf.extraction,
+    pages: [{ page: 3, text: pdf.chunks[0]!.originalText!, status: 'text' as const }], sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+  async function environment() {
+    const f = fixture([pdf.sourceId]), refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+      async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+    return { ...f, knowledge: createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate }), async observe() {
+      await refresh.register(definition.id, 'synthetic-operator');
+      await refresh.process((await refresh.jobs())[0]!.data, crypto.randomUUID(), async () => ({ status: 'ok', items: [observed] }), new AbortController().signal);
+    } };
+  }
+  const src = await environment(), dest = await environment();
+  await src.observe();
+  const first = await src.knowledge.importSource(pdf), review = { ...assessment(pdf), observationHash: observationHash(observed) };
+  for (let n = 0; n < 4; n++) await src.knowledge.prepareSearch(first.versionId, first.hash);
+  await src.knowledge.review(first.versionId, first.hash, 'synthetic-operator', review);
+  await src.knowledge.publish(first.versionId, first.hash, embeddings(pdf));
+  const dir = await mkdtemp(join(tmpdir(), 'req006-pdf-')); t.after(() => rm(dir, { recursive: true, force: true }));
+  const path = join(dir, 'feeding.zip'), selected = [{ sourceId: pdf.sourceId, versionHash: first.hash }];
+  const written = await writeKnowledgeArchive(path, selected, row => src.knowledge.exportPublishedEdition(row.sourceId, row.versionHash));
+  const archive = await openKnowledgeArchive(path, written.sha256); t.after(() => archive.close());
+  const raw = await archive.readEdition(0) as Awaited<ReturnType<typeof src.knowledge.exportPublishedEdition>>;
+  const portable = readPortableEdition(raw, archive.entries[0]!);
+  assert.deepEqual(portable.source, pdf); assert.equal(portable.library!.method!.reader.kind, 'pdf');
+  assert.equal(portable.library!.method!.sample.excerptHash, knowledgeHash(pdf.chunks[0]!.sourceExcerpt));
+  assert.equal(portable.library!.method!.sample.titleHash, knowledgeHash(observed.title));
+  assert.deepEqual(portable.embeddings, embeddings(pdf));
+  const mismatch = readPortableEdition({ ...raw, library: { ...raw.library, vectorSpace: 'unrelated-space' } }, archive.entries[0]!);
+  assert.deepEqual(mismatch.embeddings, []); assert.deepEqual(mismatch.source, pdf);
+  assert.throws(() => readPortableEdition({ ...raw, library: { ...raw.library, method: { ...raw.library!.method, execute: 'untrusted' } } }, archive.entries[0]!));
+  const local = await dest.knowledge.importSource(portable.source, undefined, portable.library);
+  const state = () => dest.records.get(dest.options.namespace + '_knowledge_versions/' + local.versionId)!.imported.methodState;
+  assert.equal(state(), 'pending_local_check');
+  await dest.observe();
+  const wrongReader = structuredClone(portable.library!); wrongReader.method!.reader.version = '0.0.1';
+  await dest.knowledge.importSource(portable.source, undefined, wrongReader); assert.equal(state(), 'pending_local_check');
+  await dest.knowledge.importSource(portable.source, undefined, portable.library); assert.equal(state(), 'verified_locally');
+  assert.deepEqual((await dest.knowledge.catalog()).items, []);
+  for (let n = 0; n < 4; n++) await dest.knowledge.prepareSearch(local.versionId, local.hash);
+  await dest.knowledge.review(local.versionId, local.hash, 'destination-operator', review);
+  await dest.knowledge.publish(local.versionId, local.hash, portable.embeddings);
+  const hit = (await dest.knowledge.candidates(filter, null, { query: 'iron' }))[0]!;
+  assert.equal(hit.versionHash, first.hash); assert.equal(hit.series?.id, 'fhs-infant-feeding');
+  assert.equal(hit.pageStart, 3); assert.equal(hit.extraction?.complete, false); assert.equal(hit.sourceExcerpt, pdf.chunks[0]!.sourceExcerpt);
+});
+
+test('REQ-006 structural identifiers match exactly, excluded rows stay archived and detailed exceptions remain retrievable', async () => {
+  const detailed = chunk('safety', { treatment: { kind: 'detailed', policyVersion: 1 } });
+  const structured = chunk('batch', { originalText: 'Confirmed batch HK-640 on 2026-01-14.', treatment: {
+    kind: 'structured', policyVersion: 1, fields: [{ label: 'Batch', value: 'HK-640' }, { label: 'Date', value: '2026-01-14' }] } });
+  const noise = chunk('navigation', { treatment: { kind: 'excluded', policyVersion: 1, reason: 'Navigation' } });
+  const f = fixture(), doc = source('synthetic-guidance', [detailed, structured, noise]);
+  const input = await f.store.importSource(doc); await f.store.review(input.versionId, input.hash, 'operator', assessment(doc));
+  assert.equal((await f.store.missingDocuments(input.versionId)).length, 1, 'identical embedding inputs are shared');
+  await f.store.publish(input.versionId, input.hash, embeddings(doc).filter(item => item.chunkKey !== 'navigation'));
+  assert.equal((await f.store.candidates(filter, null, { query: 'HK-640' }))[0]?.key, 'batch');
+  assert.ok(!(await f.store.candidates(filter, vector, { query: 'HK-641' })).some(row => row.key === 'batch'));
+  assert.deepEqual((await f.store.candidates(filter, null)).map(hit => hit.key).sort(), ['batch', 'safety']);
+  const packet = await f.store.exportPublishedEdition(doc.sourceId, input.hash);
+  assert.ok(packet.source.chunks.some(row => row.key === 'navigation')); assert.equal(packet.embeddings.length, 2);
+});
+
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
 
 test("operator edition export returns portable source and compatible vectors in one read-only transaction and fences stale or unavailable editions", async t => {
@@ -96,7 +243,8 @@ test("operator edition export returns portable source and compatible vectors in 
   assert.deepEqual(transactions.mock.calls[0]!.arguments[1], { readOnly: true });
   t.mock.restoreAll();
   assert.deepEqual([...f.records], before);
-  assert.deepEqual(exported, { source: parseKnowledgeSource(published.document), versionHash: published.hash, embeddings: embeddings(published.document) });
+  assert.deepEqual(exported.library?.series, { id: published.document.sourceId, institutionId: 'www.fhs.gov.hk', name: published.document.title });
+  assert.deepEqual({ ...exported, library: undefined }, { library: undefined, source: parseKnowledgeSource(published.document), versionHash: published.hash, embeddings: embeddings(published.document) });
   assert.doesNotMatch(JSON.stringify(exported), /synthetic-operator|reviewer|projectId|namespace|chunkId|vectorHash/u);
   // The destination still performs its own review and publication; only the compatible vector payload travels.
   const destination = fixture(), imported = await destination.store.importSource(exported.source);

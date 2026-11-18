@@ -2,29 +2,34 @@ import { z } from 'zod';
 import { parseKnowledgeSource, sourceVersionHash, embeddingDocument, internalKnowledgeSource } from '../server/knowledge-inputs.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 
+import { checkPortableSource, checkPortableSeries, portableSeriesSchema } from '../server/knowledge-portable-series.ts';
+
 const hex = z.string().regex(/^[a-f0-9]{64}$/u);
 const vector = z.strictObject({
   chunkKey: z.string().min(1).max(100), inputHash: hex, model: z.string().min(1).max(180), dimensions: z.int().min(1).max(4096),
   pipeline: z.string().min(1).max(100), values: z.array(z.number().finite().min(-1e10).max(1e10)).min(1).max(4096),
 }).refine(row => row.values.length === row.dimensions && row.values.some(v => v !== 0));
-const edition = z.strictObject({ source: z.unknown(), versionHash: hex, embeddings: z.array(vector).max(32) });
+const edition = z.strictObject({ source: z.unknown(), versionHash: hex, library: portableSeriesSchema.optional(), embeddings: z.array(vector).max(32) });
 function reject(reason) { throw new Error(reason); }
 
 export function readPortableEdition(raw, entry) {
+  if (raw?.kind === 'published_reference') reject('knowledge_transfer_reference_only');
   const data = edition.parse(raw), source = parseKnowledgeSource(data.source);
   if (source.sourceId !== entry.sourceId || data.versionHash !== entry.versionHash || sourceVersionHash(source) !== entry.versionHash)
     reject('knowledge_transfer_binding_invalid');
   if (internalKnowledgeSource(source.url)) reject('knowledge_transfer_internal_source');
+  checkPortableSource(source);
+  const library = data.library ? checkPortableSeries(source, data.library) : undefined;
   const checked = [], seen = new Set();
   for (const row of data.embeddings) {
     const chunk = source.chunks.find(item => item.key === row.chunkKey);
     if (!chunk || seen.has(row.chunkKey)) reject('knowledge_transfer_vector_invalid');
     seen.add(row.chunkKey);
-    if (row.model !== KNOWLEDGE_EMBEDDING.model || row.dimensions !== KNOWLEDGE_EMBEDDING.dimensions || row.pipeline !== KNOWLEDGE_EMBEDDING.pipeline) continue;
+    if (library && library.vectorSpace !== 'vertex-retrieval-document-cosine' || row.model !== KNOWLEDGE_EMBEDDING.model || row.dimensions !== KNOWLEDGE_EMBEDDING.dimensions || row.pipeline !== KNOWLEDGE_EMBEDDING.pipeline) continue;
     if (row.inputHash !== embeddingDocument(source.title, chunk.section, chunk.text).hash) reject('knowledge_transfer_vector_invalid');
     checked.push(row);
   }
-  return { source, embeddings: checked };
+  return { source, embeddings: checked, ...(library ? { library } : {}) };
 }
 
 export async function importKnowledgePage({ ledger, store, archive, digest, operator, limit, signal, expectedRevision }) {
@@ -38,7 +43,7 @@ export async function importKnowledgePage({ ledger, store, archive, digest, oper
     try {
       const portable = readPortableEdition(await archive.readEdition(job.next), entry);
       signal?.throwIfAborted();
-      await store.importSource(portable.source, ledger.fence(job, entry, operator));
+      await store.importSource(portable.source, ledger.fence(job, entry, operator), portable.library);
     } catch (error) {
       signal?.throwIfAborted();
       const reason = error instanceof z.ZodError ? 'knowledge_transfer_edition_invalid'

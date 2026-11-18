@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { z } from 'zod';
+import { handlePersonalLibraryRequest } from '../server/personal-library-api.ts';
+import { createProductAgentApi } from '../src/client/product-agent-api.ts';
 import { createFirestorePersonalLibrary } from '../server/firestore-personal-library.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 const scope = { ownerUserId: 'synthetic-owner', workspaceId: '11111111-1111-4111-8111-111111111111',
@@ -22,6 +25,27 @@ test('public catalogue cursor binds the current account, child, epoch and author
   const other = createFirestorePersonalLibrary({ ...base, projectId: 'another-project', authority: { async readScope() { return { scope, authorizationVersion: '1' }; } },
     knowledge: { async catalog() { throw new Error('must not load'); } } });
   await assert.rejects(other.page(scope.ownerUserId, scope.childId, first.nextCursor), { code: 'invalid_cursor' });
+});
+
+test('existing strict Android catalogue and new series-aware client read the same authenticated route', async () => {
+  // Keep the released client's field set independent of the current contract.
+  const time = z.iso.datetime({ offset: true });
+  const released = z.strictObject({ items: z.array(z.strictObject({ sourceId: z.string(), versionId: z.uuid(), title: z.string(),
+    publisher: z.string(), url: z.url(), classification: z.enum(['official_guidance', 'recent_information']), checkedAt: time,
+    sourceUpdatedAt: time.nullable(), validUntil: time.nullable() })), nextCursor: z.string().nullable(), complete: z.boolean() });
+  const item = { sourceId: 'fhs-solid-food', versionId: scope.storageEpoch, title: 'Booklet', publisher: 'FHS', url: 'https://www.fhs.gov.hk/',
+    classification: 'official_guidance' as const, checkedAt: '2026-11-01T12:00:00Z', sourceUpdatedAt: null, validUntil: null,
+    series: { id: 'fhs-infant-feeding', institutionId: 'www.fhs.gov.hk', name: 'Feeding' }, versionHash: 'a'.repeat(64),
+    preference: { revision: 1, enabled: true, mode: 'fixed' as const, selectedVersionId: scope.storageEpoch, eligible: true } };
+  const library = { async page() { return { items: [item], registered: [], complete: true, nextCursor: null }; } };
+  const route = (req: Request) => handlePersonalLibraryRequest(req, scope.ownerUserId, { library, isCurrentUser: async () => true });
+  const baseUrl = 'https://example.test', path = '/api/children/' + scope.childId + '/library';
+  const old = await route(new Request(baseUrl + path, { headers: { accept: 'application/json', 'x-expected-user-id': scope.ownerUserId } }));
+  assert.equal(old.status, 200); assert.equal(released.parse(await old.json()).items[0]?.versionId, item.versionId);
+  const client = createProductAgentApi(baseUrl, (url, init) => route(new Request(url, init)));
+  const current = await client.getLibrary(scope.childId, new AbortController().signal, scope.ownerUserId);
+  assert.equal(current.items[0]?.series?.id, item.series.id); assert.deepEqual(current.items[0]?.preference, item.preference);
+  assert.deepEqual(current.registered, []);
 });
 
 test('scope changes while reading the public catalogue do not return a stale success', async () => {

@@ -581,7 +581,7 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         const result: ProductAgentResult = unchanged ? value : { ...value, status: 'stopped', stopReason: 'unauthorized',
           text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
           citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };
-        if (!unchanged) { delete result.outcome; delete result.deliveryReview; }
+        if (!unchanged) { delete result.outcome; delete result.deliveryReview; delete result.liveCitations; }
         // A stale summary is optional; an invalid authority/read is not a silent empty summary.
         let prepared: Awaited<ReturnType<FirestoreMemoryStore['prepareSummaryWrite']>> | undefined;
         if (summary && result.status === 'completed') {

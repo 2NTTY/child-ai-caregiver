@@ -84,7 +84,7 @@ export interface FirebaseRequestHandlerOptions {
   files?: FirebaseChatFileApiPort;
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
-  library?: Pick<PersonalLibrary, "page">;
+  library?: PersonalLibrary;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
@@ -443,7 +443,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
-        const response = await handlePersonalLibraryRequest(request, userId, { library, isCurrentUser });
+        const response = await handlePersonalLibraryRequest(request, userId, { library, isCurrentUser, readJson });
         if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }

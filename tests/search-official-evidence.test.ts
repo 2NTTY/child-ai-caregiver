@@ -887,6 +887,13 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   assert.ok(realSeedDraftSource.excerpt.includes("若孩子現已佩戴眼鏡"));
   assert.ok(realSeedDraftSource.excerpt.includes("請盡快到家庭或眼科醫生求診"));
   assert.ok(preschoolOriginalText.indexOf("請盡快到家庭或眼科醫生求診") >= 800, "Final eye-doctor clause lies past char 800");
+  const tool = realLongTools.tools.find(tool => tool.name === 'present_answer')!;
+  const cited = (text: string) => tool.execute({ kind: 'caregiving', paragraphs: [{ text: '引用普查指引。', citationIds: [realSeedLongChunk.chunkId] }],
+    originalQuotes: [{ chunkId: realSeedLongChunk.chunkId, text }] }, { callId: 'selected-original' } as any);
+  assert.equal((await cited('文字不在原件內')).status, 'rejected');
+  const actual = '請盡快到家庭或眼科醫生求診';
+  assert.equal((await cited(actual)).status, 'succeeded');
+  assert.equal((await realLongTools.presentation())?.citations[0]?.citedExcerpt, actual);
 });
 
 test("insufficient evidence cleanly stops with delivery_review_no_sources while retaining sources without hallucinated text (REQ-001 §7 Line 6)", async (t) => {

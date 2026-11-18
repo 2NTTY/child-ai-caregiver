@@ -15,12 +15,16 @@ export const lexicalBucket = (hash: string) => Number.parseInt(hash.slice(0, 2),
 export function knowledgeLexicalIndex(title: string, chunks: readonly { chunkId: string; document: KnowledgeChunkInput }[]) {
   const buckets: LexicalTerms[] = Array.from({ length: KNOWLEDGE_LEXICAL_BUCKETS }, () => ({}));
   for (const { chunkId, document } of chunks) {
+    if (document.treatment?.kind === 'excluded') continue;
     const scores = new Map<string, number>();
     const add = (text: string, weight: number) => {
       for (const token of knowledgeIndexTokens(text)) scores.set(token, (scores.get(token) ?? 0) + weight);
     };
     add(title, 4); add(document.section, 3); add(document.text, 1);
     document.keywords.forEach(text => add(text, 5)); document.applicability.topics.forEach(text => add(text, 4));
+    if (document.treatment?.kind === 'structured') for (const field of document.treatment.fields) {
+      add(field.label, 4); add(field.value, 8);
+    }
     for (const [token, score] of scores) {
       const hash = lexicalTokenHash(token), bucket = buckets[lexicalBucket(hash)]!;
       (bucket[hash] ??= []).push({ chunkId, score });
