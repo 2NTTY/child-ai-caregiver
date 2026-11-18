@@ -2,7 +2,7 @@ import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
 import { normalizeChatInput } from "./chat-input.ts";
-import { reconcileAgentProgress, type AgentProgress, type OfficialHelpId } from '../shared/agent-feedback.ts';
+import { reconcileAgentProgress, type AgentProgress, type AgentProgressSource, type OfficialHelpId } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
 import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -41,7 +41,7 @@ export interface ChatState {
   remoteReply?: ChatReplyState | null;
   replyingMessageId: string | null;
   replyError: string | null;
-  feedback?: (AgentProgress & { cards: OfficialHelpId[] }) | null;
+  feedback?: (AgentProgress & { cards: OfficialHelpId[]; sources: AgentProgressSource[] }) | null;
 }
 
 interface RequestScope {
@@ -730,4 +730,5 @@ export class ChatController {
     this.listeners.clear();
   }
 }
+
 

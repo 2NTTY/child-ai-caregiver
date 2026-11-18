@@ -1,7 +1,7 @@
 import { BackgroundSurface, useCustomBackground } from "../components/appearance/BackgroundSurface";
 import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
-import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
+import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -118,6 +118,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
     {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
+    {chat.busy === "reply" && chat.feedback?.sources.length ? <ProgressSourceCards sources={chat.feedback.sources} reviewing={chat.feedback.phase === "reviewing"} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
@@ -241,3 +242,4 @@ const styles = StyleSheet.create({
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
   disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
+
