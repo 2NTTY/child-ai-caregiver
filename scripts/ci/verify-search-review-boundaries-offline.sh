@@ -29,6 +29,14 @@ test "$("$NODE_BIN" --version)" = "v24.22.1"
 GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
+  tests/agent-feedback-sources.test.ts
+  tests/chat-progress-integration.test.ts
+  tests/chat-run-recovery.test.ts
+  tests/chat-recovered-draft.test.ts
+  tests/chat-web-sources-copy.test.ts
+  tests/chat-busy-stop-feedback.test.ts
+  tests/chat-stop-feedback.test.ts
+  tests/agent-work-continuation-recovery.test.ts
   tests/pr608-review-regressions.test.mjs
   tests/search-review-boundaries.test.ts
   tests/agent-review-obligation.test.ts
@@ -36,7 +44,7 @@ TEST_FILES=(
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(11 12 17 44 9 8)
+TEST_CASES=(5 7 6 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

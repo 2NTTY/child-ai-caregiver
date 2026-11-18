@@ -6247,3 +6247,79 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P4）SSE 進度收斂、同機重連原執行狀態恢復與訊息同步 (`codex/search-run-recovery`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P4（REQ-001 §4.2、REQ-002 §4.3、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：消除 SSE 重試／亂序造成的重複進度閃爍，支援同機網路閃斷後沿原背景 run 恢復狀態，並在背景回覆完成時即時更新訊息列表。
+- Actual Work：
+  - 於 `src/shared/agent-feedback.ts` 實作 `reconcileAgentProgress`，確保同 `runId`/`messageId` 的進度階段單調前進且求助卡去重。
+  - 於 `src/client/chat-controller.ts` 強化 `requestReply` 的串流中斷降級檢查（若 `getOriginalReply` 回報 `status === "running"` 則保留 `remoteReply` 狀態供 `refreshOriginalReply` 接手），並於 `readOriginal` 偵測到 `completed` 時立即刷新 `listMessages`。
+  - 於 `frontend/src/screens/chatScreen.tsx` 避免在對應回覆訊息已送達時繼續顯示執行中狀態橫幅。
+  - 新增 `tests/chat-run-recovery.test.ts`、`scripts/ci/verify-search-run-recovery-offline.sh` 與 `.github/workflows/search-run-recovery-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/chat-run-recovery.test.ts tests/chat-web-sources-copy.test.ts tests/chat-busy-stop-feedback.test.ts tests/chat-stop-feedback.test.ts tests/agent-work-continuation-recovery.test.ts`（5 個完整測試檔共 **17/17** 通過：4 + 7 + 1 + 2 + 3，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P4 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` (`B-P4-1`) 進行 forward-only 修復：
+1）將 `reconcileAgentProgress` 的階段保護由特例（僅保護 `reviewing` 與 `started`）升級為完整單調階序 `AGENT_PROGRESS_PHASE_RANK`（`started: 0, model: 1, help: 1, working: 2, searching: 2, reading: 2, tool_finished: 3, reviewing: 4`），確保遲到 `searching`/`reading`/`working`/`model`/`started` 絕不覆寫 `tool_finished` 或高階階段，同時維持 `help` 卡片累積與 `card` schema 一致性。
+2）於 [chat-run-recovery 測試](tests/chat-run-recovery.test.ts) 增補 `tool_finished` 拒退回 `searching`/`model` 與 `searching` 拒退回 `model` 斷言；將 CI workflow 與 `scripts/ci/verify-search-run-recovery-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 與 `summary-progress-contract.mjs` 驗證契約。
+
+### 2026-11-18　B-P4 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-run-recovery`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P4 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+## 2026-11-14　Slice B（B-P3）檢索中官方來源卡片即時串流與對話預覽 (`codex/search-source-progress`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P3（REQ-002 §§5.1–5.2、§7.2）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：在正式回覆完成前，將已檢索與已精讀的官方來源卡片即時串流至前端對話視窗，讓照顧者在等待期間可先行點擊查閱官方指引。
+- Actual Work：
+  - 更新 `src/shared/agent-feedback.ts`（新增 `agentProgressSourceSchema` 與 `mergeAgentProgressSources`）、`server/agent-feedback-stream.ts`、`server/product-agent-tools.ts` 及 `server/product-agent.ts`，於 `search_knowledge` 與 `read_knowledge_context` 完成時發布 `stage: "found" | "read"` 的官方來源預覽卡。
+  - 更新 `src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx` 與 `frontend/src/screens/chatScreen.tsx`，在 `chat.busy === "reply"` 期間顯示 `ProgressSourceCards`。
+  - 新增 `tests/agent-feedback-sources.test.ts`、`scripts/ci/verify-search-source-progress-offline.sh` 與 `.github/workflows/search-source-progress-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/agent-feedback-sources.test.ts tests/chat-delivery-review.test.ts tests/product-agent-execution-contract.test.ts tests/chat-web-sources-copy.test.ts`（4 個完整測試檔共 **64/64** 通過：5 + 44 + 8 + 7，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server，無法於 `unshare --net` 或 socket guard 下執行）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`）；未執行真實 Gemini/Vertex API、未連接真實 PostgreSQL／Firestore、未執行 GitHub Actions 雲端 runner 或 Android 實機驗收；依指示嚴格保留於本地分支，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P3 R1 審核修復補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復：
+1）`B-P3-1`：`mergeAgentProgressSources` 現保證遲到的 `found` 不會以較舊／局部 `excerpt`、`title`、`section`、`publisher` 或 `applicabilityStatus` 覆寫已 `read` 條目（僅補全缺失 metadata），超過 `AGENT_PROGRESS_MAX_SOURCES = 6` 時優先保留 `read` 卡片並統一截斷於 6 筆（對齊後端、schema 與 UI）。
+2）`B-P3-2`：`toAgentProgressSource` 的 `fetchedAt` 改為 `nullable()`，缺日期時維持 `null` 而不偽造 `1970-01-01`；`OfficialHelpCards.tsx` 改用 `formatProgressSourceDateText` 且無日期時省略 `更新／檢查：` 列；`url` 嚴格限制僅允許 `https://`（非 HTTPS 置 `null` 且 schema 拒絕）。
+3）測試與 CI 對齊：`tests/agent-feedback-sources.test.ts` 改用 in-memory injected `fetch` 驗證完整 `createChatApi` → `handleChatRequest`/`handleProductAgentRequest` SSE 串流（無 loopback port、`blockedAttempts: 0`），並於 CI workflow 與 `scripts/ci/verify-search-source-progress-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約；`PLAN.md` 同步更正欄位名稱（`publisher`）與實測數字（64 離線 + 4 loopback）。
+
+### 2026-11-17　B-P3 R8 文件更正（D1 append-only 恢復）
+
+- **更正說明**：依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（D1）與 `AGENTS.md:125` 嚴格 append-only 規範，以 forward-only 方式恢復 `2b29f39` 既有紀錄（`2026-11-14　B-P3 R1 審核修復補充` 第 2 點原句），並於此另起獨立紀錄補述同一決策，不重寫歷史。
+- **補充決策紀錄（`applicabilityStatus`）**：未經獨立交付審核之即時進度來源（`AgentProgressSource`），其 `applicabilityStatus` 嚴格限制為警示性質之 `'conditional' | 'requires_clarification'`，不在獨立審核完成前於進度事件傳遞 `'applicable'`。
+
+### 2026-11-18　B-P3 正向合併最新 origin/master（cd1193b2）並開立 PR
+
+- **Merge 動作**：將 `origin/master`（`cd1193b2`，含 `#596`–`#598`）正向無改歷史合併至 `codex/search-source-progress`，僅按嚴格 append-only 次序解開 `WORKLOG.md` 尾段衝突（保留 `#596` 與 B-P3 所有歷史紀錄）並觸發 GitHub PR（HOLD MERGE，等待獨立審核與 Hosted CI）。
+
+### 2026-11-18　正向合併最新 origin/master（a7c24296）並更新 PR
+
+將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
+
+
+
+### 2026-11-18　#601 與已合併 #602 正向整合
+
+保留來源卡、因果 sequence、原運行恢復及已完成回覆草稿修復；合併共享進度收斂，遲到 read 可提升同一來源 found 狀態，但不倒退全局 phase／sequence、不覆寫較新 metadata 或恢復被屏蔽 URL。新增 7 項整合測試；#601 CI 納入兩 PR 去重後 10 個整檔、預期 86 案及三組既有型別檢查。隔離本機 11 項與獨立補充 9 個斷言通過；完整 exact-head CI 需推送後核實，不代表真模型、正式資料或畫面驗收。
+

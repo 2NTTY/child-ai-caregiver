@@ -345,8 +345,18 @@ export function createProductAgent(options: {
         return await isCurrentUser() ? original : null;
       }
       const shown = new Set<string>();
-      const publish = (phase: AgentProgress['phase'], card?: AgentProgress['card']) => {
-        try { onProgress?.({ runId: claim.runId, messageId, phase, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
+      let sequence = 0;
+      const publish = (phase: AgentProgress['phase'], extra?: { card?: AgentProgress['card']; sources?: AgentProgress['sources'] }) => {
+        try {
+          onProgress?.({
+            runId: claim.runId,
+            messageId,
+            phase,
+            sequence: ++sequence,
+            ...(extra?.card ? { card: extra.card } : {}),
+            ...(extra?.sources?.length ? { sources: extra.sources } : {}),
+          });
+        } catch { /* Observation cannot change execution. */ }
       };
       publish('started');
       const recent = selectRecentConversation(page.messages, index, { upstreamHasEarlierMessages: page.nextCursor != null });
@@ -403,7 +413,8 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
             trustedUserMessage: page.messages[index]!.text,
-            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } },
+            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
+            onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
           });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
@@ -509,3 +520,5 @@ export function createProductAgent(options: {
   };
 }
 export type ProductAgent = ReturnType<typeof createProductAgent>;
+
+

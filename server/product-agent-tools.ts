@@ -2,7 +2,7 @@ import { materialQuery, selectedMaterialCitations, type MaterialQuery, type Mate
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
-import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
+import { officialHelpIdSchema, toAgentProgressSource, type AgentProgressSource, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import { assistantTaskContextRequestSchema, type AssistantTaskContextPage } from '../src/shared/assistant-task-context.ts';
 import { selectedCareFiltersSchema, selectedCareCursorSchema, type SelectedCarePage, type SelectedCareRequest } from '../src/shared/assistant-care-context.ts';
@@ -120,6 +120,7 @@ export function createProductAgentTools(options: {
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: ChatFileAgentReader;
   onOfficialHelp?: (id: OfficialHelpId) => void;
+  onKnowledgeSources?: (sources: AgentProgressSource[], stage: AgentProgressSource['stage']) => void;
   includeDocuments?: boolean;
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   includeConcerns?: boolean; includePrivateSources?: boolean; ordinaryToolNames?: readonly string[];
@@ -571,6 +572,11 @@ export function createProductAgentTools(options: {
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
         if (result.chunks.length > 0) deliveryReview.require("review");
+        const progressSources = result.chunks
+          .map(chunk => toAgentProgressSource(chunk, "found"))
+          .filter((item): item is AgentProgressSource => item !== null)
+          .slice(0, 6);
+        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
         return result;
       }) },
     { name: "read_knowledge_context", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
@@ -585,6 +591,11 @@ export function createProductAgentTools(options: {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
         if (result.chunks.length > 0) deliveryReview.require("review");
+        const progressSources = result.chunks
+          .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
+          .filter((item): item is AgentProgressSource => item !== null)
+          .slice(0, 6);
+        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "read");
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
@@ -965,4 +976,5 @@ export function createProductAgentTools(options: {
     },
   };
 }
+
 
