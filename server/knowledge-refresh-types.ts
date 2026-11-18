@@ -31,11 +31,12 @@ export interface ObservedContent {
   sourcePublishedAt: string | null;
   sourceUpdatedAt: string | null;
   sourceDateText: string | null;
+  nativeWindowMethod?: "native-pdf-window/1";
   rssItem?: { xml: string; copyright: string };
   extraction?: import("../src/shared/knowledge.ts").KnowledgeExtraction;
   pages?: { page: number; text: string; status: "text" | "empty" | "unreadable" }[];
 }
-export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
+export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; readMethod?: string; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
   | { status: "unavailable"; httpStatus: 404 | 410 }
   | { status: "failed"; reason: "network" | "timeout" | "response" | "parse" };
 export type SourceFetcher = (definition: SourceWatchDefinition, signal: AbortSignal) => Promise<SourceFetchResult>;

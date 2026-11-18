@@ -38,6 +38,8 @@ export interface KnowledgeChunkInput {
   section: string;
   sourceExcerpt: string;
   originalText?: string;
+  /** Source position is the original for textless material. Transcriptions are independently checked against the page image. */
+  originalKind?: "page_excerpt" | "page_transcription" | "visual_page";
   pageStart?: number;
   pageEnd?: number;
   text: string;

@@ -1,6 +1,6 @@
 {
   "schema": "req004-native-pdf-chp-verification/v1",
-  "observedAt": "2026-11-18T20:16:49.411Z",
+  "observedAt": "2026-11-18T20:54:08.570Z",
   "baseline": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
   "environment": {
     "node": "24.11.0",
@@ -37,8 +37,8 @@
     "layout": {
       "physicalPage": 6,
       "row": "Fruit",
-      "observed": "左圖為蘋果和金屬匙羹，藍色箭嘴向右指向碟內的果蓉。",
-      "method": "直接檢視原 PDF 的第六實體頁渲染。"
+      "observed": "左圖為紅皮的半個蘋果和金屬匙羹，中間的藍色箭嘴向右，右圖為黃橙色果蓉。",
+      "method": "直接檢視同版原 PDF 的第 6 實體頁渲染，並由整合端獨立重看。"
     },
     "model": "gemini-3.1-flash-lite",
     "region": "global",
@@ -396,6 +396,90 @@
     "focusedModelTests": {
       "passed": 5,
       "targetedTypescript": true
+    },
+    "windowedPdf": {
+      "method": "native-pdf-window/1",
+      "commits": [
+        "0fd108d5",
+        "5e901a36"
+      ],
+      "script": "tests/firestore-knowledge-pdf-windows-emulator.mjs",
+      "environment": "本機 Firestore emulator、真 33 頁合成 PDF、合成模型及向量；掃描樣本沒有使用付費 OCR 或 vision。",
+      "inputPages": 33,
+      "core": [
+        [
+          1,
+          14
+        ],
+        [
+          15,
+          28
+        ],
+        [
+          29,
+          33
+        ]
+      ],
+      "attached": [
+        [
+          1,
+          15
+        ],
+        [
+          14,
+          29
+        ],
+        [
+          28,
+          33
+        ]
+      ],
+      "observedSourceMethod": "fhs-registered-pdf-anchor/1",
+      "valid": {
+        "generations": 6,
+        "embeddings": 3,
+        "downloads": 1,
+        "coveredPhysicalPages": 33,
+        "published": true,
+        "restart": "already_recorded",
+        "retrieval": "正式 store 查回 3 段，均保留原件 SHA 及節錄範圍。第 15 頁保留轉錄，第 31 頁純圖沒有引文。再查得 404，保留原版本及 http_404 收據。"
+      },
+      "contradiction": {
+        "generations": 4,
+        "embeddings": 0,
+        "published": false,
+        "heldAtPhysicalPage": 15,
+        "code": "knowledge_window_quote_mismatch"
+      },
+      "exhausted": {
+        "dailyLimit": 1,
+        "generations": 1,
+        "embeddings": 0,
+        "published": false,
+        "code": "knowledge_model_daily_admission",
+        "replayGenerations": 0
+      },
+      "checks": {
+        "serverTypeScript": true,
+        "unitPassed": 38,
+        "unitSkipped": 6,
+        "unitFailed": 0
+      },
+      "historicalWorkRestore": {
+        "at": "2026-11-18T20:37:02.552Z",
+        "rows": {
+          "knowledge_work": 31,
+          "knowledge_budget": 6,
+          "ai_usage": 20,
+          "ai_usage_detail": 1
+        },
+        "retained": 58,
+        "stage": "in-memory restore plan",
+        "preparedHash": "667239c6e25c0fbdae01df6ac5255583e8de6e6da511f6ec955a360bf615b809",
+        "modelCalls": 2,
+        "writtenToLiveDatabase": 0
+      },
+      "observedAt": "2026-11-18T20:54:08.570Z"
     }
   }
 }
