@@ -1,0 +1,401 @@
+{
+  "schema": "req004-native-pdf-chp-verification/v1",
+  "observedAt": "2026-11-18T20:16:49.411Z",
+  "baseline": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
+  "environment": {
+    "node": "24.11.0",
+    "firestoreProject": "demo-req004-native",
+    "database": "(default)",
+    "namespace": "req004",
+    "storage": "Firebase Storage Emulator",
+    "deployed": false
+  },
+  "fhs": {
+    "id": "fhs-feeding-booklet-en",
+    "title": "Healthy Eating for 6 to 24 month old children (1) Getting Started",
+    "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "sourceDateText": "(Content revised 02/2026)",
+    "fetchedAt": "2026-11-18T19:22:27.858Z",
+    "observationHash": "74a11741c020df3b9459bb2fc821a74be2cea5f5b05903523c97036f8c27fd46",
+    "extraction": {
+      "format": "text_pdf",
+      "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "extractionQuality": "requires_review",
+      "totalPages": 20,
+      "pageStart": 1,
+      "pageEnd": 20,
+      "complete": true
+    },
+    "landingUrl": "https://www.fhs.gov.hk/english/health_info/child/14727.html",
+    "pdfBytes": 7944671,
+    "downloadObservedAt": "2026-11-18T19:07:29Z",
+    "lastModified": "2026-06-30T09:44:35Z",
+    "mimeType": "application/pdf",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "use": "非商業使用並註明出處。",
+    "layout": {
+      "physicalPage": 6,
+      "row": "Fruit",
+      "observed": "左圖為蘋果和金屬匙羹，藍色箭嘴向右指向碟內的果蓉。",
+      "method": "直接檢視原 PDF 的第六實體頁渲染。"
+    },
+    "model": "gemini-3.1-flash-lite",
+    "region": "global",
+    "gateway": "AgentGatewayModel.completeText",
+    "modelInput": "五次完整原件生成，其後兩次只送同版原件第 6 頁的單頁 PDF。PDF inlineData 於 gateway 前核對 SHA-256。",
+    "work": [
+      {
+        "operationFingerprint": "772cb5ce331044bab85c04a165927539223640e46c58df3d324beee9ef445a25",
+        "result": {
+          "status": "candidate_held",
+          "code": "knowledge_review_failed",
+          "watchId": "fhs-feeding-booklet-en",
+          "observationHash": "74a11741c020df3b9459bb2fc821a74be2cea5f5b05903523c97036f8c27fd46",
+          "publishMode": "live",
+          "budget": {
+            "usedUnits": 2,
+            "maxUnits": 18,
+            "modelCalls": 1,
+            "maxModelCalls": 2
+          },
+          "published": false
+        },
+        "publicationReceipt": null,
+        "prepared": false
+      },
+      {
+        "operationFingerprint": "d8ad54bf16469815d57d4e818910980af3afebdaa8a90e05885e4bb7b4a7c984",
+        "result": {
+          "status": "candidate_held",
+          "code": "knowledge_native_read_incomplete",
+          "watchId": "fhs-feeding-booklet-en",
+          "observationHash": "74a11741c020df3b9459bb2fc821a74be2cea5f5b05903523c97036f8c27fd46",
+          "publishMode": "live",
+          "budget": {
+            "usedUnits": 2,
+            "maxUnits": 18,
+            "modelCalls": 2,
+            "maxModelCalls": 2
+          },
+          "published": false
+        },
+        "publicationReceipt": null,
+        "prepared": false
+      },
+      {
+        "operationFingerprint": "f868172c30f41163d1bfec8449e8025d538db755cf6aa276fa1ef60e3e76e839",
+        "stage": "organize",
+        "result": "held",
+        "code": "knowledge_review_failed",
+        "reason": "20 頁、13 段。region 回傳 Hong Kong；已封存整理結果並在接續中正規化為 HK。"
+      },
+      {
+        "operationFingerprint": "96d4c6372eb6460e811bee5739d6f97cfb3cba00f4e7cfd342cbb3acc1b0352b",
+        "stage": "review",
+        "result": "held_after_reference_check",
+        "originalReceipt": {
+          "at": "2026-11-18T19:57:48.287Z",
+          "sourceId": "fhs-feeding-booklet-en",
+          "versionId": "01e78798-9d84-5b58-bd73-d259264a8ee6",
+          "versionHash": "23f63f9319367693fdc15a059192c46cfd483082bcb18e5155ee7b613df7043e",
+          "operation": "96d4c6372eb6460e811bee5739d6f97cfb3cba00f4e7cfd342cbb3acc1b0352b",
+          "status": "held",
+          "code": "knowledge_native_visual_sample_mismatch",
+          "paidReviewDecision": "approve",
+          "organizeCoverage": 20,
+          "reviewCoverage": 20,
+          "published": false,
+          "activeEditionId": null,
+          "visibleCandidates": 0
+        },
+        "priorReviewReceivedOrganizerAnswer": true,
+        "embeddingsBeforeHold": 11
+      },
+      {
+        "operationFingerprint": "b531798feb5d7237dd8cea3d3b3e5ed2409a50d70cf44a018787e93d8cff6a00",
+        "stage": "focused_organize",
+        "result": "candidate_held",
+        "reason": "整理辨認出蘋果、湯匙、藍色及右邊；驗收字表漏列同義詞「右邊」，已保留初次 hold。"
+      },
+      {
+        "operationFingerprint": "1bb19ed678fcac239647d389ecc45ec8d2724b4815cde9cb30bf5cfed8aa3e71",
+        "stage": "focused_review",
+        "result": "prepared_waiting_daily_admission",
+        "versionHash": "7a367bce0329af1bf8f649b0bd04dd4fd11607f673daf6087653c90da20a5ec5",
+        "receipt": null,
+        "reusedSinglePageOrganize": true
+      }
+    ],
+    "firstHold": "第一次整理回應的年齡與頁段結構不合契約。",
+    "secondHold": "第二次整理交回 20 項逐頁觀察，其候選段落有實體頁碼錯配。獨立審核答對圖表問題，但只交回第 1、6 頁的閱讀證據，並誤稱和舊版一致。該來源並無已發布舊版。",
+    "providerDecision": "approve",
+    "acceptedDecision": "prepared_waiting_daily_admission",
+    "activeEditionId": null,
+    "liveRetrieval": false,
+    "revisedMethod": "來源原件按實體頁判讀，分別記錄整理與覆核。爭議頁沿用同版原頁，兩份單頁生成互不提供視覺答案。驗收標準只在測試及本紀錄使用。",
+    "focus": {
+      "sourceId": "fhs-feeding-booklet-en",
+      "parentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "first": 6,
+      "count": 1,
+      "method": "pdfjs-dist/6.4.299-extractPages/1",
+      "total": 20,
+      "contentHash": "13f239c3a296fcca47cba9b99413e55ffaf0ef7844bf5a84b7ac83da7b8f5c1c",
+      "derivedBytes": 1136397,
+      "pixels": {
+        "sha256": "b2b80fd16569023803442dd41041fb9e9785f51a9761bd8996a59563a3733c7c",
+        "raster": "pdftoppm -r 180 -scale-to 2090",
+        "parentPhysicalPage": 6,
+        "derivedPage": 1
+      },
+      "mediaResolution": "MEDIA_RESOLUTION_HIGH",
+      "organize": {
+        "decision": "supported",
+        "finding": "在第 6 頁的 'Baby food DIY' 表格中，關於 'Fruit' 一行，左邊展示了使用湯匙刮取蘋果（水果），照片中間有一個藍色的箭嘴指向右邊的成品果泥。",
+        "layoutFacts": {
+          "fruit": "蘋果",
+          "tool": "湯匙",
+          "arrowColour": "藍色",
+          "arrowDirection": "右邊"
+        }
+      },
+      "review": {
+        "decision": "supported",
+        "finding": "在第 6 頁「Baby food DIY」表格中，Fruit 一行的左邊照片展示了使用匙羹刮蘋果（Fruit），照片之間有一個藍色箭嘴，指向右邊。",
+        "layoutFacts": {
+          "fruit": "蘋果",
+          "tool": "匙羹",
+          "arrowColour": "藍色",
+          "arrowDirection": "右邊"
+        }
+      },
+      "reviewSawOrganizerAnswer": false,
+      "fullBookResent": false
+    },
+    "embeddingRecovery": {
+      "existingReady": 11,
+      "unchangedReusable": 10,
+      "changedPage": 6,
+      "unattemptedPage": 20,
+      "reconciled": {
+        "method": "emulator-pre-dispatch-reconciliation/1",
+        "work": "96d4c6372eb6460e811bee5739d6f97cfb3cba00f4e7cfd342cbb3acc1b0352b",
+        "startedAt": "2026-11-18T19:54:42.648Z",
+        "attemptId": "71187e8b-7c14-4fb8-beae-16d4ba6afd63",
+        "operationId": "29dd509b-86ea-5ef0-814f-a141b6219dc5",
+        "documentHash": "cb7b77b8c7df002ee2588b0b8b9759dee61ead288ff8e4cbbc6442079e016b80",
+        "previousState": "unknown",
+        "paidAdmission": null,
+        "currentState": "not_dispatched",
+        "providerDispatchesForPriorWork": 11
+      },
+      "nextQuotaBoundary": "2026-11-19T00:00:00Z"
+    }
+  },
+  "chp": {
+    "feedUrl": "https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml",
+    "first": {
+      "status": "changed",
+      "items": 10,
+      "changed": 10
+    },
+    "latestDate": "2026-11-17T16:00:00.000Z",
+    "sourceId": "chp-recent-5fdcea8698cee4b69fdbc7f33865a299",
+    "itemHash": "4faf0a8ca3ca9110dd109d0e7dda56c60dc16253d70c04a6cb1be7683e5cf5d2",
+    "feedHash": "4e998f2649a054bb3dd32f73476b96635ccf71301a63ee54194843266a71093e",
+    "fetchedAt": "2026-11-18T19:21:50.543Z",
+    "sourceUrl": "https://www.chp.gov.hk/tc/media/116/110574.html",
+    "rights": "https://www.chp.gov.hk/tc/static/24027.html",
+    "audience": "internal_noncommercial",
+    "exactItemBytes": 224,
+    "modelCalls": 0,
+    "resumed": {
+      "status": "already_recorded"
+    },
+    "second": {
+      "status": "unchanged",
+      "items": 10,
+      "changed": 0
+    },
+    "missing": {
+      "status": "unavailable",
+      "items": 0,
+      "changed": 0
+    },
+    "retainedOn404": true,
+    "old": {
+      "status": "superseded"
+    },
+    "increment": {
+      "namespace": "req004_chp_1795030806376",
+      "setup": "Nine real items retained as a controlled pre-existing local state; complete unmodified RSS bytes.",
+      "seed": {
+        "status": "changed",
+        "items": 9,
+        "changed": 9
+      },
+      "newer": {
+        "status": "changed",
+        "items": 10,
+        "changed": 1
+      },
+      "stale": {
+        "status": "superseded",
+        "items": 0,
+        "changed": 0
+      },
+      "retainedLatest": "4faf0a8ca3ca9110dd109d0e7dda56c60dc16253d70c04a6cb1be7683e5cf5d2",
+      "sourceId": "chp-recent-5fdcea8698cee4b69fdbc7f33865a299",
+      "at": "2026-11-18T19:40:07.496Z",
+      "modelCalls": 0
+    },
+    "scope": "保存與核對內部 RSS 原件及原有 item XML。沒有取得文章全文，沒有公開索引、公開摘要或模型呼叫。"
+  },
+  "storage": {
+    "objects": [
+      {
+        "schemaVersion": 1,
+        "projectId": "demo-req004-native",
+        "namespace": "req004",
+        "sourceId": "fhs-feeding-booklet-en",
+        "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "mimeType": "application/pdf",
+        "size": 7944671,
+        "bucketName": "demo-req004-native-private",
+        "generation": "1795030566841"
+      },
+      {
+        "schemaVersion": 1,
+        "projectId": "demo-req004-native",
+        "namespace": "req004",
+        "sourceId": "chp-recent",
+        "contentHash": "4e998f2649a054bb3dd32f73476b96635ccf71301a63ee54194843266a71093e",
+        "mimeType": "application/rss+xml",
+        "size": 3002,
+        "bucketName": "demo-req004-native-private",
+        "generation": "1795030566992"
+      }
+    ],
+    "primary": "使用既有 FIREBASE_PHOTO_BUCKET。每一來源及內容 hash 對應一個 create-only 物件和一筆小型 Firestore descriptor。由文件 ID 查找，正式索引設定關閉 descriptor 欄位索引。",
+    "recovery": "Firestore 清冊與還原 codec 包含 descriptor。明確匯出時把原件固定於既有備份 bucket，核對 generation、temporary hold、大小和 SHA-256。受管理快照還原需要原件的固定 generation 仍可讀，缺失會停止。",
+    "productionRecoveryExecuted": false,
+    "cost": "每一新版本佔一次原件容量，另有一筆 descriptor。使用明確備份時，該次備份另佔一次原件容量。不變來源重用既有檔案。實際費用取決於保留版本、讀取、備份和區域。"
+  },
+  "billing": {
+    "campaignLimitUsd": 1.35,
+    "priorSharedWindowUpperUsd": 2.765521,
+    "sharedLimitUsd": 5,
+    "providerChargesSettled": false,
+    "priceUrl": "https://cloud.google.com/model-garden/pricing",
+    "generated": [
+      {
+        "role": "background-knowledge-maintenance",
+        "finishedAt": "2026-11-18T19:22:43.552Z",
+        "inputTokens": 16660,
+        "outputTokens": 2467,
+        "imageInputTokens": 10640,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "finishReason": "STOP",
+        "estimateUsd": 0.0078655
+      },
+      {
+        "role": "background-knowledge-maintenance",
+        "finishedAt": "2026-11-18T19:27:41.809Z",
+        "inputTokens": 21077,
+        "outputTokens": 2737,
+        "imageInputTokens": 10640,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "finishReason": "STOP",
+        "estimateUsd": 0.00937475
+      },
+      {
+        "role": "knowledge-semantic-review",
+        "finishedAt": "2026-11-18T19:27:52.517Z",
+        "inputTokens": 22882,
+        "outputTokens": 1328,
+        "imageInputTokens": 10640,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "finishReason": "STOP",
+        "estimateUsd": 0.0077125
+      },
+      {
+        "role": "background-knowledge-maintenance",
+        "finishedAt": "2026-11-18T19:50:59.299Z",
+        "inputTokens": 22149,
+        "outputTokens": 3412,
+        "imageInputTokens": 10640,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "finishReason": "STOP",
+        "estimateUsd": 0.01065525
+      },
+      {
+        "role": "knowledge-semantic-review",
+        "finishedAt": "2026-11-18T19:54:24.152Z",
+        "inputTokens": 23294,
+        "outputTokens": 1529,
+        "imageInputTokens": 10640,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "finishReason": "STOP",
+        "estimateUsd": 0.008117
+      },
+      {
+        "role": "organize",
+        "finishedAt": "2026-11-18T20:12:50.498Z",
+        "inputTokens": 6506,
+        "outputTokens": 115,
+        "imageInputTokens": 1092,
+        "fileHash": "13f239c3a296fcca47cba9b99413e55ffaf0ef7844bf5a84b7ac83da7b8f5c1c",
+        "finishReason": "STOP",
+        "estimateUsd": 0.001799
+      },
+      {
+        "role": "review",
+        "finishedAt": "2026-11-18T20:13:40.770Z",
+        "inputTokens": 7268,
+        "outputTokens": 106,
+        "imageInputTokens": 1092,
+        "fileHash": "13f239c3a296fcca47cba9b99413e55ffaf0ef7844bf5a84b7ac83da7b8f5c1c",
+        "finishReason": "STOP",
+        "estimateUsd": 0.001976
+      }
+    ],
+    "embeddingCalls": 11,
+    "totalEstimateUsd": 0.04789105,
+    "billableEmbeddingCharacters": 2607,
+    "embeddingEstimateUsd": 0.00039104999999999994
+  },
+  "verification": {
+    "sourceAndMaintenance": {
+      "passed": 33,
+      "skipped": 6
+    },
+    "storeAndPrompt": {
+      "passed": 17
+    },
+    "backupAndRecovery": {
+      "passed": 28
+    },
+    "tscServer": true,
+    "sponsoredSynthetic": {
+      "nativePdfBothStages": true,
+      "embeddingCalls": 1,
+      "publicationAndReadback": true,
+      "restart": true,
+      "unknownNotRedispatched": true
+    },
+    "productionCloudIamAndBilling": false,
+    "officialPdfSynthetic": {
+      "source": "同版 20 頁官方原件",
+      "namespace": "req004_offline_page_contract",
+      "model": "合成",
+      "embedding": "合成",
+      "publishedInIsolatedFixture": true,
+      "paidCalls": 0
+    },
+    "focusedModelTests": {
+      "passed": 5,
+      "targetedTypescript": true
+    }
+  }
+}

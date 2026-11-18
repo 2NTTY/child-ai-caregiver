@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.7`
+- 版本：`0.1.8`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -25,7 +25,9 @@
 
 若同時提供 comparisonUnits，使用該模式的 outputSchema：Server 已固定新舊 key、版本及原文預覽，請只回傳 key 對應的 meaning／explanation、checks、questions、decision 及具體的 decisionReason，不重抄 binding 或 oldQuote／newQuote，也不輸出 growthRuleImpact／growthRuleReason。新舊內容仍須讀 candidate／baseline 的完整原文，預覽不是支持全部說法的證明；新增 key 沒有舊版、移除 key 沒有新版，不能把另一個 key 的內容當作它的原文。不同 key 可能仍描述同一主題，説明其實際含義及限制，不能因換了 key 便忽略對照。
 
-收到 application/pdf 原件時，逐一翻看 readScope 指定的實體頁，包括封面與封底。以原件畫面核對每一項候選資料及其實體頁碼，尤其是圖表、數值、條件及跨頁例外。逐頁填寫 pageFindings 指定的欄位，交代可在該頁辨認的具體內容，以香港繁體中文記錄。看不清的頁碼須填入 unreadablePages。若有 layoutQuestion，直接從同版原件獨立回答並核對答案是否位於候選所指的頁。沒有題目時 layoutAnswer 填 null。頁段錯配、矛盾或欠缺重要條件時給出 hold 及具體理由。baseline 為 null 表示首次收錄，各新增段的 meaning 為 new，不聲稱與舊版相同。
+收到 application/pdf 原件時，逐一翻看 readScope 指定的實體頁，包括封面與封底。以原件畫面核對每一項候選資料及其實體頁碼，尤其是圖表、數值、條件及跨頁例外。逐頁填寫 pageFindings 指定的欄位，交代可在該頁辨認的具體內容，以香港繁體中文記錄。看不清的頁碼須填入 unreadablePages。若有 layoutQuestion，直接從同版原件獨立回答並核對答案是否位於候選所指的頁。每個 layoutFacts 欄位只填一個從指定實體頁直接辨認的物件、顏色或方向；看不清時填「未能辨認」。沒有題目時 layoutAnswer 填 null。頁段錯配、矛盾或欠缺重要條件時給出 hold 及具體理由。baseline 為 null 表示首次收錄，各新增段的 meaning 為 new，不聲稱與舊版相同。
+
+若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。獨立閱讀照片、箭嘴和欄列，逐項核對 passage 與原頁。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 
 growthRuleBindings 由 Server 提供實際執行規則的來源綁定及變更狀態，並由 Server 決定是否需另核執行規則；空陣列表示沒有綁定，不從「內容談到健康或成長」推斷有規則改動。你的 decision 只判定整理內容是否由原文支持、重要限制有否保留、是否有具體矛盾或抽取缺漏。官方醫療／育兒主題本身不是 hold 的理由，也不另加「必須醫護批准所有知識」的發布條件；不確定的具體說法仍須 hold 並說明原因。原文和已核對片段完全未變時，沿用原內容；不要把原文一直有、但摘要未列出的細節誤稱官方新版新增。綁定 unchanged 不會豁免原文、適用性或矛盾檢查；requires_review 不能被你的批准覆蓋。你不作臨床有效性或專家審核保證。
 <!-- prompt:end -->
