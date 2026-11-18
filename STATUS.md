@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-18 22:01 香港**　REQ-005 已發布到 Web、API 和 worker，三者均為 `0a47c9b3`。站外 Web／API 版本一致，網站健康。隔離真 Vertex 查詢已找回最後更正的原句並通過獨立審核。正式維護者收件及擴大私人摘要試行仍待跟進。[正式收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44317583446) · [驗收及待決項](PLAN.md#req005-closeout01)
+
 **2026-11-18 07:49 香港**　P4 多孩查詢修正已發布。Web、API、worker 均為 `b17fa999`，站外版本與收據一致，網站健康。原版 APK 透過同一 API 使用這項修正。兩名所選孩子的記憶、真 Gemini 審核及引用原件已用隔離資料驗證，真機點讀仍待核。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461) · [接手清單](docs/P4_RESUME.md#下次從哪開始)
 
 
