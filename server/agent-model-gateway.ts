@@ -7,7 +7,7 @@ import type { VoiceMessageReference } from '../src/shared/voice.ts';
 import { AGENT_IMAGE_LIMIT, type AgentImageInput } from './agent-images.ts';
 import { BaseLlm, createEvent, populateClientFunctionCallId } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
-import { ApiError, GoogleGenAI } from "@google/genai";
+import { ApiError, GoogleGenAI, createPartFromBase64, PartMediaResolutionLevel } from "@google/genai";
 import type { FunctionCall, GoogleGenAIOptions } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
@@ -25,12 +25,12 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 import { nativeContextPreflight, nativeTokenCounter, type ContextPreflight, type NativeContextPayload } from './model-context-preflight.ts';
 
-export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string }>;
+export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string; highDetail: boolean }>;
 const verifiedKnowledgePdfs = new WeakSet<AgentKnowledgePdf>();
-export function originalKnowledgePdf(bytes: Buffer, sha256: string): AgentKnowledgePdf {
+export function originalKnowledgePdf(bytes: Buffer, sha256: string, highDetail = false): AgentKnowledgePdf {
   if (bytes.length > KNOWLEDGE_PDF_MAX_BYTES || bytes.subarray(0, 5).toString() !== "%PDF-"
     || createHash("sha256").update(bytes).digest("hex") !== sha256) throw new AgentStopped("input_limit");
-  const pdf = Object.freeze({ sha256, data: bytes.toString("base64") });
+  const pdf = Object.freeze({ sha256, data: bytes.toString("base64"), highDetail });
   verifiedKnowledgePdfs.add(pdf);
   return pdf;
 }
@@ -197,7 +197,8 @@ export class AgentGatewayModel extends BaseLlm {
           ...(this.options.roleProfileOverrides ? { profileOverrides: this.options.roleProfileOverrides } : {}),
         }) });
     const request: LlmRequest = {
-      contents: [{ role: "user", parts: [{ text: input.user }, ...(input.pdf ? [{ inlineData: { mimeType: "application/pdf", data: input.pdf.data } }] : []), ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
+      contents: [{ role: "user", parts: [{ text: input.user }, ...(input.pdf ? [createPartFromBase64(input.pdf.data, "application/pdf",
+        input.pdf.highDetail ? PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH : undefined)] : []), ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
       config: { systemInstruction: roleInstruction(), ...(input.pdf && input.responseJsonSchema ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema } : {}) },
       toolsDict: {},
       liveConnectConfig: {},

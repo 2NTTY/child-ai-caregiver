@@ -1,3 +1,4 @@
+import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -36,12 +37,36 @@ const modelAssessmentSchema = z.strictObject({
   decisionReason: reviewFields.growthRuleReason,
   decision: reviewFields.decision,
 });
+const digest = z.string().regex(/^[a-f0-9]{64}$/u);
+const focusReadingSchema = z.strictObject({ finding: z.string().trim().min(1).max(240),
+  layoutFacts: z.record(z.string(), z.string().min(1).max(80)), attemptKey: z.string().max(150) });
+export const focusEvidenceSchema = z.strictObject({ priorWork: digest, priorVersionHash: digest,
+  parentHash: digest, contentHash: digest, physicalPage: z.number().int().positive(), method: z.string().min(1).max(80),
+  mediaResolution: z.literal("MEDIA_RESOLUTION_HIGH"), organize: focusReadingSchema, review: focusReadingSchema });
 export const nativePdfProvenanceSchema = z.strictObject({
   contentHash: z.string().regex(/^[a-f0-9]{64}$/u),
   organize: nativeCoverageSchema, review: nativeCoverageSchema,
+  focus: focusEvidenceSchema.optional(),
   layoutQuestion: z.string().min(1).max(500).nullable(),
 });
-export interface KnowledgePdfQuestion { contentHash: string; question: string }
+export type { KnowledgePdfQuestion } from "./knowledge-pdf-layout.ts";
+export type KnowledgePdfAcceptance = (sourceHash: string, physicalPage: number, role: "organize" | "review", facts: LayoutFacts) => boolean;
+
+/** Verification clients may check a frozen sample against their own independently recorded reference. */
+export function assertPreparedKnowledgePdfLayout(prepared: PreparedKnowledgeMaintenance,
+  query?: KnowledgePdfQuestion, acceptance?: KnowledgePdfAcceptance) {
+  if (!query?.factKeys?.length || prepared.source.extraction?.contentHash !== query.contentHash) return;
+  const proof = prepared.provenance.nativePdf;
+  if (!proof || proof.contentHash !== query.contentHash || proof.layoutQuestion !== query.question || !query.physicalPage)
+    reject("knowledge_native_visual_evidence_missing");
+  const schema = layoutFactContract(query.factKeys);
+  for (const role of ["organize","review"] as const) {
+    const observed = proof.focus?.physicalPage === query.physicalPage ? proof.focus[role] : proof[role];
+    const facts = schema.safeParse(observed.layoutFacts);
+    if (!facts.success || (acceptance && !acceptance(query.contentHash,query.physicalPage,role,facts.data)))
+      reject("knowledge_native_visual_sample_mismatch");
+  }
+}
 type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null };
 export interface KnowledgeMaintenanceBaseline {
   versionId: string;
@@ -124,6 +149,7 @@ export async function prepareKnowledgeMaintenance(input: {
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
   readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
   pdfQuestion?: KnowledgePdfQuestion;
+  acceptance?: KnowledgePdfAcceptance;
   signal?: AbortSignal;
 }): Promise<PreparedKnowledgeMaintenance> {
   const { candidate, baseline, signal } = input;
@@ -144,8 +170,12 @@ export async function prepareKnowledgeMaintenance(input: {
   const units = originalUnits(candidate);
   const sha = candidate.definition.leafletPage ? candidate.observed.extraction!.contentHash : null;
   if (sha && !input.readPdf) reject("knowledge_original_missing");
-  const pdf = sha ? originalKnowledgePdf(await input.readPdf!(candidate.watchId, sha), sha) : undefined;
-  const layoutQuestion = pdf && input.pdfQuestion?.contentHash === sha ? input.pdfQuestion.question : null;
+  const sample = sha && input.pdfQuestion?.contentHash === sha && input.pdfQuestion.factKeys?.length
+    ? input.pdfQuestion : null;
+  if (sample && (!Number.isSafeInteger(sample.physicalPage) || sample.physicalPage! < 1
+    || sample.physicalPage! > candidate.observed.extraction!.totalPages!)) reject("knowledge_native_visual_range_mismatch");
+  const pdf = sha ? originalKnowledgePdf(await input.readPdf!(candidate.watchId, sha), sha, sample !== null) : undefined;
+  const layoutQuestion = sample?.question ?? (pdf && input.pdfQuestion?.contentHash === sha ? input.pdfQuestion.question : null);
   function coverage(value: unknown) {
     const report = nativeCoverageSchema.parse(value);
     if (report.unreadablePages.length || report.pages.length !== candidate.observed.extraction?.totalPages
@@ -154,8 +184,9 @@ export async function prepareKnowledgeMaintenance(input: {
     return report;
   }
   const nativeScope = pdf ? { readScope: { contentHash: sha, firstPage: 1,
-    lastPage: candidate.observed.extraction!.totalPages }, layoutQuestion } : {};
-  const pdfContract = pdf ? pdfOrganizationContract(units) : null;
+    lastPage: candidate.observed.extraction!.totalPages }, layoutQuestion,
+    ...(sample ? { physicalPage: sample.physicalPage } : {}) } : {};
+  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys) : null;
   const organize = await loadAgentPrompt("knowledge-organize", "structured", INPUTS);
   const complete = async (stage: "organize" | "review", system: string, payload: unknown, responseJsonSchema?: Record<string, unknown>) => {
     checkSignal(signal);
@@ -194,6 +225,8 @@ export async function prepareKnowledgeMaintenance(input: {
   }, pdfContract?.schema) : null;
   const parsedDraft = pdfContract?.parse(organized?.value);
   const organizedCoverage = parsedDraft ? coverage(parsedDraft.nativeCoverage) : null;
+  if (sample && input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"organize",organizedCoverage!.layoutFacts!))
+    reject("knowledge_native_visual_sample_mismatch");
   const drafted = parsedDraft ?? (organized ? organizedSchema.parse(organized.value) : { units: [] });
   const byId = new Map(drafted.units.map(unit => [unit.unitId, unit]));
   if (byId.size !== drafted.units.length || byId.size !== pending.length
@@ -235,6 +268,7 @@ export async function prepareKnowledgeMaintenance(input: {
   const changeFields = modelAssessmentSchema.shape.changes.element.shape;
   const pageKeys = pdf ? Array.from({ length: candidate.observed.extraction!.totalPages! }, (_, i) => "page" + (i + 1)) : [];
   const reviewCoverage = nativeCoverageSchema.omit({pages:true}).extend({
+    ...(sample ? { layoutFacts: layoutFactContract(sample.factKeys!) } : {}),
     pageFindings: z.strictObject(Object.fromEntries(pageKeys.map(key => [key, nativeCoverageSchema.shape.pages.element.shape.finding]))),
   });
   const pdfReviewSchema = pdf ? modelAssessmentSchema.extend({
@@ -259,12 +293,24 @@ export async function prepareKnowledgeMaintenance(input: {
   const nativeReview = pdfReviewSchema?.parse(reviewed.value);
   const reviewedCoverage = nativeReview ? coverage({
     pages: pageKeys.map((key, i) => ({ page: i + 1, finding: nativeReview.nativeCoverage.pageFindings[key] })),
+    ...(nativeReview.nativeCoverage.layoutFacts ? {layoutFacts:nativeReview.nativeCoverage.layoutFacts} : {}),
     layoutAnswer: nativeReview.nativeCoverage.layoutAnswer, unreadablePages: nativeReview.nativeCoverage.unreadablePages,
   }) : null;
   const { decisionReason, ...modelAssessment } = nativeReview
     ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage")),
       changes: Object.entries(nativeReview.changes).map(([key, change]) => ({ key, ...change })) })
     : modelAssessmentSchema.parse(reviewed.value);
+  if (sample) {
+    if (input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"review",reviewedCoverage!.layoutFacts!)) reject("knowledge_native_visual_sample_mismatch");
+    const matches = source.chunks.filter(chunk => chunk.pageStart! <= sample.physicalPage! && chunk.pageEnd! >= sample.physicalPage!);
+    if (matches.length !== 1) reject("knowledge_native_visual_range_mismatch");
+    // Add only the claims independently identified by both stages on this physical page.
+    const facts = reviewedCoverage!.layoutFacts!;
+    if (!input.acceptance && sample.factKeys!.some(k => facts[k] !== organizedCoverage!.layoutFacts![k])) reject("knowledge_native_visual_evidence_disputed");
+    const chunk = matches[0]!;
+    chunk.text = knowledgeChunkInputSchema.shape.text.parse(chunk.text + "\n" + sample.question
+      + "\n" + sample.factKeys!.map(key => facts[key]).join("、"));
+  }
   const changedRule = growthRuleBindings.some(rule => rule.state === "requires_review");
   const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
     growthRuleImpact: changedRule ? "requires_review" : "none",
@@ -305,13 +351,14 @@ export function createModelKnowledgeReviewPort(options: {
   fetchedAt(candidate: BackgroundKnowledgeCandidate): Promise<string>;
   readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
   pdfQuestion?: KnowledgePdfQuestion;
+  acceptance?: KnowledgePdfAcceptance;
   savePrepared(candidate: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance): Promise<void>;
 }): KnowledgeSemanticReviewPort {
   return {
     async review(candidate, signal) {
       checkSignal(signal);
       const prepared = await prepareKnowledgeMaintenance({ candidate, baseline: await options.baseline(candidate),
-        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, growthRules: options.growthRules, signal });
+        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
       checkSignal(signal);
       await options.savePrepared(candidate, prepared);
       checkSignal(signal);
