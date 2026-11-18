@@ -4,7 +4,7 @@ import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { personalLibraryItemSchema } from "../src/shared/personal-library.ts";
 import { embeddingDocument, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
-import { knowledgeTokens } from "./knowledge-ranking.ts";
+import { knowledgeTokens, questionAgeTokens } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
@@ -627,14 +627,16 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         }
         const distances = new Map<string, number>(), scores = new Map<string, number>();
         const tokens = knowledgeTokens(query, true), tokenHashes = [...tokens].map(lexicalTokenHash);
+        const ageTokens = questionAgeTokens(query), ageHashes = new Set([...ageTokens].map(lexicalTokenHash));
+        const topicHashes = new Set(tokenHashes), searchHashes = [...new Set([...tokenHashes, ...ageHashes])];
         for (const edition of current.editions) {
           const versionId = edition.version.versionId, ids = [...eligible].filter(([, row]) => row.edition.version.versionId === versionId).map(([id]) => id);
           if (!ids.length) continue;
           // Read only exact token buckets of eligible, published editions. Postings carry IDs/scores, never full bodies.
-          const buckets = [...new Set(tokenHashes.map(lexicalBucket))].filter(bucket => edition.version.search!.hashes[bucket] !== emptyLexicalHash);
+          const buckets = [...new Set(searchHashes.map(lexicalBucket))].filter(bucket => edition.version.search!.hashes[bucket] !== emptyLexicalHash);
           if (buckets.length) {
             const bucketScores = await database.runTransaction(async tx => {
-            const matches = new Map<string, number>();
+            const matches = new Map<string, number>(), ageMatches = new Map<string, number>();
             const snapshots = await tx.getAll(...buckets.map(bucket => lexicalRef(versionId, bucket)));
             snapshots.forEach((snapshot, index) => {
               const bucket = buckets[index]!;
@@ -642,11 +644,16 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
               const row = scoped(parse(lexicalSchema, snapshot.data()));
               if (row.versionId !== versionId || row.versionHash !== edition.version.versionHash || row.sourceId !== edition.source.sourceId
                 || row.bucket !== bucket || row.termsHash !== edition.version.search!.hashes[bucket] || row.termsHash !== knowledgeHash(row.terms)) reject("knowledge_search_binding_invalid", 503);
-              for (const token of tokenHashes.filter(hash => lexicalBucket(hash) === bucket)) for (const match of row.terms[token] ?? []) {
+              for (const token of searchHashes.filter(hash => lexicalBucket(hash) === bucket)) for (const match of row.terms[token] ?? []) {
                 if (!edition.version.chunks.some(chunk => chunk.chunkId === match.chunkId)) reject("knowledge_search_binding_invalid", 503);
-                if (eligible.has(match.chunkId)) matches.set(match.chunkId, (matches.get(match.chunkId) ?? 0) + match.score);
+                if (eligible.has(match.chunkId)) {
+                  if (topicHashes.has(token)) matches.set(match.chunkId, (matches.get(match.chunkId) ?? 0) + match.score);
+                  if (ageHashes.has(token)) ageMatches.set(match.chunkId, (ageMatches.get(match.chunkId) ?? 0) + match.score);
+                }
               }
             });
+            // Age tokens refine only substantive topic matches, never create retrieval hits.
+            for (const [id, score] of matches) matches.set(id, score + (ageMatches.get(id) ?? 0));
             return matches;
           }, { readOnly: true });
             for (const [id, score] of bucketScores) scores.set(id, (scores.get(id) ?? 0) + score);
@@ -676,7 +683,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const read = await readCandidates(top.map(row => row.id));
         const result = top.map(row => {
           const item = read.get(row.id)!;
-          if (scores.has(row.id) && keywordScore(tokens, item) !== scores.get(row.id)) reject("knowledge_search_binding_invalid", 503);
+          const topicScore = keywordScore(tokens, item);
+          if (scores.has(row.id) && (topicScore === 0 || topicScore + keywordScore(ageTokens, item) !== scores.get(row.id))) reject("knowledge_search_binding_invalid", 503);
           return { ...item, distance: distances.get(row.id) ?? null, rankScore: row.rankScore };
         });
         if (await unchanged(current)) return result;
@@ -687,3 +695,4 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
 }
 
 export const firestoreKnowledgeSchemas = { source: sourceSchema, version: versionSchema, chunk: chunkSchema, lexical: lexicalSchema, vector: cachedVectorSchema } as const;
+

@@ -63,7 +63,7 @@ export function knowledgeIndexTokens(text: string, question = false): Set<string
   return result;
 }
 
-function questionAgeTokens(text: string): Set<string> {
+export function questionAgeTokens(text: string): Set<string> {
   const rawNormalized = text.normalize("NFKC").toLowerCase();
   const result = new Set<string>();
   for (const match of rawNormalized.matchAll(QUESTION_AGE_MODIFIERS)) {
@@ -167,3 +167,4 @@ export function rankKnowledge(
       return evidence;
     });
 }
+
