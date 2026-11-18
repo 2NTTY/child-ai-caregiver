@@ -4,6 +4,8 @@ import { agentBudgetFingerprint } from '../server/agent-budget.ts';
 import { FirestoreAiUsage, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
 import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
+import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
+import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
 
 const now = Date.parse('2026-10-09T12:00:00Z');
 const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequest => ({ rootRunId: 'synthetic-root',
@@ -12,6 +14,94 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('admin reconciles original UTC-day receipts once with scoped financial evidence and keeps missing values unknown', async () => {
+  const start = Date.parse('2026-10-09T23:59:59Z'), f = firestoreUsageFixture(start), day = '2026-10-09';
+  const first = request({ deadlineAtMs: start + 60000 }), retry = { ...first, attemptKey: 'model:original-step:retry:1' };
+  await f.service.reserve(first); await f.service.reserve(retry);
+  const embedding = { ...first, kind: 'embedding' as const, attemptKey: 'embedding:1' };
+  await f.service.reserve(embedding, 'query_embedding');
+  f.setNow(start + 10000);
+  await f.service.record(first, { outcome: 'unavailable', inputTokens: null, cachedTokens: null, outputTokens: null, durationMs: 1 });
+  await f.service.record(retry, known); await f.service.record(retry, known);
+  await f.service.record(embedding, { kind: 'embedding', outcome: 'succeeded', inputTokens: 5, billableCharacters: 17, durationMs: 2 });
+  const evidence = { day, payer: 'platform' as const, currency: 'USD', attempts: [
+    { rootRunId: first.rootRunId, attemptKey: first.attemptKey, model: first.model, rate: { kind: 'model' as const, priceVersion: 'synthetic-v1',
+      uncachedInputMicrosPerMillion: 2000000, cachedInputMicrosPerMillion: 1000000, outputMicrosPerMillion: 3000000 } },
+    { rootRunId: retry.rootRunId, attemptKey: retry.attemptKey, model: retry.model, rate: { kind: 'model' as const, priceVersion: 'synthetic-v1',
+      uncachedInputMicrosPerMillion: 2000000, cachedInputMicrosPerMillion: 1000000, outputMicrosPerMillion: 3000000 }, settlement: { reference: 'synthetic-line', micros: 27 } },
+  ] };
+  const result = await f.service.getGlobal(day, evidence);
+  assert.equal(result.attempts, 3);
+  assert.deepEqual(result.breakdown, { model: 2, queryEmbedding: 1, documentEmbedding: 0, otherEmbedding: 0, unclassified: 0,
+    embeddingCharacters: 17, embeddingCharacterReports: 1 });
+  assert.deepEqual(result.finance.estimates, [{ status: 'estimated', currency: 'USD', micros: '29', attempts: 1, priceVersion: 'synthetic-v1' }]);
+  assert.deepEqual(result.finance.settlement, { status: 'settled', currency: 'USD', micros: '27', attempts: 1 });
+  assert.equal(result.finance.unestimatedAttempts, 2); assert.equal(result.finance.unsettledAttempts, 2);
+  const missing = await f.service.getGlobal(day);
+  assert.equal(missing.finance.settlement.status, 'unknown'); assert.deepEqual(missing.finance.estimates, []);
+  assert.equal(missing.finance.providerQuota, null);
+  assert.equal((await f.service.getGlobal('2026-10-10')).attempts, 0);
+  assert.equal((await f.service.reserve(retry)).decision, 'lookup');
+  await assert.rejects(f.service.getGlobal(day, { ...evidence, attempts: [evidence.attempts[1]!, evidence.attempts[1]!] }));
+  await assert.rejects(f.service.getGlobal(day, { ...evidence, payer: 'personal' }));
+  await assert.rejects(f.service.getGlobal(day, { ...evidence, attempts: [{ ...evidence.attempts[1]!, model: 'mismatch' }] }));
+});
+
+test('restoring a legacy counter alongside newer dimensions preserves original spend and unclassified attempts', async () => {
+  const f = firestoreUsageFixture(), day = '2026-10-09', namespace = 'synthetic_ai_usage';
+  const usage = new FirestoreAiUsage({ ...f.options, namespace });
+  await usage.reserve(request()); await usage.record(request(), known);
+  const rows = () => [...f.records].map(([path, data]) => ({ path, data: data as Record<string, unknown> }));
+  for (const [path, value] of f.records) if (path.startsWith(namespace + '/daily_')) {
+    const id = path.split('/')[1], envelope = value as { ciphertext: string };
+    const aad = JSON.stringify(['yuban-ai-daily-usage', 1, f.options.projectId, namespace, id]);
+    const historical = JSON.parse(f.options.cipher.decrypt(envelope.ciphertext, aad));
+    assert.deepEqual(Object.keys(historical).sort(), ['attempts','cachedTokens','inputTokens','known','outputTokens'],
+      'the previous worker must still be able to parse the strict v1 daily quota record');
+  }
+  // A historical deployment accumulated these calls before recording their purpose.
+  for (const path of f.records.keys()) if (path.startsWith(namespace + '_detail/')) f.records.delete(path);
+  const old = rows();
+  const embedding = request({ kind: 'embedding', attemptKey: 'document' });
+  await usage.reserve(embedding, 'corpus_maintenance');
+  await usage.record(embedding, { kind: 'embedding', outcome: 'succeeded', inputTokens: null, billableCharacters: 0, durationMs: 0 });
+  const restored = restoreFirestoreUsage({ ...f.options, namespace: 'synthetic' }, old, rows(), []);
+  f.records.clear();
+  for (const row of restored) f.records.set(row.path, row.data);
+  const report = await usage.getGlobal(day);
+  assert.equal(report.attempts, 2);
+  assert.deepEqual(report.breakdown, { model: 0, queryEmbedding: 0, documentEmbedding: 1, otherEmbedding: 0, unclassified: 1,
+    embeddingCharacters: 0, embeddingCharacterReports: 1 });
+});
+
+test('confirmed embedding pricing uses one stated unit and retains sub-micro amounts; quota is a dated project observation', async () => {
+  const f = firestoreUsageFixture(), day = '2026-10-09', row = request({ kind: 'embedding', attemptKey: 'embedding:query' });
+  await f.service.reserve(row, 'query_embedding');
+  await f.service.record(row, { kind: 'embedding', outcome: 'succeeded', inputTokens: null, billableCharacters: 3, durationMs: 0 });
+  const quota = { provider: 'synthetic', project: 'synthetic-project', model: row.model, tier: 'synthetic-tier',
+    source: 'synthetic-quota-export', observedAt: '2026-10-09T10:00:00Z', unit: 'RPM', limit: 42 };
+  const raw = { day, payer: 'platform', currency: 'USD', providerQuota: [quota], attempts: [{
+    rootRunId: row.rootRunId, attemptKey: row.attemptKey, model: row.model,
+    rate: { kind: 'embedding_characters', priceVersion: 'synthetic-v2', microsPerMillion: 250000 },
+  }] };
+  const [evidence] = readFinancialEvidence(JSON.stringify([raw]))!;
+  const { finance } = await f.service.getGlobal(day, evidence);
+  assert.equal(finance.estimates[0].micros, '0.75');
+  assert.deepEqual(finance.providerQuota, [quota]); assert.equal(finance.unsettledAttempts, 1);
+  const [quotaOnly] = readFinancialEvidence(JSON.stringify([{ day, payer: 'platform', providerQuota: [quota], attempts: [] }]))!;
+  const quotaOnlyReport = await f.service.getGlobal(day, quotaOnly);
+  assert.deepEqual(quotaOnlyReport.finance.providerQuota, [quota]); assert.equal(quotaOnlyReport.finance.settlement.status, 'unknown');
+  assert.equal(quotaOnlyReport.finance.approvedDailyBudget, null);
+  const budget = { currency: 'HKD', micros: 60000000, approvalReference: 'synthetic-owner-approval', approvedAt: '2026-10-08T20:00:00Z' };
+  const [approved] = readFinancialEvidence(JSON.stringify([{ day, payer: 'platform', approvedDailyBudget: budget, attempts: [] }]))!;
+  assert.deepEqual((await f.service.getGlobal(day, approved)).finance.approvedDailyBudget, budget);
+  assert.throws(() => readFinancialEvidence(JSON.stringify([{ day, payer: 'personal', approvedDailyBudget: budget, attempts: [] }])));
+  assert.equal(readFinancialEvidence(undefined), undefined);
+  assert.throws(() => readFinancialEvidence(JSON.stringify([raw, raw])), /Invalid AI_USAGE_RECONCILIATION_JSON/);
+  assert.throws(() => readFinancialEvidence(JSON.stringify([{ ...raw, day: '2026-10-10' }])), /Invalid AI_USAGE_RECONCILIATION_JSON/);
+});
+
 
 function globalCounter(f: ReturnType<typeof firestoreUsageFixture>, day = '2026-10-09') {
   const id = 'daily_' + agentBudgetFingerprint([f.options.billingSource, day, null]);
@@ -93,9 +183,10 @@ test('concurrent same-attempt reservations issue one grant across instances and 
   const f = firestoreUsageFixture(), restarted = new FirestoreAiUsage(f.options), input = request(); f.retryCallback();
   const results = await Promise.all([f.service.reserve(input), restarted.reserve(input)]);
   assert.deepEqual(results.map(result => result.decision).sort(), ['execute', 'lookup']);
-  assert.equal((await restarted.getForUser(input.userId)).attempts, 1); assert.equal(f.records.size, 3);
+  assert.equal((await restarted.getForUser(input.userId)).attempts, 1); assert.equal(f.records.size, 4);
   assert.deepEqual(await restarted.read(input), { day: '2026-10-09', reservedAtMs: now, record: null });
-  assert.ok(f.transactions.every(tx => tx.reads <= 3 && tx.writes <= 3));
+  // One original receipt, two quota counters and one daily reporting projection.
+  assert.ok(f.transactions.every(tx => tx.reads <= 4 && tx.writes <= 4));
   const encoded = JSON.stringify([...f.records]);
   for (const secret of [input.userId, input.childId, input.rootRunId, input.model, input.requestFingerprint]) assert.equal(encoded.includes(secret), false);
 });

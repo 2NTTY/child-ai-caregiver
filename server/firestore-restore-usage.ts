@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { canonical } from './firestore-session-codec.ts';
 import { firestoreUsageRecoverySchemas as usage } from './firestore-ai-usage.ts';
-import { firestoreRootBudgetRecoverySchema as budget } from './firestore-root-budget.ts';
+import { decodeRootBudgetState, encodeRootBudgetState } from './firestore-root-budget.ts';
 import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirebaseBackupDocument } from './firestore-backup.ts';
 
@@ -13,7 +13,7 @@ const envelopeSchema = z.object({ format: z.string(), version: z.literal(1), cip
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore usage binding rejected'), { code: 'restore_usage_binding', status: 409 }); }
 export function isRestoreProtocolOrUsage(namespace: string, path: string) {
-  return ['_sessions/', '_adk/', '_root_budget/', '_ai_usage/'].some(suffix => path.startsWith(namespace + suffix));
+  return ['_sessions/', '_adk/', '_root_budget/', '_ai_usage/', '_ai_usage_detail/'].some(suffix => path.startsWith(namespace + suffix));
 }
 /** Keep spent quota, including operations after the snapshot. Protocol sessions are deliberately not resumed. */
 export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots: readonly FirebaseBackupDocument[],
@@ -27,7 +27,19 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
   const seal = (path: string, format: string, aad: string, value: unknown) => ({ path,
     data: { format, version: 1, ciphertext: cipher.encrypt(canonical(value), aad) } });
   for (const row of [...snapshots, ...current]) {
-    const [collection, id, extra] = row.path.split('/'); if (collection !== namespace + '_ai_usage') continue;
+    const [collection, id, extra] = row.path.split('/');
+    if (collection === namespace + '_ai_usage_detail') {
+      check(extra === undefined && /^daily_[a-f0-9]{64}$/u.test(id));
+      const format = 'yuban-ai-daily-usage', aad = canonical([format, 1, projectId, namespace + '_ai_usage', 'detail/' + id]);
+      const value = usage.detail.parse(open(row, format, aad)), old = records.get(row.path);
+      const previous = old ? usage.detail.parse(open(old, format, aad)) : {};
+      for (const key of Object.keys(previous) as (keyof typeof previous)[]) {
+        value[key] = Math.max(value[key] ?? 0, previous[key]!);
+      }
+      records.set(row.path, seal(row.path, format, aad, value));
+      continue;
+    }
+    if (collection !== namespace + '_ai_usage') continue;
     check(extra === undefined && /^(attempt|daily)_[a-f0-9]{64}$/u.test(id));
     const format = 'yuban-ai-daily-usage', aad = canonical([format, 1, projectId, collection, id]);
     const raw = open(row, format, aad), old = records.get(row.path);
@@ -43,7 +55,8 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
       records.set(row.path, seal(row.path, format, aad, value));
     } else {
       const value = usage.counter.parse(raw), prior = old ? usage.counter.parse(open(old, format, aad)) : value;
-      const merged = Object.fromEntries(Object.keys(value).map(key => [key, Math.max(value[key as keyof typeof value], prior[key as keyof typeof prior])]));
+      const fields = Object.keys({ ...prior, ...value }) as (keyof typeof value)[];
+      const merged = Object.fromEntries(fields.map(key => [key, Math.max(value[key] ?? 0, prior[key] ?? 0)]));
       records.set(row.path, seal(row.path, format, aad, usage.counter.parse(merged)));
     }
   }
@@ -57,12 +70,12 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
       records.set(row.path, { path: row.path, data: saved }); continue;
     }
     const format = 'yuban-root-budget', aad = JSON.stringify([format, 1, projectId, collection, rootId]);
-    const value = budget.parse(open(row, format, aad)), old = records.get(row.path);
+    const value = decodeRootBudgetState(open(row, format, aad)), old = records.get(row.path);
     if (old) {
-      const prior = budget.parse(open(old, format, aad)); check(prior.bindingFingerprint === value.bindingFingerprint);
+      const prior = decodeRootBudgetState(open(old, format, aad)); check(prior.bindingFingerprint === value.bindingFingerprint);
       check(value.used.modelCalls >= prior.used.modelCalls && value.used.toolCalls >= prior.used.toolCalls && value.used.queryEmbeddings >= prior.used.queryEmbeddings);
     }
-    records.set(row.path, seal(row.path, format, aad, { ...value, status: 'stopped' }));
+    records.set(row.path, seal(row.path, format, aad, encodeRootBudgetState({ ...value, status: 'stopped' })));
   }
   return [...records.values()];
 }
@@ -146,7 +159,7 @@ export function assertPrivateSummaryProtocolEvidence(options: FirestoreDomainOpt
   const decodedRoot = (row: FirebaseBackupDocument, runId: string) => {
     const env = envelopeSchema.parse(row.data); require(env.format === 'yuban-root-budget');
     const collection = namespace + '_root_budget';
-    const value = budget.parse(JSON.parse(cipher.decrypt(env.ciphertext, JSON.stringify(['yuban-root-budget', 1, projectId, collection, runId]))));
+    const value = decodeRootBudgetState(JSON.parse(cipher.decrypt(env.ciphertext, JSON.stringify(['yuban-root-budget', 1, projectId, collection, runId]))));
     const keys = new Set<string>(), used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
     for (const entry of value.attempts) {
       require(!keys.has(entry.request.key)); keys.add(entry.request.key);

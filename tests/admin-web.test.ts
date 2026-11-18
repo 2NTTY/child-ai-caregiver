@@ -12,6 +12,7 @@ import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 import { claimedRunAssembly } from '../server/agent-run-assembly.ts';
 import { adminCommandSchema, platformPolicySchema } from '../src/shared/admin.ts';
 import { readAiConfig } from '../server/ai-config.ts';
+import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { FirestoreAiUsage } from '../server/firestore-ai-usage.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
@@ -31,7 +32,13 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
     await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   }
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-admin', VERTEX_LOCATION: 'global', GEMINI_MODEL: 'gemini-3.1-flash-lite', AI_DAILY_USER_ATTEMPTS: '12', AI_DAILY_GLOBAL_ATTEMPTS: '20' });
-  const admin = createFirestoreAdmin(options, config);
+  const usageFinancialEvidence = readFinancialEvidence(JSON.stringify([{
+    day: new Date().toISOString().slice(0, 10), payer: 'platform', currency: 'HKD', attempts: [{
+      rootRunId: 'admin-synthetic-run', attemptKey: 'model:1', model: config.model,
+      settlement: { reference: 'synthetic-invoice-line', micros: 0 },
+    }],
+  }]));
+  const admin = createFirestoreAdmin({ ...options, usageFinancialEvidence: () => usageFinancialEvidence }, config);
   let actor: string | null = 'admin', recent = true, expireAfterCommit = false, sessionReads = 0;
   const session = () => actor ? { user: { id: actor } } : null;
   async function getSession(options: { headers: Headers; returnHeaders?: false }): Promise<ServerAuthSession | null>;
@@ -123,6 +130,10 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal((await http('operations', pause)).status, 200); assert.equal(await newer.authorize(), false);
   assert.equal((await admin.readPolicy()).maxToolCalls,9);assert.equal((await admin.readPolicy()).maxRunSeconds,180);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
+  assert.equal(totals.platform.breakdown.model, 1);
+  assert.deepEqual(totals.platform.finance.settlement, { status: 'settled', micros: '0', currency: 'HKD', attempts: 1 });
+  assert.equal(totals.personal.finance.settlement.status, 'unknown');
+  assert.doesNotMatch(JSON.stringify(totals), /admin-synthetic-run|synthetic-invoice-line/);
   assert.equal((await http('usage?day=2026-02-30')).status, 400);
   const codec = createFirestoreRestoreCodec(options);
   for (const [path, data] of f.records) if (path.includes('_admin_policy/') || path.includes('_admin_operations/') || path.includes('_admin_invitations/')) {

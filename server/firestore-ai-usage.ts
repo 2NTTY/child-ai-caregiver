@@ -2,6 +2,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { DocumentSnapshot, Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { dailyFinance, dayFinancialEvidenceSchema, type DayFinancialEvidence } from './ai-financial-evidence.ts';
 import type { StorageCipher } from './storage-crypto.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
@@ -27,8 +28,11 @@ const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSc
   reservedAtMs: integer, record: recordSchema.nullable(), preparedFingerprint: fingerprint.optional(), preparationTokenHash: fingerprint.optional() }).strict()
   .refine(value => value.preparedFingerprint === undefined || (value.request.kind ?? 'model') === 'model').refine(value => value.record === null
     || (value.request.kind ?? 'model') === (value.record.kind ?? 'model'));
+// Missing dimensions are historical coverage gaps. Only observed reservations or reports add to them.
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
-export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema };
+const detailSchema = z.object({ model: integer.optional(), queryEmbedding: integer.optional(), documentEmbedding: integer.optional(), otherEmbedding: integer.optional(),
+  embeddingCharacters: integer.optional(), embeddingCharacterReports: integer.optional() }).strict();
+export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema, detail: detailSchema };
 type Counter = z.infer<typeof counterSchema>;
 type SavedAttempt = z.infer<typeof attemptSchema>;
 const emptyCounter = (): Counter => ({ attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, known: 0 });
@@ -83,8 +87,17 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return now;
   }
   #day(now: number) { return new Date(now).toISOString().slice(0, 10); }
-  #attemptId(request: DurableAiUsageRequest) { return 'attempt_' + hash([request.rootRunId, request.attemptKey]); }
+  #attemptId(request: Pick<DurableAiUsageRequest, 'rootRunId' | 'attemptKey'>) { return 'attempt_' + hash([request.rootRunId, request.attemptKey]); }
   #counterId(day: string, userId: string | null) { return 'daily_' + hash([this.#source, day, userId]); }
+  // Existing workers and rollback images read the strict v1 quota documents.
+  // Keep additive reporting separate and commit it with the original admission or acknowledgement.
+  async #detail(transaction: Transaction, id: string) {
+    const ref = this.#database.collection(this.#namespace + '_detail').doc(id);
+    const snapshot = await transaction.get(ref);
+    const key = 'detail/' + id;
+    const value: z.infer<typeof detailSchema> = snapshot.exists ? this.#open(key, snapshot, detailSchema) : {};
+    return { value, save: () => transaction.set(ref, this.#seal(key, parse(detailSchema, value, 'usage_overflow'))) };
+  }
   #ref(id: string) { return this.#database.collection(this.#namespace).doc(id); }
   #aad(id: string) { return canonical([FORMAT, VERSION, this.#projectId, this.#namespace, id]); }
   #size(value: unknown) {
@@ -127,8 +140,12 @@ export class FirestoreAiUsage implements DurableAiUsage {
     for (const key of ['attempts', 'known', 'inputTokens', 'outputTokens', 'cachedTokens'] as const)
       if (user[key] > global[key]) reject('counter_inconsistent');
   }
-  async reserve(input: DurableAiUsageRequest): Promise<DurableAiUsageAdmission> {
+  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance'): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
+    if (embeddingPurpose !== undefined && (request.kind !== 'embedding'
+      || !['query_embedding', 'corpus_maintenance'].includes(embeddingPurpose))) reject('invalid_request');
+    const dimension = request.kind !== 'embedding' ? 'model' : embeddingPurpose === 'query_embedding' ? 'queryEmbedding'
+      : embeddingPurpose === 'corpus_maintenance' ? 'documentEmbedding' : 'otherEmbedding';
     return this.#database.runTransaction(async transaction => {
       const saved = await transaction.get(attemptRef);
       // No day, deadline, counter or limit change can turn an existing attempt into execute.
@@ -143,12 +160,15 @@ export class FirestoreAiUsage implements DurableAiUsage {
       this.#consistent(global, user);
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
       if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
+      const detail = await this.#detail(transaction, globalId);
+      detail.value[dimension] = (detail.value[dimension] ?? 0) + 1;
       global.attempts++; user.attempts++;
       const preparationToken = (request.kind ?? 'model') === 'model' ? randomBytes(32).toString('hex') : undefined;
       const state: SavedAttempt = { request, billingSource: this.#source, day, reservedAtMs: now, record: null,
         ...(preparationToken ? { preparationTokenHash: createHash('sha256').update(preparationToken).digest('hex') } : {}) };
       transaction.create(attemptRef, this.#seal(attemptId, state));
       transaction.set(globalRef, this.#seal(globalId, global)); transaction.set(userRef, this.#seal(userId, user));
+      detail.save();
       return { decision: 'execute', receipt: receipt(state), ...(preparationToken ? { preparationToken } : {}) };
     });
   }
@@ -196,6 +216,12 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const globalRef = this.#ref(globalId), userRef = this.#ref(userId);
       const global = this.#counter(globalId, await transaction.get(globalRef), true), user = this.#counter(userId, await transaction.get(userRef), true);
       this.#consistent(global, user);
+      if (record.kind === 'embedding' && record.billableCharacters !== null) {
+        const detail = await this.#detail(transaction, globalId);
+        detail.value.embeddingCharacters = (detail.value.embeddingCharacters ?? 0) + record.billableCharacters;
+        detail.value.embeddingCharacterReports = (detail.value.embeddingCharacterReports ?? 0) + 1;
+        detail.save();
+      }
       for (const counter of [global, user]) {
         if (counter.attempts < 1) reject('invalid_stored_usage');
         counter.inputTokens += record.inputTokens ?? 0;
@@ -215,12 +241,31 @@ export class FirestoreAiUsage implements DurableAiUsage {
       return receipt(state);
     });
   }
-  async getGlobal(input: string) {
+  async getGlobal(input: string, rawEvidence?: DayFinancialEvidence) {
     const day = parse(daySchema, input, 'invalid_day');
+    const evidence = rawEvidence && parse(dayFinancialEvidenceSchema, rawEvidence, 'invalid_financial_evidence');
+    if (evidence && (evidence.day !== day || evidence.payer !== this.#source)) reject('financial_binding_conflict');
     return this.#database.runTransaction(async transaction => {
       const id = this.#counterId(day, null), state = this.#counter(id, await transaction.get(this.#ref(id)));
+      if (evidence && evidence.attempts.length > state.attempts) reject('financial_binding_conflict');
+      const records = await Promise.all((evidence?.attempts ?? []).map(async line => {
+        const attemptId = this.#attemptId(line), snapshot = await transaction.get(this.#ref(attemptId));
+        if (!snapshot.exists) reject('financial_binding_conflict');
+        const saved = this.#open(attemptId, snapshot, attemptSchema);
+        if (saved.billingSource !== this.#source || saved.day !== day || this.#day(saved.reservedAtMs) !== day
+          || saved.request.model !== line.model || saved.request.rootRunId !== line.rootRunId || saved.request.attemptKey !== line.attemptKey
+          || (line.rate && (line.rate.kind === 'model') !== ((saved.request.kind ?? 'model') === 'model'))) reject('financial_binding_conflict');
+        return saved.record;
+      }));
+      const { value: detail } = await this.#detail(transaction, id);
+      const model = detail.model ?? 0, queryEmbedding = detail.queryEmbedding ?? 0, documentEmbedding = detail.documentEmbedding ?? 0,
+        otherEmbedding = detail.otherEmbedding ?? 0, unclassified = state.attempts - model - queryEmbedding - documentEmbedding - otherEmbedding;
+      if (unclassified < 0) reject('invalid_stored_usage');
       return { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
-        cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source };
+        cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source,
+        breakdown: { model, queryEmbedding, documentEmbedding, otherEmbedding, unclassified,
+          embeddingCharacters: detail.embeddingCharacters ?? null, embeddingCharacterReports: detail.embeddingCharacterReports ?? 0 },
+        finance: dailyFinance(this.#source, state.attempts, evidence, records) };
     }, { readOnly: true });
   }
   async getForUser(input: string) {

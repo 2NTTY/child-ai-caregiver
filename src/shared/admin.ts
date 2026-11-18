@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { highWatermarkPolicySchema } from './budget-alerts.ts';
 import { PERSONAL_MODEL, PERSONAL_RUN_LIMITS } from './model-settings.ts';
 import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from './agent-run-limits.ts';
 
@@ -19,6 +20,7 @@ export const platformPolicyValuesSchema = z.object({
   maxToolCalls: tools.optional(), maxRunSeconds: seconds.optional(),
   modelRequestSeconds: requestSeconds.optional(), maxModelRetries: retries.optional(),
   softBudgetRatio: softRatio.optional(),
+  highWatermark: highWatermarkPolicySchema.optional(),
   roleSoftBudgetRatios: z.object({
     interactive: softRatio.optional(),
     background: softRatio.optional(),
@@ -53,7 +55,21 @@ export const adminReceiptSchema = z.object({ opId: z.uuid(), actorId: z.string()
 }).strict();
 export type AdminReceipt = z.infer<typeof adminReceiptSchema>;
 export interface AdminPage<T> { items: T[]; nextCursor: string | null }
-export interface AdminUsage { day: string; attempts: number; inputTokens: number; outputTokens: number; cachedTokens: number; unknownUsageAttempts: number }
+export interface AdminUsageBreakdown {
+  model: number; queryEmbedding: number; documentEmbedding: number; otherEmbedding: number; unclassified: number;
+  embeddingCharacters: number | null; embeddingCharacterReports: number;
+}
+export interface AdminUsageFinance {
+  payer: 'platform' | 'personal';
+  estimates: { status: 'estimated'; currency: string; priceVersion: string; micros: string; attempts: number }[];
+  settlement: { status: 'unknown' } | { status: 'settled'; currency: string; micros: string; attempts: number };
+  unestimatedAttempts: number;
+  unsettledAttempts: number;
+  approvedDailyBudget: { currency: string; micros: number; approvalReference: string; approvedAt: string } | null;
+  providerQuota: { provider: string; project: string; model: string; tier: string; source: string; observedAt: string; unit: 'RPM' | 'TPM' | 'RPD'; limit: number }[] | null;
+}
+export interface AdminUsage { day: string; attempts: number; inputTokens: number; outputTokens: number; cachedTokens: number; unknownUsageAttempts: number;
+  breakdown?: AdminUsageBreakdown; finance?: AdminUsageFinance }
 export interface AdminOverview { policy: PlatformPolicy; platformConfigured: boolean; serverEnabled: boolean; toolCalls: number; deadlineMs: number; outputTokens: number; inputCharacters: number }
 const knowledgeCheckStatus = z.enum(['changed', 'unchanged', 'failed', 'unavailable', 'superseded']);
 const knowledgeWatchId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);

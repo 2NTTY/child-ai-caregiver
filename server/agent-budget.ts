@@ -104,6 +104,9 @@ export interface AgentDurableBudget {
 }
 
 export type AgentPolicyTransition = {
+  policyVersion?: number;
+  softBudgetSource?: 'administrator' | 'personal' | 'system_default';
+  repeatedSignatureStreak?: number;
   enabled?: boolean;
   maxModelCalls?: number;
   maxToolCalls?: number;
@@ -267,15 +270,9 @@ export class AgentBudget {
       queryEmbeddings: Math.max(0, this.selectedLimits.queryEmbeddings - this.used.queryEmbeddings),
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
-    const effectiveSoftRatio = options?.softBudgetRatio !== undefined
-      ? resolveRoleSoftBudgetRatio({ runOverride: options.softBudgetRatio })
-      : this.personalSoftOverride && this.hasExplicitSoftRatio
-        ? this.softRatio
-        : resolveRoleSoftBudgetRatio({
-            role: options?.role,
-            policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined,
-            profileOverrides: options?.profileOverrides ?? this.roleProfileOverrides,
-          });
+    const effectiveSoftRatio = options?.softBudgetRatio === undefined
+      ? this.effectiveSoftRatio(options?.role, options?.profileOverrides)
+      : resolveRoleSoftBudgetRatio({ runOverride: options.softBudgetRatio });
     const derivedSoftTargets = deriveSoftBudgetTargets(this.selectedLimits, effectiveSoftRatio);
     const softBudget = {
       modelCalls: derivedSoftTargets.modelCalls,
@@ -345,6 +342,11 @@ export class AgentBudget {
     if (!this.preparingModels.delete(attempt)) throw new AgentStopped('unavailable');
   }
   get counts() { return { ...this.used }; }
+  effectiveSoftRatio(role?: AgentSoftBudgetProfileRole, profiles = this.roleProfileOverrides) {
+    return this.personalSoftOverride && this.hasExplicitSoftRatio ? this.softRatio : resolveRoleSoftBudgetRatio({
+      role, policyRatio: this.hasExplicitSoftRatio ? this.softRatio : undefined, profileOverrides: profiles,
+    });
+  }
   get limits() { return { ...this.selectedLimits }; }
   /** Policy identity excludes usage; refreshed payloads receive their own preparation binding. */
   get policyFingerprint(): string {

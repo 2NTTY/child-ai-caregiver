@@ -1,4 +1,5 @@
 import { createFirestoreAdmin } from './firestore-admin.ts';
+import { AGENT_HIGH_WATERMARK_DEFAULTS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
 import { AGENT_INTERACTIVE_INPUT, AgentStopped } from './agent-budget.ts';
@@ -43,7 +44,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
     });
   }
   return {
-    settings,
+    settings, budgetAlerts: policy.budgetAlerts,
     async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction, scope: FirestoreAuthorityTransaction['scope']) {
       const current = await policy.readPolicyIn(tx);
       const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });
@@ -111,13 +112,15 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
       let activePolicyVersion = current.version;
       const readPolicyTransition = async () => {
-        if (!enabled) return { enabled: false as const };
         const latest = await policy.readPolicy();
-        if (!personal && !latest.enabled) return { enabled: false as const };
+        const nextLimits = resolvePersonalModelLimits(state, latest);
+        const metadata = { policyVersion: latest.version, softBudgetSource: nextLimits.limitSources?.softBudgetRatio,
+          repeatedSignatureStreak: latest.highWatermark?.repeatedSignatureStreak ?? AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak };
+        if (!enabled || (!personal && !latest.enabled)) return { ...metadata, enabled: false as const };
         if (latest.version === activePolicyVersion) return null;
         activePolicyVersion = latest.version;
-        const nextLimits = resolvePersonalModelLimits(state, latest);
         return {
+          ...metadata,
           enabled: true as const,
           maxModelCalls: nextLimits.maxModelCalls,
           maxToolCalls: nextLimits.maxToolCalls,
@@ -129,7 +132,9 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       };
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
         usage: requireDurableUsage, billingSource: source });
-      return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
+      return { config: selectedConfig, provider: providers.agent, policyVersion: current.version,
+        repeatedSignatureStreak: current.highWatermark?.repeatedSignatureStreak ?? AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak,
+        settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
         dailyUsage: usage[source], authorize, readPolicyTransition,
         softBudgetSource: limits.limitSources?.softBudgetRatio,
         ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),

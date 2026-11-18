@@ -1,8 +1,5 @@
 import {
-  AGENT_HIGH_WATERMARK_SCOPE,
-  agentHighWatermarkDocSchema,
   createHighWatermarkMonitor,
-  mergeHighWatermarkSamples,
   type HighWatermarkAlert,
   type HighWatermarkPersistenceErrorInfo,
 } from './agent-high-watermark.ts';
@@ -76,6 +73,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   platformProviders?: import('./firestore-model-routing.ts').PlatformProviderFactory;
   onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   onHighWatermarkPersistenceError?: (info: HighWatermarkPersistenceErrorInfo) => void | Promise<void>;
+  sendMaintainerBudgetAlert?: import('./firestore-budget-alerts.ts').MaintainerAlertSender;
   /** Trusted work policy only. Existing per-dispatch limits never supply missing cumulative grants. */
   summaryWorkPolicy?: SummaryWorkPolicyPort;
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
@@ -83,6 +81,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8')) as { version?: unknown };
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
   const promptPackVersion = manifest.version;
+  const workerInstance = randomUUID();
   const routing = createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
   const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
@@ -96,27 +95,9 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
   const admission = createFirestoreAgentAdmission(options);
-  const hwmData = new FirestoreDomainData(options);
   const highWatermarkMonitor = createHighWatermarkMonitor({
-    async loadWindow(category) {
-      return await options.database.runTransaction(async tx => {
-        const row = await tx.get(hwmData.ref('agent_metrics', 'agent-high-watermark', category));
-        if (!row.exists) return [];
-        return hwmData.open('agent-high-watermark', category, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, row).samples;
-      }, { readOnly: true });
-    },
-    async appendDurableSample(sample, windowSize) {
-      return await options.database.runTransaction(async tx => {
-        const ref = hwmData.ref('agent_metrics', 'agent-high-watermark', sample.runCategory);
-        const row = await tx.get(ref);
-        const existing = row.exists
-          ? hwmData.open('agent-high-watermark', sample.runCategory, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, row).samples
-          : [];
-        const updated = mergeHighWatermarkSamples(existing, sample, windowSize);
-        tx.set(ref, hwmData.seal('agent-high-watermark', sample.runCategory, AGENT_HIGH_WATERMARK_SCOPE, agentHighWatermarkDocSchema, { samples: updated }));
-        return updated;
-      });
-    },
+    recordWithPolicy: sample => routing.budgetAlerts.record(sample, options.sendMaintainerBudgetAlert),
+    evaluateWithPolicy: routing.budgetAlerts.evaluate,
     async onPersistenceError(info) {
       console.warn(JSON.stringify({ event: 'agent_high_watermark_persistence_error', category: info.category, stage: info.stage }));
       await options.onHighWatermarkPersistenceError?.(info);
@@ -145,6 +126,8 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             settingsVersion: 'firestore:' + selected.settingsVersion, billingVersion: selected.billingSource + ':v1',
             billingSource: selected.billingSource, runLimits: limits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
+          policyVersion: selected.policyVersion, repeatedSignatureStreak: selected.repeatedSignatureStreak,
+          onPolicyObservation: observation => console.info(JSON.stringify({ event: 'agent_budget_policy', workerInstance, ...observation })),
           chatDeliveryReviewModelCalls: selected.config.chatDeliveryReviewModelCalls,
           highWatermarkMonitor, onHighWatermarkAlert: options.onHighWatermarkAlert,
           softBudgetSource: policySync.softBudgetSource,

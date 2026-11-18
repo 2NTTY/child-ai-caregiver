@@ -9,7 +9,9 @@ import { MAX_ROOT_BUDGET_LIMITS, RootBudgetError, type BudgetAdmission, type Bud
 
 const FORMAT = 'yuban-root-budget';
 const VERSION = 1;
-export const MAX_ROOT_BUDGET_BYTES = 64 * 1024;
+// Leave room below Firestore's 1 MiB document limit for field and path overhead.
+export const MAX_ROOT_BUDGET_BYTES = 768 * 1024;
+const MAX_ROOT_PLAINTEXT_BYTES = 512 * 1024;
 export const MAX_ROOT_BUDGET_ATTEMPTS = Object.values(MAX_ROOT_BUDGET_LIMITS).reduce((sum, limit) => sum + limit, 0);
 const bounded = (bytes: number) => z.string().min(1).refine(value => value.isWellFormed() && Buffer.byteLength(value, 'utf8') <= bytes);
 const id = bounded(256);
@@ -37,6 +39,39 @@ const stateSchema = z.object({ bindingFingerprint: fingerprint, generation: inte
   attempts: z.array(savedAttemptSchema).max(MAX_ROOT_BUDGET_ATTEMPTS) }).strict();
 type Stored = z.infer<typeof stateSchema>;
 export const firestoreRootBudgetRecoverySchema = stateSchema;
+
+// JSON escaping can expand the two user-controlled strings sixfold. Base64
+// uses at most 344 bytes per key and 684 per reference, even for controls.
+export function encodeRootBudgetState(state: Stored): unknown {
+  if (Buffer.byteLength(JSON.stringify(state), 'utf8') <= MAX_ROOT_PLAINTEXT_BYTES) return state;
+  const encode = (value: string) => Buffer.from(value, 'utf8').toString('base64');
+  return { ...state, attemptTextEncoding: 'base64', attempts: state.attempts.map(entry => ({
+    ...entry, request: { ...entry.request, key: encode(entry.request.key) },
+    outcome: entry.outcome.status === 'known' ? { ...entry.outcome, reference: encode(entry.outcome.reference) } : entry.outcome,
+  })) };
+}
+const encodedText = (maxBytes: number) => z.string().min(1).max(4 * Math.ceil(maxBytes / 3))
+  .transform((encoded, ctx) => {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    if (Buffer.from(decoded, 'utf8').toString('base64') !== encoded) {
+      ctx.addIssue({ code: 'custom', message: 'Invalid encoded receipt text' });
+      return z.NEVER;
+    }
+    return decoded;
+  });
+const encodedEntry = z.object({
+  request: z.object({ key: encodedText(256) }).passthrough(),
+  outcome: z.union([z.object({ status: z.literal('known'), reference: encodedText(512) }).strict(),
+    z.object({ status: z.enum(['reserved', 'unknown']) }).strict()]),
+}).passthrough();
+const packedSchema = z.object({ attemptTextEncoding: z.literal('base64'), attempts: z.array(encodedEntry).max(MAX_ROOT_BUDGET_ATTEMPTS) }).passthrough();
+export function decodeRootBudgetState(raw: unknown): Stored {
+  if (isRecord(raw) && 'attemptTextEncoding' in raw) {
+    const { attemptTextEncoding, ...unpacked } = packedSchema.parse(raw);
+    return stateSchema.parse(unpacked);
+  }
+  return stateSchema.parse(raw);
+}
 function reject(code: string): never { throw new RootBudgetError(code); }
 function parse<T>(schema: z.ZodType<T>, value: unknown, code: string): T {
   const parsed = schema.safeParse(value); if (!parsed.success) reject(code); return parsed.data;
@@ -85,9 +120,11 @@ export class FirestoreRootBudget implements DurableRootBudget {
   #fingerprint(context: RootBudgetContext): string { return hash(canonical(context.binding)); }
   #size(value: unknown): void { if (Buffer.byteLength(JSON.stringify(value), 'utf8') > MAX_ROOT_BUDGET_BYTES) reject('document_too_large'); }
   #seal(context: RootBudgetContext, state: Stored) {
-    this.#size(state);
+    const stored = encodeRootBudgetState(state);
+    const plaintext = canonical(stored);
+    if (Buffer.byteLength(plaintext, 'utf8') > MAX_ROOT_PLAINTEXT_BYTES) reject('document_too_large');
     let ciphertext: string;
-    try { ciphertext = this.#cipher.encrypt(canonical(state), this.#aad(context)); } catch { reject('ciphertext_rejected'); }
+    try { ciphertext = this.#cipher.encrypt(plaintext, this.#aad(context)); } catch { reject('ciphertext_rejected'); }
     if (typeof ciphertext !== 'string' || !ciphertext) reject('ciphertext_rejected');
     const envelope = { format: FORMAT, version: VERSION, ciphertext }; this.#size(envelope); return envelope;
   }
@@ -99,10 +136,11 @@ export class FirestoreRootBudget implements DurableRootBudget {
       if (!isRecord(envelope) || Object.keys(envelope).sort().join(',') !== 'ciphertext,format,version'
         || envelope.format !== FORMAT || envelope.version !== VERSION || typeof envelope.ciphertext !== 'string') reject('ciphertext_rejected');
       const text = this.#cipher.decrypt(envelope.ciphertext, this.#aad(context));
-      if (Buffer.byteLength(text, 'utf8') > MAX_ROOT_BUDGET_BYTES) reject('ciphertext_rejected');
+      if (Buffer.byteLength(text, 'utf8') > MAX_ROOT_PLAINTEXT_BYTES) reject('ciphertext_rejected');
       decoded = JSON.parse(text);
     } catch { reject('ciphertext_rejected'); }
-    const state = parse(stateSchema, decoded, 'invalid_stored_budget');
+    let state: Stored;
+    try { state = decodeRootBudgetState(decoded); } catch { reject('invalid_stored_budget'); }
     const used: RootBudgetLimits = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, keys = new Set<string>();
     for (const attempt of state.attempts) {
       if (keys.has(attempt.request.key)) reject('invalid_stored_budget');

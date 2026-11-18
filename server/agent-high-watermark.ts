@@ -10,6 +10,7 @@ export const AGENT_HIGH_WATERMARK_SCOPE = Object.freeze({
 });
 
 export const agentHighWatermarkDocSchema = z.object({
+  activeIncident: z.uuid().nullable().optional(),
   samples: z.array(z.object({
     sampleId: z.string().min(1).max(128).optional(),
     runCategory: z.string().min(1).max(64),
@@ -20,10 +21,12 @@ export const agentHighWatermarkDocSchema = z.object({
     usedQueryEmbeddings: z.number().int().nonnegative().optional(),
     hardQueryEmbeddings: z.number().int().positive().optional(),
     repeatedCallSignature: z.string().min(1).max(200).optional(),
+    stoppedLoop: z.literal(true).optional(),
   }).strict()).max(100),
 }).strict();
 
 export interface HighWatermarkSample {
+  stoppedLoop?: true;
   sampleId?: string;
   runCategory: string;
   usedModelCalls: number;
@@ -108,6 +111,7 @@ export function evaluateSustainedHighWatermark(
   let loopDetected = false;
 
   for (const sample of recent) {
+    if (sample === recent.at(-1) && sample.stoppedLoop) loopDetected = true;
     const modelHigh = isDimensionHigh(sample.usedModelCalls, sample.hardModelCalls, thresholdRatio);
     const toolHigh = isDimensionHigh(sample.usedToolCalls, sample.hardToolCalls, thresholdRatio);
     const embedHigh = isDimensionHigh(sample.usedQueryEmbeddings, sample.hardQueryEmbeddings, thresholdRatio);
@@ -185,6 +189,8 @@ export interface HighWatermarkMonitorOptions {
   loadWindow?: (runCategory: string) => Promise<readonly AgentRunUtilizationSample[]> | readonly AgentRunUtilizationSample[];
   persistWindow?: (runCategory: string, samples: readonly AgentRunUtilizationSample[]) => Promise<void> | void;
   appendDurableSample?: (sample: AgentRunUtilizationSample, windowSize: number) => Promise<readonly AgentRunUtilizationSample[]>;
+  recordWithPolicy?: (sample: AgentRunUtilizationSample) => Promise<HighWatermarkEvaluation>;
+  evaluateWithPolicy?: (category: string) => Promise<HighWatermarkEvaluation>;
   onPersistenceError?: (info: HighWatermarkPersistenceErrorInfo) => Promise<void> | void;
 }
 
@@ -297,6 +303,16 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
   return {
     recordSample(sample) {
       return serialize(sample.runCategory, async () => {
+        if (options.recordWithPolicy) {
+          try {
+            const evaluation = await boundedTelemetryIO(() => options.recordWithPolicy!(sample));
+            markPersisted(sample.runCategory);
+            return { ...evaluation, persisted: true, persistenceDegraded: false };
+          } catch (error) {
+            await recordPersistenceFailure('persist', sample.runCategory, error);
+            return { ...evaluateSustainedHighWatermark([], sample.runCategory), persisted: false, persistenceDegraded: true };
+          }
+        }
         let updated: AgentRunUtilizationSample[];
         let loadFailed = false;
         let persistFailed = false;
@@ -351,6 +367,15 @@ export function createHighWatermarkMonitor(options: HighWatermarkMonitorOptions 
     },
     evaluateCategory(runCategory) {
       return serialize(runCategory, async () => {
+        if (options.evaluateWithPolicy) {
+          try {
+            const evaluation = await boundedTelemetryIO(() => options.evaluateWithPolicy!(runCategory));
+            return { ...evaluation, persisted: true, persistenceDegraded: false };
+          } catch (error) {
+            await recordPersistenceFailure('load', runCategory, error);
+            return { ...evaluateSustainedHighWatermark([], runCategory), persisted: false, persistenceDegraded: true };
+          }
+        }
         const read = await readFreshWindow(runCategory);
         const evaluation = evaluateSustainedHighWatermark(read.samples, runCategory, evalOptions);
         const status = getStatus(runCategory);

@@ -6,7 +6,7 @@ import { AGENT_IMAGE_LIMIT, type AgentImageInput } from './agent-images.ts';
 import { BaseLlm, createEvent, populateClientFunctionCallId } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { ApiError, GoogleGenAI } from "@google/genai";
-import type { FunctionCall, GenerateContentParameters, GoogleGenAIOptions } from "@google/genai";
+import type { FunctionCall, GoogleGenAIOptions } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
@@ -21,7 +21,11 @@ import { fitInitialConversationSummary } from './summary-projection.ts';
 import type { DurableAiUsage, DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
 
+import { nativeContextPreflight, nativeTokenCounter, type ContextPreflight, type NativeContextPayload } from './model-context-preflight.ts';
+
 export interface AgentModelProvider {
+  preflight?(request: LlmRequest, audioDurationMs?: number, counted?: number): ContextPreflight;
+  countInput?(request: LlmRequest): Promise<number | undefined>;
   generate(request: LlmRequest, signal: AbortSignal): Promise<LlmResponse>;
 }
 
@@ -71,7 +75,7 @@ export function vertexAgentClientOptions(config: AiConfig): GoogleGenAIOptions {
 /** Share native payload construction; the AbortSignal is transport-only. */
 export function createVertexAgentPayloadBuilder(config: AiConfig) {
   const thinkingLevel = nativeModelThinkingLevel(config.model, config.agentThinkingLevel);
-  return (request: Pick<LlmRequest, "contents" | "config">): GenerateContentParameters => ({ model: config.model, contents: request.contents,
+  return (request: Pick<LlmRequest, "contents" | "config">): NativeContextPayload => ({ model: config.model, contents: request.contents,
     config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_OUTPUT_LIMITS.maxInteractive),
       thinkingConfig: { thinkingLevel } } });
 }
@@ -79,7 +83,10 @@ export function createVertexAgentPayloadBuilder(config: AiConfig) {
 export function createVertexAgentProvider(config: AiConfig): AgentModelProvider {
   const buildPayload = createVertexAgentPayloadBuilder(config);
   const client = new GoogleGenAI(vertexAgentClientOptions(config));
+  const count = nativeTokenCounter(config.model, config.localContextTokenizer);
   return {
+    preflight: (request, duration, counted) => nativeContextPreflight(buildPayload(request), duration, counted),
+    ...(count ? { countInput: (request: LlmRequest) => count(buildPayload(request)) } : {}),
     async generate(request, signal) {
       try {
         const payload = buildPayload(request);
@@ -104,7 +111,7 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
-    syncPolicy?: () => Promise<boolean | void>;
+    syncPolicy?: (attemptKey?: string) => Promise<boolean | void>;
     refreshPolicyConfig?: (request: LlmRequest, modelCallAlreadyReserved?: boolean) => Promise<LlmRequest["config"] | undefined>;
     roleProfileOverrides?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
     reserveDeliveryReview?: AgentReviewReserve;
@@ -124,9 +131,17 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
-  private async checkAuthorizeAndPolicy(): Promise<boolean> {
-    if (!await this.options.budget.wait(this.options.authorize)) throw new AgentStopped("unauthorized");
-    if (this.options.syncPolicy) return Boolean(await this.options.budget.wait(this.options.syncPolicy));
+  private async checkAuthorizeAndPolicy(attemptKey?: string): Promise<boolean> {
+    const authorized = await this.options.budget.wait(this.options.authorize);
+    if (!authorized) {
+      // Platform revocation may be seen by authorization before the policy barrier.
+      // Resolve the committed version for the observer while preserving the denial.
+      if (this.options.syncPolicy) {
+        try { await this.options.budget.wait(() => this.options.syncPolicy!(attemptKey)); } catch {}
+      }
+      throw new AgentStopped("unauthorized");
+    }
+    if (this.options.syncPolicy) return Boolean(await this.options.budget.wait(() => this.options.syncPolicy!(attemptKey)));
     return false;
   }
   private async syncRequestPolicy(request: LlmRequest, force = false, renderedPolicy?: string, modelCallAlreadyReserved = false): Promise<LlmRequest> {
@@ -252,9 +267,31 @@ export class AgentGatewayModel extends BaseLlm {
     requestCharacters = requestSize(base);
     if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
     let outgoing = base;
-    const fits = (context: LlmRequest['contents'][number]) =>
-      requestSize({ ...base, contents: [...base.contents, context] })
-        + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters;
+    let countedFingerprint: string | undefined;
+    let countedTokens: number | undefined;
+    const fingerprint = (value: LlmRequest) => agentBudgetFingerprint({ model: config.model, contents: value.contents, config: value.config });
+    const countInput = async (value: LlmRequest) => {
+      if (!provider.countInput) return;
+      const key = fingerprint(value);
+      if (key === countedFingerprint) return;
+      countedTokens = await budget.wait(() => provider.countInput!(value));
+      countedFingerprint = key;
+    };
+    const inspect = (value: LlmRequest) => {
+      try {
+        const count = countedTokens !== undefined && countedFingerprint === fingerprint(value) ? countedTokens : undefined;
+        return provider.preflight?.(value, this.options.audio?.metadata.durationMs, count);
+      } catch (error) {
+        if (error instanceof PersonalProviderError) throw new AgentStopped(error.diagnostic.reason);
+        throw error;
+      }
+    };
+    const fits = (context: LlmRequest['contents'][number], optionalSummary = true) => {
+      const candidate = { ...base, contents: [...base.contents, context] };
+      if (requestSize(candidate) + AGENT_TOOL_RESPONSE_RESERVE > budget.limits.inputCharacters) return false;
+      const measured = inspect(candidate);
+      return !measured?.exceedsCapacity && (!optionalSummary || measured?.softExceeded !== true);
+    };
     const projection = initial ? fitInitialConversationSummary(initial, fits) : null;
     const validUntil = projection?.validUntil ?? NaN;
     // Fresh provider-only data never enters ADK events; size the full request without cumulative copies.
@@ -262,7 +299,7 @@ export class AgentGatewayModel extends BaseLlm {
     const includesSummary = projection !== null;
     const omittedSummary = () => {
       const marker = { role: 'user', parts: [{ text: 'Server context coverage: historical summary omitted for capacity or expiry; read authorized history/current resources when needed. Do not claim complete historical coverage.' }] };
-      return fits(marker) ? { ...base, contents: [...base.contents, marker] } : base;
+      return fits(marker, false) ? { ...base, contents: [...base.contents, marker] } : base;
     };
     if (initial && !includesSummary) outgoing = omittedSummary();
     // Keep content and summary fixed after admission; server policy guidance is separately bound before dispatch.
@@ -278,6 +315,8 @@ export class AgentGatewayModel extends BaseLlm {
         outgoing = { ...outgoing, config: base.config };
         requestCharacters = requestSize(base);
       }
+      if (provider.countInput) await countInput(outgoing);
+      if (inspect(outgoing)?.exceedsCapacity) throw new AgentStopped('model_context_exceeded');
       let preparedFingerprint: string | undefined;
       let modelAttempt: import("./durable-root-budget.ts").BudgetAttempt | undefined;
       const modelKey = retry && originalModelKey ? originalModelKey + ":retry:" + retry : originalModelKey;
@@ -319,7 +358,7 @@ export class AgentGatewayModel extends BaseLlm {
       let response: LlmResponse | undefined;
       try {
         if (includesSummary) {
-          await this.checkAuthorizeAndPolicy();
+          await this.checkAuthorizeAndPolicy(modelKey);
           if (Date.now() >= validUntil) {
             if (budget.durable) throw new AgentStopped("unavailable");
             outgoing = omittedSummary();
@@ -335,7 +374,7 @@ export class AgentGatewayModel extends BaseLlm {
         // identity and accounting, while binding the exact refreshed payload in the same ledgers.
         // Only this caller owns execute; neither preparation nor a cold lookup grants dispatch.
         for (;;) {
-          await this.checkAuthorizeAndPolicy();
+          await this.checkAuthorizeAndPolicy(modelKey);
           if (budget.policyFingerprint !== renderedPolicy) {
             base = await this.syncRequestPolicy(base, true, renderedPolicy, true);
             renderedPolicy = budget.policyFingerprint;
@@ -344,6 +383,7 @@ export class AgentGatewayModel extends BaseLlm {
           }
           if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
           const fingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
+          if (provider.countInput) await countInput(outgoing);
           if (modelAttempt && fingerprint !== preparedFingerprint) {
             await budget.prepareModelDispatch(modelAttempt, preparedFingerprint!, fingerprint);
             if (daily && dailyRequest) {
@@ -356,7 +396,7 @@ export class AgentGatewayModel extends BaseLlm {
           if (budget.durable) await budget.checkDurable();
           if (this.options.privateSummaryAdmission && !await budget.wait(() => this.options.privateSummaryAdmission!.revalidate()))
             throw new AgentStopped('unauthorized');
-          await this.checkAuthorizeAndPolicy();
+          await this.checkAuthorizeAndPolicy(modelKey);
           if (budget.policyFingerprint === renderedPolicy) break;
         }
         response = await budget.wait(() => {
@@ -366,6 +406,7 @@ export class AgentGatewayModel extends BaseLlm {
             outgoing = omittedSummary();
           }
           if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
+          if (inspect(outgoing)?.exceedsCapacity) throw new AgentStopped('model_context_exceeded');
           // Preparation, rejected quota and input checks do not consume the first-call opportunity.
           if (modelAttempt) budget.beginModelDispatch(modelAttempt);
           this.providerCalled = true;
@@ -377,7 +418,7 @@ export class AgentGatewayModel extends BaseLlm {
         if (response.finishReason === 'MAX_TOKENS') throw new AgentStopped('model_output_limit');
         if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
           || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
-        await this.checkAuthorizeAndPolicy();
+        await this.checkAuthorizeAndPolicy(modelKey);
         // ADK normally assigns missing call IDs after the gateway returns. Fix those
         // same native IDs before charging this private batch so persisted evidence
         // and its original complete fingerprint cannot disagree after a crash.

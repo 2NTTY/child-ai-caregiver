@@ -45,7 +45,7 @@ export type DurableAiUsageAdmission = { decision: 'execute' | 'lookup'; receipt:
   | { decision: 'quota_exceeded' };
 export interface DurableAiUsage {
   readonly billingSource: ModelBillingSource;
-  reserve(request: DurableAiUsageRequest): Promise<DurableAiUsageAdmission>;
+  reserve(request: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance'): Promise<DurableAiUsageAdmission>;
   /** Preparation only, by the newly admitted caller before its one provider dispatch. No quota changes. */
   prepareModelDispatch?(request: DurableAiUsageRequest, expectedFingerprint: string, nextFingerprint: string, preparationToken: string): Promise<DurableAiUsageReceipt>;
   read(request: DurableAiUsageRequest): Promise<DurableAiUsageReceipt | null>;

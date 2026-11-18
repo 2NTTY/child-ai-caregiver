@@ -23,6 +23,19 @@ test('real recovery consumer preserves the original receipt, retries discarded c
   assert.ok(f.fake.transactions.slice(transactionsBeforeRecovery).every(tx => tx.writes <= 4 && tx.reads <= 18));
 });
 
+test('recovery preserves an original worker receipt at the interactive policy ceiling', async () => {
+  const f = await setup();
+  const counts = { modelCalls: 64, toolCalls: 256, queryEmbeddings: 32 };
+  const tools = Array.from({ length: counts.toolCalls }, () => ({ name: 'read_work', status: 'succeeded' }));
+  const receipt = f.options.cipher.encrypt(JSON.stringify({ ...f.original, tools, counts }),
+    `agent-run:${f.scope.childId}:${f.scope.ownerUserId}:${f.rows.run.id}`);
+  f.rows.run.resultEncrypted = receipt;
+  await f.write('run');
+  await processor(f.service).process(f.job, f.job.jobId);
+  assert.equal((await f.read('event')).state, 'completed');
+  assert.equal((await f.read('run')).resultEncrypted, receipt);
+});
+
 test('pending original run cannot execute, and lost expiry commit remains unknown after reconstruction', async () => {
   const f = await setup(); f.rows.run.state = 'running'; f.rows.run.resultEncrypted = null; await f.write('run');
   const pending = processor(f.service);

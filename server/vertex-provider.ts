@@ -3,7 +3,8 @@ import type { GenerateContentResponse } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import { ProviderFailure } from "./model-gateway.ts";
-import type { ModelProvider } from "./model-gateway.ts";
+import type { ModelInput, ModelProvider } from "./model-gateway.ts";
+import { nativeContextPreflight, nativeTokenCounter } from './model-context-preflight.ts';
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 
 function count(value: unknown): number | null {
@@ -34,20 +35,18 @@ export function createVertexProvider(config: AiConfig): ModelProvider {
     enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
     httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } },
   });
+  const count = nativeTokenCounter(config.model, config.localContextTokenizer);
+  const payload = (input: ModelInput, maxOutputTokens: number) => ({
+    model: config.model, contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
+    config: { systemInstruction: input.systemInstruction, maxOutputTokens, candidateCount: 1, thinkingConfig: { thinkingLevel } },
+  });
   return {
+    preflight: (input, max, counted) => nativeContextPreflight(payload(input, max), undefined, counted),
+    ...(count ? { countInput: (input: ModelInput, max: number) => count(payload(input, max)) } : {}),
     async generate(input, options) {
       try {
-        const response = await client.models.generateContent({
-          model: config.model,
-          contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
-          config: {
-            systemInstruction: input.systemInstruction,
-            maxOutputTokens: options.maxOutputTokens,
-            candidateCount: 1,
-            thinkingConfig: { thinkingLevel },
-            abortSignal: options.signal,
-          },
-        });
+        const request = payload(input, options.maxOutputTokens);
+        const response = await client.models.generateContent({ ...request, config: { ...request.config, abortSignal: options.signal } });
         return readVertexReply(response);
       } catch (error) {
         if (error instanceof ProviderFailure) throw error;
