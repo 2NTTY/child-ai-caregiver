@@ -1,0 +1,14 @@
+{
+  "store": "Firestore Emulator",
+  "entry": "scripts/verify-agent-worker-rollout.mjs",
+  "runDateHongKong": "2026-11-18",
+  "simultaneousNodeProcesses": 2,
+  "policyVersionsObserved": [1, 2, 3],
+  "limitsInOrder": [3, 1, 4],
+  "workersBlockedAfterTightening": 2,
+  "oldRunAfterRaise": "model_limit",
+  "knownAttemptAfterProcessRestart": "lookup_only",
+  "replayedProviderCalls": 0,
+  "newRunLimit": 4,
+  "scope": "Production policy selection and Firestore root admission. Synthetic provider dispatch. No production worker rollout or model calls."
+}
