@@ -24,7 +24,8 @@ export async function handleHandoverImport(request: Request, owner: string, serv
         ...(classFeatures.includes('concerns') ? { classConcernImports: true } : {}),
         ...(classFeatures.includes('growth') ? { classGrowthImports: true } : {}),
         ...(request.headers.get('x-handover-original-modules') === '1' ? { originalModules: service.originalModules.filter(module =>
-          (module !== 'concerns' || originalFeatures.includes('concerns'))
+          (module !== 'chat' || originalFeatures.includes('private-chat'))
+          && (module !== 'concerns' || originalFeatures.includes('concerns'))
           && (module !== 'growth' || originalFeatures.includes('growth'))
           && (module !== 'memory' || originalFeatures.includes('private-instructions'))) } : {}),
         ...(service.accountAvatarRestore && request.headers.get('x-handover-account-backup') === '1'

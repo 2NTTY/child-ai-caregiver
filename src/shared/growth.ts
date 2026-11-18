@@ -21,7 +21,7 @@ export interface GrowthAttention {
 }
 export interface GrowthInput { key: string; label: string; choices: { value: string; label: string }[]; value: string | null; conflict: boolean; factRefs: { id: string; version: number }[] }
 export interface GrowthTopic { id: GrowthTopicId; title: string; version: number; disabled: boolean; inputs: GrowthInput[] }
-export interface GrowthPage { authorityVersion: string; items: GrowthAttention[]; historyHasMore: boolean; topics: GrowthTopic[]; notices: string[]; eligibleAssignees: TaskAssignee[]; canManage: boolean }
+export interface GrowthPage { authorityVersion: string; items: GrowthAttention[]; historyHasMore: boolean; historyNextCursor?: string | null; topics: GrowthTopic[]; notices: string[]; eligibleAssignees: TaskAssignee[]; canManage: boolean }
 const basis = { authorityVersion: z.string().min(1).max(100), expectedVersion: z.number().int().positive().max(2147483646), confirm: z.literal(true) };
 export const growthActionSchema = z.discriminatedUnion("action", [
   z.object({ ...basis, action: z.literal("accept"), task: z.discriminatedUnion("kind", [

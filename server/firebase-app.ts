@@ -192,8 +192,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           }
           result=await options.push.authorizeChatOpen(session.userId,session,reference,proof);
         } else {
-          result=post ? await options.push.setChatPresence(session.userId,session,await readJson(request))
-            : await options.push.readChatPresence(session.userId,session,query.get('bindingId') ?? '');
+          const classTasks = request.headers.get('x-push-features') === 'class-tasks';
+          result=post ? await options.push.setChatPresence(session.userId,session,await readJson(request),classTasks)
+            : await options.push.readChatPresence(session.userId,session,query.get('bindingId') ?? '',classTasks);
         }
         const current=await auth.webSessionProof?.(request.headers);
         if(current?.userId!==session.userId || current.sessionHash!==session.sessionHash) throw new RequestError('session_changed',409);
@@ -207,8 +208,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const expected = request.headers.get('x-expected-user-id');
         if (expected !== session.userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
         const withPreview = path === '/api/native-push/v2/chat-presence';
-        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview)
-          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview);
+        const classTasks = request.headers.get('x-push-features') === 'class-tasks';
+        const result = request.method === 'GET' ? await options.nativePush.readChatPresence(session.userId, session, withPreview, classTasks)
+          : await options.nativePush.setChatPresence(session.userId, session, await readJson(request), withPreview, classTasks);
         const current = await auth.nativeSessionProof?.(request.headers);
         if (current?.userId !== session.userId || current.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
@@ -221,7 +223,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!raw || raw.length > 1024) throw new RequestError('invalid_input', 400);
         let value; try { value = JSON.parse(raw); } catch { throw new RequestError('invalid_input', 400); }
         const ref = await options.nativePush.authorizeOpen(session.userId, session, value);
-        const result = 'screen' in ref ? { kind: 'chat', childId: ref.childId, messageId: ref.messageId }
+        const result = 'screen' in ref ? (ref.screen === 'class_task'
+          ? {kind:'class_task',spaceId:ref.spaceId,childId:ref.childId,taskId:ref.taskId}
+          : {kind:'chat',childId:ref.childId,messageId:ref.messageId})
           : ref.kind === 'test' ? { kind: 'test', childId: null, taskId: null } : await options.contact?.resolveNativeOpen(session.userId, ref);
         if (!result) throw new RequestError('not_found', 404);
         // Recheck after lookup; a tap never marks receipt or completes a task.
@@ -252,14 +256,20 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (expected !== userId) throw new RequestError(expected ? 'identity_changed' : 'account_precondition_required',expected ? 409 : 428);
         const store=options.chat?.mixed;
         if (!store) throw new RequestError('mixed_chat_unavailable',503);
-        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?|care-citations\/([1-6])))?)?)?$/u.exec(path);
+        const match=/^\/api\/account\/mixed-chats(?:\/([a-f0-9-]+)(\/messages(?:\/([a-f0-9-]+)\/(reply|task-batch(?:\/advance)?|care-citations\/([1-6])|material-citations\/(1[0-2]|[1-9])))?)?)?$/u.exec(path);
         if (!match) throw new RequestError('not_found',404);
         if ([match[1],match[3]].some(id=>id && !z.uuid().safeParse(id).success)) throw new RequestError('not_found',404);
         const cursor=new URL(request.url).searchParams.get('cursor');
         let result;
         if (match[1] && match[3]) {
           if (!options.product) throw new RequestError('agent_unavailable',503);
-          if (match[4]?.startsWith('care-citations/')) {
+          if (match[4]?.startsWith('material-citations/')) {
+            if (request.method!=='GET') throw new RequestError('method_not_allowed',405);
+            const params=new URL(request.url).searchParams, offsets=params.getAll('offset');
+            if ([...params.keys()].some(key=>key!=='offset') || offsets.length>1
+              || (offsets.length && !/^(0|[1-9][0-9]{0,8})$/u.test(offsets[0]))) throw new RequestError('invalid_input',400);
+            result={citation:await options.product.runs.mixedMaterialCitation(userId,match[1],match[3],Number(match[6]),offsets.length ? Number(offsets[0]) : undefined)};
+          } else if (match[4]?.startsWith('care-citations/')) {
             if (request.method!=='GET') throw new RequestError('method_not_allowed',405);
             if (new URL(request.url).search) throw new RequestError('invalid_input',400);
             result={citation:await options.product.runs.mixedCareCitation(userId,match[1],match[3],Number(match[5]))};
@@ -383,9 +393,15 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
         const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
-        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+        const allowed = request.method === 'GET' ? ['spaceId', 'limit', 'cursor'] : ['spaceId'];
+        const limit = url.searchParams.get('limit');
+        if ([...url.searchParams.keys()].some(key => !allowed.includes(key) || url.searchParams.getAll(key).length !== 1)
+          || limit !== null && !/^(?:[1-9]|[1-9][0-9]|100)$/u.test(limit)
           || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
-        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId) : options.concerns;
+        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId, {
+          sharedActions: request.headers.get('x-concern-features') === 'shared-actions',
+          authorityVersion: request.headers.get('x-concern-authority') ?? undefined,
+        }) : options.concerns;
         const response = await handleConcernRequest(request, userId, concerns, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);

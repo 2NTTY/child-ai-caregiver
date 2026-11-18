@@ -1,3 +1,4 @@
+import { growthModuleWritable } from "../../growth-view-model";
 import { useGrowthFormDraftGuard } from "./useGrowthFormDraftGuard";
 import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -21,7 +22,7 @@ const links = { recordId: null, taskId: null, attentionId: null };
 const labels: Record<keyof Fields, string> = { title: "關注名稱", reason: "關注原因", observation: "觀察內容", observedAt: "觀察時間", followUpAt: "站內跟進時間" };
 
 export function GrowthConcernManualFallback({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
-  if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page) return null;
+  if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page || !growthModuleWritable(model.page,"concerns")) return null;
   return <ManualFormDialog label="手動" title={concern ? "新增／跟進關注" : "新增關注"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
     <ManualForm model={model} actions={actions} concern={concern} />
   </ManualFormDialog>;

@@ -72,9 +72,12 @@ function useProductionValue(owner: ProductionOwner) {
     const identity = snapshot.identityKey, generation = snapshot.sessionGeneration;
     leave(() => { void (async () => {
       if (!identity || owner.getSnapshot().identityKey !== identity || owner.getSnapshot().sessionGeneration !== generation) return;
-      if (target.childId) await owner.selectPersonalChild(target.childId);
+      if (target.kind === "class_task") await owner.selectSharedChild(target.spaceId, target.childId);
+      else if (target.childId) await owner.selectPersonalChild(target.childId);
       if (owner.getSnapshot().identityKey !== identity || owner.getSnapshot().sessionGeneration !== generation) return;
-      if (target.childId && owner.getSnapshot().activeChild?.id !== target.childId) throw new Error("notification_child_unavailable");
+      const selected = owner.getSnapshot();
+      if (target.childId && (selected.activeChild?.id !== target.childId || (target.kind === "class_task"
+        ? selected.sharedChild.view?.spaceId !== target.spaceId : !!selected.sharedChild.target))) throw new Error("notification_child_unavailable");
       router.push(target.kind === "test" ? "/settings" : target.kind === "chat"
         ? { pathname: "/chat", params: { messageId: target.messageId, childId: target.childId } }
         : { pathname: "/tasks", params: { taskId: target.taskId! } });

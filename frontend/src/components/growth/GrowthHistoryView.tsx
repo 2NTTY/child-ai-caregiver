@@ -1,3 +1,4 @@
+import { growthModuleWritable } from "../../growth-view-model";
 import { useEffect, useRef, useState } from "react";
 import { GrowthConcernPagination } from "./GrowthConcernPagination";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -69,8 +70,8 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
           {notice ? <Text style={model.operation === "unknown" || model.operation === "failed" || model.operation === "conflict" ? s.warning : s.body}>{notice}</Text> : null}
           <GrowthOperationRecovery model={model} actions={actions} includeRefresh />
           <GrowthConcernTimeline concern={selected} page={model.page} onRecord={onRecord} onTask={onTask} />
-          {model.page.canManage ? restore(selected) : null}
-          {model.page.canManage && !growthConcernCanRestore(selected) ? <Text style={s.meta}>{growthConcernAtCapacity(selected) ? "已達歷史容量限制" : "未取得原狀態，暫未能恢復。"}</Text> : null}
+          {growthModuleWritable(model.page,"concerns") ? restore(selected) : null}
+          {growthModuleWritable(model.page,"concerns") && !growthConcernCanRestore(selected) ? <Text style={s.meta}>{growthConcernAtCapacity(selected) ? "已達歷史容量限制" : "未取得原狀態，暫未能恢復。"}</Text> : null}
         </View> : null}
       </FormDialog>
   </View>;

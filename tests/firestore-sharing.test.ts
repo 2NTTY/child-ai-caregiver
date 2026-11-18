@@ -92,6 +92,47 @@ async function fixture() {
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
 
+test('shared concern actions and due follow-ups use the original timeline and the live grant', async () => {
+  const f = await fixture(), childId = f.child.child.id;
+  const space = await f.sharing.share('parent', { spaceId:f.space.id, childId, modules:['concerns'],
+    expectedVersion:f.space.version, operationId:randomUUID() });
+  const store = createFirestoreConcernStore(f.options), feature = store.forSharedSpace(space.id, { sharedActions:true });
+  const page = await feature.list('carer', childId);
+  assert.equal(page.canManage, true);
+  assert.equal((await feature.list('viewer', childId)).canManage, false);
+  const writer = store.forSharedSpace(space.id, { sharedActions:true, authorityVersion:page.authorityVersion });
+  const now = Date.now(), at = new Date(now + 60_000).toISOString();
+  const values = { title:'交接後觀察', reason:'測試', observation:'今日記錄', observedAt:new Date(now).toISOString(),
+    links:{ recordId:null, taskId:null, attentionId:null }, followUpAt:at };
+  const op = randomUUID(), saved = await writer.create('carer', childId, values, op);
+  assert.equal(saved.events[0].actorUserId, 'carer');
+  assert.deepEqual(await writer.create('carer', childId, values, op), saved);
+  await assert.rejects(writer.create('viewer', childId, values, randomUUID()), code('read_only'));
+  await assert.rejects(writer.create('carer', childId, { ...values, links:{...values.links, recordId:randomUUID()} }, randomUUID()), code('module_not_shared'));
+  const second = await writer.create('carer', childId, values, randomUUID());
+  const data = new FirestoreDomainData(f.options);
+  const jobs = await f.authority.runTransaction('parent', childId, async b => {
+    const rows = await b.transaction.get(data.collection('background_work').where('childTag','==',data.tags(b.scope).childTag));
+    return rows.docs.map(row => data.open('background-work', row.get('id'), b.scope, firestoreBackgroundWorkSchema, row));
+  });
+  const scheduled = jobs.filter(job => job.kind === 'shared-concern');
+  assert.equal(scheduled.length, 2);
+  assert.equal(jobs.some(job => job.kind === 'concern'), false);
+  const run = (id:string) => store.processSharedFollowup(scheduled.find(job => job.resourceId === id)!, async uid => uid === 'carer', now + 61_000);
+  assert.equal((await run(saved.id)).state, 'completed');
+  await run(saved.id);
+  const completed = await feature.get('viewer', childId, saved.id);
+  assert.equal(completed!.followUp!.state, 'completed');
+  assert.equal(completed!.events.length, saved.events.length + 1);
+  assert.equal(completed!.events.at(-1)!.runId, undefined);
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(entry => /_(concern_events|concern_operations|background_work)\//u.test(entry.path))) codec.decode(row);
+  assert.equal(JSON.stringify(completed).includes('changedViaShare'), false);
+  await f.sharing.share('parent', { spaceId:space.id, childId, modules:['care'], expectedVersion:space.version, operationId:randomUUID() });
+  assert.equal((await run(second.id)).state, 'stopped');
+  assert.equal((await store.get('parent',childId,second.id))!.events.length, second.events.length);
+});
+
 test('shared growth and concerns read original resources without widening live input or private run access', async () => {
   const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
   const care = createFirestoreCareStore(f.options), chat = createFirestoreChatStore(f.options);
@@ -170,6 +211,14 @@ test('shared growth and concerns read original resources without widening live i
   space = await f.sharing.share('parent', { spaceId:space.id, childId, modules:['concerns'],
     expectedVersion:space.version, operationId:randomUUID() });
   const restricted = await concernClient.getPage(childId, signal, actor);
+  const endpoint = origin + '/api/children/' + childId + '/concerns?spaceId=' + space.id;
+  const headers = { 'x-expected-user-id':actor, 'x-concern-features':'shared-actions', 'Content-Type':'application/json' };
+  const capable = await fetcher(endpoint + '&limit=1', { headers });
+  assert.equal(capable.status, 200);
+  assert.equal((await capable.json()).page.canManage, true);
+  const body = JSON.stringify({ opId:randomUUID(), confirmShared:true, values:{...values,links:{ recordId:null,taskId:null,attentionId:null }} });
+  assert.equal((await fetcher(endpoint, { method:'POST', headers:{...headers,'x-concern-authority':concernPage.authorityVersion}, body })).status, 409);
+  assert.equal((await fetcher(endpoint, { method:'POST', headers:{...headers,'x-concern-authority':restricted.authorityVersion}, body })).status, 200);
   assert.deepEqual(restricted.items[0].attentionIds, []);
   assert.equal(restricted.items[0].events[0].attentionId, undefined);
   await assert.rejects(growthClient.getPage(childId, signal, actor), code('module_not_shared'));

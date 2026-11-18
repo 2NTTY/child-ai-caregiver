@@ -10,7 +10,7 @@ export const sharedWriteAttributionSchema = z.object({ actorUserId: z.string().m
 export type SharedWriteAttribution = z.infer<typeof sharedWriteAttributionSchema>;
 /** A class task names a real member; the class storage identity cannot receive reminders. */
 export const classTaskAssignmentSchema = z.object({ userId: z.string().min(1).max(128), spaceId: z.uuid(),
-  membershipId: z.uuid(), membershipScopeId: z.uuid() }).strict();
+  membershipId: z.uuid(), membershipScopeId: z.uuid(), classGeneration: z.uuid().optional() }).strict();
 export type ClassTaskAssignment = z.infer<typeof classTaskAssignmentSchema>;
 export function sharedWriteAttribution(binding: FirestoreAuthorityTransaction, id: string, version: number): SharedWriteAttribution | undefined {
   const access = binding.sharedAccess;

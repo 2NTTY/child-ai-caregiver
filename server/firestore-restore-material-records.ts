@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreSharedInputSchema, firestoreSharedInputPartSchema, firestoreSourceManagementRevisionSchema,
   firestoreSharedInputTombstoneSchema } from './firestore-shared-inputs.ts';
 import { firestoreConcernSchema, firestoreConcernRecoverySchemas } from './firestore-concerns.ts';
-import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
-import { firestoreGrowthSchema, firestoreGrowthTopicSchema, firestoreGrowthRecoverySchema } from './firestore-growth.ts';
+import { firestoreConcernEventStorageSchema } from './firestore-document-sources.ts';
+import { firestoreGrowthSchema, firestoreGrowthTopicSchema, firestoreGrowthRecoverySchema, firestoreGrowthReadingIndexSchema } from './firestore-growth.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 
 export const materialRestoreSchemas = {
@@ -13,13 +14,14 @@ export const materialRestoreSchemas = {
   'shared-input-tombstone': { suffix: 'shared_inputs', schema: firestoreSharedInputTombstoneSchema },
   concern: { suffix: 'concerns', schema: firestoreConcernSchema },
   'concern-revision': { suffix: 'concern_revisions', schema: firestoreConcernSchema },
-  'concern-event': { suffix: 'concern_events', schema: firestoreDocumentConcernEventSchema },
+  'concern-event': { suffix: 'concern_events', schema: firestoreConcernEventStorageSchema },
   'concern-operation': { suffix: 'concern_operations', schema: firestoreConcernRecoverySchemas.receipt },
   'concern-followup': { suffix: 'concern_followups', schema: firestoreConcernRecoverySchemas.followup },
   'growth-attention': { suffix: 'growth_attention', schema: firestoreGrowthSchema },
   'growth-revision': { suffix: 'growth_revisions', schema: firestoreGrowthSchema },
   'growth-topic': { suffix: 'growth_topics', schema: firestoreGrowthTopicSchema },
   'growth-topic-revision': { suffix: 'growth_topic_revisions', schema: firestoreGrowthTopicSchema },
+  'growth-reading-index': { suffix: 'growth_checks', schema: firestoreGrowthReadingIndexSchema },
   'growth-check': { suffix: 'growth_checks', schema: firestoreGrowthRecoverySchema },
 } as const;
 export type MaterialRestoreKind = keyof typeof materialRestoreSchemas;
@@ -55,15 +57,19 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
     return { concernId: row.id, entityVersion: row.version, createdAt: row.createdAt };
   }
   if (kind === 'concern-event') {
-    const row = firestoreDocumentConcernEventSchema.parse(raw), source = row.importedFrom?.current;
+    const row = firestoreConcernEventStorageSchema.parse(raw), source = row.importedFrom?.current;
     const actor = source ? source.source.section === 'concern_events' && source.source.authorUserId === row.actorUserId
       ? source.importedBy : null : row.actorUserId;
-    check(id === row.id && row.childId === scope.childId && recordVersion === 1 && actor === scope.ownerUserId);
+    check(id === row.id && row.childId === scope.childId && recordVersion === 1 && actor !== null
+      && validSharedAttribution(row.changedViaShare, scope, row.id, 1, actor));
     return { ...(row.timelineId ? { timelineId: row.timelineId } : { concernId: row.concernId }), eventId: row.id, sequence: row.sequence };
   }
   if (kind === 'concern-operation') {
     let key: unknown; try { key = JSON.parse(id); } catch { check(false); }
-    check(Array.isArray(key) && key.length === 2 && key[0] === scope.ownerUserId && z.uuid().safeParse(key[1]).success && JSON.stringify(key) === id && recordVersion === 1);
+    const receipt = firestoreConcernRecoverySchemas.receipt.parse(raw);
+    check(Array.isArray(key) && key.length === 2 && typeof key[0] === 'string'
+      && validSharedAttribution(receipt.changedViaShare, scope, receipt.id, receipt.version, key[0])
+      && z.uuid().safeParse(key[1]).success && JSON.stringify(key) === id && recordVersion === 1);
     return {};
   }
   if (kind === 'concern-followup') { const row = firestoreConcernRecoverySchemas.followup.parse(raw); check(id === row.id && recordVersion === 1); return {}; }
@@ -78,6 +84,10 @@ export function materialRestoreMetadata(context: FirestoreRecoveryContext & { ki
       && origin.source.authorUserId === row.actor && origin.source.growthTopic === row.topicId && origin.importedBy === scope.ownerUserId));
     if (kind === 'growth-topic') check(id === key); else equal(id, [scope.childId, row.topicId, row.version]);
     return {};
+  }
+  if (kind === 'growth-reading-index') {
+    const row = firestoreGrowthReadingIndexSchema.parse(raw); check(id === row.childId && id === scope.childId && recordVersion === 1);
+    return {}; // Its authority hash binds the old scope/epoch/generation; restored state cannot activate the index.
   }
   const row = firestoreGrowthRecoverySchema.parse(raw); check(id === row.childId && id === scope.childId && recordVersion === 1);
   return {}; // Current context/basis is re-evaluated before further growth actions.

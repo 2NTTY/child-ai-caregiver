@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 const COMPACTOR_PATH = "server/context-compactor.ts";
 const RUNTIME_PATH = "server/agent-runtime.ts";
@@ -105,10 +105,20 @@ try {
     console.log(`Testing [${m.id}]: ${m.name}...`);
     m.mutate();
     try {
-      execSync("node --test tests/agent-context-compaction.test.ts", {
-        stdio: "pipe",
-        encoding: "utf8"
-      });
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          "./frontend/scripts/family-cleanup-network-guard.mjs",
+          "--experimental-transform-types",
+          "--test",
+          "tests/agent-context-compaction.test.ts",
+        ],
+        {
+          stdio: "pipe",
+          encoding: "utf8",
+        },
+      );
       console.error(`  FAIL: Mutation ${m.id} was NOT caught by tests!`);
       passedAll = false;
     } catch (err) {

@@ -14,7 +14,7 @@ export const SHARING_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'sy
 export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers', 'class']), name: z.string().trim().min(1).max(160),
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),
-  teacherSpaceId:z.uuid().nullable().optional(), directMembershipGeneration:z.uuid().optional(),
+  teacherSpaceId:z.uuid().nullable().optional(), directMembershipGeneration:z.uuid().optional(), taskGenerationBound:z.literal(true).optional(),
   erasureOperationId:z.uuid().optional(),
   detachTargetUserId:user.nullable().optional(), detachManagerGeneration:z.uuid().nullable().optional(), detachTargetMembershipId:z.uuid().nullable().optional(),
   transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict()

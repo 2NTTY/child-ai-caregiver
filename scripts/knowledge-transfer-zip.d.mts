@@ -1,0 +1,6 @@
+export interface KnowledgeArchive {
+  entries: readonly {sourceId:string; versionHash:string; sha256:string}[];
+  readEdition(index:number):Promise<unknown>;
+  close():Promise<void>;
+}
+export function openKnowledgeArchive(path:string, digest:string, signal?:AbortSignal):Promise<KnowledgeArchive>;

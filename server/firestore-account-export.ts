@@ -39,7 +39,8 @@ import { validateSourceHistory, sourceHistoryVisible } from './handover-source-h
 import type { PackageMediaFilter } from './handover-attachment-period.ts';
 import { firestoreGrowthSchema, firestoreGrowthTopicSchema, type createFirestoreGrowthStore } from './firestore-growth.ts';
 import { createFirestoreConcernStore, firestoreConcernSchema, sharedConcernHead, sharedConcernEvent } from './firestore-concerns.ts';
-import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { firestoreChatMessageSchema } from './chat-message-schema.ts';
+import { firestoreConcernEventViewSchema } from './firestore-document-sources.ts';
 import { handoverIdentityLinks } from './handover-provenance.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import { sharedMessageAttachmentVisible } from './firestore-attachment-access.ts';
@@ -231,6 +232,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             domainReject('export_scope_changed');
           if (section === 'children') {
             const child = await binding.readChild(context.scope.childId); if (child) items.push(child);
+          } else if (section === 'chat' && packageOptions?.includeOriginalChatPosition && !classRequest) {
+            items.push({ ...firestoreChatMessageSchema.parse(value), originalPosition:{ workspaceId:binding.scope.workspaceId,
+              sortKey:domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'export_scope_changed', 409) } });
           } else if (section === 'agent_work') {
             const work = await binding.readWork(context.id); if (!work) domainReject('export_scope_changed'); items.push(work);
           } else if (section === 'document_content' || section === 'document_versions') {
@@ -284,8 +288,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const current = await concerns.head(binding, head.id);
             if (current && current.version >= head.version) items.push({ ...sharedConcernHead(head, classRequest.selection.modules),
               importedFrom: handoverIdentityLinks(head.importedFrom) });
+          } else if (!classRequest && section === 'concern_events') {
+            items.push(firestoreConcernEventViewSchema.parse(value));
           } else if (classRequest && section === 'concern_events') {
-            const event = firestoreDocumentConcernEventSchema.parse(value);
+            const event = firestoreConcernEventViewSchema.parse(value);
             if (context.id !== event.id || event.id !== row.get('eventId') || event.childId !== binding.scope.childId
               || event.sequence !== row.get('sequence')) domainReject('export_scope_changed');
             const current = await concerns.head(binding, event.concernId);

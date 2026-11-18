@@ -189,6 +189,9 @@ test('restore retains knowledge index batch progress and receipts in system scop
 
     const receipt = indexBatchReceiptSchema.parse({ opId: randomUUID(), batchId: batch.id, actorId: batch.actorId,
       action: 'create', fingerprint: digest, controlVersion: 1, at });
+    const root = {...receipt,opId:batch.id,parts:[batch.id,randomUUID()]};
+    const sealedRoot=record(f.data,'knowledge_index_receipts','knowledge-index-receipt',root.opId,FIRESTORE_TASK_DISPATCH_SCOPE,indexBatchReceiptSchema,root);
+    assert.deepEqual(f.codec.decode(f.codec.transform(f.codec.decode(sealedRoot),input())).value,root);
     const before = record(f.data, 'knowledge_index_receipts', 'knowledge-index-receipt', receipt.opId,
       FIRESTORE_TASK_DISPATCH_SCOPE, indexBatchReceiptSchema, receipt);
     const after = f.codec.transform(f.codec.decode(before), input()), receiptDecoded = f.codec.decode(after);

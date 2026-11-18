@@ -6,7 +6,8 @@ import { concernValuesSchema, concernChangeSchema, CONCERN_EVENT_LIMIT, CONCERN_
 import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema,
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
+import { sharedWriteAttribution, sharedWriteAttributionSchema } from './shared-write-attribution.ts';
+import { firestoreConcernEventViewSchema, firestoreConcernEventStorageSchema, firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { assertClassImportAccess } from './firestore-class-handover.ts';
 import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
@@ -82,7 +83,7 @@ function transferTimeline(row: HandoverImportRow, rawEvents: unknown[]) {
   return { source, sourceEvents };
 }
 type StoredEvent = ConcernEvent & { importedFrom?: ImportProvenance };
-const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version }).strict();
+const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, version, changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
   reference: uuid, generation: uuid, authorizationVersion: z.string() }).strict();
 type Prepared = { value: Concern; changeSeq: string; commit(): void };
@@ -121,7 +122,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     const rows = await b.transaction.get(query(b, 'concern_events').where(item.timelineId ? 'timelineId' : 'concernId', '==', item.timelineId ?? item.id)
       .where('sequence', '<=', item.eventCount).orderBy('sequence', 'asc').limit(CONCERN_STORED_EVENT_LIMIT));
     const events = rows.docs.map((row, i) => {
-      const event = data.open('concern-event', row.get('eventId'), b.scope, firestoreDocumentConcernEventSchema, row);
+      const event = data.open('concern-event', row.get('eventId'), b.scope, firestoreConcernEventViewSchema, row);
       if (event.id !== row.get('eventId') || event.concernId !== item.id || event.childId !== item.childId
         || event.timelineId !== item.timelineId || event.sequence !== i + 1 || row.get('sequence') !== event.sequence) domainReject('concern_binding', 500);
       return event;
@@ -136,13 +137,14 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   async function read(b: Binding, id: string) { const item = await head(b, id); return item ? hydrate(b, item) : null; }
   function event(b: Binding, at: string, kind: ConcernEvent['kind'], title: string, text: string,
     refs: Partial<ConcernEvent> = {}): ConcernEvent {
-    return { id: randomUUID(), at, kind, title, text, sourceLabel: '家庭共享關注', actorUserId: b.scope.ownerUserId, ...refs };
+    return { id: randomUUID(), at, kind, title, text, sourceLabel: '家庭共享關注', actorUserId: b.actorUserId, ...refs };
   }
   async function links(b: Binding, values: ConcernValues['links']) {
     const refs: Partial<ConcernEvent> = {};
     for (const [field, suffix, kind, schema] of [['recordId', 'care_records', 'care-record', firestoreCareSchema],
       ['taskId', 'tasks', 'task', firestoreTaskSchema]] as const) {
       const id = values[field]; if (!id) continue;
+      if (b.sharedAccess && !b.sharedAccess.modules?.includes(field === 'recordId' ? 'care' : 'tasks')) domainReject('module_not_shared', 403);
       const row = await b.transaction.get(data.ref(suffix, kind, id));
       if (!row.exists || Object.entries(data.tags(b.scope)).some(([k, v]) => row.get(k) !== v)
         || field === 'recordId' && row.get('live') !== true) domainReject('not_found', 404);
@@ -151,6 +153,7 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       refs[field] = id;
     }
     if (values.attentionId) {
+      if (b.sharedAccess && !b.sharedAccess.modules?.includes('growth')) domainReject('module_not_shared', 403);
       const row = await b.transaction.get(data.ref('growth_attention', 'growth-attention', values.attentionId));
       if (!row.exists || Object.entries(data.tags(b.scope)).some(([k, v]) => row.get(k) !== v)) domainReject('not_found', 404);
       const saved = data.open('growth-attention', values.attentionId, b.scope,
@@ -167,17 +170,19 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
     const revisionId = JSON.stringify([value.id, value.version]), revisionRef = data.ref('concern_revisions', 'concern-revision', revisionId);
     if ((await b.transaction.get(revisionRef)).exists) domainReject('concern_changed');
     const wake = schedulePending && value.followUp?.state === 'pending' ? await prepareFirestoreBackgroundWork(data, b.transaction,
-      { kind: 'concern', scope: b.scope, resourceId: value.id, basis: value.followUp.id,
-        generation: b.generation, authorizationVersion: b.authorizationVersion }, value.followUp.at) : null;
-    const context = await prepareContextChange(data, b, { proactive: value.status !== 'closed' && value.archivedAt === null
+      { kind: b.sharedAccess ? 'shared-concern' : 'concern', scope: b.scope, resourceId: value.id,
+        basis: b.sharedAccess ? [b.sharedAccess.spaceId, value.followUp.id, b.actorUserId].join('/') : value.followUp.id,
+        generation: b.generation, authorizationVersion: b.sharedAccess ? followupAuthority(b) : b.authorizationVersion }, value.followUp.at) : null;
+    const context = await prepareContextChange(data, b, { proactive: !b.sharedAccess && value.status !== 'closed' && value.archivedAt === null
       && !value.followUp?.state.match(/^(pending|queued|unknown)$/u), resource: { domain: 'concern', id: value.id } }), change = await b.prepareChange(opId, 'growth', false);
     const tags = { ...data.tags(b.scope), concernId: value.id, entityVersion: value.version, createdAt: value.createdAt };
     const storedEvents = events.map((entry, i) => {
-      const row = { ...entry, concernId: value.id, childId: value.childId, sequence: prior.length + i + 1,
+      const proof = sharedWriteAttribution(b, entry.id, 1);
+      const row = { ...entry, ...(proof ? { changedViaShare: proof } : {}), concernId: value.id, childId: value.childId, sequence: prior.length + i + 1,
         ...(value.timelineId ? { timelineId: value.timelineId } : {}) };
       return { ref: data.ref('concern_events', 'concern-event', entry.id), value: { ...data.tags(b.scope),
         ...(value.timelineId ? { timelineId: value.timelineId } : { concernId: value.id }), eventId: entry.id, sequence: row.sequence,
-        ...data.seal('concern-event', entry.id, b.scope, firestoreDocumentConcernEventSchema, row) } };
+        ...data.seal('concern-event', entry.id, b.scope, firestoreConcernEventStorageSchema, row) } };
     });
     const { timelineId: _timeline, importedFrom: _origin, eventCount: _count, ...publicHead } = value;
     const publicEvents = events.map(({ importedFrom: _source, ...event }) => event);
@@ -351,24 +356,28 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       added.push(event(b, now, 'confirmed_action', input.followUpAt ? '安排站內跟進' : '取消站內跟進',
         input.followUpAt ? '家長確認在指定時間進行一次站內跟進。' : '家長取消尚未完成的站內跟進。'));
     }
-    value.eventCount += added.length; return save(b, value, added, previous.events, opId);
+    value.eventCount += added.length; return save(b, value, added, previous.events, opId, input.action === 'schedule_followup');
   }
   async function operation(userId: string, childId: string, opId: string, request: unknown,
-    prepare: (b: Binding) => Promise<Prepared>) {
+    prepare: (b: Binding) => Promise<Prepared>, shared?: { spaceId:string; authorityVersion?:string }) {
     domainParse(uuid, opId);
-    return authority.runTransaction(userId, childId, async b => {
+    async function apply(b: Binding) {
       const key = JSON.stringify([userId, opId]), ref = data.ref('concern_operations', 'concern-operation', key);
-      const row = await b.transaction.get(ref), fingerprint = firestoreDomainHash(request);
+      const row = await b.transaction.get(ref), fingerprint = firestoreDomainHash(shared ? [shared.spaceId, childId, request] : request);
       if (row.exists) {
         if (Object.entries(data.tags(b.scope)).some(([k, v]) => row.get(k) !== v)) domainReject('operation_mismatch');
         const receipt = data.open('concern-operation', key, b.scope, receiptSchema, row);
         if (receipt.fingerprint !== fingerprint) domainReject('operation_mismatch');
-        const item = await head(b, receipt.id, receipt.version); if (!item) domainReject('operation_erased'); return hydrate(b, item);
+        const item = await head(b, receipt.id, receipt.version); if (!item) domainReject('operation_erased'); return sharedView(b, await hydrate(b, item));
       }
-      const prepared = await prepare(b), receipt = { fingerprint, id: prepared.value.id, version: prepared.value.version };
+      if (shared && shared.authorityVersion !== authorityVersion(b)) domainReject('concern_changed');
+      const prepared = await prepare(b), proof = sharedWriteAttribution(b, prepared.value.id, prepared.value.version);
+      const receipt = { fingerprint, id: prepared.value.id, version: prepared.value.version, ...(proof ? { changedViaShare:proof } : {}) };
       const envelope = { ...data.tags(b.scope), ...data.seal('concern-operation', key, b.scope, receiptSchema, receipt) };
-      prepared.commit(); b.transaction.create(ref, envelope); return prepared.value;
-    });
+      prepared.commit(); b.transaction.create(ref, envelope); return sharedView(b, prepared.value);
+    }
+    return shared ? sharing.withResource(userId, { spaceId:shared.spaceId, childId, module:'concerns', mode:'write' }, access => apply(access.binding))
+      : authority.runTransaction(userId, childId, apply);
   }
   const extension: FirestoreAgentProposalExtension = {
     supports: value => value.kind === 'concern_create' || value.kind === 'concern_change',
@@ -447,7 +456,41 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       const prepared = await save(b, value, added, current.events, randomUUID()); prepared.commit(); return { state };
     });
   }
-  async function page(b: Binding, options?: { limit?: number; cursor?: string | null }) {
+  function followupAuthority(b: Binding) {
+    const access = b.sharedAccess!;
+    return firestoreDomainHash([access.spaceId, access.membershipId, access.classMember ?? null, access.basis.membershipVersion,
+      access.basis.shareVersion, access.basis.actorAuthorizationVersion, access.basis.sourceAuthorizationVersion]);
+  }
+  async function processSharedFollowup(job: FirestoreBackgroundWork, identityActive: (uid: string) => Promise<boolean>, now = Date.now()) {
+    // UUIDs have fixed length. Preserve the entire Firebase UID, including any slashes in it.
+    const spaceId = job.basis.slice(0, 36), followId = job.basis.slice(37, 73), actor = job.basis.slice(74);
+    if (job.kind !== 'shared-concern' || job.basis[36] !== '/' || job.basis[73] !== '/'
+      || !uuid.safeParse(spaceId).success || !uuid.safeParse(followId).success || !actor || !await identityActive(actor)) return { state:'stopped' as const };
+    try {
+      return await sharing.withResource(actor, { spaceId, childId:job.scope.childId, module:'concerns', mode:'write' }, async ({ binding:b }) => {
+        if (b.generation !== job.generation || followupAuthority(b) !== job.authorizationVersion
+          || firestoreDomainHash(b.scope) !== firestoreDomainHash(job.scope)) return { state:'stopped' as const };
+        const value = await head(b, job.resourceId);
+        if (!value || value.status !== 'following' || value.followUp?.id !== followId) return { state:'stopped' as const };
+        if (value.followUp.state === 'completed') return { state:'completed' as const };
+        if (value.followUp.state !== 'pending' || Date.parse(value.followUp.at) > now) return { state:'stopped' as const };
+        const previous = await hydrate(b, value), at = new Date(now).toISOString();
+        const full = value.eventCount >= CONCERN_EVENT_LIMIT;
+        value.followUp = { ...value.followUp, state: full ? 'stopped' : 'completed', runId:null };
+        value.version++; value.updatedAt = at;
+        const added = full ? [] : [event(b, at, 'confirmed_action', '已到跟進時間',
+          '這項持續關注已到約定時間。成員可以在此補充最新觀察。', { sourceLabel:'系統定時跟進' })];
+        value.eventCount += added.length;
+        const saved = await save(b, value, added, previous.events, firestoreBackgroundReference(job), false);
+        saved.commit(); return { state: full ? 'stopped' as const : 'completed' as const };
+      });
+    } catch (error) {
+      const status = (error as { status?:number })?.status;
+      if (status === 403 || status === 404) return { state:'stopped' as const };
+      throw error;
+    }
+  }
+  async function page(b: Binding, options?: { limit?: number; cursor?: string | null }, sharedActions = false) {
     const cursor = options?.cursor ? decodeConcernCursor(options.cursor, b.actorUserId, b.scope.childId) : null;
     let q = query(b, 'concerns').orderBy('createdAt').orderBy('concernId');
     if (cursor) q = q.startAfter(cursor.after.at, cursor.after.id);
@@ -465,19 +508,22 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       v: 1, kind: 'concerns', userId: b.actorUserId, childId: b.scope.childId,
       after: { at: last.get('createdAt'), id: last.get('concernId') },
     }) : null;
-    return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess, hasMore, nextCursor };
+    return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess || sharedActions && b.sharedAccess.role !== 'viewer', hasMore, nextCursor };
   }
-  return { read, head, extension, compareOriginal, prepareOriginal, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground,
-    forSharedSpace(spaceId: string) {
+  return { read, head, extension, compareOriginal, prepareOriginal, prepareCreate, prepareChange, prepareImportedSnapshot, beginBackground, finishBackground, processSharedFollowup,
+    forSharedSpace(spaceId: string, features?: { sharedActions:boolean; authorityVersion?:string }) {
       domainParse(uuid, spaceId);
       const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);
       return {
         list:(u: string, c: string, options?: { limit?: number; cursor?: string | null }) =>
-          sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, access => page(access.binding, options)),
+          sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, access => page(access.binding, options, features?.sharedActions)),
         get:(u: string, c: string, id: string) => sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, async access => {
           const value = await read(access.binding, id); return value ? sharedView(access.binding, value) : null;
         }),
-        create:unavailable, change:unavailable,
+        create:(u:string, c:string, values:ConcernValues, opId:string) => features?.sharedActions
+          ? operation(u,c,opId,{ action:'create',values }, b => prepareCreate(b,values,opId), { spaceId,authorityVersion:features.authorityVersion }) : unavailable(),
+        change:(u:string, c:string, id:string, change:ConcernChange, opId:string) => features?.sharedActions
+          ? operation(u,c,opId,{ id,change }, b => prepareChange(b,id,change,opId), { spaceId,authorityVersion:change.authorityVersion }) : unavailable(),
       };
     },
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => {
