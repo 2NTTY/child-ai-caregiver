@@ -5,7 +5,7 @@
 
 API／worker 共用 `PRIVATE_SUMMARY_SPONSOR_JSON`。由營運設定指定一個 `scope`（ownerUserId、workspaceId、childId、storageEpoch）、authorizationVersion、generation、payer、model、expiresAt 及累積 limits（modelCalls、toolCalls）。私人 key 仍由原模型設定服務讀取。每次接續均核對原工作、現行權限、付款路由及政策版本。缺配置的既有 durable 工作保留原帳與停止狀態。
 
-先用本機 Agent 的 `demo-` 專案及它的 loopback Firestore Emulator 設定執行 `node scripts/verify-summary-pilot.mjs`。腳本建立獨立資料範圍，等舊程序退出，再執行 inventory 切換。兩次增量和兩次冷啟動分別在新程序執行。撤權後再開一次讀取會被拒絕。[實際收據](../artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json)
+先用本機 Agent 的 `demo-` 專案及它的 loopback Firestore Emulator 設定執行 `node scripts/verify-summary-pilot.mjs`。腳本建立獨立資料範圍，等舊程序退出，再執行 inventory 切換。兩批增量完成後，由新程序透過 `product.agent.reply` 發起聊天，在 scripted provider 核對每批的來源 ID 和文字。修訂一項已確認事實後再開新聊天，只保留仍有效的批次。撤權後讀取舊訊息也須在呼叫模型前停止。[實際收據](../artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json)
 
 正式環境另需在 inventory 期間持續證明所有可寫舊格式的 worker 均已退出，核對當前授權、世代和索引，再逐個範圍啟用。單靠設定出資資料不會切換工作。這次隔離驗收使用 scripted provider，正式站仍沿現行寫入者。
 

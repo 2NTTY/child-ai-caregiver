@@ -10,5 +10,15 @@
   "restartedContextCalls": 0,
   "correctionReadBack": true,
   "revokedAccountRead": "denied",
-  "productionCutover": false
+  "productionCutover": false,
+  "coldChatVerification": {
+    "namespace": "summary_1f5bcae36c11497aab91680004a73701",
+    "entry": "product.agent.reply",
+    "boundaryObserved": "provider.generate, source message IDs and text of projected batches",
+    "coldChatBatchCountsBeforeAndAfterSourceCorrection": [2, 1],
+    "unaffectedBatchRetained": true,
+    "summaryGenerationsDuringChat": 0,
+    "revokedChatProviderCalls": 0,
+    "provider": "scripted"
+  }
 }
