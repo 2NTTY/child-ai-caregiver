@@ -68,6 +68,7 @@ function chatUiOverrides(): Record<string, any> {
       Linking: { openURL: async () => {} },
     },
     "react-native-paper": { Text: "Text", ActivityIndicator: "ActivityIndicator" },
+    "../../preview/PreviewNavigationGuard": { PreviewLink: 'PreviewLink' },
     "../AppScrollView": { AppScrollView: "AppScrollView" },
     "../HorizontalOverflowRail": { HorizontalOverflowRail: "HorizontalOverflowRail" },
     "../ui": { AppButton: "AppButton" },

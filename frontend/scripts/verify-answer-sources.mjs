@@ -89,20 +89,19 @@ try{
   for(let index=0;index<3;index++){
    const tab=sourceTab(answer,index+1,titles[index]);assert.ok((await tab.innerText()).includes(titles[index]));
    await instantJump(answer.getByRole('button',{name:`查看引用【${index+1}】：${titles[index]}`,exact:true}),footer.getByTestId('answer-source-panel'));
-   await located(tab);assert.equal(await details.count(),0);assert.equal(await tab.getAttribute('aria-expanded'),'false');
+   await located(tab);await details.getByText(titles[index],{exact:true}).waitFor();assert.equal(await tab.getAttribute('aria-expanded'),'true');
   }
   const originalThird=answer.getByRole('button',{name:`查看引用【3】：${titles[2]}`,exact:true});
-  await returnToQuote(answer,originalThird,width,'short reply with collapsed sources');
+  await returnToQuote(answer,originalThird,width,'short reply with the cited evidence open');
   await originalThird.click();
-  await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),1);
+  assert.equal(await details.count(),1);
   await returnToQuote(answer,originalThird,width,'quote with open source');
   assert.equal(await sourceTab(answer,3,titles[2]).getAttribute('aria-expanded'),'true');
   await page.screenshot({path:resolve(directory,`returned-quote-${width}.png`)});
   await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),0);
   await footer.evaluate(element=>{element.style.marginTop='1800px';});
   await instantJump(answer.getByRole('button',{name:`查看引用【1】：${titles[0]}`,exact:true}),footer.getByTestId('answer-source-panel'));
-  await located(sourceTab(answer,1,titles[0]));assert.equal(await details.count(),0);
-  assert.equal((await sourceAppearance(answer,3)).panel.height,initialAppearance.panel.height,'Returning to a citation must not change the source header height');
+  await located(sourceTab(answer,1,titles[0]));await details.getByText(titles[0],{exact:true}).waitFor();
   const originalMarker=answer.getByRole('button',{name:`查看引用【1】：${titles[0]}`,exact:true});
   await returnToQuote(answer,originalMarker,width,'1800px extended reply');
   await instantJump(originalMarker,footer.getByTestId('answer-source-panel'));
@@ -149,7 +148,7 @@ try{
   await hint.focus();await page.keyboard.press('Enter');const keyboardHint=await sourceHintState(many);assert.ok(keyboardHint.left>pointerHint.left);assert.equal(await manyDetails.count(),0);
   await page.screenshot({path:resolve(directory,`source-scroll-hint-${width}.png`)});
   await instantJump(many.getByRole('button',{name:`查看引用【12】：${lastTitle}`,exact:true}),many.getByTestId('answer-source-panel'));await located(last);
-  const end=(await horizontalState(last)).left;assert.ok(end>0);assert.equal(await manyDetails.count(),0);
+  const end=(await horizontalState(last)).left;assert.ok(end>0);await manyDetails.getByText(lastTitle,{exact:true}).waitFor();
   const ended=await sourceHintState(many);assert.equal(ended.more,false);assert.equal(ended.width,beforeHint.width,'Reaching the end must not resize the source viewport');
   await instantJump(many.getByRole('button',{name:`查看引用【1】：${firstTitle}`,exact:true}),many.getByTestId('answer-source-panel'));await located(first);
   assert.ok((await horizontalState(first)).left<end);

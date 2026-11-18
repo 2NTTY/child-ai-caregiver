@@ -51,11 +51,25 @@ export async function exportPackage(response: Response, filename: string, bytes:
   try { return await share({ stream, bytes }, filename, 'application/zip', isCurrent, 256 * 1024 * 1024); }
   finally { if (!stream.locked) await stream.cancel().catch(() => {}); }
 }
+export async function exportLibraryPackage(response: Response, filename: string, bytes: number, current: () => boolean): Promise<{ message: string; share?: () => Promise<void> }> {
+  if (response.body) return { message: await exportPackage(response, filename, bytes, current) };
+  const blob = await response.blob();
+  if (!current() || blob.size !== bytes) throw Error('知識包未完整讀取。');
+  return { message: await share(await readBlobBytes(blob), filename, 'application/zip', current, bytes) };
+}
+
 export async function exportBlob(blob: Blob, filename: string, isCurrent: () => boolean = () => true): Promise<string> {
   if (!isCurrent()) throw new Error("Export scope changed");
   if (blob.size > 16 * 1024 * 1024) throw new Error("Export too large");
   return share(await readBlobBytes(blob), filename, blob.type || "application/pdf", isCurrent);
 }
+export async function openCitationPdf(load: () => Promise<Blob>, page: number | undefined, current: () => boolean): Promise<string> {
+  const blob = await load();
+  if (!current() || blob.size > 32 * 1024 * 1024) throw new Error('暫未能開啟當時的 PDF。');
+  const message = await share(await readBlobBytes(blob), 'citation.pdf', 'application/pdf', current, 32 * 1024 * 1024);
+  return page ? message + ` 引用在第 ${page} 頁。` : message;
+}
+
 export async function exportText(text: string, filename: string, isCurrent: () => boolean = () => true): Promise<void> {
   await share(text, filename, "application/json", isCurrent);
 }
