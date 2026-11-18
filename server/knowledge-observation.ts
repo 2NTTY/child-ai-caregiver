@@ -12,7 +12,7 @@ export function observationHash(item: ObservedContent): string {
 }
 export function definitionHash(definition: SourceWatchDefinition): string {
   return knowledgeHash([definition.id, definition.url, definition.kind, definition.classification, definition.publisher,
-    definition.termsUrl, definition.audience, definition.selector ?? null, definition.itemHosts ?? [], definition.pdfPages ?? null, definition.title ?? null]);
+    definition.termsUrl, definition.audience, definition.selector ?? null, definition.itemHosts ?? [], definition.pdfPages ?? null, definition.title ?? null, ...(definition.leafletPage ? [definition.leafletPage] : [])]);
 }
 
 /** Shared semantic-review boundary; storage adapters supply their transaction-bound observation. */

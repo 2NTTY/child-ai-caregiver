@@ -7,10 +7,13 @@ import { READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
 export interface ChatStore {
+  getOriginalMessageForUser?(userId: string, childId: string, messageId: string, purpose?: 'memory'): Promise<ChatMessage | null>;
   listImportedForUser?(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedForUser?(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
-  listForUser(userId: string, childId: string, before?: string | null): Promise<ChatPage | null>;
+  listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent'): Promise<(ChatPage & {
+    dataVersion?: string; sourceDeadlines?: Record<string, string>;
+  }) | null>;
   createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
 }

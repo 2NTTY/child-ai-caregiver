@@ -253,6 +253,10 @@ test('signed original attachment backups retain immutable live assets and restor
     assert.equal(restoredChat.counts.created,1);
     const saved = await chat.getOriginalMessageForUser('parent',childId,attached.id);
     assert.ok(saved?.file); assert.equal(saved.file.id,newIds.get(deleted.id));
+    await authority.runTransaction('parent',childId,async b => {
+      assert.equal(await chat.readMessage(b,childId,attached.id,'memory'),null);
+      assert.ok(await chat.readMessage(b,childId,photoMessage.id,'memory'));
+    });
     assert.equal((await files.contentForMessage('parent',childId,saved.id,saved.file)).base64,fileBytes.toString('base64'));
     assert.equal(fixture.records.get(historicPath)!.sortKey,originalPosition);
     assert.ok(String(originalPosition)<String(fixture.records.get(data.ref('chat_messages','chat-message',recent.id).path)!.sortKey));

@@ -1,3 +1,4 @@
+import { cloudKnowledgeOriginalBucket } from './firestore-knowledge-originals.ts';
 import { AVATAR_LIFECYCLE_RELEASE_READY } from './avatar-release.ts';
 import { readAvatarConfig } from './avatar-config.ts';
 import { createAvatarCodec, type AvatarCodec } from './avatar-codec.ts';
@@ -39,6 +40,8 @@ import { createCloudStorageErasureJournal, createFirebaseErasureJournal } from '
 import { createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
 import { createFirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { readPublisherPdf } from './knowledge-cited-pdf.ts';
+import { createOfficialLivePages } from './official-live-pages.ts';
 import { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
@@ -180,7 +183,9 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const mutations = [summary.mutation, chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation, nativePush.mutation];
     const online = createFirestoreOnlineStore({ ...domain, photos, erasures, avatars, reminders, mutations });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
-    const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
+    const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain,
+      originalBucket: composition.local ? { bucketName: config.photoBucket, bucket: composition.local.bucket(config.photoBucket) }
+        : cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
     const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: knowledgeRefresh.gate });
     const proactiveEvents = createProactiveEventSources({...domain,care,knowledge,sourceIds:config.knowledgeSourceIds ?? [],
       managedSelections:parseProactivePublicSelections(env.PROACTIVE_PUBLIC_EVENTS_JSON)});
@@ -213,6 +218,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
     const usageFinancialEvidence = () => readFinancialEvidence(env.AI_USAGE_RECONCILIATION_JSON);
     product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+      liveSourceReader: knowledge && (userId => createOfficialLivePages({ sourceIds: config.knowledgeSourceIds ?? [],
+        mayRead: sourceId => knowledge.mayReadLivePage(userId, sourceId) })),
       summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
@@ -268,6 +275,12 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+      knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, async read(target, signal) {
+        signal.throwIfAborted();
+        const archived = await knowledgeRefresh.originals.findPdf(target.sourceId, target.sha256);
+        signal.throwIfAborted();
+        return archived ?? readPublisherPdf(target, signal);
+      } },
       proactiveDemo: createProactiveDemo(env,authority,chat,chatNotifications), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
         async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });

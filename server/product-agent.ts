@@ -130,6 +130,8 @@ export function createProductAgent(options: {
   summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request' | 'recordedForRun'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
+  liveSourceReader?: import('./live-source-citation.ts').LiveSourceReaderOption;
+  publishedLiveSeries?: import('./live-source-citation.ts').PublishedLiveSeries;
   runtime: AgentRuntimePort; store: ProductAgentStore;
   memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
   contextCompaction?: boolean | { tokenThreshold?: number; eventRetentionSize?: number };
@@ -511,6 +513,7 @@ export function createProductAgent(options: {
         privateSourceCitations: presentation?.privateSourceCitations ?? retained?.privateSourceCitations ?? [],
         retrievalMode: presentation?.retrievalMode ?? retained?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
+        ...(presentation?.liveCitations?.length ? { liveCitations: presentation.liveCitations } : {}),
         countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
+import { librarySeriesMediaType, personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
 import { privateSourceCitationSchema } from "../shared/product-agent.ts";
 import { agentDecisionSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
@@ -26,6 +26,7 @@ export class ProductAgentApiError extends Error {
 
 import { agentWorkPageSchema, agentHistoryPageSchema, agentHistoryMessageSchema, type AgentWorkPage, type AgentHistoryPage, type AgentHistoryMessage } from "../shared/agent-work.ts";
 export interface ProductAgentApi {
+  setLibraryPreference?(childId: string, signal: AbortSignal, userId: string, change: import('../shared/source-series.ts').LibraryPreferenceChange): Promise<void>;
   getLibrary(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<PersonalLibraryPage>;
   getWork(childId: string, signal: AbortSignal, userId: string, workId?: string | null, cursor?: string | null): Promise<AgentWorkPage>;
   searchHistory(childId: string, kind: "message" | "private_instruction" | "memory_fact", query: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentHistoryPage>;
@@ -51,7 +52,7 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     if (!uuid.safeParse(childId).success || !uuid.safeParse(runId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, "invalid_input");
   }
   const path = (childId: string, runId: string) => `/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`;
-  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision | import('../shared/source-series.ts').LibraryPreferenceChange, accept = 'application/json'): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true });
@@ -60,7 +61,7 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     try {
       const response = await fetcher(`${apiUrl}${url}`, {
         method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
-        headers: { Accept: "application/json", "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+        headers: { Accept: accept, "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal,
       });
       if (!response.ok) {
@@ -81,10 +82,15 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     }
   }
   return {
+    async setLibraryPreference(childId, signal, userId, change) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, 'invalid_input');
+      const result = await request(`/children/${encodeURIComponent(childId)}/library`, signal, userId, change);
+      if (!object(result) || result.revision !== change.expectedRevision + 1) throw new ProductAgentApiError();
+    },
     async getLibrary(childId, signal, userId, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success
         || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
-      const parsed = personalLibraryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/library${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId));
+      const parsed = personalLibraryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/library${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId, undefined, librarySeriesMediaType));
       if (!parsed.success) throw new ProductAgentApiError();
       return parsed.data;
     },

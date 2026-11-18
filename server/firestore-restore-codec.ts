@@ -1,3 +1,4 @@
+import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
 import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
@@ -93,10 +94,10 @@ const domainSchemas = {
   'agent-high-watermark': { suffix: 'agent_metrics', schema: agentHighWatermarkDocSchema },
   'agent-budget-alert': { suffix: 'agent_budget_alerts', schema: budgetAlertSchema },
 } as const;
-const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
+const knowledgeSchemas = { 'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
   'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
-const knowledgeSuffixes = { 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
+const knowledgeSuffixes = { 'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
   'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
   'knowledge-observation': 'knowledge_observations', 'knowledge-observation-part': 'knowledge_observation_parts', 'knowledge-check': 'knowledge_checks' } as const;
 export type FirestoreRestoreAuthorityKind = keyof typeof authoritySchemas;
@@ -367,7 +368,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       parse(knowledgeChunkInputSchema, row.document);
       requireBinding((row.document.pageStart === undefined) === (row.document.pageEnd === undefined));
       if (row.document.pageStart !== undefined && row.document.pageEnd !== undefined)
-        requireBinding(row.document.pageStart <= row.document.pageEnd && typeof row.document.originalText === 'string');
+        requireBinding(row.document.pageStart <= row.document.pageEnd && (typeof row.document.originalText === "string"
+          || row.document.originalKind === "visual_page" && row.document.sourceExcerpt === ""));
       if (row.embedding === null) requireBinding([row.vectorHash, row.model, row.dimensions, row.pipeline].every(value => value === null));
       else {
         requireBinding(row.embedding instanceof VectorValue);
@@ -392,6 +394,9 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           requireBinding(values.length === KNOWLEDGE_EMBEDDING.dimensions && values.every(n => Number.isFinite(n) && Math.abs(n) <= 1e10)
             && values.some(n => n !== 0) && value.vectorHash === knowledgeHash(values));
         } else requireBinding(value.embedding === null && value.vectorHash === null);
+      } else if (kind === 'knowledge-original') {
+        const value = knowledgeOriginalManifest.parse(row);
+        requireBinding(id === value.sourceId + '-' + value.contentHash);
       } else if (kind === 'knowledge-watch') {
         const value = parse(knowledgeRefresh.watch, row); requireBinding(value.id === id && value.definition.id === id && value.definitionHash === definitionHash(value.definition));
       } else if (kind === 'knowledge-observation') requireBinding(parse(knowledgeRefresh.observation, row).sourceId === id);

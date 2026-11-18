@@ -26,6 +26,8 @@ test("a textless figure stays bound to its original PDF and cannot create a fabr
   };
   const source = parseKnowledgeSource({ ...header, chunks: [figure] });
   assert.equal(source.chunks[0]?.originalText, undefined);
+  assert.equal(parseKnowledgeSource({ ...header, chunks: [{ ...figure, excerptPage: 1 }] }).chunks[0]?.excerptPage, 1);
+  assert.throws(() => parseKnowledgeSource({ ...header, chunks: [{ ...figure, excerptPage: 2 }] }));
   assert.throws(() => parseKnowledgeSource({ ...header, chunks: [{ ...figure, originalText: "Invented text" }] }));
   assert.throws(() => parseKnowledgeSource({ ...header, chunks: [{ ...figure, originalKind: undefined }] }));
   const observed = {

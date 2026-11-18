@@ -158,6 +158,17 @@ export class FirestoreAiUsage implements DurableAiUsage {
     activities.tool = (activities.tool ?? 0) + integer.min(1).parse(units);
     detail.save();
   }
+  /** Peek before starting a native PDF stage. The usual reserve remains authoritative at dispatch. */
+  async modelCapacity(tx: Transaction, userId: string, userLimit: number, globalLimit: number) {
+    const day = this.#day(this.#now());
+    const globalId = this.#counterId(day, null), ownerId = this.#counterId(day, userId);
+    const [globalSnapshot, ownerSnapshot] = await tx.getAll(this.#ref(globalId), this.#ref(ownerId));
+    const global = this.#counter(globalId, globalSnapshot, ownerSnapshot.exists);
+    const owner = this.#counter(ownerId, ownerSnapshot);
+    this.#consistent(global, owner);
+    return global.attempts < globalLimit && owner.attempts < userLimit;
+  }
+
   async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
     if (embeddingPurpose !== undefined && (request.kind !== 'embedding'

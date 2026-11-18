@@ -9,8 +9,7 @@ import type { createHandoverUploadService } from './handover-upload-service.ts';
 import { handleHandoverUpload } from './firebase-handover-upload-api.ts';
 import { handleHandoverImport } from './firebase-handover-import-api.ts';
 import type { createHandoverImportService } from './handover-import-service.ts';
-import { createReadStream } from 'node:fs';
-import { Readable } from 'node:stream';
+import { streamTemporaryZip } from './zip-download.ts';
 import { supportsAccountPreferencePackage, supportsMixedConversationPackage } from '../src/shared/handover.ts';
 
 export interface FirebaseAccountDataPort {
@@ -85,16 +84,8 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
     }
     if (request.method === 'GET' && route[2] === 'download') {
       const file = await packages.download(user.id, id, request.signal);
-      try {
-        await sameIdentity(); request.signal.throwIfAborted();
-        const stream = createReadStream(file.path, { signal: request.signal });
-        stream.once('close', () => { void file.dispose().catch(() => {}); });
-        return new Response(Readable.toWeb(stream) as ReadableStream<Uint8Array>, { headers: {
-          'Content-Type': 'application/zip', 'Content-Length': String(file.bytes), 'Cache-Control': 'private, no-store',
-          Vary: 'Cookie, Authorization', 'X-Content-Type-Options': 'nosniff',
-          'Content-Disposition': "attachment; filename=data-package.zip; filename*=UTF-8''" + encodeURIComponent(file.filename),
-        } });
-      } catch (error) { await file.dispose(); throw error; }
+      return await streamTemporaryZip(file, request.signal, sameIdentity,
+        "attachment; filename=data-package.zip; filename*=UTF-8''" + encodeURIComponent(file.filename));
     }
     domainReject('not_found', 404);
   }

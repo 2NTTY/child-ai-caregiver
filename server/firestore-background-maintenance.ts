@@ -53,7 +53,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   proactiveEvents?: Pick<ReturnType<typeof createProactiveEventSources>, 'prepareGlobal'>;
   knowledgeAgent?: { binding: string; accepts(watchId: string): boolean;
-    run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped'}> };
+    run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped' | 'deferred'; nextAt?: string}> };
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'> & Partial<Pick<ReturnType<typeof createFirestorePhotoStore>, 'expireImport'>>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -325,7 +325,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
         return agent.run(job.resourceId, revision, job.basis.slice(37), job.generation, signal);
       }
       const result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
-        firestoreBackgroundReference(job), fetcher, signal);
+        firestoreBackgroundReference(job), fetcher, signal, job.basis.slice(37));
       return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
     }
     if (job.kind === 'avatar-cleanup') {

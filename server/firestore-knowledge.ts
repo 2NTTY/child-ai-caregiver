@@ -1,25 +1,35 @@
+import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
-import { personalLibraryItemSchema } from "../src/shared/personal-library.ts";
+import { personalLibraryItemSchema, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
 import { embeddingDocument, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
-import { knowledgeTokens, questionAgeTokens } from "./knowledge-ranking.ts";
+import { knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
 import { checkKnowledgeObservation } from "./knowledge-observation.ts";
 import type { FirestoreKnowledgeObservation, FirestoreKnowledgeObservationPort } from "./firestore-knowledge-refresh.ts";
+import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
-export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[];
+import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
+import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import { createLibrarySelections, explicitlyDisabled, selectedEdition } from './knowledge-library-selection.ts';
+import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
+import { canonical } from './firestore-session-codec.ts';
+import type { StorageCipher } from './storage-crypto.ts';
+
+export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[]; cipher?: StorageCipher;
   observations?: FirestoreKnowledgeObservationPort; audience?: "public" | "internal" }
 export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
 /** Read-only operator material. Redistribution approval belongs to the operator workflow. */
 export interface FirestoreKnowledgeEditionExporter {
-  exportPublishedEdition(sourceId: string, expectedHash: string): Promise<{
-    source: KnowledgeSourceInput; versionHash: string; embeddings: FirestoreKnowledgeEmbedding[] }>;
+  exportPublishedEdition(sourceId: string, expectedHash: string, familySeries?: string): Promise<{
+    source: KnowledgeSourceInput; versionHash: string; embeddings: FirestoreKnowledgeEmbedding[]; library?: PortableSeries }>;
 }
 export type FirestoreKnowledgeImportResult = { versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" };
 /** Operator checkpoint commits with the domain write, after the final transaction read. */
@@ -32,12 +42,17 @@ export interface FirestoreKnowledgePublicationFence {
   }): Promise<() => void>;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
+  mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
+  publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
+  catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
+  saveLibraryPreference(tx: Transaction, owner: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     source: KnowledgeSourceInput; enabled: boolean } | null>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
-  importSource(input: unknown, commit?: FirestoreKnowledgeImportCommit): Promise<FirestoreKnowledgeImportResult>;
+  importSource(input: unknown, commit?: FirestoreKnowledgeImportCommit, library?: PortableSeries): Promise<FirestoreKnowledgeImportResult>;
   prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
     complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
@@ -45,7 +60,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
-    expectedObservation?: { sourceId: string; contentHash: string }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
+    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<boolean> }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
   publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[],
     fence?: FirestoreKnowledgePublicationFence): Promise<{ status: "published" }>;
   disable(sourceId: string, reason: string): Promise<void>;
@@ -60,13 +75,14 @@ const date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
 const sourceSchema = z.strictObject({ ...binding, sourceId, url: z.url(), activeVersionId: uuid.nullable(), enabled: z.boolean(),
   revision: z.string().regex(/^(0|[1-9][0-9]{0,18})$/), disabledReason: z.string().min(1).max(400).nullable() });
-const headerSchema = z.strictObject({ sourceId, url: z.url(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
+const headerSchema = z.strictObject({ series: sourceSeriesSchema.optional(), sourceId, url: z.url(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   classification: z.enum(["official_guidance", "recent_information"]), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().min(1).max(200).nullable().optional(), validUntil: date.nullable().optional(), fetchedAt: date,
   termsUrl: z.url(), extraction: knowledgeExtractionSchema.optional() });
 const versionSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, versionHash: hash, header: headerSchema,
   chunks: z.array(z.strictObject({ chunkId: uuid, key: sourceId, order: z.number().int().min(1).max(32),
-    contentHash: hash.optional(), embeddingHash: hash.optional(), applicability: knowledgeChunkInputSchema.shape.applicability.optional() })).min(1).max(32),
+    excluded: z.literal(true).optional(), treatment: z.enum(['detailed', 'overview', 'structured', 'excluded']).optional(), contentHash: hash.optional(), embeddingHash: hash.optional(), applicability: knowledgeChunkInputSchema.shape.applicability.optional() })).min(1).max(32),
+  imported: z.strictObject({ library: portableSeriesSchema, methodState: z.enum(['not_supplied', 'pending_local_check', 'verified_locally']) }).optional(),
   search: z.strictObject({ pipeline: z.literal(KNOWLEDGE_LEXICAL_PIPELINE), hashes: z.array(hash).length(KNOWLEDGE_LEXICAL_BUCKETS),
     completed: z.number().int().min(0).max(KNOWLEDGE_LEXICAL_BUCKETS), termCount: z.number().int().nonnegative() }).optional(),
   reviewState: z.enum(["draft", "reviewed", "withdrawn"]), checkedAt: date.nullable(), publishedAt: date.nullable(),
@@ -88,7 +104,7 @@ const lexicalSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, ve
   terms: z.record(hash, z.array(z.strictObject({ chunkId: uuid, score: z.number().int().positive().max(300) })).min(1).max(32)) });
 const cachedVectorSchema = z.strictObject({ ...binding, inputHash: hash, model: z.literal(KNOWLEDGE_EMBEDDING.model),
   dimensions: z.literal(KNOWLEDGE_EMBEDDING.dimensions), pipeline: z.literal(KNOWLEDGE_EMBEDDING.pipeline),
-  state: z.enum(["running", "ready", "unknown"]), attemptId: uuid, startedAt: date,
+  state: z.enum(["running", "ready", "unknown", "not_dispatched"]), attemptId: uuid, startedAt: date,
   embedding: z.custom<VectorValue>((value): value is VectorValue => value instanceof VectorValue).nullable(), vectorHash: hash.nullable() });
 const MAX_DOCUMENT_BYTES = 900 * 1024, MAX_TRANSACTION_BYTES = 8 * 1024 * 1024;
 const compareId = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
@@ -124,7 +140,8 @@ function keywordScore(tokens: ReadonlySet<string>, candidate: KnowledgeCandidate
   };
   return matches(candidate.title) * 4 + matches(candidate.section) * 3
     + candidate.keywords.reduce((sum, text) => sum + matches(text) * 5, 0)
-    + candidate.applicability.topics.reduce((sum, text) => sum + matches(text) * 4, 0) + matches(candidate.text);
+    + candidate.applicability.topics.reduce((sum, text) => sum + matches(text) * 4, 0) + matches(candidate.text)
+    + (candidate.treatment?.kind === 'structured' ? candidate.treatment.fields.reduce((sum, field) => sum + matches(field.label) * 4 + matches(field.value) * 8, 0) : 0);
 }
 
 /** Selected public official editions only. Maintenance ports are for a trusted operator, never HTTP or Agent tools. */
@@ -137,6 +154,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   const sourceIds = [...options.sourceIds].sort(compareId), allowed = new Set(sourceIds), scope = { schemaVersion: 1 as const, projectId, namespace };
   const allowedId = (id: string) => allowed.has(id) || Boolean(options.observations && sourceIds.some(watchId =>
     id.startsWith(watchId + "-") && /^[a-f0-9]{32}$/u.test(id.slice(watchId.length + 1))));
+  const selections = options.cipher ? createLibrarySelections({ database, projectId, namespace, cipher: options.cipher }) : null;
   const sourceRef = (id: string) => database.collection(namespace + "_knowledge_sources").doc(id);
   const versionRef = (id: string) => database.collection(namespace + "_knowledge_versions").doc(id);
   const chunks = database.collection(namespace + "_knowledge_chunks"), chunkRef = (id: string) => chunks.doc(id);
@@ -208,7 +226,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     const context = edition.observed, review = edition.version.review;
     if (!context) return !review?.assessment.observationHash && !review?.watchRevision && edition.document.classification !== "recent_information";
     const observed = context.observation;
-    return context.catalogMatches && context.watch.enabled && context.watch.lastStatus !== "unavailable" && observed !== null && !observed.unavailable
+    return context.catalogMatches && context.watch.enabled && !(context.watch.confirmedGone ?? context.watch.lastStatus === "unavailable") && observed !== null && !observed.unavailable
       && observed.approved?.contentHash === observed.contentHash && observed.approved?.versionId === edition.version.versionId
       && observed.approved?.watchRevision === context.watch.revision && review?.watchRevision === context.watch.revision
       && review.assessment.observationHash === observed.contentHash;
@@ -232,34 +250,58 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     }
     return { sources, editions };
   }
-  async function unchanged(previous: Corpus): Promise<boolean> {
-    return database.runTransaction(async tx => {
-      for (const old of previous.sources) {
-        const current = await readSource(tx, old.id);
-        if (knowledgeHash(current) !== knowledgeHash(old.source)) return false;
-      }
-      for (const edition of previous.editions) {
-        const snapshot = await tx.get(versionRef(edition.version.versionId)); if (!snapshot.exists) return false;
-        const current = scoped(parse(versionSchema, snapshot.data()));
-        if (knowledgeHash(current) !== knowledgeHash(edition.version)) return false;
-        const observed = await options.observations?.read(tx, edition.source.sourceId) ?? null;
-        if (!publication({ ...edition, observed })) return false;
-      }
-      return previous.editions.every(edition => publication(edition));
-    }, { readOnly: true });
+  const isPublicEdition = (edition: Edition) => !internalKnowledgeSource(edition.document.url)
+    && edition.observed?.watch.definition.audience !== 'internal_noncommercial';
+  function readSelections(tx: Transaction, owner?: string) {
+    return owner && selections ? selections.read(tx, owner) : [];
+  }
+  async function personalCorpus(tx: Transaction, owner?: string) {
+    const current = await corpus(tx), preferences = await readSelections(tx, owner);
+    if (!preferences.length) return { ...current, preferences };
+    const editions: Edition[] = [];
+    for (const active of current.editions) {
+      const { view: choice, snapshotVersionId } = selectedEdition(isPublicEdition(active) ? preferences : [], selectionEdition(active));
+      if (!choice.enabled) continue;
+      if (choice.eligible) { editions.push(active); continue; }
+      if (!snapshotVersionId) continue;
+      const pinned = await metadata(tx, snapshotVersionId, active.source);
+      if (pinnedAllowed(pinned, active)) editions.push(pinned);
+    }
+    return { sources: current.sources, editions, preferences };
+  }
+  function pinnedAllowed(pinned: Edition, active: Edition) {
+    const { version, document } = pinned, watch = active.observed?.watch;
+    // The live publication above has already rechecked withdrawal, rights, watch approval and scope.
+    // Time-sensitive news needs the currently approved observation. Durable guidance can keep an older reviewed edition.
+    return version.reviewState === 'reviewed' && !!version.publishedAt && !!version.checkedAt && version.review?.assessment.decision === 'approve'
+      && version.review.assessment.growthRuleImpact !== 'requires_review' && document.classification === 'official_guidance'
+      && active.document.classification === document.classification && active.document.url === document.url && active.document.termsUrl === document.termsUrl
+      && (version.review.watchRevision ?? null) === (watch?.revision ?? null) && (!document.validUntil || Date.parse(document.validUntil) > Date.now());
   }
   function candidate(edition: Edition, chunk: Chunk, filter: KnowledgeFilter): KnowledgeCandidate {
     const { document, version } = edition;
-    return { ...chunk.document, chunkId: chunk.chunkId, sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
-      contentHash: chunk.contentHash, url: document.url, title: document.title, publisher: document.publisher, classification: document.classification,
+    return { ...chunk.document, series: sourceSeries(document), chunkId: chunk.chunkId, sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
+      contentHash: chunk.contentHash, url: document.url, termsUrl: document.termsUrl, title: document.title, publisher: document.publisher, classification: document.classification,
       sourcePublishedAt: document.sourcePublishedAt, sourceUpdatedAt: document.sourceUpdatedAt, sourceDateText: document.sourceDateText ?? null,
       validUntil: document.validUntil ?? null, fetchedAt: document.fetchedAt, checkedAt: version.checkedAt!,
       lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
       usageScope: internalKnowledgeSource(document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial" ? "internal_noncommercial" : "public_noncommercial",
       reviewState: "reviewed", ...(document.extraction ? { extraction: document.extraction } : {}),
-      originalCoverage: chunk.document.originalText ? "chunk_original" : "excerpt_only",
+      originalCoverage: chunk.document.originalText && !chunk.document.originalKind ? "chunk_original" : "excerpt_only",
       applicabilityStatus: chunk.document.applicability.ageBasis === "any" ? "applicable"
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
+  }
+  function selectionEdition(edition: Edition) {
+    const doc = edition.document, series = sourceSeries(doc), extraction = doc.extraction;
+    const conditions = edition.version.chunks.map(chunk => chunk.applicability ?? null);
+    const watch = edition.observed?.watch.definition;
+    const scopeHash = (watchScope: unknown) => knowledgeHash(canonical([series.institutionId, doc.url, doc.termsUrl, doc.classification,
+      watchScope, extraction?.format ?? null, extraction?.pageStart ?? null, extraction?.pageEnd ?? null,
+      [...new Set(conditions.map(value => canonical(value)))].sort()]));
+    const identity = { sourceId: doc.sourceId, seriesId: series.id, versionId: edition.version.versionId };
+    if (!watch) return { ...identity, scopeHash: scopeHash(null) };
+    const { title: _title, publisher: _publisher, ...scope } = watch;
+    return { ...identity, scopeHash: scopeHash(scope), legacyScopeHash: scopeHash(watch) };
   }
   function bump(source: Source): Source { return { ...source, revision: (BigInt(source.revision) + 1n).toString() }; }
   function writeSearchPageIn(tx: Transaction, edition: Loaded, start: number, repair: boolean) {
@@ -268,7 +310,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     if (prior && (knowledgeHash(prior.hashes) !== knowledgeHash(index.hashes) || prior.termCount !== index.termCount)) reject("knowledge_search_binding_invalid", 503);
     const end = Math.min(start + KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS);
     const next: Version = { ...version, chunks: edition.chunks.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order,
-      contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability })),
+      contentHash: row.contentHash, embeddingHash: row.embeddingHash, applicability: row.document.applicability,
+      ...(row.document.treatment?.kind === 'excluded' ? { excluded: true as const } : {}), treatment: row.document.treatment?.kind ?? 'detailed' })),
       search: { pipeline: KNOWLEDGE_LEXICAL_PIPELINE, hashes: index.hashes, completed: Math.max(prior?.completed ?? 0, end), termCount: index.termCount } };
     const records = index.buckets.slice(start, end).flatMap((terms, offset) => Object.keys(terms).length ? [{ ...scope, sourceId: version.sourceId,
       versionId, versionHash: version.versionHash, pipeline: KNOWLEDGE_LEXICAL_PIPELINE, bucket: start + offset, termsHash: index.hashes[start + offset]!, terms }] : []);
@@ -289,25 +332,130 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
   }
+  async function catalog(afterSourceId: string | null = null, owner?: string) {
+    if (afterSourceId !== null && !sourceId.safeParse(afterSourceId).success) reject('knowledge_catalog_cursor_invalid', 400);
+    return database.runTransaction(async tx => {
+      const current = await corpus(tx), preferences = await readSelections(tx, owner);
+      const visible = current.editions.filter(edition => (afterSourceId === null || edition.source.sourceId > afterSourceId)
+        && !internalKnowledgeSource(edition.document.url) && edition.observed?.watch.definition.audience !== 'internal_noncommercial');
+      const items = await Promise.all(visible.slice(0, 10).map(async edition => {
+        const { document, version, observed } = edition, extraction = document.extraction;
+        const { view: preference } = selectedEdition(preferences, selectionEdition(edition));
+        const pinnedVersion = preference.selectedVersionId && preference.mode === 'fixed'
+          ? preference.selectedVersionId === version.versionId ? edition : await metadata(tx, preference.selectedVersionId, edition.source) : null;
+        if (!preference.eligible && preference.mode === 'fixed' && preference.selectedVersionId) {
+          preference.eligible = !!pinnedVersion && sourceSeries(pinnedVersion.document).id === sourceSeries(document).id && pinnedAllowed(pinnedVersion, edition);
+        }
+        return personalLibraryItemSchema.parse({ sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
+          series: sourceSeries(document), ...(owner && selections ? { preference: { ...preference, ...(pinnedVersion ? { selectedVersionHash: pinnedVersion.version.versionHash } : {}) } } : {}),
+          title: document.title, publisher: document.publisher, url: document.url, classification: document.classification, checkedAt: version.checkedAt,
+          fetchedAt: document.fetchedAt, publishedAt: version.publishedAt, lastCheckedAt: observed?.watch.lastAttemptAt ?? null,
+          lastSuccessfulCheckAt: observed?.observation?.lastSuccessfulCheckAt ?? null, topics: [...new Set(version.chunks.flatMap(chunk => chunk.applicability?.topics ?? []))],
+          coverage: extraction?.format === 'text_pdf' ? `第 ${extraction.pageStart}–${extraction.pageEnd} 頁 / 共 ${extraction.totalPages ?? '未知'} 頁` : `已收錄 ${version.chunks.length} 個段落`,
+          methods: [...(version.chunks.every(row => row.treatment) ? [...new Set(version.chunks.map(row => row.treatment!))].map(kind =>
+            ({ detailed: '精細保留', overview: '概括整理', structured: '結構化保存', excluded: '不進問答索引' })[kind] + ' · ' + version.chunks.filter(row => row.treatment === kind).length + ' 段') : []),
+            ...(observed?.catalogMatches ? [observed.watch.definition.kind === 'pdf' ? '已登記 PDF 文字讀取' : '已登記網頁讀取'] : []),
+            ...(version.imported ? [`ZIP 匯入 · ${({ not_supplied: '沒有附讀法', pending_local_check: '讀法待本機樣本驗證', verified_locally: '本機已核對讀法及原文樣本' })[version.imported.methodState]}`] : [])],
+          sourceUpdatedAt: document.sourceUpdatedAt, validUntil: document.validUntil ?? null });
+      }));
+      const registered: RegisteredLibrarySource[] = [];
+      if (owner && afterSourceId === null) for (const { id, source } of current.sources) {
+        const watch = SOURCE_WATCHES.find(watch => watch.id === id && watch.audience === 'public_noncommercial');
+        if (!watch || watch.kind === 'rss' || current.editions.some(edition => edition.source.sourceId === id)) continue;
+        const local = await options.observations?.read(tx, id);
+        const withdrawn = !!source?.disabledReason || !!local && (!local.catalogMatches || !local.watch.enabled || !!local.observation?.unavailable);
+        const series = sourceSeries({ sourceId: id, url: watch.url, title: watch.title ?? id });
+        registered.push({ sourceId: id, series,
+          publisher: watch.publisher, url: watch.url, kind: watch.kind, status: withdrawn ? 'withdrawn' : source || local?.observation ? 'pending' : 'registered',
+          lastCheckedAt: local?.watch.lastAttemptAt ?? null, lastSuccessfulCheckAt: local?.observation?.lastSuccessfulCheckAt ?? null,
+          live: watch.kind === 'page' && !withdrawn && !explicitlyDisabled(preferences, series.id) });
+      }
+      return { items, ...(registered.length ? { registered } : {}), nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
+    }, { readOnly: true });
+  }
+  const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
+    || (allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined);
   return {
-    async exportPublishedEdition(id, expectedHash) {
+    async mayReadLivePage(userId, id) {
+      const registered = livePage(id);
+      if (!registered || !userId || !selections) return false;
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, id), local = await options.observations?.read(tx, id);
+        if (source && (source.url !== registered.url || source.disabledReason !== null || source.activeVersionId && !source.enabled)
+          || local && (!local.catalogMatches || !local.watch.enabled || local.watch.definition.url !== registered.url
+            || local.watch.definition.audience !== 'public_noncommercial' || local.observation?.unavailable)) return false;
+        const active = source?.activeVersionId && source.enabled ? await metadata(tx, source.activeVersionId, source) : null;
+        const series = sourceSeries(active?.document ?? { sourceId: id, title: registered.title ?? id, url: registered.url });
+        const rows = await selections.read(tx, userId);
+        return !explicitlyDisabled(rows, series.id);
+      }, { readOnly: true });
+    },
+    async publishedLiveSeries(id, url) {
+      const watch = livePage(id);
+      if (!watch || watch.url !== url) return null;
+      const series = sourceSeries({ sourceId: id, title: watch.title ?? id, url });
+      return database.runTransaction(async tx => {
+        const current = await corpus(tx);
+        const published = current.editions.filter(isPublicEdition);
+        const matching = published.find(item => item.document.sourceId === id);
+        return matching ? sourceSeries(matching.document) : published.map(item => sourceSeries(item.document)).find(item => item.id === series.id) ?? null;
+      }, { readOnly: true });
+    },
+    async exportPublishedEdition(id, expectedHash, familySeries) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
       if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
       return database.runTransaction(async tx => {
         const source = await readSource(tx, id);
         if (!source?.enabled || !source.activeVersionId) reject("knowledge_source_unavailable");
-        const edition = await load(tx, source.activeVersionId, source);
-        if (edition.version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
+        const active = await metadata(tx, source.activeVersionId, source);
+        if (!publication(active)) reject("knowledge_source_unavailable");
+        if (familySeries && (sourceSeries(active.document).id !== familySeries || !familySharingAllowed(active.document)))
+          reject("knowledge_source_not_shareable", 403);
+        const isCurrent = active.version.versionHash === expectedHash;
+        if (!isCurrent && !familySeries) reject("knowledge_review_version_mismatch");
+        const versionId = isCurrent ? source.activeVersionId : deterministicUuid([projectId, namespace, 'version', id, expectedHash]);
+        const edition = await load(tx, versionId, source);
+        if (!isCurrent && (!pinnedAllowed(edition, active) || !familySharingAllowed(edition.document))) reject("knowledge_source_unavailable");
         // An internal store can inspect restricted editions, but can never transfer them.
         if (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial")
           reject("knowledge_source_internal_export_forbidden", 403);
-        if (!publication(edition)) reject("knowledge_source_unavailable");
-        const embeddings = edition.chunks.map(chunk => {
+        const embeddings = edition.chunks.filter(chunk => needsKnowledgeVector(chunk.document.treatment)).map(chunk => {
           if (chunk.embedding === null) reject("knowledge_vectors_incomplete");
           return { chunkKey: chunk.document.key, inputHash: chunk.embeddingHash, ...KNOWLEDGE_EMBEDDING,
             values: vectorValues(chunk.embedding.toArray()) };
         });
-        return { source: edition.document, versionHash: edition.version.versionHash, embeddings };
+        const library = portableSeries(edition.document, edition.observed);
+        checkPortableSeries(edition.document, library);
+        if (library.method && edition.observed?.observation && options.observations) {
+          const body = await options.observations.content(tx, edition.observed.observation);
+          if (body?.title) library.method.sample.titleHash = knowledgeHash(body.title);
+          if (verifyPortableMethod(library, edition.document, edition.observed, body) !== 'verified_locally') library.method = null;
+        }
+        return { source: edition.document, versionHash: edition.version.versionHash, embeddings, library };
+      }, { readOnly: true });
+    },
+    async citedPdf(citation) {
+      // A historical citation can outlive the active edition. Current source permissions still apply.
+      if (!allowedId(citation.sourceId)) return null;
+      const policy = SOURCE_WATCHES.find(watch => watch.id === citation.sourceId && watch.kind === "pdf");
+      if (policy?.audience !== "public_noncommercial" || policy.url !== citation.url) return null;
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, citation.sourceId);
+        if (!source?.enabled || !source.activeVersionId) return null;
+        const edition = await metadata(tx, citation.versionId, source).catch(error => {
+          if (error instanceof FirestoreKnowledgeError && error.code === "knowledge_version_unknown") return null;
+          throw error;
+        });
+        if (!edition) return null;
+        const { version, document, observed } = edition;
+        if (version.versionHash !== citation.versionHash || !version.publishedAt || version.reviewState !== "reviewed"
+          || version.review?.assessment.decision !== "approve" || document.url !== citation.url || internalKnowledgeSource(document.url)
+          || document.extraction?.format !== "text_pdf"
+          || observed && (!observed.catalogMatches || !observed.watch.enabled || observed.watch.definition.audience !== "public_noncommercial")) return null;
+        if (!version.chunks.some(chunk => chunk.chunkId === citation.chunkId)) return null;
+        const snapshot = await tx.get(chunkRef(citation.chunkId));
+        if (!snapshot.exists || checkedChunk(edition, snapshot.data()).contentHash !== citation.contentHash) return null;
+        return { sourceId: source.sourceId, url: document.url, sha256: document.extraction.contentHash };
       }, { readOnly: true });
     },
     async publishedEdition(id) {
@@ -356,7 +504,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const edition = await load(tx, versionId);
         if (edition.version.reviewState !== "reviewed") reject("knowledge_version_unreviewed");
         const missing = new Map<string, { hash: string; title: string; text: string }>();
-        for (const chunk of edition.chunks) if (chunk.embedding === null && (await readVector(tx, chunk.embeddingHash))?.state !== "ready") {
+        for (const chunk of edition.chunks) if (needsKnowledgeVector(chunk.document.treatment) && chunk.embedding === null && (await readVector(tx, chunk.embeddingHash))?.state !== "ready") {
           missing.set(chunk.embeddingHash, embeddingDocument(edition.document.title, chunk.document.section, chunk.document.text));
         }
         return [...missing.values()];
@@ -369,8 +517,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       const claimed = await database.runTransaction(async tx => {
         const saved = await readVector(tx, document.hash);
         if (saved?.state === "ready") return false;
-        if (saved) reject("knowledge_embedding_result_unknown");
-        tx.create(vectorRef(document.hash), { ...scope, inputHash: document.hash, ...KNOWLEDGE_EMBEDDING,
+        if (saved && saved.state !== "not_dispatched") reject("knowledge_embedding_result_unknown");
+        tx.set(vectorRef(document.hash), { ...scope, inputHash: document.hash, ...KNOWLEDGE_EMBEDDING,
           state: "running", attemptId, startedAt, embedding: null, vectorHash: null });
         return true;
       });
@@ -387,7 +535,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       } catch (error) {
         await database.runTransaction(async tx => {
           const saved = await readVector(tx, document.hash);
-          if (saved?.attemptId === attemptId && saved.state === "running") tx.set(vectorRef(document.hash), { ...saved, state: "unknown" });
+          if (saved?.attemptId === attemptId && saved.state === "running") tx.set(vectorRef(document.hash), { ...saved, state: error instanceof EmbeddingAdmissionDeferred ? "not_dispatched" : "unknown" });
         });
         throw error;
       }
@@ -419,14 +567,14 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (!allowedId(rule.sourceId)) continue;
         const source = await readSource(tx, rule.sourceId); if (!source?.enabled || !source.activeVersionId) continue;
         const edition = await metadata(tx, source.activeVersionId, source); if (!publication(edition)) continue;
-        const manifest = edition.version.chunks.find(chunk => chunk.key === rule.key); if (!manifest) continue;
+        const manifest = edition.version.chunks.find(chunk => chunk.key === rule.key); if (!manifest || manifest.excluded) continue;
         const snapshot = await tx.get(chunkRef(manifest.chunkId)); if (!snapshot.exists) reject('knowledge_chunk_missing', 503);
         const chunk = checkedChunk(edition, snapshot.data());
         if (applies(chunk.document.applicability, filter)) result.push(candidate(edition, chunk, filter));
       }
       return result;
     },
-    async importSource(input, commit) {
+    async importSource(input, commit, portable) {
       if (input && typeof input === "object" && ["watch", "watchId", "observation", "audience"].some(key => key in input)) reject("domain_not_ready", 503);
       const document = JSON.parse(JSON.stringify(parseKnowledgeSource(input))) as KnowledgeSourceInput;
       if (!allowedId(document.sourceId)) reject("knowledge_source_not_configured", 403);
@@ -439,7 +587,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         embedding: null, vectorHash: null, model: null, dimensions: null, pipeline: null }));
       const version: Version = { ...scope, sourceId: document.sourceId, versionId, versionHash, header: parse(headerSchema, header),
         chunks: records.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order, contentHash: row.contentHash,
-          embeddingHash: row.embeddingHash, applicability: row.document.applicability })), reviewState: "draft", checkedAt: null, publishedAt: null, review: null };
+          embeddingHash: row.embeddingHash, applicability: row.document.applicability,
+          ...(row.document.treatment?.kind === 'excluded' ? { excluded: true as const } : {}), treatment: row.document.treatment?.kind ?? 'detailed' })), reviewState: "draft", checkedAt: null, publishedAt: null, review: null };
       const fresh: Source = { ...scope, sourceId: document.sourceId, url: document.url, enabled: false, activeVersionId: null, revision: "0", disabledReason: null };
       writeBudget([version, fresh, ...records]);
       return database.runTransaction(async tx => {
@@ -452,17 +601,27 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
             || observed.observation?.url !== document.url) reject("knowledge_source_not_configured", 403);
         }
         if (source && source.url !== document.url) reject("knowledge_source_url_changed");
+        const library = portable ? checkPortableSeries(document, portable) : undefined;
+        let imported: Version['imported'];
+        if (library) {
+          const local = library.method ? await options.observations?.read(tx, document.sourceId) ?? null : null;
+          const sample = local?.catalogMatches && local.observation && local.watch.definition.audience === 'public_noncommercial' && options.observations
+            ? await options.observations.content(tx, local.observation) : null;
+          imported = { library, methodState: verifyPortableMethod(library, document, local, sample) };
+        }
         const prior = await tx.get(versionRef(versionId));
         if (prior.exists) {
           const old = await load(tx, versionId, source ?? undefined);
           const result = { versionId, hash: versionHash, unchanged: true, state: old.version.reviewState };
           await commit?.(tx, { sourceId: document.sourceId, ...result });
+          if (imported && (!old.version.imported || old.version.imported.methodState === 'pending_local_check' && imported.methodState === 'verified_locally'))
+            tx.set(versionRef(versionId), { ...old.version, imported });
           return result;
         }
         const previous = source?.activeVersionId ? await load(tx, source.activeVersionId, source) : null;
         const compatible = new Map(previous?.chunks.filter(row => row.embedding !== null).map(row => [row.embeddingHash, row]) ?? []);
         const reused = records.map(row => {
-          const old = compatible.get(row.embeddingHash);
+          const old = needsKnowledgeVector(row.document.treatment) ? compatible.get(row.embeddingHash) : null;
           return old ? { ...row, embedding: old.embedding, vectorHash: old.vectorHash, model: old.model, dimensions: old.dimensions, pipeline: old.pipeline } : row;
         });
         const existing = await tx.getAll(...records.map(row => chunkRef(row.chunkId)));
@@ -471,7 +630,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const result = { versionId, hash: versionHash, unchanged: false, state: "draft" as const };
         await commit?.(tx, { sourceId: document.sourceId, ...result });
         if (!source) tx.create(sourceRef(document.sourceId), fresh);
-        tx.create(versionRef(versionId), version); for (const row of reused) tx.create(chunkRef(row.chunkId), row);
+        tx.create(versionRef(versionId), imported ? { ...version, imported } : version); for (const row of reused) tx.create(chunkRef(row.chunkId), row);
         return result;
       });
     },
@@ -483,12 +642,17 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
         if (expectedObservation && (expectedObservation.sourceId !== source.sourceId || expectedObservation.contentHash !== assessment.observationHash))
           reject("knowledge_observation_review_mismatch");
+        if (reviewer === "agent-knowledge-maintenance" && version.review?.assessment.decision === "hold")
+          return { status: "held" as const, reason: "operator_hold" };
         const observed = edition.observed;
-        if (observed && (!observed.catalogMatches || observed.watch.lastStatus === "unavailable")) reject("knowledge_observation_review_mismatch");
+        if (observed && (!observed.catalogMatches || (observed.watch.confirmedGone ?? observed.watch.lastStatus === "unavailable"))) reject("knowledge_observation_review_mismatch");
         if (options.audience !== "internal" && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial")) reject("knowledge_source_internal_review_required", 403);
         const original = observed?.observation ? await options.observations!.content(tx, observed.observation) : null;
+        const checkedWindows = Boolean(original?.nativeWindowMethod &&
+          (assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash ||
+            expectedObservation?.verifyWindowedReview && await expectedObservation.verifyWindowedReview(tx, expectedHash)));
         checkKnowledgeObservation(document, observed?.watch, original && observed?.observation ? {
-          document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash);
+          document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash,checkedWindows);
         if (version.reviewState === "reviewed" && version.review?.assessmentHash === assessmentHash
           && (version.review.watchRevision ?? null) === (observed?.watch.revision ?? null)
           && (!observed || observationCurrent(edition))
@@ -500,7 +664,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if ((version.reviewState === "withdrawn" || version.review && (version.review.watchRevision ?? null) !== (observed?.watch.revision ?? null))
           && document.chunks.some(chunk => !assessment.changes.some(change => change.key === chunk.key)))
           reject("knowledge_withdrawn_full_review_required");
-        if (original && assessment.changes.some(change => change.newQuote !== null && !original.text.includes(change.newQuote))) reject("knowledge_review_observation_quote_mismatch");
+        if (original && !checkedWindows && assessment.changes.some(change => change.newQuote !== null && !original.text.includes(change.newQuote))) reject("knowledge_review_observation_quote_mismatch");
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
           checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };
@@ -524,6 +688,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (options.audience !== "internal" && (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial"))
           reject("knowledge_source_internal_review_required", 403);
         if (edition.document.validUntil && Date.parse(edition.document.validUntil) <= Date.now()) reject("knowledge_version_expired");
+        if (isPublicEdition(edition)) {
+          const series = sourceSeries(edition.document), current = await corpus(tx);
+          if (current.editions.some(other => isPublicEdition(other) && other.source.sourceId !== source.sourceId
+            && sourceSeries(other.document).id === series.id && sourceSeries(other.document).institutionId !== series.institutionId))
+            reject('knowledge_series_institution_conflict');
+        }
         if (source.activeVersionId !== versionId && source.activeVersionId !== review.assessment.comparedVersionId) reject("knowledge_review_baseline_changed");
         if (review.assessment.comparedVersionId && source.activeVersionId !== versionId) {
           const baseline = await load(tx, review.assessment.comparedVersionId, source);
@@ -531,9 +701,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         }
         if (supplied?.some(row => !edition.chunks.some(chunk => chunk.document.key === row.chunkKey))) reject("knowledge_vector_binding_invalid", 400);
         const cached = new Map<string, Awaited<ReturnType<typeof readVector>>>();
-        for (const chunk of edition.chunks) if (chunk.embedding === null && !supplied?.some(input => input.chunkKey === chunk.document.key)
+        for (const chunk of edition.chunks) if (needsKnowledgeVector(chunk.document.treatment) && chunk.embedding === null && !supplied?.some(input => input.chunkKey === chunk.document.key)
           && !cached.has(chunk.embeddingHash)) cached.set(chunk.embeddingHash, await readVector(tx, chunk.embeddingHash));
         const updated = edition.chunks.map(chunk => {
+          if (!needsKnowledgeVector(chunk.document.treatment)) return chunk;
           const input = supplied?.find(row => row.chunkKey === chunk.document.key);
           if (!input) {
             if (chunk.embedding !== null) return chunk;
@@ -572,16 +743,23 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (withdrawn) tx.set(versionRef(withdrawn.versionId), withdrawn); tx.set(sourceRef(id), next);
       });
     },
-    async catalog(afterSourceId = null) {
-      if (afterSourceId !== null && !sourceId.safeParse(afterSourceId).success) reject("knowledge_catalog_cursor_invalid", 400);
-      return database.runTransaction(async tx => {
-        const current = await corpus(tx), eligible = current.editions.filter(edition => (afterSourceId === null || edition.source.sourceId > afterSourceId)
-          && !internalKnowledgeSource(edition.document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial");
-        const items = eligible.slice(0, 10).map(({ document, version }) => personalLibraryItemSchema.parse({ sourceId: document.sourceId, versionId: version.versionId,
-          title: document.title, publisher: document.publisher, url: document.url, classification: document.classification, checkedAt: version.checkedAt!,
-          sourceUpdatedAt: document.sourceUpdatedAt, validUntil: document.validUntil ?? null }));
-        return { items, nextSourceId: eligible.length > 10 ? items.at(-1)!.sourceId : null };
-      }, { readOnly: true });
+    catalog: after => catalog(after), catalogForUser: (owner, after) => catalog(after, owner),
+    async saveLibraryPreference(tx, owner, change) {
+      if (!selections) reject('knowledge_preferences_unavailable', 503);
+      const current = await corpus(tx);
+      const publicEditions = current.editions.filter(edition => !internalKnowledgeSource(edition.document.url)
+        && edition.observed?.watch.definition.audience !== 'internal_noncommercial');
+      if (!change.imported) return selections.save(tx, owner, change, publicEditions.map(selectionEdition));
+      const resolved = [];
+      for (const ref of change.editions) {
+        const active = publicEditions.find(item => item.source.sourceId === ref.sourceId);
+        if (!active || !ref.versionHash || sourceSeries(active.document).id !== change.seriesId) reject('knowledge_reference_unavailable', 409);
+        const id = deterministicUuid([projectId, namespace, 'version', ref.sourceId, ref.versionHash]);
+        const pinned = id === active.version.versionId ? active : await metadata(tx, id, active.source);
+        if (id !== active.version.versionId && !pinnedAllowed(pinned, active)) reject('knowledge_reference_unavailable', 409);
+        resolved.push(selectionEdition(pinned));
+      }
+      return selections.save(tx, owner, { ...change, adopt: true, mode: 'fixed', editions: resolved }, resolved);
     },
     async candidates(input, vector, selection = {}) {
       const filter = parseKnowledgeFilter(input), query = selection.query ? parseKnowledgeQuery(selection.query) : null;
@@ -592,7 +770,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       const limit = Math.min(selection.limit ?? (query ? 6 : 60), query ? 6 : 60);
       if (!Number.isInteger(limit) || limit < 1) reject("knowledge_selection_invalid", 400);
       for (let attempt = 0; attempt < 2; attempt++) {
-        const current = await database.runTransaction(tx => corpus(tx), { readOnly: true });
+        const owner = selection.libraryUserId;
+        const readCorpus = () => database.runTransaction(tx => personalCorpus(tx, owner), { readOnly: true });
+        const current = await readCorpus();
+        const stillCurrent = async () => canonical(await readCorpus()) === canonical(current);
         const eligible = new Map<string, { edition: Edition; manifest: Version["chunks"][number] }>();
         for (const edition of current.editions) {
           if (edition.document.classification !== filter.classification || selection.versionId && edition.version.versionId !== selection.versionId) continue;
@@ -601,7 +782,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           if (selection.afterKey && after < 0) continue;
           for (const manifest of edition.version.chunks) {
             if (!manifest.applicability || !manifest.contentHash || !manifest.embeddingHash) reject("knowledge_search_rebuild_required", 503);
-            if (manifest.order > after + 1 && applies(manifest.applicability, filter)
+            if (!manifest.excluded && manifest.order > after + 1 && applies(manifest.applicability, filter)
               && (!selection.chunkIds || selection.chunkIds.includes(manifest.chunkId))) eligible.set(manifest.chunkId, { edition, manifest });
           }
         }
@@ -614,7 +795,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
               const id = ids[index]!, selected = eligible.get(id)!;
               if (!snapshot.exists || snapshot.id !== id) reject("knowledge_chunk_missing", 503);
               const chunk = checkedChunk(selected.edition, snapshot.data());
-              if (chunk.chunkId !== id || chunk.embedding === null || !applies(chunk.document.applicability, filter)) reject("knowledge_binding_invalid", 503);
+              if (chunk.chunkId !== id || (needsKnowledgeVector(chunk.document.treatment) && chunk.embedding === null) || !applies(chunk.document.applicability, filter)) reject("knowledge_binding_invalid", 503);
               result.set(id, candidate(selected.edition, chunk, filter));
             });
             return result;
@@ -623,7 +804,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (!query) {
           const ids = [...eligible].sort((a, b) => a[1].manifest.order - b[1].manifest.order || compareId(a[0], b[0])).slice(0, limit).map(([id]) => id);
           const result = await readCandidates(ids);
-          if (await unchanged(current)) return ids.map(id => result.get(id)!); continue;
+          if (await stillCurrent()) return ids.map(id => result.get(id)!); continue;
         }
         const distances = new Map<string, number>(), scores = new Map<string, number>();
         const tokens = knowledgeTokens(query, true), tokenHashes = [...tokens].map(lexicalTokenHash);
@@ -659,15 +840,16 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
             for (const [id, score] of bucketScores) scores.set(id, (scores.get(id) ?? 0) + score);
           }
           if (values === null) continue;
-          for (let start = 0; start < ids.length; start += 30) {
-            const nearest = await chunks.where("versionId", "==", versionId).where("chunkId", "in", ids.slice(start, start + 30)).findNearest({
+          const vectorIds = ids.filter(id => eligible.get(id)!.manifest.treatment !== 'structured');
+          for (let start = 0; start < vectorIds.length; start += 30) {
+            const nearest = await chunks.where("versionId", "==", versionId).where("chunkId", "in", vectorIds.slice(start, start + 30)).findNearest({
               vectorField: "embedding", queryVector: FieldValue.vector(values), distanceMeasure: "COSINE", limit: 60,
               distanceThreshold: 0.4, distanceResultField: "knowledgeDistance" }).get();
             for (const snapshot of nearest.docs) {
               const { knowledgeDistance: distance, ...raw } = snapshot.data(), row = checkedChunk(edition, raw);
               if (!eligible.has(row.chunkId) || row.versionId !== versionId || snapshot.id !== row.chunkId || row.embedding === null
                 || !Number.isFinite(distance) || distance < 0 || distance > 2) reject("knowledge_vector_binding_invalid", 503);
-              if (distance <= 0.4) distances.set(row.chunkId, distance);
+              if (distance <= 0.4 && row.document.treatment?.kind !== 'structured') distances.set(row.chunkId, distance);
             }
           }
         }
@@ -679,15 +861,20 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           else fused.set(id, { id, rankScore: 1 / (60 + rank), bestRank: rank });
         };
         vectorTop.forEach(([id], index) => add(id, index + 1)); keywordTop.forEach(([id], index) => add(id, index + 1));
-        const top = [...fused.values()].sort((a, b) => b.rankScore - a.rankScore || a.bestRank - b.bestRank || compareId(a.id, b.id)).slice(0, limit);
-        const read = await readCandidates(top.map(row => row.id));
-        const result = top.map(row => {
-          const item = read.get(row.id)!;
-          const topicScore = keywordScore(tokens, item);
-          if (scores.has(row.id) && (topicScore === 0 || topicScore + keywordScore(ageTokens, item) !== scores.get(row.id))) reject("knowledge_search_binding_invalid", 503);
-          return { ...item, distance: distances.get(row.id) ?? null, rankScore: row.rankScore };
-        });
-        if (await unchanged(current)) return result;
+        const top = [...fused.values()].sort((a, b) => b.rankScore - a.rankScore || a.bestRank - b.bestRank || compareId(a.id, b.id));
+        const result: KnowledgeCandidate[] = [];
+        for (let offset = 0; offset < top.length && result.length < limit; offset += limit) {
+          const page = top.slice(offset, offset + limit);
+          const read = await readCandidates(page.map(row => row.id));
+          for (const row of page) {
+            const item = read.get(row.id)!;
+            const topicScore = keywordScore(tokens, item);
+            if (scores.has(row.id) && (topicScore === 0 || topicScore + keywordScore(ageTokens, item) !== scores.get(row.id))) reject("knowledge_search_binding_invalid", 503);
+            if (structuredQueryMatches(query, item.treatment)) result.push({ ...item, distance: distances.get(row.id) ?? null, rankScore: row.rankScore });
+            if (result.length === limit) break;
+          }
+        }
+        if (await stillCurrent()) return result;
       }
       return reject("knowledge_publication_changed");
     },
