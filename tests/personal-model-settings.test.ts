@@ -59,6 +59,19 @@ test('only the owner can update their daily money budget; older clients preserve
   assert.equal((await (await call('other', include)).json()).settings.dailyMoneyBudget, undefined);
   assert.equal((await call('owner', include, { ...base, opId: randomUUID(), expectedVersion: 2, dailyMoneyBudget: null })).status, 200);
   assert.equal((await (await call('owner', include)).json()).settings.dailyMoneyBudget, undefined);
+  const sponsor = { ...base, opId: randomUUID(), backgroundEnabled: true, publicMaintenanceEnabled: true, expectedVersion: 3 };
+  await assert.rejects(routing.resolve('owner', 'knowledge-maintenance'), /unauthorized/u);
+  assert.equal((await call('owner', legacy, sponsor)).status, 409);
+  assert.equal((await call('owner', include, sponsor)).status, 200);
+  assert.equal((await (await call('owner', legacy)).json()).settings.publicMaintenanceEnabled, undefined);
+  const funded = await routing.resolve('owner', 'knowledge-maintenance');
+  assert.equal(funded.billingSource, 'personal');
+  assert.ok(funded.maintenanceEmbedding);
+  assert.equal(await funded.authorize(), true);
+  await assert.rejects(routing.resolve('other', 'knowledge-maintenance'), /unauthorized/u);
+  assert.equal((await call('owner', include, { ...sponsor, opId: randomUUID(), publicMaintenanceEnabled: false, expectedVersion: 4 })).status, 200);
+  assert.equal(await funded.authorize(), false);
+  await assert.rejects(routing.resolve('owner', 'knowledge-maintenance'), /unauthorized/u);
 });
 
 test('personal settings share policy, recover the original write, isolate accounts and retain legacy HTTP', async () => {

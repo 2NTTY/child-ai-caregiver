@@ -18,7 +18,7 @@ const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
 const sourceSchema = z.enum(['platform', 'personal']);
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
-const requestSchema = z.object({ kind: z.enum(['model', 'embedding']).optional(), rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
+const requestSchema = z.object({ budgetPurpose: z.literal('knowledge_maintenance').optional(), kind: z.enum(['model', 'embedding']).optional(), rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
   requestFingerprint: fingerprint, userId: id, childId: id, model: id, deadlineAtMs: integer.min(1),
   userLimit: integer.min(1).max(1000), globalLimit: integer.min(1).max(10000) }).strict();
 const recordSchema = z.union([
@@ -33,7 +33,7 @@ const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSc
     || (value.request.kind ?? 'model') === (value.record.kind ?? 'model'));
 // Missing dimensions are historical coverage gaps. Only observed reservations or reports add to them.
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
-const detailSchema = z.object({ model: integer.optional(), queryEmbedding: integer.optional(), documentEmbedding: integer.optional(), otherEmbedding: integer.optional(),
+const detailSchema = z.object({ sponsoredMaintenance: integer.optional(), model: integer.optional(), queryEmbedding: integer.optional(), documentEmbedding: integer.optional(), otherEmbedding: integer.optional(),
   activities: z.partialRecord(z.enum([...MODEL_USAGE_ACTIVITIES, 'retry', 'tool']), integer).optional(),
   embeddingCharacters: integer.optional(), embeddingCharacterReports: integer.optional() }).strict();
 export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema, detail: detailSchema };
@@ -173,6 +173,12 @@ export class FirestoreAiUsage implements DurableAiUsage {
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
       if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
       const detail = await this.#detail(transaction, globalId);
+      if (request.budgetPurpose === 'knowledge_maintenance' && this.#source === 'personal') {
+        const ownerDetail = await this.#detail(transaction, userId);
+        ownerDetail.value.sponsoredMaintenance = (ownerDetail.value.sponsoredMaintenance ?? 0) + 1;
+        detail.value.sponsoredMaintenance = (detail.value.sponsoredMaintenance ?? 0) + 1;
+        ownerDetail.save();
+      }
       detail.value[dimension] = (detail.value[dimension] ?? 0) + 1;
       if (activity) {
         const counts = detail.value.activities ??= {};
@@ -267,7 +273,9 @@ export class FirestoreAiUsage implements DurableAiUsage {
         || saved.request.model !== line.model || saved.request.rootRunId !== line.rootRunId || saved.request.attemptKey !== line.attemptKey
         || (line.ownerUserId !== undefined && line.ownerUserId !== saved.request.userId)
         || (line.rate && (line.rate.kind === 'model') !== ((saved.request.kind ?? 'model') === 'model'))) reject('financial_binding_conflict');
-      return { line, userId: saved.request.userId, record: saved.record };
+      const maintenance = this.#source === 'personal' ? saved.request.budgetPurpose === 'knowledge_maintenance'
+        : saved.request.userId === KNOWLEDGE_MAINTENANCE_PAYER;
+      return { line, userId: saved.request.userId, record: saved.record, maintenance };
     }));
   }
   async getGlobal(input: string, rawEvidence?: DayFinancialEvidence) {
@@ -278,7 +286,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const id = this.#counterId(day, null), state = this.#counter(id, await transaction.get(this.#ref(id)));
       if (evidence && evidence.attempts.length > state.attempts) reject('financial_binding_conflict');
       const lines = await this.#resolveInvoiceLines(transaction, day, evidence?.attempts ?? []);
-      let maintenanceAttempts = 0;
+      const { value: detail } = await this.#detail(transaction, id);
+      let maintenanceAttempts = detail.sponsoredMaintenance ?? 0;
       if (this.#source === 'platform') {
         const maintenanceId = this.#counterId(day, KNOWLEDGE_MAINTENANCE_PAYER);
         const maintenance = this.#counter(maintenanceId, await transaction.get(this.#ref(maintenanceId)));
@@ -286,13 +295,13 @@ export class FirestoreAiUsage implements DurableAiUsage {
         maintenanceAttempts = maintenance.attempts;
       }
       const projectFinance = (maintenance: boolean, attempts: number) => {
-        const selected = lines.filter(item => maintenance === (this.#source === 'platform' && item.userId === KNOWLEDGE_MAINTENANCE_PAYER));
+        const selected = lines.filter(item => maintenance === item.maintenance);
         if (selected.length > attempts) reject('financial_binding_conflict');
         return dailyFinance(this.#source, attempts, evidence && { ...evidence, attempts: selected.map(item => item.line),
           approvedDailyBudget: maintenance ? evidence.approvedMaintenanceBudget : evidence.approvedDailyBudget,
           providerQuota: maintenance ? undefined : evidence.providerQuota }, selected.map(item => item.record));
       };
-      const { value: detail } = await this.#detail(transaction, id);
+      if (maintenanceAttempts > state.attempts) reject('counter_inconsistent');
       const model = detail.model ?? 0, queryEmbedding = detail.queryEmbedding ?? 0, documentEmbedding = detail.documentEmbedding ?? 0,
         otherEmbedding = detail.otherEmbedding ?? 0, unclassified = state.attempts - model - queryEmbedding - documentEmbedding - otherEmbedding;
       if (unclassified < 0) reject('invalid_stored_usage');
@@ -302,7 +311,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
           ...(detail.activities ? { activities: detail.activities } : {}),
           embeddingCharacters: detail.embeddingCharacters ?? null, embeddingCharacterReports: detail.embeddingCharacterReports ?? 0 },
         finance: projectFinance(false, state.attempts - maintenanceAttempts),
-        ...(this.#source === 'platform' ? { maintenanceFinance: projectFinance(true, maintenanceAttempts) } : {}) };
+        maintenanceFinance: projectFinance(true, maintenanceAttempts) };
     }, { readOnly: true });
   }
   async getForUser(input: string, financialEvidence?: readonly DayFinancialEvidence[]): Promise<ModelSettingsUsage & { billingSource: ModelBillingSource }> {
@@ -316,9 +325,16 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const candidates = state.attempts === 0 ? [] : evidence?.attempts.filter(line => !line.ownerUserId || line.ownerUserId === userId) ?? [];
       const lines = (await this.#resolveInvoiceLines(transaction, day, candidates)).filter(item => item.userId === userId);
       if (lines.length > state.attempts) reject('financial_binding_conflict');
-      const { settlement, estimates, unestimatedAttempts, unsettledAttempts } = dailyFinance(this.#source, state.attempts,
-        evidence && { ...evidence, attempts: lines.map(item => item.line) }, lines.map(item => item.record));
-      return { ...usage, finance: { settlement, estimates, unestimatedAttempts, unsettledAttempts } };
+      const maintenance = (await this.#detail(transaction, id)).value.sponsoredMaintenance ?? 0;
+      if (maintenance > state.attempts) reject('counter_inconsistent');
+      const project = (isMaintenance: boolean, attempts: number) => {
+        const selected = lines.filter(item => item.maintenance === isMaintenance);
+        if (selected.length > attempts) reject('financial_binding_conflict');
+        const { settlement, estimates, unestimatedAttempts, unsettledAttempts } = dailyFinance(this.#source, attempts,
+          evidence && { ...evidence, attempts: selected.map(item => item.line) }, selected.map(item => item.record));
+        return { settlement, estimates, unestimatedAttempts, unsettledAttempts };
+      };
+      return { ...usage, finance: project(false, state.attempts - maintenance), maintenanceFinance: project(true, maintenance) };
     }, { readOnly: true });
   }
 }

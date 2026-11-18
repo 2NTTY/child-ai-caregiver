@@ -52,6 +52,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   handover?: Pick<ReturnType<typeof createHandoverService>, 'cleanup'>;
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   proactiveEvents?: Pick<ReturnType<typeof createProactiveEventSources>, 'prepareGlobal'>;
+  knowledgeAgent?: { binding: string; accepts(watchId: string): boolean;
+    run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped'}> };
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'> & Partial<Pick<ReturnType<typeof createFirestorePhotoStore>, 'expireImport'>>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -257,7 +259,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       await options.database.runTransaction(async tx => {
         const control = await authority.readControl(tx); if (!control.enabled || control.generation !== entry.data.workerGeneration) return;
         const queued = await prepareFirestoreBackgroundWork(data, tx, { kind: 'knowledge-check', scope: SYSTEM, resourceId: entry.definition.id,
-          basis: entry.data.revision + ':' + slot, generation: control.generation, authorizationVersion: '0' }, new Date().toISOString()); queued.commit();
+          basis: entry.data.revision + ':' + slot, generation: control.generation,
+          authorizationVersion: options.knowledgeAgent?.accepts(entry.definition.id) ? options.knowledgeAgent.binding : '0' }, new Date().toISOString()); queued.commit();
       });
     }
     await options.database.runTransaction(async tx => {
@@ -315,7 +318,13 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
         ? { state: 'deferred' as const, nextAt: new Date(Date.now() + 60000).toISOString() } : result;
     }
     if (job.kind === 'knowledge-check') {
-      const revision = job.basis.slice(0, 36), result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
+      const revision = job.basis.slice(0, 36);
+      if (job.authorizationVersion !== '0') {
+        const agent = options.knowledgeAgent;
+        if (!agent || job.authorizationVersion !== agent.binding || !agent.accepts(job.resourceId)) return { state: 'stopped' as const };
+        return agent.run(job.resourceId, revision, job.basis.slice(37), job.generation, signal);
+      }
+      const result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
         firestoreBackgroundReference(job), fetcher, signal);
       return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
     }

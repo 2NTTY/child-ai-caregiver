@@ -8,6 +8,24 @@ import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
 import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
 import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 
+test('one personal key funds public maintenance separately from chat across both owner and global reports', async () => {
+  const f = firestoreUsageFixture(now), personal = new FirestoreAiUsage({ ...f.options, billingSource: 'personal' });
+  const chat = request(), maintenance = request({ attemptKey: 'review', budgetPurpose: 'knowledge_maintenance' });
+  await personal.reserve(chat);
+  await personal.reserve(maintenance, undefined, { activity: 'review', retry: false });
+  assert.equal((await personal.reserve(maintenance)).decision, 'lookup');
+  await assert.rejects(personal.read(request({ attemptKey: 'review' })), code('attempt_conflict'));
+  const owner = await personal.getForUser(chat.userId, []);
+  assert.equal(owner.attempts, 2);
+  assert.equal(owner.finance?.unsettledAttempts, 1);
+  assert.equal(owner.maintenanceFinance?.unsettledAttempts, 1);
+  assert.equal((await personal.getForUser('another-user', [])).maintenanceFinance?.unsettledAttempts, 0);
+  const report = await personal.getGlobal('2026-10-09');
+  assert.equal(report.finance.unsettledAttempts, 1);
+  assert.equal(report.maintenanceFinance?.unsettledAttempts, 1);
+  assert.equal((await f.service.getGlobal('2026-10-09')).attempts, 0);
+});
+
 const now = Date.parse('2026-10-09T12:00:00Z');
 const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequest => ({ rootRunId: 'synthetic-root',
   attemptKey: 'model:original-step', bindingFingerprint: agentBudgetFingerprint('original-bound-scope'),

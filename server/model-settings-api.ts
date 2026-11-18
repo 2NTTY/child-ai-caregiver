@@ -54,7 +54,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
   const v3 = v4 || accept === MODEL_SETTINGS_V3_MEDIA_TYPE, v2 = accept === MODEL_SETTINGS_MEDIA_TYPE, versioned = v2 || v3;
   const publicSettings = (value: ModelSettings) => {
     if (includeFinance) return value;
-    const { dailyMoneyBudget, ...compatible } = value;
+    const { dailyMoneyBudget, maintenanceMoneyBudget, publicMaintenanceEnabled, ...compatible } = value;
     return v4 ? compatible : v3 ? v3Settings(compatible) : v2 ? v2Settings(compatible) : legacySettings(compatible);
   };
   try {
@@ -86,7 +86,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
     try { input = await request.json(); } catch { throw new ModelSettingsError("invalid_input"); }
     if (path === "/api/ai/settings") {
       const command = parseModelSettingsCommand(input);
-      if (!includeFinance && Object.hasOwn(command, 'dailyMoneyBudget')) throw new ModelSettingsError('client_update_required', 409);
+      if (!includeFinance && (Object.hasOwn(command, 'dailyMoneyBudget') || Object.hasOwn(command, 'publicMaintenanceEnabled') || Object.hasOwn(command, 'maintenanceMoneyBudget'))) throw new ModelSettingsError('client_update_required', 409);
       if (!v4 && v4Fields.some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('client_update_required', 409);
       if (!v3) {
         if (v3Fields.some(key => Object.hasOwn(command, key)) || command.provider === 'openai-compatible')

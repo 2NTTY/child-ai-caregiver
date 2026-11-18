@@ -28,6 +28,8 @@ export const personalAdvancedShape = {
   maxModelRetries: bounded(PERSONAL_RUN_LIMITS.modelRetries).optional(),
 };
 export const publicModelSettingsSchema = z.object({
+  publicMaintenanceEnabled: z.boolean().optional(),
+  maintenanceMoneyBudget: dailyMoneyBudgetSchema.optional(),
   dailyMoneyBudget: dailyMoneyBudgetSchema.optional(),
   limitPolicyVersion: z.literal(2).optional(),
   version: z.number().int().nonnegative().max(2147483647), mode: z.enum(['platform', 'personal', 'disabled']),

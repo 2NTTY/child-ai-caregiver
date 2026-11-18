@@ -47,6 +47,7 @@ import { createFirestoreCareSummary } from './firestore-care-summary.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreProductAgent } from './firestore-product-agent.ts';
+import { createScheduledKnowledgeAgent } from './scheduled-knowledge-agent.ts';
 import { readAiConfig } from './ai-config.ts';
 import { createPhotoAgent } from './photo-agent.ts';
 import { createFirestoreErasureStore } from './firestore-erasure.ts';
@@ -259,6 +260,9 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
+    const knowledgeAgent = composition.worker && knowledge && aiConfig.backgroundKnowledgeMaintenanceEnabled && aiConfig.backgroundKnowledgeLiveFetch
+      ? createScheduledKnowledgeAgent({ ...domain, config: aiConfig, knowledge, refresh: knowledgeRefresh, routing: product.routing,
+        payer: env.AI_KNOWLEDGE_MAINTENANCE_PAYER, currentAuth, readControl: tx => authority.readControl(tx) }) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence },
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
@@ -269,7 +273,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { proactive,proactiveEvents,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { proactive,proactiveEvents,knowledgeAgent,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => {
         try { await nativeChatDelivery?.close(); }
         finally { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } }

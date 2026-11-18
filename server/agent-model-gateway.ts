@@ -334,6 +334,8 @@ export class AgentGatewayModel extends BaseLlm {
         const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
         if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
           bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
+          ...(daily.adapter.billingSource === 'personal' && daily.context.binding.trigger.kind === 'knowledge-maintenance'
+            ? { budgetPurpose: 'knowledge_maintenance' as const } : {}),
           deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
         if (this.options.privateSummaryAdmission) {
           if (!dailyRequest || await budget.wait(() => this.options.privateSummaryAdmission!.reserveModel({

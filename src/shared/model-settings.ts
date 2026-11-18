@@ -38,6 +38,8 @@ export interface PersonalAdvancedLimits {
 
 /** Secret-free account settings; never return the key, its hash or a decryptable envelope. */
 export interface ModelSettings extends PersonalAdvancedLimits, PersonalEmbeddingSettings {
+  publicMaintenanceEnabled?: boolean;
+  maintenanceMoneyBudget?: DailyMoneyBudget;
   dailyMoneyBudget?: DailyMoneyBudget;
   limitPolicyVersion?: 2;
   version: number;
@@ -55,6 +57,8 @@ export interface ModelSettings extends PersonalAdvancedLimits, PersonalEmbedding
 }
 export interface ModelSettingsCommand extends PersonalAdvancedLimits, PersonalEmbeddingSettings {
   /** Omit to preserve the owner's budget; null explicitly clears it. */
+  publicMaintenanceEnabled?: boolean;
+  maintenanceMoneyBudget?: DailyMoneyBudget | null;
   dailyMoneyBudget?: DailyMoneyBudget | null;
   /** New clients use a secret-free operation lookup after a lost response. */
   opId?: string;
@@ -104,6 +108,7 @@ export interface EffectiveModelLimits {
 }
 export interface ModelSettingsUsage {
   finance?: Pick<AdminUsageFinance, 'settlement' | 'estimates' | 'unestimatedAttempts' | 'unsettledAttempts'>;
+  maintenanceFinance?: ModelSettingsUsage['finance'];
   billingSource?: ModelBillingSource;
   day: string; attempts: number; inputTokens: number; outputTokens: number;
   cachedTokens: number; unknownUsageAttempts: number;

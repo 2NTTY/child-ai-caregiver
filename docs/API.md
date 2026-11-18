@@ -841,6 +841,8 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 <a id="knowledge-maintenance-model"></a>
 ### 背景候選的整理與模型審核
 
+部署者在 worker 的受保護設定指定 `AI_KNOWLEDGE_MAINTENANCE_PAYER=platform` 或 `user:<Firebase UID>`。缺省沿用來源巡查。啟用維護及實時來源讀取後，worker 才為支援的來源安排 Agent，發布仍依獨立開關。個人出資須本人啟用背景工作及 `publicMaintenanceEnabled`，可隨時撤回。工作綁定出資方和設定版本。整理、審核及文件向量分別用該出資方的模型及向量設定，全部記入維護預算。
+
 整理／審核共用正式 `AgentGatewayModel.completeText` 接點，由受信工作組裝注入已綁定的維護身份、共同預算及取消；角色不能選付款來源、另開 run 或自行重試。取得原文後，Server 產生固定單元、逐字原文預覽及真實 PDF 頁碼，模型只提出章節、摘要、關鍵詞與適用範圍。每單元恰好回傳一次；來源 URL、日期、發布者、原文、預覽及頁碼不由模型填寫。預覽不代表已完整引證，獨立審核仍讀完整原文。
 
 獨立審核接收候選的完整原文與整理、舊版原文及固定版本綁定，回傳既有 `KnowledgeReviewAssessment`；沿正式含義差異、原文引證、代表問題與規則影響檢查。模型不能把成長規則填成 `reviewed` 來創造核准。缺舊版、超出有界批次／上下文、部分原文、無效引用或儲存失敗均不產生批准；不靜默截斷。候選及審核證據由工作保存成功後才返回 `model_review` 結果；此結果不等於發布收據。

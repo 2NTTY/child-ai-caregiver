@@ -7,6 +7,7 @@ export interface ModelAttemptActivity { activity: ModelUsageActivity; retry: boo
 export interface DurableAiUsageRequest {
   /** Missing kind is accepted only as the legacy model representation. New callers set it explicitly. */
   kind?: 'model' | 'embedding';
+  budgetPurpose?: 'knowledge_maintenance';
   rootRunId: string;
   attemptKey: string;
   /** Hash of the original complete root binding and generation. */

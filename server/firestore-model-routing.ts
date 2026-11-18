@@ -117,14 +117,17 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return result;
     },
-    async resolve(userId: string, trigger: 'interactive' | 'worker') {
+    async resolve(userId: string, trigger: 'interactive' | 'worker' | 'knowledge-maintenance') {
       const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal', current = await policy.readPolicy();
-      const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } = profileFor(state, current, trigger);
+      if (trigger === 'knowledge-maintenance' && (!personal || !state.publicMaintenanceEnabled || !state.backgroundEnabled || !snapshot.apiKey))
+        throw new AgentStopped('unauthorized');
+      const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } =
+        profileFor(state, current, trigger === 'knowledge-maintenance' ? 'worker' : trigger);
       if (enabled && personal && !snapshot.apiKey) throw new AgentStopped('unavailable');
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
       const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } }
         : personal && snapshot.apiKey ? createPersonalModelProviders(selectedConfig, snapshot.apiKey, state.provider,
-          { baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
+          { documentEmbeddings: trigger === 'knowledge-maintenance', baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
             embeddingProvider: state.embeddingProvider, embeddingProject: state.embeddingProject, embeddingLocation: state.embeddingLocation })
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
@@ -153,6 +156,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
       return { config: selectedConfig, provider: providers.agent, policyVersion: current.version,
         repeatedSignatureStreak: current.highWatermark?.repeatedSignatureStreak ?? AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak,
         settingsVersion, billingSource: source,
+        maintenanceEmbedding: trigger === 'knowledge-maintenance' ? providers.embedding : undefined,
         dailyUsage: usage[source], authorize, readPolicyTransition,
         softBudgetSource: limits.limitSources?.softBudgetRatio,
         ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),

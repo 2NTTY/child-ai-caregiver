@@ -125,6 +125,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           if (Date.now() >= daily.context.binding.deadlineAtMs) throw new AgentStopped('deadline');
           if (controller.signal.aborted) throw controller.signal.reason;
         }
+        if (!daily && actor.kind === "corpus_maintenance" && !await authority(authorize)) throw new EmbeddingFailure("unauthorized");
         const reply = await Promise.race([provider.embed(input, controller.signal), new Promise<never>((_, reject) => {
           onStop = () => reject(controller.signal.reason);
           controller.signal.addEventListener("abort", onStop, { once: true });
