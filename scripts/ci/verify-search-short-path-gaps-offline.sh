@@ -30,10 +30,34 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/search-short-path-gaps.test.ts
+  tests/search-official-evidence.test.ts
+  tests/knowledge-ranking.test.ts
+  tests/knowledge-a04.test.ts
+  tests/knowledge-runtime.test.ts
+  tests/firestore-knowledge.test.ts
+  tests/local-knowledge-seed-assessments.test.ts
+  tests/search-query-minimization.test.ts
+  tests/agent-prompt.test.ts
+  tests/agent-prompt-wiring.test.ts
+  tests/vertex-tool-contract.test.ts
+  tests/agent-runtime.test.ts
+  tests/agent-runtime-contract.test.ts
+  tests/agent-feedback-sources.test.ts
+  tests/chat-progress-integration.test.ts
+  tests/chat-run-recovery.test.ts
+  tests/chat-recovered-draft.test.ts
+  tests/chat-web-sources-copy.test.ts
+  tests/chat-busy-stop-feedback.test.ts
+  tests/chat-stop-feedback.test.ts
+  tests/agent-work-continuation-recovery.test.ts
+  tests/pr608-review-regressions.test.mjs
+  tests/search-review-boundaries.test.ts
+  tests/agent-review-obligation.test.ts
   tests/chat-delivery-review.test.ts
+  tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(12 44 8)
+TEST_CASES=(13 15 13 4 6 10 3 8 3 4 6 20 17 5 7 6 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -82,3 +106,4 @@ git diff --exit-code HEAD
 test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 printf 'PASS candidate=%s complete-test-files=%s cases=%s strict-type-configs=tsconfig.server.json,tsconfig.json,frontend/tsconfig.json\n' \
   "$EXPECTED_SHA" "${#TEST_FILES[@]}" "$total_cases"
+

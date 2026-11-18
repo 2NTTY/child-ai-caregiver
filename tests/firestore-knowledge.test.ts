@@ -318,3 +318,21 @@ test("F05 source observation fences changed or unavailable evidence and reuses u
   assert.equal((await store.catalog()).items.length, 0);
   await assert.rejects(store.review(next.versionId, next.hash, "synthetic-operator", { ...assessment(nextDocument), observationHash: observationHash(changed) }), rejects("knowledge_observation_review_mismatch"));
 });
+
+
+test("Firestore lexical ranking applies topic-gated age specificity before rankScore short circuit", async () => {
+  const f = fixture();
+  await f.publish(source("synthetic-guidance", [
+    chunk("general", { section: "發展", text: "發展", keywords: ["發展"] }),
+    chunk("age-specific", { section: "六個月發展", text: "發展", keywords: ["synthetic"] }),
+    chunk("unrelated", { section: "六個月加固", text: "六個月米糊", keywords: ["六個月"] }),
+  ]));
+  for (const query of ["六個月發展", "半歲發展"]) {
+    const result = await f.store.candidates(filter, null, { query });
+    assert.deepEqual(result.map(item => item.key), ["age-specific", "general"]);
+    assert.deepEqual(rankKnowledge(query, result).map(item => item.key), ["age-specific", "general"]);
+  }
+  assert.deepEqual(await f.store.candidates(filter, null, { query: "六個月" }), []);
+  assert.deepEqual(await f.store.candidates(filter, null, { query: "六個月發燒" }), []);
+});
+

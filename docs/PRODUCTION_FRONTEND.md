@@ -238,8 +238,9 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
      }
    }
    ```
-3. 在已安裝倉庫依賴的根目錄，使用有 Firebase 專案配置權限的身份執行 `npm exec --offline -- firebase deploy --only auth --project ai-caregivers-for-children --config <工程外的設定檔路徑>`。倉庫固定的 Firebase CLI 15.34.0 可為既有專案配置 Google 登入。這份設定只指定 Google。啟用後在 Firebase Auth 核對 `google.com` 已啟用，並重新取得該 Android App 的 SDK 設定。核對 Android OAuth client 的套件與簽署，另取 Web 類型的 client ID 配給 `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`。[Firebase 官方 CLI 指引](https://firebase.google.com/docs/auth/configure-providers-cli)
-4. 在供應商配置齊備的平台，將 `google.com` 加入現有 `EXPO_PUBLIC_AUTH_PROVIDERS`。Web 變數在建置時讀取，按[原站發布](DEPLOYMENT.md)核對包含新設定的 Web 產物；Android 按 runtime 決定 OTA 或新版本。用原測試帳號連結 Google、重新驗證並核對 UID，再將相應平台記為可用。
+3. 在已安裝倉庫依賴的根目錄，使用有 Firebase 專案配置權限的身份執行 `npm exec --offline -- firebase deploy --only auth --project ai-caregivers-for-children --config <工程外的設定檔路徑>`。使用本機 ADC 時，在該程序設定 `GOOGLE_CLOUD_QUOTA_PROJECT=ai-caregivers-for-children`，讓 Firebase Management 查詢計入本站專案。倉庫固定的 Firebase CLI 15.34.0 可為既有專案配置 Google 登入。這份設定只指定 Google。啟用後在 Firebase Auth 核對 `google.com` 已啟用，並重新取得該 Android App 的 SDK 設定。核對 Android OAuth client 的套件與簽署，另取 Web 類型的 client ID 配給 `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`。[Firebase 官方 CLI 指引](https://firebase.google.com/docs/auth/configure-providers-cli)
+4. 在供應商配置齊備的平台，將 `google.com` 加入現有 `EXPO_PUBLIC_AUTH_PROVIDERS`。Web 變數在建置時讀取，按[原站發布](DEPLOYMENT.md)核對包含新設定的 Web 產物；Android 按 runtime 決定 OTA 或新版本。用原測試帳號連結 Google、重新驗證並核對 UID，再將相應平台記為可用。 本站本輪只啟用 Google，支援電郵採管理員指定地址。iPhone 使用 Web 建置的 PWA。正式供應商、網站及 Android 收據見[Google 啟用及發行收據](../artifacts/verification/P4_GOOGLE_AUTH_DELIVERY_20261118.json)。
+5. 首次開放新登入方式要另核 Firebase 的 beforeCreate。用 `gcloud functions describe before-yuban-user-created --gen2 --region asia-east2 --project ai-caregivers-for-children` 核對正式 revision、來源版本與 handler。11 月 18 日以既有函式封包替換 master 的 `server/firebase-registration.ts`，只更新 `buildConfig.source`；原 URI 及邀請核對沿用。原 revision、新 revision 與校驗值記在同一份收據。發布後確認函式 ACTIVE、流量指向新 revision，以及 Firebase beforeCreate 仍指向同一 URI。
 
 Android launcher 使用既有 `assets/brand/app-icon-ios.png` 品牌圖；共用原生啟動畫面由 Expo SDK 57 對應的 `expo-splash-screen@57.0.9`（MIT）plugin 設定，使用 `favicon.png` 透明標記與白底。沿[官方配置](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)及已安裝版本核對；這些設定進入下一個新 binary，不能用 OTA 更新舊版的 launcher／原生 splash，也不能手填舊 fingerprint。JS 首屏仍沿現有 FirstScreenGate，不新增啟動等待或重做畫面。
 
