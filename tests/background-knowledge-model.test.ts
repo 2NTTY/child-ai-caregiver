@@ -1,3 +1,4 @@
+import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createModelKnowledgeReviewPort, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
@@ -121,4 +122,16 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
   assert.equal(changed.review.decision, "hold_candidate");
   assert.equal(changed.assessment.growthRuleImpact, "requires_review",
     "semantic approval cannot erase the server-verified changed rule dependency");
+});
+
+test("grouped PDF sections require one keyed summary for each physical page in its range", () => {
+  const contract = pdfOrganizationContract([{id:"u1",page:5,pageEnd:6}]);
+  const range = contract.ranges[0]!;
+  const group = {section:"Fruit",keywords:["fruit"],region:"HK",topics:["care"],conditions:[],ageRange:null};
+  const nativeCoverage = {pages:[{page:5,finding:"Table introduction"},{page:6,finding:"Fruit row"}],unreadablePages:[],layoutAnswer:null};
+  const parse = (pageText:Record<string,string>) => contract.parse({ranges:{[range.key]:{...group,pageText}},nativeCoverage});
+  assert.deepEqual(range.pages,["physicalPage5","physicalPage6"]);
+  assert.throws(() => parse({physicalPage1:"Wrong physical page",physicalPage6:"Figure"}));
+  assert.throws(() => parse({physicalPage6:"Figure"}));
+  assert.match(parse({physicalPage6:"Figure",physicalPage5:"Introduction"}).units[0]!.text,/第 5 頁　Introduction\n第 6 頁　Figure/u);
 });
