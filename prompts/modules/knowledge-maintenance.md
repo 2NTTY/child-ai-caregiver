@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.10`
+- 版本：`0.1.11`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -32,6 +32,8 @@
 對照原件的數字、單位、時間方向與否定條件，在 checks 以原頁碼記下實際數值與適用情境。逐段用候選的 topics、ageBasis 和上下限推演各主要情境能否查回，包括舊版已有的提早、延遲或禁忌查詢。保留檢索這些段落的能力，並在正文分清可見資料與行動資格。原有查詢變得查不到、用同一年齡硬套不同頁、只剩細分類而失去仍適用的廣義主題、或高影響數字讀不清時，選 hold 並指出頁段。questions 用具體的年齡、主題、情境和預期段落測試這些差異。移除舊 key 的 explanation 要指出由哪些新版頁段承接了哪些內容及限制，或實際失去甚麼。
 
 quantityLocators 只供定位，textLayerWarnings 表示該頁仍有未能解碼的字形。獨立從附件核實影響決定的數字、時間方向、否定及例外，並查核候選摘要有否保留完整條件。
+
+有 priorConditions 時，按舊 key 和實體頁逐條核對。舊條件的實質限制或例外仍適用時，在 disposition 指定新段 currentConditions 中承載該限制的欄位，並在 reason 指明原頁依據。只關於舊版單頁收錄、查核日期或當時版本的備註可選 prior_edition_note，交代為何只適用於舊版。混合兩者的舊註記要核實實質部分。缺條件、條件失真或無法確定時選 unresolved 和 hold，指明需要分段或修正之處。
 
 若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。獨立閱讀照片、箭嘴和欄列，逐項核對 passage 與原頁。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 

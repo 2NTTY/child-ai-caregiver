@@ -48,6 +48,11 @@ export const nativePdfProvenanceSchema = z.strictObject({
   contentHash: z.string().regex(/^[a-f0-9]{64}$/u),
   organize: nativeCoverageSchema, review: nativeCoverageSchema,
   focus: focusEvidenceSchema.optional(),
+  priorConditions: z.array(z.strictObject({
+    oldKey: z.string(), pageStart: z.number().int(), pageEnd: z.number().int(), original: z.string(),
+    newKey: z.string(), disposition: z.enum(["retained", "prior_edition_note", "unresolved"]),
+    currentCondition: z.string().nullable(), reason: z.string().min(1).max(300),
+  })).max(256).optional(),
   layoutQuestion: z.string().min(1).max(500).nullable(),
 });
 export const destinationReviewSchema = z.strictObject({
@@ -74,17 +79,26 @@ export function assertPreparedKnowledgePdfLayout(prepared: PreparedKnowledgeMain
 }
 type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null };
 type Applicability = KnowledgeSourceInput["chunks"][number]["applicability"];
-function includePriorRetrieval(current: Applicability, prior: Applicability[]): Applicability {
+export function includePriorRetrieval(current: Applicability, prior: Applicability[]): Applicability {
   if (!prior.length) return current;
   const scopes = [current, ...prior];
   if (scopes.some(scope => scope.region !== current.region)) reject("knowledge_pdf_region_conflict");
   const topics = [...new Set(scopes.flatMap(scope => scope.topics))];
   const { maxAgeMonthsExclusive: _, ...rest } = current;
-  if (scopes.some(scope => scope.ageBasis !== current.ageBasis || scope.ageBasis === "any"))
-    return { ...rest, topics, ageBasis: "any", minAgeMonths: null, maxAgeMonths: null };
-  const maxAgeMonths = Math.max(...scopes.map(scope => scope.maxAgeMonths!));
-  return { ...rest, topics, minAgeMonths: Math.min(...scopes.map(scope => scope.minAgeMonths!)), maxAgeMonths,
-    ...(scopes.filter(scope => scope.maxAgeMonths === maxAgeMonths).every(scope => scope.maxAgeMonthsExclusive)
+  // Only the organizer may propose an unrestricted range for independent
+  // review. Numeric scopes cannot bridge a gap or change the age basis.
+  if (new Set(scopes.map(scope => scope.ageBasis).filter(basis => basis !== "any")).size > 1)
+    reject("knowledge_pdf_age_scope_conflict");
+  if (current.ageBasis === "any") return { ...current, topics };
+  if (prior.some(scope => scope.ageBasis !== current.ageBasis)) reject("knowledge_pdf_age_scope_conflict");
+  const ordered = [...scopes].sort((a, b) => a.minAgeMonths! - b.minAgeMonths!);
+  let coveredTo = ordered[0]!.maxAgeMonths!;
+  for (const scope of ordered.slice(1)) {
+    if (scope.minAgeMonths! > coveredTo) reject("knowledge_pdf_age_scope_conflict");
+    coveredTo = Math.max(coveredTo, scope.maxAgeMonths!);
+  }
+  return { ...rest, topics, minAgeMonths: ordered[0]!.minAgeMonths, maxAgeMonths: coveredTo,
+    ...(scopes.filter(scope => scope.maxAgeMonths === coveredTo).every(scope => scope.maxAgeMonthsExclusive)
       ? { maxAgeMonthsExclusive: true } : {}) };
 }
 export interface KnowledgeMaintenanceBaseline {
@@ -290,6 +304,10 @@ export async function prepareKnowledgeMaintenance(input: {
     }),
   });
   const reviewPrompt = await loadAgentPrompt("knowledge-review", "structured", INPUTS);
+  const priorConditions = units.flatMap(unit => samePages(unit).flatMap(old =>
+    old.applicability.conditions.map(original => ({ oldKey: old.key, pageStart: old.pageStart!, pageEnd: old.pageEnd!,
+      original, newKey: unit.id, conditions: source.chunks.find(chunk => chunk.key === unit.id)!.applicability.conditions }))))
+    .map((row, index) => ({ ...row, field: "priorCondition" + (index + 1) }));
   const before = new Map(baseline?.source.chunks.map(chunk => [chunk.key, chunk]) ?? []);
   const after = new Map(source.chunks.map(chunk => [chunk.key, chunk]));
   const preview = (chunk: KnowledgeSourceInput["chunks"][number] | undefined) =>
@@ -312,6 +330,9 @@ export async function prepareKnowledgeMaintenance(input: {
     pageFindings: z.strictObject(Object.fromEntries(pageKeys.map(key => [key, nativeCoverageSchema.shape.pages.element.shape.finding]))),
   });
   const pdfReviewSchema = pdf ? modelAssessmentSchema.extend({
+    ...(priorConditions.length ? { priorConditions: z.strictObject(Object.fromEntries(priorConditions.map(row =>
+      [row.field, z.strictObject({ disposition: z.enum(["prior_edition_note", "unresolved",
+        ...row.conditions.map((_, i) => "condition" + (i + 1))]), reason: z.string().trim().min(1).max(300) })]))) } : {}),
     changes: z.strictObject(Object.fromEntries(comparisonUnits.map(({key, oldQuote, newQuote}) => [key, z.strictObject({
       meaning: oldQuote === null ? z.enum(["new"]) : newQuote === null ? z.enum(["removed"]) : changeFields.meaning, explanation: changeFields.explanation,
     })]))),
@@ -321,6 +342,8 @@ export async function prepareKnowledgeMaintenance(input: {
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
     binding, comparisonUnits, growthRuleBindings,
+    ...(priorConditions.length ? { priorConditions: priorConditions.map(({ conditions, ...row }) => ({ ...row,
+      currentConditions: Object.fromEntries(conditions.map((condition, i) => ["condition" + (i + 1), condition])) })) } : {}),
     candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) } : source,
     baseline: baseline?.source ?? null, ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
@@ -337,9 +360,21 @@ export async function prepareKnowledgeMaintenance(input: {
     layoutAnswer: nativeReview.nativeCoverage.layoutAnswer, unreadablePages: nativeReview.nativeCoverage.unreadablePages,
   }) : null;
   const { decisionReason, ...modelAssessment } = nativeReview
-    ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage")),
+    ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage" && k !== "priorConditions")),
       changes: Object.entries(nativeReview.changes).map(([key, change]) => ({ key, ...change })) })
     : modelAssessmentSchema.parse(reviewed.value);
+  const conditionDecisions = z.record(z.string(), z.object({disposition:z.string(), reason:z.string()}))
+    .parse(nativeReview?.priorConditions ?? {});
+  const checkedConditions = priorConditions.map(({ field, conditions, ...row }) => {
+    const { disposition, reason } = conditionDecisions[field]!;
+    if (disposition === "unresolved" || disposition === "prior_edition_note")
+      return { ...row, disposition: disposition as "unresolved" | "prior_edition_note", currentCondition: null, reason };
+    const index = conditions.findIndex((_, i) => disposition === "condition" + (i + 1));
+    if (index < 0) reject("knowledge_pdf_prior_condition_mismatch");
+    return { ...row, disposition: "retained" as const, currentCondition: conditions[index]!, reason };
+  });
+  const unresolvedCondition = checkedConditions.find(row => row.disposition === "unresolved");
+  if (unresolvedCondition) modelAssessment.decision = "hold";
   if (sample) {
     if (input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"review",reviewedCoverage!.layoutFacts!)) reject("knowledge_native_visual_sample_mismatch");
     const matches = source.chunks.filter(chunk => chunk.pageStart! <= sample.physicalPage! && chunk.pageEnd! >= sample.physicalPage!);
@@ -374,13 +409,14 @@ export async function prepareKnowledgeMaintenance(input: {
     decision: assessment.decision === "approve" && assessment.growthRuleImpact === "none" ? "approve_candidate" : "hold_candidate",
     reviewKind: "model_review", policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
     modelReviewCompleted: true, growthRuleImpact: assessment.growthRuleImpact,
-    notes: [decisionReason.slice(0, 240), ...(changedRule ? [assessment.growthRuleReason] : [])],
+    notes: [(unresolvedCondition?.reason ?? decisionReason).slice(0, 240), ...(changedRule ? [assessment.growthRuleReason] : [])],
   });
   return { source, versionHash: sourceVersionHash(source), assessment, review,
     provenance: { packVersion: organize.packVersion,
       organizeAttemptKey: organized?.attemptKey ?? "reused-originals:" + knowledgeReviewHash([...reusable.values()]),
       reviewAttemptKey: reviewed.attemptKey, ...(sha && organizedCoverage && reviewedCoverage ? { nativePdf: { contentHash: sha,
-        organize: organizedCoverage, review: reviewedCoverage, layoutQuestion, ...priorVisual } } : {}) } };
+        organize: organizedCoverage, review: reviewedCoverage, layoutQuestion, ...priorVisual,
+        ...(checkedConditions.length ? { priorConditions: checkedConditions } : {}) } } : {}) } };
 }
 
 /** No memory fallback: the durable caller must store evidence before returning approval. */

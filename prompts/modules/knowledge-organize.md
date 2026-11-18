@@ -1,7 +1,7 @@
 # 背景知識整理
 
 - ID：`module.knowledge-organize`
-- 版本：`0.1.5`
+- 版本：`0.1.6`
 - 使用條件：獨立知識維護工作已取得指定來源及固定原文單元，準備同一候選版本時使用。
 - 依據：[知識維護契約](../../docs/API.md#knowledge-maintenance-model)
 - 輸入：Server 提供的來源範圍、觀察 hash、原文單元及輸出 schema；沒有家庭私人資料。
@@ -24,7 +24,7 @@
 
 若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。依版面辨認 layoutQuestion 所指的圖列。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 
-有 priorTopicMatches 時，逐段判斷原有每個主題的查詢能否由該段回答。有相關原文便填 true，沒有便填 false，另以 topics 補充較具體的主題。quantityLocators 是文字層中含數字的行，協助在原頁定位。前後文可能在另一行，逐項看原頁核對數字、單位、先後、否定與例外，並將影響家長決定的完整條件保留在該頁正文。
+有 priorTopicMatches 時，逐段判斷原有每個主題的查詢能否由該段回答。有相關原文便填 true，沒有便填 false，另以 topics 補充較具體的主題。舊頁仍適用的例外及行動限制要寫進新段的 conditions，連同所屬頁碼或情境。舊版只收錄哪一頁、當時查核日期或抽取進度等註記只屬舊版審核紀錄。若一條舊註記同時含有實質限制，保留其中仍適用的限制。quantityLocators 是文字層中含數字的行，協助在原頁定位。前後文可能在另一行，逐項看原頁核對數字、單位、先後、否定與例外，並將影響家長決定的完整條件保留在該頁正文。
 
-整理結果會交另一個唯讀步驟查看原文並核對含義。不要自稱已審核、已發布或資料庫已更新。
+conditions 用家長可讀的香港繁體中文寫清原頁限制。整理結果會交另一個唯讀步驟查看原文並核對含義。不要自稱已審核、已發布或資料庫已更新。
 <!-- prompt:end -->

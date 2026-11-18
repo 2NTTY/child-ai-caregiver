@@ -1,8 +1,9 @@
 import { matchesFhsLayout } from "./helpers/knowledge-pdf-layout-sample.ts";
 import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
-import { createModelKnowledgeReviewPort, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
+import { createModelKnowledgeReviewPort, includePriorRetrieval, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
@@ -167,6 +168,55 @@ test("grouped PDF sections require one keyed summary for each physical page in i
   const retained = mapped.parse({ranges:{[range.key]:{...group,priorTopicMatches:{feeding:true,sleep:false},
     pageText:{physicalPage5:"Opening",physicalPage6:"Food preparation"}}},nativeCoverage});
   assert.deepEqual(retained.units[0]!.applicability.topics, ["feeding", "care"]);
+});
+
+test("regrouping an unchanged page preserves its qualified retrieval and archives its earlier collection note", async () => {
+  const definition = SOURCE_WATCHES.find(d => d.leafletPage)!;
+  const pdf = Buffer.from("%PDF-1.7 synthetic, with injected page layers and model responses");
+  const contentHash = createHash("sha256").update(pdf).digest("hex");
+  const pages = ["Cover", "Contents", "Age eligibility also requires the readiness signs on this page."].map((text,i) =>
+    ({ page: i + 1, text, status: "text" as const }));
+  const observed = { url: definition.url, title: "Booklet", text: pages.map(p => p.text).join("\n\n"), pages,
+    sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null,
+    extraction: { format: "text_pdf" as const, contentHash, totalPages: 3, pageStart: 1, pageEnd: 3, complete: true } };
+  const administrative = "The earlier edition only collected physical page 3.";
+  const clinical = "The lookup age is insufficient to establish readiness.";
+  const scope = { region: "HK", ageBasis: "actual" as const, minAgeMonths: 0, maxAgeMonths: 12,
+    topics: ["feeding"], conditions: [administrative, clinical] };
+  const source = { sourceId: definition.id, url: definition.url, title: observed.title, publisher: definition.publisher,
+    classification: definition.classification, termsUrl: definition.termsUrl, sourcePublishedAt: null, sourceUpdatedAt: null, fetchedAt,
+    extraction: { ...observed.extraction, pageStart: 3, complete: false },
+    chunks: [{key:"previous-page", section:"Readiness", sourceExcerpt:pages[2]!.text, originalText:pages[2]!.text,
+      text:"Previous guidance.", keywords:["readiness"], applicability:scope, pageStart:3, pageEnd:3}] };
+  const baseline = { versionId: "c3000da1-1435-422f-9000-000000000001", versionHash: sourceVersionHash(source), source,
+    observationHash: knowledgeHash("earlier-page") };
+  const candidate: BackgroundKnowledgeCandidate = { watchId: "fhs-feeding-booklet-en", definition, observed, observationHash: observationHash(observed),
+    previousObservationHash: baseline.observationHash };
+  const current = "Physical page 3 also requires readiness signs.";
+  async function run(unresolved: boolean) {
+    return prepareKnowledgeMaintenance({ candidate, baseline, growthRules: [], fetchedAt, readPdf: async () => pdf, async completeText(input) {
+      const v = JSON.parse(input.user);
+      if (v.ranges) return JSON.stringify({ ranges: { [v.ranges[0].key]: { section:"Starting", keywords:["solids"],
+        priorTopicMatches:{feeding:true}, region:"HK",topics:["readiness"],conditions:[current],
+        ageRange:{basis:"actual",minMonths:6,maxMonths:24,exclusiveEnd:true},
+        pageText:{physicalPage1:"Cover",physicalPage2:"Contents",physicalPage3:"Check readiness before starting."} } },
+        nativeCoverage:{pages:pages.map(p => ({page:p.page,finding:p.text})),unreadablePages:[],layoutAnswer:null} });
+      assert.equal(v.priorConditions[1].original, clinical);
+      const reference = JSON.parse((await provider([])(input)).split("\n")[1]!);
+      reference.changes = Object.fromEntries(reference.changes.map(({key,...value}: {key:string}) => [key,value]));
+      return JSON.stringify({...reference, priorConditions:{priorCondition1:{disposition:"prior_edition_note",reason:"Old collection coverage."},
+        priorCondition2:{disposition:unresolved?"unresolved":"condition1",reason:"Physical page 3 requires readiness."}},
+        nativeCoverage:{pageFindings:{page1:"Cover",page2:"Contents",page3:"Readiness signs"},unreadablePages:[],layoutAnswer:null}});
+    } });
+  }
+  const accepted = await run(false), applicability = accepted.source.chunks[0]!.applicability;
+  assert.deepEqual([applicability.minAgeMonths, applicability.maxAgeMonths, applicability.maxAgeMonthsExclusive], [0,24,true]);
+  assert.deepEqual(applicability.conditions, [current]);
+  assert.deepEqual(accepted.provenance.nativePdf!.priorConditions!.map(c => [c.pageStart,c.original,c.disposition,c.currentCondition]),
+    [[3,administrative,"prior_edition_note",null],[3,clinical,"retained",current]]);
+  assert.equal((await run(true)).review.decision, "hold_candidate");
+  assert.throws(() => includePriorRetrieval({...scope,minAgeMonths:18,maxAgeMonths:24},[scope]), /age_scope_conflict/u);
+  assert.throws(() => includePriorRetrieval({...scope,ageBasis:"corrected"},[scope]), /age_scope_conflict/u);
 });
 
 test("the registered visual sample rejects wrong fruit and disagreement independently of an approval", () => {
