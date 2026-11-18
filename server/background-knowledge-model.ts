@@ -1,4 +1,6 @@
+import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
+import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION, backgroundKnowledgeReviewBindingSchema,
@@ -13,7 +15,7 @@ import {
   knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment,
   type KnowledgeReviewAssessment,
 } from "./knowledge-review-assessment.ts";
-import type { AgentGatewayModel } from "./agent-model-gateway.ts";
+import { originalKnowledgePdf, type AgentGatewayModel } from "./agent-model-gateway.ts";
 
 const INPUTS = ["run", "scope", "context", "evidence", "capabilities", "outputContract"];
 const fields = knowledgeChunkInputSchema.shape;
@@ -35,7 +37,37 @@ const modelAssessmentSchema = z.strictObject({
   decisionReason: reviewFields.growthRuleReason,
   decision: reviewFields.decision,
 });
-type OriginalUnit = { id: string; originalText: string; page: number | null };
+const digest = z.string().regex(/^[a-f0-9]{64}$/u);
+const focusReadingSchema = z.strictObject({ finding: z.string().trim().min(1).max(240),
+  layoutFacts: z.record(z.string(), z.string().min(1).max(80)), attemptKey: z.string().max(150) });
+export const focusEvidenceSchema = z.strictObject({ priorWork: digest, priorVersionHash: digest,
+  parentHash: digest, contentHash: digest, physicalPage: z.number().int().positive(), method: z.string().min(1).max(80),
+  mediaResolution: z.literal("MEDIA_RESOLUTION_HIGH"), organize: focusReadingSchema, review: focusReadingSchema });
+export const nativePdfProvenanceSchema = z.strictObject({
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/u),
+  organize: nativeCoverageSchema, review: nativeCoverageSchema,
+  focus: focusEvidenceSchema.optional(),
+  layoutQuestion: z.string().min(1).max(500).nullable(),
+});
+export type { KnowledgePdfQuestion } from "./knowledge-pdf-layout.ts";
+export type KnowledgePdfAcceptance = (sourceHash: string, physicalPage: number, role: "organize" | "review", facts: LayoutFacts) => boolean;
+
+/** Verification clients may check a frozen sample against their own independently recorded reference. */
+export function assertPreparedKnowledgePdfLayout(prepared: PreparedKnowledgeMaintenance,
+  query?: KnowledgePdfQuestion, acceptance?: KnowledgePdfAcceptance) {
+  if (!query?.factKeys?.length || prepared.source.extraction?.contentHash !== query.contentHash) return;
+  const proof = prepared.provenance.nativePdf;
+  if (!proof || proof.contentHash !== query.contentHash || proof.layoutQuestion !== query.question || !query.physicalPage)
+    reject("knowledge_native_visual_evidence_missing");
+  const schema = layoutFactContract(query.factKeys);
+  for (const role of ["organize","review"] as const) {
+    const observed = proof.focus?.physicalPage === query.physicalPage ? proof.focus[role] : proof[role];
+    const facts = schema.safeParse(observed.layoutFacts);
+    if (!facts.success || (acceptance && !acceptance(query.contentHash,query.physicalPage,role,facts.data)))
+      reject("knowledge_native_visual_sample_mismatch");
+  }
+}
+type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null };
 export interface KnowledgeMaintenanceBaseline {
   versionId: string;
   versionHash: string;
@@ -54,7 +86,7 @@ export interface PreparedKnowledgeMaintenance {
   versionHash: string;
   assessment: KnowledgeReviewAssessment;
   review: BackgroundKnowledgeReviewBinding;
-  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string };
+  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string; nativePdf?: z.infer<typeof nativePdfProvenanceSchema>; windows?: import("./knowledge-pdf-windows.ts").WindowReading[] };
 }
 export class KnowledgeMaintenanceModelError extends Error {
   readonly code: string;
@@ -69,9 +101,20 @@ function checkSignal(signal?: AbortSignal) {
 function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] {
   const issue = backgroundKnowledgePdfCoverageIssue(candidate);
   if (issue) reject(issue);
-  const parts = candidate.definition.kind === "pdf"
+  let parts: { text: string; page: number | null }[] = candidate.definition.kind === "pdf"
     ? candidate.observed.pages!.map(page => ({ text: page.text, page: page.page }))
     : [{ text: candidate.observed.text, page: null }];
+  const ends = new Map<number, number>();
+  if (candidate.definition.leafletPage) {
+    const grouped: typeof parts = [];
+    for (const part of parts) {
+      const prev = grouped.at(-1);
+      if (prev && prev.text.length + part.text.length + 2 <= 3000) {
+        prev.text += "\n\n" + part.text; ends.set(prev.page!, part.page!);
+      } else grouped.push({ ...part });
+    }
+    parts = grouped;
+  }
   const units: OriginalUnit[] = [];
   const occurrences = new Map<string, number>();
   for (const part of parts) {
@@ -85,7 +128,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
       // Preserve unchanged unit identities when another paragraph is inserted.
       const occurrence = occurrences.get(id) ?? 0;
       occurrences.set(id, occurrence + 1);
-      units.push({ id: `p${part.page ?? 0}-${knowledgeReviewHash([id, occurrence]).slice(0, 20)}`, originalText, page: part.page });
+      units.push({ id: `p${part.page ?? 0}-${knowledgeReviewHash([id, occurrence]).slice(0, 20)}`, originalText, page: part.page, pageEnd: ends.get(part.page!) ?? part.page });
       if (units.length > 32) reject("knowledge_maintenance_batch_too_large");
     }
   }
@@ -104,6 +147,9 @@ export async function prepareKnowledgeMaintenance(input: {
   growthRules: readonly KnowledgeGrowthRuleBinding[];
   fetchedAt: string;
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
+  readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
+  pdfQuestion?: KnowledgePdfQuestion;
+  acceptance?: KnowledgePdfAcceptance;
   signal?: AbortSignal;
 }): Promise<PreparedKnowledgeMaintenance> {
   const { candidate, baseline, signal } = input;
@@ -122,15 +168,34 @@ export async function prepareKnowledgeMaintenance(input: {
       reject("knowledge_maintenance_baseline_mismatch");
   } else if (candidate.previousObservationHash !== null) reject("knowledge_maintenance_baseline_missing");
   const units = originalUnits(candidate);
+  const sha = candidate.definition.leafletPage ? candidate.observed.extraction!.contentHash : null;
+  if (sha && !input.readPdf) reject("knowledge_original_missing");
+  const sample = sha && input.pdfQuestion?.contentHash === sha && input.pdfQuestion.factKeys?.length
+    ? input.pdfQuestion : null;
+  if (sample && (!Number.isSafeInteger(sample.physicalPage) || sample.physicalPage! < 1
+    || sample.physicalPage! > candidate.observed.extraction!.totalPages!)) reject("knowledge_native_visual_range_mismatch");
+  const pdf = sha ? originalKnowledgePdf(await input.readPdf!(candidate.watchId, sha), sha, sample !== null) : undefined;
+  const layoutQuestion = sample?.question ?? (pdf && input.pdfQuestion?.contentHash === sha ? input.pdfQuestion.question : null);
+  function coverage(value: unknown) {
+    const report = nativeCoverageSchema.parse(value);
+    if (report.unreadablePages.length || report.pages.length !== candidate.observed.extraction?.totalPages
+      || report.pages.some((p, i) => p.page !== i + 1) || Boolean(report.layoutAnswer) !== Boolean(layoutQuestion))
+      reject("knowledge_native_read_incomplete");
+    return report;
+  }
+  const nativeScope = pdf ? { readScope: { contentHash: sha, firstPage: 1,
+    lastPage: candidate.observed.extraction!.totalPages }, layoutQuestion,
+    ...(sample ? { physicalPage: sample.physicalPage } : {}) } : {};
+  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys) : null;
   const organize = await loadAgentPrompt("knowledge-organize", "structured", INPUTS);
-  const complete = async (stage: "organize" | "review", system: string, payload: unknown) => {
+  const complete = async (stage: "organize" | "review", system: string, payload: unknown, responseJsonSchema?: Record<string, unknown>) => {
     checkSignal(signal);
     const user = JSON.stringify(payload);
     // Fail explicitly rather than silently truncate evidence; the gateway also
     // applies its actual model/runtime capacity and the shared work budget.
     if (system.length + user.length > 64000) reject("knowledge_maintenance_input_limit");
-    const attemptKey = `knowledge-${stage}:${knowledgeReviewHash({ system, user })}`;
-    const raw = await input.completeText({ system, user, attemptKey, ...(stage === "review" ? { purpose: "knowledge_review" as const } : {}) });
+    const attemptKey = `knowledge-${stage}:${knowledgeReviewHash({ system, user, ...(pdf ? { pdfHash: sha, responseJsonSchema } : {}) })}`;
+    const raw = await input.completeText({ system, user, attemptKey, ...(pdf ? { pdf, responseJsonSchema } : {}), ...(stage === "review" ? { purpose: "knowledge_review" as const } : {}) });
     checkSignal(signal);
     if (raw.length > 128000) reject("knowledge_maintenance_output_limit");
     // Accept a complete JSON code block, never extract a guessed object from
@@ -146,16 +211,23 @@ export async function prepareKnowledgeMaintenance(input: {
     // Similar wording, a short excerpt or a different location is not enough.
     const matches = baseline?.source.chunks.filter(chunk => chunk.originalText === unit.originalText
       && (chunk.pageStart ?? null) === unit.page && (chunk.pageEnd ?? null) === unit.page) ?? [];
-    if (matches.length === 1 && units.filter(other => other.originalText === unit.originalText && other.page === unit.page).length === 1)
+    if (!pdf && matches.length === 1 && units.filter(other => other.originalText === unit.originalText && other.page === unit.page).length === 1)
       reusable.set(unit.id, matches[0]!);
   }
   const pending = units.filter(unit => !reusable.has(unit.id));
   const organized = pending.length ? await complete("organize", organize.text, {
     role: "background-knowledge-maintenance", watch: candidate.definition,
-    observationHash: candidate.observationHash, originalUnits: pending,
-    outputSchema: z.toJSONSchema(organizedSchema, { io: "input" }),
-  }) : null;
-  const drafted = organized ? organizedSchema.parse(organized.value) : { units: [] };
+    observationHash: candidate.observationHash,
+    ...(pdfContract ? { ranges: pdfContract.ranges.map(({ key, first, last, pages }) => ({ key, first, last, pages })) }
+      : { originalUnits: pending.map(({ pageEnd: _, ...unit }) => unit) }),
+    ...nativeScope,
+    ...(pdf ? {} : { outputSchema: z.toJSONSchema(organizedSchema, { io: "input" }) }),
+  }, pdfContract?.schema) : null;
+  const parsedDraft = pdfContract?.parse(organized?.value);
+  const organizedCoverage = parsedDraft ? coverage(parsedDraft.nativeCoverage) : null;
+  if (sample && input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"organize",organizedCoverage!.layoutFacts!))
+    reject("knowledge_native_visual_sample_mismatch");
+  const drafted = parsedDraft ?? (organized ? organizedSchema.parse(organized.value) : { units: [] });
   const byId = new Map(drafted.units.map(unit => [unit.unitId, unit]));
   if (byId.size !== drafted.units.length || byId.size !== pending.length
     || pending.some(unit => !byId.has(unit.id))) reject("knowledge_maintenance_coverage_mismatch");
@@ -174,7 +246,7 @@ export async function prepareKnowledgeMaintenance(input: {
       const sourceExcerpt = [...unit.originalText.trim()].slice(0, 150).join("");
       return { key: unit.id, section: draft.section, sourceExcerpt,
         originalText: unit.originalText, text: draft.text, keywords: draft.keywords, applicability: draft.applicability,
-        ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.page } : {}) };
+        ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.pageEnd! } : {}) };
     }),
   });
   const reviewPrompt = await loadAgentPrompt("knowledge-review", "structured", INPUTS);
@@ -193,17 +265,52 @@ export async function prepareKnowledgeMaintenance(input: {
   });
   const binding = { comparedVersionId: baseline?.versionId ?? null, comparedHash: baseline?.versionHash ?? null,
     observationHash: candidate.observationHash };
+  const changeFields = modelAssessmentSchema.shape.changes.element.shape;
+  const pageKeys = pdf ? Array.from({ length: candidate.observed.extraction!.totalPages! }, (_, i) => "page" + (i + 1)) : [];
+  const reviewCoverage = nativeCoverageSchema.omit({pages:true}).extend({
+    ...(sample ? { layoutFacts: layoutFactContract(sample.factKeys!) } : {}),
+    pageFindings: z.strictObject(Object.fromEntries(pageKeys.map(key => [key, nativeCoverageSchema.shape.pages.element.shape.finding]))),
+  });
+  const pdfReviewSchema = pdf ? modelAssessmentSchema.extend({
+    changes: z.strictObject(Object.fromEntries(comparisonUnits.map(({key, oldQuote, newQuote}) => [key, z.strictObject({
+      meaning: oldQuote === null ? z.enum(["new"]) : newQuote === null ? z.enum(["removed"]) : changeFields.meaning, explanation: changeFields.explanation,
+    })]))),
+    questions: z.array(reviewFields.questions.element.extend({ expectedKeys: z.array(z.enum(source.chunks.map(chunk => chunk.key))) })).min(1).max(12),
+    nativeCoverage: reviewCoverage,
+  }) : null;
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
-    binding, comparisonUnits, growthRuleBindings, candidate: source, baseline: baseline?.source ?? null,
-    outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }),
-  });
+    binding, comparisonUnits, growthRuleBindings,
+    candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) } : source,
+    baseline: baseline?.source ?? null, ...nativeScope,
+    ...(pdf ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
+  }, pdfReviewSchema ? nativeResponseSchema(pdfReviewSchema) : undefined);
   // Executable dependencies come from the catalog, not a model's interpretation
   // of whether a passage is about health. Semantic approval remains independent.
   if (reviewed.value && typeof reviewed.value === "object"
     && ("growthRuleImpact" in reviewed.value || "growthRuleReason" in reviewed.value))
     reject("knowledge_growth_rule_authority_invalid");
-  const { decisionReason, ...modelAssessment } = modelAssessmentSchema.parse(reviewed.value);
+  const nativeReview = pdfReviewSchema?.parse(reviewed.value);
+  const reviewedCoverage = nativeReview ? coverage({
+    pages: pageKeys.map((key, i) => ({ page: i + 1, finding: nativeReview.nativeCoverage.pageFindings[key] })),
+    ...(nativeReview.nativeCoverage.layoutFacts ? {layoutFacts:nativeReview.nativeCoverage.layoutFacts} : {}),
+    layoutAnswer: nativeReview.nativeCoverage.layoutAnswer, unreadablePages: nativeReview.nativeCoverage.unreadablePages,
+  }) : null;
+  const { decisionReason, ...modelAssessment } = nativeReview
+    ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage")),
+      changes: Object.entries(nativeReview.changes).map(([key, change]) => ({ key, ...change })) })
+    : modelAssessmentSchema.parse(reviewed.value);
+  if (sample) {
+    if (input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"review",reviewedCoverage!.layoutFacts!)) reject("knowledge_native_visual_sample_mismatch");
+    const matches = source.chunks.filter(chunk => chunk.pageStart! <= sample.physicalPage! && chunk.pageEnd! >= sample.physicalPage!);
+    if (matches.length !== 1) reject("knowledge_native_visual_range_mismatch");
+    // Add only the claims independently identified by both stages on this physical page.
+    const facts = reviewedCoverage!.layoutFacts!;
+    if (!input.acceptance && sample.factKeys!.some(k => facts[k] !== organizedCoverage!.layoutFacts![k])) reject("knowledge_native_visual_evidence_disputed");
+    const chunk = matches[0]!;
+    chunk.text = knowledgeChunkInputSchema.shape.text.parse(chunk.text + "\n" + sample.question
+      + "\n" + sample.factKeys!.map(key => facts[key]).join("、"));
+  }
   const changedRule = growthRuleBindings.some(rule => rule.state === "requires_review");
   const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
     growthRuleImpact: changedRule ? "requires_review" : "none",
@@ -232,7 +339,8 @@ export async function prepareKnowledgeMaintenance(input: {
   return { source, versionHash: sourceVersionHash(source), assessment, review,
     provenance: { packVersion: organize.packVersion,
       organizeAttemptKey: organized?.attemptKey ?? "reused-originals:" + knowledgeReviewHash([...reusable.values()]),
-      reviewAttemptKey: reviewed.attemptKey } };
+      reviewAttemptKey: reviewed.attemptKey, ...(sha && organizedCoverage && reviewedCoverage ? { nativePdf: { contentHash: sha,
+        organize: organizedCoverage, review: reviewedCoverage, layoutQuestion } } : {}) } };
 }
 
 /** No memory fallback: the durable caller must store evidence before returning approval. */
@@ -241,13 +349,16 @@ export function createModelKnowledgeReviewPort(options: {
   growthRules: readonly KnowledgeGrowthRuleBinding[];
   baseline(candidate: BackgroundKnowledgeCandidate): Promise<KnowledgeMaintenanceBaseline | null>;
   fetchedAt(candidate: BackgroundKnowledgeCandidate): Promise<string>;
+  readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
+  pdfQuestion?: KnowledgePdfQuestion;
+  acceptance?: KnowledgePdfAcceptance;
   savePrepared(candidate: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance): Promise<void>;
 }): KnowledgeSemanticReviewPort {
   return {
     async review(candidate, signal) {
       checkSignal(signal);
       const prepared = await prepareKnowledgeMaintenance({ candidate, baseline: await options.baseline(candidate),
-        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, growthRules: options.growthRules, signal });
+        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
       checkSignal(signal);
       await options.savePrepared(candidate, prepared);
       checkSignal(signal);

@@ -1,3 +1,5 @@
+import { matchesFhsLayout } from "./helpers/knowledge-pdf-layout-sample.ts";
+import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createModelKnowledgeReviewPort, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
@@ -121,4 +123,28 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
   assert.equal(changed.review.decision, "hold_candidate");
   assert.equal(changed.assessment.growthRuleImpact, "requires_review",
     "semantic approval cannot erase the server-verified changed rule dependency");
+});
+
+test("grouped PDF sections require one keyed summary for each physical page in its range", () => {
+  const contract = pdfOrganizationContract([{id:"u1",page:5,pageEnd:6}]);
+  const range = contract.ranges[0]!;
+  const group = {section:"Fruit",keywords:["fruit"],region:"HK",topics:["care"],conditions:[],ageRange:null};
+  const nativeCoverage = {pages:[{page:5,finding:"Table introduction"},{page:6,finding:"Fruit row"}],unreadablePages:[],layoutAnswer:null};
+  const parse = (pageText:Record<string,string>) => contract.parse({ranges:{[range.key]:{...group,pageText}},nativeCoverage});
+  const spelling = contract.parse({ranges:{[range.key]:{...group,region:"Hong Kong",pageText:{physicalPage5:"Opening",physicalPage6:"Fruit"}}},nativeCoverage});
+  assert.equal(spelling.units[0]!.applicability.region,"HK");
+  assert.deepEqual(range.pages,["physicalPage5","physicalPage6"]);
+  assert.throws(() => parse({physicalPage1:"Wrong physical page",physicalPage6:"Figure"}));
+  assert.throws(() => parse({physicalPage6:"Figure"}));
+  assert.match(parse({physicalPage6:"Figure",physicalPage5:"Introduction"}).units[0]!.text,/第 5 頁　Introduction\n第 6 頁　Figure/u);
+});
+
+test("the registered visual sample rejects wrong fruit and disagreement independently of an approval", () => {
+  const answer = {fruit:"蘋果",tool:"金屬匙羹",arrowColour:"藍色",arrowDirection:"向右"};
+  assert.equal(matchesFhsLayout(answer),true);
+  assert.equal(matchesFhsLayout({...answer,arrowDirection:"右邊"}),true);
+  assert.equal(matchesFhsLayout({...answer,fruit:"梨子"}),false);
+  assert.equal(matchesFhsLayout({...answer,fruit:"梨子（或類似蘋果的果肉）"}),false);
+  assert.equal(matchesFhsLayout({...answer,arrowDirection:"向左"}),false);
+  assert.equal(matchesFhsLayout(undefined),false);
 });

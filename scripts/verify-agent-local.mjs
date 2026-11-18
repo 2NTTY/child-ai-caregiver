@@ -16,7 +16,12 @@ import { verifyCorrectedHistory } from './verify-corrected-history.mjs';
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
 const historyQuery = mode === '--real-history-query';
-if (!historyQuery && !['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries', '--maintainer-inbox'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
+const bookletQuery = mode === '--real-booklet-query';
+const realMode = historyQuery || bookletQuery || mode === '--real-agent' || mode === '--real-compose';
+const [bookletVersionHash, bookletDigest] = process.argv.slice(3);
+if (bookletQuery && ![bookletVersionHash, bookletDigest].every(value => /^[a-f0-9]{64}$/u.test(value ?? '')))
+  throw Error('Pass the published booklet version hash and original PDF SHA-256 from the maintenance receipt');
+if (!realMode && !['--data-only', '--persistence-only', '--readback', '--artifacts', '--deliveries', '--maintainer-inbox'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -45,7 +50,7 @@ async function json(path, method, body) {
   assert.ok(response.ok, JSON.stringify({ path, status: response.status, code: value.code })); return value;
 }
 try {
-  const status = await json('/__local/status'); assert.equal(status.enabled, historyQuery || ['--real-agent', '--real-compose'].includes(mode)); assert.equal(status.project, state.projectId);
+  const status = await json('/__local/status'); assert.equal(status.enabled, realMode); assert.equal(status.project, state.projectId);
   const proof = await fetch('http://' + env.FIREBASE_AUTH_EMULATOR_HOST + '/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator-public-key-only', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: state.email, password: state.password, returnSecureToken: true }),
   });
@@ -213,7 +218,7 @@ try {
     await assert.rejects(files.content(reopened, signal, uid), error => error.status === 410);
     steps.push('production-encrypted-attachment-reserve-save-readback-and-delete');
   }
-  if (mode === '--real-agent' || mode === '--real-compose') {
+  if (mode === '--real-agent' || mode === '--real-compose' || bookletQuery) {
     const childId = receipt.result.child.id;
     const clientFetch = (url, init = {}) => {
       assert.ok(++calls <= 24); assert.equal(new URL(url).origin, origin);
@@ -222,17 +227,34 @@ try {
     };
     const signal = AbortSignal.timeout(330_000), progress = [];
     const chat = createChatApi(origin, async () => ({ id: uid, email: state.email, name: '本地開發帳號' }), clientFetch);
+    const agent = createProductAgentApi(origin, clientFetch);
+    let bookletVersion;
+    if (bookletQuery) {
+      let page = await agent.getLibrary(childId, signal, uid);
+      const edition = item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionHash === bookletVersionHash;
+      while (!page.items.some(edition)) {
+        assert.ok(page.nextCursor, 'The maintenance edition must be published and visible before spending a chat run');
+        page = await agent.getLibrary(childId, signal, uid, page.nextCursor);
+      }
+      const item = page.items.find(edition);
+      assert.ok(item.preference?.enabled && item.preference.eligible,
+        'The test account must have access to this edition before spending a chat run');
+      if (item.preference.mode === 'fixed' && item.preference.selectedVersionId)
+        assert.equal(item.preference.selectedVersionId, item.versionId, 'The test account has pinned another booklet edition');
+      bookletVersion = item.versionId;
+    }
     let document;
     if (mode === '--real-compose') document = await createFamilyDocumentsApi(origin, clientFetch).create(childId,
       { kind: 'preparation', purpose: 'appointment', title: '本地到診準備', eventDate: null, period: { from: '2026-10-01', to: '2026-10-31' } }, signal, uid);
     const message = await chat.saveMessage(childId, mode === '--real-compose'
       ? '請用資料編製能力，把《本地到診準備》的標題整理為《下次到診問題》，其他內容保持不變。先讓我確認。'
+      : bookletQuery ? '家庭健康服務本英文加固小冊子教人整生果蓉，幅圖左邊係咩水果、用咩工具？我想睇返嗰一頁。'
       : 'BB差唔多半歲，想開始加固，應該點開始？請附官方來源，再整理一份到母嬰健康院問加固問題的準備單草稿。', signal, uid);
     originalAgent = { childId, messageId: message.id, documentId: document?.id };
     await writeFile(resolve(directory, 'original-agent-' + run + '.json'), JSON.stringify(originalAgent), { mode: 0o600 });
     // Exactly one POST. A stopped/unknown run is retained, never automatically rerun.
     const reply = await chat.requestReply(childId, message.id, signal, uid, event => progress.push(event.phase));
-    const result = await createProductAgentApi(origin, clientFetch).getRun(childId, reply.agentRunId, signal, uid);
+    const result = await agent.getRun(childId, reply.agentRunId, signal, uid);
     agentEvidence = { runId: result.runId, status: result.status, stopReason: result.stopReason, counts: result.counts,
       tools: result.tools.map(tool => ({ name: tool.name, status: tool.status })),
       citations: result.citations.map(item => ({ sourceId: item.sourceId, versionId: item.versionId, chunkId: item.chunkId })), progress };
@@ -261,6 +283,19 @@ try {
       assert.equal(saved.version, document.version + 1); assert.deepEqual(saved.current.sections, document.current.sections);
       agentEvidence.document = { id: saved.id, version: saved.version, proposalId: proposal.id, status: accepted.status };
       steps.push('real-compose-review-explicit-confirmation-and-same-document-readback');
+    } else if (bookletQuery) {
+      const used = result.citations.find(item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionId === bookletVersion && item.versionHash === bookletVersionHash
+        && item.pageStart <= 6 && item.pageEnd >= 6 && item.extraction?.contentHash === bookletDigest);
+      assert.ok(used?.sourceExcerpt && used.readCoverage, 'The saved answer must cite the page it read from the maintained edition');
+      assert.match(reply.text, /蘋果|苹果|apple/iu);
+      assert.match(reply.text, /匙|勺|羹|spoon/iu);
+      const pdfResponse = await call(`/api/children/${childId}/agent/runs/${result.runId}/citations/${used.chunkId}/original`);
+      assert.equal(pdfResponse.status, 200);
+      assert.equal(pdfResponse.headers.get('content-type'), 'application/pdf');
+      const hash = createHash('sha256').update(Buffer.from(await pdfResponse.arrayBuffer())).digest('hex');
+      assert.equal(hash, bookletDigest);
+      agentEvidence.original = { versionId: bookletVersion, versionHash: bookletVersionHash, sha256: hash, pageStart: used.pageStart, pageEnd: used.pageEnd };
+      steps.push('chat-cites-maintained-visual-detail-and-reopens-identical-original');
     } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);
     assert.ok(history.messages.some(item => item.id === reply.id && item.text === reply.text));

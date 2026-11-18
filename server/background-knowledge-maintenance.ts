@@ -106,15 +106,24 @@ function isInitialWatchId(value: string): value is M03InitialWatchId {
   return (M03_INITIAL_WATCH_IDS as readonly string[]).includes(value);
 }
 
+export class KnowledgeWindowPending extends Error {}
+export class KnowledgeModelQuotaPending extends Error {}
+
 /** Independently enforce extraction coverage; a model pass cannot expand it. */
 export function backgroundKnowledgePdfCoverageIssue(candidate: BackgroundKnowledgeCandidate): string | null {
   if (candidate.definition.kind !== "pdf") return null;
-  const window = candidate.definition.pdfPages;
+  const window = candidate.definition.leafletPage ? { startPage: 1, endPage: candidate.observed.extraction?.totalPages ?? 0 } : candidate.definition.pdfPages;
   const extraction = candidate.observed.extraction;
   const pages = candidate.observed.pages;
+  if (candidate.observed.nativeWindowMethod) {
+    if (!candidate.definition.leafletPage || !extraction?.totalPages || extraction.pageStart !== 1
+      || extraction.pageEnd !== extraction.totalPages || extraction.complete || pages || candidate.observed.text !== "") return "pdf_scope_invalid";
+    return null;
+  }
   if (!window || !extraction || !pages?.length) return "pdf_coverage_missing";
   if (extraction.pageStart !== window.startPage || extraction.pageEnd !== window.endPage
     || pages.some(page => page.page < window.startPage || page.page > window.endPage)) return "pdf_scope_invalid";
+  if (candidate.definition.leafletPage && (!extraction.complete || !pages.every((p, index) => p.page === index + 1))) return "pdf_coverage_incomplete";
   const expected = window.endPage - window.startPage + 1;
   if (pages.length !== expected || new Set(pages.map(page => page.page)).size !== expected
     || pages.some(page => page.status === "unreadable")) return "pdf_coverage_incomplete";
@@ -430,7 +439,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     };
 
     // Reserve fetch+organize units before side effects so a crash cannot skip budget.
-    const reserved = spend(budget, BACKGROUND_KNOWLEDGE_RESERVED_UNITS);
+    const reserved = budget.usedUnits >= BACKGROUND_KNOWLEDGE_RESERVED_UNITS && durable ? budget : spend(budget, BACKGROUND_KNOWLEDGE_RESERVED_UNITS);
     if (!reserved) {
       return finish({
         status: "budget_exhausted", code: "maintenance_budget_exhausted",
@@ -559,6 +568,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     let review: BackgroundKnowledgeReviewBinding;
     try { review = await reviewPort.review(candidate, signal); }
     catch (error) {
+      if (error instanceof KnowledgeWindowPending || error instanceof KnowledgeModelQuotaPending) throw error;
       const code = (error as { code?: unknown; reason?: unknown })?.code ?? (error as { reason?: unknown })?.reason;
       return finish({ status: "candidate_held",
         code: typeof code === "string" && /^[a-z_]{1,80}$/u.test(code) ? code : "knowledge_review_failed",
