@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { highWatermarkPolicySchema } from './budget-alerts.ts';
 import { PERSONAL_MODEL, PERSONAL_RUN_LIMITS } from './model-settings.ts';
+import { dailyMoneyBudgetSchema } from './model-settings-schema.ts';
 import { AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE } from './agent-run-limits.ts';
 
 const tools = z.number().int().min(AGENT_RUN_LIMITS.toolCalls.min).max(AGENT_RUN_LIMITS.toolCalls.max);
@@ -39,7 +40,13 @@ export const platformPolicySchema = platformPolicyValuesSchema.extend({
   version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
 export type PlatformPolicy = z.infer<typeof platformPolicySchema>;
 const operation = { opId: z.uuid() }, address = z.email().max(320).transform(value => value.toLowerCase());
+const moneyPool = z.enum(['general', 'maintenance']);
+export const approvedMoneyBudgetSchema = dailyMoneyBudgetSchema.extend({ approvalReference: z.string().trim().min(1).max(128),
+  approvedAt: z.iso.datetime({ offset: true }) });
+export const adminDayBudgetSchema = z.object({ day: z.iso.date(), pool: moneyPool, version: z.number().int().positive(),
+  approved: approvedMoneyBudgetSchema.nullable() }).strict();
 export const adminCommandSchema = z.discriminatedUnion('kind', [
+  z.object({ ...operation, kind: z.literal('money_budget'), day: z.iso.date(), pool: moneyPool, expectedVersion: z.number().int().nonnegative(), amount: dailyMoneyBudgetSchema.nullable() }).strict(),
   z.object({ ...operation, kind: z.literal('policy'), expectedVersion: z.number().int().nonnegative(), values: platformPolicyValuesSchema }).strict(),
   z.object({ ...operation, kind: z.literal('invite'), email: address, expiresAt: z.iso.datetime({ offset: true }) }).strict(),
   z.object({ ...operation, kind: z.literal('revoke'), email: address }).strict(),
@@ -50,8 +57,8 @@ export const adminInvitationSchema = z.object({ email: z.email(), expiresAt: z.i
 export type AdminInvitation = z.infer<typeof adminInvitationSchema>;
 export const adminReceiptSchema = z.object({ opId: z.uuid(), actorId: z.string().min(1), at: z.iso.datetime(),
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/), command: adminCommandSchema,
-  before: z.union([platformPolicySchema, adminInvitationSchema]).nullable(),
-  result: z.union([platformPolicySchema, adminInvitationSchema]),
+  before: z.union([platformPolicySchema, adminInvitationSchema, adminDayBudgetSchema]).nullable(),
+  result: z.union([platformPolicySchema, adminInvitationSchema, adminDayBudgetSchema]),
 }).strict();
 export type AdminReceipt = z.infer<typeof adminReceiptSchema>;
 export interface AdminPage<T> { items: T[]; nextCursor: string | null }
@@ -72,7 +79,8 @@ export interface AdminUsageFinance {
   providerQuota: { provider: string; project: string; model: string; tier: string; source: string; observedAt: string; unit: 'RPM' | 'TPM' | 'RPD'; limit: number }[] | null;
 }
 export interface AdminUsage { day: string; attempts: number; inputTokens: number; outputTokens: number; cachedTokens: number; unknownUsageAttempts: number;
-  breakdown?: AdminUsageBreakdown; finance?: AdminUsageFinance }
+  breakdown?: AdminUsageBreakdown; finance?: AdminUsageFinance; maintenanceFinance?: AdminUsageFinance;
+  budgetVersions?: { general: number; maintenance: number } }
 export interface AdminOverview { policy: PlatformPolicy; platformConfigured: boolean; serverEnabled: boolean; toolCalls: number; deadlineMs: number; outputTokens: number; inputCharacters: number }
 const knowledgeCheckStatus = z.enum(['changed', 'unchanged', 'failed', 'unavailable', 'superseded']);
 const knowledgeWatchId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);

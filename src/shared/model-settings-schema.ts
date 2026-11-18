@@ -4,6 +4,8 @@ import { SOFT_BUDGET_RATIO_RANGE } from './agent-run-limits.ts';
 
 const bounded = (range: { min: number; max: number }) => z.number().int().min(range.min).max(range.max);
 export const personalProviderSchema = z.enum(['gemini', 'vertex', 'openai-compatible']);
+export const dailyMoneyBudgetSchema = z.object({ currency: z.string().regex(/^[A-Z]{3}$/u),
+  micros: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict();
 export const personalEmbeddingShape = {
   embeddingProvider: z.enum(['gemini', 'vertex']).optional(),
   embeddingProject: z.string().regex(/^(?:[a-z][a-z0-9-]{4,28}[a-z0-9]|[1-9][0-9]{5,19})$/u).optional(),
@@ -26,6 +28,9 @@ export const personalAdvancedShape = {
   maxModelRetries: bounded(PERSONAL_RUN_LIMITS.modelRetries).optional(),
 };
 export const publicModelSettingsSchema = z.object({
+  publicMaintenanceEnabled: z.boolean().optional(),
+  maintenanceMoneyBudget: dailyMoneyBudgetSchema.optional(),
+  dailyMoneyBudget: dailyMoneyBudgetSchema.optional(),
   limitPolicyVersion: z.literal(2).optional(),
   version: z.number().int().nonnegative().max(2147483647), mode: z.enum(['platform', 'personal', 'disabled']),
   provider: personalProviderSchema, model: personalModelIdSchema, keyConfigured: z.boolean(), backgroundEnabled: z.boolean(),

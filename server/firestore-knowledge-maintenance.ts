@@ -7,9 +7,9 @@ import { createVertexEmbeddingProvider } from "./vertex-embedding.ts";
 import { createEmbeddingGateway } from "./embedding-gateway.ts";
 import { createFirestoreOperatorEmbeddingUsage } from "./firestore-embedding-usage.ts";
 import { createFirestoreAdmin } from "./firestore-admin.ts";
-import { FirestoreAiUsage } from "./firestore-ai-usage.ts";
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER as OPERATOR } from "./firestore-ai-usage.ts";
 import { FirestoreRootBudget } from "./firestore-root-budget.ts";
-import { requireDurableUsage, type PlatformProviderFactory } from "./firestore-model-routing.ts";
+import { requireDurableUsage, type PlatformProviderFactory, type FirestoreModelRouting } from "./firestore-model-routing.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
@@ -24,7 +24,6 @@ import type { SourceFetcher } from "./knowledge-refresh-types.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
-const OPERATOR = "system:knowledge-maintenance";
 function reject(code: string): never { throw new FirestoreKnowledgeWorkError(code); }
 function operationId(scope: string, fingerprint: string) {
   const id = knowledgeReviewHash([scope, fingerprint]);
@@ -36,6 +35,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   config: AiConfig;
   credentialBinding: string;
   providers?: PlatformProviderFactory;
+  sponsor?: { userId: string; routing: Pick<FirestoreModelRouting, 'resolve'>; identityActive(): Promise<boolean> };
   knowledge: FirestoreKnowledgeStore;
   refresh: ReturnType<typeof createFirestoreKnowledgeRefresh>;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
@@ -50,27 +50,35 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   const policy = createFirestoreAdmin(options, options.config);
   const work = createFirestoreKnowledgeWork(options);
   const root = new FirestoreRootBudget({ ...options, namespace: options.namespace + "_knowledge_budget" });
-  const daily = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: "platform" });
+  const platformDaily = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: "platform" });
   return {
-    async start(request: BackgroundKnowledgeRunRequest, signal = new AbortController().signal) {
+    async start(request: BackgroundKnowledgeRunRequest, signal = new AbortController().signal, expectedRevision?: string) {
       const current = await policy.readPolicy(), base = options.config;
-      if (!base.enabled || !current.enabled || !base.backgroundKnowledgeMaintenanceEnabled)
+      if (!base.enabled || (!options.sponsor && !current.enabled) || !base.backgroundKnowledgeMaintenanceEnabled)
         return { status: "not_enabled" as const, code: "background_knowledge_disabled", published: false };
       const definition = SOURCE_WATCHES.find(item => item.id === request.watchId);
       const registration = (await options.refresh.jobs()).find(job => job.definition.id === request.watchId);
-      if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration)
+      if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration
+        || (expectedRevision !== undefined && expectedRevision !== registration.data.revision))
         reject("knowledge_watch_not_registered");
       const prompt = await loadAgentPrompt("knowledge-organize", "structured",
         ["run", "scope", "context", "evidence", "capabilities", "outputContract"]);
-      // Background work has an independent two-step profile, never a family key.
-      // Respect a lower administrator ceiling. No retry can silently spend more.
-      const limits = { modelCalls: Math.min(2, current.maxModelCalls), toolCalls: 8, queryEmbeddings: 1,
-        deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000) };
-      const config: AiConfig = { ...base, model: base.localModelOverride ?? current.model, dailyUserAttempts: current.dailyUserAttempts,
-        dailyGlobalAttempts: current.dailyGlobalAttempts, timeoutMs: Math.min(base.timeoutMs, current.modelRequestSeconds * 1000),
-        maxAttempts: 1, agentMaxRetries: 0 };
+      const sponsor = options.sponsor;
+      if (sponsor && !await sponsor.identityActive()) reject('knowledge_sponsor_inactive');
+      const personal = sponsor && await sponsor.routing.resolve(sponsor.userId, 'knowledge-maintenance');
+      if (sponsor && (!personal || personal.billingSource !== 'personal' || !personal.maintenanceEmbedding || !await personal.authorize()))
+        reject('knowledge_sponsor_not_authorized');
+      const daily = personal?.dailyUsage ?? platformDaily, payerId = sponsor?.userId ?? OPERATOR;
+      const credentialBinding = sponsor && personal
+        ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
+      const limits = { modelCalls: Math.min(2, current.maxModelCalls, personal?.runLimits.modelCalls ?? 2),
+        toolCalls: Math.min(8, current.maxToolCalls, personal?.runLimits.toolCalls ?? 8), queryEmbeddings: 1,
+        deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000, personal?.runLimits.deadlineMs ?? 300_000) };
+      const config: AiConfig = { ...(personal?.config ?? { ...base, model: base.localModelOverride ?? current.model,
+        dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
+        timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
       const configHash = knowledgeReviewHash({ config, limits, policyVersion: current.version,
-        credentialBinding: options.credentialBinding, promptPack: prompt.packVersion, watchRevision: registration.data.revision });
+        credentialBinding, promptPack: prompt.packVersion, watchRevision: registration.data.revision });
       let budget: AgentBudget | undefined;
       let baseline: KnowledgeMaintenanceBaseline | null | undefined;
       const readBaseline = async () => {
@@ -109,18 +117,23 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
               { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs });
-            const authorize = async () => !signal.aborted && await session.authorize() && (await policy.readPolicy()).enabled;
-            const providers = options.providers?.(config);
+            const authorize = async () => {
+              if (signal.aborted || !await session.authorize()) return false;
+              const latest = await policy.readPolicy();
+              return sponsor ? Boolean(personal && latest.version === current.version && await sponsor.identityActive() && await personal.authorize())
+                : latest.enabled;
+            };
+            const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
             let model: AgentGatewayModel | undefined;
             const completeText = async (input: { system: string; user: string; attemptKey: string }) =>
               session.completeText(input, async () => {
                 if (!model) {
                   const context: RootBudgetContext = { generation: 1, binding: {
-                    rootRunId: request.operationFingerprint, ownerId: OPERATOR, workspaceId: NIL, childId: NIL,
+                    rootRunId: request.operationFingerprint, ownerId: payerId, workspaceId: NIL, childId: NIL,
                     authorizationVersion: registration.data.revision, storageEpoch: request.workerGeneration,
                     trigger: { kind: "knowledge-maintenance", reference: request.watchId },
                     workflowVersion: "knowledge-maintenance/1", promptPackVersion: prompt.packVersion,
-                    settingsVersion: String(current.version), billingVersion: options.credentialBinding,
+                    settingsVersion: String(current.version), billingVersion: credentialBinding,
                     limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings },
                     deadlineAtMs: session.deadlineAtMs,
                   } };
@@ -129,7 +142,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                   budget.configureInputCharacters(base.agentMaxInputCharacters ?? AGENT_LIMITS.inputCharacters);
                   await budget.initializeDurable({ adapter: root, context, dailyUsage: daily, runLimits: limits });
                   model = new AgentGatewayModel({ config, budget, provider: providers?.agent ?? createVertexAgentProvider(config),
-                    usage: requireDurableUsage, userId: OPERATOR, childId: NIL, authorize,
+                    usage: requireDurableUsage, userId: payerId, childId: NIL, authorize,
                     durableDailyUsage: { adapter: daily, context } });
                 }
                 return model.completeText(input);
@@ -166,7 +179,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 for (const document of pending) {
                   await session.reserveWorkUnit("embedding:" + document.hash);
                   const embedding = createEmbeddingGateway({ config, provider: providers?.embedding ?? createVertexEmbeddingProvider(config),
-                    usage: createFirestoreOperatorEmbeddingUsage(options, session.deadlineAtMs) });
+                    billingSource: daily.billingSource, usage: createFirestoreOperatorEmbeddingUsage(options, session.deadlineAtMs,
+                      sponsor ? { userId: payerId, dailyLimit: config.dailyUserAttempts, binding: credentialBinding } : undefined) });
                   await options.knowledge.embedDocument(document, () => embedding.embed({
                     text: document.text, title: document.title, task: "RETRIEVAL_DOCUMENT",
                   }, { kind: "corpus_maintenance", actorId: "operator:knowledge-maintenance",

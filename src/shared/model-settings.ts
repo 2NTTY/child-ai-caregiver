@@ -1,4 +1,5 @@
 import { AGENT_RUN_LIMITS } from './agent-run-limits.ts';
+import type { AdminUsageFinance } from './admin.ts';
 
 export type ModelBillingSource = "platform" | "personal";
 export type ModelMode = ModelBillingSource | "disabled";
@@ -14,6 +15,8 @@ export const PERSONAL_MODEL = "gemini-3.1-flash-lite";
 export const MODEL_SETTINGS_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v2+json';
 export const MODEL_SETTINGS_V3_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v3+json';
 export const MODEL_SETTINGS_V4_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v4+json';
+export const MODEL_SETTINGS_FINANCE_PREFERENCE = 'include-personal-finance';
+export interface DailyMoneyBudget { currency: string; micros: number }
 export const PERSONAL_DAILY_LIMIT = { default: 100, min: 1, max: 1000 } as const;
 export const PERSONAL_RUN_LIMITS = {
   modelCalls: { ...AGENT_RUN_LIMITS.modelCalls, default: 4 },
@@ -35,6 +38,9 @@ export interface PersonalAdvancedLimits {
 
 /** Secret-free account settings; never return the key, its hash or a decryptable envelope. */
 export interface ModelSettings extends PersonalAdvancedLimits, PersonalEmbeddingSettings {
+  publicMaintenanceEnabled?: boolean;
+  maintenanceMoneyBudget?: DailyMoneyBudget;
+  dailyMoneyBudget?: DailyMoneyBudget;
   limitPolicyVersion?: 2;
   version: number;
   mode: ModelMode;
@@ -50,6 +56,10 @@ export interface ModelSettings extends PersonalAdvancedLimits, PersonalEmbedding
   updatedAt: string | null;
 }
 export interface ModelSettingsCommand extends PersonalAdvancedLimits, PersonalEmbeddingSettings {
+  /** Omit to preserve the owner's budget; null explicitly clears it. */
+  publicMaintenanceEnabled?: boolean;
+  maintenanceMoneyBudget?: DailyMoneyBudget | null;
+  dailyMoneyBudget?: DailyMoneyBudget | null;
   /** New clients use a secret-free operation lookup after a lost response. */
   opId?: string;
   expectedVersion: number;
@@ -97,6 +107,8 @@ export interface EffectiveModelLimits {
   limitSources?: EffectiveModelLimitSources;
 }
 export interface ModelSettingsUsage {
+  finance?: Pick<AdminUsageFinance, 'settlement' | 'estimates' | 'unestimatedAttempts' | 'unsettledAttempts'>;
+  maintenanceFinance?: ModelSettingsUsage['finance'];
   billingSource?: ModelBillingSource;
   day: string; attempts: number; inputTokens: number; outputTokens: number;
   cachedTokens: number; unknownUsageAttempts: number;

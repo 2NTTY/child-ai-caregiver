@@ -1,7 +1,7 @@
 // Explicit local integration command, never part of automatic startup or unit discovery.
 import assert from 'node:assert/strict';
 import { Firestore } from '@google-cloud/firestore';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
@@ -12,7 +12,11 @@ import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work
 import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
 import { readAiConfig } from '../server/ai-config.ts';
 
-const state = JSON.parse(await readFile(new URL('../.cache/agent-local/state.json', import.meta.url), 'utf8'));
+import { createFirestoreModelRouting } from '../server/firestore-model-routing.ts';
+import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
+
+const sponsored = process.argv.includes('--sponsored');
+const state = sponsored ? { projectId: 'demo-req005-maintenance', storageKey: randomBytes(32).toString('base64') } : JSON.parse(await readFile(new URL('../.cache/agent-local/state.json', import.meta.url), 'utf8'));
 if (!state.projectId.startsWith('demo-') || !/^127\.0\.0\.1:\d+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? ''))
   throw Error('This check requires an explicitly running isolated local emulator');
 process.env.YUYF_LOCAL_DEVELOPMENT = '1';
@@ -69,6 +73,41 @@ try {
       embedding: { async embed() { embeddings++; return { values: vector, inputTokens: 10, billableCharacters: 30 }; } },
     }),
   };
+  let sponsorRouting, revoke;
+  if (sponsored) {
+    const uid = 'test-public-sponsor', email = uid + '@example.test', key = 'synthetic-maintenance-emulator-key';
+    await authority.issueInvitation({ email, expiresAt: new Date(Date.now() + 60000).toISOString(), operationId: randomUUID() });
+    await authority.admitIdentity({ userId: uid, email, emailVerified: true });
+    await authority.acknowledge({ userId: uid, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+    sponsorRouting = createFirestoreModelRouting(domain, config);
+    const policy = { mode: 'personal', backgroundEnabled: true, publicMaintenanceEnabled: true, dailyLimit: 20,
+      maxModelCalls: 2, maxQueryEmbeddings: 1, consent: true };
+    await sponsorRouting.settings.save(uid, { ...policy, opId: randomUUID(), expectedVersion: 0, apiKey: key });
+    revoke = () => sponsorRouting.settings.save(uid, { ...policy, opId: randomUUID(), expectedVersion: 1, publicMaintenanceEnabled: false });
+    const scripted = options.providers();
+    options.sponsor = { userId: uid, routing: sponsorRouting, identityActive: async () => true };
+    options.providers = () => { throw Error('Unexpected platform credential'); };
+    // Keep the real personal adapters and intercept only their network requests.
+    globalThis.fetch = async (url, init) => {
+      const endpoint = new URL(url instanceof Request ? url.url : url);
+      assert.equal(endpoint.hostname, 'generativelanguage.googleapis.com');
+      assert.equal(new Headers(init?.headers ?? url.headers).get('x-goog-api-key'), key);
+      const body = JSON.parse(init?.body ?? await url.text());
+      if (endpoint.pathname.endsWith(':countTokens')) return Response.json({ totalTokens: 200 });
+      if (endpoint.pathname.endsWith(':generateContent')) {
+        const generated = await scripted.agent.generate(body);
+        return Response.json({ candidates: [{ content: generated.content, finishReason: generated.finishReason }], usageMetadata: generated.usageMetadata });
+      }
+      if (endpoint.pathname.endsWith(':batchEmbedContents')) {
+        assert.equal(body.requests.length, 1);
+        assert.equal(body.requests[0].taskType, 'RETRIEVAL_DOCUMENT');
+        assert.ok(body.requests[0].title);
+        const result = await scripted.embedding.embed();
+        return Response.json({ embeddings: [{ values: result.values }] });
+      }
+      throw Error('Unexpected personal provider endpoint: ' + endpoint.pathname);
+    };
+  }
   const request = { watchId: definition.id, operationFingerprint: createHash('sha256').update(randomUUID()).digest('hex'),
     workerGeneration: generation, publishMode: 'live' };
   const result = await createFirestoreKnowledgeMaintenance(options).start(request);
@@ -87,6 +126,19 @@ try {
     vector, { query: '到診' });
   assert.equal(retrieved.length, 1);
   assert.equal(retrieved[0].versionId, edition.versionId);
+  if (sponsored) {
+    const day = new Date().toISOString().slice(0, 10);
+    const userUsage = await sponsorRouting.usage.personal.getForUser('test-public-sponsor', []);
+    assert.equal(userUsage.attempts, 3);
+    assert.equal(userUsage.finance.unsettledAttempts, 0);
+    assert.equal(userUsage.maintenanceFinance.unsettledAttempts, 3);
+    assert.equal((await sponsorRouting.usage.platform.getGlobal(day)).attempts, 0);
+    await revoke();
+    await assert.rejects(createFirestoreKnowledgeMaintenance(options).start({ ...request,
+      operationFingerprint: createHash('sha256').update(randomUUID()).digest('hex') }), /unauthorized/u);
+    assert.equal(calls.length, 2);
+    assert.equal(embeddings, 1);
+  }
   // Unknown model outcome must stay lookup-only across a new lease/process.
   const work = createFirestoreKnowledgeWork({ ...domain, readControl });
   const unknownRequest = { ...request, operationFingerprint: createHash('sha256').update(randomUUID()).digest('hex') };
@@ -101,7 +153,7 @@ try {
   await assert.rejects(next.completeText(input, async () => { throw Error('must never be called'); }), { code: 'knowledge_work_model_outcome_unknown' });
   await next.ports.releaseOperation(unknownRequest.operationFingerprint, nextToken);
   console.log(JSON.stringify({ status: 'passed', namespace, result: result.status, modelStages: calls, scriptedEmbeddings: embeddings,
-    nativeEmulatorPublication: true, sameOperationReassembled: true, unknownNotRedispatched: true, trueModelCalls: 0 }));
+    sponsored, nativeEmulatorPublication: true, sameOperationReassembled: true, unknownNotRedispatched: true, trueModelCalls: 0 }));
 } catch (error) {
   console.error(JSON.stringify({ status: 'failed', namespace, scriptedModelCalls: calls.length, scriptedEmbeddings: embeddings,
     code: error.code ?? error.name, trueModelCalls: 0 }));

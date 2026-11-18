@@ -57,6 +57,7 @@ import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
 import type { FirestoreContact } from './firestore-contact.ts';
 
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
+  usageFinancialEvidence?: () => import('./ai-financial-evidence.ts').DayFinancialEvidence[] | undefined;
   photos?: import('./firestore-photos.ts').FirestorePhotoStore;
   files?: import("./firestore-chat-files.ts").FirestoreChatFilesStore;
   voices?: import("./firestore-voice.ts").FirestoreVoiceStore;

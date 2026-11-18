@@ -147,6 +147,17 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal(totals.personal.finance.settlement.status, 'unknown');
   assert.doesNotMatch(JSON.stringify(totals), /admin-synthetic-run|synthetic-invoice-line/);
   assert.equal((await http('usage?day=2026-02-30')).status, 400);
+  const budgetCommand = { kind: 'money_budget', opId: randomUUID(), day: totals.platform.day, pool: 'maintenance',
+    expectedVersion: 0, amount: { currency: 'HKD', micros: 2500000 } };
+  const budgetResponse = await http('operations', budgetCommand);
+  assert.equal(budgetResponse.status, 200);
+  const budgetReceipt = await budgetResponse.json();
+  assert.deepEqual(await (await http('operations', budgetCommand)).json(), budgetReceipt);
+  assert.equal((await http('operations', { ...budgetCommand, opId: randomUUID() })).status, 409);
+  const updated = await (await http('usage')).json();
+  assert.equal(updated.platform.finance.approvedDailyBudget, null);
+  assert.equal(updated.platform.maintenanceFinance.approvedDailyBudget.micros, 2500000);
+  assert.deepEqual(updated.platform.budgetVersions, { general: 0, maintenance: 1 });
   const codec = createFirestoreRestoreCodec(options);
   for (const [path, data] of f.records) if (path.includes('_admin_policy/') || path.includes('_admin_operations/') || path.includes('_admin_invitations/')) {
     const decoded = codec.decode({ path, data });

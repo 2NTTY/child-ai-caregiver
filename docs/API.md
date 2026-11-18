@@ -841,6 +841,8 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 <a id="knowledge-maintenance-model"></a>
 ### 背景候選的整理與模型審核
 
+部署者在 worker 的受保護設定指定 `AI_KNOWLEDGE_MAINTENANCE_PAYER=platform` 或 `user:<Firebase UID>`。缺省沿用來源巡查。啟用維護及實時來源讀取後，worker 才為支援的來源安排 Agent，發布仍依獨立開關。個人出資須本人啟用背景工作及 `publicMaintenanceEnabled`，可隨時撤回。工作綁定出資方和設定版本。整理、審核及文件向量分別用該出資方的模型及向量設定，全部記入維護預算。
+
 整理／審核共用正式 `AgentGatewayModel.completeText` 接點，由受信工作組裝注入已綁定的維護身份、共同預算及取消；角色不能選付款來源、另開 run 或自行重試。取得原文後，Server 產生固定單元、逐字原文預覽及真實 PDF 頁碼，模型只提出章節、摘要、關鍵詞與適用範圍。每單元恰好回傳一次；來源 URL、日期、發布者、原文、預覽及頁碼不由模型填寫。預覽不代表已完整引證，獨立審核仍讀完整原文。
 
 獨立審核接收候選的完整原文與整理、舊版原文及固定版本綁定，回傳既有 `KnowledgeReviewAssessment`；沿正式含義差異、原文引證、代表問題與規則影響檢查。模型不能把成長規則填成 `reviewed` 來創造核准。缺舊版、超出有界批次／上下文、部分原文、無效引用或儲存失敗均不產生批准；不靜默截斷。候選及審核證據由工作保存成功後才返回 `model_review` 結果；此結果不等於發布收據。
@@ -965,6 +967,10 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 管理員可從受保護的 Server 配置 `AI_USAGE_RECONCILIATION_JSON` 提供按日、出資來源、模型與原嘗試對應的價目或結算依據。API 分開返回估算、已結算額、已批准的金額及有日期的供應商配額。缺少依據的部分列為未知；管理回應省去原收據及帳單識別。每輪可設上限為生成 64、工具 256、查詢向量 32。舊設定與預設額度沿用，擴大後的單筆帳本須由支援擴大格式的後端處理。
 
 對帳設定中的 `settlement.reference` 識別一筆可歸屬至單次供應商呼叫的帳單明細。若帳單只提供局部行號，請連同帳戶及帳單編號組成唯一識別。同一份設定跨日期或出資方重用一筆明細會被拒絕。只有整日或整張帳單總額時，保留各次結算未知。
+
+用量中的 `platform.attempts` 保留平台技術總數。平台和個人分別提供 `finance`（一般用途）及 `maintenanceFinance`。維護生成、審核和文件向量以原收據的出資方及用途歸帳。管理員向原 operations 入口提交 `money_budget`，以 UTC 帳日、`general` 或 `maintenance`、該項 `expectedVersion` 及原 `opId` 保存。金額欄 `amount` 包含幣別和整數微單位，明確傳 `null` 清除。當日或未來日期可調，過往日可讀。受保護配置可提供日期預算，管理員對同一日及範圍的決定優先。
+
+個人模型 v4 接口可用 `Prefer: include-personal-finance` 取得本人當日費用。本人分開設定 `dailyMoneyBudget`（一般）及 `maintenanceMoneyBudget`（維護）的對帳預算，更新時沿原設定版本及收據保存，每個 UTC 日使用同一份本人設定，傳 `null` 清除。舊客戶端保留其設定。個人帳單列可帶 `ownerUserId` 以縮小讀取範圍。新舊帳單都按原嘗試的付款身份歸屬，明示的身份必須吻合；個人回應只含本人的小計及未對帳次數。財務餘額由已核准金額和可核對的帳單推導，原派送仍按各自的呼叫數與供應商限制執行。
 
 <a id="admin-usage-quota"></a>
 

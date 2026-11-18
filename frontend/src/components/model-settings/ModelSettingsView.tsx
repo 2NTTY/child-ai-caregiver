@@ -1,3 +1,4 @@
+import { budgetBalanceLabel, displayMoney } from '../admin/usage-amounts';
 import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useContainerWidth } from "../useContainerWidth";
@@ -35,11 +36,18 @@ const formFields = [
   { name: "embeddingLocation", label: "Vertex 地區" }, { name: "embeddingKeyText", label: "向量 API 密鑰" },
   ...modelLimitFields.map(([name, label]) => ({ name, label })),
 ] as const;
-function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage }) {
+function UsageCard({ label, usage, settings }: { label: string; usage: ModelSettingsUsage; settings?: ModelSettings }) {
   return <SectionCard><SectionHeader density="compact" title={label} subtitle={`計數日：${usage.day}（UTC）；資料來自最後讀取。`} />
     <Text style={styles.count}>{usage.attempts} <Text style={styles.body}>次呼叫嘗試</Text></Text>
     <Text style={styles.meta}>輸入 {usage.inputTokens} · 輸出 {usage.outputTokens} · 快取 {usage.cachedTokens} tokens</Text>
     <Text style={styles.meta}>有 {usage.unknownUsageAttempts} 次用量未能確認。</Text>
+    {([['一般使用', usage.finance, settings?.dailyMoneyBudget], ['公共知識維護', usage.maintenanceFinance, settings?.maintenanceMoneyBudget]] as const)
+      .map(([title, finance, budget]) => finance ? <View key={title}>
+        <Text style={styles.groupTitle}>{title}</Text>
+        {finance.estimates.map(item => <Text key={item.priceVersion} style={styles.meta}>估算 {displayMoney(item.currency, item.micros)} · {item.attempts} 次</Text>)}
+        <Text style={styles.meta}>{finance.settlement.status === 'settled' ? '已結算 ' + displayMoney(finance.settlement.currency, finance.settlement.micros) : '未有已結算金額'} · {finance.unsettledAttempts} 次待對帳</Text>
+        {budget ? <Text style={styles.meta}>{budgetBalanceLabel({ ...finance, approvedDailyBudget: budget }) ?? '預算 ' + displayMoney(budget.currency, String(budget.micros))}</Text> : null}
+      </View> : null)}
   </SectionCard>;
 }
 
@@ -258,6 +266,19 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
             <FormFieldMessage id={`${fieldId("consent")}-message`} error={errors.consent?.message} />
             <Controller control={control} name="backgroundEnabled" render={({ field }) => <AppCheckbox checked={field.value} onChange={field.onChange} disabled={locked || !available}
               label="另行允許背景任務使用此密鑰" description="背景處理亦會使用供應商服務及計入用量；不會因加入密鑰而自動啟用。" />} />
+            {snapshot?.usage.personal.finance ? <View style={styles.limitFields}>
+              <Controller control={control} name="publicMaintenanceEnabled" render={({ field }) => <AppCheckbox
+                label="允許使用我的密鑰支付公共知識整理、審核及文件向量費用" checked={watch('backgroundEnabled') && field.value}
+                onChange={field.onChange} disabled={locked || !available || !watch('backgroundEnabled')} />} />
+              {([['moneyText', 'moneyCurrency', '一般使用'], ['maintenanceText', 'maintenanceCurrency', '公共知識維護']] as const)
+                .map(([amount, currency, title]) => <View key={amount} style={styles.limitField}>
+                  <Controller control={control} name={currency} render={({ field }) => <AppTextField label={title + '幣別'} value={field.value}
+                    maxLength={3} autoCapitalize="characters" onChangeText={value => field.onChange(value.toUpperCase())} disabled={locked || !available} />} />
+                  <Controller control={control} name={amount} render={({ field }) => <AppTextField label={title + '每日對帳預算'} value={field.value}
+                    keyboardType="decimal-pad" placeholder="留空表示未設定" onChangeText={field.onChange} disabled={locked || !available} error={!!errors[amount]} />} />
+                  <FormFieldMessage id={fieldId(amount) + '-message'} error={errors[amount]?.message} />
+                </View>)}
+            </View> : null}
             <View style={styles.limitFields}><Text accessibilityRole="header" style={styles.groupTitle}>個人呼叫上限</Text>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
               <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
@@ -289,7 +310,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
         </SectionCard> : null}
       </View>
       <View style={[styles.column, narrow && styles.fullColumn]}>
-        <UsageCard label="平台服務用量" usage={snapshot.usage.platform} /><UsageCard label="個人服務用量" usage={snapshot.usage.personal} />
+        <UsageCard label="平台服務用量" usage={snapshot.usage.platform} /><UsageCard label="個人服務用量" usage={snapshot.usage.personal} settings={snapshot.settings} />
         <SectionCard><SectionHeader density="compact" title="用量與安全上限" />
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>

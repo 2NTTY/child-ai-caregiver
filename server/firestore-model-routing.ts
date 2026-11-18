@@ -1,4 +1,5 @@
 import { createFirestoreAdmin } from './firestore-admin.ts';
+import type { DayFinancialEvidence } from './ai-financial-evidence.ts';
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
@@ -30,7 +31,9 @@ export const requireDurableUsage = Object.freeze({ async reserve(): Promise<neve
 
 export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createPersonalModelProviders>, 'agent' | 'model' | 'embedding'>;
 
-export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig, platformProviders?: PlatformProviderFactory) {
+export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
+  usageFinancialEvidence?: () => DayFinancialEvidence[] | undefined;
+}, config: AiConfig, platformProviders?: PlatformProviderFactory) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const usage = { platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
@@ -70,12 +73,13 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const state = await settings.readIn({ transaction: tx, scope: { ...scope, childId: '00000000-0000-0000-0000-000000000000' } });
       return resolvePersonalModelLimits(state, current).maxRunSeconds;
     },
-    async view(userId: string): Promise<ModelSettingsView> {
+    async view(userId: string, includePersonalFinance = false): Promise<ModelSettingsView> {
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
         personalAvailable: config.enabled, personalGlobalLimit: current.personalDailyGlobalAttempts, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
         effective: resolvePersonalModelLimits(state, current, { role: 'interactive', applyAdminRoleOverride: true }),
-        usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
+        usage: { platform: await usage.platform.getForUser(userId),
+          personal: await usage.personal.getForUser(userId, includePersonalFinance ? options.usageFinancialEvidence?.() ?? [] : undefined) } };
     },
     async currentUsage(userId: string) {
       const state = await settings.get(userId); return usage[state.mode === 'personal' ? 'personal' : 'platform'].getForUser(userId);
@@ -113,14 +117,17 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return result;
     },
-    async resolve(userId: string, trigger: 'interactive' | 'worker') {
+    async resolve(userId: string, trigger: 'interactive' | 'worker' | 'knowledge-maintenance') {
       const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal', current = await policy.readPolicy();
-      const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } = profileFor(state, current, trigger);
+      if (trigger === 'knowledge-maintenance' && (!personal || !state.publicMaintenanceEnabled || !state.backgroundEnabled || !snapshot.apiKey))
+        throw new AgentStopped('unauthorized');
+      const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } =
+        profileFor(state, current, trigger === 'knowledge-maintenance' ? 'worker' : trigger);
       if (enabled && personal && !snapshot.apiKey) throw new AgentStopped('unavailable');
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
       const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } }
         : personal && snapshot.apiKey ? createPersonalModelProviders(selectedConfig, snapshot.apiKey, state.provider,
-          { baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
+          { documentEmbeddings: trigger === 'knowledge-maintenance', baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
             embeddingProvider: state.embeddingProvider, embeddingProject: state.embeddingProject, embeddingLocation: state.embeddingLocation })
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
@@ -149,6 +156,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       return { config: selectedConfig, provider: providers.agent, policyVersion: current.version,
         repeatedSignatureStreak: current.highWatermark?.repeatedSignatureStreak ?? AGENT_HIGH_WATERMARK_DEFAULTS.repeatedSignatureStreak,
         settingsVersion, billingSource: source,
+        maintenanceEmbedding: trigger === 'knowledge-maintenance' ? providers.embedding : undefined,
         dailyUsage: usage[source], authorize, readPolicyTransition,
         softBudgetSource: limits.limitSources?.softBudgetRatio,
         ...(current.roleSoftBudgetRatios ? { roleSoftBudgetRatios: current.roleSoftBudgetRatios } : {}),
