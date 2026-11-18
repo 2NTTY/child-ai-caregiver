@@ -1,3 +1,4 @@
+import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
@@ -108,6 +109,10 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
+  mixedMaterials?: {
+    search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;
+    read(ref:MaterialRef):Promise<MaterialCitationPage>;
+  };
   mixedCare?:(input:{from:number;limit:number;singleChild?:boolean;filters:SelectedCareRequest['filters'];cursor?:SelectedCareRequest['cursor']})=>
     Promise<{children:SelectedCarePage[];nextFrom:number|null}>;
   mixedTasks?: (input:{from:number; childId?:string; cursor?:{afterId:string;basis:string}}) =>
@@ -757,6 +762,30 @@ export function createProductAgentTools(options: {
         return {children,nextFrom};
       })});
   }
+  if (options.mixedMaterials) {
+    const reader = options.mixedMaterials;
+    tools.push({name:'search_selected_materials',effect:'read',authorize:permitted,parameters:materialQuery,
+      description:'在這段對話已選的孩子中查有效記憶（memory）或文件（document）。from 從 0 開始，只讀該孩子的一頁。可按字詞 query 找片段；同一孩子續頁沿原 query 和 nextCursor，下一個孩子用 nextFrom。引用返回的 citationId，留意部分讀取。',
+      execute:args=>guard(async()=>{
+        const query = materialQuery.parse(args);
+        const allowance = budget.toolResponseCharacters - 256;
+        let page = await reader.search(query,allowance < 4000 ? 1 : 3);
+        if (JSON.stringify(page).length > allowance && page.items.length > 1) page = await reader.search(query,1);
+        if (JSON.stringify(page).length > allowance) throw new FamilyError(400,'response_limit');
+        if (!await authorize()) throw new AgentStopped('unauthorized');
+        for (const item of page.items) {
+          const text = JSON.stringify(item);
+          selectedEvidence.set(item.citationId,{citationId:item.citationId,version:String(item.version),
+            contentHash:chatDeliveryContentHash(text),classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
+          householdEvidence.set(item.citationId,{label:'',async isCurrent() {
+            const original = await reader.read({kind:item.kind,from:query.from,id:item.id,version:item.version,offset:item.offset});
+            return original.childId === item.childId && original.childName === item.childName && original.title === item.title
+              && original.source === item.source && original.text.slice(0,item.text.length) === item.text;
+          }});
+        }
+        return page;
+      })});
+  }
   if (options.mixedCare) {
     const read=options.mixedCare;
     const parameters=z.strictObject({from:z.int().min(0).default(0),
@@ -818,7 +847,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
@@ -886,7 +915,10 @@ export function createProductAgentTools(options: {
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const careReferences=selectedCareRecordCitations(selectedSources);
+      const materialReferences=selectedMaterialCitations(selectedSources);
       function citationLabel(id:string) {
+        const material=materialReferences.findIndex(ref=>ref.citationId===id);
+        if (material!==-1) return `[孩子資料 ${material+1}]`;
         const household = householdEvidence.get(id);
         if (household) return household.label;
         const index=careReferences.findIndex(reference=>reference.citationId===id);
@@ -897,7 +929,8 @@ export function createProductAgentTools(options: {
       }
       const rendered = paragraphs.map(paragraph => {
         // Only labels appended from reviewed IDs should become interactive care links.
-        const text=careReferences.length ? paragraph.text.replace(/\[照護記錄 (\d+)\]/gu,'［照護記錄 $1］') : paragraph.text;
+        const text=paragraph.text.replace(/\[(照護記錄|孩子資料) (\d+)\]/gu,(mark,kind,ordinal)=>
+          (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const adminTransferDigestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 export const adminTransferPageSize = 20;
+export const publicArchiveMaxBytes = 512 * 1024 * 1024;
 const sourceId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
 const at = z.iso.datetime({ offset: true });
 const index = z.int().min(0).max(4095);

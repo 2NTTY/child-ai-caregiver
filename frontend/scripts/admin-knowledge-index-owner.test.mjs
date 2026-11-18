@@ -51,7 +51,7 @@ test('index batch owner bounds reviewed selections and preserves unknown command
   assert.equal(requests.length, beforeFailedResume, 'A failed terminal batch cannot be resumed');
   owner.selectIndexVersion(uuid(53), true);
   assert.equal(owner.getSnapshot().index.selected.length, 0, 'Draft versions cannot be selected');
-  for (const version of versions.slice(0, 51)) owner.selectIndexVersion(version.id, true);
+  for (const version of versions.slice(0, 50)) owner.selectIndexVersion(version.id, true);
   assert.equal(owner.getSnapshot().index.selected.length, 50);
   assert.equal(owner.getSnapshot().busy, false, 'Index controls do not occupy invitation/settings reads');
   await owner.createIndexBatch();
@@ -93,5 +93,59 @@ test('index batch owner bounds reviewed selections and preserves unknown command
   assert.deepEqual(owner.getSnapshot().index.batches.items, []);
   finish(Response.json({ items: versions.slice(0, 20), nextVersionId: null })); await stale;
   assert.deepEqual(owner.getSnapshot().index.versions.items, [], 'A late list cannot repopulate a different identity');
+  owner.dispose();
+});
+
+test('bulk rebuild pins all reviewed pages, recovers the same group and controls its parts together', async () => {
+  const id = n => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+  const versions = Array.from({ length: 53 }, (_, i) => ({
+    id: id(i + 1), sourceId: 'source', hash: 'a'.repeat(64),
+    state: i === 52 ? 'draft' : 'reviewed', publishedAt: null, searchReady: false,
+  }));
+  const requests = [];
+  let group;
+  const owner = new AdminOwner('https://example.invalid', async (input, options) => {
+    const url = new URL(input);
+    if (url.pathname.endsWith('/session')) return Response.json({ administrator: true });
+    if (url.pathname.endsWith('/knowledge-versions')) {
+      const start = url.searchParams.has('cursor') ? versions.findIndex(v => v.id === url.searchParams.get('cursor')) + 1 : 0;
+      const items = versions.slice(start, start + 20);
+      return Response.json({ items, nextVersionId: start + items.length < versions.length ? items.at(-1).id : null });
+    }
+    if (url.pathname.endsWith('/knowledge-index-batches')) return Response.json({ items: [], nextCursor: null });
+    const body = options.body && JSON.parse(options.body);
+    requests.push({ path: url.pathname, body, method: options.method });
+    if (options.method === 'GET') return Response.json({ group });
+    if (body.targets) {
+      const bytes = new TextEncoder().encode(JSON.stringify(body.targets.map(t => [t.versionId, t.versionHash])));
+      group = { id: body.opId, targetDigest: Buffer.from(await crypto.subtle.digest('SHA-256', bytes)).toString('hex'),
+        parts: [50, 2].map((total, i) => ({ id: i ? id(999) : body.opId, total, completed: 0, failed: 0, controlVersion: 1, state: 'running' })) };
+      return Response.json({ error: { code: 'operation_result_unknown' } }, { status: 503 });
+    }
+    assert.deepEqual(body.versions, group.parts.map(part => part.controlVersion));
+    group = { ...group, parts: group.parts.map(part => ({ ...part, controlVersion: part.controlVersion + 1,
+      state: url.pathname.endsWith('/stop') ? 'paused' : 'running' })) };
+    return Response.json({ group });
+  });
+  owner.setUser('admin-a'); await owner.checkAccess(); await owner.setIndexOpen(true);
+  await owner.loadIndexVersions(true); await owner.loadIndexVersions(true);
+  owner.selectLoadedIndexVersions();
+  assert.equal(owner.getSnapshot().index.selected.length, 52);
+  await owner.createIndexBatch();
+  assert.equal(requests[0].path, '/api/admin/knowledge-index-groups');
+  assert.equal(owner.getSnapshot().index.pending.payload.opId, group.id);
+  const expectedDigest = group.targetDigest;
+  group.targetDigest = 'b'.repeat(64);
+  await owner.recoverIndexOperation();
+  assert.ok(owner.getSnapshot().index.pending, 'An unrelated fingerprint cannot resolve the original request');
+  group.targetDigest = expectedDigest;
+  await owner.recoverIndexOperation();
+  assert.equal(requests.filter(r => r.method === 'POST').length, 1);
+  assert.equal(owner.getSnapshot().index.pending, null);
+  assert.equal(owner.getSnapshot().index.group.id, group.id);
+  await owner.controlIndexGroup('stop'); await owner.controlIndexGroup('resume');
+  assert.deepEqual(requests.slice(-2).map(r => r.path.split('/').at(-1)), ['stop','resume']);
+  owner.setUser('admin-b');
+  assert.equal(owner.getSnapshot().index.group, null);
   owner.dispose();
 });

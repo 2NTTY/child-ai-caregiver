@@ -13,28 +13,19 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, ty
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
-import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
+import { sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
 import { firestorePhotoSchemas } from './firestore-photos.ts';
-import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import type { HandoverImportRow } from './handover-import.ts';
 import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 import { selectedCareRequestSchema, type SelectedCareRequest, type SelectedCarePage } from '../src/shared/assistant-care-context.ts';
 import { reminderLocalTime } from './task-policy.ts';
 
+import { firestoreCareSchema, firestoreCareStorageSchema, firestoreProfileSchema, firestoreProfileStorageSchema } from './firestore-care-schemas.ts';
+export { firestoreCareSchema, firestoreCareStorageSchema, firestoreProfileSchema, firestoreProfileStorageSchema } from './firestore-care-schemas.ts';
+
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
-const user = z.string().min(1).max(256);
-export const firestoreCareStorageSchema = careValuesSchema.extend({ id: uuid, childId: uuid, authorUserId: user, createdAt: time,
-  version: version.min(1), confirmedBy: user, confirmedAt: time, reason: z.string().max(500),
-  confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement', 'imported_source']).optional(),
-  importedFrom: importProvenanceSchema.optional(),
-  createdViaShare: sharedWriteAttributionSchema.optional(), confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
-export const firestoreProfileStorageSchema = z.object({ childId: uuid, version, data: profileDataSchema.nullable(),
-  confirmedBy: user.nullable(), confirmedAt: time.nullable(), reason: z.string().max(500).nullable(),
-  confirmationBasis: z.enum(['explicit', 'imported_source']).optional(), importedFrom: importProvenanceSchema.optional(),
-  confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
-export const firestoreCareSchema = firestoreCareStorageSchema.transform(({ createdViaShare, confirmedViaShare, ...value }) => value);
-export const firestoreProfileSchema = firestoreProfileStorageSchema.transform(({ confirmedViaShare, ...value }) => value);
 const tombstoneSchema = z.object({ id: uuid, childId: uuid, version: version.min(1), operationId: uuid, deletedAt: time }).strict();
 const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/([0-9a-f-]{36})\/(revise|delete))?|profile(?:\/(delete))?)$/iu;
 type Binding = FirestoreAuthorityTransaction;

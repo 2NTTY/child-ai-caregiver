@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.59",
+  "version": "0.1.60",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -217,6 +217,15 @@
         "core.tool-use",
         "core.output",
         "module.knowledge-answering"
+      ]
+    },
+    {
+      "id": "module.selected-children",
+      "path": "modules/selected-children.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
       ]
     },
     {
@@ -568,6 +577,31 @@
         "P2-A01"
       ],
       "missingCapability": "缺權限、引用、明確确认或目前可用工具時停止相關操作，回報限制。"
+    },
+    {
+      "id": "product-selected-children",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "domain.childcare-hk.care-workflows",
+        "module.chat",
+        "module.selected-children"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities",
+        "selectedChildren"
+      ],
+      "plannedPackages": [
+        "P4-CLASS02"
+      ],
+      "missingCapability": "依當次已授權工具及已讀範圍回覆。"
     },
     {
       "id": "product-background",

@@ -27,15 +27,20 @@ export function readPortableEdition(raw, entry) {
   return { source, embeddings: checked };
 }
 
-export async function importKnowledgePage({ ledger, store, archive, digest, operator, limit }) {
+export async function importKnowledgePage({ ledger, store, archive, digest, operator, limit, signal, expectedRevision }) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 4096) reject('knowledge_transfer_page_invalid');
+  signal?.throwIfAborted();
   let job = await ledger.start(digest, archive.entries.length, operator);
+  if (expectedRevision !== undefined && job.revision !== expectedRevision) reject('knowledge_transfer_changed');
   for (let done = 0; done < limit && job.state === 'ready'; done++) {
+    signal?.throwIfAborted();
     const entry = archive.entries[job.next];
     try {
       const portable = readPortableEdition(await archive.readEdition(job.next), entry);
+      signal?.throwIfAborted();
       await store.importSource(portable.source, ledger.fence(job, entry, operator));
     } catch (error) {
+      signal?.throwIfAborted();
       const reason = error instanceof z.ZodError ? 'knowledge_transfer_edition_invalid'
         : /^knowledge_[a-z_]{1,100}$/u.test(error?.code ?? '') ? error.code : error?.message;
       // A transport failure may follow a committed write. Look up the same batch before taking further action.
@@ -44,7 +49,9 @@ export async function importKnowledgePage({ ledger, store, archive, digest, oper
       await ledger.fail(job, entry, reason, operator);
       reject(reason);
     }
-    job = await ledger.get(digest);
+    const next = await ledger.get(digest);
+    if (next?.revision !== job.revision + 1 && next?.state === 'ready') reject('knowledge_transfer_changed');
+    job = next;
   }
   return job;
 }

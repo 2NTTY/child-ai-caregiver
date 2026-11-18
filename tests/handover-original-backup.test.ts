@@ -11,6 +11,7 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import type { CareTask } from '../src/shared/tasks.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirestoreSharedInputStore } from '../server/firestore-shared-inputs.ts';
 import { createFirebaseHandoverObjects } from '../server/firebase-handover-objects.ts';
@@ -96,19 +97,25 @@ test('verified personal backups preview without disclosure and restore scoped or
     const issued = new Set<string>();
     const originalBackup = {serverId,async matchesIssuedBackup(owner:string,id:string,manifestSha256:string,archiveSha256:string){
       return issued.has(JSON.stringify([owner,id,manifestSha256,archiveSha256]));}};
+    const chat = createFirestoreChatStore(options);
+    const originalChat = { id:randomUUID(), childId, authorUserId:'parent', role:'user' as const, text:'只還原本人歷史',
+      inReplyTo:null, createdAt:new Date().toISOString() };
+    const position = await authority.runTransaction('parent',childId,async b => ({
+      workspaceId:b.scope.workspaceId, sortKey:b.changeSeq.padStart(19,'0'),
+    }));
     const service = createHandoverImportService({...options,uploads,originalBackup});
     async function stage(settings:{signed?:boolean;issued?:boolean;accountId?:string;sourceServerId?:string;purpose?:'backup'|'handover';owner?:string;allCore?:boolean}={}) {
       const scopeVersion='a'.repeat(64),packageId=randomUUID(),owner=settings.owner??'parent';
       const pages: {section:string;childId:string|null;items:unknown[]}[]=[{section:'children',childId:null,items:[{id:childId,displayName:'Private original child'}]},
         {section:'care',childId,items:rows},{section:'care_history',childId,items:[]}];
-      if (settings.allCore) pages.push({section:'profile',childId,items:[profile]}, {section:'profile_history',childId,items:[]},
+      if (settings.allCore) pages.push({section:'chat',childId,items:[{...originalChat,originalPosition:position}]}, {section:'chat_imports',childId,items:[]}, {section:'profile',childId,items:[profile]}, {section:'profile_history',childId,items:[]},
         {section:'tasks',childId,items:[originalTask]}, {section:'task_history',childId,items:[]},
         {section:'private_sources',childId,items:[editedSource,removedSource,reference]}, {section:'private_source_history',childId,items:[]});
       async function* entries(){for(const [index,page] of pages.entries())yield {path:`data/${index}.json`,mediaType:'application/json',content:Buffer.from(JSON.stringify({...page,scopeVersion}))};
         yield {path:'summary.md',mediaType:'text/markdown',content:Buffer.from('Own backup')};}
       const archive=await writeHandoverArchive({directory,header:{format:'yuyoufang-data',version:1,packageId,packageVersion:1,
         createdAt:new Date().toISOString(),purpose:settings.purpose??'backup',source:{serverId:settings.sourceServerId??serverId,accountId:settings.accountId??'parent'},
-        selection:{childIds:[childId],modules:settings.allCore?['care','profile','tasks','sources']:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
+        selection:{childIds:[childId],modules:settings.allCore?['care','profile','tasks','sources','chat']:['care'],period:null}},entries:entries(),signingKey:settings.signed?keys.privateKey:undefined,
         coverage:()=>pages.map(page=>({section:page.section,childId:page.childId,scopeVersion,items:page.items.length,complete:true}))});
       const bytes=await readFile(archive.path),archiveSha256=hash(bytes),uploadId=randomUUID();
       if(settings.issued)issued.add(JSON.stringify([owner,packageId,archive.manifestSha256,archiveSha256]));
@@ -158,7 +165,12 @@ test('verified personal backups preview without disclosure and restore scoped or
       await disposeUpload(request);
     }
     // Restoring the original uses the observed versions and never edits a separate imported copy.
-    const request=await stage({issued:true,allCore:true}), preview=await compare(request);
+    const request=await stage({signed:true,issued:true,allCore:true}), preview=await compare(request);
+    const chatQuery = {...request,module:'chat',includeRestoreTarget:true};
+    const beforeChat = await service.compareOriginal('parent',chatQuery,new AbortController().signal);
+    assert.equal(beforeChat.items[0].state,'backup_newer',beforeChat.items[0].changedFields.join(', '));
+    assert.equal(beforeChat.items[0].localVersion,0);
+    assert.equal(JSON.stringify(beforeChat).includes(originalChat.text),false);
     const sourceQuery={...request,module:'sources' as const,includeRestoreTarget:true as const};
     const sourcePreview=await service.compareOriginal('parent',sourceQuery,new AbortController().signal);
     assert.equal(sourcePreview.items.find(row=>row.id===editedSource.id)?.state,'local_newer');
@@ -171,8 +183,8 @@ test('verified personal backups preview without disclosure and restore scoped or
       {confirm:true,action:'complete',expectedVersion:originalTask.version,note:''});
     const restoreCommand = (opId:string) => ({opId,uploadId:request.uploadId,expectedUploadVersion:request.expectedUploadVersion,
       acceptedManifestSha256:preview.manifestSha256,restoreOriginal:true,resolutionOnly:true,
-      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['care','profile','tasks','sources']}],
-      resolutions:[...rows.map((row,i)=>({sourceChildId:childId,section:'care',resourceId:row.id,
+      targets:[{sourceChildId:childId,target:{childId,spaceId:null},sections:['care','profile','tasks','sources','chat']}],
+      resolutions:[{sourceChildId:childId,section:'chat',resourceId:originalChat.id,resolution:{mode:'replace_current',targetId:originalChat.id,expectedVersion:0}},...rows.map((row,i)=>({sourceChildId:childId,section:'care',resourceId:row.id,
         resolution:{mode:i===2?'restore_deleted':'replace_current',targetId:row.id,expectedVersion:i===2?row.version+1:i===1?newer.version:row.version}})),
         {sourceChildId:childId,section:'profile',resourceId:childId,resolution:{mode:'replace_current',targetId:childId,expectedVersion:editedProfile.version}},
         {sourceChildId:childId,section:'tasks',resourceId:originalTask.id,resolution:{mode:'replace_current',targetId:originalTask.id,expectedVersion:completedTask.version}},
@@ -205,7 +217,9 @@ test('verified personal backups preview without disclosure and restore scoped or
     assert.equal((await worker.background.process(delivery)).state,'completed');
     const done=await service.get('parent',first.id);
     assert.equal(done.state,'completed',done.error??JSON.stringify(done));
-    assert.deepEqual(done.counts,{created:3,updated:4,conflict:1,skipped:0});
+    assert.deepEqual(done.counts,{created:4,updated:4,conflict:1,skipped:0});
+    assert.deepEqual(await chat.getOriginalMessageForUser('parent',childId,originalChat.id),originalChat);
+    assert.equal((await service.compareOriginal('parent',chatQuery,signal.signal)).items[0].state,'unchanged');
     const afterSources=await service.compareOriginal('parent',sourceQuery,signal.signal);
     const revived=afterSources.items.find(row=>row.id===removedSource.id)?.targetId;
     assert.ok(revived && revived!==removedSource.id);

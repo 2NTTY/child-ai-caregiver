@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { documentChangeSchema, documentExportSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema } from "../src/shared/family-documents.ts";
 import type { FamilyDocumentStore } from "./family-document-store.ts";
+import { projectDocumentExport } from "../src/shared/document-export-view.ts";
 import { renderFamilyDocumentPdf } from "./family-document-pdf.ts";
 import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
@@ -59,13 +60,16 @@ export async function handleFamilyDocumentRequest(request: Request, userId: stri
       const input = documentExportSchema.parse(raw), snapshot = await store.exportSnapshot(userId, childId, id!, input);
       if (!snapshot) return apiError("not_found", "沒有可匯出的快照。", 404);
       // PDF formatting can be slow; no family lock is held while rendering.
-      const bytes = await renderFamilyDocumentPdf(snapshot, input);
+      const response = url.searchParams.get("view") === "content"
+        ? jsonResponse({ preview: projectDocumentExport(snapshot, input) })
+        : new Response(new Uint8Array(await renderFamilyDocumentPdf(snapshot, input)), { headers: {
+          "content-type": "application/pdf", "cache-control": "no-store", "content-disposition": 'attachment; filename="family-document.pdf"',
+        } });
       const current = await store.exportSnapshot(userId, childId, id!, input);
       if (!current || current.sourceBasis !== snapshot.sourceBasis || current.id !== snapshot.id || current.version !== snapshot.version)
         return apiError("source_changed", "來源或版本已改變，請重新核對。", 409);
       if (!await isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
-      return new Response(new Uint8Array(bytes), { headers: { "content-type": "application/pdf", "cache-control": "no-store",
-        "content-disposition": 'attachment; filename="family-document.pdf"' } });
+      return response;
     }
     const parsed = id ? changeSchema.parse(raw) : createSchema.parse(raw);
     if ('expectedBasis' in parsed && parsed.expectedBasis) {

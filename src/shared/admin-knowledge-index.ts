@@ -11,3 +11,20 @@ export const adminIndexBatchSchema = z.object({ id: z.uuid(), state: z.enum(['ru
 export const adminIndexBatchPageSchema = z.object({ items: z.array(adminIndexBatchSchema).max(20), nextCursor: z.string().min(1).max(2048).nullable() }).strict();
 export const adminIndexBatchReplySchema = z.object({ batch: adminIndexBatchSchema.nullable() }).strict();
 export const indexVersionTargetSchema = adminIndexBatchSchema.shape.targets.element.pick({ versionId: true, versionHash: true });
+
+
+// Fits the existing 64 KiB HTTP transport while each worker still processes at most 50 versions.
+export const indexGroupParts = 8;
+export const indexGroupTargetLimit = indexGroupParts * indexTargetLimit;
+export const indexGroupCreateSchema = z.strictObject({opId:z.uuid(),
+  targets:z.array(indexVersionTargetSchema).min(indexTargetLimit+1).max(indexGroupTargetLimit)})
+  .refine(value=>new Set(value.targets.map(target=>target.versionId)).size===value.targets.length);
+export const indexGroupControlSchema = z.strictObject({opId:z.uuid(),versions:z.array(z.int().positive()).min(2).max(indexGroupParts)});
+export function indexGroupTargetBytes(targets:readonly z.infer<typeof indexVersionTargetSchema>[]) {
+  return new TextEncoder().encode(JSON.stringify(targets.map(t=>[t.versionId,t.versionHash])));
+}
+export const indexGroupViewSchema = z.strictObject({id:z.uuid(),targetDigest:hash,parts:z.array(z.strictObject({
+  id:z.uuid(),controlVersion:z.int().positive(),state:adminIndexBatchSchema.shape.state,total:z.int().positive().max(indexTargetLimit),
+  completed:z.int().nonnegative(),failed:z.int().nonnegative(),
+})).min(2).max(indexGroupParts)});
+export const indexGroupReplySchema=z.strictObject({group:indexGroupViewSchema.nullable()});
