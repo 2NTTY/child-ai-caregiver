@@ -17,8 +17,8 @@ export function createFirestoreOperatorEmbeddingUsage(options: FirestoreDomainOp
       const key = knowledgeHash(actor), request: DurableAiUsageRequest = { kind: "embedding", rootRunId: actor.operationId,
         attemptKey: "operator-embedding:" + sequence, bindingFingerprint: sponsor ? knowledgeHash([key, sponsor.binding]) : key, requestFingerprint: knowledgeHash([actor, sequence]),
         userId: sponsor?.userId ?? (actor.kind === "corpus_maintenance" ? KNOWLEDGE_MAINTENANCE_PAYER : actor.actorId),
-        ...(sponsor ? { budgetPurpose: "knowledge_maintenance" } : {}),
-        childId: "00000000-0000-0000-0000-000000000000", model: KNOWLEDGE_EMBEDDING.model, deadlineAtMs, userLimit: sponsor ? Math.min(userLimit, sponsor.dailyLimit) : userLimit, globalLimit };
+        ...(sponsor ? { budgetPurpose: "knowledge_maintenance", maintenanceLimit: userLimit } : {}),
+        childId: "00000000-0000-0000-0000-000000000000", model: KNOWLEDGE_EMBEDDING.model, deadlineAtMs, userLimit: sponsor?.dailyLimit ?? userLimit, globalLimit };
       const admitted = await usage.reserve(request, actor.kind);
       if (admitted.decision === "quota_exceeded") return false;
       if (admitted.decision !== "execute") throw new Error("knowledge_embedding_result_unknown");

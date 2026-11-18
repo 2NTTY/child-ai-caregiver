@@ -5,6 +5,7 @@ import { FirestoreAiUsage, type FirestoreAiUsageOptions } from '../server/firest
 import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
+import { createFirestoreOperatorEmbeddingUsage } from '../server/firestore-embedding-usage.ts';
 import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
 import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 
@@ -33,6 +34,29 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('sponsored corpus ceiling counts maintenance separately while the owner daily total still gates all calls', async () => {
+  const f = firestoreUsageFixture(now);
+  const usage = new FirestoreAiUsage({ ...f.options, namespace: f.options.namespace + '_ai_usage', billingSource: 'personal' });
+  const uid = 'synthetic-sponsor', deadline = Date.now() + 60000;
+  await usage.reserve(request({ userId: uid }));
+  const reserve = (sequence: number, dailyLimit: number, maintenanceLimit: number) =>
+    createFirestoreOperatorEmbeddingUsage(f.options, deadline, { userId: uid, dailyLimit, binding: 'original-grant' })
+      .reserve({ kind: 'corpus_maintenance', actorId: 'operator:knowledge-maintenance',
+        operationId: '00000000-0000-4000-8000-' + String(sequence).padStart(12, '0') }, maintenanceLimit, 100);
+  assert.equal(await reserve(1, 3, 1), true);
+  assert.equal(await reserve(2, 3, 1), false);
+  assert.equal(await reserve(3, 2, 8), false);
+  assert.equal((await usage.getForUser(uid, [])).maintenanceFinance?.unsettledAttempts, 1);
+  const old = request({ kind: 'embedding', userId: 'previous-sponsor', attemptKey: 'old-corpus',
+    budgetPurpose: 'knowledge_maintenance', userLimit: 16 });
+  await usage.reserve(old, 'corpus_maintenance');
+  const split = { ...old, userLimit: 48, maintenanceLimit: 16 };
+  assert.equal((await usage.reserve(split, 'corpus_maintenance')).decision, 'lookup');
+  assert.equal((await usage.record(split, { kind: 'embedding', outcome: 'succeeded', inputTokens: 1,
+    billableCharacters: 3, durationMs: 4 })).record?.outcome, 'succeeded');
+  assert.equal((await usage.getForUser(old.userId)).attempts, 1);
+});
 
 test('activity counters describe original admissions; a review retry counts once as a model attempt', async () => {
   const f = firestoreUsageFixture(now), day = '2026-10-09';

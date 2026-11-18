@@ -18,7 +18,7 @@ const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
 const sourceSchema = z.enum(['platform', 'personal']);
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
-const requestSchema = z.object({ budgetPurpose: z.literal('knowledge_maintenance').optional(), kind: z.enum(['model', 'embedding']).optional(), rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
+const requestSchema = z.object({ budgetPurpose: z.literal('knowledge_maintenance').optional(), maintenanceLimit: integer.min(1).max(1000).optional(), kind: z.enum(['model', 'embedding']).optional(), rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
   requestFingerprint: fingerprint, userId: id, childId: id, model: id, deadlineAtMs: integer.min(1),
   userLimit: integer.min(1).max(1000), globalLimit: integer.min(1).max(10000) }).strict();
 const recordSchema = z.union([
@@ -128,7 +128,15 @@ export class FirestoreAiUsage implements DurableAiUsage {
   }
   #attempt(id: string, snapshot: DocumentSnapshot, request: DurableAiUsageRequest) {
     const state = this.#open(id, snapshot, attemptSchema);
-    if (canonical(comparable(state.request)) !== canonical(comparable(request)) || state.billingSource !== this.#source) reject('attempt_conflict');
+    // Older sponsored embeddings recorded the smaller of the two limits. Their receipt
+    // remains lookup-only after the split, including settlement after midnight.
+    let original: DurableAiUsageRequest = request;
+    if (state.request.maintenanceLimit === undefined && request.maintenanceLimit !== undefined
+      && this.#source === 'personal' && request.kind === 'embedding' && request.budgetPurpose === 'knowledge_maintenance') {
+      const { maintenanceLimit, ...legacy } = request;
+      original = { ...legacy, userLimit: Math.min(request.userLimit, maintenanceLimit) };
+    }
+    if (canonical(comparable(state.request)) !== canonical(comparable(original)) || state.billingSource !== this.#source) reject('attempt_conflict');
     if (state.day !== this.#day(state.reservedAtMs) || state.reservedAtMs >= request.deadlineAtMs) reject('invalid_stored_usage');
     return state;
   }
@@ -156,6 +164,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
       || !['query_embedding', 'corpus_maintenance'].includes(embeddingPurpose))) reject('invalid_request');
     if (activity && (request.kind === 'embedding' || !MODEL_USAGE_ACTIVITIES.includes(activity.activity)
       || typeof activity.retry !== 'boolean')) reject('invalid_request');
+    if (request.maintenanceLimit !== undefined && (this.#source !== 'personal' || embeddingPurpose !== 'corpus_maintenance'
+      || request.budgetPurpose !== 'knowledge_maintenance')) reject('invalid_request');
     const dimension = request.kind !== 'embedding' ? 'model' : embeddingPurpose === 'query_embedding' ? 'queryEmbedding'
       : embeddingPurpose === 'corpus_maintenance' ? 'documentEmbedding' : 'otherEmbedding';
     return this.#database.runTransaction(async transaction => {
@@ -175,7 +185,9 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const detail = await this.#detail(transaction, globalId);
       if (request.budgetPurpose === 'knowledge_maintenance' && this.#source === 'personal') {
         const ownerDetail = await this.#detail(transaction, userId);
-        ownerDetail.value.sponsoredMaintenance = (ownerDetail.value.sponsoredMaintenance ?? 0) + 1;
+        const maintenance = ownerDetail.value.sponsoredMaintenance ?? 0;
+        if (request.maintenanceLimit !== undefined && maintenance >= request.maintenanceLimit) return { decision: 'quota_exceeded' };
+        ownerDetail.value.sponsoredMaintenance = maintenance + 1;
         detail.value.sponsoredMaintenance = (detail.value.sponsoredMaintenance ?? 0) + 1;
         ownerDetail.save();
       }

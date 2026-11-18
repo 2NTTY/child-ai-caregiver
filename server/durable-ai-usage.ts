@@ -8,6 +8,8 @@ export interface DurableAiUsageRequest {
   /** Missing kind is accepted only as the legacy model representation. New callers set it explicitly. */
   kind?: 'model' | 'embedding';
   budgetPurpose?: 'knowledge_maintenance';
+  /** A sponsored corpus embedding also checks this cap against the owner's maintenance subtotal. */
+  maintenanceLimit?: number;
   rootRunId: string;
   attemptKey: string;
   /** Hash of the original complete root binding and generation. */
