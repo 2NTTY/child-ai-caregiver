@@ -134,6 +134,20 @@ test('confirmed embedding pricing uses one stated unit and retains sub-micro amo
 });
 
 
+test('one invoice line can settle only one original attempt across UTC days and payers', () => {
+  function row(day: string, payer: 'platform' | 'personal', reference: string) {
+    return { day, payer, currency: 'HKD', attempts: [{ rootRunId: day, attemptKey: payer,
+      model: 'test-model', settlement: { reference, micros: 27 } }] };
+  }
+  const first = row('2026-10-09', 'platform', 'billing-account/invoice/line-1');
+  const next = row('2026-10-10', 'platform', 'billing-account/invoice/line-2');
+  assert.deepEqual(readFinancialEvidence(JSON.stringify([first, next])), [first, next]);
+  for (const payer of ['platform', 'personal'] as const) {
+    const duplicate = row('2026-10-10', payer, first.attempts[0]!.settlement.reference);
+    assert.throws(() => readFinancialEvidence(JSON.stringify([first, duplicate])), /Invalid AI_USAGE_RECONCILIATION_JSON/);
+  }
+});
+
 function globalCounter(f: ReturnType<typeof firestoreUsageFixture>, day = '2026-10-09') {
   const id = 'daily_' + agentBudgetFingerprint([f.options.billingSource, day, null]);
   const path = `${f.options.namespace}/${id}`;
