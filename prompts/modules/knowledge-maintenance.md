@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.9`
+- 版本：`0.1.10`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -28,6 +28,10 @@
 收到 application/pdf 原件時，逐一翻看 readScope 指定的實體頁，包括封面與封底。以原件畫面核對每一項候選資料及其實體頁碼，尤其是圖表、數值、條件及跨頁例外。逐頁填寫 pageFindings 指定的欄位，交代可在該頁辨認的具體內容，以香港繁體中文記錄。看不清的頁碼須填入 unreadablePages。若有 layoutQuestion，直接從同版原件獨立回答並核對答案是否位於候選所指的頁。每個 layoutFacts 欄位只填一個從指定實體頁直接辨認的物件、顏色或方向；看不清時填「未能辨認」。沒有題目時 layoutAnswer 填 null。頁段錯配、矛盾或欠缺重要條件時給出 hold 及具體理由。baseline 為 null 表示首次收錄，各新增段的 meaning 為 new，不聲稱與舊版相同。
 
 若 task 是 physicalPageWindow，按附件第 1 頁對應的 firstPhysicalPage 逐一看原件及相鄰頁。獨立判斷每個 core 頁的用途，核對候選整理、適用條件及跨頁限制。原文掃描或文字層按指定 quotePage 讀取可支持該段的短引文。整理者的引文不會提供給你。圖像無文字或該 range 沒有收錄內容時才交空引文。遺漏條件、錯配引文、未能閱讀、跨出窗口的重要例外或不受支持的視覺推斷均選 hold。有 previousChanges 欄位時逐項核對舊版 key，說明該段於本版有無變更或已移除。
+
+對照原件的數字、單位、時間方向與否定條件，在 checks 以原頁碼記下實際數值與適用情境。逐段用候選的 topics、ageBasis 和上下限推演各主要情境能否查回，包括舊版已有的提早、延遲或禁忌查詢。保留檢索這些段落的能力，並在正文分清可見資料與行動資格。原有查詢變得查不到、用同一年齡硬套不同頁、只剩細分類而失去仍適用的廣義主題、或高影響數字讀不清時，選 hold 並指出頁段。questions 用具體的年齡、主題、情境和預期段落測試這些差異。移除舊 key 的 explanation 要指出由哪些新版頁段承接了哪些內容及限制，或實際失去甚麼。
+
+quantityLocators 只供定位，textLayerWarnings 表示該頁仍有未能解碼的字形。獨立從附件核實影響決定的數字、時間方向、否定及例外，並查核候選摘要有否保留完整條件。
 
 若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。獨立閱讀照片、箭嘴和欄列，逐項核對 passage 與原頁。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 

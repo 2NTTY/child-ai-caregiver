@@ -125,6 +125,32 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
     "semantic approval cannot erase the server-verified changed rule dependency");
 });
 
+test("a destination comparison keeps its baseline while an empty local store validates only additions", async () => {
+  const old = candidate();
+  const edition = await prepareKnowledgeMaintenance({ candidate: old, baseline: null, fetchedAt,
+    growthRules: [], completeText: provider([]) });
+  const baseline = { versionId: "c3000da1-1435-422f-9000-000000000001", versionHash: edition.versionHash,
+    observationHash: old.observationHash, source: edition.source };
+  const next = { ...old, observed: { ...old.observed, text: "Revised instructions and additional material." } };
+  next.observationHash = observationHash(next.observed);
+  const calls: Parameters<Completion>[0][] = [];
+  const options = { fetchedAt: async () => fetchedAt, growthRules: [], completeText: provider(calls),
+    comparison: { destination: "official-site", baseline }, async savePrepared(_: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance) {
+      const target = prepared.provenance.destinationReview!;
+      assert.equal(target.assessment.comparedVersionId, baseline.versionId);
+      assert.equal(target.previousObservationHash, baseline.observationHash);
+      assert.deepEqual(target.assessment.changes.map(c => c.meaning).sort(), ["new", "removed"]);
+      assert.equal(prepared.assessment.comparedVersionId, null);
+      assert.deepEqual(prepared.assessment.changes.map(c => c.meaning), ["new"]);
+    } };
+  const result = await createModelKnowledgeReviewPort({ ...options, baseline: async () => null }).review(next, new AbortController().signal);
+  assert.equal(result.previousObservationHash, null);
+  assert.equal(JSON.parse(calls[1]!.user).binding.comparedHash, baseline.versionHash);
+  await assert.rejects(createModelKnowledgeReviewPort({ ...options, baseline: async () => baseline }).review(next, new AbortController().signal),
+    /knowledge_destination_baseline_conflict/u);
+  assert.equal(calls.length, 2);
+});
+
 test("grouped PDF sections require one keyed summary for each physical page in its range", () => {
   const contract = pdfOrganizationContract([{id:"u1",page:5,pageEnd:6}]);
   const range = contract.ranges[0]!;
@@ -137,6 +163,10 @@ test("grouped PDF sections require one keyed summary for each physical page in i
   assert.throws(() => parse({physicalPage1:"Wrong physical page",physicalPage6:"Figure"}));
   assert.throws(() => parse({physicalPage6:"Figure"}));
   assert.match(parse({physicalPage6:"Figure",physicalPage5:"Introduction"}).units[0]!.text,/第 5 頁　Introduction\n第 6 頁　Figure/u);
+  const mapped = pdfOrganizationContract([{id:"u1",page:5,pageEnd:6}], [], ["feeding", "sleep"]);
+  const retained = mapped.parse({ranges:{[range.key]:{...group,priorTopicMatches:{feeding:true,sleep:false},
+    pageText:{physicalPage5:"Opening",physicalPage6:"Food preparation"}}},nativeCoverage});
+  assert.deepEqual(retained.units[0]!.applicability.topics, ["feeding", "care"]);
 });
 
 test("the registered visual sample rejects wrong fruit and disagreement independently of an approval", () => {
