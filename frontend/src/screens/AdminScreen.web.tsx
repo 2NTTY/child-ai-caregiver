@@ -37,11 +37,19 @@ function displayMoney(currency: string, micros: string) {
 }
 function UsageDetails({ usage }: { usage: AdminUsage }) {
   const { breakdown, finance } = usage;
+  const activities = breakdown?.activities;
+  const labels = { generate: '普通生成', delegate: '委派', review: '審核', revise: '修訂', summary: '摘要', compact: '壓縮' } as const;
   const tokenSubtotal = (value: number) => value === 0 && usage.unknownUsageAttempts > 0 ? '未確認' : String(value);
   return <>
     <Text>已預留 {usage.attempts} 次嘗試。已回報輸入 {tokenSubtotal(usage.inputTokens)}、輸出 {tokenSubtotal(usage.outputTokens)}、快取 {tokenSubtotal(usage.cachedTokens)} tokens。用量未完整 {usage.unknownUsageAttempts} 次。</Text>
     {breakdown ? <Text>生成 {breakdown.model} 次，查詢向量 {breakdown.queryEmbedding} 次，文件向量 {breakdown.documentEmbedding} 次。其他向量 {breakdown.otherEmbedding} 次，未分類 {breakdown.unclassified} 次。
       {breakdown.embeddingCharacters !== null ? `向量計費字元已回報 ${breakdown.embeddingCharacters}（${breakdown.embeddingCharacterReports} 次）。` : '向量計費字元未有回報。'}</Text> : null}
+    {activities ? <View>
+      {(Object.keys(labels) as (keyof typeof labels)[]).filter(key => activities[key] !== undefined).map(key =>
+        <Text key={key}>{labels[key]} {activities[key]} 次</Text>)}
+      {activities.retry !== undefined ? <Text>上述生成嘗試中有 {activities.retry} 次重試。</Text> : null}
+      {activities.tool !== undefined ? <Text>獲准執行的工具 {activities.tool} 次。</Text> : null}
+    </View> : null}
     {finance?.estimates.length ? finance.estimates.map(item => <Text key={item.priceVersion}>估算小計 {displayMoney(item.currency, item.micros)}（{item.attempts} 次，價目 {item.priceVersion}）</Text>)
       : <Text>費用估算未知。</Text>}
     {finance?.settlement.status === 'settled' ? <Text>已結算小計 {displayMoney(finance.settlement.currency, finance.settlement.micros)}（{finance.settlement.attempts} 次）</Text>
