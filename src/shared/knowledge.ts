@@ -40,6 +40,8 @@ export interface KnowledgeChunkInput {
   originalText?: string;
   /** Source position is the original for textless material. Transcriptions are independently checked against the page image. */
   originalKind?: "page_excerpt" | "page_transcription" | "visual_page";
+  /** Physical page of the evidence within a section that may span multiple pages. */
+  excerptPage?: number;
   pageStart?: number;
   pageEnd?: number;
   text: string;

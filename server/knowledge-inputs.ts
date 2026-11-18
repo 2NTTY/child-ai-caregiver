@@ -49,7 +49,7 @@ const sourceSchema = z.strictObject({
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
   validUntil: date.nullable().optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
   chunks: z.array(z.strictObject({ key: id, treatment: chunkTreatmentSchema.optional(), section: text(240), sourceExcerpt: z.union([text(300), z.literal("")]),
-    originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), text: text(4000),
+    originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
     originalText: text(4000).optional(), pageStart: z.number().int().min(1).optional(), pageEnd: z.number().int().min(1).optional(),
     keywords: z.array(text(80)).min(1).max(24), applicability }).refine(chunk => chunk.originalKind === "visual_page"
       ? !chunk.sourceExcerpt && !chunk.originalText : Boolean(chunk.sourceExcerpt.trim()))).min(1).max(32),
@@ -62,6 +62,9 @@ const sourceSchema = z.strictObject({
       ctx.addIssue({ code: 'custom', message: 'Structured values require exact source text' });
     if (chunk.originalKind && value.extraction?.format !== "text_pdf")
       ctx.addIssue({ code: "custom", message: "Invalid original representation" });
+    if (chunk.excerptPage !== undefined && (!chunk.originalKind || !chunk.pageStart || !chunk.pageEnd ||
+      chunk.excerptPage < chunk.pageStart || chunk.excerptPage > chunk.pageEnd))
+      ctx.addIssue({ code: "custom", message: "The physical evidence page must belong to the reviewed PDF section" });
     if (value.extraction?.format === "text_pdf" && ((!chunk.originalText && chunk.originalKind !== "visual_page") || !chunk.pageStart || !chunk.pageEnd))
       ctx.addIssue({ code: "custom", message: "PDF chunks require original text and page coverage" });
     if ((chunk.pageStart === undefined) !== (chunk.pageEnd === undefined)

@@ -194,7 +194,11 @@ export function assembleKnowledgePdfWindows(input: {
     sourceId: candidate.watchId, url: doc.url, title: doc.title, publisher: candidate.definition.publisher,
     classification: candidate.definition.classification, sourcePublishedAt: doc.sourcePublishedAt, sourceUpdatedAt: doc.sourceUpdatedAt,
     sourceDateText: doc.sourceDateText, fetchedAt: input.fetchedAt, termsUrl: candidate.definition.termsUrl, extraction: { ...extraction, complete: true },
-    chunks: windows.flatMap(w => w.chunks)
+    chunks: windows.flatMap(w => w.chunks.map(chunk => {
+      const location = w.originalLocations[chunk.key];
+      if (!location) reject("knowledge_window_range_invalid");
+      return { ...chunk, excerptPage: location.physicalPage };
+    }))
   });
   const before = new Map(baseline?.source.chunks.map(c => [c.key, c]) ?? []), after = new Map(source.chunks.map(c => [c.key, c]));
   const previousChanges = Object.assign({}, ...windows.map(w => w.previousChanges)) as WindowReading["previousChanges"];
