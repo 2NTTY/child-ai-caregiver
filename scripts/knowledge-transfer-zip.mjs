@@ -29,8 +29,13 @@ const integrity = () => failure('knowledge_archive_integrity_failed');
 function decode(bytes) { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
 // Only the envelope identity is checked here; source/vector schemas and authorization belong to preflight callers.
 function editionIdentity(value) {
+  if (value?.kind === 'published_reference') {
+    const ref = selectedSchema.extend({ kind: z.literal('published_reference') }).strict().safeParse(value);
+    if (!ref.success) reject();
+    return { sourceId: ref.data.sourceId, versionHash: ref.data.versionHash };
+  }
   if (!value || typeof value !== 'object' || Array.isArray(value)
-    || Object.keys(value).sort().join(',') !== 'embeddings,source,versionHash'
+    || !['embeddings,source,versionHash', 'embeddings,library,source,versionHash'].includes(Object.keys(value).sort().join(','))
     || !value.source || typeof value.source !== 'object' || Array.isArray(value.source)
     || !sourceId.safeParse(value.source.sourceId).success || !hash.safeParse(value.versionHash).success) reject();
   return { sourceId: value.source.sourceId, versionHash: value.versionHash };

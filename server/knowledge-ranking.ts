@@ -87,12 +87,23 @@ function matches(query: ReadonlySet<string>, text: string): number {
   return count;
 }
 
+/** A dated or alphanumeric lookup must match the recorded identifier in full. */
+export function structuredQueryMatches(query: string, treatment: KnowledgeCandidate['treatment']) {
+  if (treatment?.kind !== 'structured') return true;
+  const identifiers = (text: string) => (text.normalize('NFKC').toLowerCase().match(/[a-z0-9]+(?:[-/.][a-z0-9]+)*/gu) ?? [])
+    .filter(word => /\d/u.test(word) && (/[a-z/.-]/u.test(word) || word.length >= 3));
+  const required = identifiers(query);
+  const values = new Set(treatment.fields.flatMap(field => identifiers(field.value)));
+  return required.every(word => values.has(word));
+}
+
 function keywordScore(query: ReadonlySet<string>, candidate: KnowledgeCandidate): number {
   return matches(query, candidate.title) * 4
     + matches(query, candidate.section) * 3
     + candidate.keywords.reduce((score, keyword) => score + matches(query, keyword) * 5, 0)
     + candidate.applicability.topics.reduce((score, topic) => score + matches(query, topic) * 4, 0)
-    + matches(query, candidate.text);
+    + matches(query, candidate.text)
+    + (candidate.treatment?.kind === 'structured' ? candidate.treatment.fields.reduce((sum, field) => sum + matches(query, field.label) * 4 + matches(query, field.value) * 8, 0) : 0);
 }
 
 /**
@@ -126,13 +137,13 @@ export function rankKnowledge(
   }
 
   if (candidates.length && candidates.every(candidate => candidate.rankScore !== undefined)) return candidates
-    .slice(0, limit).map(({ distance: _distance, rankScore: _rankScore, ...item }) => item);
+    .filter(item => item.treatment?.kind !== 'excluded' && structuredQueryMatches(query, item.treatment)).slice(0, limit).map(({ distance: _distance, rankScore: _rankScore, ...item }) => item);
   const queryTokens = knowledgeTokens(query, true);
   const ageTokens = questionAgeTokens(query);
   if (queryTokens.size === 0) return [];
-  const items = [...unique.values()];
+  const items = [...unique.values()].filter(item => item.treatment?.kind !== 'excluded' && structuredQueryMatches(query, item.treatment));
   const vectorRank = items
-    .filter(candidate => candidate.distance !== null && candidate.distance <= maxDistance)
+    .filter(candidate => candidate.treatment?.kind !== 'structured' && candidate.distance !== null && candidate.distance <= maxDistance)
     .sort((left, right) => left.distance! - right.distance! || compareId(left.chunkId, right.chunkId));
   // Require substantive topic match (queryTokens > 0) before age-modifier tokens can boost specificity.
   const keywordRank = items

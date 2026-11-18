@@ -46,7 +46,7 @@ export const agentPendingPageSchema = z.object({
   })).max(20),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,1024}$/).nullable(),
 }).strict();
-const answerKind = z.enum(["caregiving", "safety_help", "clarification", "operation", "record_restatement", "private_reference"]);
+const answerKind = z.enum(["public_information", "caregiving", "safety_help", "clarification", "operation", "record_restatement", "private_reference"]);
 const answerParagraph = z.object({ kind: answerKind.optional(), text: text(1800), citationIds: z.array(z.string().min(1).max(80)).max(6) }).strict();
 export const agentAnswerSchema = z.object({
   kind: z.enum([...answerKind.options, "mixed"]),
@@ -71,6 +71,7 @@ export interface AgentPresentation {
   outcome?: "no_action";
   citations: KnowledgeEvidence[];
   privateSourceCitations?:PrivateSourceCitation[];
+  liveCitations?: import('./live-source-citation.ts').LiveSourceCitation[];
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
 }
 export interface ProductAgentResult extends AgentPresentation {
