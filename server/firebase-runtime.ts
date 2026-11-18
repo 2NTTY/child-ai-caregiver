@@ -12,6 +12,7 @@ import { readContextBasis } from './firestore-context-basis.ts';
 import { parseSummaryBackgroundBasis } from './private-summary-work.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readFinancialEvidence } from './ai-financial-evidence.ts';
+import { parseSummarySponsor } from './summary-funded-policy.ts';
 import { readAdminUid } from './admin-api.ts';
 import { createKnowledgeIndexBatches } from './firestore-knowledge-index-batches.ts';
 import { createKnowledgeArchiveReceiver } from './admin-knowledge-archive.ts';
@@ -210,6 +211,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
     product = await createFirestoreProductAgent({ ...domain, config: aiConfig, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+      summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;

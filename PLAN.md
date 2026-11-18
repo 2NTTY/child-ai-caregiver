@@ -180,7 +180,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+
+2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。

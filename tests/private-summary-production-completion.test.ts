@@ -19,7 +19,7 @@ import type { SummaryWorkPolicyPort } from '../server/firestore-private-summary-
 
 // A constructor-only synthetic policy exercises the actual production composer and worker.
 // It is deliberately not a production policy or a model/transport integration test.
-test('production scope zero-dispatch transfers once, actual part workers publish full coverage, and completion wakes without a new grant', async () => {
+for (const funding of ['constructor', 'sponsor'] as const) test(funding + ': production scope zero-dispatch transfers once, actual part workers publish full coverage, and completion wakes without a new grant', async () => {
   const original = '\u0001'.repeat(10000), userId = 'owner';
   const f = await privateSummaryPolicyFixture(original, userId);
   const dueAt = new Date(Date.now() - 1000).toISOString();
@@ -74,9 +74,13 @@ test('production scope zero-dispatch transfers once, actual part workers publish
       { ...f.data.tags(b.scope), ...f.data.seal('private-summary-cutover', id, b.scope, privateSummaryCutoverSchema, value, 1) });
   });
   const fragments: { text: string; range: { startUtf16: number; endUtf16: number }; accumulator: string | null }[] = [];
+  const sponsor = await f.authority.runTransaction(userId, f.childId, async b => ({
+    scope: b.scope, generation: b.generation, authorizationVersion: b.authorizationVersion, payer: 'platform' as const,
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(), limits: f.grant.limits, model: config.model,
+  }));
   let priorOutput: string | null = null;
   const product = await createFirestoreProductAgent({ ...f.options, chat: f.chat, care: f.care, memory: f.memory,
-    online: createFirestoreOnlineStore(f.options), config, summaryWorkPolicy: policy,
+    online: createFirestoreOnlineStore(f.options), config, ...(funding === 'sponsor' ? { summarySponsor: sponsor } : { summaryWorkPolicy: policy }),
     async authorizeWorker(b, reference, recipe) {
       const job = await readFirestoreBackgroundClaim(f.data, b, reference);
       return job?.kind === 'memory-refresh' && recipe === 'memory-refresh';
@@ -188,7 +192,7 @@ test('production scope zero-dispatch transfers once, actual part workers publish
   assert.deepEqual(summary.coveredMessageIds, [f.message.id]); assert.equal(summary.lastCoveredMessageId, f.message.id);
   assert.deepEqual(summary.sourcePeriod, { from: f.message.createdAt, to: f.message.createdAt });
   assert.equal(await f.memory.prepareMaintenance(userId, f.childId), null);
-  assert.equal(resolutions, 1);
+  assert.equal(resolutions, funding === 'constructor' ? 1 : 0);
   const wake = final.work.completionWake;
   assert.equal(wake?.scheduling.kind, 'queued');
   if (wake?.scheduling.kind !== 'queued') throw new Error('Expected canonical completion wake');
@@ -197,7 +201,7 @@ test('production scope zero-dispatch transfers once, actual part workers publish
   const afterWake = await f.authority.runTransaction(userId, f.childId, b => readContextBasis(f.data, b));
   assert.equal(afterWake.value.summaryRequest, beforeWake.value.summaryRequest! + 1);
   assert.equal(afterWake.value.summaryPending, true, 'Completion routes a scope hint, not fake coverage acknowledgement');
-  assert.equal(resolutions, 1, 'Completion hint may not resolve a fresh grant');
+  assert.equal(resolutions, funding === 'constructor' ? 1 : 0, 'Completion hint may not resolve a fresh grant');
   assert.deepEqual(await product.summaryWork.readState(userId, f.childId, initial.work.id), final);
   assert.deepEqual((await f.memory.summary(userId, f.childId))!.summary, summary);
 });
