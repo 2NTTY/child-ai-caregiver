@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sharedWriteAttributionSchema } from './shared-write-attribution.ts';
 import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 import type { Query } from '@google-cloud/firestore';
 import type { DocumentSnapshot, DocumentSource } from '../src/shared/family-documents.ts';
@@ -24,6 +25,9 @@ export const firestoreDocumentConcernEventSchema = z.object({ concernId: uuid, c
   id: uuid, at: time, kind: z.enum(['observation', 'confirmed_action']), title: z.string().max(160), text: z.string().max(2000),
   sourceLabel: z.string().max(256), actorUserId: z.string().max(256), recordId: uuid.optional(), taskId: uuid.optional(),
   attentionId: uuid.optional(), attentionVersion: version.optional(), runId: uuid.optional() }).strict();
+
+export const firestoreConcernEventStorageSchema = firestoreDocumentConcernEventSchema.extend({ changedViaShare: sharedWriteAttributionSchema.optional() });
+export const firestoreConcernEventViewSchema = firestoreConcernEventStorageSchema.transform(({ changedViaShare: _authority, ...event }) => event);
 
 export interface FirestoreDocumentReport extends ReportAccumulator { pageAfter?: string }
 
@@ -71,7 +75,7 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
   async function event(b: Binding, concernId: string, id: string, timelineId?: string) {
     const row = await b.transaction.get(data.ref('concern_events', 'concern-event', id)); if (!row.exists) return null;
     if (Object.entries(data.tags(b.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
-    const value = data.open('concern-event', id, b.scope, firestoreDocumentConcernEventSchema, row);
+    const value = data.open('concern-event', id, b.scope, firestoreConcernEventViewSchema, row);
     if (value.id !== id || value.concernId !== concernId || value.childId !== b.scope.childId
       || value.sequence !== row.get('sequence')
       || row.get(value.timelineId ? 'timelineId' : 'concernId') !== (value.timelineId ?? concernId)) domainReject('concern_binding', 500);

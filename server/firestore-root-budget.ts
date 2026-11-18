@@ -1,5 +1,5 @@
 /// <reference lib="es2024.string" />
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import type { Firestore, DocumentSnapshot, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
@@ -30,7 +30,8 @@ const settlementSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('known'), reference: bounded(512) }).strict(), z.object({ status: z.literal('unknown') }).strict(),
 ]);
 const outcomeSchema = z.union([z.object({ status: z.literal('reserved') }).strict(), settlementSchema]);
-const savedAttemptSchema = z.object({ request: attemptSchema, outcome: outcomeSchema }).strict();
+const savedAttemptSchema = z.object({ request: attemptSchema, outcome: outcomeSchema, preparedFingerprint: fingerprint.optional(), preparationTokenHash: fingerprint.optional() }).strict()
+  .refine(value => value.preparedFingerprint === undefined || value.request.kind === 'model');
 const stateSchema = z.object({ bindingFingerprint: fingerprint, generation: integer.min(1), deadlineAtMs: integer.min(1),
   limits: limitsSchema, used: countsSchema, status: z.enum(['active', 'stopped']),
   attempts: z.array(savedAttemptSchema).max(MAX_ROOT_BUDGET_ATTEMPTS) }).strict();
@@ -44,7 +45,7 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function counter(attempt: BudgetAttempt): keyof RootBudgetLimits {
   return attempt.kind === 'model' ? 'modelCalls' : attempt.kind === 'embedding' ? 'queryEmbeddings' : 'toolCalls';
 }
-function entrySnapshot(entry: Stored['attempts'][number]): BudgetAttemptSnapshot { return { ...entry.request, outcome: { ...entry.outcome } }; }
+function entrySnapshot(entry: Stored['attempts'][number]): BudgetAttemptSnapshot { return { ...entry.request, outcome: { ...entry.outcome }, ...(entry.preparedFingerprint ? { preparedFingerprint: entry.preparedFingerprint } : {}) }; }
 
 export interface FirestoreRootBudgetOptions {
   /** Already configured trusted client; its lifecycle remains with the caller. */
@@ -159,10 +160,29 @@ export class FirestoreRootBudget implements DurableRootBudget {
       const key = counter(request);
       if (state.used[key] + request.units > state.limits[key]) reject('budget_exhausted');
       if (state.attempts.length >= MAX_ROOT_BUDGET_ATTEMPTS) reject('attempt_capacity');
-      const entry: Stored['attempts'][number] = { request, outcome: { status: 'reserved' } };
+      const preparationToken = request.kind === 'model' ? randomBytes(32).toString('hex') : undefined;
+      const entry: Stored['attempts'][number] = { request, outcome: { status: 'reserved' },
+        ...(preparationToken ? { preparationTokenHash: hash(preparationToken) } : {}) };
       state.used[key] += request.units; state.attempts.push(entry);
       transaction.set(ref, this.#seal(context, state));
-      return { decision: 'execute', attempt: entrySnapshot(entry), snapshot: this.#snapshot(state, now) };
+      return { decision: 'execute', attempt: entrySnapshot(entry), snapshot: this.#snapshot(state, now),
+        ...(preparationToken ? { preparationToken } : {}) };
+    });
+  }
+  async prepareModelDispatch(input: RootBudgetContext, attempt: BudgetAttempt, expected: string, next: string, preparationToken: string): Promise<RootBudgetSnapshot> {
+    const context = parse(contextSchema, input, 'invalid_context'), request = parse(attemptSchema, attempt, 'invalid_attempt'),
+      expectedFingerprint = parse(fingerprint, expected, 'invalid_fingerprint'), nextFingerprint = parse(fingerprint, next, 'invalid_fingerprint'), ref = this.#ref(context);
+    if (request.kind !== 'model') reject('invalid_attempt');
+    const token = parse(fingerprint, preparationToken, 'invalid_preparation_token');
+    return this.#database.runTransaction(async transaction => {
+      const state = this.#load(context, await transaction.get(ref)), now = this.#now(); this.#active(state, now);
+      const entry = this.#find(state, request);
+      if (!entry) reject('attempt_not_found');
+      if (entry.outcome.status !== 'reserved') reject('settlement_conflict');
+      if (entry.preparationTokenHash !== hash(token)) reject('preparation_owner_conflict');
+      if ((entry.preparedFingerprint ?? entry.request.fingerprint) !== expectedFingerprint) reject('preparation_conflict');
+      entry.preparedFingerprint = nextFingerprint;
+      transaction.set(ref, this.#seal(context, state)); return this.#snapshot(state, now);
     });
   }
   async settle(input: RootBudgetContext, attempt: BudgetAttempt, result: BudgetSettlement): Promise<RootBudgetSnapshot> {

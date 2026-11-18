@@ -48,10 +48,10 @@ export function useWebPushNavigation(owner: ProductionOwner, identity: string | 
         if (!current()) return;
         if (error instanceof WebPushApiError && (error.status === 401 || error.onlineCode === "session_changed")) {
           retainForRecovery = true; owner.handleDomainAccessError({ status: error.status, code: error.onlineCode });
-          callbacks.current.notice("請重新登入，以核對通知的原聊天訊息。");
+          callbacks.current.notice("請重新登入，以開啟通知對應的聊天或待辦。");
         } else {
           retainForRecovery = error instanceof WebPushApiError && (error.status === 0 || error.status >= 500);
-          callbacks.current.notice("通知內容暫未能核對；請重新讀取原聊天或通知歷史。");
+          callbacks.current.notice("通知內容暫未能核對；請重新讀取原聊天、待辦或通知歷史。");
         }
       })
       .finally(() => {

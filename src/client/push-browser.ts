@@ -101,10 +101,18 @@ export async function activatePushBrowser(epoch: string, binding: PushBrowserBin
 export type PushChatMode = "off" | "generic" | "preview";
 export async function setPushBrowserChatPreference(binding: PushBrowserBinding, mode: PushChatMode, restrictOnly = false,
   current: () => boolean = () => true, epoch?: string): Promise<string | null> {
+  return setBrowserPreference("chat-preference", binding, mode, restrictOnly, current, epoch);
+}
+export function setPushBrowserClassTaskPreference(binding: PushBrowserBinding, enabled: boolean, restrictOnly: boolean,
+  current: () => boolean, epoch?: string) {
+  return setBrowserPreference("class-task-preference", binding, enabled ? "generic" : "off", restrictOnly, current, epoch);
+}
+async function setBrowserPreference(type: "chat-preference" | "class-task-preference", binding: PushBrowserBinding,
+  mode: PushChatMode, restrictOnly: boolean, current: () => boolean, epoch?: string) {
   const reg = await registration();
   if (!current()) return null;
   if (!reg) throw failure();
-  const result = await message(reg, { type: "chat-preference", binding, mode, restrictOnly, ...(epoch ? { epoch } : {}) });
+  const result = await message(reg, { type, binding, mode, restrictOnly, ...(epoch ? { epoch } : {}) });
   if (!result.ok) throw failure();
   return result.epoch ?? null;
 }

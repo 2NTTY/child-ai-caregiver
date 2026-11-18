@@ -1,0 +1,31 @@
+{
+  "scope": "S10-W03. Existing official seed corpus through actual Firestore knowledge store, background queue, claims, and index batch processing on a loopback Firestore Emulator.",
+  "revision": "9463f45294a5a64e22c2c705059604af6f07c382",
+  "dateHK": "2026-11-18",
+  "emulator": "cloud-firestore-emulator-v1.22.0",
+  "java": "Eclipse Temurin 21.0.13+9",
+  "setup": {
+    "project": "demo-p4-knowledge",
+    "data": "knowledge/hk-official-seed.json",
+    "review": "Existing repository seed assessments",
+    "modelCalls": 0,
+    "externalNotifications": 0
+  },
+  "observed": {
+    "reviewedSourceVersions": 5,
+    "chunks": 6,
+    "pages": 20,
+    "totalIndexTransactionProcessingMs": 2168,
+    "elapsedMsIncludingScheduledDeferral": 98614,
+    "sameCommandReturnedOriginalBatch": true,
+    "adminListCheckedVersionHashSearchReadyAndUnpublished": true
+  },
+  "otherEvidence": {
+    "groupControl": "151 synthetic version identities formed four jobs and preserved targets on stop, resume and replay (PR #616); Web control and recovery in #617.",
+    "liveMetadata": "Read-only capped count on the production public version collection returned 12 of a maximum of 402 in 407 ms. No family data or production reindex."
+  },
+  "limits": [
+    "The local dispatcher delivers to the real queue handler at scheduledAt, replacing Cloud Tasks transport.",
+    "Measured wall time is a single local run with five real source versions. The 151-version control test and production metadata count do not establish a throughput guarantee for 151 editions on production."
+  ]
+}

@@ -74,9 +74,9 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
     if(s.kind==='class'&&(value.spaceGeneration??null)!==(s.directMembershipGeneration??null))domainReject('space_access_denied',403);
     return value;
   }
-  function classTaskAssignment(spaceId: string, membership: Member) {
+  function classTaskAssignment(spaceId: string, membership: Member, classGeneration?: string) {
     return Object.freeze({ spaceId, userId: membership.userId, membershipId: membership.membershipId,
-      membershipScopeId: membership.teacherSpace?.id ?? spaceId });
+      membershipScopeId: membership.teacherSpace?.id ?? spaceId, ...(classGeneration ? {classGeneration} : {}) });
   }
   function manager(s: Space, m: Member) {
     if ((m.teacherSpace?.managerUserId??s.managerUserId) !== m.userId || m.role !== 'owner') domainReject('space_manager_required', 403);
@@ -152,9 +152,9 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
       actorAuthorizationVersion: b.authorizationVersion, sourceAuthorizationVersion: source.authorizationVersion,
       ...(m.teacherSpace?{teacherSpaceId:m.teacherSpace.id,teacherSpaceVersion:m.teacherSpace.version}:{}) };
     if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
-    return authority.withSharedSource(b, grant.source, { spaceId: s.id, basis: Object.freeze(basis), role: m.role, module: input.module,
+    return authority.withSharedSource(b, grant.source, { spaceId: s.id, membershipId: m.membershipId, basis: Object.freeze(basis), role: m.role, module: input.module,
       modules: Object.freeze([...grant.modules]), mode: input.mode,
-      ...(s.kind === 'class' ? { classMember: classTaskAssignment(s.id, m) } : {}) }, binding =>
+      ...(s.kind === 'class' ? { classMember: classTaskAssignment(s.id, m, s.taskGenerationBound ? s.directMembershipGeneration : undefined) } : {}) }, binding =>
       use(Object.freeze({ transaction: b.transaction, actorUserId: userId, scope: binding.scope, binding,
         role: m.role, module: input.module, includePrivate: false as const, basis: Object.freeze(basis) })));
   }
@@ -225,7 +225,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
   }
   async function finishClassDetach(b:FirestoreAuthorityTransaction,s:Space,parent:Space):Promise<MutationResult<Space>> {
     const old=await read(b.transaction,'shared-membership',key(s.id,b.actorUserId),sharedMembershipSchema,true);
-    const generation=randomUUID(), value=updated(s,{teacherSpaceId:null,directMembershipGeneration:generation,
+    const generation=randomUUID(), value=updated(s,{teacherSpaceId:null,directMembershipGeneration:generation,taskGenerationBound:true,
       managerUserId:b.actorUserId,managerGeneration:randomUUID(),transferTargetUserId:null,
       detachTargetUserId:null,detachManagerGeneration:null,detachTargetMembershipId:null});
     return {value,writes:[write(b.transaction,'shared-space',s.id,value),write(b.transaction,'shared-space',parent.id,updated(parent)),
@@ -252,8 +252,10 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
     inResourceTransaction,
     async classTaskAssigneeStillEligible(tx: Transaction, assignment: ClassTaskAssignment) {
       try {
-        const current = await member(tx, assignment.spaceId, assignment.userId);
-        return current.role !== 'viewer' && current.membershipId === assignment.membershipId
+        const s = await space(tx, assignment.spaceId);
+        const current = await member(tx, assignment.spaceId, assignment.userId, s);
+        return current.role !== 'viewer' && (s.taskGenerationBound ? s.directMembershipGeneration : undefined) === assignment.classGeneration
+          && current.membershipId === assignment.membershipId
           && (current.teacherSpace?.id ?? assignment.spaceId) === assignment.membershipScopeId;
       } catch (error) {
         if (error && typeof error === 'object' && 'code' in error
@@ -272,7 +274,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
         throw error;
       });
       if (membership.role === 'viewer') domainReject('assignee_not_eligible', 400);
-      return classTaskAssignment(access.spaceId, membership);
+      return classTaskAssignment(access.spaceId, membership, access.classMember.classGeneration);
     },
     async plannedClassImportScope(b: FirestoreAuthorityTransaction, classId: string, childId: string) {
       await writableClass(b, classId);
@@ -508,7 +510,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions &
         if(parent.kind!=='teachers')domainReject('teacher_space_required',400);
         if(parentMember.role==='viewer')domainReject('read_only',403);
         basisVersion(parent,input.expectedTeacherVersion);
-        const value=updated(s,{teacherSpaceId:parent.id,directMembershipGeneration:randomUUID(),managerGeneration:randomUUID(),
+        const value=updated(s,{teacherSpaceId:parent.id,directMembershipGeneration:randomUUID(),taskGenerationBound:true,managerGeneration:randomUUID(),
           transferTargetUserId:null,detachTargetUserId:null,detachManagerGeneration:null,detachTargetMembershipId:null});
         return {value,writes:[write(b.transaction,'shared-space',s.id,value),write(b.transaction,'shared-space',parent.id,updated(parent))]};
       });

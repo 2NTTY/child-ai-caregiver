@@ -32,22 +32,24 @@ function CitationReference({ number, source, locate }: { number: number; source:
   return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.title}`} onPress={() => locate(source.id, anchor)} />;
 }
 
-export function CitationText({ children, style, careCitationCount = 0, onOpenCareCitation }: {
+export function CitationText({ children, style, careCitationCount = 0, onOpenCareCitation, materialCount = 0, onOpenMaterial }: {
+  materialCount?:number; onOpenMaterial?:(ordinal:number)=>void;
   children: string; style?: StyleProp<TextStyle>; careCitationCount?: number; onOpenCareCitation?: (ordinal: number) => void;
 }) {
   const context = useContext(CitationContext);
-  if (!context && !onOpenCareCitation) return <Text selectable style={style}>{children}</Text>;
+  if (!context && !onOpenCareCitation && !onOpenMaterial) return <Text selectable style={style}>{children}</Text>;
   const parts: ReactNode[] = [];
-  const pattern = /【([1-9]\d*)】|\[([1-9]\d*)\]|\[照護記錄 ([1-9]\d*)\]/g;
+  const pattern = /【([1-9]\d*)】|\[([1-9]\d*)\]|\[(照護記錄|孩子資料) ([1-9]\d*)\]/g;
   let offset = 0;
   for (const match of children.matchAll(pattern)) {
     if (match[3]) {
-      const ordinal = Number(match[3]);
-      if (!onOpenCareCitation || !Number.isSafeInteger(ordinal) || ordinal > careCitationCount) continue;
+      const ordinal = Number(match[4]);
+      const care = match[3] === '照護記錄', open = care ? onOpenCareCitation : onOpenMaterial;
+      if (!open || !Number.isSafeInteger(ordinal) || ordinal > (care ? careCitationCount : materialCount)) continue;
       const position = match.index!;
       parts.push(children.slice(offset, position));
-      parts.push(<CitationMarker key={position} number={ordinal} markerText={match[0]} label={`查看照護記錄 ${ordinal} 原文`}
-        onPress={() => onOpenCareCitation(ordinal)} />);
+      parts.push(<CitationMarker key={position} number={ordinal} markerText={match[0]} label={`查看${match[3]} ${ordinal} 原文`}
+        onPress={() => open(ordinal)} />);
       offset = position + match[0].length;
       continue;
     }

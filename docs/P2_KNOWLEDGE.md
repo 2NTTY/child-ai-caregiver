@@ -36,6 +36,8 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 這組操作者指令只處理選定的公開版本。選擇檔是 `[{"sourceId":"…","versionHash":"…"}]`。先從 `list` 取得目標，並按實際散布用途核對來源條款。包內每個版本包含原文位置、片段及當時使用的向量。它只涵蓋所選版本，沒有轉移帳戶、私人來源或發布權限。
 
+Web 管理員可在「公共知識 ZIP 匯入台帳」貼上交付者提供的 SHA-256，再選取 ZIP。服務逐版保存草稿及收據。關頁或逾時後，按同一指紋查已保存項目；如有剩餘，選回同一 ZIP 即可接續。大量匯入沿用同一台帳與主機命令。
+
 沿用上述 `node scripts/knowledge.mjs` 前綴及 `--operator team-alias --operator-confirmed`。從受信任的交付渠道取得整個包的 SHA-256。
 
 | 操作 | 指令與結果 |
@@ -47,6 +49,10 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 | 核准後復用向量 | 先用本地版本 ID 完成既有 `review`、`prepare-search`。核實包與向量來自可信操作者後，執行 `archive-publish library.zip --archive-sha256 DIGEST --source ID --version LOCAL_VERSION --hash VERSION_HASH --trusted-vector-origin`。模型、維度、處理版本與輸入相符的向量可在同一次發布復用。缺少相容向量時仍需按既有額度補齊。 |
 
 匯入和發布均不自動呼叫模型。檔案指紋證明交付內容一致；來源內容是否仍適用，由接收端的既有審核、原文觀察及發布條件判定。停止、失敗或隔離還原後，終端機不需要維持開啟；重新取得同一檔案和指紋即可查回批次。
+
+超過 50 個已審核版本的關鍵詞重建可分成一組，一次最多 400 個。每 50 個沿用一個背景批次，整組目標、工作及原操作收據一起提交。關閉後台後 worker 繼續。用首批編號查回整組，再查各批的逐版本結果。整組停止或恢復沿當前控制版本一次提交，已完成及失敗的項目保留原狀。換版後要重建新內容，另選新版本及 hash。
+
+本機可用官方 Firestore Emulator 重現整條重建流程。啟動 loopback emulator（專案 `demo-p4-knowledge`），在同一終端設定 `FIRESTORE_EMULATOR_HOST=127.0.0.1:實際端口`，執行 `node scripts/verify-knowledge-rebuild-emulator.mjs`。腳本在新 namespace 載入倉庫官方種子及既有審核，按原定時間處理工作，最後從管理清單核對版本、索引就緒及發布狀態。工作完成後關閉本次臨時 emulator 即可。[11 月 18 日的規模、耗時及實測範圍](../artifacts/verification/P4_KNOWLEDGE_REBUILD_20261118.json)。
 
 Web 管理後台的公共知識匯入區與 `archive-status` 讀取同一台帳。可翻看每批已提交的來源、版本及失敗位置，或貼上 ZIP 的完整 SHA-256 查回未列出的舊批次。按「停止」後，舊執行者不能再提交。恢復後以原檔及指紋執行 `archive-import`，從上次已保存的位置接續。版本的內容核准與發布沿上表另行操作。
 

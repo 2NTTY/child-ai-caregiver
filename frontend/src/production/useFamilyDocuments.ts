@@ -473,7 +473,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const archive: GrowthArchiveProjection = { ...projectedArchive, reading: { ...reading,
     content: reading.content && reportDocumentIds.includes(reading.content.documentId) ? reading.content : null,
     indexes: reading.indexes.filter(index => reportDocumentIds.includes(index.documentId)) } };
-  const exportReport = async (request: GrowthReportExportRequest, isCurrent: () => boolean = () => true): Promise<GrowthReportExportResult | undefined> => {
+  const readReportExport = async (request: GrowthReportExportRequest, isCurrent: () => boolean, mode: "file" | "preview"): Promise<GrowthReportExportResult | undefined> => {
     const actualPage = latest.current.page;
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);
     const target = actualPage?.items.find(item => item.kind === "growth_report" && findSnapshot(item));
@@ -488,9 +488,15 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         && latest.current.page?.authorityVersion === request.authorityVersion
         && latest.current.page.items.some(item => item.id === target.id && findSnapshot(item));
       try {
-        const blob = await api.exportPdf(env.childId!, target.id, { snapshotId: request.snapshotId, snapshotVersion: request.snapshotVersion,
-          authorityVersion: request.authorityVersion, purpose: request.purpose === "care_handoff" ? "handoff" : request.purpose,
-          includeSources: request.includeSources, includeRevision: request.includeRevision }, signal, env.userId!);
+        const options = { snapshotId: request.snapshotId, snapshotVersion: request.snapshotVersion,
+          authorityVersion: request.authorityVersion, purpose: request.purpose === "care_handoff" ? "handoff" as const : request.purpose,
+          includeSources: request.includeSources, includeRevision: request.includeRevision };
+        if (mode === "preview") {
+          const preview = await api.previewExport(env.childId!, target.id, options, signal, env.userId!);
+          if (valid()) return { state: "ready", message: "已讀取所選版本的匯出內容。", preview };
+          return;
+        }
+        const blob = await api.exportPdf(env.childId!, target.id, options, signal, env.userId!);
         if (!valid()) return;
         const message = await exportBlob(blob, `growth-report-${request.snapshotId}-v${request.snapshotVersion}.pdf`, valid);
         if (!valid()) return;
@@ -503,7 +509,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
           catch (readError) { if (!current() || clearAccess(readError) || !valid()) return; setLoad("error"); }
         }
         if (!current() || !isCurrent()) return;
-        const message = "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。";
+        const message = mode === "preview" ? "未能確認此版本的預覽。請重新讀取報告後再試。" : "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。";
         setNotice(message); return { state: "error", message };
       } finally {
         // Only this request can release its lock, including after access loss.
@@ -512,7 +518,9 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     });
   };
   return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, notice, standard, flushChecks,
-    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, createDocument, exportReport,
+    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, createDocument,
+    exportReport: (request: GrowthReportExportRequest, current: () => boolean = () => true) => readReportExport(request, current, "file"),
+    previewReport: (request: GrowthReportExportRequest, current: () => boolean) => readReportExport(request, current, "preview"),
     refreshReport() { if (standard) change(standard.id, standard.version, "refresh"); },
     refresh() { refresh(); }, markDraft: preparation.actions.markDraft!, discardDraft: preparation.actions.discardDraft! };
 }

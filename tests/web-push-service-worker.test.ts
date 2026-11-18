@@ -213,3 +213,23 @@ test('push worker renders captured content while legacy references still use the
   await f.push({ v: 1, bindingId: binding.id, bindingVersion: 1, deliveryId: randomUUID(), content: { ...content, contentVersion: 'unknown' } });
   assert.equal(f.shown.length, 1);
 });
+
+test('class task opt-in survives restart, opens the original delivery and is independent of chat', async () => {
+  const f = fixture(), epoch = (await f.message({type:'suspend'})).epoch;
+  const binding = {id:randomUUID(), userId:'teacher', version:1};
+  await f.message({type:'activate',epoch,binding});
+  const payload = {v:2,kind:'class_task',bindingId:binding.id,bindingVersion:1,deliveryId:randomUUID()};
+  await f.push(payload); assert.equal(f.shown.length,0);
+  assert.equal((await f.message({type:'class-task-preference',binding,epoch,mode:'generic'})).ok,true);
+  const restarted = fixture(f.state());
+  await restarted.push({...payload,kind:'chat'}); assert.equal(restarted.shown.length,0);
+  await restarted.push({...payload,content:{contentVersion:'web-push-chat-preview-v1',title:'育有方有新訊息',body:'私人內容'}});
+  assert.equal(restarted.shown.length,0);
+  await restarted.push(payload); await restarted.push(payload);
+  assert.equal(restarted.shown.length,1); assert.equal(restarted.shown[0].title,'育有方照護提示');
+  const click = () => restarted.event('notificationclick',{notification:{data:restarted.shown[0].options.data,close(){}}});
+  await click(); assert.equal(new URL(restarted.opened[0]).searchParams.get('pushDelivery'),payload.deliveryId);
+  await restarted.message({type:'class-task-preference',binding,mode:'off',restrictOnly:true,epoch});
+  assert.equal(restarted.shown[0].closed,true);
+  await click(); assert.equal(restarted.opened.length,1);
+});

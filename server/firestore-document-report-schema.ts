@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { documentRequestSchema, documentPeriodSchema, reportCoverageSchema } from '../src/shared/family-documents.ts';
-import { firestoreProfileSchema } from './firestore-care.ts';
+import { firestoreProfileSchema } from './firestore-care-schemas.ts';
 import { firestoreDocumentSourceSchema } from './firestore-family-document-snapshots.ts';
 import type { FirestoreDocumentReport } from './firestore-document-sources.ts';
 

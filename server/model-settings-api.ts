@@ -24,7 +24,7 @@ function v2Settings(value: ModelSettings): ModelSettings {
 function legacySettings(value: ModelSettings): ModelSettings {
   value = v2Settings(value);
   if (value.provider !== 'gemini' || value.model !== PERSONAL_MODEL) throw new ModelSettingsError('client_update_required', 409);
-  const { limitPolicyVersion, maxToolCalls, maxRunSeconds, modelRequestSeconds, maxModelRetries, ...legacy } = value;
+  const { limitPolicyVersion, maxToolCalls, maxRunSeconds, modelRequestSeconds, maxModelRetries, softBudgetRatio, ...legacy } = value;
   return legacy;
 }
 function v2Catalog(value: PersonalModelCatalog): PersonalModelCatalog {

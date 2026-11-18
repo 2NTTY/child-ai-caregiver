@@ -1,3 +1,4 @@
+import { createFirestoreSharingStore } from '../server/firestore-sharing.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createECDH, randomUUID } from 'node:crypto';
@@ -97,6 +98,101 @@ async function fixture(fake: Pick<ReturnType<typeof firestoreDomainFixture>, 'da
   return { ...fake, options, authority, data, store, online, sessions, keys, bindings, userId, childId, otherChildId,
     presence, prepare, jobFor, statuses, calls, beforeAuthorization: (callback: () => Promise<void>) => { beforeAuthorization = callback; } };
 }
+
+test('class task notifications opt in on this device independently of chat and fence earlier consent', async () => {
+  const f = await fixture();
+  const set = (expectedPresenceVersion: number, enabled: boolean) => f.store.setChatPresence(f.userId, f.keys[0]!,
+    { childId: null, bindingId: f.bindings[0]!.id, expectedPresenceVersion, classTaskNotificationsEnabled: enabled }, true, true);
+  const enabled = await set(0,true);
+  assert.equal(enabled.classTaskNotificationsEnabled,true);
+  assert.equal(enabled.chatNotificationsEnabled,false);
+  assert.equal((await f.store.readChatPresence(f.userId,f.keys[1]!,true,true)).classTaskNotificationsEnabled,false);
+  assert.equal('classTaskNotificationsEnabled' in await f.store.readChatPresence(f.userId,f.keys[0]!,true),false);
+  await assert.rejects(set(0,false), {code:'presence_changed'});
+  assert.equal((await set(enabled.presenceVersion,false)).classTaskNotificationsEnabled,false);
+});
+
+test('class task deadline uses only the opted-in teacher device and rechecks the task before send and tap', async t => {
+  t.mock.method(Date,'now',()=>Date.parse('2026-11-18T04:00:00Z'));
+  const f=await fixture(serialFirestoreFixture()), sharing=createFirestoreSharingStore(f.options);
+  const room=await sharing.create(f.userId,{kind:'class',name:'Class',operationId:randomUUID()});
+  const {child} = await sharing.addClassChild(f.userId,{spaceId:room.id,expectedVersion:room.version,displayName:'Learner',operationId:randomUUID()});
+  const headers={spaceId:room.id}, path=`/api/children/${child.id}/tasks`;
+  await f.store.setChatPresence(f.userId,f.keys[0]!,{childId:null,bindingId:f.bindings[0]!.id,
+    expectedPresenceVersion:0,classTaskNotificationsEnabled:true},true,true);
+  const subscription={endpoint:'https://web.push.apple.com/class-installation',expirationTime:null,
+    keys:{p256dh:createECDH('prime256v1').generateKeys().toString('base64url'),auth:Buffer.alloc(16,7).toString('base64url')}};
+  const webSends:import('../src/shared/web-push.ts').PushPayload[]=[];
+  const web=createFirestoreWebPush({...f.options,sessions:f.sessions,enabled:true,currentAuth:async()=>({disabled:false,emailVerified:true}),
+    gateway:{publicKey:'test-public',async send(_subscription,ref,_signal,authorized,preview) {
+      assert.ok(await authorized()); assert.equal(preview?.(),undefined); webSends.push(ref);
+      return {status:'accepted',reason:null,providerStatus:201};
+    }}});
+  const registrations=createFirestoreOnlineStore({...f.options,mutations:[web.mutation]});
+  const register={path:'/api/web-push/subscriptions',payload:{subscription,label:'Class iPhone'}};
+  const op={...await registrations.context(f.userId,register),deviceId:randomUUID(),opId:randomUUID()};
+  const response=await registrations.submit(f.userId,{...register,operation:op});
+  const bindingId=(response.result as {binding:{id:string}}).binding.id;
+  const webSettings={childId:null,bindingId,expectedBindingVersion:1,expectedPresenceVersion:0,classTaskNotificationsEnabled:true};
+  await assert.rejects(web.setChatPresence(f.userId,f.keys[0]!,webSettings,true),{code:'installation_proof_required'});
+  await web.setChatPresence(f.userId,f.keys[0]!,{...webSettings,subscription},true);
+  const webQueued:string[]=[];
+  const queued:string[]=[];
+  const worker=createFirestoreTaskWorker({...f.options,enabled:true,
+    currentAuth:async userId=>({userId,email:'parent@example.test',disabled:false,emailVerified:true}),
+    async prepareClassTaskDeliveries(recipient,target) {
+      const value=await f.store.prepareClassTaskDeliveries(recipient,target);
+      const browser=await web.prepareClassTaskDeliveries(recipient,target);
+      queued.push(...value.ids); webQueued.push(...browser.ids);
+      return {ids:[...value.ids,...browser.ids],commit(){value.commit();browser.commit();}};
+    }});
+  async function command(route:string,payload:unknown) {
+    const context=await f.online.context(f.userId,{path:route,payload,sharing:headers});
+    return f.online.submit(f.userId,{path:route,payload,sharing:{...headers,expectedBasis:context.sharingBasis},
+      operation:{workspaceId:context.workspaceId,storageEpoch:context.storageEpoch,opId:randomUUID(),deviceId:randomUUID()}});
+  }
+  async function due() {
+    const saved=await command(path,{confirm:true,values:{title:'Private class appointment',details:'',kind:'appointment',
+      assigneeUserId:f.userId,dueAt:new Date(Date.now()-60000).toISOString(),timeZone:'Asia/Hong_Kong'}});
+    const {task}=saved.result as {task:CareTask};
+    const job=await sharing.withResource(f.userId,{spaceId:room.id,childId:child.id,module:'tasks',mode:'read'},async a=>({
+      kind:'task-reminder' as const,scope:{...a.scope},taskId:task.id,taskVersion:task.version,occurrenceId:task.occurrence.id,
+      authorizationVersion:a.binding.authorizationVersion,generation:a.binding.generation,scheduledAt:task.occurrence.dueAt}));
+    assert.ok((await worker.process(job)).receipt);
+    assert.ok((await worker.process(job)).receipt);
+    return task;
+  }
+  const first=await due();
+  assert.equal(queued.length,1);
+  assert.equal(webQueued.length,1);
+  await web.process(await f.jobFor(webQueued[0]!),new AbortController().signal);
+  assert.equal(webSends.length,1);
+  assert.equal(webSends[0]!.kind,'class_task');
+  const webRef={...webSends[0],kind:'care',v:1};
+  assert.deepEqual(await web.authorizeChatOpen(f.userId,f.keys[0]!,webRef),
+    {kind:'class_task',spaceId:room.id,childId:child.id,taskId:first.id});
+  const firstJob=await f.jobFor(queued[0]!);
+  assert.equal((await f.store.process(firstJob,new AbortController().signal)).state,'completed');
+  assert.equal((await f.store.process(firstJob,new AbortController().signal)).state,'completed');
+  assert.equal(f.calls.length,1);
+  assert.equal(f.calls[0]!.token,'synthetic-android-token-0');
+  const ref=f.calls[0]!.reference;
+  assert.deepEqual(Object.keys(ref).sort(),['v','kind','bindingId','bindingVersion','deliveryId'].sort());
+  assert.deepEqual(await f.store.authorizeOpen(f.userId,f.keys[0]!,ref),{screen:'class_task',spaceId:room.id,childId:child.id,taskId:first.id});
+  await assert.rejects(f.store.authorizeOpen(f.userId,f.keys[1]!,ref));
+  const second=await due();
+  assert.equal(queued.length,2);
+  f.beforeAuthorization(async()=>{await command(path+'/'+second.id+'/change',{confirm:true,expectedVersion:second.version,action:'complete',note:''});});
+  await f.store.process(await f.jobFor(queued[1]!),new AbortController().signal);
+  assert.equal(f.calls.length,1);
+  await web.process(await f.jobFor(webQueued[1]!),new AbortController().signal);
+  assert.equal(webSends.length,1);
+  await web.setChatPresence(f.userId,f.keys[0]!,{...webSettings,expectedPresenceVersion:1,subscription,classTaskNotificationsEnabled:false},true);
+  await assert.rejects(web.authorizeChatOpen(f.userId,f.keys[0]!,webRef));
+  await f.store.setChatPresence(f.userId,f.keys[0]!,{childId:null,bindingId:f.bindings[0]!.id,expectedPresenceVersion:1,
+    classTaskNotificationsEnabled:false},true,true);
+  await assert.rejects(f.store.authorizeOpen(f.userId,f.keys[0]!,ref));
+});
 
 test('chat delivery requires explicit device consent and atomically reuses bounded delivery identities', async t => {
   t.mock.method(Date, 'now', () => Date.parse('2026-11-12T04:00:00Z'));

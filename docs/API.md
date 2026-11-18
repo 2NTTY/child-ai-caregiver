@@ -664,6 +664,8 @@ provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 AP
 <a id="int-family-documents"></a>
 ## INT：家庭文件及同版 PDF
 
+在原有文件 PDF 的 POST 路徑附上 `?view=content`，沿相同身份、範圍、文件版本、用途及附加內容選項，取得 `{ preview }`。Web 與原生顯示的標題、段落、勾選狀態及附加來源均由 [PDF 共用投影](../src/shared/document-export-view.ts) 產生。未選入的來源及修訂欄位為 `null`。來源或授權在處理期間改變時沿原錯誤回應。預設回傳同版 PDF。
+
 `/api/children/:childId/documents` 是多份準備文件及成長報告的唯一業務入口，與舊單份 VisitPreparation 分開。每次重查本人、目前家庭角色、孩子及 authorityVersion；owner／caregiver 可整理，viewer 唯讀。GET 清單／單項不呼叫模型或自動建立文件。POST 建立及 `/:id/actions` 帶原 opId；refresh／archive／restore／check_item／check_items 帶 expectedVersion。網絡未知只重查／重送相同原操作，不換 opId 或版本猜成功。
 
 `check_items` 接受同文件最多 128 個不重複的 `{sectionId,itemId,checked}`，全部項目、目前來源、權限及版本在同一交易核對；任一不合法便不修改。成功只建立一個文件版本及原操作收據，回傳權威文件；保留舊 `check_item` 相容。共用 owner 可先顯示未保存勾選、停手約三秒合併最後狀態，或在同孩子離頁時立即背景送出；不是 Server 暫存資料庫。保存中可繼續勾選，成功後以回傳版本整理下一批；衝突／unknown 停止自動提交，保留意圖並沿原收據恢復。身份切換、登出及撤權仍沿現有隔離規則，未保存值不當成已保存正文或匯出依據。
@@ -970,6 +972,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | POST `/api/admin/knowledge-transfers/{digest}/stop` 或 `/resume` | 提交 `{expectedRevision}`，與 CLI 共用台帳的版本核對，回 `{batch}`。恢復使原包可接續寫入；匯入執行者仍需取得相同 ZIP，結果不明時按指紋查回。 |
 | GET `/api/admin/knowledge-status?cursor=`（S10 已發布） | 管理員按需讀取現行來源目錄的註冊／停用／定義變更狀態，以及實際檢查紀錄。每頁最多 20 筆，依檢查時間與工作 ID 倒序續讀。失敗原因、最近嘗試與最近成功分開顯示。這項查詢不觸發來源抓取或發布。 |
 | GET `/api/admin/knowledge-versions?cursor=` | 管理員按頁查看允許來源的版本 ID、hash、核准狀態及索引就緒情況，每頁最多 20 筆。 |
+| POST `/api/admin/knowledge-index-groups`、GET `/:id`、POST `/:id/stop`／`resume` | 建立 51–400 個固定版本的重建組。根 ID 等於建立 opId；查回各子批次 ID、狀態與結果計數。整組控制帶原 opId 和依序排列的各批控制版本；版本衝突整組維持原狀。 |
 | GET／POST `/api/admin/knowledge-index-batches` | GET 分頁讀取批次；POST 帶原 `opId` 及最多 50 個選定版本的 ID／hash，建立同 ID 的關鍵詞索引重建批次。 |
 | GET `/api/admin/knowledge-index-batches/{id}`；POST 同路徑的 `/stop`、`/resume` | 每個目標顯示已完成範圍及實際失敗原因。控制操作帶原 `opId` 及 `expectedControlVersion`，逾時依原資料查回或重送。控制版本只隨人工操作遞增。 |
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
@@ -1223,7 +1226,9 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **班級待辦背景身份（接線中，未部署）：**沿既有 `assigneeUserId` 及共用待辦表單；班級清單回傳 `classAssigneeSpaceId`，沿既有分頁成員接口選擇本人或另一位 owner／caregiver。建立及改期在同一交易讀取負責人的有效會籍，保留原操作者；他人仍可按班級權限完成／取消同一事項，這不改變負責人。worker 由已保存任務取得真帳號，領取／完成／派送前沿同一共享服務重核目前成員與指派關係；退出後重新加入不復活舊指派授權。排程遇到已失效的會籍，會在交易內核實原任務版本及目前會籍，將舊提醒移出待派送佇列。偏好使用負責人的目前安靜時段。原生成員證據不進公開 DTO；既有個人／家庭契約不變。
 
-本段只交付確定性到期核對、提醒及待投遞意圖，沒有以提醒收據宣稱渠道接受；班級 Agent 及外部投遞仍須接續，相關 D 接口未接前不建立注定以虛構帳號失敗的 Agent 工作，也不借管理員 key。舊班級待辦若仍以儲存身份作負責人，保留可讀，須經正常改期明確指定目前合資格成員才能執行，不自動搬移授權。
+班級手機提醒按裝置訂閱。本人在已登記裝置選擇接收後，往後指派給本人的班級待辦到期即可送往該機。每包裝置沿用自己的會話、偏好與安靜時段；撤權、改期、完成或關閉便停止待送通知。手機鎖屏只顯示通用提示，開啟後再核對老師與目標班級和待辦。每部裝置各有一筆投遞收據。舊班級待辦若以儲存身份為負責人，須明確改期及指派給目前合資格成員。班級 Agent 仍由相關工作包承接。
+
+已支援的客戶端以 `x-push-features: class-tasks` 協商現有裝置 presence 接口的選填欄位 `classTaskNotificationsEnabled`。Web 更新設定需提供原訂閱證明；手機設定綁定原生會話。聊天通知和班級待辦開關各自生效。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
@@ -1237,7 +1242,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單列出已連結訊息或直接在附件庫保存的 ready 原件；選取 includeImported 時也包含已發布的匯入原件。照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared，canManage 依目前角色表示可刪除；隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
 
-共用附件頁面已接這些 client；媒體元件在共享模式須顯式取得共享 API，並核空間、孩子、ID、版本、hash 及 null 訊息綁定，不能退回原 owner 的私人 API。共享上載／提取／聊天重用未接時不提供可執行入口。文件／錄音刪除回覆遺失後，先以 `GET /api/online/operations/:opId` 核對同一操作及路徑；confirmed 的受理收據不當日誌完成。已有受理證據才接續原刪除端點；unconfirmed 由使用者明確重試原 opId，無新 ID 或自動循環。恢復原操作不被自己的頁面 pending 鎖擋住，仍重核目前身份／權限；清單刷新不清掉待查操作。
+共用附件頁面已接這些 client；媒體元件在共享模式須顯式取得共享 API，並核空間、孩子、ID、版本、hash 及 null 訊息綁定，不能退回原 owner 的私人 API。家庭成員可依角色直接從附件庫上傳並保存原件。提取及聊天重用另依其領域授權。文件／錄音刪除回覆遺失後，先以 `GET /api/online/operations/:opId` 核對同一操作及路徑；confirmed 的受理收據不當日誌完成。已有受理證據才接續原刪除端點；unconfirmed 由使用者明確重試原 opId，無新 ID 或自動循環。恢復原操作不被自己的頁面 pending 鎖擋住，仍重核目前身份／權限；清單刷新不清掉待查操作。
 
 共享游標及原檔讀取前後同時綁操作者、來源、孩子、儲存世代及共享 basis；撤權、換模組或撤權後重新授權均不能承接舊讀取。Cloud Storage 原物件及應用層加密保持，無額外副本或公開 URL。三種共用 client 的第四個可選參數接 `SharedSelection`，Web／Android 沿同一 transport；舊未選空間的 DTO／游標仍可讀。文件／錄音可沿原 `/delete?spaceId=…` POST，仍帶原 `expectedVersion`／`opId`；Server 核當前 write 角色及已提交原件，viewer／未連結草稿不得刪除。受理收據只含原件 ID／action／accepted，歸操作者，不代表 journal 已完成；只有 journal 核實後才回 `deleted:true`，物件清理狀態另列。原操作重試不換 ID，不同操作者不能認領他人的刪除。共享日誌使用操作者＋原 opId 的穩定來源操作 ID，避免不同成員在來源 owner 的日誌空間撞鍵；對外及收據仍保留原 opId。共享照片刪除沿既有 online context／submit，帶 `sharing.spaceId`／`expectedBasis`、`expectedVersion`／`confirmDelete` 及原 `opId`。當前角色／版本、來源配額及已綁定的照片記錄一併核對；受理後建立原清理工作，日誌未核實時查回仍為 unconfirmed，不能顯示刪除成功。完成後沿舊 `{deleted:true,cleanupPending:true}` 結果；家庭附件庫可直接提交原件。沿 photos／voices／files 的集合 POST 預留，帶 `opId`、`?spaceId` 及 `X-Library-Access-Basis`（所選孩子 basis 的 JSON）；對原 ID 的 `POST content` 上載、`POST resolve` 查回沿用同一選擇。owner／caregiver 可提交，viewer 可讀取 ready 原件。Server 在預留與保存時重新核對授權，把實際提交人與原資料歸屬分開記錄；過期預留沿既有清理。此流程不產生聊天或模型工作。共享照片分頁可有空中間頁，但游標必須前進且查詢有界。
 
@@ -1271,7 +1276,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 <a id="p4-personal-restore"></a>
 **本人備份與交接匯入。** 沿同一匯入入口，交接到其他帳戶、班級或孩子仍建立獨立副本。使用者選擇還原到原件時，Server 以可信簽章或等效的本站紀錄核實包的內容識別、備份用途、本站來源、目前帳戶及同一個本人孩子，再按目前權限讀原件和刪除紀錄。單憑自報的名稱或 ID、其他來源的簽章或用戶接受缺證明提示，不能改寫原件。不符合原件資格時可另選匯入副本；舊版請求沿原副本行為。
 
-- 個人孩子的 `care`、`profile`、`tasks`、`sources`、`documents` 、`attachments` 的孩子頭像、持續關注及 `memory` 的私人交代／事實／主題可用 `POST /api/account/package-imports/compare-original` 按頁比較。需要還原時傳 `includeRestoreTarget: true` 取得目前目標 ID；同一原件曾經明確恢復時，目標可能已有新 ID。`POST /api/account/package-imports` 沿原操作提交 `restoreOriginal: true`、`resolutionOnly: true`、已讀 manifest hash，以及逐項目標與版本。只有明確選中的差異才寫入；既有匯入副本的映射與此路徑隔離。其他模組及帳戶全量還原仍待接。
+- 個人孩子的 `care`、`profile`、`tasks`、`sources`、`documents` 、`attachments` 的孩子頭像、持續關注及 `memory` 的私人交代／事實／主題可用 `POST /api/account/package-imports/compare-original` 按頁比較。需要還原時傳 `includeRestoreTarget: true` 取得目前目標 ID；同一原件曾經明確恢復時，目標可能已有新 ID。`POST /api/account/package-imports` 沿原操作提交 `restoreOriginal: true`、`resolutionOnly: true`、已讀 manifest hash，以及逐項目標與版本。只有明確選中的差異才寫入；既有匯入副本的映射與此路徑隔離。私人聊天用戶端送 `x-handover-original-features: private-chat` 才會取得 `chat` 原件能力。已核實的本人備份可比較同一孩子的訊息，預覽只回 ID、版本、差異原因。缺少的原件按原 ID 與原排序還原，收據記入匯入台帳，保留既有聊天及已發送結果。缺少排序資料的舊備份仍可核對現存訊息。明確恢復的附件會有新 ID。比較時提供重連原訊息的選項，交易內核對原孩子、來源映射、內容識別和現存訊息後，只更新附件連結。跨人交接仍建立獨立歷史副本。帳戶全量還原尚待驗收。
 - 首次還原也須辨認未有交接映射的原件。相同內容及版本略過；較新的修改或已刪項目預設保留。無法證明項目狀態時，須列明未能處理。完整備份的範圍應涵蓋本人有權備份的孩子與模組、私人資料及個人頭像，清單可分頁；選期、選項或平台容量令覆蓋不完整時只標為部分備份。
 - 收件端可向 `GET /api/account/package-imports/capabilities` 傳 `x-handover-original-modules: 1` 查可比較模組。文件模組的每個結果另帶 `resourceSection`，`documents` 是一份文件，`visit_preparation` 是該孩子的到診準備。選取、分頁及送出逐項決定均以該欄位與原 ID 合併識別。同一份文件按目前來源及報告涵蓋期重核，再保存至原 ID 的新版本。仍在整理的文件或來源已改的文件會產生逐項衝突。原文件帶有共享來源選擇（`sourceSelection`）時，目前一律回報 `document_source_changed`。到診準備原預約已完成或不再可用時，保留現況，其他項目可繼續。實際上線版本見 [PLAN](../PLAN.md#active)。
 - 本人私人交代用 `x-handover-original-features: private-instructions` 協商 `originalModules` 的 `memory` 選項。未選新增記憶資源時，比較只回 `resourceSection: instructions` 的 ID、版本及差異欄名。明確選取同孩子、目前目標及版本後才替換，保留原有來源鏈並記下本次備份。不按名稱還原，缺少原件及刪除證明時顯示無法還原。
@@ -1304,6 +1309,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - `POST /api/account/mixed-chats` 接受 `{operationId,scope,childIds}`，scope 與 task-context 相同；每段對話固定選定 1–100 個孩子及原班級成員身份。班級名冊可繼續分頁。`POST /api/account/mixed-chats/:id/messages` 接受 `{operationId,expectedVersion,text}`，回傳已保存留言；重送原請求查回同一則。`GET /api/account/mixed-chats`、`GET /api/account/mixed-chats/:id` 均支援 `cursor`。目錄每頁檢查三段對話，只顯示仍可讀的項目，正文每頁最多 16 則，按時間正序回傳，nextCursor 指向更早的訊息。清單與內容只供發起帳戶，當前所選孩子及班級待辦模組須逐一核權。單孩匯出不含混合留言。
 - `/api/account/mixed-chats/:id/messages/:messageId/reply` 支援 POST 啟動原留言的助手、GET 查回、DELETE 取消，回傳 `{result: ProductAgentResult | null}`。已取得運行的留言只查回原結果。正式 ADK 從該對話已選範圍讀取待辦、照護記錄及官方知識。待辦每次最多五名孩子。
 - `search_selected_care` 首次只需傳篩選條件。Server 依對話固定順序選取最多兩名孩子，逐一核對目前照護資料權限。每名最多掃 25 筆，交回 1–3 筆，保留來源版本、原話節錄、單位及精度。`eventDate` 依各記錄的事件時區判斷曆日，日期未知的相關記錄分開計數。下一組使用 `nextFrom`；同一孩子續頁使用返回的 `from`、原條件及 `nextCursor`。引用綁定本次實際讀到的私人證據。
+- 多孩對話在目前孩子的一頁內查記憶或文件。搜尋詞用空格分開時可匹配任一詞；連續短句命中時優先從該處取片段。每頁沿原授權及游標，候選仍需按原文核對。
+- `GET /api/account/mixed-chats/:roomId/messages/:messageId/material-citations/:ordinal` 點讀該回覆獲審核的「孩子資料 N」。沿原房間名冊及所選孩子的記憶／文件權限讀取當前版本。首次從引用位置讀取，後續可傳 `?offset=N`。回傳孩子稱呼、來源、版本、正文及下一頁位置。已更正、失效、撤權或匯入副本不能借舊連結讀回。查詢工具 `search_selected_materials` 每次讀一名所選孩子的有界頁面，並區分該孩子續頁與下一名孩子。
 - `GET /api/account/mixed-chats/:roomId/messages/:messageId/care-citations/:ordinal` 讀取正式回覆中的「照護記錄 N」（1–6）。序號只對該訊息有效，以通過審核的來源綁定定位孩子、記錄及版本。Server 在同一交易內重核登入身份、對話與現時照護權限，回傳孩子稱呼、原文、來源、可用的事件時間及版本。記錄更正回 409，刪除、缺少定位或失去權限回 404／403；來源不明的歷史回覆與匯入副本維持純文字。「查詢範圍」表示檢索覆蓋，沒有記錄原文。
 - 同則留言的 `/task-batch` 以 GET 讀取本人可見清單，POST 接受 `{action: "confirm" | "cancel", digest}`。確認時逐一核對原對象、版本及授權。POST `/task-batch/advance` 接受原 `{position, digest}`，每次最多五項；重送同一位置沿用逐項收據。所有接口回傳 `{batch}`，尚無草案時 GET 回傳 null。完成、略過、衝突、失敗、取消及待辦分列於 items。跨世代還原關閉未結批次，保留原收據。
 - 匯入各狀態均提供有界紀錄查回：操作者／時間、包與版本／內容識別、完整性結果、目標／選擇、來源鏈、操作／批次及逐項資源／版本／原因、接續結果。格式錯誤無包 ID 時記未知與原因，亦非無紀錄失敗。
@@ -1336,7 +1343,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 - 來源歷史使用 `GET /api/children/:childId/messages/imported`（有界 `cursor`）及 `GET /api/children/:childId/messages/imported/:id` 查閱；回傳來源作者、原訊息及 provenance，不更改舊 messages／reply 契約。新 collection 同時加入加密備份、隔離還原及孩子／帳戶刪除登記；完整 UI／Agent 接線與部署結果按 PLAN 分開記錄。
 - Agent 按需查閱契約（已實作及合成核對）：沿原 `search_history.kind=imported_message` 搜尋，最多掃 100 項、回傳 10 個命中；`read_history.kind=imported_message` 以匯入後本地歷史 ID 分段讀回。省略 read 的 kind 保持原本地訊息行為。匯入結果保留本地資源版本、原訊息／作者／回覆對象及當次來源鏈，來源角色不代表本地授權或審核；原收據／確認仍核真正本地訊息，不接受匯入 ID 代替。每段提供 contentVersion，續讀須帶原值；來源更新或原錄音／轉錄失效時舊續讀版本失效。音訊只讀已匯入並可核對的本地原件及既有轉錄，無原件便明示，不重新轉錄。沿同一私人權限、變更序號與 cursor；不改公共索引、不新增模型或 Runner。
 - 關注來源修訂接點（個人匯入已接）：沿同一 concern ID、head 版本、事件及修訂服務保存。既有時間線只追加；匯入來源修正可能更正較早事件，因此新來源快照使用可選的內部 timelineId，舊修訂仍指向原時間線，不覆寫舊事件。原資料不搬移；普通追加沿目前時間線。文件／報告來源及續讀同時核目前時間線，不能混讀舊觀察；備份／還原重建同一時間線 metadata。公開 DTO 不傳此內部欄位，舊客戶端仍讀原契約。包 reader 只為已驗證的關注 head／修訂按 eventCount 取相同時間線的連續原事件；頁面位置、來源及 manifest 綁定，缺失、重複或錯配明確拒絕，不把較晚事件混入舊修訂。個人關注匯入沿原 worker 的 concerns 階段，在既有領域／聊天之後、來源歷史之前保存；相同來源及本地版本、原 opId、防重、映射與逐項結果沿同一交易。關注及成長的個人匯入與共用畫面已接。班級關注只經已授權的交接匯入寫入；其他共享寫入另列待辦。
-- 關注快照保存契約（本人與班級交接）：來源 head 及事件均保留來源鏈、原身份／關聯及時間；本地 concern 保持同一 ID、遞增本地版本，每個被採用來源版本建立新時間線，與普通追加共用原服務。原事件 actor 仍是來源作者，來源標籤明示匯入；本地操作者另由 importedBy／收據記錄，不把匯入者改稱原確認人。來源 run、待辦／記錄／成長 ID 只屬證據，不直接取得本地權限；已有且仍可授權的來源映射才轉成本地關聯。有效將來跟進以目前帳戶規則建立新工作身份，來源 completed／cancelled／unknown 不重播。原來源 head／事件逐筆保存在既有 handover_source_history，按來源身份及版本去重；再匯出時分別回到 concern_history／concern_events，不把整條歷史塞進單一文件。來源歷史保持唯讀，不變成本地動作收據。事件原 section 留於 provenance，收據查詢與恢復 metadata 用父 concerns 分類，變更通知沿既有 growth 頻道。一般關注 API 仍沿既有共享讀取。班級匯入由 worker 經目前班級寫權提交；家庭私人原件不會被這個入口改寫。
+- 關注快照保存契約（本人與班級交接）：來源 head 及事件均保留來源鏈、原身份／關聯及時間；本地 concern 保持同一 ID、遞增本地版本，每個被採用來源版本建立新時間線，與普通追加共用原服務。原事件 actor 仍是來源作者，來源標籤明示匯入；本地操作者另由 importedBy／收據記錄，不把匯入者改稱原確認人。來源 run、待辦／記錄／成長 ID 只屬證據，不直接取得本地權限；已有且仍可授權的來源映射才轉成本地關聯。有效將來跟進以目前帳戶規則建立新工作身份，來源 completed／cancelled／unknown 不重播。原來源 head／事件逐筆保存在既有 handover_source_history，按來源身份及版本去重；再匯出時分別回到 concern_history／concern_events，不把整條歷史塞進單一文件。來源歷史保持唯讀，不變成本地動作收據。事件原 section 留於 provenance，收據查詢與恢復 metadata 用父 concerns 分類，變更通知沿既有 growth 頻道。共享關注讀寫沿既有關注 API。用戶端送 `x-concern-features: shared-actions` 後，清單按目前角色返回 `canManage`；建立時以 `x-concern-authority` 帶上所讀版本，修改仍用 `authorityVersion` 及原項版本。舊版維持原唯讀投影。從共享頁安排的跟進使用原關注時間線，執行時核對安排者、共享範圍和跟進身份。成員可在該頁查看；指定老師的手機提醒另用班級待辦。班級匯入由 worker 經目前班級寫權提交；家庭私人原件不會被這個入口改寫。
 - 成長匯入領域契約（個人批次／來源歷史已接）：沿原成長事項／主題／修訂服務保存，固定本地 ID 與版本，來源作者、近況、舊關聯及處理結果留 provenance。舊 lastRequest／執行授權不作本地請求。映射的待辦須在目前孩子內重新核權；沒有映射只留來源關聯。來源已完成／忽略及主題停用保持；活動項只在目前規則、資料與官方來源重新核實後建立新工作。來源正文不可僅憑自報 hash 成為官方建議，不能寫入用戶近況來迎合來源適用性。同主題已停用時，新匯入不能暗中啟用；明確採用主題設定仍走版本／衝突決定。與本地現行資料不符的內容保留為歷史及來源不足狀態，不假造確認，也不丟棄包內原值。共享寫入保持原限制；共用畫面沿相同個人批次讀取結果。統一 worker 先保存主題設定，再保存成長事項及關注；兩種成長資源以固定來源身份分開記錄結果及衝突。growth_history／growth_topic_history 保存原修訂及來源 evidence，分頁閱讀／再匯出不丟來源作者；舊 v1 包可省略這兩個後加的歷史 section，不能省略已聲明的內容。正式 runtime 使用同一 knowledge store 核對適用性。原匯入批次在 queued／running 時以加密台帳及可重建的 scope metadata 暫緩成長評估／背景提醒，完成、取消或失敗即退出等待；不在半套快照上建立新提醒，也不重播相同依據已有接受／忽略結果。仍需目前身份、版本與原工作核對；不新增模型或獨立工作平台。
 - 到診準備沿原摘要服務保存，目前值、原本地修訂、來源映射及收據同交易。問題／清單／期間保留，原預約 ID、核對狀態／依據與作者時間放來源鏈；只有目前有 tasks 讀取權、已有本地映射且符合孩子／appointment／scheduled／expectedVersion 時建立預約關聯，否則只留原來源證據。共享寫入沿 documents 的 change 範圍；來源已核對不當成本地已核對。原準備修訂使用共同來源歷史 wrapper，分頁匯出及再次交接不丟原 evidence；不以新本地匯入修訂冒充原歷史。普通修改仍沿原確認／basis／收據，公開 preparation DTO 不新增內部來源欄位。
 - 私人來源接線：`sources` 模組的目前值為 `private_sources`，原管理歷史為 `private_source_history`，統一 worker 仍先保存目前值再接來源歷史。目標只接受本人孩子（spaceId=null）；結果帶 resourceSection，歷史查詢用 module=private_sources。原管理歷史只描述用途／啟用／摘錄設定，不含原正文修訂，也不成為本地模型授權。父來源刪除後讀取及再次匯出立即遮蔽其來源歷史；恢復已刪項須明確操作及當前刪除版本，建立新本地資源並保留舊 tombstone。
@@ -1346,7 +1353,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 
 <a id="p4-auth-providers"></a>
-### P4-AUTH01：同 UID 登入方式（實作中，尚未部署）
+### P4-AUTH01：同 UID 登入方式（應用接線已發布，供應商待啟用）
 
 `GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同。回應 `{userId, providers, currentProvider}` 只列當前 Firebase 身份與產品已批准方式的交集。已撤銷的裝置或已解除連結的第三方身份無法用原憑據讀取。回應沿私人 no-store。
 
@@ -1356,22 +1363,22 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 共用 Firebase client 增加 provider 登入、本人登入方式讀取、以原方式重新驗證，以及先核對原 UID 後連結新 provider。身份 token 仍只經原 `/api/auth/session` 或 `/api/auth/native-session` 交換；沒有新增業務憑據格式。原密碼重新驗證字串保持相容，provider-only 使用 `{provider}`。連結先以原方式重新驗證，暫存 SDK 身份最多兩分鐘，再由另一個明確同意手勢呼叫原生 linking，避免連續 popup 被阻擋。SDK 成功但交換結果未知時先讀回目前方法，不自動重做連結；這個公開讀回須等待原 SDK 操作及取消清理完成，不能用未定局的舊列表解除 unknown。內部重新驗證的唯讀核對不等待自身 queue。取消／切換身份拒絕遲到交換，清理暫存 provider 身份；不推定已取消 provider 端已完成的連結。
 
-註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；另由原邀請地址驗證後連結同 UID 的接續流程承接（尚待實作）。平台 adapter 只列實際配置的方式；原生 Google／Apple SDK、供應商配置、隱藏電郵及真人流程未完成不得宣稱已支援。
+註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；以原邀請電郵完成驗證及准入，再從同一帳戶重新驗證原方式並明確連結 Apple。Web 與原生 session 交換已有[合成驗證](../tests/firebase-auth.test.ts)。正式供應商尚待配置，隱藏電郵的真人驗收仍待完成。
 
 正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
 
 **AUTH01 原生 provider adapter（已實作、未開放）：**Google／Apple 原生 SDK 只取得供應商 credential，再交 Firebase JS 的 `signInWithCredential`／`linkWithCredential`；業務登入仍經同一 session exchange。平台 adapter 不自建 session、不自行寫 Firebase 用戶 email 或合併 UID。Google 要求實際 Web OAuth client ID，iOS 另需 iOS client ID／URL scheme；Apple 每次產生新 nonce／state，供應商回覆及 Firebase credential 驗證後才回中央流程。缺平台配置不暴露可用方式；新原生依賴須新 binary，不能強推舊 runtime OTA。仍不啟用雲端 provider；自動連結與邀請 gate 沿上文。
 
 <a id="p4-system-share-input"></a>
-## S12-W02：系統分享進入共用草稿（Android 已接線，待新 binary）
+## S12-W02：系統分享進入共用草稿（Android 已交付，外部 App 收件待實機）
 
 外部系統分享是未提交輸入，不是 Agent 指令、上載授權或匯入結果。Android 復用 Expo Sharing 的原始 payload 與 Router intent；網址只作原文，不在接收時抓取或解析。`/share` 在登入後顯示待處理項目，選定個人孩子後才加入既有草稿。已有文字追加而不覆寫；每則一份附件沿既有規則，已有附件時保留兩邊輸入並說明，不能靜默取代。
 
-- 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
+- Android 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
 - 帳號變更清除原清單與原生 intent；未登入接收可待首次登入後選擇目標。讀取期間切換孩子／撤權，遲到的本機副本必須釋放，不加入新範圍。
 - 照片／錄音／一般檔案沿現有 bytes、格式、大小、hash、暫存與原送出服務；不新增 HTTP 上載接口、模型呼叫或預覽解析服務。原始 URI 不加入聊天文字、URL 參數或日誌。
 - 收件箱最多持有 20 項；超量明示，不能截斷後回報全部接受。用戶逐項加入／捨棄輸入，不因此要求逐條批准 Agent 業務操作。
-- 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
+- Android 第 8 版已包含分享 intent filter；[相容 OTA](../artifacts/verification/P4_ANDROID_DELIVERY_20261118.json)已發布。Web 維持站內選檔。原生收到 ZIP 可選既有匯入資料入口；iOS extension 先把一批分享保存在本機 App Group，使用者返回來源 App 後可自行開啟育有方處理。iPhone 真機收件及 Android 外部 App 到草稿／ZIP 的驗收見[接手清單](P4_RESUME.md#下次從哪開始)。
 
 ### 完整混合對話的文檔包
 
