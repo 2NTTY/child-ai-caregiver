@@ -9,7 +9,8 @@ import { selectedCareFiltersSchema, selectedCareCursorSchema, type SelectedCareP
 import { careRecordCitationId, selectedCareRecordCitations } from '../src/shared/assistant-care-citation.ts';
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
-import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
+import { readAgentWorkSchema, type AgentHistoryMessage } from "../src/shared/agent-work.ts";
+import type { ChatMessage } from "../src/shared/chat.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
@@ -159,6 +160,7 @@ export function createProductAgentTools(options: {
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
   currentMessageId?: string;
+  recentQuoteSources?: ChatMessage[];
   /** Optional household/child display identifiers kept out of external search queries. */
   knownPrivateIdentifiers?: readonly string[];
 }) {
@@ -178,6 +180,8 @@ export function createProductAgentTools(options: {
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
   const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
   let groundingLoaded = false;
+  let recalledFactsValidUntil = Infinity;
+  const noteRecallExpiry = (until: string) => { recalledFactsValidUntil = Math.min(recalledFactsValidUntil, Date.parse(until)); };
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
@@ -379,6 +383,10 @@ export function createProductAgentTools(options: {
       } });
     }
   }
+  function recordRecalledFacts(facts: MemoryFact[]) {
+    for (const fact of facts) if (usableMemoryFact(fact) && fact.validUntil) noteRecallExpiry(fact.validUntil);
+    noteConfirmedMemoryFacts(facts);
+  }
   function selectDeliverySources(value: AgentAnswer) {
     const sources: ChatDeliverySource[] = [], facts: MemoryFact[] = [];
     const cited = value.paragraphs.flatMap(paragraph => paragraph.citationIds);
@@ -576,7 +584,7 @@ export function createProductAgentTools(options: {
       execute: args => guard(async () => {
         const context = await current({ factsAfterId: args.factsAfterId as string | undefined ?? undefined, topicsAfterId: args.topicsAfterId as string | undefined ?? undefined }), page = await tasks.list(scope.userId, scope.childId, args.tasksAfterId as string | undefined ?? undefined);
         if (!page) throw new AgentStopped("unauthorized");
-        noteConfirmedMemoryFacts(context.facts);
+        recordRecalledFacts(context.facts);
         const prepared = options.visibility !== "family" && context.recentMessages.length >= 12
           ? await memory.prepareSummary(scope.userId, scope.childId) : null;
         const sourceContext = prepared ? { ...context, recentMessages: prepared.messages,
@@ -762,9 +770,9 @@ export function createProductAgentTools(options: {
           raw = { kind: wire.kind, paragraphs: wire.paragraphs.map(paragraph => {
             if (!('quoteHistory' in paragraph)) {
               if ((paragraph.kind ?? wire.kind) !== 'private_reference') return paragraph;
-              return { ...paragraph, citationIds: paragraph.citationIds.map(id => historyQuoteHandles.get(id) ?? id) };
+              return { ...paragraph, citationIds: paragraph.citationIds.map(resolveChatCitation) };
             }
-            const source = selectedEvidence.get(historyQuoteHandles.get(paragraph.quoteHistory) ?? paragraph.quoteHistory);
+            const source = selectedEvidence.get(resolveChatCitation(paragraph.quoteHistory));
             if (!['mixed', 'private_reference'].includes(wire.kind) || !source?.citationId.startsWith('chat:') ||
               !source.excerptComplete || !householdEvidence.has(source.citationId)) throw new FamilyError(400, 'invalid_citation');
             const text = attributedChatQuote(source);
@@ -781,12 +789,15 @@ export function createProductAgentTools(options: {
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
         }
-        // Always hydrate confirmed memory before delivery so caregiving/mixed answers mentioning personal facts stay grounded alongside official sources.
-        // Pure greetings and pure bounded clarifying questions without citations need no memory fact hydration (REQ-002 §3.3).
+        // A verified verbatim quote already has its source. New personal claims still require current memory grounding.
         const joinedAnswerText = parsed.kind === "no_action" ? "" : parsed.paragraphs.map(item => item.text).join("\n").trim();
-        const skipMemoryHydration = parsed.kind !== "no_action"
-          && parsed.paragraphs.every(item => item.citationIds.length === 0)
-          && (isPureGreetingOrSmallTalk(joinedAnswerText) || isPureClarifyingQuestion(joinedAnswerText));
+        const skipMemoryHydration = parsed.kind !== "no_action" && (
+          parsed.paragraphs.every(item => item.citationIds.length === 0)
+            && (isPureGreetingOrSmallTalk(joinedAnswerText) || isPureClarifyingQuestion(joinedAnswerText))
+          || parsed.paragraphs.every(item => {
+            const source = item.citationIds.length === 1 && selectedEvidence.get(item.citationIds[0]);
+            return (item.kind ?? parsed.kind) === 'private_reference' && source && attributedChatQuote(source) === item.text;
+          }));
         if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && !skipMemoryHydration) {
           await ensureConfirmedMemoryGrounding();
         }
@@ -841,7 +852,7 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }, (message, reread, precedingMatch) => {
+  function registerChatSource(message: AgentHistoryMessage, reread: () => Promise<AgentHistoryMessage | null>, precedingMatch?: string) {
     const citationId = `chat:${message.id}:${message.offset}:${message.text.length}`;
     if (precedingMatch && precedingMatch !== citationId) precedingHistoryMatch.set(citationId, precedingMatch);
     const source = (item: typeof message) => JSON.stringify({ role: item.role, createdAt: item.createdAt, text: item.text });
@@ -859,7 +870,20 @@ export function createProductAgentTools(options: {
       historyQuoteHandles.set(handle, citationId);
     }
     return { citationId, quoteHistory: handle };
-  }, options.currentMessageId));
+  }
+  function resolveChatCitation(handle: string) {
+    const message = /^R[1-6]$/u.test(handle) ? options.recentQuoteSources?.[Number(handle.slice(1)) - 1] : undefined;
+    if (message) {
+      const slice = { id: message.id, childId: message.childId, role: message.role, version: 1, createdAt: message.createdAt,
+        text: message.text, offset: 0, nextOffset: null, totalCharacters: message.text.length };
+      return registerChatSource(slice, () => store.readHistory(scope.userId, scope.childId, { messageId: message.id, offset: 0, limit: message.text.length }, 'memory')).citationId;
+    }
+    return historyQuoteHandles.get(handle) ?? handle;
+  }
+  if (options.visibility !== "family") {
+    tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, recordRecalledFacts,
+      () => { pendingMemoryProposalCount += 1; }, registerChatSource, options.currentMessageId, noteRecallExpiry));
+  }
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
@@ -1007,6 +1031,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
+    recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
     tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
