@@ -1,6 +1,7 @@
 import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
+import { damagedPdfText, pdfQuantityLocators, readablePdfQuote } from "./knowledge-pdf-quotes.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION, backgroundKnowledgeReviewBindingSchema,
@@ -47,7 +48,16 @@ export const nativePdfProvenanceSchema = z.strictObject({
   contentHash: z.string().regex(/^[a-f0-9]{64}$/u),
   organize: nativeCoverageSchema, review: nativeCoverageSchema,
   focus: focusEvidenceSchema.optional(),
+  priorConditions: z.array(z.strictObject({
+    oldKey: z.string(), pageStart: z.number().int(), pageEnd: z.number().int(), original: z.string(),
+    newKey: z.string(), disposition: z.enum(["retained", "prior_edition_note", "unresolved"]),
+    currentCondition: z.string().nullable(), reason: z.string().min(1).max(300),
+  })).max(256).optional(),
   layoutQuestion: z.string().min(1).max(500).nullable(),
+});
+export const destinationReviewSchema = z.strictObject({
+  destination: z.string().min(1).max(200), previousObservationHash: digest,
+  assessment: knowledgeReviewAssessmentSchema,
 });
 export type { KnowledgePdfQuestion } from "./knowledge-pdf-layout.ts";
 export type KnowledgePdfAcceptance = (sourceHash: string, physicalPage: number, role: "organize" | "review", facts: LayoutFacts) => boolean;
@@ -68,6 +78,29 @@ export function assertPreparedKnowledgePdfLayout(prepared: PreparedKnowledgeMain
   }
 }
 type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null };
+type Applicability = KnowledgeSourceInput["chunks"][number]["applicability"];
+export function includePriorRetrieval(current: Applicability, prior: Applicability[]): Applicability {
+  if (!prior.length) return current;
+  const scopes = [current, ...prior];
+  if (scopes.some(scope => scope.region !== current.region)) reject("knowledge_pdf_region_conflict");
+  const topics = [...new Set(scopes.flatMap(scope => scope.topics))];
+  const { maxAgeMonthsExclusive: _, ...rest } = current;
+  // Only the organizer may propose an unrestricted range for independent
+  // review. Numeric scopes cannot bridge a gap or change the age basis.
+  if (new Set(scopes.map(scope => scope.ageBasis).filter(basis => basis !== "any")).size > 1)
+    reject("knowledge_pdf_age_scope_conflict");
+  if (current.ageBasis === "any") return { ...current, topics };
+  if (prior.some(scope => scope.ageBasis !== current.ageBasis)) reject("knowledge_pdf_age_scope_conflict");
+  const ordered = [...scopes].sort((a, b) => a.minAgeMonths! - b.minAgeMonths!);
+  let coveredTo = ordered[0]!.maxAgeMonths!;
+  for (const scope of ordered.slice(1)) {
+    if (scope.minAgeMonths! > coveredTo) reject("knowledge_pdf_age_scope_conflict");
+    coveredTo = Math.max(coveredTo, scope.maxAgeMonths!);
+  }
+  return { ...rest, topics, minAgeMonths: ordered[0]!.minAgeMonths, maxAgeMonths: coveredTo,
+    ...(scopes.filter(scope => scope.maxAgeMonths === coveredTo).every(scope => scope.maxAgeMonthsExclusive)
+      ? { maxAgeMonthsExclusive: true } : {}) };
+}
 export interface KnowledgeMaintenanceBaseline {
   versionId: string;
   versionHash: string;
@@ -86,7 +119,7 @@ export interface PreparedKnowledgeMaintenance {
   versionHash: string;
   assessment: KnowledgeReviewAssessment;
   review: BackgroundKnowledgeReviewBinding;
-  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string; nativePdf?: z.infer<typeof nativePdfProvenanceSchema>; windows?: import("./knowledge-pdf-windows.ts").WindowReading[] };
+  provenance: { packVersion: string; organizeAttemptKey: string; reviewAttemptKey: string; nativePdf?: z.infer<typeof nativePdfProvenanceSchema>; destinationReview?: z.infer<typeof destinationReviewSchema>; windows?: import("./knowledge-pdf-windows.ts").WindowReading[] };
 }
 export class KnowledgeMaintenanceModelError extends Error {
   readonly code: string;
@@ -150,6 +183,7 @@ export async function prepareKnowledgeMaintenance(input: {
   readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
+  previousVisual?: Pick<z.infer<typeof nativePdfProvenanceSchema>, "focus" | "layoutQuestion">;
   signal?: AbortSignal;
 }): Promise<PreparedKnowledgeMaintenance> {
   const { candidate, baseline, signal } = input;
@@ -174,7 +208,7 @@ export async function prepareKnowledgeMaintenance(input: {
     ? input.pdfQuestion : null;
   if (sample && (!Number.isSafeInteger(sample.physicalPage) || sample.physicalPage! < 1
     || sample.physicalPage! > candidate.observed.extraction!.totalPages!)) reject("knowledge_native_visual_range_mismatch");
-  const pdf = sha ? originalKnowledgePdf(await input.readPdf!(candidate.watchId, sha), sha, sample !== null) : undefined;
+  const pdf = sha ? originalKnowledgePdf(await input.readPdf!(candidate.watchId, sha), sha, sample !== null || Boolean(input.previousVisual)) : undefined;
   const layoutQuestion = sample?.question ?? (pdf && input.pdfQuestion?.contentHash === sha ? input.pdfQuestion.question : null);
   function coverage(value: unknown) {
     const report = nativeCoverageSchema.parse(value);
@@ -185,8 +219,18 @@ export async function prepareKnowledgeMaintenance(input: {
   }
   const nativeScope = pdf ? { readScope: { contentHash: sha, firstPage: 1,
     lastPage: candidate.observed.extraction!.totalPages }, layoutQuestion,
+    textLayerWarnings: candidate.observed.pages!.filter(p => damagedPdfText.test(p.text)).map(p => p.page),
+    quantityLocators: pdfQuantityLocators(candidate.observed.pages!),
     ...(sample ? { physicalPage: sample.physicalPage } : {}) } : {};
-  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys) : null;
+  const priorRanges = baseline?.source.extraction?.contentHash === sha ? baseline.source.chunks : [];
+  const priorTopics = [...new Set(priorRanges.flatMap(chunk => chunk.applicability.topics))].slice(0, 12);
+  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys, priorTopics) : null;
+  const samePages = (unit: OriginalUnit) => priorRanges.filter(chunk => chunk.pageStart && chunk.pageEnd
+    && chunk.pageStart >= unit.page! && chunk.pageEnd <= unit.pageEnd! && chunk.originalText
+    && unit.originalText.includes(chunk.originalText));
+  const priorVisual = input.previousVisual;
+  if (priorVisual && (!priorVisual.focus || priorVisual.focus.parentHash !== sha || !priorVisual.layoutQuestion || sample))
+    reject("knowledge_focus_binding_mismatch");
   const organize = await loadAgentPrompt("knowledge-organize", "structured", INPUTS);
   const complete = async (stage: "organize" | "review", system: string, payload: unknown, responseJsonSchema?: Record<string, unknown>) => {
     checkSignal(signal);
@@ -218,7 +262,9 @@ export async function prepareKnowledgeMaintenance(input: {
   const organized = pending.length ? await complete("organize", organize.text, {
     role: "background-knowledge-maintenance", watch: candidate.definition,
     observationHash: candidate.observationHash,
-    ...(pdfContract ? { ranges: pdfContract.ranges.map(({ key, first, last, pages }) => ({ key, first, last, pages })) }
+    ...(pdfContract ? { ranges: pdfContract.ranges.map(({ key, first, last, pages }) => ({ key, first, last, pages })),
+      priorRetrieval: priorRanges.map(({ pageStart, pageEnd, section, applicability, sourceExcerpt }) =>
+        ({ pageStart, pageEnd, section, applicability, sourceExcerpt })) }
       : { originalUnits: pending.map(({ pageEnd: _, ...unit }) => unit) }),
     ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(organizedSchema, { io: "input" }) }),
@@ -243,17 +289,29 @@ export async function prepareKnowledgeMaintenance(input: {
       const draft = byId.get(unit.id)!;
       // The short original preview is deterministic, not model-authored evidence.
       // Full original text remains available to the independent semantic review.
-      const sourceExcerpt = [...unit.originalText.trim()].slice(0, 150).join("");
-      return { key: unit.id, section: draft.section, sourceExcerpt,
-        originalText: unit.originalText, text: draft.text, keywords: draft.keywords, applicability: draft.applicability,
+      const evidence = pdf ? readablePdfQuote(unit.originalText, samePages(unit)[0]?.sourceExcerpt)
+        : { originalText: unit.originalText, sourceExcerpt: [...unit.originalText.trim()].slice(0, 150).join("") };
+      const focus = priorVisual?.focus;
+      const text = focus && unit.page! <= focus.physicalPage && unit.pageEnd! >= focus.physicalPage
+        ? draft.text + "\n" + priorVisual.layoutQuestion + "\n" + Object.values(focus.review.layoutFacts).join("、") : draft.text;
+      // Regrouping unchanged physical pages retains their existing retrieval
+      // eligibility. The independent review sees the resulting scope and text.
+      const applicability = pdf ? includePriorRetrieval(draft.applicability, samePages(unit).map(chunk => chunk.applicability))
+        : draft.applicability;
+      return { key: unit.id, section: draft.section, ...evidence,
+        text, keywords: draft.keywords, applicability,
         ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.pageEnd! } : {}) };
     }),
   });
   const reviewPrompt = await loadAgentPrompt("knowledge-review", "structured", INPUTS);
+  const priorConditions = units.flatMap(unit => samePages(unit).flatMap(old =>
+    old.applicability.conditions.map(original => ({ oldKey: old.key, pageStart: old.pageStart!, pageEnd: old.pageEnd!,
+      original, newKey: unit.id, conditions: source.chunks.find(chunk => chunk.key === unit.id)!.applicability.conditions }))))
+    .map((row, index) => ({ ...row, field: "priorCondition" + (index + 1) }));
   const before = new Map(baseline?.source.chunks.map(chunk => [chunk.key, chunk]) ?? []);
   const after = new Map(source.chunks.map(chunk => [chunk.key, chunk]));
   const preview = (chunk: KnowledgeSourceInput["chunks"][number] | undefined) =>
-    chunk ? [...(chunk.originalText ?? chunk.sourceExcerpt).trim()].slice(0, 150).join("") : null;
+    chunk ? [...(chunk.sourceExcerpt || chunk.originalText || "").trim()].slice(0, 150).join("") : null;
   const comparisonUnits = [...new Set([...before.keys(), ...after.keys()])].map(key => ({
     key, oldQuote: preview(before.get(key)), newQuote: preview(after.get(key)),
   }));
@@ -272,6 +330,9 @@ export async function prepareKnowledgeMaintenance(input: {
     pageFindings: z.strictObject(Object.fromEntries(pageKeys.map(key => [key, nativeCoverageSchema.shape.pages.element.shape.finding]))),
   });
   const pdfReviewSchema = pdf ? modelAssessmentSchema.extend({
+    ...(priorConditions.length ? { priorConditions: z.strictObject(Object.fromEntries(priorConditions.map(row =>
+      [row.field, z.strictObject({ disposition: z.enum(["prior_edition_note", "unresolved",
+        ...row.conditions.map((_, i) => "condition" + (i + 1))]), reason: z.string().trim().min(1).max(300) })]))) } : {}),
     changes: z.strictObject(Object.fromEntries(comparisonUnits.map(({key, oldQuote, newQuote}) => [key, z.strictObject({
       meaning: oldQuote === null ? z.enum(["new"]) : newQuote === null ? z.enum(["removed"]) : changeFields.meaning, explanation: changeFields.explanation,
     })]))),
@@ -281,6 +342,8 @@ export async function prepareKnowledgeMaintenance(input: {
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
     binding, comparisonUnits, growthRuleBindings,
+    ...(priorConditions.length ? { priorConditions: priorConditions.map(({ conditions, ...row }) => ({ ...row,
+      currentConditions: Object.fromEntries(conditions.map((condition, i) => ["condition" + (i + 1), condition])) })) } : {}),
     candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) } : source,
     baseline: baseline?.source ?? null, ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
@@ -297,9 +360,21 @@ export async function prepareKnowledgeMaintenance(input: {
     layoutAnswer: nativeReview.nativeCoverage.layoutAnswer, unreadablePages: nativeReview.nativeCoverage.unreadablePages,
   }) : null;
   const { decisionReason, ...modelAssessment } = nativeReview
-    ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage")),
+    ? modelAssessmentSchema.parse({ ...Object.fromEntries(Object.entries(nativeReview).filter(([k]) => k !== "nativeCoverage" && k !== "priorConditions")),
       changes: Object.entries(nativeReview.changes).map(([key, change]) => ({ key, ...change })) })
     : modelAssessmentSchema.parse(reviewed.value);
+  const conditionDecisions = z.record(z.string(), z.object({disposition:z.string(), reason:z.string()}))
+    .parse(nativeReview?.priorConditions ?? {});
+  const checkedConditions = priorConditions.map(({ field, conditions, ...row }) => {
+    const { disposition, reason } = conditionDecisions[field]!;
+    if (disposition === "unresolved" || disposition === "prior_edition_note")
+      return { ...row, disposition: disposition as "unresolved" | "prior_edition_note", currentCondition: null, reason };
+    const index = conditions.findIndex((_, i) => disposition === "condition" + (i + 1));
+    if (index < 0) reject("knowledge_pdf_prior_condition_mismatch");
+    return { ...row, disposition: "retained" as const, currentCondition: conditions[index]!, reason };
+  });
+  const unresolvedCondition = checkedConditions.find(row => row.disposition === "unresolved");
+  if (unresolvedCondition) modelAssessment.decision = "hold";
   if (sample) {
     if (input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"review",reviewedCoverage!.layoutFacts!)) reject("knowledge_native_visual_sample_mismatch");
     const matches = source.chunks.filter(chunk => chunk.pageStart! <= sample.physicalPage! && chunk.pageEnd! >= sample.physicalPage!);
@@ -334,13 +409,14 @@ export async function prepareKnowledgeMaintenance(input: {
     decision: assessment.decision === "approve" && assessment.growthRuleImpact === "none" ? "approve_candidate" : "hold_candidate",
     reviewKind: "model_review", policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
     modelReviewCompleted: true, growthRuleImpact: assessment.growthRuleImpact,
-    notes: [decisionReason.slice(0, 240), ...(changedRule ? [assessment.growthRuleReason] : [])],
+    notes: [(unresolvedCondition?.reason ?? decisionReason).slice(0, 240), ...(changedRule ? [assessment.growthRuleReason] : [])],
   });
   return { source, versionHash: sourceVersionHash(source), assessment, review,
     provenance: { packVersion: organize.packVersion,
       organizeAttemptKey: organized?.attemptKey ?? "reused-originals:" + knowledgeReviewHash([...reusable.values()]),
       reviewAttemptKey: reviewed.attemptKey, ...(sha && organizedCoverage && reviewedCoverage ? { nativePdf: { contentHash: sha,
-        organize: organizedCoverage, review: reviewedCoverage, layoutQuestion } } : {}) } };
+        organize: organizedCoverage, review: reviewedCoverage, layoutQuestion, ...priorVisual,
+        ...(checkedConditions.length ? { priorConditions: checkedConditions } : {}) } } : {}) } };
 }
 
 /** No memory fallback: the durable caller must store evidence before returning approval. */
@@ -352,13 +428,33 @@ export function createModelKnowledgeReviewPort(options: {
   readPdf?: (sourceId: string, hash: string) => Promise<Buffer>;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
+  comparison?: { destination: string; baseline: KnowledgeMaintenanceBaseline };
+  previousVisual?: (candidate: BackgroundKnowledgeCandidate) => Promise<Pick<z.infer<typeof nativePdfProvenanceSchema>, "focus" | "layoutQuestion">>;
   savePrepared(candidate: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance): Promise<void>;
 }): KnowledgeSemanticReviewPort {
   return {
     async review(candidate, signal) {
       checkSignal(signal);
-      const prepared = await prepareKnowledgeMaintenance({ candidate, baseline: await options.baseline(candidate),
+      const local = await options.baseline(candidate), comparison = options.comparison;
+      if (comparison && (local || candidate.previousObservationHash !== null || !comparison.baseline.observationHash))
+        reject("knowledge_destination_baseline_conflict");
+      const comparedCandidate = comparison ? { ...candidate, previousObservationHash: comparison.baseline.observationHash } : candidate;
+      const prepared = await prepareKnowledgeMaintenance({ candidate: comparedCandidate, baseline: comparison?.baseline ?? local,
+        previousVisual: await options.previousVisual?.(candidate),
         fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
+      if (comparison) {
+        prepared.provenance.destinationReview = destinationReviewSchema.parse({ destination: comparison.destination,
+          previousObservationHash: comparison.baseline.observationHash, assessment: prepared.assessment });
+        // The reviewer read the whole candidate. On an empty local store every
+        // retained key is an addition. Never relabel a destination withdrawal
+        // or a changed key as independently assessed against the empty store.
+        const additions = prepared.assessment.changes.filter(change => change.newQuote !== null);
+        if (additions.length !== prepared.source.chunks.length || additions.some(change => change.meaning !== "new"))
+          reject("knowledge_empty_baseline_projection_ambiguous");
+        prepared.assessment = validateKnowledgeAssessment({ ...prepared.assessment, comparedVersionId: null, comparedHash: null,
+          changes: additions }, prepared.source, null);
+        prepared.review = { ...prepared.review, previousObservationHash: null };
+      }
       checkSignal(signal);
       await options.savePrepared(candidate, prepared);
       checkSignal(signal);

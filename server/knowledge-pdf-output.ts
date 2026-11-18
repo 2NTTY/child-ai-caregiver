@@ -2,7 +2,7 @@ import { layoutFactsSchema, layoutFactContract } from "./knowledge-pdf-layout.ts
 import { z } from "zod";
 import { knowledgeChunkInputSchema } from "./knowledge-inputs.ts";
 
-export const NATIVE_PDF_READER_VERSION = "native-pdf-physical-pages/3";
+export const NATIVE_PDF_READER_VERSION = "native-pdf-physical-pages/4";
 
 const { section, text, keywords, applicability } = knowledgeChunkInputSchema.shape;
 const { region, topics, conditions } = applicability.shape;
@@ -19,7 +19,8 @@ export const nativeCoverageSchema = z.strictObject({
 });
 
 /** The response grammar requires every server-assigned range, including image/table pages. */
-export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[], factKeys: readonly string[] = []) {
+export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[],
+  factKeys: readonly string[] = [], priorTopics: readonly string[] = []) {
   const ranges = units.map((unit, i) => {
     const first = unit.page!, last = unit.pageEnd!;
     const pages = Array.from({length:last - first + 1}, (_, offset) => "physicalPage" + (first + offset));
@@ -27,6 +28,7 @@ export function pdfOrganizationContract(units: readonly { id: string; page: numb
   });
   const shape = z.strictObject({ ranges: z.strictObject(Object.fromEntries(ranges.map(r => [r.key, group.extend({
     pageText: z.strictObject(Object.fromEntries(r.pages.map(key => [key, text]))),
+    ...(priorTopics.length ? { priorTopicMatches: z.strictObject(Object.fromEntries(priorTopics.map(key => [key, z.boolean()]))) } : {}),
   })]))), nativeCoverage: factKeys.length ? nativeCoverageSchema.extend({ layoutFacts: layoutFactContract(factKeys) }) : nativeCoverageSchema });
   return { ranges, schema: nativeResponseSchema(shape), parse(raw: unknown) {
     // The English FHS publication can spell its jurisdiction in full. Normalize that
@@ -37,10 +39,11 @@ export function pdfOrganizationContract(units: readonly { id: string; page: numb
         ? { ...value, region: "HK" } : value]));
     const value = shape.parse({ ...envelope, ranges: normalized });
     return { nativeCoverage: value.nativeCoverage, units: ranges.map(({ key, unitId, first, pages }) => {
-      const { region, topics, conditions, ageRange, pageText, ...content } = value.ranges[key]!;
+      const { region, topics, conditions, ageRange, pageText, priorTopicMatches, ...content } = value.ranges[key]!;
+      const matches = Object.entries(priorTopicMatches ?? {}).filter(([, supported]) => supported).map(([topic]) => topic);
       const text = pages.length === 1 ? pageText[pages[0]!]! : pages.map((page, offset) => "第 " + (first + offset) + " 頁　" + pageText[page]).join("\n");
-      return { ...content, text, unitId, applicability: { region, topics, conditions,
-        ageBasis: ageRange?.basis ?? "any", minAgeMonths: ageRange?.minMonths ?? null, maxAgeMonths: ageRange?.maxMonths ?? null,
+      return { ...content, text, unitId, applicability: { region, topics: [...new Set([...matches, ...topics])], conditions,
+        ageBasis: ageRange?.basis ?? ("any" as const), minAgeMonths: ageRange?.minMonths ?? null, maxAgeMonths: ageRange?.maxMonths ?? null,
         ...(ageRange?.exclusiveEnd ? { maxAgeMonthsExclusive: true } : {}) } };
     }) };
   } };
