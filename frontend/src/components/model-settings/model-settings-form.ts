@@ -1,3 +1,4 @@
+import { formatMoneyMicros, parseMoneyBudget } from '../admin/usage-amounts.ts';
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
 import { DEFAULT_SOFT_BUDGET_RATIO, SOFT_BUDGET_RATIO_RANGE, deriveSoftBudgetTargets } from "../../../../src/shared/agent-run-limits.ts";
@@ -27,6 +28,11 @@ export function modelSettingsDraft(settings: ModelSettings, effective?: Effectiv
   return { mode: settings.mode, provider: settings.provider, model: settings.model, baseUrl: settings.baseUrl ?? "",
     embeddingProvider: settings.embeddingProvider ?? "gemini", embeddingProject: settings.embeddingProject ?? "", embeddingLocation: settings.embeddingLocation ?? "",
     keyText: "", embeddingKeyText: "", removeEmbeddingKey: false, consent: false, backgroundEnabled: settings.backgroundEnabled,
+    publicMaintenanceEnabled: settings.publicMaintenanceEnabled ?? false,
+    moneyText: settings.dailyMoneyBudget ? formatMoneyMicros(String(settings.dailyMoneyBudget.micros)) : '',
+    moneyCurrency: settings.dailyMoneyBudget?.currency ?? 'HKD',
+    maintenanceText: settings.maintenanceMoneyBudget ? formatMoneyMicros(String(settings.maintenanceMoneyBudget.micros)) : '',
+    maintenanceCurrency: settings.maintenanceMoneyBudget?.currency ?? 'HKD',
     dailyText: String(settings.dailyLimit), modelCallsText: String(settings.maxModelCalls), queryEmbeddingsText: String(settings.maxQueryEmbeddings),
     toolCallsText: String(settings.maxToolCalls ?? effective?.maxToolCalls ?? personalLimits.toolCalls.default),
     runSecondsText: String(settings.maxRunSeconds ?? effective?.maxRunSeconds ?? personalLimits.deadlineSeconds.default),
@@ -47,7 +53,8 @@ export function modelSettingsSchema(keyConfigured: boolean, savedProvider: Model
     removeEmbeddingKey: z.boolean(), consent: z.boolean(), backgroundEnabled: z.boolean(),
     dailyText: z.string(), modelCallsText: z.string(), queryEmbeddingsText: z.string(), toolCallsText: z.string(),
     runSecondsText: z.string(), requestSecondsText: z.string(), retriesText: z.string(),
-    softBudgetRatioText: z.string(),
+    moneyText: z.string(), moneyCurrency: z.string(), maintenanceText: z.string(), maintenanceCurrency: z.string(),
+    publicMaintenanceEnabled: z.boolean(), softBudgetRatioText: z.string(),
   }).superRefine((draft, context) => {
     if (draft.mode !== "personal") return;
     if (!personalModelIdSchema.safeParse(draft.model).success || /^[a-z][a-z\d+.-]*:\/\//iu.test(draft.model))
@@ -76,6 +83,10 @@ export function modelSettingsSchema(keyConfigured: boolean, savedProvider: Model
     if (!draft.removeEmbeddingKey && !draft.embeddingKeyText && (modelEmbeddingRouteChanged(draft, savedSettings)
       || draft.embeddingProvider === "vertex" && !savedSettings?.embeddingKeyConfigured))
       context.addIssue({ code: "custom", path: ["embeddingKeyText"], message: "新增或更換向量服務／專案／地區時，請重新輸入相應的獨立向量密鑰。" });
+    for (const [amount, currency] of [['moneyText', 'moneyCurrency'], ['maintenanceText', 'maintenanceCurrency']] as const) {
+      if (parseMoneyBudget(draft[amount], draft[currency]) === undefined)
+        context.addIssue({ code: 'custom', path: [amount], message: '請輸入三個大寫字母的幣別及最多六位小數的非負金額。' });
+    }
     for (const [path, , range] of modelLimitFields) {
       const number = Number(draft[path]);
       if (!/^\d+$/u.test(draft[path]) || !Number.isInteger(number) || number < range.min || number > range.max)
@@ -95,7 +106,17 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
   const personal = draft.mode === "personal";
   const softText = (draft.softBudgetRatioText ?? "").trim();
   const parsedSoftRatio = softText === "" ? Number.NaN : parseAdminSoftBudgetRatioInput(softText);
-  return { expectedVersion: settings.version, mode: draft.mode,
+  const budgets: Pick<ModelSettingsCommand, 'dailyMoneyBudget' | 'maintenanceMoneyBudget'> = {};
+  if (personal) {
+    for (const [field, amount, currency] of [['dailyMoneyBudget', draft.moneyText, draft.moneyCurrency],
+      ['maintenanceMoneyBudget', draft.maintenanceText, draft.maintenanceCurrency]] as const) {
+      const value = parseMoneyBudget(amount, currency), saved = settings[field];
+      if (value !== undefined && (value?.currency !== saved?.currency || value?.micros !== saved?.micros)) budgets[field] = value;
+    }
+  }
+  const sponsor = personal && draft.backgroundEnabled && draft.publicMaintenanceEnabled;
+  return { expectedVersion: settings.version, mode: draft.mode, ...budgets,
+    ...(sponsor !== Boolean(settings.publicMaintenanceEnabled) ? { publicMaintenanceEnabled: sponsor } : {}),
     backgroundEnabled: personal && draft.backgroundEnabled, consent: personal && draft.consent,
     dailyLimit: personal ? Number(draft.dailyText) : settings.dailyLimit,
     maxModelCalls: personal ? Number(draft.modelCallsText) : settings.maxModelCalls,

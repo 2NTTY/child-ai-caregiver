@@ -12,7 +12,7 @@ import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TabToolbar, UnderlineTabs } from '../components/ui';
 import { AppIcon } from '../components/AppIcon';
 import { ToolbarIconButton } from '../components/ToolbarIconButton';
-import { budgetBalanceLabel, displayMoney } from '../components/admin/usage-amounts';
+import { budgetBalanceLabel, displayMoney, formatMoneyMicros, parseMoneyBudget } from '../components/admin/usage-amounts';
 import { AppCheckbox } from '../components/AppCheckbox';
 import { useProduction } from '../production/ProductionProvider';
 import { colors, mobileLayout, spacing } from '../theme';
@@ -38,9 +38,24 @@ const adminTabs = [
 ] as const;
 type AdminTab = typeof adminTabs[number]['key'];
 
-function UsageDetails({ usage }: { usage: AdminUsage }) {
+function PoolBudgetEditor({ pool, usage, disabled, submit }: { pool: 'general' | 'maintenance'; usage: AdminUsage; disabled: boolean; submit(command: AdminCommand): void }) {
+  const saved = (pool === 'maintenance' ? usage.maintenanceFinance : usage.finance)?.approvedDailyBudget;
+  const [currency, setCurrency] = useState(saved?.currency ?? 'HKD');
+  const [amount, setAmount] = useState(saved ? formatMoneyMicros(String(saved.micros)) : '');
+  const value = parseMoneyBudget(amount, currency);
+  const changed = value !== undefined && (value?.currency !== saved?.currency || value?.micros !== saved?.micros);
+  return <View style={styles.actions}>
+    <AppTextField label="幣別" value={currency} maxLength={3} onChangeText={v => setCurrency(v.toUpperCase())} disabled={disabled} />
+    <AppTextField label="當日對帳預算" value={amount} keyboardType="decimal-pad" placeholder="留空以清除" onChangeText={setAmount} disabled={disabled} error={value === undefined} />
+    <AppButton label={value === null ? '清除預算' : '保存預算'} disabled={disabled || !changed} onPress={() => {
+      if (usage.budgetVersions && changed && value !== undefined) submit({ kind: 'money_budget', opId: crypto.randomUUID(), day: usage.day,
+        expectedVersion: usage.budgetVersions[pool], pool, amount: value });
+    }} />
+  </View>;
+}
+
+function UsageDetails({ usage, disabled, submit }: { usage: AdminUsage; disabled: boolean; submit(command: AdminCommand): void }) {
   const { breakdown, finance } = usage;
-  const balance = budgetBalanceLabel(finance);
   const activities = breakdown?.activities;
   const labels = { generate: '普通生成', delegate: '委派', review: '審核', revise: '修訂', summary: '摘要', compact: '壓縮' } as const;
   const tokenSubtotal = (value: number) => value === 0 && usage.unknownUsageAttempts > 0 ? '未確認' : String(value);
@@ -54,6 +69,11 @@ function UsageDetails({ usage }: { usage: AdminUsage }) {
       {activities.retry !== undefined ? <Text>上述生成嘗試中有 {activities.retry} 次重試。</Text> : null}
       {activities.tool !== undefined ? <Text>獲准執行的工具 {activities.tool} 次。</Text> : null}
     </View> : null}
+    {(['general', 'maintenance'] as const).map(pool => {
+      const finance = pool === 'general' ? usage.finance : usage.maintenanceFinance;
+      if (!finance) return null;
+      const balance = budgetBalanceLabel(finance);
+      return <View key={pool}><Text style={styles.emphasis}>{pool === 'maintenance' ? '公共知識維護' : '一般使用'}</Text>
     {finance?.estimates.length ? finance.estimates.map(item => <Text key={item.priceVersion}>估算小計 {displayMoney(item.currency, item.micros)}（{item.attempts} 次，價目 {item.priceVersion}）</Text>)
       : <Text>費用估算未知。</Text>}
     {finance?.settlement.status === 'settled' ? <Text>已結算小計 {displayMoney(finance.settlement.currency, finance.settlement.micros)}（{finance.settlement.attempts} 次）</Text>
@@ -63,6 +83,9 @@ function UsageDetails({ usage }: { usage: AdminUsage }) {
       （{finance.approvedDailyBudget.approvalReference}，香港時間 {when(finance.approvedDailyBudget.approvedAt)} 批准）</Text>
       : <Text>當日貨幣預算未知。</Text>}
     {balance ? <Text style={styles.emphasis}>{balance}</Text> : null}
+        {usage.budgetVersions ? <PoolBudgetEditor key={usage.day + pool + usage.budgetVersions[pool]} pool={pool} usage={usage} disabled={disabled} submit={submit} /> : null}
+      </View>;
+    })}
     {finance?.providerQuota?.map((quota, index) => <Text key={index}>{quota.provider} 配額 {quota.limit} {quota.unit}（{quota.project}／{quota.model}／{quota.tier}，{quota.source} 於香港時間 {when(quota.observedAt)} 核對）</Text>)
       ?? <Text>供應商實際配額未知。</Text>}
   </>;
@@ -78,12 +101,13 @@ const indexBatchState = { running: '處理中', paused: '已暫停', interrupted
 const indexTargetState = { pending: '待處理', completed: '已完成', failed: '失敗' };
 function AuditItem({ item }: { item: AdminReceipt }) {
   return <View style={styles.row}>
-    <Text>{when(item.at)} · {item.command.kind === 'policy' ? '修改平台設定' : item.command.kind === 'invite' ? '發出／續期邀請' : '撤銷未使用邀請'}</Text>
+    <Text>{when(item.at)} · {item.command.kind === 'policy' ? '修改平台設定' : item.command.kind === 'money_budget' ? '調整當日預算' : item.command.kind === 'invite' ? '發出／續期邀請' : '撤銷未使用邀請'}</Text>
     <Text selectable style={styles.note}>操作：{item.opId} · 管理員：{item.actorId}</Text>
-    {item.command.kind === 'policy' && 'version' in item.result ? <>
+    {item.command.kind === 'policy' && 'enabled' in item.result ? <>
       <Text>平台 AI：{item.before && 'enabled' in item.before ? item.before.enabled ? '啟用' : '暫停' : '未設定'} → {item.result.enabled ? '啟用' : '暫停'}；版本 {item.result.version}</Text>
       {fields.map(([key, label]) => <Text key={key} style={styles.note}>{label}：{item.before && key in item.before ? String((item.before as Values)[key]) : '—'} → {String((item.result as Values)[key])}</Text>)}
-    </> : 'email' in item.result ? <Text>{item.result.email} · {stateLabel(item.result)} · 有效至 {when(item.result.expiresAt)}</Text> : null}
+    </> : 'pool' in item.result ? <Text>{item.result.day} · {item.result.pool === 'maintenance' ? '公共知識維護' : '一般使用'} · {item.result.approved
+      ? displayMoney(item.result.approved.currency, String(item.result.approved.micros)) : '已清除預算'}</Text> : 'email' in item.result ? <Text>{item.result.email} · {stateLabel(item.result)} · 有效至 {when(item.result.expiresAt)}</Text> : null}
   </View>;
 }
 export default function AdminScreen() {
@@ -420,7 +444,7 @@ export default function AdminScreen() {
               <AppButton label={costDetail === source ? '收起明細' : '用量及費用明細'} accessibilityLabel={label + '用量及費用明細'}
                 expanded={costDetail === source} variant="quiet" density="compact" onPress={() => setCostDetail(current => current === source ? null : source)} />
             </View>
-            {costDetail === source ? <UsageDetails usage={usage} /> : null}
+            {costDetail === source ? <UsageDetails key={userId + usage.day} usage={usage} disabled={locked || day !== usage.day || day < new Date().toISOString().slice(0, 10)} submit={submit} /> : null}
           </View>;
         }) : null}
       </View>
