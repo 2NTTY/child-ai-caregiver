@@ -16,7 +16,7 @@ import { verifyCorrectedHistory } from './verify-corrected-history.mjs';
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
 const historyQuery = mode === '--real-history-query';
-if (!historyQuery && !['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
+if (!historyQuery && !['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries', '--maintainer-inbox'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -32,7 +32,7 @@ const env = { NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0
 Object.assign(process.env, env);
 const steps = [], run = randomUUID(); let calls = 0, cookie = '', uid = '', database;
 const maximumCalls = mode === '--deliveries' ? 56 : 24;
-let agentEvidence, originalAgent;
+let agentEvidence, originalAgent, maintainerReceipt;
 async function call(path, method = 'GET', body) {
   assert.ok(++calls <= maximumCalls);
   const response = await fetch(origin + path, { method, headers: { Origin: origin, 'Content-Type': 'application/json',
@@ -86,6 +86,35 @@ try {
       },
       onResult: value => { agentEvidence = value; },
     });
+  } else if (mode === '--maintainer-inbox') {
+    const { createFirestoreAdmin } = await import('../server/firestore-admin.ts');
+    const { createStorageCipher } = await import('../server/storage-crypto.ts');
+    const { decodeFirebaseStorageKey } = await import('../server/firebase-storage-key.ts');
+    const { readAiConfig } = await import('../server/ai-config.ts');
+    const { AGENT_HIGH_WATERMARK_DEFAULTS } = await import('../src/shared/agent-run-limits.ts');
+    database = new Firestore({ projectId: state.projectId });
+    const admin = createFirestoreAdmin({ database, projectId: state.projectId, namespace: 'local_agent',
+      cipher: createStorageCipher(decodeFirebaseStorageKey(state.storageKey)) }, readAiConfig(env));
+    const path = '/api/admin/budget-alerts';
+    const policy = (await admin.readPolicy()).highWatermark ?? AGENT_HIGH_WATERMARK_DEFAULTS;
+    // Start a distinct incident even when the local harness has an older episode.
+    let prior = await admin.budgetAlerts.evaluate('background');
+    for (let i = 0; (prior.triggered || prior.highWatermarkCount > 0) && i < policy.windowSize; i++) prior = await admin.budgetAlerts.record({
+      sampleId: run + '-quiet-' + i, runCategory: 'background', usedModelCalls: 0, hardModelCalls: 2 });
+    assert.equal(prior.highWatermarkCount, 0);
+    assert.equal(prior.triggered, false);
+    const previous = await json(path);
+    for (let i = 0; i < policy.minHighRuns; i++) await admin.budgetAlerts.record({
+      sampleId: run + '-' + i, runCategory: 'background', usedModelCalls: 2, hardModelCalls: 2 });
+    const fresh = (await json(path)).items.filter(row => row.category === 'background' && !previous.items.some(old => old.id === row.id));
+    assert.equal(fresh.length, 1, 'Expected a new local incident; do not acknowledge a pre-existing alert');
+    const item = fresh[0];
+    assert.equal(item.category, 'background'); assert.equal(item.receivedAt, null); assert.equal(item.delivery, 'not_sent');
+    const key = { id: item.id, category: item.category };
+    const ack = await json(path + '/ack', 'POST', key);
+    assert.ok(ack.receivedAt); assert.deepEqual(await json(path + '/ack', 'POST', key), ack);
+    maintainerReceipt = { ...key, receivedAt: ack.receivedAt, channel: 'authenticated local administrator inbox', externalDelivery: item.delivery };
+    steps.push('maintainer-inbox-received-and-idempotent-ack');
   } else if (mode === '--deliveries') {
     assert.equal(status.externalDelivery, 'local-inbox-not-sent');
     const initial = await json('/__local/inbox'), initialIds = new Set(initial.deliveries.map(row => row.id));
@@ -270,7 +299,7 @@ try {
   console.error(JSON.stringify(evidence)); process.exitCode = 1;
 } finally { await database?.terminate(); }
 if (!process.exitCode) {
-  const evidence = { run, status: 'passed', calls, steps, modelCalls: agentEvidence?.counts.modelCalls ?? 0, agent: agentEvidence, notifications: 0,
+  const evidence = { run, status: 'passed', calls, steps, modelCalls: agentEvidence?.counts.modelCalls ?? 0, agent: agentEvidence, maintainerReceipt, notifications: 0,
     limitation: 'Current branch only; no background knowledge model, visual browser or cloud IAM acceptance' };
   await writeFile(resolve(directory, 'verification-' + run + '.json'), JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence));
 }

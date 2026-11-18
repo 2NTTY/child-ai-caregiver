@@ -222,6 +222,7 @@ export interface AgentRunInput {
   onHighWatermarkAlert?: (alert: HighWatermarkAlert) => void | Promise<void>;
   /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
   toolCatalog?: AgentToolCatalog;
+  compactToolCatalog?: AgentToolCatalog & { deferredRecipeModules: readonly string[] };
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -459,17 +460,19 @@ export function createAgentRuntime(options: {
           const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
-          if (privateSummaryEnabled && (input.toolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
+          if (privateSummaryEnabled && (input.toolCatalog || input.compactToolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
             || configuredTools[0].name !== 'stage_private_summary' || configuredTools[0].terminal !== true))
             throw new AgentStopped('invalid_tool');
-          const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
+          const compact = budget.limits.inputCharacters < AGENT_INTERACTIVE_INPUT.default ? input.compactToolCatalog : undefined;
+          const catalog = compact ?? input.toolCatalog;
+          const capabilitySelection = catalog ? new AgentCapabilitySelection(configuredTools, catalog) : undefined;
           const promptCache = new Map<string, ReturnType<typeof loadAgentPrompt>>();
           const getPrompt = (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
             const key = JSON.stringify(ids);
             let pending = promptCache.get(key);
             if (!pending) {
               pending = loadAgentPrompt(input.promptRecipeId ?? input.recipeId, "tool_cycle",
-                input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids));
+                input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids), compact?.deferredRecipeModules);
               promptCache.set(key, pending);
             }
             return pending;

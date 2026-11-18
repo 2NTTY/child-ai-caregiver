@@ -36,6 +36,27 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
   ],
 } as const;
 
+/** Sites retaining a smaller request limit can load the same schemas and methods by domain. */
+export const COMPACT_PRODUCT_AGENT_TOOL_CATALOG = {
+  loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
+  coreToolNames: ['read_context', 'present_answer', 'show_official_help', 'request_confirmation'],
+  deferredRecipeModules: ['domain.childcare-hk.care-workflows', 'module.knowledge-answering', 'module.product-tools'],
+  groups: [
+    ...PRODUCT_AGENT_TOOL_CATALOG.groups.map(group => {
+      if (group.id === 'history') return { ...group, toolNames: ['search_history', ...group.toolNames] };
+      if (group.id === 'work') return { ...group, toolNames: ['read_work', ...group.toolNames] };
+      return group;
+    }),
+    { id: 'knowledge', description: '搜尋公共知識及續讀原文。', toolNames: ['search_knowledge', 'read_knowledge_context'],
+      promptModuleIds: ['domain.childcare-hk.care-workflows', 'module.knowledge-answering'] },
+    { id: 'memory_facts', description: '讀取、準備新增、更正或停用孩子事實。',
+      toolNames: ['read_memory_facts', 'propose_fact', 'propose_fact_revision', 'propose_fact_deactivation'],
+      promptModuleIds: ['module.knowledge-answering', 'module.product-tools'] },
+    { id: 'chat_media', description: '讀取這段聊天已有的附件或照片。',
+      toolNames: ['read_chat_file', 'read_chat_photo', 'list_chat_photos'], promptModuleIds: [] },
+  ],
+} as const;
+
 /** A private background event can discover readers, never mutations or external contact. */
 export const WORK_CONTINUATION_TOOL_CATALOG = {
   coreToolNames: ["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "read_background_result"],

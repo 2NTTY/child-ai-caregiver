@@ -2,9 +2,24 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { loadAgentPrompt, type AgentOutputMode, type PromptManifest } from "../server/agent-prompt.ts";
-import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
+import { COMPACT_PRODUCT_AGENT_TOOL_CATALOG, PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
 
 const manifest = JSON.parse(await readFile(new URL("../prompts/manifest.json", import.meta.url), "utf8")) as PromptManifest;
+test('a smaller input setting preserves every product tool and reloads original domain methods on demand', async () => {
+  const compact = COMPACT_PRODUCT_AGENT_TOOL_CATALOG;
+  const names = (c: typeof compact | typeof PRODUCT_AGENT_TOOL_CATALOG) =>
+    [...c.coreToolNames, ...c.groups.flatMap(g => [...g.toolNames])].sort();
+  assert.deepEqual(names(compact), names(PRODUCT_AGENT_TOOL_CATALOG));
+  const inputs = ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'];
+  const initial = await loadAgentPrompt('product-interactive', 'tool_cycle', inputs, [], compact.deferredRecipeModules);
+  for (const required of [...manifest.baseModules, ...manifest.domain.requiredModules]) assert.ok(initial.moduleIds.includes(required));
+  const modules = new Set<string>(initial.moduleIds);
+  for (const group of compact.groups) {
+    const loaded = await loadAgentPrompt('product-interactive', 'tool_cycle', inputs, group.promptModuleIds, compact.deferredRecipeModules);
+    loaded.moduleIds.forEach(id => modules.add(id));
+  }
+  for (const id of compact.deferredRecipeModules) assert.ok(modules.has(id), id);
+});
 const directEntries = [
   { id: "product-interactive", path: "product-agent.ts", catalog: PRODUCT_AGENT_TOOL_CATALOG },
   { id: "product-background", path: "product-agent.ts" },

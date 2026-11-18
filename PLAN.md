@@ -85,7 +85,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
-**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。原候選的離線驗證與 11 月 11 日整合修正分別列出；真模型驗收與正式發布仍待核對。
+**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。11 月 18 日真模型已找回最後更正的原句並通過獨立審核。正式站部署按發布收據另核。
 
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
@@ -203,7 +203,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 11 月 18 日續驗：香港 Firestore 同時間的 32 筆合成資料按原游標分成 30／2，無遺漏或重複，已清除該隔離範圍。本機實際 Web 續頁曾因正式 HTTP 入口拒收游標而回 400；修正後 Edge 點「載入較早建議」顯示 32 筆且按鈕消失。[分頁收據](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [兩個 worker 收緊政策與重啟收據](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json)
 
-預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。正式發布收據、維護者實收及正式摘要啟用仍分開追蹤。
+預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
+
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。正式站維護者親自收件、正式摘要啟用及供應商未提供的結算／配額各自待核。
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
