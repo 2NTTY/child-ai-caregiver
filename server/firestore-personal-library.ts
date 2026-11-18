@@ -1,13 +1,17 @@
 import { z } from 'zod';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { writeKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
 import type { StorageCipher } from './storage-crypto.ts';
 import type { FirestoreAuthority } from './firestore-authority.ts';
-import { FirestoreKnowledgeError, type FirestoreKnowledgeStore } from './firestore-knowledge.ts';
-import type { PersonalLibraryPage } from '../src/shared/personal-library.ts';
+import { FirestoreKnowledgeError, type FirestoreKnowledgeEditionExporter, type FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { selectedLibraryEditions, type PersonalLibraryPage } from '../src/shared/personal-library.ts';
 import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.ts';
 import { canonical } from './firestore-session-codec.ts';
 import { FamilyError } from './family-access.ts';
 
-import type { LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import type { LibraryArchiveSelection, LibraryPreferenceChange } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeSchema,
   authorizationVersion: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u),
@@ -15,12 +19,45 @@ const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeS
 /** Public catalogue reads retain the current child and account preconditions. */
 export function createFirestorePersonalLibrary(options: {
   authority: Pick<FirestoreAuthority, 'readScope'> & Partial<Pick<FirestoreAuthority, 'runTransaction'>>;
-  knowledge: Pick<FirestoreKnowledgeStore, 'catalog'> & Partial<Pick<FirestoreKnowledgeStore, 'catalogForUser' | 'saveLibraryPreference'>>;
+  knowledge: Pick<FirestoreKnowledgeStore, 'catalog'> & Partial<Pick<FirestoreKnowledgeStore, 'catalogForUser' | 'saveLibraryPreference'>> & Partial<FirestoreKnowledgeEditionExporter>;
   cipher: StorageCipher; projectId: string; namespace: string;
 }) {
   const aad = (owner: string) => canonical(['yuban-library-cursor', 1, options.projectId, options.namespace, owner]);
   const changed = (): never => { throw new FamilyError(409, 'library_scope_changed'); };
   return {
+    async exportArchive(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal) {
+      const { catalogForUser, exportPublishedEdition } = options.knowledge;
+      if (!catalogForUser || !exportPublishedEdition) throw new Error('library_unavailable');
+      const scope = await options.authority.readScope(userId, childId);
+      const verify = async () => {
+        const items: PersonalLibraryPage['items'] = [];
+        let cursor: string | null = null;
+        do {
+          signal.throwIfAborted();
+          const page = await catalogForUser(userId, cursor);
+          items.push(...page.items.filter(item => item.series?.id === selection.seriesId));
+          cursor = page.nextSourceId;
+        } while (cursor);
+        const expected = selectedLibraryEditions(items);
+        if (!expected.length || expected.length !== selection.editions.length
+          || expected.some(row => !selection.editions.some(item => item.sourceId === row.sourceId && item.versionHash === row.versionHash)))
+          throw new FamilyError(409, 'library_selection_changed');
+        if (canonical(await options.authority.readScope(userId, childId)) !== canonical(scope)) changed();
+      };
+      await verify();
+      const directory = await mkdtemp(join(tmpdir(), 'public-library-'));
+      try {
+        const path = join(directory, 'series.zip');
+        const archive = await writeKnowledgeArchive(path, selection.editions, async row => {
+          signal.throwIfAborted();
+          return exportPublishedEdition(row.sourceId, row.versionHash, selection.seriesId);
+        });
+        // Each family-shareable registered edition is bounded by the archive writer's 2 MiB member limit.
+        const bytes = new Uint8Array(await readFile(path));
+        await verify();
+        return { bytes, sha256: archive.sha256 };
+      } finally { await rm(directory, { recursive: true, force: true }); }
+    },
     async save(userId: string, childId: string, change: LibraryPreferenceChange) {
       const save = options.knowledge.saveLibraryPreference;
       if (!save || !options.authority.runTransaction) throw new Error('library_unavailable');

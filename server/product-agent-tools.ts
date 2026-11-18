@@ -500,11 +500,15 @@ export function createProductAgentTools(options: {
     for (const paragraph of parsed.paragraphs) {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
-      if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => {
+      if (official && !paragraph.citationIds.some(id => {
         const chunk = evidence.get(id)?.chunk;
         return chunk?.classification === 'official_guidance' && chunk.treatment?.kind !== 'overview' || liveEvidence.get(id)?.classification === 'official_guidance';
       })) throw new FamilyError(400, "citation_required");
-      if (kind === 'public_information' && !paragraph.citationIds.some(id => evidence.has(id) || liveEvidence.has(id))) throw new FamilyError(400, 'citation_required');
+      if (kind === 'public_information') {
+        const quantitative = /\p{Decimal_Number}|[零〇一二兩三四五六七八九十百千萬半]+(?:個月|小時|分鐘|毫升|毫克|公斤|克|歲|日|次|度|年|月)/u.test(paragraph.text);
+        if (!paragraph.citationIds.some(id => liveEvidence.has(id) || evidence.has(id) && (!quantitative || evidence.get(id)!.chunk.treatment?.kind !== 'overview')))
+          throw new FamilyError(400, 'citation_required');
+      }
       if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id) && !liveEvidence.has(id)) && !run.images?.references().length && !run.voice) {
         const quotes = [...historyQuoteHandles].slice(-6).flatMap(([handle, id]) => {
           const source = selectedEvidence.get(id);

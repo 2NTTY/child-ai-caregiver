@@ -99,7 +99,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       if (row.review_state !== "reviewed") throw new Error("Review public content before embedding");
       const result = await pool.query<{ embedding_hash: string; document: KnowledgeChunkInput }>(
         `SELECT DISTINCT ON (c.embedding_hash) c.embedding_hash,c.document FROM knowledge_chunks c
-         WHERE c.version_id = $4 AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
+         WHERE c.version_id = $4 AND COALESCE(c.document->'treatment'->>'kind','detailed') NOT IN ('structured','excluded') AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
          WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)
          ORDER BY c.embedding_hash`, [...embeddingKey, versionId]);
       return result.rows.map(chunk => embeddingDocument(row.document.title, chunk.document.section, chunk.document.text));
@@ -177,13 +177,14 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
            ELSE COALESCE(w.definition->>'audience','public_noncommercial') END AS usage_scope,
          ord.chunk_order,CASE WHEN $4::vector IS NULL THEN NULL ELSE e.embedding <=> $4::vector END AS distance
          FROM knowledge_sources s JOIN knowledge_versions v ON v.id = s.active_version_id AND v.source_id = s.id
-         JOIN knowledge_chunks c ON c.version_id = v.id ${vectorJoin}
+         JOIN knowledge_chunks c ON c.version_id = v.id LEFT ${vectorJoin}
          JOIN LATERAL (SELECT chunk_order FROM jsonb_array_elements(v.document->'chunks') WITH ORDINALITY AS listed(chunk,chunk_order)
            WHERE listed.chunk->>'key'=c.section_key) ord ON true
          LEFT JOIN knowledge_observations o ON o.source_id=s.id
          LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
          WHERE ${knowledgeEligibility("$11::boolean")}
            AND c.document->'treatment'->>'kind' IS DISTINCT FROM 'excluded'
+           AND (e.input_hash IS NOT NULL OR c.document->'treatment'->>'kind' = 'structured')
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
            AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
