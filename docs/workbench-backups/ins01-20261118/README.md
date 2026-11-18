@@ -1,6 +1,6 @@
 # INS01: Numalog Insights reference and verification index
 
-This branch contains a **text-only backup of a verified design-reference result**. It is not a deployed site, app implementation, complete preview backup, medical recommendation, or selected product design. No pull request or merge is requested by this backup.
+This backup commit adds only a **text-only index of a verified design-reference result**; the independent branch also inherits the existing repository base. It is not a deployed site, app implementation, complete preview backup, medical recommendation, or selected product design. No pull request or merge is requested by this backup.
 
 ## Source and exact version
 
@@ -43,13 +43,13 @@ One source is shown in two evidence representations, not two independent designs
 
 Not verified: other catalogue pages in this browser pass, physical mobile devices, complete accessibility, all original app functions, editing/sharing/sync/backend, live external source availability, medical correctness or a complete per-request network trace. The medical wording in the reference remains original synthetic example content, not endorsed advice.
 
-## What is deliberately not in this public branch
+## What is deliberately not added by this backup commit
 
 - No third-party screenshots, fonts, runtime bundles, upstream source archive or raw research files.
 - No synthetic record-level dataset, browser logs, private workspace paths, Library identifiers, credentials, personal data, full backup archives or existing preview source tree.
 - The complete screenshots and full evidence backup remain only in the owner's private Library backup; they are **not backed up to GitHub by this text-only commit**.
 
-The hashes below identify evidence without publishing the image bytes. Local filenames are descriptive artifact labels, not downloadable assets in this branch.
+The hashes below identify evidence without publishing the image bytes. Local filenames are descriptive artifact labels, not image assets added by this backup commit.
 
 ## Image identity (SHA-256)
 
