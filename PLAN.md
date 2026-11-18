@@ -215,13 +215,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 | **PR 10** | `codex/req005-cursor-pagination` | [#513](https://github.com/2NTTY/child-ai-caregiver/pull/513) | §8 | 累積資料規模化：移除 50 文件、50 來源、200 關注小型業務牆；實作有界 Keyset Cursor 分頁、端到端 API／Agent 游標傳遞（HTTP、client schema 與 options、list_private_sources、read_concerns 20 筆邊界對齊無跳漏）、雙遍索引／舊資料查重與單項 200 事件時間線硬拒絕防線；前端畫面控制器續頁待接（實施 feature commit `20b08990`, CI SUCCESS run `42409849290`） | `REQ005_CURSOR_PAGINATION_20261107.json` | 🚀 OPEN (tip `8873734f`) |
 | **PR 11** | `codex/req005-closeout-validation` | [#514](https://github.com/2NTTY/child-ai-caregiver/pull/514) | §9 | 全量收束核對清單、官方 26 項驗收場景實測對照、待決清單完整化與真模型驗收標準確立（整合至 PLAN.md#req005-closeout01，依 AGENTS.md 移除獨立文件） | `REQ005_CLOSEOUT_VALIDATION_20261107.json` | 🔄 本次校準交付 (HEAD) |
 
-**補完 PR 的主線狀態（以 master `fc96aed8`、#629 為準）**
+**補完 PR 的主線狀態（以 master `cb974524`、#593 為準）**
 
 | 工作包 | 此基線的狀態與下一步 |
 |---|---|
 | A／[#591](https://github.com/2NTTY/child-ai-caregiver/pull/591)、B／[#592](https://github.com/2NTTY/child-ai-caregiver/pull/592)、D／[#594](https://github.com/2NTTY/child-ai-caregiver/pull/594) | 已分別合入主線 `8ae2e653`、`59e167a8`、`c28f8a09`。合併不等於已部署或通過真實環境驗收。 |
-| C／[#593](https://github.com/2NTTY/child-ai-caregiver/pull/593) | 尚未納入此 master，主線亦未包含成長歷史游標回歸測試。先前的本地候選與冷啟測試收據屬歷史證據，不能代替 #593 最新 PR head 的託管 CI。 |
-| E／[#595](https://github.com/2NTTY/child-ai-caregiver/pull/595) | 文件與離線門檻延續 `46c21b37`；每個測試檔都須證明有執行，不能以跳過或待辦冒充通過。E 不夾帶未合併的 C；C 未合併前可驗 E 自身，但正式整合門檻仍須等 C 合併後在新 master／PR head 上重跑。 |
+| C／[#593](https://github.com/2NTTY/child-ai-caregiver/pull/593) | 已合入主線 `cb974524`，成長歷史游標及其回歸測試已納入整合門檻。這不等同正式環境或實機驗收。 |
+| E／[#595](https://github.com/2NTTY/child-ai-caregiver/pull/595) | 收束文件、場景測試及門檻沿用 `c365211f`，以 `cb974524` 重新核對 PR head 與實際整合候選。每個選定測試檔均須有案例執行並全部通過；先前的 head 結果不能代替這次雙層檢查。 |
 
 官方 26 項場景未全案驗收。下方矩陣只記各版本的離線子集；本地合成、託管 CI、真模型、正式儲存與實機驗收分開記錄。`#447` 持久跨輪摘要仍未啟用。
 

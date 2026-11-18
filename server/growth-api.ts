@@ -4,6 +4,7 @@ import type { GrowthStore } from "./growth-store.ts";
 import { FirestoreDomainError } from "./firestore-domain-data.ts";
 import { FirestoreAuthorityError } from "./firestore-authority.ts";
 import { FamilyError } from "./family-access.ts";
+import { decodeGrowthHistoryCursor } from "./growth-rules.ts";
 import { apiError,jsonResponse } from "./workspace-api.ts";
 const uuid="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const route=new RegExp("^/api/children/("+uuid+")/growth(?:/(?:("+uuid+")/decide|topics/([a-z_]+)))?$","i");
@@ -18,7 +19,13 @@ export async function handleGrowthRequest(request:Request,userId:string|null,sto
     const childId=match[1].toLowerCase();
     if(!match[2] && !match[3]){
       if(request.method!=="GET") return apiError("method_not_allowed","不支援此操作。",405);
-      const page=await store.list(userId,childId);
+      const rawCursor = new URL(request.url).searchParams.get("historyCursor");
+      if (rawCursor !== null && !decodeGrowthHistoryCursor(rawCursor)) {
+        return apiError("invalid_input", "資料格式不正確。", 400);
+      }
+      const page = rawCursor !== null
+        ? await store.list(userId, childId, { historyCursor: rawCursor })
+        : await store.list(userId, childId);
       return page && await isCurrentUser(userId)?jsonResponse({page}):apiError("not_found","沒有可讀取的資料。",404);
     }
     if(request.method!=="POST") return apiError("method_not_allowed","不支援此操作。",405);
