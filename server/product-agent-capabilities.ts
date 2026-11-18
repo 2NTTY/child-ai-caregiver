@@ -9,7 +9,7 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
   groups: [
     { id: "work", description: "保存或更新已讀的同一工作、待答問題及有依據的站內跟進，並查閱背景結果；不是執行業務操作或外發授權。",
       toolNames: ["save_work", "read_background_result"], promptModuleIds: ["module.product-work"] },
-    { id: "history", description: "按本人目前可見範圍搜尋、分段讀取前文，區分本人原話與模型；舊內容不能授權重做操作。",
+    { id: "history", description: "回想之前聊過的事、核對最後一次改口。可搜尋對話原句及附近時段的訊息，按 ID 讀原文及取得私人引用。",
       toolNames: ["search_history", "read_history"], promptModuleIds: ["module.product-history"] },
     { id: "care_records", description: "按家長交代保存或更正普通照護記錄；由 Server 檢查本人預授權及原資源。",
       toolNames: ["read_care_records", "save_ordinary_record", "revise_ordinary_record"], promptModuleIds: ["module.capture-confirmation", "module.product-ordinary-actions"] },

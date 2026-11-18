@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { historyNeighbors } from './agent-history-neighbors.ts';
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
@@ -119,7 +120,7 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
         return result;
       });
     },
-    async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>): Promise<AgentHistoryPage | null> {
+    async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>, includeNeighbors = false): Promise<AgentHistoryPage | null> {
       const input = historySearchSchema.parse(raw), cursor = parseCursor(input.cursor, userId, childId, input.kind, input.query);
       if (input.kind === 'imported_message') throw new FamilyError(400, 'imported_history_unavailable');
       const table = { message: "chat_messages", private_instruction: "agent_private_notes", memory_fact: "memory_facts" }[input.kind];
@@ -134,6 +135,7 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
           AND (created_at,id)<=($3::timestamptz,$4::uuid) AND ($5::timestamptz IS NULL OR (created_at,id)>($5::timestamptz,$6::uuid))
           ORDER BY created_at,id LIMIT 101`, [userId, childId, highAt, highId, cursor?.afterAt ?? null, cursor?.afterId ?? null])).rows;
         const matches: AgentHistoryPage["matches"] = [], query = input.query.toLocaleLowerCase("zh-HK");
+        const neighbors = includeNeighbors && input.kind === 'message' && query.trim() ? historyNeighbors() : null;
         let scanned = 0, last: ScanRow | undefined;
         for (const row of rows.slice(0, 100)) {
           scanned++; last = row;
@@ -142,11 +144,15 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
           const payload = cipher.decrypt(row.payload_encrypted, context);
           const value = input.kind === "message" ? null : JSON.parse(payload);
           const text = input.kind === "message" ? payload : input.kind === "private_instruction" ? value.title + "\n" + value.text : value.key + "\n" + value.content;
-          if (text.toLocaleLowerCase("zh-HK").includes(query)) {
+          const index = text.toLocaleLowerCase("zh-HK").indexOf(query);
+          if (index >= 0) {
+            const offset = Math.max(0, index - 100);
             matches.push({ id: row.id, kind: input.kind, version: row.version, createdAt: row.created_at.toISOString(), role: row.role,
-              excerpt: text.slice(Math.max(0, text.toLocaleLowerCase("zh-HK").indexOf(query) - 100), Math.max(0, text.toLocaleLowerCase("zh-HK").indexOf(query) - 100) + 400) });
+              excerpt: text.slice(offset, offset + 400),
+              ...(neighbors ? { excerptRange: { offset, totalCharacters: text.length }, followingMessages: neighbors.following() } : {}) });
             if (matches.length === 10) break;
           }
+          if (row.role) neighbors?.observe({ id: row.id, version: row.version, createdAt: row.created_at.toISOString(), role: row.role, text });
         }
         const complete = scanned === rows.length;
         return { matches, scanned, scanLimit: 100, complete, nextCursor: !complete && last ? encode({

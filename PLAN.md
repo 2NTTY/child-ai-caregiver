@@ -195,6 +195,12 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="req005-closeout01"></a>
 ### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
 
+**2026-11-18 更正原文查詢**　從 `codex/req005-history-query` 以 `node scripts/verify-agent-local.mjs --real-history-query` 驗一個合成孩子。第一次真 Vertex 執行 `4f71c7ee` 沒有查回原話。第二次 `bb96c47a` 找到原地點，漏了省略主題的更正。接入同一孩子的相鄰原訊息並整合 #608 後，`7ff33001` 的正式回覆為「根據之前的記錄，學校簡介會最後改為在『青竹室』舉行。」共四次模型、三次工具及零次向量呼叫，沒有混入另一個孩子或寫入業務資料。該次收據欠更正原句的引用綁定。現已修正歷史工具的摘錄與呈現指引，離線驗過引用版本重讀及撤權；最新修訂仍待一次真查詢及審核收據。
+
+本機用專案支援的 Node 24.22.3 完成 Emulator 檢查點匯出及重開，沿用原帳本。先前 Windows Node 24.11.0 的 `dest already exists` 失敗仍保留。這份證據只涵蓋開發資料保存。
+
+再接 `codex/req005-query-completion`。模型輸入預檢及每輪上限已有定向離線證據；管理頁、分項帳本、告警與跨 worker 政策仍在整合，特別要核舊版 daily writer／還原相容，以及 worker 實際看到的版本。保留分域 diff 供前後端按各自分支交接。持久摘要仍須接正式累積授權及舊 writer 隔離；成長索引已有 READY 收據，真實分頁與 Web 讀回待驗。以上兩分支尚未發布。
+
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
 - **11 月 11 日整合：**專案負責人已授權按原分支修正及合併。下列表格保留 11 月 8 日各候選 SHA 的證據與當日狀態。整合時另修正了模型看見的輸出上限（#510）、本人出資 run 的持久期限（#511）、301 至 900 秒的執行期限（#512）、關注與私人來源的前端續頁及所需索引（#513），以及 ADK 同時間事件和跨範圍摘要（#508）。逐項上線、真模型品質及可調軟預算仍需分別核對。

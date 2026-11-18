@@ -723,7 +723,19 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }));
+  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, noteConfirmedMemoryFacts, () => { pendingMemoryProposalCount += 1; }, (message, reread) => {
+    const citationId = `chat:${message.id}:${message.offset}:${message.text.length}`;
+    const source = (item: typeof message) => JSON.stringify({ role: item.role, createdAt: item.createdAt, text: item.text });
+    const original = source(message);
+    selectedEvidence.set(citationId, { citationId, version: message.contentVersion ?? String(message.version),
+      contentHash: chatDeliveryContentHash(original), classification: 'private', ...chatDeliveryReviewSourceExcerpt(original) });
+    householdEvidence.set(citationId, { label: '[聊天原文]', async isCurrent() {
+      const current = await reread();
+      return !!current && current.id === message.id && current.childId === message.childId && current.version === message.version
+        && current.contentVersion === message.contentVersion && source(current) === original;
+    } });
+    return citationId;
+  }));
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,

@@ -11,10 +11,12 @@ import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts'
 import { createChatFileApi } from '../src/client/chat-file-api.ts';
 import { createTelegramApi } from '../src/client/telegram-api.ts';
 import { createWebPushApi } from '../src/client/web-push-api.ts';
+import { verifyCorrectedHistory } from './verify-corrected-history.mjs';
 
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
-if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
+const historyQuery = mode === '--real-history-query';
+if (!historyQuery && !['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -43,7 +45,7 @@ async function json(path, method, body) {
   assert.ok(response.ok, JSON.stringify({ path, status: response.status, code: value.code })); return value;
 }
 try {
-  const status = await json('/__local/status'); assert.equal(status.enabled, ['--real-agent', '--real-compose'].includes(mode)); assert.equal(status.project, state.projectId);
+  const status = await json('/__local/status'); assert.equal(status.enabled, historyQuery || ['--real-agent', '--real-compose'].includes(mode)); assert.equal(status.project, state.projectId);
   const proof = await fetch('http://' + env.FIREBASE_AUTH_EMULATOR_HOST + '/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator-public-key-only', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: state.email, password: state.password, returnSecureToken: true }),
   });
@@ -55,7 +57,36 @@ try {
   assert.deepEqual(await json('/api/admin/session'), { administrator: true });
   if (mode !== '--readback') await json('/api/account/acknowledgement', 'POST', { operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION, accepted: true });
   steps.push('emulator-login-through-production-session-and-admission');
-  if (mode === '--deliveries') {
+  if (historyQuery) {
+    const createChild = async displayName => {
+      const command = { path: '/api/children', payload: { displayName } };
+      const context = await json('/api/online/context', 'POST', command);
+      const receipt = await json('/api/online/submit', 'POST', { ...command, operation: {
+        opId: randomUUID(), deviceId: randomUUID(), workspaceId: context.workspaceId, storageEpoch: context.storageEpoch } });
+      return receipt.result.child.id;
+    };
+    const clientFetch = (url, init = {}) => {
+      assert.equal(new URL(url).origin, origin);
+      const headers = new Headers(init.headers);
+      headers.set('Origin', origin);
+      headers.set('Cookie', cookie);
+      return fetch(url, { ...init, headers });
+    };
+    const freshSession = async () => {
+      const response = await call('/api/auth/session', 'POST', { idToken: token.idToken });
+      assert.equal(response.status, 200);
+      const next = response.headers.getSetCookie().map(value => value.split(';', 1)[0]).join('; ');
+      assert.ok(next.startsWith('__local_session_') && next !== cookie);
+      cookie = next;
+    };
+    agentEvidence = await verifyCorrectedHistory({ origin, clientFetch, createChild, freshSession, uid, steps,
+      onOriginal: async value => {
+        originalAgent = value;
+        await writeFile(resolve(directory, 'original-agent-' + run + '.json'), JSON.stringify(value), { mode: 0o600 });
+      },
+      onResult: value => { agentEvidence = value; },
+    });
+  } else if (mode === '--deliveries') {
     assert.equal(status.externalDelivery, 'local-inbox-not-sent');
     const initial = await json('/__local/inbox'), initialIds = new Set(initial.deliveries.map(row => row.id));
     const signal = AbortSignal.timeout(45_000); let lastSubmission;

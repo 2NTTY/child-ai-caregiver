@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { readAgentWorkSchema, saveAgentWorkSchema, historySearchSchema, historyReadSchema, memoryFactReadSchema, requestAgentConfirmationSchema } from "../src/shared/agent-work.ts";
+import { readAgentWorkSchema, saveAgentWorkSchema, historySearchSchema, historyReadSchema, memoryFactReadSchema, requestAgentConfirmationSchema, type AgentHistoryMessage } from "../src/shared/agent-work.ts";
 import { agentProposalSchema, type AgentProposal } from "../src/shared/product-agent.ts";
 import { AGENT_WORK_TOOL_DESCRIPTIONS } from "./agent-work-tool-descriptions.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
@@ -29,7 +29,8 @@ export async function prepareProposalConfirmation(
 }
 
 export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>,
-  onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void): AgentTool[] {
+  onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void,
+  onHistoryRead?: (message: AgentHistoryMessage, reread: () => Promise<AgentHistoryMessage | null>) => string): AgentTool[] {
   const { userId, childId } = run.scope;
   const guard = async (fn: () => Promise<unknown>): Promise<AgentToolResult> => {
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
@@ -74,8 +75,38 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         budgetLimited: available < input.limit && end < value.text.length };
     })),
     make("save_work", saveAgentWorkSchema, (args, call) => guard(() => store.saveWork(run.scope, run.runId, call.callId, saveAgentWorkSchema.parse(args)))),
-    make("search_history", historySearchSchema, args => guard(() => store.searchHistory(userId, childId, historySearchSchema.parse(args)))),
-    make("read_history", historyReadSchema, args => guard(() => store.readHistory(userId, childId, historyReadSchema.parse(args)))),
+    make("search_history", historySearchSchema, args => guard(async () => {
+      const input = historySearchSchema.parse(args);
+      const page = await store.searchHistory(userId, childId, input, true);
+      if (!page || !onHistoryRead) return page;
+      const cite = (slice: Omit<AgentHistoryMessage, 'childId' | 'nextOffset'>) => {
+        if (!slice.text || slice.role !== 'user') return {};
+        const end = slice.offset + slice.text.length;
+        const reread = () => store.readHistory(userId, childId, { messageId: slice.id, offset: slice.offset,
+          limit: slice.text.length, ...(slice.contentVersion ? { contentVersion: slice.contentVersion } : {}) });
+        return { citationId: onHistoryRead({ ...slice, childId, nextOffset: end < slice.totalCharacters ? end : null }, reread) };
+      };
+      return { ...page, matches: page.matches.map(({ excerptRange, ...match }) => {
+        if (!excerptRange || !match.role) return match;
+        return { ...match, ...cite({ id: match.id, role: match.role, version: match.version, createdAt: match.createdAt,
+          text: match.excerpt, ...excerptRange }), followingMessages: match.followingMessages?.map(neighbor =>
+          ({ ...neighbor, ...cite({ ...neighbor, offset: 0 }) })) };
+      }), ...(page.matches.some(match => match.excerptRange) ? {
+        answerGuidance: '回述這些聊天原話時，用 private_reference，citationIds 填入實際支持答案的摘錄識別。其後更正可以省略原主題；沒有支持片段時可繼續讀取或說明未找到。'
+      } : {}) };
+    })),
+    make("read_history", historyReadSchema, async args => {
+      let reference: string | undefined;
+      const response = await guard(async () => {
+        const input = historyReadSchema.parse(args);
+        const reread = () => store.readHistory(userId, childId, input);
+        const message = await reread();
+        if (!message || !message.text || message.importedSource || !onHistoryRead) return message;
+        reference = message.id;
+        return { ...message, citationId: onHistoryRead(message, reread) };
+      });
+      return reference && response.status === 'succeeded' ? { ...response, reference } : response;
+    }),
     make("read_memory_facts", memoryFactReadSchema, args => guard(async () => {
       const parsed = memoryFactReadSchema.parse(args);
       const input = { factId: parsed.factId ?? null, afterId: parsed.afterId ?? null, ...(parsed.keys?.length ? { keys: parsed.keys } : {}) };
