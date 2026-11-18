@@ -18,9 +18,9 @@ const mode = process.argv[2];
 const historyQuery = mode === '--real-history-query';
 const bookletQuery = mode === '--real-booklet-query';
 const realMode = historyQuery || bookletQuery || mode === '--real-agent' || mode === '--real-compose';
-const [bookletVersion, bookletDigest] = process.argv.slice(3);
-if (bookletQuery && (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u.test(bookletVersion ?? '')
-  || !/^[a-f0-9]{64}$/u.test(bookletDigest ?? ''))) throw Error('Pass the published booklet version ID and original PDF SHA-256 from the maintenance receipt');
+const [bookletVersionHash, bookletDigest] = process.argv.slice(3);
+if (bookletQuery && ![bookletVersionHash, bookletDigest].every(value => /^[a-f0-9]{64}$/u.test(value ?? '')))
+  throw Error('Pass the published booklet version hash and original PDF SHA-256 from the maintenance receipt');
 if (!realMode && !['--data-only', '--persistence-only', '--readback', '--artifacts', '--deliveries', '--maintainer-inbox'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
@@ -228,12 +228,15 @@ try {
     const signal = AbortSignal.timeout(330_000), progress = [];
     const chat = createChatApi(origin, async () => ({ id: uid, email: state.email, name: '本地開發帳號' }), clientFetch);
     const agent = createProductAgentApi(origin, clientFetch);
+    let bookletVersion;
     if (bookletQuery) {
       let page = await agent.getLibrary(childId, signal, uid);
-      while (!page.items.some(item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionId === bookletVersion)) {
+      const edition = item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionHash === bookletVersionHash;
+      while (!page.items.some(edition)) {
         assert.ok(page.nextCursor, 'The maintenance edition must be published and visible before spending a chat run');
         page = await agent.getLibrary(childId, signal, uid, page.nextCursor);
       }
+      bookletVersion = page.items.find(edition).versionId;
     }
     let document;
     if (mode === '--real-compose') document = await createFamilyDocumentsApi(origin, clientFetch).create(childId,
@@ -276,7 +279,7 @@ try {
       agentEvidence.document = { id: saved.id, version: saved.version, proposalId: proposal.id, status: accepted.status };
       steps.push('real-compose-review-explicit-confirmation-and-same-document-readback');
     } else if (bookletQuery) {
-      const used = result.citations.find(item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionId === bookletVersion
+      const used = result.citations.find(item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionId === bookletVersion && item.versionHash === bookletVersionHash
         && item.pageStart <= 6 && item.pageEnd >= 6 && item.extraction?.contentHash === bookletDigest);
       assert.ok(used?.sourceExcerpt && used.readCoverage, 'The saved answer must cite the page it read from the maintained edition');
       assert.match(reply.text, /蘋果|苹果|apple/iu);
@@ -286,7 +289,7 @@ try {
       assert.equal(pdfResponse.headers.get('content-type'), 'application/pdf');
       const hash = createHash('sha256').update(Buffer.from(await pdfResponse.arrayBuffer())).digest('hex');
       assert.equal(hash, bookletDigest);
-      agentEvidence.original = { versionId: bookletVersion, sha256: hash, pageStart: used.pageStart, pageEnd: used.pageEnd };
+      agentEvidence.original = { versionId: bookletVersion, versionHash: bookletVersionHash, sha256: hash, pageStart: used.pageStart, pageEnd: used.pageEnd };
       steps.push('chat-cites-maintained-visual-detail-and-reopens-identical-original');
     } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);

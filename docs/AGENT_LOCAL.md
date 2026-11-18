@@ -136,10 +136,10 @@ npm run agent:local -- --inspect-knowledge
 
 ### 查回小冊子的已發布原件
 
-完成家庭健康服務英文加固小冊子的整本整理及獨立審核後，可用同一個本地環境驗一次聊天點讀。啟動本地網站時將 `fhs-feeding-booklet-en` 列入 `FIREBASE_KNOWLEDGE_SOURCE_IDS`，從本次維護收據取已發布的版本 ID 和原始 PDF 的 SHA-256。在另一個終端執行：
+完成家庭健康服務英文加固小冊子的整本整理及獨立審核後，可用同一個本地環境驗一次聊天點讀。啟動本地網站時將 `fhs-feeding-booklet-en` 列入 `FIREBASE_KNOWLEDGE_SOURCE_IDS`，從本次維護收據取已發布的版本雜湊和原始 PDF 的 SHA-256。這兩個值在合規匯出匯入後仍可核對，每個資料庫的本地版本 ID 可不同。在另一個終端執行：
 
 ```sh
-node --experimental-strip-types scripts/verify-agent-local.mjs --real-booklet-query <published-version-id> <original-pdf-sha256>
+node --experimental-strip-types scripts/verify-agent-local.mjs --real-booklet-query <published-version-hash> <original-pdf-sha256>
 ```
 
 命令先確認該版在帳戶的來源庫可見，再發一則關於圖解的自然問話。它讀回保存的回答、來源頁碼及原件，核對 PDF 位元組。已停止的 run 保留原收據；這個命令每次明確執行才會發送一則新問題。
