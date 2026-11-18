@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Redirect, useIsFocused, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,10 +9,13 @@ import { AGENT_HIGH_WATERMARK_DEFAULTS, AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RA
 import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin';
 import { parseAdminSoftBudgetRatioInput } from '../components/model-settings/model-settings-form';
 import { PageFrame } from '../components/PageFrame';
-import { AppButton, AppTextField, SectionHeader } from '../components/ui';
+import { AppButton, AppTabPanel, AppTextField, SectionHeader, TabToolbar, UnderlineTabs } from '../components/ui';
+import { AppIcon } from '../components/AppIcon';
+import { ToolbarIconButton } from '../components/ToolbarIconButton';
+import { budgetBalanceLabel, displayMoney } from '../components/admin/usage-amounts';
 import { AppCheckbox } from '../components/AppCheckbox';
 import { useProduction } from '../production/ProductionProvider';
-import { colors, spacing } from '../theme';
+import { colors, mobileLayout, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
 import { indexGroupTargetLimit } from '../production/admin-knowledge-index';
 import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
@@ -29,14 +32,15 @@ const fields = [
 type Values = z.infer<typeof platformPolicyValuesSchema>;
 const inviteForm = z.object({ email: z.email().max(320), days: z.number().int().min(1).max(90) });
 const when = (value: string) => new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false });
-function displayMoney(currency: string, micros: string) {
-  const [whole, fraction = ''] = micros.split('.');
-  const digits = whole.padStart(7, '0');
-  const decimals = (digits.slice(-6) + fraction).replace(/0+$/u, '');
-  return currency + ' ' + digits.slice(0, -6) + (decimals ? '.' + decimals : '');
-}
+const adminTabs = [
+  { key: 'overview', label: '用量與告警' }, { key: 'policy', label: 'AI 設定' },
+  { key: 'invites', label: '帳戶邀請' }, { key: 'knowledge', label: '知識管理' }, { key: 'demo', label: '通知示範' },
+] as const;
+type AdminTab = typeof adminTabs[number]['key'];
+
 function UsageDetails({ usage }: { usage: AdminUsage }) {
   const { breakdown, finance } = usage;
+  const balance = budgetBalanceLabel(finance);
   const activities = breakdown?.activities;
   const labels = { generate: '普通生成', delegate: '委派', review: '審核', revise: '修訂', summary: '摘要', compact: '壓縮' } as const;
   const tokenSubtotal = (value: number) => value === 0 && usage.unknownUsageAttempts > 0 ? '未確認' : String(value);
@@ -58,6 +62,7 @@ function UsageDetails({ usage }: { usage: AdminUsage }) {
     {finance?.approvedDailyBudget ? <Text>當日核准預算 {displayMoney(finance.approvedDailyBudget.currency, String(finance.approvedDailyBudget.micros))}
       （{finance.approvedDailyBudget.approvalReference}，香港時間 {when(finance.approvedDailyBudget.approvedAt)} 批准）</Text>
       : <Text>當日貨幣預算未知。</Text>}
+    {balance ? <Text style={styles.emphasis}>{balance}</Text> : null}
     {finance?.providerQuota?.map((quota, index) => <Text key={index}>{quota.provider} 配額 {quota.limit} {quota.unit}（{quota.project}／{quota.model}／{quota.tier}，{quota.source} 於香港時間 {when(quota.observedAt)} 核對）</Text>)
       ?? <Text>供應商實際配額未知。</Text>}
   </>;
@@ -83,9 +88,13 @@ function AuditItem({ item }: { item: AdminReceipt }) {
 }
 export default function AdminScreen() {
   const focused = useIsFocused();
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const { owner, userId, auth, user, online, refresh, account, identityKey, socialProviders } = useProduction(), admin = owner.adminOwner, router = useRouter();
   const state = useSyncExternalStore(admin.subscribe, admin.getSnapshot, admin.getSnapshot);
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
+  const [tab, setTab] = useState<AdminTab>('overview');
+  const [showProof, setShowProof] = useState(false);
+  const [costDetail, setCostDetail] = useState<'platform' | 'personal' | null>(null);
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
   const [search, setSearch] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
   const [groupId, setGroupId] = useState('');
@@ -101,6 +110,7 @@ export default function AdminScreen() {
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
     setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); setIndexDetails(null); setGroupId(''); setSoftRatioText(String(DEFAULT_SOFT_BUDGET_RATIO)); setRoleRatioTexts({ interactive: '', background: '', reviewer: '', retriever: '' }); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setTab('overview'); setShowProof(false); setCostDetail(null);
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -139,25 +149,39 @@ export default function AdminScreen() {
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
-  return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定、實際用量、知識來源監測及示範訊息。"
-    headerActions={<AppButton label="返回育有方" variant="quiet" onPress={() => router.replace('/')} />}>
+  return <PageFrame title="網站管理">
+    <View style={styles.masthead}>
+      <View style={styles.identity}>
+        <View style={[styles.brandMark, compact && styles.compactMark]}><AppIcon name="shield-check-outline" size={compact ? 23 : 30} color={colors.ink} /></View>
+        <View style={styles.headingCopy}>
+          <Text accessibilityRole="header" style={styles.title}>網站管理後台</Text>
+          {visible ? <Text selectable numberOfLines={1} style={styles.adminIdentity}>{user?.email}</Text> : null}
+        </View>
+      </View>
+      {compact ? <ToolbarIconButton label="返回育有方" icon="arrow-left" onPress={() => router.replace('/')} />
+        : <AppButton label="返回育有方" variant="secondary" style={styles.returnButton} density="compact" onPress={() => router.replace('/')} />}
+    </View>
     {!visible ? <View style={styles.card}><Text>{state.access === 'denied' ? '此帳號沒有網站管理權限。' : '正在核對網站管理身份。'}</Text>
       {state.notice ? <Text>{state.notice}</Text> : null}
       <AppButton label="重新核對登入及權限" disabled={!online || state.access === 'loading'} onPress={() => { void refresh(); if (userId) void admin.checkAccess(); }} /></View>
     : <>
-      <Text>目前管理員：{user?.email}。所有管理寫入需在最近五分鐘內驗證登入。</Text>
-      <View style={styles.card}><SectionHeader title="重新驗證登入" />
+      <TabToolbar><UnderlineTabs id="admin-sections" label="管理功能" items={adminTabs} value={tab} onChange={setTab} /></TabToolbar>
+      <View style={styles.authRow}><AppIcon name="lock-outline" size={16} />
+        <Text style={styles.authNote}>更改設定前，須在最近五分鐘內驗證身份。</Text>
+        <AppButton label={showProof ? '收起登入驗證' : '重新驗證登入'} expanded={showProof} variant="quiet" density="compact"
+          onPress={() => setShowProof(current => !current)} />
+      </View>
+      {showProof ? <View style={styles.card}><SectionHeader title="重新驗證登入" />
         <AuthenticationProofControl methods={account.authenticationMethods} socialProviders={socialProviders} identityKey={identityKey} online={online}
           disabled={!online || state.busy || !!state.pending} busy={reauthBusy} onSubmit={reauthenticate} />
         <AppButton label="重新讀取登入方式" variant="quiet" disabled={locked || !!account.busy} onPress={() => { void owner.accountOwner.loadAuthenticationMethods(); }} />
-        <Text style={styles.note}>憑證只交現有 Firebase 登入流程，不加入管理紀錄或模型內容。</Text>
-      </View>
+      </View> : null}
       {state.notice || localNotice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{localNotice ?? state.notice}</Text> : null}
       {state.pending ? <View style={styles.card}><Text>有一項結果未明的操作：{state.pending.opId}。其他寫入暫時鎖定。</Text>
         <AppButton label="查回原操作" disabled={state.busy || !online} onPress={() => { void admin.recover(); }} />
         <AppButton label="以同一 ID 重送原操作" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.retryOriginal(); }} />
       </View> : null}
-      <View style={styles.card}><SectionHeader title="邀請資格" subtitle="預設七天；對方仍需使用相同電郵註冊及驗證。" />
+      <AppTabPanel tabsId="admin-sections" tabKey="invites" active={tab === 'invites'}><View style={styles.card}><SectionHeader icon="email-outline" title="邀請資格" subtitle="邀請預設七天有效，對方需以同一電郵註冊及驗證。" />
         <Controller control={invitationForm.control} name="email" render={({ field, fieldState }) => <><AppTextField label="受邀電郵" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} autoCapitalize="none" keyboardType="email-address" disabled={locked} error={!!fieldState.error} />{fieldState.error ? <Text>請填有效電郵。</Text> : null}</>} />
         <Controller control={invitationForm.control} name="days" render={({ field, fieldState }) => <><AppTextField label="有效天數（1–90）" value={String(field.value ?? '')} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />{fieldState.error ? <Text>請填 1 至 90 的整數。</Text> : null}</>} />
         <AppButton label="確認發出／續期邀請" disabled={locked} onPress={invitationForm.handleSubmit(value => submit({ kind: 'invite', opId: crypto.randomUUID(), email: value.email.trim().toLowerCase(), expiresAt: new Date(Date.now() + value.days * 86400000).toISOString() }))} />
@@ -180,9 +204,12 @@ export default function AdminScreen() {
           <AppButton label="確認撤銷此邀請" variant="danger" disabled={locked} onPress={() => { submit({ kind: 'revoke', email: revoke.email, opId: crypto.randomUUID() }); setRevoke(null); }} />
           <AppButton label="保留邀請" variant="quiet" onPress={() => setRevoke(null)} /></View> : null}
       </View>
-      <AdminProactiveDemo key={`proactive-demo:${userId}`} admin={admin} state={state.demo} online={online} visible={focused}
-        writeLocked={locked || state.transfers.busy || !!state.transfers.pending} />
-      <View style={styles.card}><SectionHeader title="平台 AI 與限額" />
+      </AppTabPanel>
+      <AppTabPanel tabsId="admin-sections" tabKey="demo" active={tab === 'demo'}>
+        {tab === 'demo' ? <AdminProactiveDemo key={`proactive-demo:${userId}`} admin={admin} state={state.demo} online={online} visible={focused}
+          writeLocked={locked || state.transfers.busy || !!state.transfers.pending} /> : null}
+      </AppTabPanel>
+      <AppTabPanel tabsId="admin-sections" tabKey="policy" active={tab === 'policy'}><View style={styles.card}><SectionHeader icon="chart-bar" title="平台 AI 與限額" />
         {state.overview ? <>
           <Text>生效版本 {state.overview.policy.version} · 模型 {state.overview.policy.model}</Text>
           {policyForm.formState.isDirty ? <View style={styles.row}>
@@ -191,12 +218,12 @@ export default function AdminScreen() {
           </View> : null}
           {!state.overview.serverEnabled || !state.overview.platformConfigured ? <Text>部署層 AI 或憑據尚未就緒；後台開關不能越過部署限制。</Text> : null}
           <Controller control={policyForm.control} name="enabled" render={({ field }) => <View style={styles.actions}><Text>平台 AI：{field.value ? '啟用' : '暫停'}</Text><Switch accessibilityLabel="平台 AI" value={field.value ?? false} onValueChange={field.onChange} disabled={locked} /></View>} />
-          {fields.map(([key, label, max]) => <Controller key={key} control={policyForm.control} name={key} render={({ field, fieldState }) => <View>
+          <View style={styles.formGrid}>{fields.map(([key, label, max]) => <Controller key={key} control={policyForm.control} name={key} render={({ field, fieldState }) => <View style={styles.formField}>
             <AppTextField label={`${label}（${key === 'maxRunSeconds' ? AGENT_RUN_LIMITS.deadlineSeconds.min : key === 'modelRequestSeconds' ? AGENT_RUN_LIMITS.modelRequestSeconds.min : key === 'maxModelRetries' ? 0 : 1}–${max}）`} value={field.value === undefined ? '' : String(field.value)} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填允許範圍內的整數。</Text> : null}
-          </View>} />)}
-          <Text>用量告警門檻</Text>
-          {([
+          </View>} />)}</View>
+          <Text style={styles.groupHeading}>用量告警門檻</Text>
+          <View style={styles.formGrid}>{([
             ['thresholdRatio', '接近上限的比例（%）'],
             ['windowSize', '要觀察的執行次數'],
             ['minHighRuns', '窗口內最少達到門檻的次數'],
@@ -204,10 +231,10 @@ export default function AdminScreen() {
             ['repeatedSignatureStreak', '連續相同消耗的次數'],
           ] as const).map(([key, label]) => <Controller key={key} control={policyForm.control} name={`highWatermark.${key}`} render={({ field, fieldState }) => {
             const scale = key === 'thresholdRatio' ? 100 : 1;
-            return <AppTextField label={label} keyboardType="numeric" disabled={locked} error={!!fieldState.error}
+            return <View style={styles.formField}><AppTextField label={label} keyboardType="numeric" disabled={locked} error={!!fieldState.error}
               value={Number.isFinite(field.value) ? String(Number((Number(field.value) * scale).toFixed(6))) : ''}
-              onChangeText={value => field.onChange(value.trim() ? Number(value) / scale : NaN)} />;
-          }} />)}
+              onChangeText={value => field.onChange(value.trim() ? Number(value) / scale : NaN)} /></View>;
+          }} />)}</View>
           {policyForm.formState.errors.highWatermark ? <Text>請核對告警門檻。觸發所需的次數須在觀察窗口內。</Text> : null}
           <Controller control={policyForm.control} name="softBudgetRatio" render={({ field, fieldState }) => <View>
             <AppTextField label="軟預算目標比例（0.05–1.0，預設 0.25）" value={softRatioText} onChangeText={value => { setSoftRatioText(value); field.onChange(parseAdminSoftBudgetRatioInput(value)); }} keyboardType="decimal-pad" disabled={locked} error={!!fieldState.error} />
@@ -242,7 +269,9 @@ export default function AdminScreen() {
           <AppButton label="確認並保存全站設定" disabled={locked || !policyForm.formState.isDirty} onPress={policyForm.handleSubmit(values => submit({ kind: 'policy', opId: crypto.randomUUID(), expectedVersion: state.overview!.policy.version, values }))} />
         </> : <Text>尚未取得設定；不能保存。</Text>}
       </View>
-      <View style={styles.card}><SectionHeader title="知識來源" subtitle="唯讀查看公開來源監測及已記錄的檢查結果。" />
+      </AppTabPanel>
+      <AppTabPanel tabsId="admin-sections" tabKey="knowledge" active={tab === 'knowledge'} style={styles.sections}>
+      <View style={styles.card}><SectionHeader icon="file-document-outline" title="知識來源" subtitle="查看公開來源監測及最近檢查結果。" />
         <Text style={styles.note}>來源註冊、檢查與知識發布是不同步驟。啟用監測或發現變更不代表已審核或發布；本區不提供發布狀態。</Text>
         <AppButton label={state.knowledge.open ? '收起知識來源' : '查看知識來源'} variant="quiet" expanded={state.knowledge.open}
           disabled={!online && !state.knowledge.open}
@@ -354,28 +383,74 @@ export default function AdminScreen() {
             disabled={!online || state.index.busy || state.index.batches.status === 'loading'} onPress={() => { void admin.loadIndexBatches(true); }} /> : null}
         </> : null}
       </View>
-      <View style={styles.card}><SectionHeader title="實際用量與管理紀錄" />
-        <Text>助手用量告警</Text>
+      </AppTabPanel>
+      <AppTabPanel tabsId="admin-sections" tabKey="overview" active={tab === 'overview'} style={styles.sections}>
+      <View style={styles.card}><SectionHeader icon="bell-outline" title="助手用量告警"
+        action={<AppButton label="重新讀取" accessibilityLabel="重新讀取用量告警" variant="quiet" density="compact" disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts(); }} />} />
         {state.alerts.notice ? <Text>{state.alerts.notice}</Text> : null}
-        {state.alerts.loaded && !state.alerts.items.length && !state.alerts.notice ? <Text>目前沒有用量告警。</Text> : null}
+        {!state.alerts.loaded && !state.alerts.notice ? <Text>{state.alerts.busy ? '正在讀取告警…' : '告警尚未載入。'}</Text> : null}
+        {state.alerts.loaded && !state.alerts.items.length && !state.alerts.notice ? <View style={styles.emptyState}>
+          <AppIcon name="check-circle" color={colors.ink} size={20} /><Text>目前沒有用量告警。</Text></View> : null}
         {state.alerts.items.map(alert => <View key={alert.id} style={styles.row}>
           <Text>{alert.category === 'interactive' ? '互動對話' : '背景工作'} · {when(alert.openedAt)} · 最近 {alert.windowCount} 次有 {alert.highWatermarkCount} 次接近上限</Text>
           <Text>政策版本 {alert.policyVersion} · {alert.triggeredDimensions.map(key => ({ modelCalls: '生成', toolCalls: '工具', queryEmbeddings: '查詢向量' })[key]).join('、')}</Text>
           {alert.receivedAt ? <Text>已於 {when(alert.receivedAt)} 確認收到</Text> : <AppButton label="確認收到告警" variant="secondary"
             disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts(alert); }} />}
         </View>)}
-        <AppButton label="重新讀取用量告警" variant="secondary" disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts(); }} />
         {state.alerts.nextCursor ? <AppButton label="更多用量告警" variant="secondary" disabled={state.alerts.busy || !online} onPress={() => { void admin.budgetAlerts('more'); }} /> : null}
-        <AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} />
-        <AppButton label="重新讀取設定、列表及用量" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.load(day); }} />
-        {state.usage ? (['platform', 'personal'] as const).map(source => <View key={source} style={styles.row}><Text>{source === 'platform' ? '平台出資' : '個人 key 出資合計'} · {state.usage![source].day}（UTC）</Text>
-          <UsageDetails usage={state.usage![source]} /></View>) : null}
+      </View>
+      <View style={styles.metrics}>
+        <View style={[styles.metric, compact && styles.fullMetric]}><Text style={styles.metricLabel}>平台 AI</Text>
+          <Text style={styles.metricValue}>{!state.overview ? '待讀取' : !state.overview.policy.enabled ? '已暫停' : state.overview.serverEnabled && state.overview.platformConfigured ? '已啟用' : '未就緒'}</Text>
+          <Text style={styles.note}>{state.overview?.policy.model ?? '模型設定待讀取'}</Text></View>
+        {(['platform', 'personal'] as const).map(source => <View key={source} style={styles.metric}>
+          <Text style={styles.metricLabel}>{source === 'platform' ? '平台出資呼叫' : '個人密鑰呼叫'}</Text>
+          <Text style={styles.metricValue}>{state.usage?.[source].attempts.toLocaleString('zh-HK') ?? '—'}</Text>
+          <Text style={styles.note}>{state.usage ? state.usage[source].day + ' · UTC' : '用量待讀取'}</Text>
+        </View>)}
+      </View>
+      <View style={styles.card}><SectionHeader icon="chart-bar" title="每日用量" />
+        <View style={styles.actions}><View style={styles.dateField}><AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} /></View>
+          <AppButton label="查詢當日用量" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.load(day); }} /></View>
+        {state.usage ? (['platform', 'personal'] as const).map(source => {
+          const usage = state.usage![source], label = source === 'platform' ? '平台出資' : '個人密鑰出資合計';
+          return <View key={source} style={styles.row}>
+            <View style={styles.detailHeading}><View style={styles.headingCopy}><Text style={styles.emphasis}>{label}</Text>
+              <Text style={styles.note}>{usage.day}（UTC） · {usage.attempts} 次呼叫</Text></View>
+              <AppButton label={costDetail === source ? '收起明細' : '用量及費用明細'} accessibilityLabel={label + '用量及費用明細'}
+                expanded={costDetail === source} variant="quiet" density="compact" onPress={() => setCostDetail(current => current === source ? null : source)} />
+            </View>
+            {costDetail === source ? <UsageDetails usage={usage} /> : null}
+          </View>;
+        }) : null}
+      </View>
+      <View style={styles.card}><SectionHeader title="管理紀錄" icon="history" />
         {state.audit.items.map(item => <AuditItem key={item.opId} item={item} />)}
         {state.audit.nextCursor ? <AppButton label="更多管理紀錄" variant="secondary" disabled={state.busy} onPress={() => { void admin.more('audit'); }} /> : null}
       </View>
+      </AppTabPanel>
     </>}
   </PageFrame>;
 }
 const styles = StyleSheet.create({ card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
+  masthead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.ink, borderRadius: 18 },
+  identity: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, minWidth: 0, gap: spacing.md },
+  brandMark: { backgroundColor: colors.sage, borderRadius: 14, width: 52, height: 52, justifyContent: 'center', alignItems: 'center' },
+  compactMark: { width: 36, height: 36, borderRadius: 10 }, returnButton: { backgroundColor: colors.paper },
+  headingCopy: { minWidth: 0, flexShrink: 1, gap: 3 }, title: { color: colors.white, fontSize: 26, lineHeight: 34, fontWeight: '800' },
+  adminIdentity: { color: colors.paleTeal, fontSize: 14, lineHeight: 20 },
+  sections: { gap: spacing.lg },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  metric: { flexGrow: 1, flexBasis: 140, minWidth: 0, padding: spacing.md, gap: spacing.xs, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
+  fullMetric: { flexBasis: '100%' }, detailHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  metricLabel: { fontSize: 14, color: colors.muted, fontWeight: '600' },
+  metricValue: { color: colors.ink, fontWeight: '800', fontSize: 26, lineHeight: 34 },
+  authRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  authNote: { color: colors.muted, flexGrow: 1, flexShrink: 1 },
+  emptyState: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, backgroundColor: colors.paleTeal, borderRadius: 10 },
+  emphasis: { color: colors.ink, fontWeight: '700' },
+  groupHeading: { color: colors.ink, fontWeight: '700', fontSize: 18, marginTop: spacing.md },
+  formGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  formField: { flexGrow: 1, flexBasis: 270, minWidth: 0 }, dateField: { flexBasis: 255, maxWidth: '100%', flexShrink: 1 },
   row: { gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderColor: colors.softLine },
   actions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md }, note: { color: colors.muted }, notice: { color: colors.ink } });
