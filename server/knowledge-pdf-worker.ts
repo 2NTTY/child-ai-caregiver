@@ -1,3 +1,4 @@
+import { repairPdfGlyphs, type PdfTextItem } from "./knowledge-pdf-glyphs.ts";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,6 +34,7 @@ async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
     data,
     stopAtErrors: true,
     disableFontFace: true,
+    fontExtraProperties: true,
     useSystemFonts: false,
     useWorkerFetch: false,
     disableAutoFetch: true,
@@ -51,33 +53,27 @@ async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
     if (startPage > document.numPages) throw new Error("knowledge_pdf_invalid_page_range");
     const lastPage = Math.min(document.numPages, startPage + pageLimit - 1);
     const pages: KnowledgePdfPage[] = [];
+    const layers: { page: PDFPageProxy; items: PdfTextItem[] }[] = [];
     for (let pageNumber = startPage; pageNumber <= lastPage; pageNumber++) {
-      let page: PDFPageProxy | undefined;
       try {
-        page = await document.getPage(pageNumber);
+        const page = await document.getPage(pageNumber);
         const content = await page.getTextContent();
-        let text = "";
-        for (const item of content.items) {
-          if (!("str" in item)) continue;
-          const separator = item.hasEOL ? "\n" : " ";
-          if (text.length + item.str.length + separator.length > maxPageCharacters) {
-            throw new Error("knowledge_pdf_page_too_long");
-          }
-          text += item.str + separator;
-        }
-        text = text.trim();
-        // A page number or sparse labels cannot establish usable page text.
-        if (text && (text.match(/\p{L}/gu)?.length ?? 0) < 20) {
-          pages.push({ page: pageNumber, text: "", status: "unreadable" });
-        } else {
-          pages.push({ page: pageNumber, text, status: text ? "text" : "empty" });
-        }
+        const items = content.items.filter(item => "str" in item);
+        if (items.reduce((sum, item) => sum + item.str.length + 1, 0) > maxPageCharacters)
+          throw new Error("knowledge_pdf_page_too_long");
+        layers.push({ page, items });
       } catch {
         pages.push({ page: pageNumber, text: "", status: "unreadable" });
-      } finally {
-        page?.cleanup();
       }
     }
+    await repairPdfGlyphs(layers);
+    for (const { page, items } of layers) {
+      const text = items.map(item => item.str + (item.hasEOL ? "\n" : " ")).join("").trim();
+      const readable = (text.match(/\p{L}/gu)?.length ?? 0) >= 20;
+      pages.push({ page: page.pageNumber, text: readable ? text : "", status: readable ? "text" : text ? "unreadable" : "empty" });
+      page.cleanup();
+    }
+    pages.sort((left, right) => left.page - right.page);
     const pagePdf = includePagePdf ? await document.extractPages([{document:null,
       includePages:Array.from({length:lastPage - startPage + 1},(_,i) => startPage - 1 + i)}]) : undefined;
     if (includePagePdf && (!pagePdf || pagePdf.length === 0 || pagePdf.byteLength > 32 * 1024 * 1024))

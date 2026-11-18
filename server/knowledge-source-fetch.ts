@@ -14,6 +14,40 @@ export function sourceFetchUrl(value: string, definition: SourceWatchDefinition)
   return url;
 }
 
+/** Re-read either a fetched or stored original through the same bounded page reader. */
+export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition, original: Buffer, title: string,
+  revision: string | null, readMethod: string, signal: AbortSignal, reader = extractKnowledgePdf): Promise<Awaited<ReturnType<SourceFetcher>>> {
+  if (!definition.leafletPage || definition.kind !== "pdf") throw Error("knowledge_pdf_source_mismatch");
+  let batch = await reader(original, { startPage: 1, pageLimit: 8, signal });
+  const { fileHash, totalPages } = batch;
+  const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
+    status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: original }, items: [{
+      url: definition.url, title, text: "", nativeWindowMethod: "native-pdf-window/1",
+      sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
+      extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",
+        totalPages, pageStart: 1, pageEnd: totalPages, complete: false },
+    }],
+  });
+  if (!Number.isSafeInteger(totalPages) || totalPages < 1 || !batch.pages.length) return { status: "failed", reason: "parse" };
+  if (totalPages > 32 || batch.pages.some(p => p.status !== "text") || batch.pages.reduce((n, p) => n + p.text.length, 0) > 60000)
+    return windowed();
+  const pages = [...batch.pages];
+  while (batch.nextPage !== null) {
+    batch = await reader(original, { startPage: pages.length + 1, pageLimit: 8, expectedHash: fileHash, signal });
+    if (!batch.pages.length || batch.totalPages !== totalPages) return { status: "failed", reason: "parse" };
+    if (batch.pages.some(p=>p.status!=="text")) return windowed();
+    pages.push(...batch.pages);
+    if (pages.reduce((sum,p)=>sum+p.text.length,0)>60000) return windowed();
+  }
+  if (pages.length !== totalPages || pages.some((p, i) => p.page !== i + 1)) return { status: "failed", reason: "parse" };
+  return { status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: original }, items: [{
+    url: definition.url, title, text: pages.map(p => p.text).join("\n\n"), pages,
+    sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
+    extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",
+      totalPages, pageStart: 1, pageEnd: totalPages, complete: true },
+  }] };
+}
+
 export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetchPublicSourceResponse; pdfReader?: typeof extractKnowledgePdf } = {}): SourceFetcher {
   return async (definition, signal) => {
     const pdf = definition.kind === "pdf", window = definition.pdfPages;
@@ -66,35 +100,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {
-          const reader = adapters.pdfReader ?? extractKnowledgePdf;
-          let batch = await reader(result.body, { startPage: 1, pageLimit: 8, signal });
-          const { fileHash, totalPages } = batch;
-          const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
-            status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: result.body }, items: [{
-              url: definition.url, title: title!, text: "", nativeWindowMethod: "native-pdf-window/1",
-              sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
-              extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",
-                totalPages, pageStart: 1, pageEnd: totalPages, complete: false },
-            }],
-          });
-          if (!Number.isSafeInteger(totalPages) || totalPages < 1 || !batch.pages.length) return { status: "failed", reason: "parse" };
-          if (totalPages > 32 || batch.pages.some(p => p.status !== "text") || batch.pages.reduce((n, p) => n + p.text.length, 0) > 60000)
-            return windowed();
-          const pages = [...batch.pages];
-          while (batch.nextPage !== null) {
-            batch = await reader(result.body, { startPage: pages.length + 1, pageLimit: 8, expectedHash: fileHash, signal });
-            if (!batch.pages.length || batch.totalPages !== totalPages) return { status: "failed", reason: "parse" };
-            if (batch.pages.some(p=>p.status!=="text")) return windowed();
-            pages.push(...batch.pages);
-            if (pages.reduce((sum,p)=>sum+p.text.length,0)>60000) return windowed();
-          }
-          if (pages.length !== totalPages || pages.some((p, i) => p.page !== i + 1)) return { status: "failed", reason: "parse" };
-          return { status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: result.body }, items: [{
-            url: definition.url, title: title!, text: pages.map(p => p.text).join("\n\n"), pages,
-            sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: revision,
-            extraction: { format: "text_pdf", contentHash: fileHash, extractionQuality: "requires_review",
-              totalPages, pageStart: 1, pageEnd: totalPages, complete: true },
-          }] };
+          return await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
         }
         const parsed = await (adapters.pdfReader ?? extractKnowledgePdf)(result.body, { startPage: window!.startPage,
           pageLimit: window!.endPage - window!.startPage + 1, signal });
