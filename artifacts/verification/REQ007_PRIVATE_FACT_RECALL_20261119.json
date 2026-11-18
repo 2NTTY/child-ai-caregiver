@@ -1,0 +1,102 @@
+{
+  "requirement": "REQ-007",
+  "observedAt": "2026-11-19T04:18:27+08:00",
+  "baseCommit": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
+  "branch": "codex/req007-private-fact-recall-aa12",
+  "integrationProbe": {
+    "observedAt": "2026-11-19T04:41:22+08:00",
+    "remoteMaster": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
+    "persistenceCommit": "6dc0f7c11539839c69eeef8b7268be6577cdd40f",
+    "pr634": {"head": "47eac87619118a0b50eb560d98ab2b81b99c8c8f", "state": "OPEN", "scope": "Permanent help dock and late failure messaging. The server/product-agent-api.ts patch applies to the updated file with git apply --check (exit 0)."},
+    "pr640": {"head": "ef363c596fbf4e11523fed759259273d7a1b8aa6", "state": "OPEN", "scope": "Offline zero-memory search fixture and CI. No product session creation, exit or recovery route."},
+    "temporaryChat": "REQ-003 sections 5 and 7 describe the lifecycle. No implementation entry found on master in server, src or frontend/src, or in the inspected PRs. No PR fixtures or workflows executed."
+  },
+  "scope": "Firestore product interactive Runner, private confirmed memory, historical chat, derived summaries, original-run replay and restoration",
+  "baseline": {
+    "entry": "Product search_history on the same scoped store and corrected synthetic fact",
+    "literalQuery": "疫苗",
+    "literalConfirmedVersion": 3,
+    "paraphraseQuery": "打針",
+    "paraphraseMatches": 0,
+    "scanComplete": true
+  },
+  "runner": {
+    "entry": "scripts/verify-private-fact-recall.mjs",
+    "environment": "Loopback Firestore Emulator, isolated synthetic namespace, Node 24.19.0, @google-cloud/firestore 9.3.1",
+    "provider": "Scripted generation and independent scripted reviewer in the product review pipeline; no external model or embeddings",
+    "currentWindow": {
+      "runId": "41be7bd9-cb65-4ad7-b35c-690f4cdb8bc3",
+      "tools": ["present_answer"],
+      "modelCallsIncludingReview": 2,
+      "memoryContextReads": 0,
+      "queryEmbeddings": 0,
+      "review": "pass",
+      "source": "Immutable parent message v1; exact quotation"
+    },
+    "outsideWindow": {
+      "runId": "b1ec0bda-55a5-4b91-a881-ffd84d9ec001",
+      "unrelatedInterveningMessages": 6,
+      "tools": ["search_history", "present_answer"],
+      "modelCallsIncludingReview": 3,
+      "memoryContextReads": 0,
+      "queryEmbeddings": 0,
+      "review": "pass",
+      "source": "Corrected fact v3 and immutable parent message v1; exact quotation",
+      "formerOrSiblingValueInProviderInputOrReply": false
+    },
+    "afterDeletingVersion3": {
+      "reopenedFact": null,
+      "reopenedSummary": null,
+      "inFlightSource": "suppressed",
+      "sourceRebuild": "suppressed",
+      "batchRepair": "suppressed",
+      "separatelyCoveredAssistantQuote": "unavailable for automatic memory or repair; original private chat readable",
+      "completedRunReplay": "withheld without another provider call",
+      "httpReplyRetry": {"status": 409, "code": "source_changed"},
+      "alreadyReviewedUndeliveredReply": "source_changed"
+    }
+  },
+  "targetedChecks": {
+    "node": "24.11.0",
+    "commandPrefix": "node --experimental-test-module-mocks --test",
+    "groups": [
+      {"passed": 21, "files": ["confirmed-fact-recall", "firestore-memory-lifecycle", "firestore-summary-batches", "firestore-summary-erasure-restore", "initial-conversation-summary", "firestore-agent-ledger", "handover-original-attachments"]},
+      {"passed": 2, "files": ["memory"], "namePattern": "only confirmed|trusted original short expiry"},
+      {"passed": 4, "files": ["chat-delivery-review"], "namePattern": "citation-free memory restatement|pure greetings skip|question-shaped private claims"},
+      {"passed": 2, "files": ["chat-stop-feedback"]}
+    ],
+    "serverTypecheck": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json; exit 0",
+    "fixtures": "Synthetic only. Includes same-name sibling, old candidate or absent proof, expiry, authorization withdrawal, cold read, legacy restore, original signed backup, and continuation beyond 50 retired originals."
+  },
+  "cost": {
+    "preflightWindow": "Rolling 12 hours checked about 2026-11-19 03:12 Asia/Hong_Kong",
+    "platformReservations": 88,
+    "meteredGenerations": 83,
+    "meteredInputTokens": 927725,
+    "meteredOutputTokens": 6969,
+    "estimatedMeteredUsd": 0.24238475,
+    "unknownLocalGenerations": 5,
+    "additionalProductionSummaryGenerationsWithoutTokenReceipts": 2,
+    "reservedTextMaximumUsdPerGeneration": 0.360448,
+    "auditedMaximumUsd": 2.76552075,
+    "allocatedMaximumForThisRunUsd": 0.45,
+    "newPaidGenerations": 0,
+    "newPaidUsd": 0,
+    "accountGate": "Original synthetic account, 88 attempts on 2026-11-18 UTC, daily user limit restored to 20. Prior temporary approval closed with the REQ-005 reviewed-history case.",
+    "nextDailyWindow": "2026-11-19T08:00:00+08:00",
+    "pricingSources": ["https://cloud.google.com/model-garden/pricing", "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-flash-lite"]
+  },
+  "sharedEvidence": {
+    "checkedAt": "2026-11-18T20:18:27Z",
+    "provenance": "Existing project-owned synthetic acceptance receipts at baseCommit. Read for internal engineering reuse.",
+    "history": {"file": "artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json", "gitBlob": "f09de6b455b5f4b3c71e84fe1c4a98ebc60e6e3c", "readScope": "Lines 1-25, original chat citation, reviewed production Runner path and restored daily limit"},
+    "summaries": {"file": "artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json", "gitBlob": "efc78c27bfc0d13ac655b9b2221a4d9192158a75", "readScope": "Lines 1-53, original two-job sponsor scope, per-job use and cold projection with original message IDs"}
+  },
+  "limitations": [
+    "Natural-language model routing and review for this corrected fact await a new daily window and a current combined spending preflight.",
+    "The base checkout has no REQ-003 temporary chat lifecycle to exercise. Rejecting a non-persisted message without model calls only covers the product recall entry.",
+    "Untraceable pre-deletion originals in a scoped restore and missing originals restored from a public personal backup remain available to their owner as history, with automatic reuse withheld.",
+    "Runtime suppression and authenticated journal replay are verified. Physical deletion of every backup, external copy or historical job was not measured.",
+    "No production deployment, broad data migration or corpus-wide semantic retrieval benchmark."
+  ]
+}

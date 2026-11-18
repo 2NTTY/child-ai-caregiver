@@ -8,7 +8,7 @@ import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtim
 import { AgentStopped } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
-import { normalizedFactKey } from "./memory-policy.ts";
+import { factIsApplicable, memoryFactReferencedByParagraph, normalizedFactKey } from "./memory-policy.ts";
 import type { MemoryFact } from "../src/shared/memory.ts";
 
 // In an ordinary chat search, an omitted cursor means the first page.
@@ -38,7 +38,7 @@ export async function prepareProposalConfirmation(
 export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>,
   onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void,
   onHistoryRead?: (message: AgentHistoryMessage, reread: () => Promise<AgentHistoryMessage | null>, precedingMatch?: string) =>
-    { citationId: string; quoteHistory: string }, currentMessageId?: string): AgentTool[] {
+    { citationId: string; quoteHistory: string }, currentMessageId?: string, onRecallExpiry?: (until: string) => void): AgentTool[] {
   const { userId, childId } = run.scope;
   const guard = async (fn: () => Promise<unknown>): Promise<AgentToolResult> => {
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
@@ -56,6 +56,23 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
   };
   const make = (name: keyof typeof AGENT_WORK_TOOL_DESCRIPTIONS, parameters: z.ZodObject,
     execute: AgentTool["execute"]): AgentTool => ({ name, description: AGENT_WORK_TOOL_DESCRIPTIONS[name], parameters, authorize, execute });
+  async function originalQuote(fact: MemoryFact) {
+    if (!onHistoryRead || !fact.applicable || !factIsApplicable(fact) || fact.childId !== childId
+      || fact.source.kind !== 'private_chat' || !fact.source.messageId) return undefined;
+    const input = { messageId: fact.source.messageId, offset: 0, limit: 400 };
+    const read = () => store.readHistory(userId, childId, input, 'memory');
+    const message = await read();
+    if (!message || message.role !== 'user' || message.importedSource || message.voice || message.childId !== childId
+      || message.nextOffset !== null || !fact.content.split(/[。！？!?;；，,\n]+/u).filter(clause => clause.trim())
+        .every(clause => memoryFactReferencedByParagraph(clause, message.text))) return undefined;
+    const reference = onHistoryRead(message, async () => {
+      const current = await memory.getFact(userId, childId, fact.id);
+      if (!current || current.version !== fact.version || !current.applicable || !factIsApplicable(current)) return null;
+      return read();
+    });
+    return { ...reference, original: { messageId: message.id, role: message.role, text: message.text, createdAt: message.createdAt,
+      version: message.version, offset: message.offset, totalCharacters: message.totalCharacters } };
+  }
   const revision = agentProposalSchema.options.find(schema => schema.shape.kind.value === "memory_fact_revise")!;
   const deactivation = agentProposalSchema.options.find(schema => schema.shape.kind.value === "memory_fact_deactivate")!;
   const { kind: _revisionKind, ...revisionShape } = revision.shape;
@@ -87,6 +104,17 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       const input = historySearchSchema.parse(chatHistorySearchSchema.parse(args));
       const page = await store.searchHistory(userId, childId, input, true);
       if (!page || !onHistoryRead) return page;
+      if (input.kind === 'memory_fact') for (const hit of page.matches) {
+        if ('applicable' in hit && hit.applicable === true && 'validUntil' in hit && typeof hit.validUntil === 'string') onRecallExpiry?.(hit.validUntil);
+      }
+      if (input.kind === 'memory_fact' && page.matches.length === 1) {
+        const match = page.matches[0], current = await memory.getFact(userId, childId, match.id);
+        if (!current || current.version !== match.version) throw new FirestoreDomainError(409, 'version_conflict');
+        onConfirmedMemoryFacts?.([current]);
+        const original = await originalQuote(current);
+        return { ...page, matches: [{ ...match, status: current.status, applicable: current.applicable, validUntil: current.validUntil,
+          source: current.source, ...original }], ...(original ? { answerGuidance: '回覆目前已確認的安排，可用 private_reference 和該項 quoteHistory 引用家長原句。' } : {}) };
+      }
       const cite = (slice: Omit<AgentHistoryMessage, 'childId' | 'nextOffset'>, precedingMatch?: string): { citationId?: string; quoteHistory?: string } => {
         if (!slice.text || slice.role !== 'user') return {};
         const end = slice.offset + slice.text.length;
@@ -124,7 +152,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       if (input.factId) {
         const fact = await memory.getFact(userId, childId, input.factId);
         note([fact]);
-        return fact;
+        return fact ? { ...fact, ...await originalQuote(fact) } : fact;
       }
       if (input.keys) {
         if (!memory.recall) throw new FirestoreDomainError(503, "memory_lookup_unavailable");
@@ -132,12 +160,15 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         // Never truncate a keyed response into a false complete result. The caller can narrow the keys.
         if (JSON.stringify(result).length > run.budget.toolResponseCharacters - 900) throw new FirestoreDomainError(413, "response_limit");
         note(result.facts);
+        const fact = result.facts.length === 1 ? result.facts[0] : null;
+        const quote = fact && await originalQuote(fact);
         return {
           ...result,
+          ...(fact && quote ? { facts: [{ ...fact, ...quote }] } : {}),
           lookup: "exact_current_keys",
           historicalSearchAvailable: true,
           ...(result.missingKeys?.length
-            ? { note: "部分或全部 keys 未有確切命中（keys 只作完全一致比對）。切勿繼續猜測鍵名；請改為呼叫不帶 keys 的 read_memory_facts({})（或 read_context）直接列出目前所有已確認事實及真正鍵名。" }
+            ? { note: "部分或全部 keys 未有確切命中（keys 只作完全一致比對）。切勿繼續猜測鍵名；請改為呼叫不帶 keys 的 read_memory_facts({})（或 read_context）分頁查看事實及真正鍵名，亦可用 search_history 的 memory_fact 按主題定位。" }
             : {}),
         };
       }
@@ -154,7 +185,8 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         const key = normalizedFactKey(fact.key), values = keys.get(key) ?? new Set<string>(); values.add(fact.content); keys.set(key, values);
       }
       note(items);
-      return { items, nextAfterId: items.length < page.items.length ? items.at(-1)?.id ?? input.afterId : page.nextAfterId, partial: more,
+      const quote = items.length === 1 ? await originalQuote(items[0]) : undefined;
+      return { items: quote ? [{ ...items[0], ...quote }] : items, nextAfterId: items.length < page.items.length ? items.at(-1)?.id ?? input.afterId : page.nextAfterId, partial: more,
         conflictingKeys: [...keys].filter(([, values]) => values.size > 1).map(([key]) => key),
         unavailableFactKeys: items.filter(item => !item.applicable).map(item => normalizedFactKey(item.key)) };
     })),
