@@ -566,3 +566,49 @@ test("enforces the same outbound boundary directly on createKnowledgeRetriever a
   assert.equal(embedCalls, 1);
   assert.equal(storeCalls, 1);
 });
+
+test("allows English symptom predicates while rejecting explicit and loaded names", () => {
+  for (const query of [
+    "my baby is sick", "my child is coughing", "my daughter is allergic to peanuts",
+    "MY BABY IS SICK", "My son is Sleeping poorly",
+  ]) {
+    assert.equal(findExternalQueryPrivacyViolation(query), null, query);
+    assert.equal(assertPublicKnowledgeQuery(query), query);
+  }
+  for (const query of [
+    "my name is alice", "MY NAME IS ALICE", "my child's name is Alice",
+    "my son's name is bob", "My daughter’s name is Alice", "my baby's name is Anne",
+  ]) {
+    assert.equal(findExternalQueryPrivacyViolation(query), "personal_name_or_transcript", query);
+  }
+  assert.equal(findExternalQueryPrivacyViolation("my child is Alice", ["Alice"]), "personal_name_or_transcript");
+});
+
+test("rejects regrouped phone digits without joining decimal readings", () => {
+  for (const query of [
+    "電話 912-345-67 BB 發燒", "電話 9 1 2 3 4 5 6 7", "912 34 567 infant fever",
+    "電話 ９１２－３４５－６７", "電話 9123 4567", "+852 912 345 67",
+    "phone 912-345-67.",
+  ]) {
+    assert.equal(findExternalQueryPrivacyViolation(query), "numeric_identifier", query);
+    assert.throws(() => assertPublicKnowledgeQuery(query), error =>
+      error instanceof FamilyError && error.code === "public_query_required");
+  }
+  for (const query of ["BB 37.5 38.5 39 度 發燒", "2024-2025 guideline", "6-12 months feeding"]) {
+    assert.equal(findExternalQueryPrivacyViolation(query), null, query);
+  }
+});
+
+
+test("retains care measurement sequences without exempting adjacent contact details", () => {
+  const careQueries = [
+    "BB 每餐奶量 120 150 180 ml 是否正常",
+    "嬰兒奶量 90 120 150 ml",
+    "兒童生長百分位 3 10 25 50 75 90 97",
+  ];
+  for (const query of careQueries) {
+    assert.equal(findExternalQueryPrivacyViolation(query), null, query);
+    assert.equal(findExternalQueryPrivacyViolation(query + "，電話 9 1 2 3 4 5 6 7"), "numeric_identifier", query);
+    assert.equal(findExternalQueryPrivacyViolation(query + "，912-345-67"), "numeric_identifier", query);
+  }
+});

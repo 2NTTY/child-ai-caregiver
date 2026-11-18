@@ -41,7 +41,11 @@ const MESSAGING_HANDLE_PATTERN =
   /\b(?:(?:whatsapp|wechat|telegram)\s*(?:[:：=]\s*[@+\w.-]{2,}|\+?\d{6,})|(?:line|ig|instagram|signal)\s*(?:(?:id|帳號|賬號|戶口|handle)\s*[:：=]?\s*[@A-Za-z0-9_.-]{2,}|[:：=]\s*(?:@[A-Za-z0-9_.-]{2,}|\+?\d{6,}|(?=[^\sA-Za-z]*[A-Za-z])(?=(?:[A-Za-z.-]*[_\d]|[A-Za-z0-9_]+\.[A-Za-z0-9_]))[A-Za-z0-9_.-]{3,})))/iu;
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f-]{27}/iu;
 const GUIDELINE_YEAR_RANGE_PATTERN = /\b(?:19|20)\d{2}\s*[-–]\s*(?:19|20)\d{2}\b/gu;
-const PHONE_OR_ID_DIGIT_RUN_PATTERN = /(?<!\d)(?:\d{8,}|\d{4}[ -]\d{4})(?!\d)/u;
+// Unlabelled spaces can separate clinical measurements, so do not concatenate arbitrary groups.
+// Preserve conventional phone layouts and hyphenated identifiers without matching decimal fragments.
+const PHONE_OR_ID_DIGIT_RUN_PATTERN = /(?<!\d)(?<!\d\.)(?:\d{8,}|\d{4} +\d{4}|\d{3} +\d{2} +\d{3}|\d{3} +\d{3} +\d{2}|(?=\d[\d ]*-)\d(?:[ -]?\d){7,})(?!\d|\.\d)/u;
+// Explicit contact labels and international '+' notation disambiguate arbitrary spaced groupings.
+const LABELLED_PHONE_PATTERN = /(?:\b(?:phone|telephone|tel|mobile|whatsapp)\b|電話|手機|手提)\s*[:：=]?\s*\+?\d(?:[ -]?\d){7,}(?!\d|\.\d)|\+\d(?:[ -]?\d){7,}(?!\d|\.\d)/iu;
 const HK_COUNTRY_PHONE_PATTERN = /\+?852[\s-]?\d{4}[\s-]?\d{4}\b/u;
 
 const FULL_BIRTH_DATE_PATTERNS: readonly RegExp[] = [
@@ -82,7 +86,8 @@ const PERSONAL_NAME_OR_TRANSCRIPT_PATTERNS: readonly RegExp[] = [
   /(?:身份證|身分證|護照|病歷號|患者編號|\bhkid\b)(?:號碼)?\s*(?:[:：=]\s*[A-Za-z0-9(]|\s+[A-Z]{0,2}\d{5,})/iu,
   /(?:我的|家長|聯絡)(?:電話|手機|手提)(?:號碼)?\s*[:：=]\s*[\d+]/iu,
   CALLED_NAME_PATTERN,
-  /\b(?:my\s+name\s+is|my\s+(?:son|daughter|child|baby)(?:'s\s+name)?\s+is)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/iu,
+  // A generic child + "is" predicate is not a name declaration (e.g. "my baby is sick").
+  /\b(?:my\s+name\s+is|my\s+(?:son|daughter|child|baby)['’]s\s+name\s+is)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/iu,
   /\b(?:Mr|Mrs|Ms|Miss)\.?\s+[A-Z][a-z]{1,20}\b/u,
   /[\u4e00-\u9fff]{1,2}(?:先生|太太|女士|小姐)/u,
   // Require multi-turn transcript shape rather than single-line conversational prefixes like "媽媽：BB發燒點算".
@@ -112,7 +117,9 @@ function containsKnownPrivateIdentifier(normalizedQuery: string, knownPrivateIde
 
 function hasNumericIdentifier(normalized: string): boolean {
   const withoutYearRanges = normalized.replace(GUIDELINE_YEAR_RANGE_PATTERN, " ");
-  return PHONE_OR_ID_DIGIT_RUN_PATTERN.test(withoutYearRanges) || HK_COUNTRY_PHONE_PATTERN.test(withoutYearRanges);
+  return PHONE_OR_ID_DIGIT_RUN_PATTERN.test(withoutYearRanges)
+    || LABELLED_PHONE_PATTERN.test(withoutYearRanges)
+    || HK_COUNTRY_PHONE_PATTERN.test(withoutYearRanges);
 }
 
 /**
@@ -150,3 +157,4 @@ export function assertPublicKnowledgeQuery(query: string, knownPrivateIdentifier
   }
   return query;
 }
+
