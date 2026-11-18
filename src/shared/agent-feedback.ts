@@ -32,6 +32,7 @@ export type AgentProgressSource = z.infer<typeof agentProgressSourceSchema>;
 
 export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid(),
   phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help']),
+  sequence: z.number().int().positive().optional(),
   card: officialHelpIdSchema.optional(),
   sources: z.array(agentProgressSourceSchema).max(AGENT_PROGRESS_MAX_SOURCES).optional(),
 }).strict().refine(event =>
@@ -129,7 +130,108 @@ export function mergeAgentProgressSources(
   return [...readItems, ...foundItems].slice(0, AGENT_PROGRESS_MAX_SOURCES);
 }
 
+export type ReconciledAgentProgress = AgentProgress & { cards: OfficialHelpId[]; sources: AgentProgressSource[] };
+
+const AGENT_PROGRESS_PHASE_RANK: Record<AgentProgress['phase'], number> = {
+  started: 0,
+  model: 1,
+  help: 1,
+  working: 2,
+  searching: 2,
+  reading: 2,
+  tool_finished: 3,
+  reviewing: 4,
+};
+
+/**
+ * Converges duplicate or out-of-order SSE progress events for a single message run.
+ * Orders causally by sequence when present (so round-2 model/tool phases advance past tool_finished),
+ * keeps active phase while accumulating help cards, blocks mismatched runIds, and preserves
+ * monotonic phase-rank fallback for unsequenced events.
+ */
+export function reconcileAgentProgress(
+  previous: ReconciledAgentProgress | null | undefined,
+  incoming: AgentProgress,
+): ReconciledAgentProgress {
+  if (!previous || previous.messageId !== incoming.messageId) {
+    return {
+      ...incoming,
+      cards: incoming.card ? [incoming.card] : [],
+      sources: mergeAgentProgressSources([], incoming.sources),
+    };
+  }
+  if (previous.runId !== incoming.runId) {
+    return previous;
+  }
+  const cards = [...new Set([...previous.cards, ...(incoming.card ? [incoming.card] : [])])];
+  const sameCards = cards.length === previous.cards.length
+    && cards.every((card, index) => card === previous.cards[index]);
+  const stale = incoming.sequence !== undefined && previous.sequence !== undefined && incoming.sequence < previous.sequence;
+  // A later global phase does not mean every source's read event has arrived.
+  // Late frames may add unseen sources or upgrade a matching found source to read,
+  // but never replace known metadata (including intentionally suppressed URLs).
+  const incomingSources = stale ? incoming.sources?.flatMap(source => {
+    const known = previous.sources.find(item => item.chunkId === source.chunkId);
+    if (!known) return [source];
+    if (known.sourceId !== source.sourceId || known.stage === 'read' || source.stage !== 'read') return [];
+    return [{ ...known, stage: 'read' as const }];
+  }) : incoming.sources;
+  const sources = mergeAgentProgressSources(previous.sources, incomingSources);
+  const sameSources = JSON.stringify(sources) === JSON.stringify(previous.sources);
+  let phase: AgentProgress['phase'];
+  let sequence: number | undefined;
+  if (incoming.sequence !== undefined && previous.sequence !== undefined) {
+    if (incoming.sequence < previous.sequence) {
+      if (sameCards && sameSources) return previous;
+      phase = previous.phase;
+      sequence = previous.sequence;
+    } else if (incoming.sequence === previous.sequence) {
+      sequence = previous.sequence;
+      if (incoming.phase === 'help' && previous.phase !== 'started') {
+        phase = previous.phase;
+      } else {
+        phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+          ? previous.phase
+          : incoming.phase;
+      }
+    } else {
+      sequence = incoming.sequence;
+      phase = incoming.phase === 'help' && previous.phase !== 'started'
+        ? previous.phase
+        : incoming.phase;
+    }
+  } else {
+    sequence = incoming.sequence ?? previous.sequence;
+    if (incoming.phase === 'help' && previous.phase !== 'started') {
+      phase = previous.phase;
+    } else {
+      phase = AGENT_PROGRESS_PHASE_RANK[incoming.phase] < AGENT_PROGRESS_PHASE_RANK[previous.phase]
+        ? previous.phase
+        : incoming.phase;
+    }
+  }
+  const resolvedCard = phase === 'help' ? (incoming.card ?? previous.card) : undefined;
+  if (
+    phase === previous.phase
+    && sequence === previous.sequence
+    && resolvedCard === previous.card
+    && sameCards
+    && sameSources
+  ) {
+    return previous;
+  }
+  return {
+    runId: incoming.runId,
+    messageId: incoming.messageId,
+    phase,
+    ...(sequence !== undefined ? { sequence } : {}),
+    ...(resolvedCard ? { card: resolvedCard } : {}),
+    cards,
+    sources,
+  };
+}
 export function officialHelpFromTools(tools: readonly { name: string; status: string; reference?: string }[]): OfficialHelpId[] {
   return [...new Set(tools.filter(tool => tool.name === 'show_official_help' && tool.status === 'succeeded')
     .flatMap(tool => { const id = officialHelpIdSchema.safeParse(tool.reference); return id.success ? [id.data] : []; }))];
 }
+

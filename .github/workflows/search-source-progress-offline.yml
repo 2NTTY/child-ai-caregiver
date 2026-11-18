@@ -114,3 +114,4 @@ jobs:
               NODE_BIN="$NODE_BIN" \
             /usr/bin/bash --noprofile --norc \
               "$GITHUB_WORKSPACE/scripts/ci/verify-search-source-progress-offline.sh"
+

@@ -345,12 +345,14 @@ export function createProductAgent(options: {
         return await isCurrentUser() ? original : null;
       }
       const shown = new Set<string>();
+      let sequence = 0;
       const publish = (phase: AgentProgress['phase'], extra?: { card?: AgentProgress['card']; sources?: AgentProgress['sources'] }) => {
         try {
           onProgress?.({
             runId: claim.runId,
             messageId,
             phase,
+            sequence: ++sequence,
             ...(extra?.card ? { card: extra.card } : {}),
             ...(extra?.sources?.length ? { sources: extra.sources } : {}),
           });
@@ -515,3 +517,4 @@ export function createProductAgent(options: {
   };
 }
 export type ProductAgent = ReturnType<typeof createProductAgent>;
+

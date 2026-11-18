@@ -1,0 +1,69 @@
+{
+  "dateHongKong": "2026-11-18",
+  "source": "a7c24296e236a6c0c2023d60c6be1fadee47e4df",
+  "firebase": {
+    "provider": "google.com",
+    "enabled": true,
+    "emailPasswordEnabled": true,
+    "allowDuplicateEmails": false,
+    "authorizedSite": "ex-machina.eu.org",
+    "createAuthUri": {
+      "provider": "google.com",
+      "host": "accounts.google.com",
+      "sessionIssued": true
+    },
+    "androidPackage": "org.yuyoufang.app",
+    "androidSigningSha1": "4d35b5f9e89c21cd51be2d51e71635447fb78aeb",
+    "androidClientType": 1,
+    "webClientType": 3,
+    "webClientMatchesIdp": true
+  },
+  "registration": {
+    "function": "before-yuban-user-created",
+    "region": "asia-east2",
+    "previousRevision": "before-yuban-user-created-00003-viq",
+    "previousSourceGeneration": "1791735353650964",
+    "updatedPath": "server/firebase-registration.ts",
+    "changedFiles": 1,
+    "sourceArchiveSha256": "606df568ac644e2714b0470424b41c40886b039a00f2b776431e10866a6025cf",
+    "updateMask": "buildConfig.source",
+    "operation": "operation-1794988167419-66088401856ab-dc64d63f-d18793b6",
+    "contractChecksPassed": 9,
+    "state": "ACTIVE",
+    "revision": "before-yuban-user-created-00004-yug",
+    "trafficPercent": 100,
+    "uriMatchesConfiguredBeforeCreate": true,
+    "deployedSourceGeneration": "1794988168959622"
+  },
+  "web": {
+    "workflowRun": 44259763092,
+    "attempt": 2,
+    "firstAttempt": "Stopped before build; two growth pagination indexes missing.",
+    "indexesReady": 2,
+    "receipt": "r44259763092-2",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44259763092/attempts/2",
+    "entry": "/_expo/static/js/web/index-de17eedc57742e33dc05a61a6506878b.js",
+    "verified": [
+      "External Web and API version endpoints matched the target; /api/health returned ok.",
+      "The actual entry referenced by the homepage compiles the social provider list as google.com only.",
+      "The installed-site manifest declares standalone."
+    ]
+  },
+  "android": {
+    "versionCode": 8,
+    "channel": "preview",
+    "runtime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "updateId": "01a1ed9c-14b7-7357-887b-d5e11c689b59",
+    "updateGroup": "afbf8fa2-520b-45e1-ab9e-ed668b918544",
+    "updateFeedHttp": 200,
+    "offeredToV8": true,
+    "newApkBuilt": false
+  },
+  "manual": [
+    "An invited user completes Google consent and receives a product session.",
+    "An existing user explicitly links Google, reauthenticates and reads the same UID and data on Web/iPhone PWA and Android."
+  ],
+  "deferred": [
+    "Sign in with Apple and the Apple relay invitation flow; resume when a developer team is available."
+  ]
+}

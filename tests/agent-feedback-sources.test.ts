@@ -472,3 +472,4 @@ test('chatScreen and OfficialHelpCards wire progressive source cards with explic
   assert.match(cardsCode, /dateText \? <Text/);
   assert.equal(AGENT_PROGRESS_LABELS.reviewing, '正在獨立核對回覆');
 });
+

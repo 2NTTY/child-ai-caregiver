@@ -42,3 +42,4 @@ export function agentFeedbackStream(execute: (publish: (progress: AgentProgress)
   });
   return new Response(body, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'private, no-store, no-transform', 'x-accel-buffering': 'no' } });
 }
+
