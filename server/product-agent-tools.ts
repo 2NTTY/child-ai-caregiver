@@ -24,7 +24,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
+import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -711,8 +711,9 @@ export function createProductAgentTools(options: {
             const source = selectedEvidence.get(historyQuoteHandles.get(paragraph.quoteHistory) ?? paragraph.quoteHistory);
             if (!['mixed', 'private_reference'].includes(wire.kind) || !source?.citationId.startsWith('chat:') ||
               !source.excerptComplete || !householdEvidence.has(source.citationId)) throw new FamilyError(400, 'invalid_citation');
-            const original = JSON.parse(source.excerpt) as { text: string };
-            return { kind: 'private_reference', text: original.text, citationIds: [source.citationId] };
+            const text = attributedChatQuote(source);
+            if (!text) throw new FamilyError(400, 'invalid_citation');
+            return { kind: 'private_reference', text, citationIds: [source.citationId] };
           }) };
         }
         const parsed = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);

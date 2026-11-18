@@ -36,6 +36,23 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
     denyQuota: () => { quotaAvailable = false; } };
 }
 
+test("consecutive parent messages leave exactly one current request before and after a tool call", async () => {
+  const s = setup(async (_, index) => index === 0 ? call() : answer("已回答本輪問題。"));
+  s.input.messages = [{ role: "user", text: "午飯食咗粟米。" }, { role: "user", text: "今日搭巴士。" },
+    { role: "user", text: "上次最後去邊間房？" }];
+  s.input.context = { currentMessageId: "message" };
+  await s.runtime.run(s.input);
+  for (const request of s.requests) {
+    const turns = request.contents.filter(content => content.parts?.some(part => part.text === s.input.messages.at(-1)!.text));
+    assert.equal(turns.length, 1);
+    const texts = turns[0]!.parts!.map(part => part.text);
+    assert.ok(texts.includes(s.input.messages[0]!.text));
+    assert.equal(texts.at(-1), s.input.messages.at(-1)!.text);
+    assert.match(texts.at(-2)!, /本輪家長訊息/u);
+  }
+  assert.equal(s.requests.length, 2);
+});
+
 test("real ADK Runner performs two tool steps, preserves native signatures and returns text only", async () => {
   const s = setup(async (_, index) => index < 2 ? call("read_context", { key: index ? "region" : "age" }) : answer("已讀取兩項合成資料。"));
   let finalized = 0;

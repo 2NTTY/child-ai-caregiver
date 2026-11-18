@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { AgentBudget } from '../server/agent-budget.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
 import { createProductAgentTools } from '../server/product-agent-tools.ts';
+import { enforceChatDeliveryReview } from '../server/chat-delivery-review.ts';
 
 test('a subjectless correction follows the matching message in time and context stays bounded to its own scan', () => {
   const window = historyNeighbors();
@@ -71,6 +72,19 @@ test('a search can cite the returned correction; replacing or revoking that exac
     assert.match((await tools.presentation())!.text, /青竹室.*\[聊天原文\]/u);
     assert.equal(run.deliveryReview?.required, true);
     assert.equal(tools.deliveryDraft()?.sources.length, 2);
+    run.completeText = async input => JSON.stringify({ draftHash: input.attemptKey.split(':').at(-1), decision: 'pass', issues: [] });
+    const validated = await enforceChatDeliveryReview({ presentation: (await tools.presentation())!, tools, context: run,
+      provenance: { model: 'synthetic', packVersion: 'synthetic' } });
+    assert.match(validated.presentation.text, /你當時說：「改咗去青竹室」/u);
+    assert.equal(validated.review?.decision, 'pass');
+    const draft = tools.deliveryDraft()!;
+    for (const [text, failure] of [[correction.text, /delivery_review_rejected/u],
+      ['我已幫你修改待辦。', /delivery_review_no_sources/u],
+      ['你當時說：「改咗去青竹室」我已幫你刪除待辦。', /delivery_review_no_sources/u]] as const) {
+      const changed = { ...draft, paragraphs: [{ ...draft.paragraphs[0]!, text }] };
+      await assert.rejects(enforceChatDeliveryReview({ presentation: validated.presentation, tools: { ...tools, deliveryDraft: () => changed },
+        context: run, provenance: { model: 'synthetic', packVersion: 'synthetic' } }), failure);
+    }
     current = false;
     await assert.rejects(tools.presentation(), /delivery_review_incomplete/u);
   } finally { budget.close(); }
