@@ -56,3 +56,29 @@ test("License inventory lock summary and selected-package counts are reproducibl
   const notices = read("THIRD_PARTY_NOTICES.md").toString("utf8");
   assert.ok(notices.includes(`${direct} direct packages, ${transitive} explicitly inventoried transitive packages, and ${files} original license/notice file entries`));
 });
+
+test("Shipped runtime dependencies have version-matched, byte-verified notices in the distribution", () => {
+  const manifest = json("licenses/manifest.json");
+  const locked = json("package-lock.json").packages;
+  const notices = read("THIRD_PARTY_NOTICES.md").toString("utf8");
+  for (const workspace of ["", "frontend/"]) {
+    for (const name of Object.keys(json(workspace + "package.json").dependencies)) {
+      const key = "node_modules/" + name;
+      const pkg = locked[workspace + key] ?? locked[key];
+      assert.ok(pkg, `Missing lockfile resolution for ${workspace}${name}`);
+      const entries = manifest.packages.filter((e: { name: string; version: string }) =>
+        e.name === name && e.version === pkg.version);
+      assert.equal(entries.length, 1, `Expected one notice entry for ${name}@${pkg.version}`);
+      const entry = entries[0];
+      assert.equal(entry.dependencyType, "dependency", name);
+      assert.equal(entry.integrity, pkg.integrity, name);
+      assert.equal(entry.tarball, pkg.resolved, name);
+      assert.equal(entry.license, pkg.license, name);
+      assert.ok(entry.files.length > 0, name);
+      for (const file of entry.files) {
+        assert.equal(sha256(read(file.path)), file.sha256, file.path);
+        assert.ok(notices.includes(`(${file.path})`), file.path);
+      }
+    }
+  }
+});
