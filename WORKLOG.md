@@ -6520,3 +6520,8 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+
+### 2026-11-18　補充無私人記憶與無歷史會話語境之外部檢索 Query 最小化測試（`codex/search-query-minimization-scratch-scope`）
+
+1）**模擬無私人上下文／零記憶寫入之臨時會話外搜測試（`tests/search-query-minimization.test.ts`，8→9 cases）**：於 `createAgentRuntime`＋`createProductAgentTools`＋`createKnowledgeRetriever` 驗證當 `profileApplicable: false`、`facts: []`、`recentMessages: []`、未載入任何家庭識別詞且零私人記憶讀取／寫入時，若單次輸入夾帶中英文姓名、確切出生日期、詳細地址或聯絡電話，`search_knowledge` 與直呼 `createKnowledgeRetriever` 仍於扣額與查庫前一律回傳 `public_query_required` 拒絕，並只放行去識別後之條件查詢且不加開額外分類或脫敏模型；同步更新 `scripts/ci/verify-search-query-minimization-offline.sh` `TEST_CASES=(9 4 6 8 3 4 6 20 17)` 與 `.github/workflows/search-query-minimization-offline.yml` 觸發條件。
+2）**誠實邊界聲明**：主線現況尚未實作 REQ-003 §5 之左上角「臨時聊天」UI 與退出即時清除前後端會話機制；本條僅補齊現有後端及工具層在「無私人上下文／不寫入記憶」條件下的外部檢索最小化契約實證，不視同 REQ-003 臨時聊天模式已交付。
