@@ -15,7 +15,7 @@ import { HistoryMessageDetail } from "../history/HistoryMessageDetail";
 import { Text } from "react-native-paper";
 import { factIsApplicable, factSourceLabel, factStatusLabels, factUnavailableReason, visibilityLabels, type MemoryFactView, type MemorySummaryView } from "../../memory-view-model";
 import { memoryClarificationQuestion, memoryConfirmerLabel, memoryDateLabel, visibleKnowledgeReferences, visibleMemoryFacts, visibleMemoryHistory,
-  type KnowledgeReferenceView, type MemoryConfirmerDisplay, type MemoryReadProjection, type MemoryReferenceModel, type MemoryReferenceWorkspaceValue } from "../../memory-reference-view-model";
+  seriesPreferenceChange, type SeriesPreferenceAction, type KnowledgeReferenceView, type MemoryConfirmerDisplay, type MemoryReadProjection, type MemoryReferenceModel, type MemoryReferenceWorkspaceValue } from "../../memory-reference-view-model";
 import { useMemoryReferenceWorkspace } from "../../workspaces/MemoryReferenceWorkspace";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
@@ -165,12 +165,16 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
   const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
   const first = items[0]!, series = first.series ?? sourceSeries(first), preference = first.preference;
   const busy = workspace.reads?.referencesBusy || !workspace.model.online || workspace.model.references.state !== 'ready';
-  const change = (enabled: boolean, mode: 'fixed' | 'follow', adopt = false) => workspace.reads?.setLibraryPreference?.({
-    seriesId: series.id, expectedRevision: preference?.revision ?? 0, enabled, mode, adopt,
-    editions: items.map(({ sourceId, versionId }) => ({ sourceId, versionId })),
-  });
+  const change = (action: SeriesPreferenceAction) => {
+    const update = seriesPreferenceChange(series.id, items, action);
+    if (update) workspace.reads?.setLibraryPreference?.(update);
+    else {
+      setExportNotice('來源設定已更新。請在重新載入後再選一次。');
+      workspace.reads?.refreshContext?.();
+    }
+  };
   const latest = items.map(item => item.publishedAt).filter((at): at is string => !!at).sort().at(-1);
-  const state = preference?.enabled === false ? '本人已停用' : preference?.revision ? preference.mode === 'follow' ? '跟隨同範圍已審核更新' : '固定快照' : '使用已發布來源';
+  const state = preference?.enabled === false ? '本人已停用' : preference?.mode === 'fixed' ? '固定快照' : preference?.mode === 'follow' ? '跟隨同範圍已審核更新' : '使用平台有效發布版';
   const latestSourceRead = items.map(item => item.lastSuccessfulCheckAt ?? item.fetchedAt).filter((at): at is string => !!at).sort().at(-1);
   const requiresSelection = items.some(item => item.preference?.eligible === false);
   return <View style={styles.card} testID={`memory-catalog-series-${series.id}`}>
@@ -179,7 +183,7 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
     <Text style={styles.meta}>範圍限所列文件及已收錄段落。</Text>
     {latestSourceRead ? <Metadata label="最近成功取得">{memoryDateLabel(latestSourceRead)}</Metadata> : null}
     {latest ? <Metadata label="最近發布">{memoryDateLabel(latest)}</Metadata> : null}
-    {requiresSelection ? <Text style={styles.warning}>目前發布的版本或範圍有變，未選用的新內容暫不供回答。</Text> : null}
+    {requiresSelection ? <Text style={styles.warning}>目前發布的版本或範圍有變，未選用的新內容暫不供回答。如要採用所列版本及範圍，可按「固定目前版本」。</Text> : null}
     <AppButton label={details ? '收起文件及設定' : '查看文件及設定'} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(!details)} />
     {details ? <View style={styles.details}>{items.map(item => <View key={item.sourceId} style={styles.details} testID={`memory-catalog-source-${item.sourceId}`}>
       <Text style={styles.cardTitle}>{item.title}</Text>
@@ -214,11 +218,12 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
         .then(message => { if (active.current) setExportNotice(message); }, () => { if (active.current) setExportNotice('未能匯出版本參照。'); }); }} /> : null}
     {exportNotice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{exportNotice}</Text> : null}
     {preference && workspace.reads?.setLibraryPreference && !workspace.model.references.data?.hasMore ? <View style={styles.actions}>
-      <AppButton label={preference.enabled ? '本人停用' : '本人啟用'} variant="quiet" disabled={busy} onPress={() => change(!preference.enabled, preference.mode)} />
+      <AppButton label={preference.enabled ? '本人停用' : '本人啟用'} variant="quiet" disabled={busy} onPress={() => change('toggle')} />
       <AppButton label="固定目前版本" variant="quiet" disabled={busy || preference.revision > 0 && preference.mode === 'fixed' && !requiresSelection && items.every(item => item.preference?.selectedVersionId === item.versionId)}
-        onPress={() => change(preference.enabled, 'fixed', true)} />
-      <AppButton label="跟隨同範圍更新" variant="quiet" disabled={busy || preference.mode === 'follow' && !requiresSelection}
-        onPress={() => change(preference.enabled, 'follow', true)} />
+        onPress={() => change('fixed')} />
+      <AppButton label="跟隨同範圍更新" variant="quiet" disabled={busy || preference.mode === 'follow'}
+        onPress={() => change('follow')} />
+      {preference.mode !== 'platform' ? <AppButton label="恢復使用平台發布版" variant="quiet" disabled={busy} onPress={() => change('platform')} /> : null}
     </View> : null}</View> : null}
   </View>;
 }

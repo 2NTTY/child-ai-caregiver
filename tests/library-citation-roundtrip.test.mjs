@@ -23,6 +23,23 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 const fixtures = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'));
 const booklet = parseKnowledgeSource(fixtures.find(item => item.sourceId === 'fhs-feeding-booklet-en'));
 
+test('source card actions preserve the displayed revision and only pinning adopts current editions', async () => {
+  const { seriesPreferenceChange } = await import('../frontend/src/memory-reference-view-model.ts');
+  const first = { sourceId: 'first', versionId: 'current-one', preference: { revision: 4, mode: 'fixed', enabled: true, selectedVersionId: 'old-one' } };
+  const second = { ...first, sourceId: 'second', versionId: 'current-two' };
+  const editions = [{ sourceId: 'first', versionId: 'current-one' }, { sourceId: 'second', versionId: 'current-two' }];
+  const base = { seriesId: 'series', expectedRevision: 4, editions };
+  const change = action => seriesPreferenceChange('series', [first, second], action);
+  assert.deepEqual(change('toggle'), { ...base, enabled: false, mode: 'fixed', adopt: false });
+  assert.deepEqual(change('follow'), { ...base, enabled: true, mode: 'follow', adopt: false });
+  assert.deepEqual(change('fixed'), { ...base, enabled: true, mode: 'fixed', adopt: true });
+  assert.deepEqual(change('platform'), { ...base, enabled: true, mode: 'platform', adopt: false });
+  assert.equal(seriesPreferenceChange('series', [first, { ...second, preference: { ...second.preference, revision: 5 } }], 'fixed'), null);
+  const untouched = { ...first, preference: { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null } };
+  const toggle = seriesPreferenceChange('series', [untouched], 'toggle');
+  assert.equal(toggle.expectedRevision, 0); assert.equal(toggle.mode, 'platform');
+});
+
 test('REQ-006 personal ZIP contains only selected immutable references, rejects modified bytes and preserves the imported revision', async () => {
   const selectedVersionHash = sourceVersionHash(booklet), catalog = [{ ...booklet, versionHash: 'c'.repeat(64), series: sourceSeries(booklet),
     preference: { enabled: true, mode: 'fixed', selectedVersionHash, revision: 3 } }];
