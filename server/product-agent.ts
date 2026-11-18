@@ -12,8 +12,10 @@ import type { AgentPresentation, ProductAgentResult } from "../src/shared/produc
 import { agentBackgroundAnswerSchema, proactiveNextCheckSchema } from "../src/shared/product-agent.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
-import { AgentStopped } from "./agent-budget.ts";
+import { AgentBudget, AgentStopped } from "./agent-budget.ts";
 import { enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import { baseAgentKnowledgeFilter } from "./knowledge-query-context.ts";
+import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
@@ -372,6 +374,51 @@ export function createProductAgent(options: {
       const currentUserMessage = page.messages[index]!;
       const pureGreetingTurn = !currentUserMessage.voice && !currentUserMessage.photo && !currentUserMessage.file
         && !confirmationResult && isPureGreetingOrSmallTalk(currentUserMessage.text);
+      let seededOfficialEvidence: { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[] = [];
+      let reusedEvidenceInvalidated = false;
+      if (!pureGreetingTurn) {
+        const priorRunIds = [...new Set(recent.messages
+          .filter((item): item is typeof item & { agentRunId: string } => item.role === "model" && typeof item.agentRunId === "string" && item.agentRunId !== claim.runId)
+          .map(item => item.agentRunId))].slice(-3);
+        const priorCandidates: KnowledgeEvidence[] = [];
+        const seenChunkIds = new Set<string>();
+        for (const prevRunId of priorRunIds) {
+          const prevRun = await options.store.get(userId, childId, prevRunId);
+          if (!prevRun || prevRun.runId !== prevRunId || prevRun.status !== "completed" || !prevRun.citations?.length) continue;
+          for (const citation of prevRun.citations) {
+            if (seenChunkIds.has(citation.chunkId)) continue;
+            seenChunkIds.add(citation.chunkId);
+            priorCandidates.push(citation);
+            if (priorCandidates.length >= 6) break;
+          }
+          if (priorCandidates.length >= 6) break;
+        }
+        if (priorCandidates.length > 0 && typeof options.knowledge?.createRun === "function") {
+          const preFilter = baseAgentKnowledgeFilter(context);
+          const preBudget = new AgentBudget(cancellation.signal, 5000);
+          try {
+            const preRun = options.knowledge.createRun({
+              actor: { kind: "query_embedding", actorId: userId, operationId: claim.runId },
+              budget: preBudget,
+              authorize,
+            });
+            if (typeof preRun.revalidateAndSeedEvidence === "function") {
+              const checked = await preRun.revalidateAndSeedEvidence(priorCandidates, preFilter);
+              seededOfficialEvidence = checked.valid.map(chunk => ({ chunk, filter: preFilter }));
+              reusedEvidenceInvalidated = checked.invalidated.length > 0;
+            } else if (typeof preRun.readReviewedCitations === "function") {
+              const checked = await preRun.readReviewedCitations(priorCandidates, preFilter);
+              if (checked) seededOfficialEvidence = checked.map(chunk => ({ chunk, filter: preFilter }));
+              else reusedEvidenceInvalidated = true;
+            }
+          } catch {
+            // Leave fail-closed runtime authorization and live retrieval to the canonical runtime.run path.
+            seededOfficialEvidence = [];
+          } finally {
+            preBudget.close();
+          }
+        }
+      }
       const result = await options.runtime.run({
         onDiagnostic: event => {
           if (event.phase === "model_start") publish("model");
@@ -407,6 +454,14 @@ export function createProductAgent(options: {
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
+          ...(seededOfficialEvidence.length ? {
+            reusedOfficialEvidence: seededOfficialEvidence.map(({ chunk }) => ({
+              chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId,
+              title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt,
+              sourceDateText: chunk.sourceDateText ?? null,
+            })),
+          } : {}),
+          ...(reusedEvidenceInvalidated ? { reusedEvidenceInvalidated: true } : {}),
           instructionPolicy: "只辦目前訊息所交代的事。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若家長問之前講過甚麼，而當前視窗沒有答案，用 search_history 查目前孩子的對話；未提供該工具時先載入 history。查詢詞選事情本身。搜尋結果的 followingMessages 是當時緊接的原話，可能省略主題；按意思核對更正。若原句已能回答，present_answer 用 private_reference 並選 paragraphs=[{quoteHistory: 該句的 H 編號}]。需要另寫回答時，每段引用支持該段的原話。需要按 ID 續讀才載入 history，再用 read_history。"
             + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
@@ -417,6 +472,7 @@ export function createProductAgent(options: {
         tools: run => {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
+            ...(seededOfficialEvidence.length ? { seededOfficialEvidence } : {}),
             trustedUserMessage: page.messages[index]!.text, currentMessageId: messageId,
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
             onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },

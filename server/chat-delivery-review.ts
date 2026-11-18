@@ -82,6 +82,10 @@ export interface ChatDeliverySurface {
   presentation(): Promise<AgentPresentation | null>;
   deliveryDraft(): ChatDeliveryDraft | null;
   replaceDeliveryAnswer(answer: AgentAnswer): void;
+  reusableEvidenceSummary?(): {
+    official: { citationId: string; title: string; section: string; sourceExcerpt: string }[];
+    private: { citationId: string; excerpt: string }[];
+  };
 }
 
 /** Server-owned, run-local state. Generator labels and repairs cannot clear it. */
@@ -1580,6 +1584,11 @@ export async function enforceChatDeliveryReview(input: {
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion, repairContext)) throw new AgentStopped("delivery_review_incomplete");
     if (chatDeliveryPassNeedsSources(liveDraft, obligation)) throw new AgentStopped("delivery_review_no_sources");
     if (hasLiveUnverifiedOperationClaim(liveDraft)) throw new AgentStopped("delivery_review_rejected");
+    if (repairContext?.previousDraft.sources.some(source => source.classification === "official_guidance")
+      && !liveDraft.sources.some(source => source.classification === "official_guidance")
+      && !isPureScopeRefusalOrLimitation(liveDraft)) {
+      throw new AgentStopped("delivery_review_no_sources");
+    }
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     return { presentation: livePresentation, review };
   };
@@ -1588,11 +1597,13 @@ export async function enforceChatDeliveryReview(input: {
   let outcome = await judge(current, "review");
   if (outcome.decision.decision === "revise" && input.context.budget.remainingModelCalls >= 2) {
     const repairContext = { previousDraft: structuredClone(current), issues: structuredClone(outcome.decision.issues) };
+    const retrievedEvidence = input.tools.reusableEvidenceSummary?.();
     const repaired = await spendText(input.context, `model:chat-delivery-repair:${outcome.draftHash}`, system,
       "Repair the draft using only the same evidence. This is a repair turn, not a review turn. "
       + "Return one JSON object matching the product answer schema (kind and paragraphs) and no other text. "
       + "Do not return a review decision object.\n"
       + JSON.stringify({ ...reviewPayload(current, outcome.draftHash), issues: outcome.decision.issues,
+        ...(retrievedEvidence && (retrievedEvidence.official.length || retrievedEvidence.private.length) ? { retrievedEvidence } : {}),
         outputContract: z.toJSONSchema(agentAnswerSchema) }), current.images, current.voice, "delivery_repair");
     const parsed = agentAnswerSchema.safeParse(readJson(repaired));
     if (!parsed.success) throw new AgentStopped("delivery_review_incomplete");
@@ -1606,6 +1617,7 @@ export async function enforceChatDeliveryReview(input: {
     }
     const nextDraft = input.tools.deliveryDraft();
     if (!nextDraft || !nextPresentation) throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryDraftHash(nextDraft) === outcome.draftHash) throw new AgentStopped("delivery_review_rejected");
     if (!requiresChatDeliveryReview(nextDraft, obligation)) return { presentation: nextPresentation, review: null };
     current = nextDraft;
     outcome = await judge(current, "rereview", repairContext);

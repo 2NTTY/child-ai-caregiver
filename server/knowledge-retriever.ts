@@ -8,6 +8,26 @@ import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { rankKnowledge } from "./knowledge-ranking.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
+export function isKnowledgeEvidenceFresh(
+  chunk: Pick<KnowledgeEvidence, "reviewState" | "validUntil">,
+  now = Date.now(),
+): boolean {
+  if (chunk.reviewState !== "reviewed") return false;
+  if (chunk.validUntil === undefined || chunk.validUntil === null) return true;
+  const expiresAt = Date.parse(chunk.validUntil);
+  return Number.isFinite(expiresAt) && expiresAt > now;
+}
+
+function canonicalFilterKey(filter: KnowledgeFilter): string {
+  return JSON.stringify({
+    region: filter.region,
+    classification: filter.classification,
+    age: filter.age ? { basis: filter.age.basis, minMonths: filter.age.minMonths, maxMonths: filter.age.maxMonths } : null,
+    ageMatch: filter.ageMatch ?? null,
+    topics: [...filter.topics].sort(),
+  });
+}
+
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates">, embeddings: EmbeddingGateway) {
   return {
     /** One instance per authorized Agent run; never share queries or caches between families. */
@@ -17,14 +37,19 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
       const loaded = new Map<string, KnowledgeEvidence>();
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();
+      const contextReadCache = new Map<string, { contentHash: string; result: KnowledgeContextResult; chunks: KnowledgeEvidence[] }>();
       // The same live read owns both validity and reviewed wording. Original-read coverage is separate.
       async function readReviewedCitations(citations: { chunkId: string; versionId: string; contentHash: string }[], applicability: KnowledgeFilter): Promise<KnowledgeEvidence[] | null> {
         if (!citations.length || citations.length > 6 || new Set(citations.map(item => item.chunkId)).size !== citations.length) return null;
         budget.check();
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-        const current = await budget.wait(() => store.candidates(parseKnowledgeFilter(applicability), null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
+        const filter = parseKnowledgeFilter(applicability);
+        const current = await budget.wait(() => store.candidates(filter, null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
+        const now = Date.now();
         const matched = citations.map(citation => current.find(chunk => chunk.chunkId === citation.chunkId
-          && chunk.versionId === citation.versionId && chunk.contentHash === citation.contentHash));
+          && chunk.versionId === citation.versionId
+          && chunk.contentHash === citation.contentHash
+          && isKnowledgeEvidenceFresh(chunk, now)));
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
         if (matched.some(chunk => !chunk)) return null;
         return matched.map(chunk => {
@@ -59,7 +84,9 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           }
           const vector = await budget.wait(() => pending!);
           // Only the vector is cached. Publication, withdrawal, freshness and applicability are always read anew.
-          const candidates = await budget.wait(() => store.candidates(filter, vector, { query }));
+          const rawCandidates = await budget.wait(() => store.candidates(filter, vector, { query }));
+          const now = Date.now();
+          const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now));
           const chunks = rankKnowledge(query, candidates).map(({ originalText: _originalText, ...chunk }) => ({
             ...chunk, readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false },
           }));
@@ -77,7 +104,21 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           const filter = parseKnowledgeFilter(applicability);
           const live = await budget.wait(() => store.candidates(filter, null, { chunkIds: [anchor.chunkId], versionId: anchor.versionId, limit: 1 }));
-          if (!live.some(item => item.contentHash === anchor.contentHash)) throw new FamilyError(409, "knowledge_context_source_changed");
+          const now = Date.now();
+          if (!live.some(item => item.contentHash === anchor.contentHash && isKnowledgeEvidenceFresh(item, now))) {
+            loaded.delete(anchor.chunkId);
+            throw new FamilyError(409, "knowledge_context_source_changed");
+          }
+          const contextCacheKey = cursor === null
+            ? JSON.stringify({ chunkId: anchor.chunkId, versionId: anchor.versionId, filter: canonicalFilterKey(filter), maxResponseCharacters })
+            : null;
+          const cachedRead = contextCacheKey ? contextReadCache.get(contextCacheKey) : undefined;
+          if (cachedRead && cachedRead.contentHash === anchor.contentHash && cachedRead.result.complete) {
+            for (const item of cachedRead.chunks) loaded.set(item.chunkId, item);
+            if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+            budget.check();
+            return structuredClone(cachedRead.result);
+          }
           const chunkId = cursor?.chunkId ?? (cursor ? null : anchor.chunkId);
           const first = chunkId ? await budget.wait(() => store.candidates(filter, null, { chunkIds: [chunkId], versionId: anchor.versionId, limit: 1 })) : [];
           if (chunkId && !first.length) throw new FamilyError(409, "knowledge_context_source_changed");
@@ -127,9 +168,66 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           if (nextCursor) issuedCursors.add(JSON.stringify(nextCursor));
           if (!fits()) throw new FamilyError(400, "knowledge_context_response_capacity");
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-          budget.check(); return result();
+          budget.check();
+          const finalResult = result();
+          if (contextCacheKey && finalResult.complete) {
+            const cachedChunks = finalResult.chunks
+              .map(chunk => loaded.get(chunk.chunkId))
+              .filter((chunk): chunk is KnowledgeEvidence => Boolean(chunk));
+            contextReadCache.set(contextCacheKey, {
+              contentHash: anchor.contentHash,
+              result: structuredClone(finalResult),
+              chunks: structuredClone(cachedChunks),
+            });
+          }
+          return finalResult;
         },
         readReviewedCitations,
+        async revalidateAndSeedEvidence(
+          priorCitations: readonly KnowledgeEvidence[],
+          applicability: KnowledgeFilter,
+        ): Promise<{ valid: KnowledgeEvidence[]; invalidated: KnowledgeEvidence[] }> {
+          const unique: KnowledgeEvidence[] = [];
+          const seen = new Set<string>();
+          for (const citation of priorCitations) {
+            if (seen.has(citation.chunkId)) continue;
+            seen.add(citation.chunkId);
+            unique.push(citation);
+            if (unique.length >= 6) break;
+          }
+          if (!unique.length) return { valid: [], invalidated: [] };
+          const filter = parseKnowledgeFilter(applicability);
+          const valid: KnowledgeEvidence[] = [];
+          const invalidated: KnowledgeEvidence[] = [];
+          budget.check();
+          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+          const current = await budget.wait(() => store.candidates(filter, null, { chunkIds: unique.map(item => item.chunkId), limit: 6 }));
+          const now = Date.now();
+          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+          for (const prior of unique) {
+            const matched = current.find(chunk =>
+              chunk.chunkId === prior.chunkId
+              && chunk.versionId === prior.versionId
+              && chunk.contentHash === prior.contentHash
+              && isKnowledgeEvidenceFresh(chunk, now));
+            if (!matched) {
+              loaded.delete(prior.chunkId);
+              invalidated.push(prior);
+              continue;
+            }
+            const { distance: _distance, rankScore: _rankScore, originalText: _originalText, ...reviewed } = matched;
+            const entry: KnowledgeEvidence = {
+              ...reviewed,
+              readCoverage: prior.readCoverage ?? { kind: "reviewed_text_and_excerpt" as const, complete: false },
+            };
+            loaded.set(entry.chunkId, entry);
+            valid.push(entry);
+          }
+          return { valid, invalidated };
+        },
+        seedEvidence(items: readonly KnowledgeEvidence[]) {
+          for (const item of items) loaded.set(item.chunkId, item);
+        },
         async revalidateCitations(citations: { chunkId: string; versionId: string; contentHash: string }[], applicability: KnowledgeFilter): Promise<boolean> {
           return await readReviewedCitations(citations, applicability) !== null;
         },

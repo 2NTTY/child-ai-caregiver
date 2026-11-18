@@ -152,6 +152,8 @@ export function createProductAgentTools(options: {
   currentMessageId?: string;
   /** Optional household/child display identifiers kept out of external search queries. */
   knownPrivateIdentifiers?: readonly string[];
+  /** Previously validated public citations scoped cleanly to this child's conversation turn. */
+  seededOfficialEvidence?: readonly { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[];
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const knownPrivateIdentifiers = new Set<string>();
@@ -279,6 +281,12 @@ export function createProductAgentTools(options: {
   const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,trackedStore,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
+  if (options.seededOfficialEvidence?.length) {
+    for (const item of options.seededOfficialEvidence) {
+      evidence.set(item.chunk.chunkId, { chunk: item.chunk, filter: item.filter });
+    }
+    retrieval.seedEvidence?.(options.seededOfficialEvidence.map(item => item.chunk));
+  }
   async function refreshVerifiedOperations(includePending = true): Promise<ChatDeliveryVerifiedOperation[]> {
     if (options.background) { selectedVerifiedOperations = []; return []; }
     const verified: ChatDeliveryVerifiedOperation[] = [];
@@ -434,12 +442,20 @@ export function createProductAgentTools(options: {
         nextAction: "從 quoteOptions 選能回答問題的原話。用 kind=private_reference 及 paragraphs=[{quoteHistory: 所選識別}]，Server 會代入原句再審核。"
       } };
       const hasOfficialEvidence = Array.from(evidence.values()).some(item => item.chunk.classification === "official_guidance");
+      const availableOfficialCitationIds = Array.from(evidence.values())
+        .filter(item => item.chunk.classification === "official_guidance")
+        .slice(0, 6)
+        .map(item => ({ chunkId: item.chunk.chunkId, title: item.chunk.title, section: item.chunk.section }));
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
           ? "不要將 emergency-hk-v1 或 medical-consult-hk-v1 等固定求助卡 ID 放進 citationIds（官方引用只接受本次 search_knowledge 回傳的 chunkId UUID）。若無適用官方片段，請用 kind=\"operation\" 與 citationIds=[]（緊急危險請直接輸出「請先使用畫面上的緊急求助入口。」）。"
           : options.actionReaders ? "引用本人交代或照護記錄時，以 records 按 id 讀回原項，使用該工具回傳的 citationId。公共建議引用 search_knowledge 的 chunkId。" : "search_knowledge", citationField: "chunks[].chunkId", message: "官方引用只能取本次 search_knowledge 結果的原始 chunkId；私人及家庭記錄須使用對應讀取工具回傳的 citationId；固定卡 ID 與背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
-      if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
+      if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
+        nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.has("emergency-hk-v1")
           ? "emergency-hk-v1 是畫面固定緊急卡 ID，不能填入 citationIds，亦不得在無官方片段下以 safety_help／caregiving 輸出自擬醫療或用藥處置。請立即單獨呼叫 present_answer({ kind: \"operation\", paragraphs: [{ text: \"請先使用畫面上的緊急求助入口。\", citationIds: [] }] })，勿增刪或改寫該固定句字眼。"
           : !hasOfficialEvidence && selectedOfficialHelp.has("medical-consult-hk-v1")
@@ -602,7 +618,7 @@ export function createProductAgentTools(options: {
         summaryText = null;
         return makeResult(selected);
       }) },
-    { name: "search_knowledge", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge,
+    { name: "search_knowledge", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge,
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
       execute: (args, context) => guard(async () => {
@@ -716,7 +732,14 @@ export function createProductAgentTools(options: {
             return { kind: 'private_reference', text, citationIds: [source.citationId] };
           }) };
         }
-        const parsed = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const parsedRaw = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const parsed = parsedRaw.kind === "no_action" ? parsedRaw : {
+          ...parsedRaw,
+          paragraphs: parsedRaw.paragraphs.map(paragraph => ({
+            ...paragraph,
+            citationIds: [...new Set(paragraph.citationIds)],
+          })),
+        };
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
         // must not stand in for propose_fact. Questions / read-backs are unaffected.
@@ -939,7 +962,7 @@ export function createProductAgentTools(options: {
       })});
   }
   if(options.contact)tools.splice(tools.length-1,0,
-    {name:"read_contact_options",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
+    {name:"read_contact_options",effect:"read",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
      parameters:z.object({taskId:z.uuid()}).strict(),authorize:permitted,
      execute:args=>guard(async()=>{const value=await options.contact!.options(scope.userId,scope.childId,args.taskId as string);if(!value)throw new AgentStopped("unauthorized");return value;})},
     {name:"contact_caregiver",description:"只按 read_contact_options 當次回傳的任務、版本及收件人建立唯一聯絡請求。queued 只是持久入列，不是送達或完成；Server worker 會再查授權、安靜時段與終態，只發固定一般提示。缺授權須請使用者到聯絡設定明確確認。",
@@ -1036,7 +1059,21 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
-      return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
+      return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations,
+        retrievalMode: citations.length > 0 && mode === "not_used" ? "vector_keyword" : mode };
+    },
+    reusableEvidenceSummary() {
+      const official = Array.from(evidence.values()).slice(0, 6).map(({ chunk }) => ({
+        citationId: chunk.chunkId,
+        title: chunk.title,
+        section: chunk.section,
+        sourceExcerpt: chunk.sourceExcerpt,
+      }));
+      const privateList = Array.from(selectedEvidence.values())
+        .filter(item => item.classification === "private")
+        .slice(0, 6)
+        .map(item => ({ citationId: item.citationId, excerpt: item.excerpt }));
+      return { official, private: privateList };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;

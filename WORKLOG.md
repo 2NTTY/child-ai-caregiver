@@ -6520,3 +6520,14 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+
+### 2026-11-19　REQ-002 唯讀並行批次檢索、證據重用失效與針對性局部修復（本地分支驗證）
+
+- Branch / Commit Context：於本地分支 `codex/req002-batch-reuse-and-repair`（基線 `origin/master` `3b51b971`，依指示僅於本機完成提交與驗證，不執行 `git push` 或於 GitHub 開啟 PR）實作 REQ-002 §§3.1、3.4、3.5、3.6、5.2 及 AC 507–513、515–516、520、522。
+- Actual Work：
+  1. **有界唯讀並行與屏障排程（`server/agent-tool-batch.ts`、`server/agent-runtime.ts` 及唯讀工具模組）**：實作 `runReadToolBatch`、`collectContiguousReadSlice`、`isBatchableReadTool`（`maxConcurrent: 3`、`maxBatchSize: 6`、`itemTimeoutMs: 8000`），保留 ADK 生命週期與寫入／終端／`show_official_help` 順序屏障，對超出上限項回傳 `batch_limit_exceeded`、對逾時／讀錯／`embedding_limit` 作單項失敗隔離，並在 `AbortSignal` 或授權撤銷時中止排隊項且不洩漏部份資料；全數純讀工具皆補齊 `effect: "read"`。
+  2. **證據重用與即時失效（`server/knowledge-retriever.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts`）**：新增 `isKnowledgeEvidenceFresh`（檢查 `reviewState === "reviewed"` 及 `validUntil`）、同次 run `readContext` 快取與變更失敗關閉（`409 knowledge_context_source_changed`），並接通 `revalidateAndSeedEvidence` 讓同 `(userId, childId)` 後續提問重驗既有官方引用；過期、撤回、版本更新、年齡／地區切換及跨帳號／跨子女情況一律失效重建。
+  3. **針對性局部修復與近限預算收斂（`server/product-agent-tools.ts`、`server/chat-delivery-review.ts`）**：修正同段重複 `citationIds` 自動去重、引用錯誤回傳 `availableOfficialCitationIds`、為 `delivery_repair` 注入 `retrievedEvidence`、阻斷與原草稿同 hash 的空轉修復（`delivery_review_rejected`），並於 `acceptLivePass` 阻止修復階段擅自抽走應附官方引用（`delivery_review_no_sources`）。
+  4. **測試與離線 CI 檢查補完**：新增 [tests/req002-batch-reuse-and-repair.test.ts](tests/req002-batch-reuse-and-repair.test.ts)（10 cases）、[scripts/ci/verify-req002-batch-reuse-repair-offline.sh](scripts/ci/verify-req002-batch-reuse-repair-offline.sh) 與 [.github/workflows/req002-batch-reuse-repair-offline.yml](.github/workflows/req002-batch-reuse-repair-offline.yml)。
+- Verification：本機離線驗證（Node `v24.16.0` on Windows + `family-cleanup-network-guard.mjs` 阻斷真實網路）完整通過 offline manifest 全部 31 個測試檔 / 276 個案例、loopback `tests/agent-feedback.test.ts`（4/4），以及 `tsconfig.server.json`、`tsconfig.json`、`frontend/tsconfig.json` 三組 `tsc --noEmit`。
+- Limitations / Blockers：僅完成本機離線測試與靜態型別驗證，未執行真實 Gemini/Vertex API、真實 PostgreSQL／Firestore、GitHub Actions Hosted CI 或 Android/Web 實機 E2E；依用戶要求嚴格保留於本地提交，未 `git push` 或建立 GitHub PR。

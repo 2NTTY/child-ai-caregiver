@@ -26,6 +26,15 @@ import { AgentCapabilitySelection, AgentCapabilityToolset, type AgentToolCatalog
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 import { WORK_RECOVERY_MAX_SEQUENCE } from "./firestore-work-continuation-recovery.ts";
 import { createRunContextCompactor, type InRunCompactionConfig } from "./context-compactor.ts";
+import {
+  collectContiguousReadSlice,
+  isBatchableReadTool,
+  normalizeReadBatchPolicy,
+  runReadToolBatch,
+  type BatchCallOutcome,
+  type ReadToolBatchPolicy,
+} from "./agent-tool-batch.ts";
+export type { ReadToolBatchPolicy } from "./agent-tool-batch.ts";
 
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
 process.env.ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = "false";
@@ -223,6 +232,8 @@ export interface AgentRunInput {
   /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
   toolCatalog?: AgentToolCatalog;
   compactToolCatalog?: AgentToolCatalog & { deferredRecipeModules: readonly string[] };
+  /** Bounded concurrent execution policy for contiguous read-only tool batches in one model turn. */
+  readBatchPolicy?: ReadToolBatchPolicy;
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -310,6 +321,7 @@ export function createAgentRuntime(options: {
   const activeUsers = new Set<string>();
   return {
     async run(input: AgentRunInput): Promise<AgentRunResult> {
+      const readBatchPolicy = normalizeReadBatchPolicy(input.readBatchPolicy);
       const runId = input.runId ?? randomUUID();
       const bindingInput: AgentDurableRunInput = Object.freeze({ runId: input.runId, scope: Object.freeze({ ...input.scope }),
         trigger: Object.freeze({ ...input.trigger }), recipeId: input.recipeId, deadlineAtMs: input.deadlineAtMs,
@@ -506,32 +518,109 @@ export function createAgentRuntime(options: {
             if (budget.remainingModelCalls === 0) throw new AgentStopped("model_limit");
           }
           if (syncPolicy) await budget.wait(syncPolicy);
+          const preResolvedBatchCalls = new Map<string, BatchCallOutcome>();
+          const scheduledBatchSlices = new Set<string>();
+          const trackToolSignature = (toolName: string, rawArgs: unknown) => {
+            if (!monitor) return;
+            const callSignature = `${toolName}:${agentBudgetFingerprint(rawArgs ?? {})}`;
+            if (callSignature === lastToolSignature) {
+              consecutiveToolRepeats += 1;
+            } else {
+              lastToolSignature = callSignature;
+              consecutiveToolRepeats = 1;
+            }
+            if (consecutiveToolRepeats >= repeatedSignatureStreak) {
+              repeatedLoopSignature = callSignature;
+              loopStopped = true;
+              observer.recordToolRejection(toolName, "execution", { status: "rejected", data: { code: "unknown" } });
+              const loopError = new AgentStopped("tool_limit");
+              toolFailure = loopError;
+              throw loopError;
+            }
+          };
+          const scheduleContiguousReadBatchIfNeeded = async (context: Context | undefined) => {
+            const functionCallId = context?.functionCallId;
+            if (!context || !functionCallId || preResolvedBatchCalls.has(functionCallId)) return;
+            const events = context.invocationContext.session.events;
+            let hostEvent: Event | undefined;
+            for (let index = events.length - 1; index >= 0; index--) {
+              const candidate = events[index];
+              if (candidate.content?.parts?.some(part => part.functionCall?.id === functionCallId)) {
+                hostEvent = candidate;
+                break;
+              }
+            }
+            if (!hostEvent?.content?.parts?.length) return;
+            const calls = hostEvent.content.parts
+              .filter(part => Boolean(part.functionCall))
+              .map(part => ({
+                id: part.functionCall!.id ?? "",
+                name: part.functionCall!.name ?? "",
+                args: (part.functionCall!.args ?? {}) as Record<string, unknown>,
+              }));
+            const startIndex = calls.findIndex(call => call.id === functionCallId);
+            if (startIndex < 0) return;
+            const slice = collectContiguousReadSlice(calls, startIndex, definitions);
+            if (slice.length < 2) return;
+            const sliceKey = `${hostEvent.id}:${startIndex}`;
+            if (scheduledBatchSlices.has(sliceKey)) return;
+            scheduledBatchSlices.add(sliceKey);
+            for (const item of slice.slice(0, readBatchPolicy.maxBatchSize)) {
+              trackToolSignature(item.tool.name, item.args);
+            }
+            const { outcomes } = await runReadToolBatch({
+              slice,
+              policy: readBatchPolicy,
+              scope,
+              budget,
+              authorize,
+              checkDurable: durable ? () => budget.checkDurable() : undefined,
+              executeItem: async (item, parsedArgs, itemSignal) => {
+                const itemContext = Object.assign(Object.create(Object.getPrototypeOf(context)), context, { functionCallId: item.callId }) as Context;
+                const embeddingKey = budget.durable && item.tool.name === "search_knowledge"
+                  ? queryEmbeddingAttemptKey(itemContext, scope, runId, item.tool.name, item.args)
+                  : undefined;
+                return await budget.wait(() => item.tool.execute(parsedArgs, {
+                  scope,
+                  runId,
+                  callId: item.callId,
+                  signal: itemSignal,
+                  ...(embeddingKey ? { queryEmbeddingAttemptKey: embeddingKey } : {}),
+                }));
+              },
+            });
+            for (const [id, outcome] of outcomes) preResolvedBatchCalls.set(id, outcome);
+          };
           const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
             parameters: tool.parameters.strict(), execute: async (args, context) => {
               budget.check();
               if (syncPolicy) await budget.wait(syncPolicy);
-              // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
-              // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
-              if (monitor) {
-                const callSignature = `${tool.name}:${agentBudgetFingerprint(args ?? {})}`;
-                if (callSignature === lastToolSignature) {
-                  consecutiveToolRepeats += 1;
-                } else {
-                  lastToolSignature = callSignature;
-                  consecutiveToolRepeats = 1;
-                }
-                if (consecutiveToolRepeats >= repeatedSignatureStreak) {
-                  repeatedLoopSignature = callSignature;
-                  loopStopped = true;
-                  observer.recordToolRejection(tool.name, "execution", { status: "rejected", data: { code: "unknown" } });
-                  const loopError = new AgentStopped("tool_limit");
-                  toolFailure = loopError;
-                  throw loopError;
+              const callId = context?.functionCallId ?? "";
+              if (isBatchableReadTool(tool)) {
+                try {
+                  await scheduleContiguousReadBatchIfNeeded(context);
+                } catch (error) {
+                  toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable");
+                  throw toolFailure;
                 }
               }
+              const preResolved = callId ? preResolvedBatchCalls.get(callId) : undefined;
+              if (preResolved) {
+                const progress: AgentRunResult["tools"][number] = {
+                  name: tool.name,
+                  callId,
+                  status: preResolved.response.status,
+                  ...(preResolved.response.reference ? { reference: preResolved.response.reference } : {}),
+                };
+                result.tools.push(progress);
+                observer.recordToolRejection(tool.name, "execution", preResolved.response);
+                return preResolved.response;
+              }
+              // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
+              // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
+              trackToolSignature(tool.name, args);
               const embeddingKey = budget.durable && tool.name === "search_knowledge"
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
-              const callId = context?.functionCallId ?? "";
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };
               result.tools.push(progress);
               try {
@@ -802,6 +891,13 @@ export function createAgentRuntime(options: {
                 toolFailure = new AgentStopped("invalid_tool");
                 throw toolFailure;
               }
+              const preResolved = context.functionCallId ? preResolvedBatchCalls.get(context.functionCallId) : undefined;
+              if (preResolved?.rejectionStage) {
+                result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: preResolved.response.status });
+                observer.recordToolRejection(tool.name, preResolved.rejectionStage, preResolved.response);
+                return { ...preResolved.response };
+              }
+              if (preResolved) return undefined;
               const definition = definitions.get(tool.name);
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
@@ -823,6 +919,7 @@ export function createAgentRuntime(options: {
               return response ? { ...response } : undefined;
             },
             afterToolCallback: ({ tool, response, context }) => {
+              if (toolFailure) throw toolFailure;
               budget.accountToolResponse(JSON.stringify({ role: "user", parts: [{ functionResponse: {
                 id: context.functionCallId, name: tool.name, response,
               } }] }).length);

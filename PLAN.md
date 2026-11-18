@@ -1562,3 +1562,14 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+
+### REQ-002 唯讀並行批次檢索、證據重用失效與針對性局部修復 (`codex/req002-batch-reuse-and-repair`)
+
+- **對應需求**：REQ-002 §§3.1、3.4、3.5、3.6、5.2；AC 507–513、515–516、520、522（基線 `origin/master` `3b51b971`）。
+- **核心設計與邊界**：
+  - **有界唯讀並行工具排程（`server/agent-tool-batch.ts`、`server/agent-runtime.ts`）**：為連續的 `effect === "read"` 唯讀工具建立 `runReadToolBatch`（預設 `maxConcurrent: 3`、`maxBatchSize: 6`、`itemTimeoutMs: 8000`），在不改動 `@google/adk` 套件本體與保留 `beforeToolCallback` / `afterToolCallback` / `result.tools` 順序前提下並行執行相鄰唯讀查詢並降低模型往返次數；遇寫入／終端／能力載入／`show_official_help` 屏障即止，對溢出項回傳 `batch_limit_exceeded`、單項逾時或失敗隔離保留同批成功結果，並於中斷撤銷或授權失效時即時停止剩餘排隊項且不洩漏部份資料；全數純讀工具皆已顯式標註 `effect: "read"`。
+  - **證據重用與即時失效（`server/knowledge-retriever.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts`）**：於 `search`、`readContext`、`readReviewedCitations` 及新增的 `revalidateAndSeedEvidence` 強制執行 `isKnowledgeEvidenceFresh`（`reviewState === "reviewed"` 與未逾期 `validUntil`）；同次 run 重複呼叫 `readContext` 於內容 hash 與時效未變時重用快取，來源變更時擲回 `409 knowledge_context_source_changed`；跨回合 `ProductAgent.reply` 僅嚴格重驗同 `(userId, childId)` 近三次已完成回覆之官方引用並於版本變更、撤回、過期或子女年齡／地區切換時失效重建。
+  - **引用診斷與針對性局部修復（`server/product-agent-tools.ts`、`server/chat-delivery-review.ts`）**：`present_answer` 自動去除同段重複 `citationIds` 並於引用拒絕錯誤提供 `availableOfficialCitationIds`；`delivery_repair` 注入 `retrievedEvidence` 免重搜、拒絕零修改空轉修復（`delivery_review_rejected`）、重算 `liveHash` 及禁止修復時抽走應附之官方引用（除非屬伺服器驗證之純範圍限制拒答）。
+  - **背景／延後帳本隔離與主回覆優先（`tests/req002-batch-reuse-and-repair.test.ts`）**：補齊離線契約測試，驗證 continuation worker 綁定原 `rootRunId`、不可變上限與絕對期限、公開知識維運帳本隔離私域、以及主回覆 `store.finish` 優先提交。
+- **驗收限制與離線門檻**：本分支全程於本機離線驗證（含 [REQ-002 離線驗證腳本](scripts/ci/verify-req002-batch-reuse-repair-offline.sh) 與 [CI workflow](.github/workflows/req002-batch-reuse-repair-offline.yml)，涵蓋 31 個測試檔、276 個離線案例與三組嚴格 TypeScript 檢查），未連接真實 Gemini / Vertex、PostgreSQL / Firestore 或進行雲端／真機實測。
