@@ -10,6 +10,8 @@ import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledge
 import type { KnowledgeStore } from "./knowledge-store.ts";
 import { checkKnowledgeObservation } from "./knowledge-observation.ts";
 import type { FirestoreKnowledgeObservation, FirestoreKnowledgeObservationPort } from "./firestore-knowledge-refresh.ts";
+import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
+import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
 export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[];
   observations?: FirestoreKnowledgeObservationPort; audience?: "public" | "internal" }
@@ -32,6 +34,7 @@ export interface FirestoreKnowledgePublicationFence {
   }): Promise<() => void>;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     source: KnowledgeSourceInput; enabled: boolean } | null>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
@@ -308,6 +311,30 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
             values: vectorValues(chunk.embedding.toArray()) };
         });
         return { source: edition.document, versionHash: edition.version.versionHash, embeddings };
+      }, { readOnly: true });
+    },
+    async citedPdf(citation) {
+      // A historical citation can outlive the active edition. Current source permissions still apply.
+      if (!allowedId(citation.sourceId)) return null;
+      const policy = SOURCE_WATCHES.find(watch => watch.id === citation.sourceId && watch.kind === "pdf");
+      if (policy?.audience !== "public_noncommercial" || policy.url !== citation.url) return null;
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, citation.sourceId);
+        if (!source?.enabled || !source.activeVersionId) return null;
+        const edition = await metadata(tx, citation.versionId, source).catch(error => {
+          if (error instanceof FirestoreKnowledgeError && error.code === "knowledge_version_unknown") return null;
+          throw error;
+        });
+        if (!edition) return null;
+        const { version, document, observed } = edition;
+        if (version.versionHash !== citation.versionHash || !version.publishedAt || version.reviewState !== "reviewed"
+          || version.review?.assessment.decision !== "approve" || document.url !== citation.url || internalKnowledgeSource(document.url)
+          || document.extraction?.format !== "text_pdf"
+          || observed && (!observed.catalogMatches || !observed.watch.enabled || observed.watch.definition.audience !== "public_noncommercial")) return null;
+        if (!version.chunks.some(chunk => chunk.chunkId === citation.chunkId)) return null;
+        const snapshot = await tx.get(chunkRef(citation.chunkId));
+        if (!snapshot.exists || checkedChunk(edition, snapshot.data()).contentHash !== citation.contentHash) return null;
+        return { sourceId: source.sourceId, url: document.url, sha256: document.extraction.contentHash };
       }, { readOnly: true });
     },
     async publishedEdition(id) {

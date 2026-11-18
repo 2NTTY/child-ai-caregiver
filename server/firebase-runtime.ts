@@ -39,6 +39,7 @@ import { createCloudStorageErasureJournal, createFirebaseErasureJournal } from '
 import { createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
 import { createFirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { readPublisherPdf } from './knowledge-cited-pdf.ts';
 import { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
@@ -268,6 +269,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+      knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, read: readPublisherPdf },
       proactiveDemo: createProactiveDemo(env,authority,chat,chatNotifications), proactiveSettings:(uid,child,command) => authority.runTransaction(uid,child,
         async b => command === undefined ? proactive.view(await proactive.read(b)) : proactive.configure(b,command)),
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });

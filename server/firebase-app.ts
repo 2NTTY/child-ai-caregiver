@@ -1,4 +1,5 @@
 import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
+import { citedPdfRoute, openCitedPdf, type KnowledgeOriginalPort } from './knowledge-cited-pdf.ts';
 import { handleSharingControlRequest, type SharingControl } from './sharing-control-api.ts';
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
@@ -85,6 +86,7 @@ export interface FirebaseRequestHandlerOptions {
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
   library?: Pick<PersonalLibrary, "page">;
+  knowledgeOriginal?: KnowledgeOriginalPort;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
@@ -496,7 +498,14 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method === 'POST') checkedRequest = new Request(request.url, { method: 'POST', headers: request.headers,
           body: JSON.stringify(await readJson(request)), signal: request.signal });
         let response: Response;
-        if (path === '/api/ai/status' && request.method === 'GET') response = json({ available: await options.product.routing.available(userId) });
+        const original = citedPdfRoute.exec(path);
+        if (original) {
+          if (!options.knowledgeOriginal) throw new RequestError('firebase_domain_not_ready', 503);
+          const [, childId, runId, chunkId] = original;
+          const store = options.product.store;
+          response = await openCitedPdf(checkedRequest, chunkId!.toLowerCase(),
+            () => store.get(userId, childId!.toLowerCase(), runId!.toLowerCase()), options.knowledgeOriginal);
+        } else if (path === '/api/ai/status' && request.method === 'GET') response = json({ available: await options.product.routing.available(userId) });
         else if (path === '/api/ai/usage' && request.method === 'GET') response = json(await options.product.routing.currentUsage(userId));
         else if (path.startsWith('/api/ai/settings')) response = await handleModelSettingsRequest(checkedRequest, userId, options.product.routing);
         else if (/\/agent\/(?:policy|notes|actions)(?:\/|$)/u.test(path))

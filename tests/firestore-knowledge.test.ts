@@ -86,6 +86,23 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
 }
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
 
+test("a saved citation opens its published PDF edition across a source upgrade and respects withdrawal", async () => {
+  const id = "fhs-feeding-booklet-en", f = fixture([id]);
+  const url = "https://www.fhs.gov.hk/english/health_info/child/14727.pdf";
+  const document: KnowledgeSourceInput = { ...source(id, [chunk("first", { pageStart: 1, pageEnd: 1 })]), url,
+    extraction: { format: "text_pdf", contentHash: "a".repeat(64), pageStart: 1, pageEnd: 1, totalPages: 1, complete: true } };
+  const first = await f.publish(document);
+  const [cited] = await f.store.candidates(filter, null, { query: "needle" });
+  assert.ok(cited);
+  await f.publish({ ...document, extraction: { ...document.extraction!, contentHash: "b".repeat(64) },
+    chunks: [{ ...document.chunks[0]!, sourceExcerpt: "Revised excerpt", originalText: "Revised excerpt and body" }] }, first);
+  assert.deepEqual(await f.store.citedPdf(cited), { sourceId: id, url, sha256: "a".repeat(64) });
+  assert.equal(await f.store.citedPdf({ ...cited, contentHash: "f".repeat(64) }), null);
+  assert.equal(await f.store.citedPdf({ ...cited, versionId: "88888888-8888-4888-8888-888888888888" }), null);
+  await f.store.disable(id, "Synthetic withdrawal");
+  assert.equal(await f.store.citedPdf(cited), null);
+});
+
 test("operator edition export returns portable source and compatible vectors in one read-only transaction and fences stale or unavailable editions", async t => {
   const f = fixture(), validUntil = new Date(Date.now() + 3600000).toISOString();
   const published = await f.publish({ ...source("synthetic-guidance", [chunk("first"), chunk("second", { text: "Second portable body" })]), validUntil });
