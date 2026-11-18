@@ -951,18 +951,18 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 
 | 工作包 | 交付與局部門檻 | 前置 |
 |---|---|---|
-| <a id="p4-auth01"></a>**P4-AUTH01** | 電郵／Google／Apple、同 UID 連結、隱藏電郵邀請接續、重新驗證及跨端會話 | 現有 Firebase 身份／邀請／session，可獨立開始 |
+| <a id="p4-auth01"></a>**P4-AUTH01** | 電郵及 Google、同 UID 連結、重新驗證及跨端會話。Apple 及隱藏電郵邀請接續延後至有 Apple 團隊 | 現有 Firebase 身份／邀請／session，可獨立驗收 |
 | <a id="p4-family-a"></a>**P4-FAMILY-A** | 操作者與穩定儲存身份分開；原資源模組共享、角色／撤權、轉交及刪帳；背景／附件同一授權 | 既有本人權限；第一個功能包 |
 | <a id="p4-family-b"></a>**P4-FAMILY-B** | 個人優先、可選家庭及軟件內模組加入；未選資料不外露 | FAMILY-A 契約，不依賴快捷登入 |
 | <a id="p4-class01"></a>**P4-CLASS01** | 獨立班級、名冊／搜尋／分頁、匯入目標、加入／移出教師空間 | FAMILY-A；不等家庭 UI |
 | <a id="p4-handover01"></a>**P4-HANDOVER01** | 統一匯入、交接／備份格式、完整性、紀錄、去重、衝突及差異還原；匯入待辦與普通建立一致。期間包含所選首尾，跨期關注只交接其間的觀察及行動 | FAMILY-A／B、CLASS01 的範圍／目標接口及現有匯出／附件；不必等其所有 UI |
 | <a id="p4-class02"></a>**P4-CLASS02** | 多孩／班級助手、混合聊天範圍、有界召回、批次結果／恢復 | CLASS01、HANDOVER01 範圍／來源契約及相關 D 工具／審核接口 |
 
-**AUTH01 共用 provider／session 首段（#347 已合併、未開放）：**沿 Firebase 13.0.0／Admin 14.5.0、原 session／裝置台帳，接本人登入方式讀取、Google／Apple Web adapter、同 UID 重新驗證及明確連結。連結分為驗原身份、再親自按連結兩個手勢，避免串接 popup 被瀏覽器阻擋；取消後等不可取消的 SDK 結束並清理，才讀回連結結果。舊密碼、原生會話、共用 owner／刪帳／管理員重新驗證保持相容。定向機械檢查、局部型別及獨立 review 的競態修正已有[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)，不代替真人登入。Web `EXPO_PUBLIC_AUTH_PROVIDERS` 預設空，原生 adapter 尚未啟用；未改雲端 provider／郵件／帳號設定。**下一步：**核定 Firebase 自動連結／duplicate-email 配置與目前電郵准入的相容性，再完成原生 SDK 的新 binary／真人核對、Apple relay 原邀請地址驗證及實際配置；詳見[採用限制](docs/TECH_REUSE.md#p4-auth-providers)。不可只打開按鈕便宣稱完整 AUTH01。Apple 團隊／本人操作只阻擋相關項，FAMILY-A／B 可獨立繼續。
+**AUTH01 共用身份。** Web、iPhone 主畫面 PWA 及 Android 沿用 Firebase 與現有裝置會話。既有帳號先驗原身份，再由本人連結 Google，保留同一 UID。正式 Google 已啟用，客戶端發行及真人驗收見 [P4 接手清單](docs/P4_RESUME.md#p4-acceptance)。依 11 月 18 日決定，iPhone 試用採 PWA，Apple 快捷登入與 relay 邀請實測延後至具備 Apple 團隊。電郵、Google 及其他 P4 工作可獨立交付。[身份契約證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)
 
-**AUTH01 原生接點（已實作、未開放）：**復用 Google Sign-In 16.1.5、Apple Authentication 2.5.1 及既有 expo-crypto；原生 credential 回同一 Firebase session／同 UID linking 流程。Google 清本機選擇，Apple 使用每次 nonce／state，沒有第二份登入權威。共用 production owner、平台配置、原生 adapter、iOS plugin introspection 及 Android Hermes 匯出已有[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)，未跑付費 build／真 provider／真機。新增原生套件須新 binary，舊 runtime 不推 OTA。下一段仍是 Firebase 自動連結／電郵准入配置、Apple 原邀請地址接續及真正配置；只在其完成後開放登入方式。
+**AUTH01 原生接點。** 原生 Google credential 沿同一 Firebase session 及連結流程，現有 Android v8 已核套件與簽署。Apple adapter、nonce、state 及 iOS plugin 的歷史檢查保留；原生 iOS 簽署與 TestFlight 另行追蹤。[原生接線證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)
 
-**AUTH01 邀請與同 UID 連結。** Server 交易核對已批准的原方式、原收件地址驗證、原裝置 session 及目標 provider 身份；Web／原生共用交換契約。11 月 8 日唯讀核對原站仍使用電郵密碼，Google／Apple 均未配置。開放前須接回共用表單的明確連結與中斷恢復，並驗供應商登入及 relay 郵件。[接口與待驗](docs/API.md#p4-auth-providers)
+**AUTH01 邀請與同 UID 連結。** Server 交易核對原方式、已驗證的原收件地址、原裝置會話及目標 provider 身份。已有帳號從帳戶設定連結 Google；換機可用已連結的方式登入。真人核對須保留原 UID 及原資料；Apple relay 另行追蹤。[接口與待驗](docs/API.md#p4-auth-providers)
 
 <a id="p4-family"></a>
 **P4-FAMILY 父包（進行中）：**由 FAMILY-A／B 承接原家庭 UI／API、成員邀請、owner／caregiver／viewer 及跨域共享；不以隱藏入口當完成。先共用契約，再開家庭／班級入口，P3 本人功能不以此為前置。
