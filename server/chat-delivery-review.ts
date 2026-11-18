@@ -496,6 +496,7 @@ function timeAnchorMatches(claimRaw: string, receiptRaw: string, timeZone?: stri
 }
 
 interface StructuredOperationItem {
+  claimText?: string;
   quantity: { value: string; unit: string } | null;
   timeAnchors: string[];
   terms: string[];
@@ -598,9 +599,9 @@ function parseStructuredOperationData(
           ambiguous = true;
         }
         if (quantities.length === 1) {
-          items.push({ quantity: quantities[0]!, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
+          items.push({ claimText: hasOperationOrStateAssertion(seg) ? seg : sentence, quantity: quantities[0]!, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
         } else if (quantities.length === 0 && (terms.length > 0 || explicitTimes.length > 0)) {
-          items.push({ quantity: null, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
+          items.push({ claimText: hasOperationOrStateAssertion(seg) ? seg : sentence, quantity: null, timeAnchors: effectiveTimes, terms, rawClauseNormalized });
         }
       }
     }
@@ -632,6 +633,7 @@ function parseStructuredOperationData(
 }
 
 interface VerifiedReceiptSlot {
+  operation: ChatDeliveryVerifiedOperation;
   item: StructuredOperationItem;
   opFullNormalized: string;
   opTimeAnchors: string[];
@@ -639,6 +641,18 @@ interface VerifiedReceiptSlot {
 }
 
 function claimItemMatchesSlot(claim: StructuredOperationItem, slot: VerifiedReceiptSlot): boolean {
+  // Bind family and domain to the very same slot used for quantity/target/time.
+  // Separate aggregate and per-clause checks could otherwise borrow a cancel
+  // receipt to fund a second create claim for the same target and quantity.
+  if (claim.claimText && hasOperationOrStateAssertion(claim.claimText)) {
+    const family = receiptActionFamily(slot.operation);
+    if (DELETE_OPERATION_CLAIM.test(claim.claimText)) {
+      if (family !== "delete") return false;
+    } else if (slot.operation.kind !== "pending_confirmation" && UPDATE_OPERATION_CLAIM.test(claim.claimText)) {
+      if (family !== "update") return false;
+    } else if (OPERATION_CLAIM_PATTERN.test(claim.claimText) && family !== "save" && family !== "update") return false;
+    if (!receiptMatchesDomain(slot.operation, claim.claimText)) return false;
+  }
   if (claim.quantity !== null) {
     if (!slot.item.quantity) return false;
     if (claim.quantity.value !== slot.item.quantity.value || claim.quantity.unit !== slot.item.quantity.unit) return false;
@@ -654,7 +668,7 @@ function claimItemMatchesSlot(claim: StructuredOperationItem, slot: VerifiedRece
   return claim.terms.every(term => slot.item.terms.includes(term) || targetHaystack.includes(term.toLowerCase()));
 }
 
-function canAssignAllQuantifiedItems(
+function canAssignAllOperationItems(
   claimQuantified: StructuredOperationItem[],
   receiptQuantified: VerifiedReceiptSlot[],
   index = 0,
@@ -666,7 +680,7 @@ function canAssignAllQuantifiedItems(
     if (used.has(i)) continue;
     if (!claimItemMatchesSlot(claim, receiptQuantified[i]!)) continue;
     used.add(i);
-    if (canAssignAllQuantifiedItems(claimQuantified, receiptQuantified, index + 1, used)) return true;
+    if (canAssignAllOperationItems(claimQuantified, receiptQuantified, index + 1, used)) return true;
     used.delete(i);
   }
   return false;
@@ -703,6 +717,7 @@ function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opT
     const opFullNormalized = texts.join(" ").replace(/[\s，,。！!？?;；：:"'「」『』（）()]+/gu, "").toLowerCase();
     for (const item of parsedOp.items) {
       slots.push({
+        operation: op,
         item,
         opFullNormalized,
         opTimeAnchors: parsedOp.allTimeAnchors,
@@ -733,17 +748,10 @@ function matchOperationClaimToReceipts(ops: ChatDeliveryVerifiedOperation[], opT
     return { matched: false, quantifiedCount: claimQuantified.length };
   }
 
-  const receiptQuantified = slots.filter(slot => slot.item.quantity !== null);
-  if (claimQuantified.length > 0) {
-    if (receiptQuantified.length < claimQuantified.length) return { matched: false, quantifiedCount: claimQuantified.length };
-    if (!canAssignAllQuantifiedItems(claimQuantified, receiptQuantified)) return { matched: false, quantifiedCount: claimQuantified.length };
-  }
-
-  const claimNonQuantified = claim.items.filter(item => item.quantity === null && (item.terms.length > 0 || item.timeAnchors.length > 0));
-  for (const item of claimNonQuantified) {
-    if (!slots.some(slot => claimItemMatchesSlot(item, slot))) {
-      return { matched: false, quantifiedCount: claimQuantified.length };
-    }
+  // A single assignment covers all asserted items; no receipt item can be
+  // reused across clauses, even when different action families share a target.
+  if (!canAssignAllOperationItems(claim.items, slots)) {
+    return { matched: false, quantifiedCount: claimQuantified.length };
   }
 
   return { matched: true, quantifiedCount: claimQuantified.length };
@@ -765,22 +773,27 @@ function verifiedOperationsCorrespond(draft: ChatDeliveryDraft, text: string): b
     : ops.filter(op => op.kind === "action_receipt" && !NON_EXECUTED_RECEIPT_STATE.test(op.state));
   if (candidateOps.length === 0) return false;
   if (!claimsAnyOp) return true;
-  const expectedFamily: "delete" | "update" | "save" | null = DELETE_OPERATION_CLAIM.test(opText)
-    ? "delete"
-    : (!isPendingNotice && UPDATE_OPERATION_CLAIM.test(opText))
-      ? "update"
-      : OPERATION_CLAIM_PATTERN.test(opText)
-        ? "save"
-        : null;
-  const matchingOps = candidateOps.filter(op => {
-    const family = receiptActionFamily(op);
-    if (expectedFamily === "delete" && family !== "delete") return false;
-    if (expectedFamily === "update" && family !== "update") return false;
-    if (expectedFamily === "save" && family !== "save" && family !== "update") return false;
-    return receiptMatchesDomain(op, opText);
-  });
-  if (matchingOps.length === 0) return false;
-  return matchOperationClaimToReceipts(matchingOps, opText).matched;
+  // Match each assertion to its own action family and domain. A delete receipt
+  // must not hide an unrelated create assertion in the same answer.
+  return matchOperationClaimToReceipts(candidateOps, opText).matched
+    && splitOperationClauses(opText).every(clause => {
+      const expectedFamily: "delete" | "update" | "save" | null = DELETE_OPERATION_CLAIM.test(clause)
+        ? "delete"
+        : (!isPendingNotice && UPDATE_OPERATION_CLAIM.test(clause))
+          ? "update"
+          : OPERATION_CLAIM_PATTERN.test(clause)
+            ? "save"
+            : null;
+      const matchingOps = candidateOps.filter(op => {
+        const family = receiptActionFamily(op);
+        if (expectedFamily === "delete" && family !== "delete") return false;
+        if (expectedFamily === "update" && family !== "update") return false;
+        if (expectedFamily === "save" && family !== "save" && family !== "update") return false;
+        return receiptMatchesDomain(op, clause);
+      });
+      if (matchingOps.length === 0) return false;
+      return matchOperationClaimToReceipts(matchingOps, clause).matched;
+    });
 }
 
 function draftClaimsUnverifiedOperation(draft: ChatDeliveryDraft, text: string): boolean {
@@ -1220,7 +1233,35 @@ function privateSourcesSupportDraft(draft: ChatDeliveryDraft): boolean {
   return backedCount > 0 || exemptCount > 0;
 }
 
+/** Narrow historical feeding restatements still undergo private citation review. */
+function isGroundedHistoricalMilkRestatement(draft: ChatDeliveryDraft): boolean {
+  if (!draft.paragraphs.length) return false;
+  return draft.paragraphs.every(paragraph => {
+    if (!["record_restatement", "private_reference"].includes(paragraph.kind ?? draft.kind)) return false;
+    const text = paragraph.text.trim();
+    if (VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN.test(text)
+      || CLINICAL_CARE_DIRECTIVE_PATTERN.test(text) || hasOperationOrStateAssertion(text)) return false;
+    for (const clause of splitOperationClauses(text)) {
+      const quantity = /\d+(?:\.\d+)?\s*(?:ml|毫升)/giu;
+      if (!quantity.test(clause)) {
+        if (CARE_ADVISORY_PATTERN.test(clause) || MEDICAL_CLAIM_PATTERN.test(clause)) return false;
+        continue;
+      }
+      // A quantity is observational only with an explicit past intake verb and
+      // milk object in this clause, never from a label or source alone.
+      if (!/(?:飲了|飲咗|喝了|食咗|吃了|\b(?:drank|consumed|had)\b)/iu.test(clause)
+        || !/(?:奶|\bmilk\b|\bformula\b)/iu.test(clause)) return false;
+      const withoutMilkAmount = clause.replace(quantity, " ");
+      if (CARE_ADVISORY_PATTERN.test(withoutMilkAmount) || MEDICAL_CLAIM_PATTERN.test(withoutMilkAmount)) return false;
+    }
+    const sources = draft.sources.filter(source => source.classification === "private"
+      && (paragraph.citationIds.length === 0 || paragraph.citationIds.includes(source.citationId)));
+    return privateSourcesSupportParagraph(sources, paragraph.text, true);
+  });
+}
+
 function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean {
+  if (isGroundedHistoricalMilkRestatement(draft)) return false;
   if (isPureVerifiedOperationSummary(draft)) return false;
   const text = joinedDraftText(draft);
   if (!text || isPureClarifyingQuestion(text)) return false;
@@ -1235,6 +1276,7 @@ function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean
 }
 
 function draftHasTaskAnchoredCareObligation(draft: ChatDeliveryDraft, text: string): boolean {
+  if (isGroundedHistoricalMilkRestatement(draft)) return false;
   if (isPureClarifyingQuestion(text) || isPureGreetingOrSmallTalk(text)
     || isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) {
     return false;
@@ -1549,3 +1591,4 @@ export async function enforceChatDeliveryReview(input: {
   if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
   return acceptLivePass(current, outcome, input.presentation);
 }
+

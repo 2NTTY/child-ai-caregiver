@@ -434,7 +434,8 @@ export function createProductAgentTools(options: {
       serverSubstitutedSourceText: false,
       ...(selectedVerifiedOperations.length ? { verifiedOperations: selectedVerifiedOperations.map(item => ({ ...item })) } : {}),
       paragraphs: parsed.paragraphs,
-      sources: [],
+      sources: [...new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds))]
+        .map(deliverySource).filter((source): source is ChatDeliverySource => source !== null),
       scope,
       ...(run.images?.references().length ? { images: run.images.references() } : {}),
       ...(run.voice ? { voice: run.voice } : {}),
@@ -964,3 +965,4 @@ export function createProductAgentTools(options: {
     },
   };
 }
+

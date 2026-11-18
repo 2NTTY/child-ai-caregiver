@@ -29,13 +29,14 @@ test "$("$NODE_BIN" --version)" = "v24.22.1"
 GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
+  tests/pr608-review-regressions.test.mjs
   tests/search-review-boundaries.test.ts
   tests/agent-review-obligation.test.ts
   tests/chat-delivery-review.test.ts
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(12 17 44 9 8)
+TEST_CASES=(11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -85,3 +86,4 @@ git diff --exit-code HEAD
 test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 printf 'PASS candidate=%s complete-test-files=%s cases=%s strict-type-configs=tsconfig.server.json,tsconfig.json,frontend/tsconfig.json\n' \
   "$EXPECTED_SHA" "${#TEST_FILES[@]}" "$total_cases"
+
