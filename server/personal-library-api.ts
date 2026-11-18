@@ -6,6 +6,7 @@ import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
+import { streamTemporaryZip, type TemporaryZip } from './zip-download.ts';
 
 import { libraryArchiveSelectionSchema, libraryPreferenceChangeSchema, type LibraryArchiveSelection, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
 
@@ -44,7 +45,7 @@ export function createPersonalLibrary(pool: Pool, cipher: StorageCipher) {
   };
 }
 export type PersonalLibrary = ReturnType<typeof createPersonalLibrary> & {
-  exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<{ bytes: Uint8Array<ArrayBuffer>; sha256: string }>;
+  exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<TemporaryZip & { sha256: string }>;
   save?(userId: string, childId: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
 };
 export async function handlePersonalLibraryRequest(request: Request, userId: string | null, options: {
@@ -60,10 +61,10 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     if (request.method === 'POST' && url.search === '?export=zip') {
       if (!options.library.exportArchive || !options.readJson) return apiError('library_unavailable', '此來源庫暫未提供可攜匯出。', 503);
       const selection = libraryArchiveSelectionSchema.parse(await options.readJson(request, 24 * 1024));
-      const { bytes, sha256 } = await options.library.exportArchive(userId, match[1].toLowerCase(), selection, request.signal);
-      if (!await options.isCurrentUser(userId)) throw new FamilyError(409, 'session_changed');
-      return new Response(bytes, { headers: { 'content-type': 'application/zip', 'content-length': String(bytes.byteLength),
-        'content-disposition': 'attachment; filename="' + selection.seriesId + '.zip"', 'x-archive-sha256': sha256, 'cache-control': 'private, no-store' } });
+      const file = await options.library.exportArchive(userId, match[1].toLowerCase(), selection, request.signal);
+      return await streamTemporaryZip(file, request.signal, async () => {
+        if (!await options.isCurrentUser(userId)) throw new FamilyError(409, 'session_changed');
+      }, 'attachment; filename="' + selection.seriesId + '.zip"', { 'x-archive-sha256': file.sha256 });
     }
     if (request.method === 'POST' && options.library.save && options.readJson) {
       if (url.search) throw new FamilyError(400, 'invalid_input');

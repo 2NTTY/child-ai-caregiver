@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { z } from 'zod';
 import { handlePersonalLibraryRequest } from '../server/personal-library-api.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
@@ -8,6 +11,32 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 const scope = { ownerUserId: 'synthetic-owner', workspaceId: '11111111-1111-4111-8111-111111111111',
   childId: '22222222-2222-4222-8222-222222222222', storageEpoch: '33333333-3333-4333-8333-333333333333' };
 const base = { cipher: createStorageCipher(Buffer.alloc(32, 7)), projectId: 'synthetic-project', namespace: 'test_authority' };
+
+test('ending a library ZIP download releases its scratch file, including a session change before delivery', { timeout: 5_000 }, async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'library-download-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  for (const revoked of [false, true]) {
+    const path = join(dir, revoked ? 'revoked.zip' : 'cancelled.zip');
+    const bytes = 1024 * 1024;
+    await writeFile(path, Buffer.alloc(bytes));
+    let notifyRelease!: () => void;
+    const released = new Promise<void>(resolve => { notifyRelease = resolve; });
+    let checked = 0;
+    const response = await handlePersonalLibraryRequest(new Request('https://example.test/api/children/' + scope.childId + '/library?export=zip', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-expected-user-id': scope.ownerUserId },
+      body: JSON.stringify({ seriesId: 'series', editions: [{ sourceId: 'book', versionHash: 'a'.repeat(64) }] }),
+    }), scope.ownerUserId, { isCurrentUser: async () => ++checked === 1 || !revoked,
+      readJson: request => request.json(), library: { async page() { throw Error('unused'); }, async exportArchive() {
+        return { path, bytes, sha256: 'a'.repeat(64), async dispose() { await rm(path); notifyRelease(); } };
+      } } });
+    assert.equal(response.status, revoked ? 409 : 200);
+    if (!revoked) {
+      assert.equal(response.headers.get('content-length'), String(bytes));
+      await response.body!.cancel();
+    }
+    await released;
+  }
+});
 
 test('public catalogue cursor binds the current account, child, epoch and authorization version', async () => {
   let current = { scope: { ...scope }, authorizationVersion: '1' }; const after: (string | null)[] = [];

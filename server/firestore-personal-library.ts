@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, stat, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeKnowledgeArchive } from '../scripts/knowledge-transfer-zip.mjs';
@@ -45,18 +45,18 @@ export function createFirestorePersonalLibrary(options: {
         if (canonical(await options.authority.readScope(userId, childId)) !== canonical(scope)) changed();
       };
       await verify();
-      const directory = await mkdtemp(join(tmpdir(), 'public-library-'));
+      const directory = await mkdtemp(join(process.env.KNOWLEDGE_ARCHIVE_TMPDIR || tmpdir(), 'public-library-'));
+      const dispose = () => rm(directory, { recursive: true, force: true });
       try {
         const path = join(directory, 'series.zip');
         const archive = await writeKnowledgeArchive(path, selection.editions, async row => {
           signal.throwIfAborted();
           return exportPublishedEdition(row.sourceId, row.versionHash, selection.seriesId);
         });
-        // Each family-shareable registered edition is bounded by the archive writer's 2 MiB member limit.
-        const bytes = new Uint8Array(await readFile(path));
+        const { size } = await stat(path);
         await verify();
-        return { bytes, sha256: archive.sha256 };
-      } finally { await rm(directory, { recursive: true, force: true }); }
+        return { path, bytes: size, sha256: archive.sha256, dispose };
+      } catch (error) { await dispose(); throw error; }
     },
     async save(userId: string, childId: string, change: LibraryPreferenceChange) {
       const save = options.knowledge.saveLibraryPreference;
