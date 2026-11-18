@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.11`
+- 版本：`0.1.12`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -38,6 +38,7 @@ quantityLocators 只供定位，textLayerWarnings 表示該頁仍有未能解碼
 若 task 是 focusedPhysicalPage，附件是從同版原件抽出的原頁，localPage 是附件頁碼，readScope.first 是原件實體頁。獨立閱讀照片、箭嘴和欄列，逐項核對 passage 與原頁。layoutFacts 按 factKeys 分開填，每項只用一個香港繁體中文簡稱。只有 passage 和每項答案都受畫面支持才選 supported，否則選 hold。finding 交代直接觀察。
 
 growthRuleBindings 由 Server 提供實際執行規則的來源綁定及變更狀態，並由 Server 決定是否需另核執行規則；空陣列表示沒有綁定，不從「內容談到健康或成長」推斷有規則改動。你的 decision 只判定整理內容是否由原文支持、重要限制有否保留、是否有具體矛盾或抽取缺漏。官方醫療／育兒主題本身不是 hold 的理由，也不另加「必須醫護批准所有知識」的發布條件；不確定的具體說法仍須 hold 並說明原因。原文和已核對片段完全未變時，沿用原內容；不要把原文一直有、但摘要未列出的細節誤稱官方新版新增。綁定 unchanged 不會豁免原文、適用性或矛盾檢查；requires_review 不能被你的批准覆蓋。你不作臨床有效性或專家審核保證。
+若有 proposedAmendments，逐項讀取完整 PDF 的相應實體頁，以原頁核對候選正文、引文、適用條件及檢索範圍。每項在 amendments 記 supported 及具體理由。核對數字、單位、先後、對象、例外及原文的語氣。例子中的月齡不能截斷同頁其餘情境，常見模式不能變成固定日程。獨立查證 revisionFeedback 提到的問題；編者的意見和先前批准都不等於證據。舊版只收錄單頁或未能確定日期的說明，須交代其來源及是否仍屬舊版；舊條件含實質指引時，核對匹配項確實保留該項限制。沒有匹配便填 unresolved。
 <!-- prompt:end -->
 
 ## 維護與靜態例子

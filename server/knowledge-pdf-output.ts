@@ -20,7 +20,7 @@ export const nativeCoverageSchema = z.strictObject({
 
 /** The response grammar requires every server-assigned range, including image/table pages. */
 export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[],
-  factKeys: readonly string[] = [], priorTopics: readonly string[] = []) {
+  factKeys: readonly string[] = [], priorTopics: readonly string[] = [], inheritedCoverage?: z.infer<typeof nativeCoverageSchema>) {
   const ranges = units.map((unit, i) => {
     const first = unit.page!, last = unit.pageEnd!;
     const pages = Array.from({length:last - first + 1}, (_, offset) => "physicalPage" + (first + offset));
@@ -30,14 +30,15 @@ export function pdfOrganizationContract(units: readonly { id: string; page: numb
     pageText: z.strictObject(Object.fromEntries(r.pages.map(key => [key, text]))),
     ...(priorTopics.length ? { priorTopicMatches: z.strictObject(Object.fromEntries(priorTopics.map(key => [key, z.boolean()]))) } : {}),
   })]))), nativeCoverage: factKeys.length ? nativeCoverageSchema.extend({ layoutFacts: layoutFactContract(factKeys) }) : nativeCoverageSchema });
-  return { ranges, schema: nativeResponseSchema(shape), parse(raw: unknown) {
+  return { ranges, schema: nativeResponseSchema(inheritedCoverage ? shape.omit({nativeCoverage:true}) : shape), parse(raw: unknown) {
     // The English FHS publication can spell its jurisdiction in full. Normalize that
     // exact display name to its ISO code before applying the unchanged storage schema.
     const envelope = z.object({ ranges: z.record(z.string(), z.unknown()) }).passthrough().parse(raw);
+    if (inheritedCoverage && Object.hasOwn(envelope, "nativeCoverage")) throw Error("knowledge_pdf_revision_unbound_coverage");
     const normalized = Object.fromEntries(Object.entries(envelope.ranges).map(([key, value]) =>
       [key, value && typeof value === "object" && "region" in value && value.region === "Hong Kong"
         ? { ...value, region: "HK" } : value]));
-    const value = shape.parse({ ...envelope, ranges: normalized });
+    const value = shape.parse({ ...envelope, ranges: normalized, ...(inheritedCoverage ? {nativeCoverage:inheritedCoverage} : {}) });
     return { nativeCoverage: value.nativeCoverage, units: ranges.map(({ key, unitId, first, pages }) => {
       const { region, topics, conditions, ageRange, pageText, priorTopicMatches, ...content } = value.ranges[key]!;
       const matches = Object.entries(priorTopicMatches ?? {}).filter(([, supported]) => supported).map(([topic]) => topic);

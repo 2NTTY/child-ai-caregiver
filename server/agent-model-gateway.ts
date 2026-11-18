@@ -199,7 +199,7 @@ export class AgentGatewayModel extends BaseLlm {
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }, ...(input.pdf ? [createPartFromBase64(input.pdf.data, "application/pdf",
         input.pdf.highDetail ? PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH : undefined)] : []), ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
-      config: { systemInstruction: roleInstruction(), ...(input.pdf && input.responseJsonSchema ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema } : {}) },
+      config: { systemInstruction: roleInstruction(), ...(input.responseJsonSchema ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema } : {}) },
       toolsDict: {},
       liveConnectConfig: {},
     };
