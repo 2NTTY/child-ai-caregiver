@@ -17,6 +17,7 @@ import { groundedRecordTime } from "./agent-record-time.ts";
 import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
 import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
+import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowledge-query-context.ts";
 import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descriptions.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
@@ -138,8 +139,16 @@ export function createProductAgentTools(options: {
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
+  /** Optional household/child display identifiers kept out of external search queries. */
+  knownPrivateIdentifiers?: readonly string[];
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
+  const knownPrivateIdentifiers = new Set<string>();
+  const noteKnownPrivateIdentifier = (value: string | null | undefined) => {
+    const trimmed = typeof value === "string" ? value.trim() : "";
+    if (trimmed) knownPrivateIdentifiers.add(trimmed);
+  };
+  for (const identifier of options.knownPrivateIdentifiers ?? []) noteKnownPrivateIdentifier(identifier);
   const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
@@ -422,6 +431,7 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "memory_read_not_propose") return { status: "rejected", data: { code: error.code, nextAction: "This turn is a question/read-back (嗎？／？／有冇／係咪／原則／禁忌 etc.), NOT a request to save a new memory fact. Do NOT call propose_fact again. Read confirmed facts with read_memory_facts({}) (omit keys) or official guidance with search_knowledge if needed, then present_answer cleanly (keeping budget for delivery review)." } };
       if (error instanceof FamilyError && error.code === "memory_fact_source_mismatch") return { status: "rejected", data: { code: error.code, nextAction: "Do not include trailing questions or unrelated clauses inside propose_fact.content, and do not propose unrequested facts from past messages. Keep only the explicitly requested durable fact from the allowed user statement, or skip proposing and answer the user's question." } };
       if ((error instanceof FamilyError || error instanceof FirestoreDomainError) && error.code === "fact_key_conflict") return { status: "conflict", data: { code: error.code, nextAction: "已有相同 key 的有效確認事實或本輪重複候選，直接建立會在確認時衝突。請先用 read_memory_facts 查明現有事實 ID 與版本：若是更正同一事實請用 propose_fact_revision；若是另一獨立新事實請改用具體不重複的新 key（例如 allergy-egg、nap-schedule）再 propose_fact。" } };
+      if (error instanceof FamilyError && error.code === "public_query_required") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", message: "外部搜尋 query 只可傳去識別的公共主題條件（保留年齡段、症狀、持續時間及粗粒度地區如香港／沙田區）；必須移除姓名、完整生日、具體街道／屋苑樓宇地址、聯絡方式及整段私人對話後重試，內部記憶與權限不受影響。" } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -556,8 +566,7 @@ export function createProductAgentTools(options: {
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
       execute: (args, context) => guard(async () => {
-        const query = args.query as string;
-        if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
+        const query = assertPublicKnowledgeQuery(args.query as string, [...knownPrivateIdentifiers]);
         const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
           { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
             budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
@@ -732,6 +741,7 @@ export function createProductAgentTools(options: {
     name:"read_care_summary",effect:"read",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
       const value=await options.summary!.get(scope.userId,scope.childId,summaryQuery.parse(args));if(!value)throw new AgentStopped("unauthorized");
+      noteKnownPrivateIdentifier(value.childName);
       return {childId:value.childId,childName:value.childName,profile:value.profile,period:value.period,endDayExclusive:value.endDayExclusive,
         generatedAt:value.generatedAt,basisVersion:value.basisVersion,counts:value.counts,metrics:value.metrics,missing:value.missing,
         sources:value.records.map(r=>({recordId:r.id,version:r.version,kind:r.details.kind,eventTime:r.details.eventTime,source:r.source,confirmationBasis:r.confirmationBasis??"explicit",corrected:r.version>1})),
@@ -769,6 +779,7 @@ export function createProductAgentTools(options: {
             break;
           }
           children.push(item);
+          noteKnownPrivateIdentifier(child.childName);
           selectedEvidence.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
         }
         return {children,nextFrom};
@@ -842,6 +853,7 @@ export function createProductAgentTools(options: {
             break;
           }
           children.push(item);
+          noteKnownPrivateIdentifier(item.childName);
           for (const source of sources) selectedEvidence.set(source.citationId,source);
         }
         return {children,nextFrom};
@@ -976,5 +988,6 @@ export function createProductAgentTools(options: {
     },
   };
 }
+
 
 
