@@ -95,7 +95,9 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
     if ((mode === 'retry' || mode === 'retry-tighten') && sent.length === 1) { if (mode === 'retry') await change(ratio); throw new ApiError({ status: 503, message: 'Synthetic policy-change retry' }); }
     return { content: { role: 'model', parts: [{ text: 'Synthetic completed answer' }] }, finishReason: FinishReason.STOP };
   } };
+  const observed: import('../server/agent-runtime.ts').BudgetPolicyObservation[] = [];
   const runtime = createAgentRuntime({ config: selected.config, provider, nativeSessionService: new InMemorySessionService(),
+    policyVersion: selected.policyVersion, onPolicyObservation: value => { observed.push(value); },
     usage: { reserve: async () => { throw new Error('Legacy reservation forbidden'); }, record: async () => { throw new Error('Legacy accounting forbidden'); } },
     durableBudget: { adapter: rootAdapter, context, dailyUsage: dailyAdapter, runLimits: selected.runLimits } });
   const result = await runtime.run({ runId, scope: { userId: 'owner', childId: 'child', workspaceId: 'workspace', authorizationVersion: '1', dataVersion: '1' },
@@ -109,6 +111,12 @@ async function runtimeBoundary(mode: Boundary, ratio: number | undefined) {
   assert.equal(ledger.attempts.length, reservations);
   assert.equal(new Set(requests.map(r => r.attemptKey)).size, requests.length);
   if (mode === 'retry-tighten') {
+    const barrier = observed.findLast(event => event.stage === 'blocked');
+    assert.equal(barrier?.policyVersion, (await admin.readPolicy()).version);
+    assert.equal(barrier?.used.modelCalls, 2);
+    assert.equal(barrier?.hard.modelCalls, 1);
+    assert.equal(barrier?.attemptFingerprint, agentBudgetFingerprint(requests.at(-1)!.attemptKey));
+    assert.equal(barrier?.rootFingerprint, agentBudgetFingerprint(runId));
     assert.equal(sent.length, 1); assert.equal(result.status, 'stopped'); assert.equal(result.stopReason, 'model_limit');
     assert.equal(result.counts.modelCalls, 2, 'Lowered hard limit cannot refund admitted attempts or dispatch a second provider call');
   } else if (mode === 'revoke' || mode === 'revoke-refresh' || mode === 'root-lost-reply' || mode === 'daily-lost-reply') {

@@ -866,12 +866,18 @@ export function isPureClarifyingQuestion(text: string): boolean {
  * A greeting substring never grants a skip for mixed advice or operation claims.
  * Care-domain or advisory wording never skips (defense in depth; not the sole gate).
  */
-const PURE_GREETING_UTTERANCE = /^(?:(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)(?:[\s，,。.!！？?]*(?:有什麼可以幫你|有什么可以帮你|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你)[？?]?)?|(?:hi|hello|hey|good\s+(?:morning|afternoon|evening))(?:[\s,]*(?:how\s+can\s+i\s+help(?:\s+you)?|what\s+can\s+i\s+(?:do|help)(?:\s+for\s+you)?)[?]?)?)[\s。.!！？?]*$/iu;
+const PURE_GREETING_UTTERANCE = /^(?:(?:你好[，,\s]+(?:謝謝|谢谢)(?:你|您)?|你好|您好|哈囉|哈啰|嗨|早晨|早唞|早安|午安|晚安|早上好|下午好|晚上好|(?:謝謝|谢谢)(?:你|您)?|多謝(?:晒|你|您)?|唔該(?:晒|你)?|感謝(?:你|您)?|不用[謝谢]|不用客氣|不客氣|唔使客氣|唔洗客氣|拜拜|再[見见]|下次見)(?:[\s，,。.!！？?]*(?:有什麼可以幫你|有什么可以帮你|有咩可以幫(?:到)?你|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你|有需要隨時(?:搵我|再問|查詢)|歡迎隨時(?:查詢|再問))[？?。!]?)?|(?:hi|hello|hey|good\s+(?:morning|afternoon|evening|night)|thank\s+you(?:\s+so\s+much|\s+very\s+much)?|thanks(?:\s+a\s+lot)?|you(?:['’]re|\s+are)\s+welcome|bye(?:\s*-\s*bye|bye)?|goodbye)(?:[\s,.!]*(?:how\s+can\s+i\s+help(?:\s+you)?|what\s+can\s+i\s+(?:do|help)(?:\s+for\s+you)?|feel\s+free\s+to\s+ask(?:\s+anytime)?)[?.!]?)?)[\s。.!！？?]*(?:👋[\s。.!！？?]*)?$/iu;
 
 export function isPureGreetingOrSmallTalk(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 80) return false;
-  if (CARE_DOMAIN_PATTERN.test(trimmed) || CARE_ADVISORY_PATTERN.test(trimmed) || OPERATION_CLAIM_PATTERN.test(trimmed)) return false;
+  if (
+    CARE_DOMAIN_PATTERN.test(trimmed)
+    || CARE_ADVISORY_PATTERN.test(trimmed)
+    || MEDICAL_CLAIM_PATTERN.test(trimmed)
+    || OPERATION_CLAIM_PATTERN.test(trimmed)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(trimmed)
+  ) return false;
   return PURE_GREETING_UTTERANCE.test(trimmed);
 }
 
@@ -1609,4 +1615,5 @@ export async function enforceChatDeliveryReview(input: {
   if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
   return acceptLivePass(current, outcome, input.presentation);
 }
+
 

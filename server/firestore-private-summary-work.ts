@@ -31,6 +31,7 @@ export type SummaryLegacyAdmission = { kind: 'blocked'; reason: 'missing' | 'inc
       workerGeneration: string; lineageKey: string; manifestHash: string; inventoryHash: string };
 /** Constructor-only authority reader. Never accept an admission proof in a request/model payload. */
 export interface SummaryWorkPolicyPort {
+  availableIn?(binding: Binding): Promise<boolean>;
   resolveSourceRevisionDueAt?(binding: Binding, input: { work: PrivateSummaryWork; priorRevision: PrivateSummarySourceRevision;
     manifest: SummaryManifest; grantRecord: SummaryGrantRecord }):
     Promise<{ kind: 'due'; dueAt: string } | { kind: 'blocked'; reason: 'policy_missing' | 'unavailable' }>;
@@ -92,6 +93,11 @@ export { summaryPartBackgroundIdentity } from './private-summary-work.ts';
 /** Runtime and worker wiring remains gated by trusted work policy and completed, continuously fenced cutover. */
 export function createFirestorePrivateSummaryWork(options: FirestorePrivateSummaryWorkOptions) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), now = options.serverClock ?? Date.now;
+  async function entryGate(b: Binding) {
+    const gate = await readPrivateSummaryEntryGate(data, b, !!options.policy);
+    return gate.kind === 'durable' && options.policy?.availableIn && !await options.policy.availableIn(b)
+      ? { kind: 'blocked' as const, reason: 'policy_missing' as const } : gate;
+  }
   function requirePrivate(b: Binding) {
     if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) domainReject('private_summary_scope_changed');
   }
@@ -115,7 +121,7 @@ export function createFirestorePrivateSummaryWork(options: FirestorePrivateSumma
     run: FirestoreAgentRun; pointer: SummaryLineageRecord; evidenceId: string;
   } | null> {
     if (!options.runs || !options.fastNoDispatchVerifier
-      || (await readPrivateSummaryEntryGate(data, b, !!options.policy)).kind !== 'durable') return null;
+      || (await entryGate(b)).kind !== 'durable') return null;
     const run = await options.runs.read(b, runId), fast = run.summaryFast;
     if (!fast || !fast.rootContext || fast.selected || fast.transferredToWorkId || run.state === 'completed'
       || run.authorizationVersion !== b.authorizationVersion || run.workerGeneration !== b.generation
@@ -464,7 +470,7 @@ export function createFirestorePrivateSummaryWork(options: FirestorePrivateSumma
         outbox.commit(); return { kind: 'refreshed', work: next };
       });
     },
-    readEntryGate(b: Binding) { return readPrivateSummaryEntryGate(data, b, options.policy !== undefined); },
+    readEntryGate: entryGate,
     /** Route authority only. Dispatch separately revalidates the original source, grant, root and daily account. */
     async authorizeBackgroundPart(b: Binding, reference: string): Promise<boolean> {
       if (b.sharedAccess || b.actorUserId !== b.scope.ownerUserId) return false;
@@ -725,7 +731,7 @@ export function createFirestorePrivateSummaryWork(options: FirestorePrivateSumma
         if (!options.runs) domainReject('private_summary_run_port');
         const run = await options.runs.requireLive(b, options.runs.current(b), runId), fast = run.summaryFast;
         if (!fast || fast.noDispatch || fast.transferredToWorkId || fast.selected
-          || (await readPrivateSummaryEntryGate(data, b, !!options.policy)).kind !== 'durable') domainReject('private_summary_fast_binding');
+          || (await entryGate(b)).kind !== 'durable') domainReject('private_summary_fast_binding');
         const lease = await readFirestoreBackgroundClaim(data, b, run.trigger.reference);
         if (!lease || lease.kind !== 'memory-refresh' || lease.resourceId !== b.scope.childId
           || parseSummaryBackgroundBasis(lease.basis)?.kind !== 'scope') domainReject('private_summary_fast_binding');
@@ -763,7 +769,7 @@ export function createFirestorePrivateSummaryWork(options: FirestorePrivateSumma
       let fallbackIds: string[] | null = null;
       if (fast) {
         if (parseSummaryBackgroundBasis(lease.basis)?.kind !== 'scope'
-          || (await readPrivateSummaryEntryGate(data, b, !!options.policy)).kind !== 'durable'
+          || (await entryGate(b)).kind !== 'durable'
           || fast.noDispatch || fast.transferredToWorkId) return { kind: 'blocked', reason: 'entry_gate' };
         const original = await options.memory.readFastSource(b, fast.candidate.target);
         const fallback = await options.memory.selectSource(b, fast.target.kind === 'fresh_message'

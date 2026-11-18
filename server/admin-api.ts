@@ -38,12 +38,14 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   const transferPath = /^\/api\/admin\/knowledge-transfers\/([a-f0-9]{64})(?:\/(stop|resume))?$/u.exec(url.pathname);
   const archivePath = archiveContentPath.exec(url.pathname);
   const demoPath = '/api/admin/proactive-demo';
-  if (request.method === 'POST' && (url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath)) {
+  const alertsPath = '/api/admin/budget-alerts';
+  if (request.method === 'POST' && (url.pathname === alertsPath + '/ack' || url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath)) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
     const input = archivePath ? undefined : await options.readJson(request,url.pathname===groupBase ? 64*1024 : undefined);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
+    else if (url.pathname === alertsPath + '/ack') result = await admin.budgetAlerts.ack(input);
     else if (url.pathname === demoPath) {
       if (!options.proactiveDemo) domainReject('demo_not_configured',409);
       result = await options.proactiveDemo.publish(input);
@@ -70,6 +72,10 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     if (url.pathname === demoPath) result = {enabled: options.proactiveDemo?.enabled === true};
     else if (url.pathname.startsWith(demoPath + '/') && options.proactiveDemo) result = await options.proactiveDemo.get(url.pathname.slice(demoPath.length + 1));
     else if (url.pathname === '/api/admin/policy') result = await admin.overview();
+    else if (url.pathname === alertsPath) {
+      if ([...url.searchParams].length > 1 || [...url.searchParams.keys()].some(key => key !== 'cursor')) domainReject('invalid_input', 400);
+      result = await admin.budgetAlerts.list(cursor);
+    }
     else if (url.pathname === '/api/admin/invitations') result = await admin.invitations(cursor);
     else if (url.pathname === '/api/admin/invitation') result = { invitation: await admin.lookup(url.searchParams.get('email') ?? '') };
     else if (url.pathname === '/api/admin/usage') result = await admin.usage(url.searchParams.get('day') ?? new Date().toISOString().slice(0, 10));

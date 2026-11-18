@@ -97,7 +97,8 @@ function domainFixture() {
     assert.ok(index < (value.document ? 3 : 1));
     const functionCall = value.document && index === 0 ? { id: 'load-documents', name: 'load_capabilities', args: { capabilities: ['document_edit'] } }
       : value.document && index === 1 ? { id: 'check-bag', name: 'change_family_document', args: { sourceQuote: value.text, documentId, change } }
-      : { id: 'answer', name: 'present_answer', args: { kind: value.document ? 'operation' : 'clarification', paragraphs: [{ text: '已儲存任務候選，仍待你確認。', citationIds: [] }] } };
+      : { id: 'answer', name: 'present_answer', args: { kind: value.document ? 'operation' : 'clarification',
+        paragraphs: [{ text: value.document ? '已勾選準備單的書包。' : '請問是哪一張準備單？', citationIds: [] }] } };
     assert.ok(Object.hasOwn(request.toolsDict, functionCall.name));
     if (value.document && index === 0) assert.equal(Object.hasOwn(request.toolsDict, 'change_family_document'), false);
     if (index > 0) assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse)));
@@ -208,8 +209,8 @@ test('claimed services compose real ProductAgent, shared runtime, Runner and all
     let reads = 0;
     const snapshot = freezeAgentRunLimits({ get modelCalls() { reads++; return reads === 1 ? 6 : 99; }, queryEmbeddings: 2 });
     assert.equal(reads, 1); assert.equal(snapshot.modelCalls, 6); assert.equal(Object.isFrozen(snapshot), true);
-    for (const runLimits of [0, 13, 6.5, NaN].map(modelCalls => ({ modelCalls, queryEmbeddings: 2 }))
-      .concat([{ modelCalls: 6, queryEmbeddings: 0 }, { modelCalls: 6, queryEmbeddings: 7 }])) {
+    for (const runLimits of [0, 65, 6.5, NaN].map(modelCalls => ({ modelCalls, queryEmbeddings: 2 }))
+      .concat([{ modelCalls: 6, queryEmbeddings: 0 }, { modelCalls: 6, queryEmbeddings: 33 }])) {
       const s = fixture();
       assert.throws(() => s.build({ ...s.persistence, profile: { ...s.persistence.profile,
         runLimits } }), /Invalid agent run limits/u);

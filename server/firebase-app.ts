@@ -372,7 +372,9 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
         const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
-        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+        const listRead = request.method === 'GET' && path.endsWith('/growth');
+        if ([...url.searchParams.keys()].some(key => key !== 'spaceId' && !(key === 'historyCursor' && listRead))
+          || url.searchParams.getAll('historyCursor').length > 1 || url.searchParams.getAll('spaceId').length > 1
           || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
         const growth = spaceId ? options.growth.forSharedSpace(spaceId) : options.growth;
         const response = await handleGrowthRequest(request, userId, growth, isCurrentUser);

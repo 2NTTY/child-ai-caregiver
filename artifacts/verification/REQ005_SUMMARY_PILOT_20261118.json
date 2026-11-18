@@ -1,0 +1,14 @@
+{
+  "requirement": "REQ-005",
+  "date": "2026-11-18",
+  "command": "node scripts/verify-summary-pilot.mjs",
+  "database": "Firestore Emulator",
+  "namespace": "summary_4dd262fc765c48e4b42fa7e6fc8f12b5",
+  "provider": "scripted",
+  "originalWriter": "blocked",
+  "generatedBatches": [1, 1],
+  "restartedContextCalls": 0,
+  "correctionReadBack": true,
+  "revokedAccountRead": "denied",
+  "productionCutover": false
+}

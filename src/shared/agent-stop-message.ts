@@ -6,7 +6,7 @@ const modelProviderReasons = {
   model_provider_rate_limit: "模型供應商回報請求過密（429），請稍後再試",
   model_tools_unsupported: "模型供應商不接受工具呼叫；請選擇支援工具的模型",
   model_input_unsupported: "目前模型接口不支援這種圖片或音訊輸入，請改用文字或另一模型",
-  model_context_exceeded: "模型供應商回報內容超出該模型的上下文容量",
+  model_context_exceeded: "內容超出所選模型的容量。請縮短訊息、分開傳送附件，或選擇容量較大的模型",
   model_output_limit: "模型回覆達到本次輸出長度上限，未取得完整結果",
   model_provider_rejected: "模型供應商拒絕請求，未取得可用回覆",
   model_response_invalid: "模型 API 回傳的內容不符合 Chat Completions 協定，請核對 API 地址及模型",
@@ -42,7 +42,7 @@ export function modelProviderStopReason(status: number): ModelProviderStopReason
 const stopReasons: Record<string, string> = {
   ...modelProviderReasons,
   cancelled: "已取消", deadline: "處理時間已到上限", model_limit: "這次處理的 AI 調用次數已達上限", tool_limit: "工具調用次數已到上限",
-  embedding_limit: "知識查詢次數已到上限", input_limit: "輸入長度已到上限", unauthorized: "存取權已改變",
+  embedding_limit: "知識查詢次數已到上限", input_limit: "本次輸入已達服務容量上限，請縮短訊息或分次傳送附件", unauthorized: "存取權已改變",
   quota_exceeded: "今日 AI 用量已達上限", busy: "AI 正忙碌，這次未開始處理，也沒有排隊", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
   delivery_review_incomplete: "尚未通過獨立核對，未成為正式回覆",
   delivery_review_rejected: "獨立核對未接納這次整理，未成為正式回覆",

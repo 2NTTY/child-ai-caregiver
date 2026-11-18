@@ -6,6 +6,7 @@ import { FirestoreRootBudget, MAX_ROOT_BUDGET_BYTES, type FirestoreRootBudgetOpt
 import { RootBudgetError, type RootBudgetContext, type BudgetAttempt } from '../server/durable-root-budget.ts';
 import { AgentBudget, AGENT_LIMITS, PLATFORM_AGENT_RUN_LIMITS } from '../server/agent-budget.ts';
 import { PERSONAL_RUN_LIMITS } from '../src/shared/model-settings.ts';
+import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
@@ -17,7 +18,7 @@ function context(patch: Partial<RootBudgetContext['binding']> = {}): RootBudgetC
 }
 const model = (key = 'original-accepted-model-step', payload = 'synthetic-request'): BudgetAttempt => ({ key, fingerprint: digest(payload), kind: 'model', units: 1 });
 const code = (expected: string) => (error: unknown) => error instanceof RootBudgetError && error.code === expected;
-function fixture() {
+function fixture(namespace = 'budget_unit') {
   const records = new Map<string, unknown>(); let now = 10_000, closed = false, loss = false, retry = false;
   let tail = Promise.resolve();
   const database = {
@@ -43,7 +44,7 @@ function fixture() {
     async terminate() { closed = true; },
   } as unknown as Firestore;
   const cipher = createStorageCipher(Buffer.alloc(32, 31));
-  const options = { database, cipher, projectId: 'synthetic-server-project', namespace: 'budget_unit', serverClock: () => now };
+  const options = { database, cipher, projectId: 'synthetic-server-project', namespace, serverClock: () => now };
   const service = new FirestoreRootBudget(options);
   return { service, options, records, setNow: (value: number) => { now = value; }, loseNextReply: () => { loss = true; },
     retryNextCallback: () => { retry = true; }, isClosed: () => closed };
@@ -145,8 +146,8 @@ test('invalid attempt/limits/reference is rejected without writes, including mal
     { ...model(), key: '界'.repeat(86) }, { ...model(), key: '\ud800' }, { ...model(), now: 1 }]) {
     await assert.rejects(f.service.reserve(c, attempt as BudgetAttempt), code('invalid_attempt'));
   }
-  for (const limits of [{ modelCalls: 13, toolCalls: 8, queryEmbeddings: 6 }, { modelCalls: 4, toolCalls: 17, queryEmbeddings: 2 },
-    { modelCalls: 4, toolCalls: 8, queryEmbeddings: 7 }, { modelCalls: 0, toolCalls: 8, queryEmbeddings: 2 }]) {
+  for (const limits of [{ modelCalls: 65, toolCalls: 8, queryEmbeddings: 6 }, { modelCalls: 4, toolCalls: 257, queryEmbeddings: 2 },
+    { modelCalls: 4, toolCalls: 8, queryEmbeddings: 33 }, { modelCalls: 0, toolCalls: 8, queryEmbeddings: 2 }]) {
     await assert.rejects(f.service.open(context({ limits })), code('invalid_context'));
   }
   for (const authorizationVersion of [1, '', 'a'.repeat(257)]) {
@@ -211,6 +212,44 @@ test('Firestore accepts current Agent limits, preserves every reservation and re
     const legacy = context();
     assert.deepEqual((await reopened.open(legacy)).limits, legacy.binding.limits);
   } finally { budget.close(); }
+});
+
+test('full 64/256/32 root preserves maximum-width receipt identities across restart, retry and backup restore', async () => {
+  const namespace = 'capacity', f = fixture(namespace + '_root_budget');
+  const limits = { modelCalls: 64, toolCalls: 256, queryEmbeddings: 32 }, c = context({ limits });
+  await f.service.open(c);
+  const attempts: BudgetAttempt[] = [];
+  const outcome = { status: 'known' as const, reference: '\u0001'.repeat(512) };
+  for (const [kind, total] of [['model', 64], ['tool_batch', 256], ['embedding', 32]] as const) {
+    for (let i = 0; i < total; i++) {
+      const key = `${kind}:${i}`.padEnd(256, '\0');
+      const request = { kind, key, units: 1 as const, fingerprint: digest(key) };
+      const admission = await f.service.reserve(c, request);
+      assert.equal(admission.decision, 'execute');
+      if (request.kind === 'model' && admission.decision === 'execute') {
+        await f.service.prepareModelDispatch(c, request, request.fingerprint, digest('prepared'), admission.preparationToken!);
+      }
+      await f.service.settle(c, request, outcome);
+      attempts.push(request);
+    }
+  }
+  const reader = new FirestoreRootBudget(f.options), result = await reader.read(c);
+  assert.deepEqual(result.used, limits);
+  assert.equal(result.attempts.length, 352);
+  for (const request of [attempts[0], attempts.at(-1)!]) {
+    assert.equal((await reader.reserve(c, request)).decision, 'lookup');
+    assert.deepEqual((await reader.settle(c, request, outcome)).used, limits);
+  }
+  assert.deepEqual(result.attempts[0].preparedFingerprint, digest('prepared'));
+  await assert.rejects(reader.reserve(c, model('extra')), code('budget_exhausted'));
+  const [path, data] = [...f.records][0];
+  const bytes = Buffer.byteLength(JSON.stringify(data));
+  assert.ok(bytes > 64 * 1024 && bytes < MAX_ROOT_BUDGET_BYTES);
+  const snapshot = [{ path, data: data as Record<string, unknown> }];
+  const restored = restoreFirestoreUsage({ ...f.options, namespace }, snapshot, snapshot, [c.binding.rootRunId]);
+  assert.equal(restored.length, 1);
+  f.records.set(path, restored[0].data);
+  assert.deepEqual(await reader.read(c), { ...result, status: 'stopped' });
 });
 
 test('transaction-bound root reads preserve original decoding, missing/conflict errors and expired versus frozen state without writing', async () => {

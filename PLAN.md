@@ -180,7 +180,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#410 後續修復與 #447 單一摘要整合（候選，未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+
+2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
@@ -199,7 +201,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 本機用專案支援的 Node 24.22.3 完成 Emulator 檢查點匯出及重開，沿用原帳本。先前 Windows Node 24.11.0 的 `dest already exists` 失敗仍保留。這份證據只涵蓋開發資料保存。
 
-再接 `codex/req005-query-completion`。模型輸入預檢及每輪上限已有定向離線證據；管理頁、分項帳本、告警與跨 worker 政策仍在整合，特別要核舊版 daily writer／還原相容，以及 worker 實際看到的版本。保留分域 diff 供前後端按各自分支交接。持久摘要仍須接正式累積授權及舊 writer 隔離；成長索引已有 READY 收據，真實分頁與 Web 讀回待驗。以上兩分支尚未發布。
+11 月 18 日續驗：香港 Firestore 同時間的 32 筆合成資料按原游標分成 30／2，無遺漏或重複，已清除該隔離範圍。本機實際 Web 續頁曾因正式 HTTP 入口拒收游標而回 400；修正後 Edge 點「載入較早建議」顯示 32 筆且按鈕消失。[分頁收據](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [兩個 worker 收緊政策與重啟收據](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json)
+
+預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。正式發布收據、維護者實收及正式摘要啟用仍分開追蹤。
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。
@@ -1511,4 +1515,20 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 | <a id="ac-s00-m09"></a>`ac-s00-m09` | [歷史原文](_archive/plans/P1-P2-20261018.md#ac-s00-m09) |
 
 
+- **官方來源檢索、適用核對與結構化引用（`codex/search-official-evidence`，基線 `origin/master` `f2d347cd`）：** 已推進離線契約與記憶體 Firestore 適用性驗證；提問側已收窄泛指共通詞（`正常`、`醫生`、`求診`、單獨`講嘢`／`食嘢`）並恢復「BB幾時可以食嘢？」對加固之召回，同時將「食藥／餵藥／藥水／10ml」及口語完成主張、多段私人來源核對與純結構句邊界納入交付審查；目前官方種子仍限五份（未覆蓋發燒／嘔吐／疫苗／腹瀉／尿布疹），另缺真模型評測與線上實行，尚待外部審核及合併批准。[離線驗證 workflow](.github/workflows/search-official-evidence-offline.yml) · [驗證腳本](scripts/ci/verify-search-official-evidence-offline.sh)
 
+
+### Slice B（B-P6）：純寒暄／道謝短回合路徑與冗餘記憶讀取收斂 (`codex/search-short-path-gaps`)
+
+- **對應需求**：REQ-002 §3.3 (`:381-388`)、§7.2 (`:506`)、REQ-005 §9 #5、REQ-008 §9 (`:1437`)。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review.ts` 擴充整句有界寒暄／禮貌回覆白名單（涵蓋粵語、國語及英語之 `早晨`、`早唞`、`謝謝`、`多謝`、`多謝晒`、`唔該`、`唔該晒`、`不用謝`、`唔使客氣`、`拜拜`、`再見`、`thank you`、`thanks`、`you're welcome`、`good night`、`bye` 等），並補強 `OPERATION_CLAIM_PATTERN`（涵蓋「已刪晒」、「記低咗」、「改咗」、「幫你...」等粵語口語操作宣稱），確保任何夾帶照護建議、用藥、原始證據或操作宣告之混合句一律失敗關閉（fail-closed）進入審核。
+  - 於 `server/product-agent-tools.ts` 及 `server/product-agent.ts` 在確認本輪使用者輸入與 `present_answer` 輸出皆為純寒暄／禮貌回覆時，略過冗餘的 `initialConversationSummary` 預讀與 `ensureConfirmedMemoryGrounding` 記憶分頁展開，同時完整保留 `present_answer` 終端工具契約與權限重驗。
+- **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；既有上游 `tests/agent-feedback.test.ts` 第 58 行含 `127.0.0.1` loopback HTTP listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+
+
+### PR #607 integration clarification
+
+Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
+
+The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
