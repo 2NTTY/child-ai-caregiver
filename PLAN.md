@@ -97,7 +97,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
-**本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+**本輪指定摘要修復：**#447 的持久摘要及 #635 的出資接線已隨 API／worker 發布。11 月 18 日在正式站的一個新合成孩子完成兩次真模型增量摘要，已結束試行出資。其餘家庭沿用現行摘要。見[摘要試行及啟用條件](#req005-summary01)。
 
 **單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後；runtime `appendEvent` 保證事件時間戳嚴格遞增，避免同毫秒／ADK pre-LLM timestamp 導致壓縮卡滯。單輪瞬態壓縮已於 `createProductAgent` 預設啟用；`#447` 持久跨輪摘要仍預設關閉／未啟用。[實作與驗證](#req005-compaction01)
 
@@ -180,9 +180,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（已完成單一正式範圍試行）
 
 2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
+
+另外沿正式聊天入口，在全新程序擷取送往模型的請求。兩批摘要帶有各自的來源訊息 ID。更正第二批依賴的事實後，下一個程序只送出仍有效的第一批。兩次聊天均直接復用已保存摘要；撤權後再開同一訊息，模型收到零個請求。
+
+同日香港時間 23:26 至 23:27，原站測試孩子的兩批短訊各耗一次 Vertex 生成。冷啟動讀回兩個原訊息 ID，最後一次更正為「青竹室」。出資隨測試程序結束，其他家庭維持原狀。正式站這次只走短訊路徑。[正式試行收據](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
@@ -197,6 +201,20 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="req005-closeout01"></a>
 ### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
 
+11 月 19 日接手時，先按下表查看本輪五項交付。下方保留各候選版本當時的結果。
+
+財務接點另有一項適用範圍：現有核准金額入口只接平台的單日金額。個人設定目前保存本人呼叫次數，公共維護亦尚欠獨立的貨幣預算歸屬。這兩項仍跟 §6 的出資安排追蹤。正式對帳按原 UTC 帳日和嘗試查核，同一份對帳設定的一筆明細只能歸入一次。[財務契約](docs/API.md#admin-usage-quota)
+
+| 交付 | 已取得的證據 | 適用範圍 |
+|---|---|---|
+| 跨會話摘要與真查詢 | 真 Vertex 回答「青竹室」並引用更正原句。正式站單一合成孩子保存兩批短摘要，讀回零生成。長來源在獨立程序分兩段完成，重送零新增用量。[查詢](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json) · [正式摘要](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json) · [分段](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) | 正式試行出資已結束，其他家庭維持原政策。 |
+| 模型輸入預檢 | 對送給供應商的完整請求核對指令、工具、媒體及輸出預留。分開記錄實算、估算與未知，128k tokens 為軟目標。[派送前測試](tests/model-context-preflight.test.ts) | 媒體或相容端點缺精確計數時保留原精度。 |
+| 每輪與重試額度 | 64／256／32 可設定上限在原 root 帳本驗過重開、重試和還原。[容量驗收](tests/firestore-root-budget.test.ts) | 生產預設及歷史用量維持原值。 |
+| 每日用量、告警與財務 | 生成、工具、向量及角色活動分項可查。隔離管理員收件與重複確認已驗。正式政策 v3 下互動視窗為空，背景連續兩次貼線，兩者均未觸發。[收件](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json) · [配額讀取](docs/API.md#admin-usage-quota) | 正式首宗維護者確認待自然事件。結算和出資預算各需原始依據。 |
+| 成長分頁與政策切換 | 香港 Firestore 同時間 32 筆按 30＋2 續讀。Edge 已驗翻頁。兩個隔離 worker 驗過舊 run 收緊、新 run 取得新額度及重啟防重。[分頁](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [政策](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json) | 真庫查詢、Web 互動及兩程序測試的環境分列於收據。 |
+
+11 月 19 日 00:28（香港），原站 API 讀回帳日 `2026-11-18`（UTC）的兩項 Google 觀測。`gemini-embedding-001` 是 100,000 RPM，`global` 地區所有模型共用的 predict 配額是 30,000 RPM。其他日期及個人用量均未帶入這兩個值。正式收件箱仍為空，本站專案可見 BigQuery 資料集為零，管理頁尚無可對應原嘗試的帳單。接手先看首宗正式告警；如收到對帳來源，再按原收據核對金額。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44344694283) · [管理接口](docs/API.md#admin-usage-quota)
+
 **2026-11-18 更正原文查詢**　從 `codex/req005-history-query` 以 `node scripts/verify-agent-local.mjs --real-history-query` 驗一個合成孩子。第一次真 Vertex 執行 `4f71c7ee` 沒有查回原話。第二次 `bb96c47a` 找到原地點，漏了省略主題的更正。接入同一孩子的相鄰原訊息並整合 #608 後，`7ff33001` 的正式回覆為「根據之前的記錄，學校簡介會最後改為在『青竹室』舉行。」共四次模型、三次工具及零次向量呼叫，沒有混入另一個孩子或寫入業務資料。該次收據欠更正原句的引用綁定。其後修正連續家長訊息的本輪歸屬，並讓原話與助手新操作的收據分開核對。新會話 686ce07b 已用真 Vertex 正式交付「你當時說：「改咗去青竹室」」，獨立審核通過，引用綁至更正原句。共三次生成、兩次工具、零次向量查詢；隔離帳本由 85 至 88，已恢復上限 20。見[隔離實測收據](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json)。
 
 本機用專案支援的 Node 24.22.3 完成 Emulator 檢查點匯出及重開，沿用原帳本。先前 Windows Node 24.11.0 的 `dest already exists` 失敗仍保留。這份證據只涵蓋開發資料保存。
@@ -205,9 +223,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
 
-維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。正式站維護者親自收件、正式摘要啟用及供應商未提供的結算／配額各自待核。
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據及供應商未提供的結算／配額各自待核。
+
+11 月 18 日場景 23 續驗：下表記錄的兩個舊測試曾在 Vertex 補齊生成設定前量度封包。改用正式 payload builder 後，八項離線檢查通過。互動與 worker 分別接受配置的 64,000／32,000 字元，多一個字元便於扣額前停止。載入工具後也按完整封包保留下一步空間。[輸入邊界](tests/agent-input-limit.test.ts) · [工具空間](tests/agent-capability-reserve.test.ts)
 
 **正式發布**　11 月 18 日 22:01（香港），原站收據 `r44317583446-1` 確認 Web、API 及 worker 均執行 `0a47c9b36f1384610af413dec72dc226cda263a0`。站外讀取 `/site-version.json` 及 `/api/version` 取得相同版本，`/api/health` 回報 Firestore 正常。下次接手先看管理後台「助手用量告警」的實際收件紀錄；如要擴大摘要，再按[出資與切換手冊](docs/summary-durable-integration-handoff.md#funded-pilot)指定帳戶、範圍及出資上限。正式每日金額及供應商用量以營運核實值為準。[正式發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44317583446)
+
+管理後台 Web 已獨立更新至 `b70ebfb8`，用量與告警在預設分頁。API 與 worker 沿用上述版本。[管理後台發布收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44325595147)
 
 - **基線／來源：** 候選分支 `codex/req005-closeout-validation` 接 master `2abe7aed60b192b253414f6464e3fd070cc377e7`，對應 [PR #514](https://github.com/2NTTY/child-ai-caregiver/pull/514)。
 - **文件治理落實規範聲明（`AGENTS.md#document-updates`）：** 依據專案「不增非必要獨立審計文件，以 `PLAN.md#active` 與 `STATUS.md` 為單一權威入口」之規範，本節完整納入 REQ-005 §9 全鏈收束核對清單、實施階段校準、官方 26 項驗收場景實測矩陣（忠實還原 REQUIREMENTS_BACKLOG.md 原文與單位）與 11 項官方未決清單；獨立草稿 `docs/REQ005_CLOSEOUT_CHECKLIST_AND_ACCEPTANCE.md` 已自 git 移除（`git rm`）。

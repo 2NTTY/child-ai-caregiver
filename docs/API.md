@@ -964,6 +964,19 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 
 管理員可從受保護的 Server 配置 `AI_USAGE_RECONCILIATION_JSON` 提供按日、出資來源、模型與原嘗試對應的價目或結算依據。API 分開返回估算、已結算額、已批准的金額及有日期的供應商配額。缺少依據的部分列為未知；管理回應省去原收據及帳單識別。每輪可設上限為生成 64、工具 256、查詢向量 32。舊設定與預設額度沿用，擴大後的單筆帳本須由支援擴大格式的後端處理。
 
+對帳設定中的 `settlement.reference` 識別一筆可歸屬至單次供應商呼叫的帳單明細。若帳單只提供局部行號，請連同帳戶及帳單編號組成唯一識別。同一份設定跨日期或出資方重用一筆明細會被拒絕。只有整日或整張帳單總額時，保留各次結算未知。
+
+<a id="admin-usage-quota"></a>
+
+平台向量配額也可按 UTC 日期單獨登記。營運者用已登入的 Cloud SDK 執行下面第一行，再於原站主機將同一份輸出交給 worker 容器。讀取器採用 Service Usage 對本站專案、模型或地區及單位返回的有限 `effectiveLimit`。背景服務沿原有 IAM。相同觀測可以重送，較早的觀測不能覆蓋較新的資料。當日已有明確配置的配額時優先採用配置。
+
+```sh
+python scripts/read-vertex-embedding-quota.py --project ai-caregivers-for-children --predict-region global > quota.json
+sudo docker exec -i yuban-p1-worker-1 node server/import-platform-quota.ts < quota.json
+```
+
+管理後台「助手用量」選擇觀測所屬日期即可查看。SDK 對 `gemini-embedding-001` 使用 `predict`，因此同時適用模型專屬 RPM 和該地區的共享 predict RPM。`--predict-region` 使用部署的 Vertex 地區，優先讀取該地區的明確值。聊天模型、私人 key、Token 上限及帳單金額各自需要對應依據。恢復含有配額觀測的新備份時使用識別 `platform-quota-observation` 的 restore codec。[Google 的向量配額維度](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/quotas) · [Service Usage 配額查詢](https://docs.cloud.google.com/service-usage/docs/reference/rest/v1beta1/services.consumerQuotaMetrics/get)
+
 管理政策中的 `highWatermark` 保存比例、觀察窗口、最低觸發次數及連續門檻。`GET /api/admin/budget-alerts` 依游標讀取維護者告警；`POST /api/admin/budget-alerts/ack` 以事件 ID 和類別確認收到，重送返回原確認。同一波超限只開一個事件。渠道接受、結果未知與維護者確認收到各自記錄。
 
 管理接口共用 Firebase session、`x-expected-user-id`，回應 `no-store`。`GET /api/admin/session` 只回本人是否為管理員；其他接口只容許部署綁定 UID。管理權不來自電郵字串、家庭 owner 或模型參數。POST 另核 Origin 與近期重新驗證，結果返回前重查身份。
