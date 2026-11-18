@@ -97,6 +97,7 @@ test("the original citation route returns only matching PDF bytes while the run 
   const open = (url = path) => handler(new Request(PUBLIC_ORIGIN + url, { headers: { "x-expected-user-id": USER_ID } }));
   const ok = await open();
   assert.equal(ok.status, 200); privateResponse(ok); assert.equal(ok.headers.get("content-type"), "application/pdf");
+  assert.equal(ok.headers.get("content-length"), String(body.byteLength));
   assert.deepEqual(Buffer.from(await ok.arrayBuffer()), body);
   assert.equal((await open(path.replace(chunkId, randomUUID()))).status, 404); assert.equal(reads, 1);
   replaceFile = true;

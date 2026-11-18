@@ -1,0 +1,19 @@
+{
+  "requirement": "REQ-006",
+  "scope": "Public official page acquisition and excerpt locator; shared UI and model delivery are verified separately",
+  "command": "createOfficialLivePages.search('視力檢查', ..., 'official_guidance') followed by mayUse()",
+  "mode": "live",
+  "source": "fhs-child-vision",
+  "title": "學前兒童視力普查",
+  "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html",
+  "terms": "https://www.fhs.gov.hk/english/notice/notice.html",
+  "sourceDate": "(02/2022 修訂內容)(02/2026 重印)",
+  "readAt": "2026-11-18T19:41:44.506Z",
+  "normalizedBodySha256": "d4a806ca83fc3e1d4fea645e91ec486199830eefb2c077f79cdb328c9b548069",
+  "range": [
+    689,
+    726
+  ],
+  "excerptSha256": "532e0e0f924c47b0a001a4a49d22ef38562d52d7f3dc02937105c93fc1b5367c",
+  "models": 0
+}

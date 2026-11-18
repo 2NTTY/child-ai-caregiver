@@ -52,7 +52,7 @@ export async function openCitedPdf(request: Request, chunkId: string,
   const current = await saved();
   if (!current || current.sourceId !== target.sourceId || current.sha256 !== target.sha256 || current.url !== target.url) return unavailable();
   return new Response(new Uint8Array(bytes), { headers: {
-    "content-type": "application/pdf", "content-disposition": 'inline; filename="source.pdf"',
+    "content-type": "application/pdf", "content-length": String(bytes.byteLength), "content-disposition": 'inline; filename="source.pdf"',
     "content-security-policy": "sandbox", "x-content-type-options": "nosniff", "cache-control": "private, no-store",
   } });
 }
