@@ -27,6 +27,13 @@ function view(card: RegisteredSourceCard) {
   const { credentialRef, ...settings } = card;
   return { ...settings, hasLogin: !!credentialRef };
 }
+function interval(minutes: number) {
+  if (minutes === 1440) return '每天';
+  if (minutes === 10080) return '每星期';
+  for (const [unit, label] of [[10080, '星期'], [1440, '天'], [60, '小時']] as const)
+    if (minutes % unit === 0) return '每 ' + minutes / unit + ' ' + label;
+  return '每 ' + minutes + ' 分鐘';
+}
 
 export function createRegisteredSourceTools(store: AgentSourceCards, owner: string, messageId: string,
   userMessage: string, authorize: () => Promise<boolean>, previousOwnerMessages: readonly string[] = []) {
@@ -77,7 +84,7 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
     const cardId = identity('card', url);
     return commit({ action: 'create', cardId, expectedRevision: 0, operationId: identity('create', cardId),
       settings: { ...settings, url, frequencyMinutes: settings.frequencyMinutes ?? sourceCardDefaultFrequencyMinutes(settings.kind) } },
-      'register_source_card', card => '已建立來源卡「' + card.name + '」，每 ' + card.frequencyMinutes + ' 分鐘檢查。');
+      'register_source_card', card => '已新增來源卡，' + interval(card.frequencyMinutes) + '檢查一次。');
   });
   add('manage_source_card', '按家長交代修改本人來源卡的名稱、檢查間隔、暫停、恢復，或排入一次立即檢查。請沿用卡片目前版本；排入不代表已下載或入庫。', management, false, async args => {
     const { action, cardId, expectedRevision, name, frequencyMinutes } = management.parse(args);
@@ -93,8 +100,8 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
     } else command = action === 'check_now' ? { ...base, action } : { ...base, action: 'set_enabled', enabled: action === 'resume' };
     return commit(command, 'manage_source_card', card => {
       const label = { pause: '已暫停檢查', resume: '已恢復檢查', check_now: '已安排檢查', rename: '已更名',
-        change_frequency: '已改為每 ' + card.frequencyMinutes + ' 分鐘檢查' }[action];
-      return '來源卡「' + card.name + '」' + label + '。';
+        change_frequency: '已改為' + interval(card.frequencyMinutes) + '檢查一次' }[action];
+      return '來源卡' + label + '。';
     });
   });
   add('open_source_card_login', '來源需要本人登入時，在這段聊天顯示連往該卡的授權按鈕。請家長只在卡內填登入資料。', z.strictObject({ cardId: z.uuid() }), true,

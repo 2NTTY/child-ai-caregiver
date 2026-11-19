@@ -1084,9 +1084,11 @@ export function createProductAgentTools(options: {
       if (answer.kind === "operation" && ids.length === 0 && options.actions) {
         const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
         if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
-        if (receipts.length) {
+        const sourceReceipts = registeredSources?.operations() ?? [];
+        if (receipts.length || sourceReceipts.length) {
           selectedVerifiedOperations = [];
-          serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          const saved = receipts.length ? [`已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`] : [];
+          serverReceiptText = [...saved, ...sourceReceipts.map(receipt => receipt.summary!)].join('\n');
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }

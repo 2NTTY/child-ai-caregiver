@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-19",
+  "environment": "Local product agent, Firebase Auth and Firestore emulators, Gemini 3.1 Flash-Lite using Vertex ADC",
+  "data": "Synthetic parent, child and school bulletin",
+  "create": {
+    "runId": "9590e438-a29c-4878-a7f0-a9392db35909",
+    "tools": ["load_capabilities", "register_source_card", "present_answer"],
+    "modelCalls": 4, "queryEmbeddings": 0,
+    "savedRevision": 1, "frequencyMinutes": 1440,
+    "outcome": "Card saved; the initial free-text acknowledgement failed delivery review."
+  },
+  "updateAfterReceiptFix": {
+    "runId": "d3f584da-37a5-4480-a362-cb4e5bf3163e",
+    "user": "頭先個學校通告，改做每星期睇一次就得。",
+    "tools": ["load_capabilities", "read_source_cards", "manage_source_card", "present_answer"],
+    "modelCalls": 4, "queryEmbeddings": 0, "outcome": "completed",
+    "answer": "來源卡已改為每星期檢查一次。",
+    "readback": "Same account source-card API used by the page; the original card is now revision 2, 10080 minutes."
+  }
+}
