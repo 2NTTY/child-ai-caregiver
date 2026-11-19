@@ -7,6 +7,7 @@ import { READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
 export interface ChatStore {
+  questionForDiscussion?(userId: string, childId: string, answerId: string, create: boolean): Promise<ChatMessage | null>;
   getOriginalMessageForUser?(userId: string, childId: string, messageId: string, purpose?: 'memory'): Promise<ChatMessage | null>;
   listImportedForUser?(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedForUser?(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;

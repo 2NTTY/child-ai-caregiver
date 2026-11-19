@@ -1,0 +1,431 @@
+{
+  "checkpoint": "2026-11-19T19:38:37.628Z",
+  "originalEvidence": "artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json",
+  "campaign": "fhs-child-initial-20261120",
+  "method": "Read the 31 terminal work records and their original frozen source checks. Replayed the 10 non-specific failures with the saved model output and the actual organizer schema. No network fetch, model call, embedding or source write was needed for classification.",
+  "counts": {
+    "truncated": 20,
+    "invalidAgeApplicability": 10,
+    "explicitReviewHold": 1
+  },
+  "continuation": {
+    "sourceId": "fhs-14840",
+    "originalOperationFingerprint": "ea9a36a380db37bc2aadfd03e900cf7a5f72a7c95e0b9043483f3c4f77addbbe",
+    "eligibleFrom": "2026-11-20T00:00:00Z",
+    "scope": "Resume the original daily-deferred operation with its bound settings before repairs and new sources. Published sources are excluded.",
+    "repair": "A single deterministic continuation binds the original watch, receipt, observation hash and saved model stages. Retain an unsuccessful repair; no automatic repair chain.",
+    "generationOutputTokens": {
+      "page": 4096,
+      "pdf": 8192
+    },
+    "grossCapUsd": 30,
+    "sharedDailyAdmission": "unchanged",
+    "video": false
+  },
+  "materials": [
+    {
+      "sourceId": "fhs-30034",
+      "originalOperationFingerprint": "b91110b6ffe375163c91bfe23239dffa1801ab5e8b3b2991b3e249a95f5fce49",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "89a6a9a443348b09942efa3d8a7d5e51ee7dd5c3a7b26836a28a4cccf658a9ba",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "共享育兒樂 (三) 嬰幼兒篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30136",
+      "originalOperationFingerprint": "cfefa008c690b44298be7ad2c13f5017cfb55712a31ccc44b928a1c85be7aed8",
+      "code": "model_output_limit",
+      "originalObservationHash": "cee7157afb4a60000ef74cafc45bf603e40c82266ddbd5b0e766c49911e6bf27",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "餵哺孩子 由你作主 (組合套裝)",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-20000",
+      "originalOperationFingerprint": "af335003a82cba9be2d6ae5d3a1a3ac6233027ecd0ab4e2d89b59d7c1f1db4a3",
+      "code": "model_output_limit",
+      "originalObservationHash": "b107cd01b5f6cc3cff14aa80c32c1b140f66de22eb2c9b42c87e51109e3f7e89",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "愛·從母乳開始……",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30073",
+      "originalOperationFingerprint": "4ab214d1f138b73fd6a87c27ea5a13cca899ff402d95e8c444394e7bea8b6306",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "a2fa92f77fe297fda96c10911db6723c2d9dda99ee1c622a668b094398267c98",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom",
+        "units.1.applicability/custom"
+      ],
+      "title": "全方位認識「泵奶器」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-20036",
+      "originalOperationFingerprint": "9bb2707cce213a1eb26cca44375497e1ef08c15769ac450eefc32f4f1f988f48",
+      "code": "model_output_limit",
+      "originalObservationHash": "d2399447dc1143d54da7c10933f38068ed8f6d04092e007bcab36b26321a8e9a",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "懷孕及哺乳期的健康飲食",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/woman/20036.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30018",
+      "originalOperationFingerprint": "43e9b57d6cc05b1b95c6f53c16b497851b3ac46735a80236305d0bdd0c9188c5",
+      "code": "model_output_limit",
+      "originalObservationHash": "d85e75a25fd2f1df2ff5fdda31885b4f3e330c7043c7cbf76f04b20e5ee160f2",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "「媽記奶品工場」漫畫",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-12146",
+      "originalOperationFingerprint": "2f22965ad1503ffddfd604d38795c778bf4eb81b51c045957ed634ec052d74e3",
+      "code": "model_output_limit",
+      "originalObservationHash": "3e414cad8d086e37c3db615e56b1fb0568101e2e47b2e462b9545074d4475001",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30146",
+      "originalOperationFingerprint": "5d52973ab3fc2428d49ec005f8dca6a600ce6905657199e5d817158f2ffedba4",
+      "code": "model_output_limit",
+      "originalObservationHash": "78765cd7765aa8fcec30abbbd4c690ee559654d21a500039abbc3460a3b4a367",
+      "modelCalls": 2,
+      "windowed": false,
+      "title": "你攝取足夠碘嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/woman/30146.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30190",
+      "originalOperationFingerprint": "a88636a8b382784c9a8949dc2527de6d3d22c79a2a4093d8ca35b2631897029c",
+      "code": "model_output_limit",
+      "originalObservationHash": "9c841efadeb6add2953f625089953cc0fa4c20c210524f668ec8ffd28496236f",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "預防嬰幼兒及孕婦缺乏維他命D的聯合建議",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30190.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-14727",
+      "originalOperationFingerprint": "9969b22b7d3f4ce8666a93be0ff7b6fca539872afffdf5cdb5e3fa0b5b007c94",
+      "code": "model_output_limit",
+      "originalObservationHash": "a77a55a113e550a3f303922518369b1daec404105bd642681eaf2b08e27a0416",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "6至24個月嬰幼兒健康飲食 (1) 起步篇小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-14722",
+      "originalOperationFingerprint": "1fec7fdd05f2f9d009020fbf96e18db08dc73da2cc793d6d39dca3a4bdf093a6",
+      "code": "model_output_limit",
+      "originalObservationHash": "d20b665edf30e1254a4e669fa0d94588c4b9f591495773e4e0ac31aab213d7ae",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "6至24個月嬰幼兒健康飲食(2)進展篇(上)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14722.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-16301",
+      "originalOperationFingerprint": "69e7fe0315d7643b18c542623a3686642043298ae5fda0a5e973655eee375c9a",
+      "code": "model_output_limit",
+      "originalObservationHash": "72005ffcf7dfdf6918556a954e010ec44bba61426ff33769d3358771f01c1f42",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "6至24個月嬰幼兒 健康飲食(3) 進展篇(下)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/16301.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-14732",
+      "originalOperationFingerprint": "4ed83fc7fd1bc9c12b3afa463ba0a29a993064aaea22b6744281434e36d4ec22",
+      "code": "model_output_limit",
+      "originalObservationHash": "bd79b8a6af565eb672985049a37fa6b93c35edeb0cc83baa1c5ab2b7f9ccbc24",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "6至24個月嬰幼兒7日飲食全攻略小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14732.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-12549",
+      "originalOperationFingerprint": "0c123bded12c03a6564b1dc4f1a19762ba11ecee9f3c327eb79a1de13e8943bf",
+      "code": "model_output_limit",
+      "originalObservationHash": "72a8beeca448f15f0b37785e5c6940bf8660cadd112164a6d31615ad69cc22d5",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "嬰幼兒健康飲食 - 飲奶知多少",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30008",
+      "originalOperationFingerprint": "3817d8cd192534e6a6f30f09ff8a347c012c80f882cd13850fc102a16ecd0d08",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "c5186658896dfd7ca92e7607c5e7108d775434f7ef6b14f61b9ec3ebb6a2cbef",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "替孩子轉換奶粉",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30169",
+      "originalOperationFingerprint": "7c910d770ba3f99bf32b879f66d21fb92ae67e414806c123ae90c041f063f79e",
+      "code": "model_output_limit",
+      "originalObservationHash": "5486735cc251385a53c082702654158645f2dd2a496c8efa6132acffc8346f91",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "幼兒成長健康生活好習慣",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30169.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-20033",
+      "originalOperationFingerprint": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "孩子「偏食」怎麼辦?",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30012",
+      "originalOperationFingerprint": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30074",
+      "originalOperationFingerprint": "ba7f91069f7bf7dd49035df612aeebf23d1d7530c32c4c3432dbb93e31294f4d",
+      "code": "model_output_limit",
+      "originalObservationHash": "742eeeb19e761b4da0c313afb6ce28512cf08691bc3a05471b6b7b8fe5bae4f4",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "食物與營養素",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30074.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30109",
+      "originalOperationFingerprint": "f559d92ca3d41fc146e4502b7ac34444c5b2790851aee58a1dd94ebcc4f1eed6",
+      "code": "model_output_limit",
+      "originalObservationHash": "c3c3e87c3bf98b64bacdc7b3eea7cbc2ba1c0090946ff3479656da1c4fc033bf",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "寶寶愛活動",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30109.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30047",
+      "originalOperationFingerprint": "f79dfdb2200a575b29cf48649f573822dba29554b96d22a723d60d1c047fb829",
+      "code": "model_output_limit",
+      "originalObservationHash": "a74f45ac463adff43c7f09aa072187b12163b51e591d1230c598c6110b57a441",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "你的 0 – 5 歲孩子需要電子屏幕產品嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30047.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-13034",
+      "originalOperationFingerprint": "1ce643542c6fadbdbac0ff761f74ac94045ed0f327f8daeb154bbe395c4690f4",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "ce2ba41bde2dcde610ad47f1e9a96873d7cc11dd87f1481a8b46a65503ea6781",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "育兒預備篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13034.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-13040",
+      "originalOperationFingerprint": "feec5eec99d54519da99c7746a659f5c6d6b90bbb0613b4522a93e90b4a98019",
+      "code": "model_output_limit",
+      "originalObservationHash": "b48a1d2789be2796df4afc8f9357645b63b23fc3553424949eecb8535b822117",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "貼心照顧: 建立親密的親子感情",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13040.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "fhs-30130",
+      "originalOperationFingerprint": "5a7fd20d95ba08febf59edb9d5e1585621e837f5468b41551cf947b5ac6fc978",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "4edde67e4bfca633d70ece50494bb8452a97e929c9e6665953751f766181e479",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "陪我玩、同我講",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30130.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30006",
+      "originalOperationFingerprint": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "培育還是催谷子女",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-30143",
+      "originalOperationFingerprint": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "足不出戶的「親子遊樂團」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-14836",
+      "originalOperationFingerprint": "962d0ed2b1179f762c82072d0c135e79e1ee75cca06c8cde5a646cce34f4c2f7",
+      "code": "review_hold",
+      "originalObservationHash": "fe0c92ed1dcfc4fb6093a9a0b3b80181cf4671597c37f1bfc908952f341f345e",
+      "modelCalls": 2,
+      "windowed": false,
+      "reviewDecision": "hold_candidate",
+      "growthRuleImpact": "none",
+      "title": "正面親職（二）：學前階段的實踐",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-14838",
+      "originalOperationFingerprint": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+      "code": "knowledge_review_failed",
+      "originalObservationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+      "modelCalls": 1,
+      "windowed": false,
+      "readyStages": [
+        "knowledge-organize"
+      ],
+      "validation": [
+        "units.0.applicability/custom"
+      ],
+      "title": "品德培育之一",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+      "decision": "retain_for_review"
+    },
+    {
+      "sourceId": "fhs-14851",
+      "originalOperationFingerprint": "e2f043b6991c703ef026fe1427233b0812cc29a85b712286125fcaf4c04c1970",
+      "code": "model_output_limit",
+      "originalObservationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "常見嬰兒皮膚問題",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "resource-d8149af7847e38",
+      "originalOperationFingerprint": "4b2d77191f63fc7c2f5e0b56f279b37ecae1cf708415416e73cced5da5c08de3",
+      "code": "model_output_limit",
+      "originalObservationHash": "e62e782f958eb72b0d43131cdb984309432f9208dbd6cb14d0e5ea34e8cb6eca",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "香港2020生長圖表",
+      "url": "https://www.dh.gov.hk/english/useful/useful_PP_Growth_Chart/files/growth_charts.pdf",
+      "decision": "one_bound_output_continuation"
+    },
+    {
+      "sourceId": "resource-6c18c8d7a17495",
+      "originalOperationFingerprint": "281ee8c2103e167081524f29b5e8ff8588243d28db96a4173cb2db6a725eb490",
+      "code": "model_output_limit",
+      "originalObservationHash": "4a64e53682e87d00c77c98d02f097279dbbb2ec6b0a5d7a947f55c189c985231",
+      "modelCalls": 1,
+      "windowed": false,
+      "title": "保護兒童 你我有責",
+      "url": "https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf",
+      "decision": "one_bound_output_continuation"
+    }
+  ]
+}

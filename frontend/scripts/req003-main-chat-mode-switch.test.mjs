@@ -86,6 +86,7 @@ function setup() {
     },
     '../components/chat/locateCitationSource': { locateCitationSource() {} },
     '../components/chat/OfficialHelpCards': { OfficialHelpCards: 'OfficialHelpCards', ProgressSourceCards: 'ProgressSourceCards' },
+    '../components/chat/QuestionDiscussion': { QuestionDiscussion: 'QuestionDiscussion' },
     '../production/ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
     '../production/RegisteredReadingCard': { RegisteredReadingCard: 'RegisteredReadingCard' },
     '../production/VoiceMessage': { VoiceMessage: 'VoiceMessage' },

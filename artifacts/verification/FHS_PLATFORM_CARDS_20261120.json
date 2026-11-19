@@ -1,0 +1,88 @@
+{
+  "observedOn": "2026-11-20",
+  "branch": "codex/fhs-platform-catalog",
+  "base": "9cba3fe8",
+  "inventoryCommit": "b9c340f3",
+  "inventory": "knowledge/fhs-child-inventory.json",
+  "quote": "artifacts/verification/FHS_CHILD_CATALOG_ESTIMATE_20261120.json",
+  "local": {
+    "node": "24.22.3",
+    "adapter": "Production services and HTTP handlers with a serial in-memory Firestore fixture. Isolated synthetic accounts, PDF bytes, model outputs and vectors.",
+    "tests": [
+      {
+        "paths": [
+          "tests/firestore-knowledge.test.ts",
+          "tests/firestore-backup.test.ts",
+          "tests/firestore-restore-codec.test.ts",
+          "tests/firestore-personal-library.test.ts",
+          "tests/knowledge-refresh-cli.test.ts",
+          "tests/platform-media.test.ts",
+          "tests/knowledge-campaign-budget.test.ts"
+        ],
+        "passed": 57
+      },
+      {
+        "paths": [
+          "tests/library-citation-roundtrip.test.mjs"
+        ],
+        "passed": 4
+      },
+      {
+        "paths": [
+          "frontend/scripts/memory-source-display.test.mjs"
+        ],
+        "passed": 13
+      }
+    ],
+    "typeChecks": [
+      "tsconfig.server.json",
+      "frontend/tsconfig.json"
+    ],
+    "scenarios": [
+      "Admin-only draft, preview, independent assessment, publication with prepared vectors; failed update leaves prior published edition available.",
+      "A parent browses without gaining retrieval access, downloads once, follows reviewed same-scope versions, can pin, pause, remove and download again. Two accounts keep separate selections.",
+      "The authenticated main chat keeps the delivered message, immutable citation and exact PDF bytes when the parent pauses or removes the card after a newer edition is published. Publisher withdrawal then returns HTTP 404 for that PDF.",
+      "One official timed caption is approved, published, downloaded, retrieved with its exact time range, then removed from new retrieval after a confirmed link change. The saved citation retains its original times.",
+      "No family or disabled-card model call; the same enabled media original is processed once across cards. Temporary errors preserve links. Published WebVTT bypasses analysis.",
+      "Recovery preserves campaign tickets and freezes new spend pending reconciliation. Lost replies keep the original gross reservation."
+    ],
+    "existingFailure": {
+      "path": "tests/firestore-knowledge-scheduler.test.ts",
+      "test": "scheduled public pages resume the same review after daily admission and publish only changed observations",
+      "expected": "completed on the second simulated day",
+      "actual": "pending; the maintenance port returned deferred until 2026-04-08T00:00:00.000Z",
+      "reproducedAtBase": "9cba3fe8",
+      "otherTestPassed": true
+    }
+  },
+  "live": {
+    "workerImage": "sha256:b736b1d9fe06f214e6300fd9af94360f86a501ef5b99827f3954527bce5d501c",
+    "campaign": "fhs-child-initial-20261120",
+    "payer": "platform",
+    "grossCapUsd": 30,
+    "generation": {
+      "model": "gemini-3.8-flash",
+      "location": "global"
+    },
+    "embeddings": {
+      "model": "gemini-embedding-001",
+      "location": "us-central1",
+      "dimensions": 1024
+    },
+    "mediaEnabled": false,
+    "firstPublished": {
+      "sourceId": "fhs-14799",
+      "operationFingerprint": "6885cf2d0b7fa646a1b321134133ed1509c79e35078f320d520577c82f98ed7e",
+      "versionHash": "ca557cc8a505126cdbab57ebf11f1d1bc02f6b322bd592be54e583b84caef4bc",
+      "initialInterruption": "A field-index query on the live Firestore configuration was unavailable. The same operation published after switching the catalogue lookup to scoped document IDs.",
+      "settledAttempts": 3,
+      "grossUsageUsd": 0.039859
+    },
+    "automaticWatchesEnabledByCampaign": false,
+    "siteDeployedByThisBranch": false,
+    "unverified": [
+      "Production Web / mobile household interaction and actual paid video decoding",
+      "Native backup and restore of live data; the currently deployed backup inspector needs the new collection registry for this campaign"
+    ]
+  }
+}

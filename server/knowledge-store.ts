@@ -44,6 +44,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
   return {
     async importSource(input: unknown) {
       const document = parseKnowledgeSource(input);
+      if (document.chunks.some(chunk => chunk.mediaClip)) throw Error('knowledge_media_evidence_unavailable');
       const hash = sourceVersionHash(document);
       return transaction(pool, async client => {
         await client.query("INSERT INTO knowledge_sources (id,url) VALUES ($1,$2) ON CONFLICT (id) DO NOTHING", [document.sourceId, document.url]);

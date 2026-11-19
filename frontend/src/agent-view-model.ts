@@ -41,6 +41,7 @@ export interface AgentProposalView {
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
+  discussion?: import('../../src/shared/chat-discussion.ts').DiscussionTranscript;
   sourceCardReadings?: import('../../src/shared/source-card-reading.ts').SourceReading[];
   sourceCardLinks?: { cardId: string; authorize: boolean }[];
   platformSeriesIds?: string[];

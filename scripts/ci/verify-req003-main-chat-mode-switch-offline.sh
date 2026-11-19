@@ -43,7 +43,7 @@ TEST_FILES=(
   tests/req003-auth-mode-and-draft-binding.test.ts
   frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs
 )
-TEST_CASES=(10 5 44 7 2 12 11 3 9 18 1 10 10)
+TEST_CASES=(10 5 44 7 2 14 11 3 9 18 1 10 10)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

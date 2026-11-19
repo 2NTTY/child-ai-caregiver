@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. 本輪從[助手原件、引用與私人記憶](#agent-evidence)接續。[主動通知](#proactive-notifications)與家庭附件庫直接上傳已交付；P4 留待人工驗收，恢復位置見[P4 接手清單](docs/P4_RESUME.md)。[P3](#phase-3)餘項沿原包追蹤。
+2. 本輪從[三方討論、頁內助手與平台卡庫](#assistant-discussion-companion-catalogue)接續；既有[原件、引用與私人記憶](#agent-evidence)供三線復用。[主動通知](#proactive-notifications)與家庭附件庫直接上傳已交付；P4 留待人工驗收，恢復位置見[P4 接手清單](docs/P4_RESUME.md)。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -55,6 +55,23 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="current-p2"></a>
 <a id="active"></a>
 ## 當前工作
+
+<a id="assistant-discussion-companion-catalogue"></a>
+### 三方討論、頁內助手與平台卡庫
+
+2026-11-20 自 `9cba3fe8` 並行開工。每線由所列成員負責整包的前後端、提交與必要驗收。主對話處理跨包接口、工程決策、整合及正式發布，結果依實際收據回填。
+
+| 主責 | 交付與驗收 |
+|---|---|
+| A · [REQ-009](docs/REQUIREMENTS_BACKLOG.md#req-009) | 家長可在送出前或收到原回答後，逐題選擇三方討論。共用當前授權背景，角色可讀彼此已交付的發言、回應分歧。可收合的群組對話保留主回答、原來源、停止及斷線查回。送出前選擇只建一個 run；已結算的回答由明確發起操作綁定唯一後續討論，所有角色、工具與核對共用該 run 的預算。同題重開只讀回，普通下一題的討論用量為零。 |
+| B · Zundamon Live2D 頁內助手 | 一個共用角色接回現有文字／錄音聊天；從待辦、記錄或文件送出時固定已保存項目及孩子，伺服器重新核權。到助手頁能接續同一訊息、回答、停止及結果，角色在該頁只作動作互動。Web、iPhone PWA、Android 各按實際載入與操作取得證據。 |
+| C · 兒童健康平台卡庫 | 全責官方目錄、報價、整理、RAG、管理後台及家長卡庫。管理員新建／匯入後同步已審核版本；家長在參考資料挑選下載，自動匯入及跟隨新版。普通問答與討論只檢索本人已下載且啟用的卡。刪除停止新召回，可重下；原回答仍綁舊版。沿用既有固定快照與顯式停用。管理員逐卡控制影音整理，預設只列影音連結，下一次成功檢查確認移除才清走。 |
+
+C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 148 份相異 PDF、1,799 頁，5 項未能取得。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
+
+共同驗收只串一條流程：家長下載一張已審核卡，在待辦頁點角色提問，開助手頁讀到同一原問題及回答，發起討論，再由引用打開當時的官方原件。每線實作、定向驗收、正式交付、仍待本人操作分開記錄。
+
+聯驗已在 Edge 從待辦角色送出，於主聊天讀回同一次回答及其對應版本的官方原文。A 續查「討論這個回答」在三位發言後未能交付的原運行。C 依首批帳本接續攝取。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
@@ -1807,4 +1824,4 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 - Branch `codex/req003-main-chat-mode-switch` stacks on `codex/req003-unified-pending-shortcut-ui` to deliver manual per-message mode selection (`"assistant"` vs `"chat_only"`) in the single main chat thread (`src/shared/chat.ts`, `src/client/chat-api.ts`, `src/client/chat-controller.ts`, `frontend/src/components/chat/ChatModeSwitch.tsx`, `frontend/src/production/ProductionProvider.tsx`, `frontend/src/screens/chatScreen.tsx`), keeping history, scroll state, and unsent drafts intact while hiding auto-authorization prompts in `"chat_only"` mode and clearly separating in-flight reply handling (`modeSwitchedDuringReply`) from subsequent messages.
 - Enforces `"chat_only"` boundaries on the server across `server/chat-message-schema.ts`, `server/chat.ts`, `server/chat-api.ts`, `server/firestore-chat.ts`, `server/product-agent-capabilities.ts` (`CHAT_ONLY_TOOL_CATALOG`, `COMPACT_CHAT_ONLY_TOOL_CATALOG`, `CHAT_ONLY_ALLOWED_TOOL_NAMES`), `server/product-agent-tools.ts`, `server/product-agent.ts`, `server/chat-delivery-review.ts` (`isPureChatOnlyModeBoundaryNotice`), and `server/agent-context-window.ts` with zero extra intent-classifier model turns: retaining main-chat context and public search while blocking write/proposal/confirmation/work/summary execution in `"chat_only"`, tagging `messageTopology` origin mode without retroactive execution when switching back to `"assistant"`, and allowing explicit follow-up references (`"把剛才那份記下來"`).
 - Preserves covered source message IDs, versions, and origin `chatMode` metadata inside technical continuation summaries (`src/shared/memory.ts`, `server/memory-summary.ts`, `server/summary-projection.ts`, `server/firestore-memory.ts`) without promoting summary entries into confirmed facts, topics, or instructions.
-- Verified offline via `tests/req003-main-chat-mode-switch.test.ts` (10 cases) and `frontend/scripts/req003-main-chat-mode-switch.test.mjs` (5 cases) within the 13-file offline gate (`scripts/ci/verify-req003-main-chat-mode-switch-offline.sh`, `.github/workflows/req003-main-chat-mode-switch-offline.yml`, 142 total cases passing under network guard + summary progress contract check) and all three strict `tsc --noEmit` checks (`tsconfig.server.json`, `tsconfig.json`, `frontend/tsconfig.json`).
+- Verified offline via `tests/req003-main-chat-mode-switch.test.ts` (10 cases) and `frontend/scripts/req003-main-chat-mode-switch.test.mjs` (5 cases) within the 13-file offline gate (`scripts/ci/verify-req003-main-chat-mode-switch-offline.sh`, `.github/workflows/req003-main-chat-mode-switch-offline.yml`, 144 total cases passing under network guard + summary progress contract check) and all three strict `tsc --noEmit` checks (`tsconfig.server.json`, `tsconfig.json`, `frontend/tsconfig.json`).
