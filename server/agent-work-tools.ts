@@ -38,7 +38,8 @@ export async function prepareProposalConfirmation(
 export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>,
   onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void, onPendingMemoryProposal?: () => void,
   onHistoryRead?: (message: AgentHistoryMessage, reread: () => Promise<AgentHistoryMessage | null>, precedingMatch?: string) =>
-    { citationId: string; quoteHistory: string }, currentMessageId?: string, onRecallExpiry?: (until: string) => void): AgentTool[] {
+    { citationId: string; quoteHistory: string }, currentMessageId?: string, onRecallExpiry?: (until: string) => void,
+  currentUserText?: string): AgentTool[] {
   const { userId, childId } = run.scope;
   const guard = async (fn: () => Promise<unknown>): Promise<AgentToolResult> => {
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
@@ -70,7 +71,9 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       if (!current || current.version !== fact.version || !current.applicable || !factIsApplicable(current)) return null;
       return read();
     });
-    return { ...reference, original: { messageId: message.id, role: message.role, text: message.text, createdAt: message.createdAt,
+    return { ...reference, quoteAnswer: { kind: 'private_reference', paragraphs: [{ quoteHistory: reference.quoteHistory }] },
+      answerGuidance: '若家長要求引用這項安排的原話，把 quoteAnswer 作為 present_answer 的完整參數。Server 會代入該句，再獨立核對。',
+      original: { messageId: message.id, role: message.role, text: message.text, createdAt: message.createdAt,
       version: message.version, offset: message.offset, totalCharacters: message.totalCharacters } };
   }
   const revision = agentProposalSchema.options.find(schema => schema.shape.kind.value === "memory_fact_revise")!;
@@ -122,12 +125,28 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
           limit: slice.text.length, ...(slice.contentVersion ? { contentVersion: slice.contentVersion } : {}) });
         return onHistoryRead({ ...slice, childId, nextOffset: end < slice.totalCharacters ? end : null }, reread, precedingMatch);
       };
-      return { ...page, matches: page.matches.filter(match => match.id !== currentMessageId).map(({ excerptRange, ...match }) => {
+      const matches = page.matches.filter(match => match.id !== currentMessageId).map(({ excerptRange, ...match }) => {
         if (!excerptRange || !match.role) return match;
         const anchor = cite({ id: match.id, role: match.role, version: match.version, createdAt: match.createdAt, text: match.excerpt, ...excerptRange });
         return { ...match, ...anchor, followingMessages: match.followingMessages?.filter(neighbor => neighbor.id !== currentMessageId).map(neighbor =>
           ({ ...neighbor, ...cite({ ...neighbor, offset: 0 }, anchor.citationId) })) };
-      }), ...(page.matches.some(match => match.excerptRange) ? {
+      });
+      const isAnotherStatement = (role: string | null, text: string) => role === 'user' && text.trim() !== currentUserText?.trim();
+      const noParentStatement = input.kind === 'message' && !matches.some(match => isAnotherStatement(match.role, match.excerpt) ||
+        match.followingMessages?.some(message => message.id !== currentMessageId && isAnotherStatement(message.role, message.text)));
+      const noFactMatch = input.kind === 'memory_fact' && !matches.length;
+      if (currentMessageId && currentUserText && input.query.trim() && !input.cursor && !input.createdFrom && !input.createdBefore && (noParentStatement || noFactMatch)) {
+        // Supply bounded navigation even if the parent's wording shares no terms with the saved fact.
+        // A topic is not evidence. Reading the selected ID revalidates its version and original.
+        const facts = await memory.facts(userId, childId, undefined, 10);
+        const applicable = facts?.items.filter(fact => fact.childId === childId && fact.applicable && factIsApplicable(fact)) ?? [];
+        if (applicable.length) {
+          for (const fact of applicable) if (fact.validUntil) onRecallExpiry?.(fact.validUntil);
+          return { ...page, matches, currentFactTopics: applicable.map(fact => ({ factId: fact.id, key: fact.key })), factTopicsNextAfterId: facts?.nextAfterId ?? null,
+            answerGuidance: '若家長追問之前定下的安排，先按意思在 currentFactTopics 選與問題相關的主題，用 read_memory_facts({factId}) 核對現行內容及家長原句。主題名稱只供定位。取得 quoteHistory 後可用 private_reference 引用。' };
+        }
+      }
+      return { ...page, matches, ...(page.matches.some(match => match.excerptRange) ? {
         answerGuidance: '選能回答問題的家長原句，把該句的 quoteHistory 原樣填入 present_answer 的 paragraphs，kind 用 private_reference。缺片段才需續讀。'
       } : {}) };
     })),

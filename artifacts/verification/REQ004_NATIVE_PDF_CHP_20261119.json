@@ -1,6 +1,6 @@
 {
   "schema": "req004-native-pdf-chp-verification/v1",
-  "observedAt": "2026-11-18T21:42:20.836Z",
+  "observedAt": "2026-11-18T23:59:33.781Z",
   "baseline": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
   "environment": {
     "node": "24.11.0",
@@ -16,7 +16,7 @@
     "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
     "sourceDateText": "(Content revised 02/2026)",
     "fetchedAt": "2026-11-18T19:22:27.858Z",
-    "observationHash": "74a11741c020df3b9459bb2fc821a74be2cea5f5b05903523c97036f8c27fd46",
+    "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
     "extraction": {
       "format": "text_pdf",
       "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
@@ -43,7 +43,7 @@
     "model": "gemini-3.1-flash-lite",
     "region": "global",
     "gateway": "AgentGatewayModel.completeText",
-    "modelInput": "五次完整原件生成，其後兩次只送同版原件第 6 頁的單頁 PDF。PDF inlineData 於 gateway 前核對 SHA-256。",
+    "modelInput": "整理器和獨立審核器均各自收到同一份完整 PDF，逐實體頁記錄發現。第 6 頁另有單頁獨立辨認。最後審核附整份原 PDF，逐項比對修訂。",
     "work": [
       {
         "operationFingerprint": "772cb5ce331044bab85c04a165927539223640e46c58df3d324beee9ef445a25",
@@ -125,14 +125,47 @@
         "versionHash": "7a367bce0329af1bf8f649b0bd04dd4fd11607f673daf6087653c90da20a5ec5",
         "receipt": null,
         "reusedSinglePageOrganize": true
+      },
+      {
+        "operationFingerprint": "cc662a7f5fec95bf4b00a4ff9ed3a2c4c1d5399f1ce7475c6e2fa7e58c4568c5",
+        "versionHash": "eb3e85414a9320386aa60adb9e6e13b75e2e1a281b237f98009fe97bd3b76e9c",
+        "result": "operator_hold",
+        "published": false,
+        "modelCalls": 2,
+        "operatorFindings": [
+          "page 4 feeding interval",
+          "page 10 feeding interval",
+          "page 5 interval"
+        ],
+        "at": "2026-11-18T23:40:13.669Z"
+      },
+      {
+        "operationFingerprint": "3de2b5d7505eddf7243eba8dac80c81f0302e37993b82bf2598e4cfdd7a18b3e",
+        "versionHash": "8b2b8f174a95aca07aac526a865bafc40110fddb9661b2c1965d49a75bd3ab2d",
+        "result": "operator_hold",
+        "published": false,
+        "modelCalls": 2,
+        "operatorFindings": [
+          "page 5 interval"
+        ],
+        "at": "2026-11-18T23:46:01.095Z"
+      },
+      {
+        "operationFingerprint": "aec979640e428f7f2332958c1a7b55e4d530b8e5a422146e56408fd5e6ddacad",
+        "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+        "result": "published",
+        "published": true,
+        "modelCalls": 1,
+        "operatorFindings": [],
+        "at": "2026-11-18T23:55:37.456Z"
       }
     ],
     "firstHold": "第一次整理回應的年齡與頁段結構不合契約。",
     "secondHold": "第二次整理交回 20 項逐頁觀察，其候選段落有實體頁碼錯配。獨立審核答對圖表問題，但只交回第 1、6 頁的閱讀證據，並誤稱和舊版一致。該來源並無已發布舊版。",
     "providerDecision": "approve",
-    "acceptedDecision": "prepared_waiting_daily_admission",
-    "activeEditionId": null,
-    "liveRetrieval": false,
+    "acceptedDecision": "published_in_isolation",
+    "activeEditionId": "6ace2447-bb46-50ef-afe6-b49bc56e869e",
+    "liveRetrieval": true,
     "revisedMethod": "來源原件按實體頁判讀，分別記錄整理與覆核。爭議頁沿用同版原頁，兩份單頁生成互不提供視覺答案。驗收標準只在測試及本紀錄使用。",
     "focus": {
       "sourceId": "fhs-feeding-booklet-en",
@@ -191,6 +224,334 @@
         "providerDispatchesForPriorWork": 11
       },
       "nextQuotaBoundary": "2026-11-19T00:00:00Z"
+    },
+    "sourceCorrection": {
+      "observedAt": "2026-11-18T22:39:16.366Z",
+      "implementation": "994e0baf8d248855c976157f29903631337c6d61",
+      "reader": "native-pdf-physical-pages/4",
+      "promptPack": "0.1.64",
+      "held": {
+        "versionId": "bb6fdf8a-8dd8-5dd6-a7d5-97b455bc02af",
+        "versionHash": "7a367bce0329af1bf8f649b0bd04dd4fd11607f673daf6087653c90da20a5ec5",
+        "work": "1bb19ed678fcac239647d389ecc45ec8d2724b4815cde9cb30bf5cfed8aa3e71",
+        "at": "2026-11-18T22:24:28.384Z",
+        "review": "operator_hold",
+        "publicResults": 0,
+        "priorState": "prepared_waiting_daily_admission",
+        "oldCheckResumable": false
+      },
+      "destination": {
+        "site": "https://ex-machina.eu.org",
+        "previousVersionId": "a9f9f85a-b91d-502e-b13b-f41b7829bb96",
+        "previousVersionHash": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98",
+        "previousObservationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "baselineSnapshotSha256": "4c07782789ea59e886e44b134717bfa5796b57e84956d5c960d2b7c79bd20bab"
+      },
+      "isolated": {
+        "priorPublishedEdition": null,
+        "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+        "work": "cc662a7f5fec95bf4b00a4ff9ed3a2c4c1d5399f1ce7475c6e2fa7e58c4568c5",
+        "check": "b157126c-5f9e-5341-8268-cb313d5ed499",
+        "pdfSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "bytes": 7944671,
+        "physicalPages": 20
+      },
+      "quotes": {
+        "pages4And10": "30 minutes before the usual feeding",
+        "page5": "3 to 4 days",
+        "method": "Unique matching embedded outlines from the same typeface; unmatched or ambiguous glyphs stay uncertain. Quoted excerpts must be contiguous and traceable to the observed pages."
+      },
+      "rendering": {
+        "method": "PDFium from the retained original",
+        "scale": 1.8,
+        "sha256ByPhysicalPage": {
+          "3": "c6f3b7f5e9f0c33e35a1f06dda863eb18d5ceb0f4869c66c6251996b7664584a",
+          "4": "7d71d10c5ba36039b105e78a82e6240a7a40c8153b236576cd94653a9779bc57",
+          "5": "d8168d6d7b653d0e21e9962876376a69065c980b28adf6f5ff3db3d8494e4e84",
+          "10": "2fc87af2620f01a97b2da2469b7c2d24752dce7941b019b1213030f4a8c08c3c",
+          "17": "1d01710594d56ee64c29600dd6651afaa8f137a3fc70bf5589dd7bb56a913b6c",
+          "19": "a8ae32412e704f3fda87538a4476ac00b90f807c02c240aa86f0952c3e4fa856"
+        }
+      },
+      "structuralReplay": {
+        "paidCalls": 0,
+        "roles": 2,
+        "originalPages": 20,
+        "chunks": 13,
+        "partialTextQuotations": 7,
+        "destinationChangedKeys": 14,
+        "isolatedAddedKeys": 13,
+        "decision": "synthetic_hold"
+      },
+      "tests": {
+        "node": "24.22.1",
+        "passed": 13,
+        "tsc": "targeted server and PDF worker passed",
+        "firstAttempt": "Node 24.11.0 failed the existing DNS mock outside the declared engine range. The project-supported runtime passed the same test."
+      },
+      "paidAcceptance": "completed_on_original_ledger",
+      "productionReleasePerformedHere": false,
+      "paidAcceptanceAtInitialObservation": "waiting_for_authorized_2026-11-19_UTC_ledger_day"
+    },
+    "finalPublication": {
+      "versionId": "6ace2447-bb46-50ef-afe6-b49bc56e869e",
+      "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+      "observedAt": "2026-11-18T23:56:13.553Z",
+      "checkId": "b157126c-5f9e-5341-8268-cb313d5ed499",
+      "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+      "receipt": {
+        "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+        "state": "committed"
+      },
+      "previousFormalVersionId": "a9f9f85a-b91d-502e-b13b-f41b7829bb96",
+      "previousFormalVersionHash": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98",
+      "previousFormalObservation": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "officialPdfIdentical": true,
+      "reader": "native-pdf-physical-pages/4",
+      "promptPack": "0.1.67",
+      "organizePages": 20,
+      "reviewPages": 20,
+      "unreadablePages": {
+        "organize": [],
+        "review": []
+      },
+      "originalOrganizeAttempt": "knowledge-organize:7f51dde7f2ea89f42055b06cd9ce36886a5996dc81b36a1f7dd64853e2f405f8",
+      "reviewAttempt": "knowledge-review:d4554549df992fb81cae1d47bc19aabfeaccddec639b807eccd67b4eac42c2cd",
+      "editorialMethod": "cited-editorial-amendment/1",
+      "amendedRangeCount": 9,
+      "preservedRangeCount": 4,
+      "checkedAmendments": true,
+      "priorConditions": [
+        {
+          "oldKey": "introducing-solids-page-3",
+          "pageStart": 3,
+          "pageEnd": 3,
+          "original": "僅核對PDF第3頁，並與同一官方現行網頁14727.html的開始時機及未滿四個月限制交叉核對。",
+          "newKey": "p1-45c0b61186f1134f4c55",
+          "disposition": "retained",
+          "currentCondition": "未滿 4 個月切勿餵固體食物；大部分嬰兒在接近 6 個月時準備好嘗試。",
+          "reason": "已在新版第 1-3 頁整合並確認此原則。"
+        },
+        {
+          "oldKey": "introducing-solids-page-3",
+          "pageStart": 3,
+          "pageEnd": 3,
+          "original": "本檢索範圍不是加固資格或提醒窗口；其他準備條件須另查適用資料。",
+          "newKey": "p1-45c0b61186f1134f4c55",
+          "disposition": "retained",
+          "currentCondition": "檢索月齡並非加固資格或提醒時間；即使到了建議月齡，仍須觀察第 4 頁列出的動作及進食準備訊號。",
+          "reason": "已在新版第 4 頁明確提及觀察訊號的重要性。"
+        },
+        {
+          "oldKey": "introducing-solids-page-3",
+          "pageStart": 3,
+          "pageEnd": 3,
+          "original": "書冊日期未知，不宣稱較現行官方網頁更新；不把本頁當整本手冊已抽取。",
+          "newKey": "p1-45c0b61186f1134f4c55",
+          "disposition": "prior_edition_note",
+          "currentCondition": null,
+          "reason": "該說明已隨手冊更新，現以新版 PDF 為準。"
+        }
+      ],
+      "physicalQuoteCoverage": {
+        "reviewedPages": 20,
+        "totalRanges": 13,
+        "excerptRanges": 7,
+        "detail": "公開引文按每段標示。含破損字形的文字層保存在本機原始觀察，公開段落只提供可核對的連續引文，並可回到原 PDF。"
+      },
+      "lookup": [
+        {
+          "n": 4,
+          "page": 3,
+          "query": "太早開始固體食物有甚麼限制？延遲加固會影響鐵質攝取嗎？",
+          "chunkId": "3393c586-51e5-5239-a649-5e9656e9c4f9",
+          "rank": 1
+        },
+        {
+          "n": 4,
+          "page": 17,
+          "query": "四個月大的嬰兒餵奶時間不定，容易分心，如何按飢餓和飽足訊號餵哺？",
+          "chunkId": "03fbba7c-100a-50a0-8aa2-975ff2c17078",
+          "rank": 3
+        },
+        {
+          "n": 5,
+          "page": 3,
+          "query": "太早開始固體食物有甚麼限制？延遲加固會影響鐵質攝取嗎？",
+          "chunkId": "3393c586-51e5-5239-a649-5e9656e9c4f9",
+          "rank": 1
+        },
+        {
+          "n": 6,
+          "page": 3,
+          "query": "太早開始固體食物有甚麼限制？延遲加固會影響鐵質攝取嗎？",
+          "chunkId": "3393c586-51e5-5239-a649-5e9656e9c4f9",
+          "rank": 1
+        },
+        {
+          "page": 6,
+          "query": "第 6 頁「Baby food DIY」表格的 Fruit 一行，左邊照片中的水果和工具是甚麼？兩張照片之間箭嘴是甚麼顏色，指向哪一邊？",
+          "topics": [],
+          "rank": 1,
+          "chunkId": "61bac653-a169-5f98-89e3-63e5389b298c"
+        },
+        {
+          "page": 19,
+          "query": "食物過敏 嚴重濕疹 呼吸困難",
+          "topics": [
+            "feeding"
+          ],
+          "rank": 1,
+          "chunkId": "b6677388-ac83-5b2d-8135-9314772f4449"
+        }
+      ],
+      "ageLookup": [
+        {
+          "basis": "corrected",
+          "age": 6,
+          "page": 4,
+          "query": "早產嬰兒 預產期 準備進食訊號",
+          "rank": 1,
+          "chunkId": "e3cdae83-d41e-5fd8-b261-06cb5210ec98"
+        },
+        {
+          "basis": "actual",
+          "age": 6,
+          "page": 16,
+          "query": "胃口變化 勿強迫每餐吃同一份量",
+          "rank": 1,
+          "chunkId": "b4d94601-9452-5d83-9dd7-8fa9b687aadc"
+        },
+        {
+          "basis": "actual",
+          "age": 8,
+          "page": 18,
+          "query": "未滿一歲 蜂蜜",
+          "rank": 1,
+          "chunkId": "8b63cc3b-71fa-576f-8a40-d41837a78956"
+        },
+        {
+          "basis": "actual",
+          "age": 3,
+          "page": 19,
+          "query": "食物過敏 嚴重濕疹 未滿四個月",
+          "rank": 1,
+          "chunkId": "b6677388-ac83-5b2d-8135-9314772f4449"
+        },
+        {
+          "basis": "actual",
+          "age": 3,
+          "page": 20,
+          "query": "未滿四個月 母乳或嬰兒配方奶",
+          "rank": 4,
+          "chunkId": "08609ffc-a469-5b69-8f55-e9dff346b7a3"
+        }
+      ],
+      "originalReadback": [
+        {
+          "physical": 3,
+          "chunkId": "3393c586-51e5-5239-a649-5e9656e9c4f9",
+          "key": "p1-45c0b61186f1134f4c55",
+          "pages": [
+            1,
+            3
+          ],
+          "coverage": "page_excerpt",
+          "quotedTextHash": "36e56c9eb1b11c63e799d2a9448a7555bca230503e0f5abf3130401c52f4d08b"
+        },
+        {
+          "physical": 4,
+          "chunkId": "e3cdae83-d41e-5fd8-b261-06cb5210ec98",
+          "key": "p4-574ff1ca016461f740b2",
+          "pages": [
+            4,
+            5
+          ],
+          "coverage": "page_excerpt",
+          "quotedTextHash": "d7fbefead4259e03f9154cda092be73411d67be89c12aa7fc0131c2f2c374350"
+        },
+        {
+          "physical": 5,
+          "chunkId": "e3cdae83-d41e-5fd8-b261-06cb5210ec98",
+          "key": "p4-574ff1ca016461f740b2",
+          "pages": [
+            4,
+            5
+          ],
+          "coverage": "page_excerpt",
+          "quotedTextHash": "d7fbefead4259e03f9154cda092be73411d67be89c12aa7fc0131c2f2c374350"
+        },
+        {
+          "physical": 6,
+          "chunkId": "61bac653-a169-5f98-89e3-63e5389b298c",
+          "key": "p6-5a115f1709555b39d61b",
+          "pages": [
+            6,
+            6
+          ],
+          "coverage": "chunk_original",
+          "quotedTextHash": "49f00a4d2c68a766fe57cb46fd817a6f8606bc0c44cef5030ba7729b4cdfd0cf"
+        },
+        {
+          "physical": 10,
+          "chunkId": "b32747ed-337c-5d38-8ae8-13c0a8f93313",
+          "key": "p10-8f0ce03285018b12e45a",
+          "pages": [
+            10,
+            11
+          ],
+          "coverage": "chunk_original",
+          "quotedTextHash": "d98ae5d7cc5bae7c31d7e62bbfdc6689dd6008794e1602d25acffb479b957fa2"
+        },
+        {
+          "physical": 17,
+          "chunkId": "03fbba7c-100a-50a0-8aa2-975ff2c17078",
+          "key": "p17-109d64df2e32de1ee9c4",
+          "pages": [
+            17,
+            17
+          ],
+          "coverage": "chunk_original",
+          "quotedTextHash": "ef82c661a7b2cd387deb9e776fbe528857e918fb8455bed9695f3f5f1abc7ad0"
+        },
+        {
+          "physical": 19,
+          "chunkId": "b6677388-ac83-5b2d-8135-9314772f4449",
+          "key": "p19-4ef0739dee9fdfc05670",
+          "pages": [
+            19,
+            19
+          ],
+          "coverage": "page_excerpt",
+          "quotedTextHash": "88b62220024119dc43e4313de20883d2281d457caccf2f1befe7b8f4f72e9444"
+        }
+      ],
+      "notes": {
+        "timing": "第 17 頁的日間 3 至 4 小時是大部分嬰兒再次感到肚餓的觀察，不是定時餵奶指示。候選正文及條件已明寫跟隨飢飽訊號。",
+        "revision": "前後版本沿用相同 PDF 雜湊。更新的是收錄範圍和檢索內容；未據此判定官方 PDF 比現行網頁更新。"
+      },
+      "transfer": {
+        "relativeTo": ".cache/req004",
+        "sourcePdf": "14727.pdf",
+        "readback": "anchored-readback.json",
+        "file": "fhs-feeding-e7f36ab93f76.zip",
+        "archiveSha256": "a2a0513f1894ebe836d301a9c3f25c3347bb933751d12b6c16b45192265917a8",
+        "bytes": 140977,
+        "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+        "sourceId": "fhs-feeding-booklet-en",
+        "originalSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+        "isolatedVersionId": "6ace2447-bb46-50ef-afe6-b49bc56e869e",
+        "sidecar": "fhs-destination-review-e7f36ab93f76.json",
+        "sidecarSha256": "4db8539a533b28d669e9dc9ab07c28d743464f5041fa12565b6f844d01577eff",
+        "assessmentFile": "fhs-destination-assessment-e7f36ab93f76.json",
+        "assessmentSha256": "9f3402260492e2b6e017f75503f24dc2dfceec968ea0370442e2aa46cb2e5fde",
+        "chunks": 13,
+        "embeddings": 13,
+        "destinationChanges": 14,
+        "isolatedChanges": 13
+      },
+      "productionReleasePerformedHere": false
     }
   },
   "chp": {
@@ -380,6 +741,7 @@
         "outputTokens": 2737,
         "imageInputTokens": 10640,
         "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "d8ad54bf16469815d57d4e818910980af3afebdaa8a90e05885e4bb7b4a7c984",
         "finishReason": "STOP",
         "estimateUsd": 0.00937475
       },
@@ -390,6 +752,7 @@
         "outputTokens": 1328,
         "imageInputTokens": 10640,
         "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "d8ad54bf16469815d57d4e818910980af3afebdaa8a90e05885e4bb7b4a7c984",
         "finishReason": "STOP",
         "estimateUsd": 0.0077125
       },
@@ -400,6 +763,7 @@
         "outputTokens": 3412,
         "imageInputTokens": 10640,
         "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "f868172c30f41163d1bfec8449e8025d538db755cf6aa276fa1ef60e3e76e839",
         "finishReason": "STOP",
         "estimateUsd": 0.01065525
       },
@@ -410,6 +774,7 @@
         "outputTokens": 1529,
         "imageInputTokens": 10640,
         "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "96d4c6372eb6460e811bee5739d6f97cfb3cba00f4e7cfd342cbb3acc1b0352b",
         "finishReason": "STOP",
         "estimateUsd": 0.008117
       },
@@ -419,7 +784,7 @@
         "inputTokens": 6506,
         "outputTokens": 115,
         "imageInputTokens": 1092,
-        "fileHash": "13f239c3a296fcca47cba9b99413e55ffaf0ef7844bf5a84b7ac83da7b8f5c1c",
+        "operation": "b531798feb5d7237dd8cea3d3b3e5ed2409a50d70cf44a018787e93d8cff6a00",
         "finishReason": "STOP",
         "estimateUsd": 0.001799
       },
@@ -429,15 +794,74 @@
         "inputTokens": 7268,
         "outputTokens": 106,
         "imageInputTokens": 1092,
-        "fileHash": "13f239c3a296fcca47cba9b99413e55ffaf0ef7844bf5a84b7ac83da7b8f5c1c",
+        "operation": "1bb19ed678fcac239647d389ecc45ec8d2724b4815cde9cb30bf5cfed8aa3e71",
         "finishReason": "STOP",
         "estimateUsd": 0.001976
+      },
+      {
+        "role": "background-knowledge-maintenance",
+        "finishedAt": "2026-11-18T23:39:59.977Z",
+        "inputTokens": 35940,
+        "outputTokens": 3731,
+        "imageInputTokens": 21840,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "cc662a7f5fec95bf4b00a4ff9ed3a2c4c1d5399f1ce7475c6e2fa7e58c4568c5",
+        "finishReason": "STOP",
+        "estimateUsd": 0.0145815
+      },
+      {
+        "role": "knowledge-semantic-review",
+        "finishedAt": "2026-11-18T23:40:13.258Z",
+        "inputTokens": 38332,
+        "outputTokens": 1759,
+        "imageInputTokens": 21840,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "cc662a7f5fec95bf4b00a4ff9ed3a2c4c1d5399f1ce7475c6e2fa7e58c4568c5",
+        "finishReason": "STOP",
+        "estimateUsd": 0.0122215
+      },
+      {
+        "role": "background-knowledge-maintenance",
+        "finishedAt": "2026-11-18T23:45:44.048Z",
+        "inputTokens": 23227,
+        "outputTokens": 3811,
+        "imageInputTokens": 0,
+        "operation": "3de2b5d7505eddf7243eba8dac80c81f0302e37993b82bf2598e4cfdd7a18b3e",
+        "finishReason": "STOP",
+        "estimateUsd": 0.01152325
+      },
+      {
+        "role": "knowledge-semantic-review",
+        "finishedAt": "2026-11-18T23:46:00.692Z",
+        "inputTokens": 38906,
+        "outputTokens": 2159,
+        "imageInputTokens": 21840,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "3de2b5d7505eddf7243eba8dac80c81f0302e37993b82bf2598e4cfdd7a18b3e",
+        "finishReason": "STOP",
+        "estimateUsd": 0.012965
+      },
+      {
+        "role": "knowledge-semantic-review",
+        "finishedAt": "2026-11-18T23:54:59.774Z",
+        "inputTokens": 44327,
+        "outputTokens": 2307,
+        "imageInputTokens": 21840,
+        "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "operation": "aec979640e428f7f2332958c1a7b55e4d530b8e5a422146e56408fd5e6ddacad",
+        "finishReason": "STOP",
+        "estimateUsd": 0.01454225
       }
     ],
-    "embeddingCalls": 11,
-    "totalEstimateUsd": 0.04789105,
-    "billableEmbeddingCharacters": 2607,
-    "embeddingEstimateUsd": 0.00039104999999999994
+    "embeddingCalls": 24,
+    "totalEstimateUsd": 0.11412085,
+    "billableEmbeddingCharacters": 5249,
+    "embeddingEstimateUsd": 0.0007873499999999999,
+    "isolatedDailyBeforeFinal": 22,
+    "isolatedDailyAfterReadback": 36,
+    "campaignRoot": "772cb5ce331044bab85c04a165927539223640e46c58df3d324beee9ef445a25",
+    "localPlatformLimit": 40,
+    "localGlobalLimit": 100
   },
   "verification": {
     "sourceAndMaintenance": {
@@ -554,6 +978,18 @@
         "writtenToLiveDatabase": 0
       },
       "observedAt": "2026-11-18T20:54:08.570Z"
+    },
+    "correctedBooklet": {
+      "node": "24.22.1",
+      "targetedTests": 33,
+      "failed": 0,
+      "typescript": "passed",
+      "zipRoundTrip": "writeKnowledgeArchive → openKnowledgeArchive → readPortableEdition",
+      "entries": 1,
+      "compatibleEmbeddings": 13,
+      "originalChecks": 7,
+      "recallProbes": 11,
+      "additionalQueryModelCalls": 0
     }
   }
 }

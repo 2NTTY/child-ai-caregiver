@@ -168,6 +168,10 @@ test("grouped PDF sections require one keyed summary for each physical page in i
   const retained = mapped.parse({ranges:{[range.key]:{...group,priorTopicMatches:{feeding:true,sleep:false},
     pageText:{physicalPage5:"Opening",physicalPage6:"Food preparation"}}},nativeCoverage});
   assert.deepEqual(retained.units[0]!.applicability.topics, ["feeding", "care"]);
+  const edit = pdfOrganizationContract([{id:"u1",page:5,pageEnd:6}], [], [], nativeCoverage);
+  const revision = {ranges:{[range.key]:{...group,pageText:{physicalPage5:"修訂",physicalPage6:"已讀圖表"}}}};
+  assert.deepEqual(edit.parse(revision).nativeCoverage,nativeCoverage);
+  assert.throws(()=>edit.parse({...revision,nativeCoverage}),/revision_unbound_coverage/u);
 });
 
 test("regrouping an unchanged page preserves its qualified retrieval and archives its earlier collection note", async () => {
@@ -215,6 +219,32 @@ test("regrouping an unchanged page preserves its qualified retrieval and archive
   assert.deepEqual(accepted.provenance.nativePdf!.priorConditions!.map(c => [c.pageStart,c.original,c.disposition,c.currentCondition]),
     [[3,administrative,"prior_edition_note",null],[3,clinical,"retained",current]]);
   assert.equal((await run(true)).review.decision, "hold_candidate");
+  const prior = accepted.source.chunks[0]!;
+  const edit = { key: prior.key, text: "Eligibility also requires readiness.", applicability: prior.applicability,
+    evidence: [{ page: 3, quote: pages[2]!.text }] };
+  async function amend(quote: string, supported: boolean) {
+    return prepareKnowledgeMaintenance({ candidate, baseline, growthRules: [], fetchedAt, readPdf: async () => pdf,
+      heldDraft: { work: knowledgeHash("held"), prepared: accepted, feedback: "Verify the example against the original.",
+        amendments: [{ ...edit, evidence: [{ page: 3, quote }] }] },
+      async completeText(input) {
+        const v = JSON.parse(input.user);
+        assert.equal(v.role, "knowledge-semantic-review");
+        assert.ok(input.pdf);
+        assert.deepEqual(v.proposedAmendments, [edit]);
+        const reference = JSON.parse((await provider([])(input)).split("\n")[1]!);
+        reference.changes = Object.fromEntries(reference.changes.map(({key,...value}: {key:string}) => [key,value]));
+        return JSON.stringify({ ...reference, amendments: { [edit.key]: { supported, reason: "Compared the cited page." } },
+          priorConditions: { priorCondition1: { disposition: "prior_edition_note", reason: "Old scope." },
+            priorCondition2: { disposition: "condition1", reason: "Readiness qualifier." } },
+          nativeCoverage: {pageFindings:{page1:"Cover",page2:"Contents",page3:"Readiness signs"},unreadablePages:[],layoutAnswer:null} });
+      } });
+  }
+  await assert.rejects(amend("Fabricated original span", true), /amendment_evidence_mismatch/u);
+  assert.equal((await amend(edit.evidence[0]!.quote, false)).review.decision, "hold_candidate");
+  const edited = await amend(edit.evidence[0]!.quote, true);
+  assert.equal(edited.source.chunks[0]!.originalText, prior.originalText);
+  assert.equal(edited.source.chunks[0]!.text, edit.text);
+  assert.equal(edited.provenance.nativePdf?.revision?.originalOrganizeAttempt, accepted.provenance.organizeAttemptKey);
   assert.throws(() => includePriorRetrieval({...scope,minAgeMonths:18,maxAgeMonths:24},[scope]), /age_scope_conflict/u);
   assert.throws(() => includePriorRetrieval({...scope,ageBasis:"corrected"},[scope]), /age_scope_conflict/u);
 });

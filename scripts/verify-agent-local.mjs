@@ -49,6 +49,14 @@ async function json(path, method, body) {
   const response = await call(path, method, body), value = await response.json();
   assert.ok(response.ok, JSON.stringify({ path, status: response.status, code: value.code })); return value;
 }
+async function findRosterChild(id) {
+  let page = await json('/api/children');
+  for (;;) {
+    const child = page.children.find(item => item.id === id);
+    if (child || !page.nextCursor) return child;
+    page = await json('/api/children?cursor=' + encodeURIComponent(page.nextCursor));
+  }
+}
 try {
   const status = await json('/__local/status'); assert.equal(status.enabled, realMode); assert.equal(status.project, state.projectId);
   const proof = await fetch('http://' + env.FIREBASE_AUTH_EMULATOR_HOST + '/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator-public-key-only', {
@@ -177,15 +185,16 @@ try {
   } else if (mode === '--readback') {
     const prior = JSON.parse(await readFile(resolve(directory, 'verification-readback.json'), 'utf8'));
     assert.deepEqual(await json('/api/online/operations/' + prior.run), prior.receipt);
-    assert.ok(JSON.stringify(await json('/api/children')).includes('本地入口核對'));
+    assert.ok(await findRosterChild(prior.receipt.result.child.id));
     steps.push('restarted-auth-session-production-data-and-original-receipt-readback');
   } else {
-  const command = { path: '/api/children', payload: { displayName: '本地入口核對' } };
+  const displayName = bookletQuery ? '小冊子查詢 ' + run.slice(0, 8) : '本地入口核對';
+  const command = { path: '/api/children', payload: { displayName } };
   const context = await json('/api/online/context', 'POST', command);
   const submission = { ...command, operation: { opId: run, deviceId: randomUUID(), workspaceId: context.workspaceId, storageEpoch: context.storageEpoch } };
   const receipt = await json('/api/online/submit', 'POST', submission);
   assert.deepEqual(await json('/api/online/submit', 'POST', submission), receipt);
-  const children = await json('/api/children'); assert.ok(JSON.stringify(children).includes('本地入口核對'));
+  assert.equal((await findRosterChild(receipt.result.child.id))?.displayName, displayName);
   await writeFile(resolve(directory, 'verification-readback.json'), JSON.stringify({ run, receipt }), { mode: 0o600 });
   steps.push('production-save-original-operation-replay-and-readback');
   if (mode === '--artifacts') {
@@ -285,8 +294,12 @@ try {
       steps.push('real-compose-review-explicit-confirmation-and-same-document-readback');
     } else if (bookletQuery) {
       const used = result.citations.find(item => item.sourceId === 'fhs-feeding-booklet-en' && item.versionId === bookletVersion && item.versionHash === bookletVersionHash
-        && item.pageStart <= 6 && item.pageEnd >= 6 && item.extraction?.contentHash === bookletDigest);
-      assert.ok(used?.sourceExcerpt && used.readCoverage, 'The saved answer must cite the page it read from the maintained edition');
+        && (item.excerptPage ?? item.pageStart) === 6 && item.extraction?.contentHash === bookletDigest);
+      assert.ok(used?.readCoverage, 'The saved answer must open the physical page with the diagram');
+      const { projectAgentCitation } = await import('../frontend/src/production/agent-projection.ts');
+      const card = projectAgentCitation(used);
+      assert.ok(card.savedPdf && card.acquisition === 'library' && card.excerpt.trim(),
+        'The source card must show the evidence used and offer the saved PDF');
       assert.match(reply.text, /蘋果|苹果|apple/iu);
       assert.match(reply.text, /匙|勺|羹|spoon/iu);
       const pdfResponse = await call(`/api/children/${childId}/agent/runs/${result.runId}/citations/${used.chunkId}/original`);
@@ -294,7 +307,9 @@ try {
       assert.equal(pdfResponse.headers.get('content-type'), 'application/pdf');
       const hash = createHash('sha256').update(Buffer.from(await pdfResponse.arrayBuffer())).digest('hex');
       assert.equal(hash, bookletDigest);
-      agentEvidence.original = { versionId: bookletVersion, versionHash: bookletVersionHash, sha256: hash, pageStart: used.pageStart, pageEnd: used.pageEnd };
+      agentEvidence.original = { versionId: bookletVersion, versionHash: bookletVersionHash, sha256: hash,
+        openedPage: card.excerptPage ?? card.pageStart, pageStart: used.pageStart, pageEnd: used.pageEnd,
+        displayedEvidenceKind: card.excerptKind ?? 'page_excerpt', displayedEvidenceSha256: createHash('sha256').update(card.excerpt).digest('hex') };
       steps.push('chat-cites-maintained-visual-detail-and-reopens-identical-original');
     } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);

@@ -37,10 +37,13 @@ test('spoken and written queries recall only the corrected confirmed fact and it
   const runs = createFirestoreAgentRuns({ ...f.options, chat: f.chat, memory: f.memory });
   const history = createFirestoreAgentHistory({ runs, chat: f.chat, memory: f.memory, actions: {} as FirestoreAgentActions });
   const sources: { message: AgentHistoryMessage; reread: () => Promise<AgentHistoryMessage | null> }[] = [];
+  const question = '下次帶阿B去健康院補返支預防針，我最後話要帶咩畀佢攬住定驚？可唔可以引返我嗰句？';
+  await f.chat.createUserMessageForUser(user, f.childId, question);
+  const asked = (await f.chat.createUserMessageForUser(user, f.childId, question))!;
   const tools = createAgentWorkTools(history as ProductAgentStore, f.memory, run, async () => true, undefined, undefined, (message, reread) => {
     sources.push({ message, reread });
     return { citationId: 'chat:' + message.id, quoteHistory: 'H' + sources.length };
-  });
+  }, asked.id, undefined, question);
   const call = { scope: run.scope, callId: 'read', runId: randomUUID(), signal: new AbortController().signal };
   const search = tools.find(tool => tool.name === 'search_history')!;
   const lookup = async (query: string) => {
@@ -57,12 +60,38 @@ test('spoken and written queries recall only the corrected confirmed fact and it
     assert.equal(sources.at(-1)!.message.text, correction.text);
     assert.equal(result.complete, true);
   }
-  const read = await tools.find(tool => tool.name === 'read_memory_facts')!.execute({ factId: revised.id }, call);
-  assert.equal((read.data as { result: typeof revised }).result.version, revised.version);
+  const outOfVocabulary = await lookup('預防針');
+  assert.deepEqual(outOfVocabulary.matches, []);
+  assert.equal(outOfVocabulary.complete, true);
+  const readFacts = tools.find(tool => tool.name === 'read_memory_facts')!;
+  type Topic = { factId: string; key: string };
+  for (const query of ['帶咩畀佢攬住定驚', '攬住 定驚 預防針']) {
+    const searchResult = await search.execute({ query }, call);
+    const topics = (searchResult.data as { result: { currentFactTopics: Topic[] } }).result.currentFactTopics;
+    assert.deepEqual(topics.find(item => item.key === revised.key), { factId: revised.id, key: revised.key });
+    assert.equal(topics.length, 2);
+    assert.ok(!JSON.stringify(topics).includes('布兔'));
+  }
+  const matchingText = await search.execute({ query: '藍色布兔' }, call);
+  assert.ok(!('currentFactTopics' in (matchingText.data as { result: object }).result));
+  const listing = await readFacts.execute({}, call);
+  const items = (listing.data as { result: { items: typeof revised[] } }).result.items;
+  const discovered = items.find(item => item.applicable && item.key === revised.key);
+  assert.equal(discovered?.id, revised.id);
+  assert.deepEqual((await lookup(discovered!.key)).matches.map(hit => hit.id), [revised.id]);
+  const read = await readFacts.execute({ factId: discovered!.id }, call);
+  const selected = (read.data as { result: typeof revised & { original: { messageId: string; text: string }; quoteHistory: string; quoteAnswer: unknown } }).result;
+  assert.equal(selected.version, revised.version);
+  assert.equal(selected.original.messageId, correction.id);
+  assert.equal(selected.original.text, correction.text);
+  assert.match(selected.quoteHistory, /^H\d+$/u);
+  assert.deepEqual(selected.quoteAnswer, { kind: 'private_reference', paragraphs: [{ quoteHistory: selected.quoteHistory }] });
   const original = await history.readHistory(user, f.childId, { messageId: correction.id, offset: 0, limit: 200 });
   assert.equal(original!.role, 'user');
   assert.equal(original!.text, correction.text);
   await f.memory.delete(user, f.childId, 'facts', revised.id, revised.version);
+  const afterDelete = await search.execute({ query: '攬住 定驚 預防針' }, call);
+  assert.deepEqual((afterDelete.data as { result: { currentFactTopics: Topic[] } }).result.currentFactTopics.map(topic => topic.key), ['返學安排']);
   assert.deepEqual((await lookup('打針')).matches, []);
   assert.equal(await sources[0].reread(), null);
   const propose = (messageId: string) => f.memory.createFact(user, f.childId, { intendedVisibility: 'private', values: { key: '疫苗日', content: correction.text,
