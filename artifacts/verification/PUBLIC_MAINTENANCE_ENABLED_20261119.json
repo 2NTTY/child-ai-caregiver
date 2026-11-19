@@ -1,0 +1,164 @@
+{
+  "dateHongKong": "2026-11-19",
+  "status": "enabled",
+  "previousSnapshot": "PUBLIC_MAINTENANCE_ACTIVATION_20261119.json",
+  "decision": "The platform funds maintenance of its five registered Family Health Service sources. Adding a platform source carries no maintenance charge for the user. User-owned source acquisition and indexing are outside this operation.",
+  "site": {
+    "releaseId": "r44465380361-1",
+    "workerSha": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+    "workerDigest": "sha256:cb6b89b47888d401b81741b1c93e349d9c2890f57d65875fbee7eaa875279323",
+    "releaseReceipt": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44465380361"
+  },
+  "operator": {
+    "commit": "e43d41e63c4f68898bb33de90e6cfcda5bd6da76",
+    "toolSha256": "ff3df0ccdfc19db690749586739f712454d9e6f84069d3e1fc8bd307888a2356",
+    "mode": "enable-platform",
+    "exitCode": 0,
+    "releaseLockAndHealth": "Guarded configuration completed on the expected release. The operator checks layout, current activity, runtime settings and site health before writing the updated release state."
+  },
+  "before": {
+    "at": "2026-11-19T06:25:06.097Z",
+    "payer": null,
+    "maintenanceEnabled": false,
+    "liveFetch": false,
+    "livePublish": false,
+    "ledger": {
+      "id": "system:knowledge-maintenance",
+      "day": "2026-11-19",
+      "payer": "platform",
+      "attempts": 0
+    }
+  },
+  "after": {
+    "at": "2026-11-19T06:26:39.765Z",
+    "payer": "platform",
+    "maintenanceEnabled": true,
+    "liveFetch": true,
+    "livePublish": true,
+    "controlEnabled": true,
+    "workerEnabled": true,
+    "ledger": {
+      "id": "system:knowledge-maintenance",
+      "day": "2026-11-19",
+      "payer": "platform",
+      "attempts": 0
+    }
+  },
+  "policy": {
+    "enabled": true,
+    "version": 3,
+    "dailyUserAttempts": 200,
+    "dailyGlobalAttempts": 400,
+    "maxModelCalls": 8,
+    "maxToolCalls": 16,
+    "maxRunSeconds": 300,
+    "dailyMaintenanceReconciliation": {
+      "period": "2026-11-19",
+      "version": 0,
+      "approved": null
+    },
+    "monthlyMaintenanceReconciliation": {
+      "period": "2026-11",
+      "version": 0,
+      "approved": null
+    }
+  },
+  "sources": [
+    {
+      "sourceId": "fhs-solid-food",
+      "publishedVersionId": "5ae32610-68bb-527f-bec2-ec4597bdc13a",
+      "observationHash": "8724543ac47cc4601e2def9ce30975705596acb79370375c5da02b25835a6a15",
+      "registeredAt": "2026-10-12T21:09:34.570Z",
+      "checkedAt": "2026-11-19T06:26:06.682Z",
+      "scheduledSlot": "2026-11-16T01:00:00.000Z",
+      "scheduledResult": "unchanged",
+      "queue": {
+        "id": "74816915083edf7ae5a6fbee353a91db96e95878094dfe02980ac41256d560c1",
+        "state": "completed",
+        "dispatch": "confirmed",
+        "dueAt": "2026-11-19T06:26:05.250Z"
+      }
+    },
+    {
+      "sourceId": "fhs-toddler-development",
+      "publishedVersionId": "46c4d086-3f2d-5320-837f-548e7c271765",
+      "observationHash": "1418d62a59cb73bcd065f4eb86395dad3b999febe5b88a2fce6e99ea83fd7eeb",
+      "registeredAt": "2026-10-12T21:10:07.466Z",
+      "checkedAt": "2026-11-19T06:26:07.305Z",
+      "scheduledSlot": "2026-11-16T01:00:00.000Z",
+      "scheduledResult": "unchanged",
+      "queue": {
+        "id": "67b72a772000bb5ae315d514d287f5f81f2d2c5eb9c6dbb170ab3e6dc7bce2a8",
+        "state": "completed",
+        "dispatch": "confirmed",
+        "dueAt": "2026-11-19T06:26:05.317Z"
+      }
+    },
+    {
+      "sourceId": "fhs-preschool-development",
+      "publishedVersionId": "a0bd6f17-20b9-50de-add0-6d4e0fa67f7d",
+      "observationHash": "d0bc856a765fc96f316793b4d2850abd1bf7181af86f9f9d91af3c6857b9b61f",
+      "registeredAt": "2026-10-12T21:10:41.221Z",
+      "checkedAt": "2026-11-19T06:26:07.782Z",
+      "scheduledSlot": "2026-11-16T01:00:00.000Z",
+      "scheduledResult": "unchanged",
+      "queue": {
+        "id": "8cb9d7b6c7237cd066ded82f67eca550761e3eba91f4ff98c5825b5579f2d4da",
+        "state": "completed",
+        "dispatch": "confirmed",
+        "dueAt": "2026-11-19T06:26:05.404Z"
+      }
+    },
+    {
+      "sourceId": "fhs-child-vision",
+      "publishedVersionId": "16e41ea5-7480-53ea-8de0-1bd234cdb070",
+      "observationHash": "ddd89585b3436f84a5fdd4925ab76594813b0b99fa999154bd1536cea47ecdfd",
+      "registeredAt": "2026-10-12T21:11:21.066Z",
+      "checkedAt": "2026-11-19T06:26:08.251Z",
+      "scheduledSlot": "2026-11-16T01:00:00.000Z",
+      "scheduledResult": "unchanged",
+      "queue": {
+        "id": "8cf0013e7a9a61f8a2c05866f83aa0a46128d5fa891ce793e34c0ed04bca07ae",
+        "state": "completed",
+        "dispatch": "confirmed",
+        "dueAt": "2026-11-19T06:26:05.479Z"
+      }
+    },
+    {
+      "sourceId": "fhs-feeding-booklet-en",
+      "publishedVersionId": "c57ddf18-aec6-5e21-a4af-0fdd95a860b8",
+      "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+      "registeredAt": "2026-11-18T21:50:30.112Z",
+      "checkedAt": "2026-11-18T23:21:04.164Z",
+      "scheduledSlot": null,
+      "scheduledResult": null,
+      "queue": null,
+      "firstEligibleSlot": "2026-11-23T01:00:00.000Z"
+    }
+  ],
+  "naturalReceipt": {
+    "observedAt": "2026-11-19T06:26:43.400Z",
+    "sourceId": "fhs-toddler-development",
+    "watchRevision": "99b6469c-9f76-4343-b830-d89b2d3b22ee",
+    "sourceVersionId": "46c4d086-3f2d-5320-837f-548e7c271765",
+    "versionHash": "8dc6f69bf16dd759781f7488a0a1ae383a7f5d9dc68a55247f3fd992310b98d8",
+    "publishedAt": "2026-10-12T21:10:34.703Z",
+    "mode": "platform-maintenance",
+    "queueId": "67b72a772000bb5ae315d514d287f5f81f2d2c5eb9c6dbb170ab3e6dc7bce2a8",
+    "state": "completed",
+    "dispatch": "confirmed",
+    "dueAt": "2026-11-19T06:26:05.317Z",
+    "check": {
+      "id": "834ff763-ff61-5b68-8444-96fea31666db",
+      "state": "recorded",
+      "result": "unchanged",
+      "checkedAt": "2026-11-19T06:26:07.305Z",
+      "items": 1,
+      "changed": 0
+    }
+  },
+  "observationOnly": [
+    "chp-recent"
+  ],
+  "verificationScope": "The four eligible weekly jobs ran through normal dispatch. All had an unchanged source and published version. The booklet was registered after this week's slot and remains eligible from its next weekly slot. No manual acquisition, model call, publication or budget edit was requested."
+}
