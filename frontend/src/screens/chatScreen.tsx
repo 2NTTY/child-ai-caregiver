@@ -5,7 +5,6 @@ import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import {
   AGENT_PROGRESS_LABELS,
-  ALL_OFFICIAL_HELP_IDS,
   isIncompleteModelReplyText,
   matchOfficialHelpForText,
   OFFICIAL_HELP_ENTRY_COPY,
@@ -68,14 +67,12 @@ function ChatContents({ compact, onPaneLayout }: {
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
   const [activityEntry, setActivityEntry] = useState<"list" | "detail">("list");
-  const currentHelpScope = `${scopeKey ?? ""}:${child?.id ?? ""}`;
   const [paneHeight, setPaneHeight] = useState(0);
-  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false), [helpState, setHelpState] = useState<{ open: boolean; scope: string }>({ open: false, scope: currentHelpScope });
+  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const handlePaneLayout = (event: LayoutChangeEvent) => {
     setPaneHeight(event.nativeEvent.layout.height);
     onPaneLayout?.(event);
   };
-  const helpOpen = helpState.scope === currentHelpScope && helpState.open;
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
   const displayedMessages = visibleIds.length ? chat.messages.filter(message => visibleIds.includes(message.id)) : chat.messages.slice(-6);
@@ -165,25 +162,19 @@ function ChatContents({ compact, onPaneLayout }: {
   ];
   const hasEmergencyHelp = autoHelpIds.includes("emergency-hk-v1");
   const hasMedicalConsultHelp = !hasEmergencyHelp && autoHelpIds.includes("medical-consult-hk-v1");
-  const activeHelpIds = [
-    ...new Set([
-      ...(helpOpen ? ALL_OFFICIAL_HELP_IDS : []),
-      ...autoHelpIds,
-    ]),
-  ];
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : replying ? (turnFeedback ? AGENT_PROGRESS_LABELS[turnFeedback.phase] : "已保存，正在等候回覆…")
       : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
-  // Fixed official help dock: permanent toolbar entry + bounded dock directly above AgentComposer (outside ChatTimeline), compensating for composerOverlap and measured paneHeight so the composer stays visible on short viewports.
+  // Leave room for the composer when a contextual card opens on a short screen.
   const measuredPaneHeight = paneHeight > 0 ? paneHeight : Math.max(0, (viewportHeight || 640) - 180);
   const preferredDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
   const maxHelpDockHeight = Math.min(preferredDockHeight, Math.max(56, measuredPaneHeight - 168));
-  const officialHelpPanel = (autoHelpIds.length || activeHelpIds.length) ? <View testID="chat-official-help-dock" style={[styles.helpDock, { maxHeight: maxHelpDockHeight }]}>
+  const officialHelpPanel = autoHelpIds.length > 0 ? <View testID="chat-official-help-dock" style={[styles.helpDock, compact && styles.compactColumn, { maxHeight: maxHelpDockHeight }]}>
     <ScrollView nestedScrollEnabled style={styles.helpDockScroll} contentContainerStyle={styles.helpDockContent}>
       <BackgroundSurface testID="chat-official-help-panel" style={styles.feedback}>
         {hasEmergencyHelp ? <Text testID="chat-official-help-urgent-notice" accessibilityRole="alert" style={styles.warning}>{OFFICIAL_HELP_ENTRY_COPY.urgentNotice}</Text> : null}
         {hasMedicalConsultHelp ? <Text testID="chat-official-help-consult-notice" accessibilityLiveRegion="polite" style={styles.meta}>{OFFICIAL_HELP_ENTRY_COPY.medicalConsultNotice}</Text> : null}
-        {activeHelpIds.length ? <OfficialHelpCards ids={activeHelpIds} /> : null}
+        <OfficialHelpCards ids={autoHelpIds} />
       </BackgroundSurface>
     </ScrollView>
   </View> : null;
@@ -243,8 +234,6 @@ function ChatContents({ compact, onPaneLayout }: {
         <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? "對話活動 · 待查核" : needsDecision ? "對話活動 · 待確認" : "對話活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"}
           onPress={target => { detailsTrigger.current = target; setActivityEntry("list"); setDetailsOpen(true); }} compact={compact} disabled={!child} />
-        <ChatAction icon="help-circle" label={hasEmergencyHelp ? "緊急求助" : "官方求助"} accessibilityLabel={hasEmergencyHelp ? OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel : OFFICIAL_HELP_ENTRY_COPY.buttonLabel}
-          accessibilityHint={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel} expanded={helpOpen} onPress={() => setHelpState(prev => ({ open: !(prev.scope === currentHelpScope && prev.open), scope: currentHelpScope }))} compact={compact} />
       </View>
     </BackgroundSurface>
     <BackgroundSurface frosted testID="chat-reading-panel" onLayout={handlePaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
@@ -331,14 +320,15 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexShrink: 0,
-    paddingHorizontal: chatLayout.wideInset, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: chatColors.line },
-  compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+    paddingHorizontal: chatLayout.wideInset },
+  compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
-  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", overflow: "hidden", marginBottom: chatLayout.composerOverlap },
+  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center",
+    paddingHorizontal: chatLayout.wideInset, overflow: "hidden", marginBottom: chatLayout.composerOverlap },
   helpDockScroll: { flexGrow: 0 }, helpDockContent: { paddingVertical: 4 },
   statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
