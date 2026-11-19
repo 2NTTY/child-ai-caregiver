@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Redirect, useIsFocused, useRouter } from 'expo-router';
+import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
@@ -19,6 +19,8 @@ import { useProduction } from '../production/ProductionProvider';
 import { colors, mobileLayout, spacing } from '../theme';
 import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
 import { indexGroupTargetLimit } from '../production/admin-knowledge-index';
+import { AdminKnowledgeTreatments } from '../components/admin/AdminKnowledgeTreatments';
+import { treatmentSourceId } from '../../../src/shared/admin-knowledge-treatment';
 import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
 import { AdminProactiveDemo } from '../components/admin/AdminProactiveDemo';
 import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
@@ -117,6 +119,9 @@ export default function AdminScreen() {
   const { owner, userId, auth, user, online, refresh, account, identityKey, socialProviders } = useProduction(), admin = owner.adminOwner, router = useRouter();
   const state = useSyncExternalStore(admin.subscribe, admin.getSnapshot, admin.getSnapshot);
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
+  const params=useLocalSearchParams<{source?:string; version?:string}>();
+  const selectedSource=treatmentSourceId.safeParse(params.source).data;
+  const selectedVersion=z.uuid().safeParse(params.version).data;
   const [tab, setTab] = useState<AdminTab>('overview');
   const [showProof, setShowProof] = useState(false);
   const [costDetail, setCostDetail] = useState<'platform' | 'personal' | null>(null);
@@ -139,6 +144,7 @@ export default function AdminScreen() {
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
+  useEffect(()=>{ if(selectedSource) setTab('knowledge'); },[selectedSource, userId, auth]);
   const loadedReceipt = useRef<string | null>(null);
   useEffect(() => {
     if (visible && focused && online) void admin.budgetAlerts();
@@ -296,6 +302,7 @@ export default function AdminScreen() {
       </View>
       </AppTabPanel>
       <AppTabPanel tabsId="admin-sections" tabKey="knowledge" active={tab === 'knowledge'} style={styles.sections}>
+      {selectedSource && tab==='knowledge' ? <AdminKnowledgeTreatments key={[userId, selectedSource, selectedVersion].join('/')} sourceId={selectedSource} versionId={selectedVersion} admin={admin} locked={!online || reauthBusy} onVersion={version=>router.setParams({version})} /> : null}
       <View style={styles.card}><SectionHeader icon="file-document-outline" title="知識來源" subtitle="查看公開來源監測及最近檢查結果。" />
         <Text style={styles.note}>來源註冊、檢查與知識發布是不同步驟。啟用監測或發現變更不代表已審核或發布；本區不提供發布狀態。</Text>
         <AppButton label={state.knowledge.open ? '收起知識來源' : '查看知識來源'} variant="quiet" expanded={state.knowledge.open}

@@ -1,3 +1,4 @@
+import { treatmentView, treatmentResult, type TreatmentCommand, treatmentSourceId } from '../../../src/shared/admin-knowledge-treatment.ts';
 import { monthlyFinanceSchema } from '../../../src/shared/monthly-finance.ts';
 import { adminDayBudgetSchema, adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
 import { z } from 'zod';
@@ -80,6 +81,15 @@ export class AdminOwner {
       if (generation !== this.generation || userId !== this.state.userId) throw new AdminApiError(409, 'identity_changed');
       if (!response.ok) throw new AdminApiError(response.status, value?.error?.code ?? value?.code ?? 'unavailable'); return value as T;
     } finally { this.controllers.delete(controller); }
+  }
+  async readTreatment(sourceId: string, versionId?: string) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');
+    const path='/admin/knowledge-treatments/'+treatmentSourceId.parse(sourceId);
+    return treatmentView.parse(await this.request(path+(versionId?'?version='+z.uuid().parse(versionId):'')));
+  }
+  async submitTreatment(sourceId:string, command:TreatmentCommand) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');
+    return treatmentResult.parse(await this.request('/admin/knowledge-treatments/'+treatmentSourceId.parse(sourceId), command));
   }
   async checkAccess() {
     if (!this.state.userId || this.state.access === 'loading') return;

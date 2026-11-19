@@ -1,1 +1,1 @@
-export function AdminEntry() { return null; }
+export function AdminEntry(_props: { sourceId?: string }) { return null; }
