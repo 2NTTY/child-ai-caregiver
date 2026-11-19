@@ -27,6 +27,7 @@ import { canonical } from './firestore-session-codec.ts';
 import { isTimelyEventActive, timelyEventLifecycleSchema } from "../src/shared/knowledge-timely.ts";
 import { evaluateTimelyEligibility, timelyRetentionClass } from "./knowledge-timely-policy.ts";
 import type { StorageCipher } from './storage-crypto.ts';
+import { externalMaterialAllowed } from './platform-materials.ts';
 
 export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[]; cipher?: StorageCipher;
   platformMaterials?: ReadonlyMap<string, { url: string; mediaLinks: string[] }>;
@@ -176,7 +177,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   // worker, operator and designated rollback revision reads both typed headers and watch hints.
   // After the first typed write, turning the flag off does not migrate durable data for pre-reader binaries.
   const timelyWrites = env.KNOWLEDGE_FIRESTORE_TIMELY_WRITES === "reviewed-v1";
-  function requireWritableEdition(document: Pick<KnowledgeSourceInput, "timelyEvent">) {
+  function requireWritableEdition(document: Omit<KnowledgeSourceInput, 'chunks'>) {
+    if (!externalMaterialAllowed(document)) reject('knowledge_transfer_source_binding_invalid', 403);
     if (document.timelyEvent && !timelyWrites) reject("knowledge_timely_writes_disabled");
   }
   const { database, projectId, namespace } = options;
@@ -296,7 +298,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
       timelyEvent: document.timelyEvent,
     }, now);
-    return source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
+    return externalMaterialAllowed(document) && source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
       && version.publishedAt !== null && review !== null && review.assessment.decision === "approve" && review.assessment.growthRuleImpact !== "requires_review"
       && timely.eligible && (observationCurrent(edition) || operation === 'read' && (verifiedPdfRange(edition) || previousPageUnderGrowthReview(edition)
         || Boolean(options.platformMaterials?.has(document.sourceId) && document.classification === 'official_guidance'
@@ -389,7 +391,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     const { version, document } = pinned, watch = active.observed?.watch;
     // The live publication above has already rechecked withdrawal, rights, watch approval and scope.
     // Time-sensitive news needs the currently approved observation. Durable guidance can keep an older reviewed edition.
-    return version.reviewState === 'reviewed' && !!version.publishedAt && !!version.checkedAt && version.review?.assessment.decision === 'approve'
+    return externalMaterialAllowed(document) && version.reviewState === 'reviewed' && !!version.publishedAt && !!version.checkedAt && version.review?.assessment.decision === 'approve'
       && version.review.assessment.growthRuleImpact !== 'requires_review' && document.classification === 'official_guidance'
       && active.document.classification === document.classification && active.document.url === document.url && active.document.termsUrl === document.termsUrl
       && ((version.review.watchRevision ?? null) === (watch?.revision ?? null) || verifiedPdfRange(pinned)) && (!document.validUntil || Date.parse(document.validUntil) > Date.now());

@@ -1,6 +1,6 @@
 import type { SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { M03_INITIAL_WATCH_IDS } from "../src/shared/background-knowledge-maintenance.ts";
-import { fhsMaterialWatches } from './platform-materials.ts';
+import { campaignMaterialWatches } from './platform-materials.ts';
 
 /** Reviewed noncommercial source scope. Adding a feed requires source/terms review, not a model URL. */
 export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
@@ -22,7 +22,7 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
 ]);
 
 /** Only reviewed public documents can enter semantic maintenance and publication. */
-export const platformSourceWatches = [...SOURCE_WATCHES, ...fhsMaterialWatches];
+export const platformSourceWatches = [...SOURCE_WATCHES, ...campaignMaterialWatches];
 export function publicMaintenanceWatch(id: string) {
   return platformSourceWatches.find(watch => watch.id === id && watch.audience === "public_noncommercial"
     && watch.classification === "official_guidance" && (watch.kind === "page" || watch.kind === "pdf"));
