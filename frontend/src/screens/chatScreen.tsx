@@ -306,7 +306,7 @@ function ChatContents({ compact, onPaneLayout }: {
             {discussionQuestion ? <QuestionDiscussion key={discussionQuestion.id} runId={discussionReply?.agentRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
               status={discussionRun?.status} state={discussionState} online={chat.online}
               read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
-              onOpenSource={id => { const runId = discussionReply?.agentRunId ?? message.agentRunId; if (runId) openAgentSource(runId, id); }} />
+              onOpenSource={openAgentSource} />
               : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId
                 ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || !chat.online || !chatWritesAllowed}
                   onPress={() => { setFollowRequest(`discuss-${Date.now()}`); void chatController.discussAnswer(message.id); }} /> : null}

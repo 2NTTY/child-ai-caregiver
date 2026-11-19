@@ -977,7 +977,8 @@ function readablePrivateSourceText(source: ChatDeliverySource): string {
       const details = parsed.details && typeof parsed.details === "object" ? parsed.details as Record<string, unknown> : null;
       const eventTime = details?.eventTime && typeof details.eventTime === "object"
         ? (details.eventTime as Record<string, unknown>).rawText : undefined;
-      const parts = [parsed.title, parsed.text, eventTime].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+      const pageFields = source.citationId === 'page-item' ? [parsed.details, parsed.summary, parsed.excerpt] : [];
+      const parts = [parsed.title, parsed.text, eventTime, ...pageFields].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
       if (parts.length > 0) return parts.join("\n");
     } catch {
       // Treat malformed JSON excerpt as literal string.
