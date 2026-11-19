@@ -27,9 +27,9 @@ const APPLICABILITY_NOTES: Record<NonNullable<AgentProgressSource['applicability
   conditional: '需視乎條件適用（尚待獨立核對回覆）',
   requires_clarification: '需補充孩子資料以確定適用性（尚待獨立核對回覆）',
 };
-const DEFAULT_UNREVIEWED_NOTE = '已找到官方來源片段（尚待獨立核對回覆）';
+const DEFAULT_UNREVIEWED_NOTE = '尚待獨立核對回覆';
 
-/** Progressive retrieved official source cards before final answer delivery; never contains draft answer text. */
+/** Stage records retrieval, not excerpt provenance. Show metadata only until a verified quote is available. */
 export function ProgressSourceCards({
   sources,
   reviewing = false,
@@ -51,7 +51,6 @@ export function ProgressSourceCards({
         <Text variant="titleSmall">{source.publisher} · {source.title}</Text>
         {source.section && source.section !== source.title ? <Text variant="bodySmall">{source.section}</Text> : null}
         {dateText ? <Text variant="bodySmall">更新／檢查：{dateText}</Text> : null}
-        <Text selectable>{source.excerpt}</Text>
         {source.url ? <AppButton variant="quiet" density="compact" label="開啟官方來源"
           onPress={() => { void Linking.openURL(source.url!).catch(() => {}); }} /> : null}
       </View>;

@@ -21,6 +21,7 @@ export const agentProgressSourceSchema = z.object({
   section: z.string().min(1).max(200),
   publisher: z.string().min(1).max(120),
   url: z.string().url().max(500).refine(value => /^https:\/\//iu.test(value), { message: 'Only https:// URLs are permitted' }).nullable(),
+  // Legacy wire field: retrieval may supply a summary or a title, not a verified quotation.
   excerpt: z.string().min(1).max(400),
   fetchedAt: z.string().min(1).max(64).nullable(),
   sourceUpdatedAt: z.string().min(1).max(64).nullable(),
@@ -91,7 +92,7 @@ export const AGENT_PROGRESS_SOURCE_STAGE_LABELS: Record<AgentProgressSource['sta
   found: '已找到官方來源',
   read: '已讀取官方來源上下文',
 };
-export const AGENT_PROGRESS_SOURCE_DISCLAIMER = '以下僅為已找到／已讀取的官方來源片段，尚未完成適用性與獨立安全核對。';
+export const AGENT_PROGRESS_SOURCE_DISCLAIMER = '以下只列出官方來源資料，尚未完成適用性與獨立安全核對。';
 
 export function toAgentProgressSource(
   chunk: Partial<KnowledgeEvidence> & { chunkId: string; original?: { text: string } },

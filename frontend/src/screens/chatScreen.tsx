@@ -113,39 +113,43 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
   const childScopedChat = !!child && chat.selectedChildId === child.id;
   const scopedMessages = childScopedChat ? chat.messages : [];
-  const scopedFeedback = childScopedChat ? chat.feedback : null;
-  // An explicit retry targets a saved turn, not necessarily the last turn in the timeline.
+  const scopedFeedback = childScopedChat && chatWritesAllowed ? chat.feedback : null;
+  // The controller owns the post-failure target. The newest visible message may predate an explicit retry.
   const replying = chat.busy === "reply";
-  const candidate = replying
-    ? scopedMessages.find(item => item.role === "user" && item.id === chat.replyingMessageId)
+  const targetId = replying ? chat.replyingMessageId : scopedFeedback?.messageId
+    ?? (phase === "reply_failed" ? draft?.savedUserMessageId : null);
+  const candidate = targetId || replying
+    ? scopedMessages.find(item => item.role === "user" && item.id === targetId)
     : [...scopedMessages].reverse().find(item => item.role === "user");
-  const helpMessage = !replying && candidate?.id === draft?.dismissedHelpMessageId ? undefined : candidate;
+  const helpMessage = !chatWritesAllowed || chat.busy === "save" || (!replying && candidate?.id === draft?.dismissedHelpMessageId) ? undefined : candidate;
   const turnReplies = helpMessage
     ? scopedMessages.filter(item => item.role === "model" && item.inReplyTo === helpMessage.id)
     : [];
+  // Timeline order is oldest first. A successful later result supersedes a stopped row for the same turn.
+  const currentReply = turnReplies[turnReplies.length - 1];
+  const supersededRun = (id: string) => !!currentReply && currentReply.agentRunId !== id
+    && turnReplies.some(item => item !== currentReply && item.agentRunId === id);
+  const remote = chat.remoteReply;
+  const status = currentReply?.agentRunId ? agentRuns[currentReply.agentRunId]?.status : undefined;
+  const currentStatus = status ?? (remote && remote.messageId === helpMessage?.id && !supersededRun(remote.runId)
+    && (!currentReply?.agentRunId || remote.runId === currentReply.agentRunId) ? remote.status : undefined);
+  const unfinishedReply = !!currentReply && (currentStatus === "running" || currentStatus === "stopped" || currentStatus === "unknown"
+    || isIncompleteModelReplyText(currentReply.text));
+  const turnFeedback = helpMessage && scopedFeedback?.messageId === helpMessage.id
+    && (replying || !supersededRun(scopedFeedback.runId)) ? scopedFeedback : null;
   const showTurnHelp = !!helpMessage && (
-    replying || turnReplies.length === 0
-    || turnReplies.some(item => {
-      const run = item.agentRunId ? agentRuns[item.agentRunId] : undefined;
-      return run?.status === "running"
-        || run?.status === "stopped"
-        || run?.status === "unknown"
-        || isIncompleteModelReplyText(item.text);
-    })
-    || (chat.remoteReply?.messageId === helpMessage.id
-      && (remoteReplyStillRunning || chat.remoteReply.status === "stopped" || chat.remoteReply.status === "unknown"))
-    || (draft?.savedUserMessageId === helpMessage.id
-      && ["saving", "saved_unreplied", "save_unknown", "checked", "reply_failed"].includes(draft.phase))
-    || (scopedFeedback?.messageId === helpMessage.id
-      && !!(scopedFeedback.cards?.length || scopedFeedback.sources?.length))
+    replying || !currentReply || unfinishedReply || !!(turnFeedback?.cards?.length || turnFeedback?.sources?.length)
   );
-  const feedbackMessageId = replying ? chat.replyingMessageId : !busy && showTurnHelp ? helpMessage?.id : null;
-  const turnFeedback = feedbackMessageId && scopedFeedback?.messageId === feedbackMessageId ? scopedFeedback : null;
+  const savedHelp = !turnFeedback?.cards?.length && unfinishedReply && (!turnFeedback || !currentReply.agentRunId || turnFeedback.runId === currentReply.agentRunId)
+    ? currentReply.officialHelp ?? [] : [];
+  const currentDraftHelp = (childScopedChat && (chatWritesAllowed || phase === "draft") || !child && !chat.selectedChildId)
+    ? matchOfficialHelpForText(chatDraft) : [];
   const autoHelpIds = [
     ...new Set([
-      ...matchOfficialHelpForText(chatDraft),
+      ...currentDraftHelp,
       ...(showTurnHelp && helpMessage ? matchOfficialHelpForText(helpMessage.text) : []),
       ...(turnFeedback?.cards ?? []),
+      ...savedHelp,
     ]),
   ];
   const hasEmergencyHelp = autoHelpIds.includes("emergency-hk-v1");
@@ -189,7 +193,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
         disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     </View> : null}
-    {chatWritesAllowed && !chat.error && turnFeedback?.sources?.length
+    {turnFeedback?.sources?.length
       ? <ProgressSourceCards sources={turnFeedback.sources} reviewing={replying && turnFeedback.phase === "reviewing"} retainedAfterFailure={!replying} />
       : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
@@ -205,6 +209,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       <AppButton label="重試原訊息回覆" variant="quiet" disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
         onPress={() => { void requestChatReply(draft.savedUserMessageId!); }} />
       <AppButton label="開始新訊息" variant="quiet" disabled={busy} onPress={() => chatController.startNewMessage()} /></View> : null}
+    {!busy && turnFeedback && (turnFeedback.cards?.length || turnFeedback.sources?.length)
+      && !remoteReplyStillRunning && turnFeedback.messageId !== draft?.savedUserMessageId
+      ? <AppButton label="收起這次查核提示" variant="quiet" density="compact"
+        onPress={() => chatController.dismissRetainedFeedback(turnFeedback.messageId)} /> : null}
     {authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
@@ -222,7 +230,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
       <View style={styles.toolbarActions}>
         <ChatAction label={hasEmergencyHelp ? OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel : OFFICIAL_HELP_ENTRY_COPY.buttonLabel}
-          accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel} expanded={helpOpen} onPress={() => setHelpState(prev => ({ open: !(prev.scope === currentHelpScope && prev.open), scope: currentHelpScope }))} compact={compact} />
+          accessibilityHint={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel} expanded={helpOpen} onPress={() => setHelpState(prev => ({ open: !(prev.scope === currentHelpScope && prev.open), scope: currentHelpScope }))} compact={compact} />
         <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
       </View>
@@ -281,11 +289,11 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     </AppDialog>
   </>;
 }
-function ChatAction({ label, accessibilityLabel = label, expanded, onPress, disabled = false, compact = false, subtle = false }: {
-  label: string; accessibilityLabel?: string; expanded?: boolean; onPress(target: View | null): void; disabled?: boolean; compact?: boolean; subtle?: boolean;
+function ChatAction({ label, accessibilityLabel = label, accessibilityHint, expanded, onPress, disabled = false, compact = false, subtle = false }: {
+  label: string; accessibilityLabel?: string; accessibilityHint?: string; expanded?: boolean; onPress(target: View | null): void; disabled?: boolean; compact?: boolean; subtle?: boolean;
 }) {
   const actionRef = useRef<View | null>(null);
-  return <Pressable ref={actionRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityState={{ disabled, expanded }} aria-disabled={disabled} aria-expanded={expanded}
+  return <Pressable ref={actionRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint} accessibilityState={{ disabled, expanded }} aria-disabled={disabled} aria-expanded={expanded}
     disabled={disabled} onPress={() => onPress(actionRef.current)} style={({ pressed, hovered, focused }: PressableStateCallbackType & { hovered?: boolean; focused?: boolean }) => [
       styles.action, compact && styles.compactAction, subtle && styles.subtleAction, disabled && styles.disabled,
       !disabled && (pressed || hovered) && styles.actionActive, focused && styles.actionFocused,

@@ -13,7 +13,7 @@ const EPOCH_ID = '33333333-3333-4333-8333-333333333333';
 const CHILD_1_ID = '44444444-4444-4444-8444-444444444441';
 const CHILD_2_ID = '44444444-4444-4444-8444-444444444442';
 
-const HELP_TOGGLE_LABEL = '查看香港緊急求助、急症室、母嬰健康院及安全用藥官方入口（毋須等待 AI 回覆）';
+const HELP_TOGGLE_LABEL = '官方求助入口';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -84,6 +84,7 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
   let unroutedApi = [];
   let completeOnReload = false;
   let revokeAccessOnNextRead = false;
+  let failNextMessageRead = false;
 
   const syntheticCitation = {
     chunkId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -303,6 +304,10 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
           });
         }
         if (sub === 'messages') {
+          if (failNextMessageRead) {
+            failNextMessageRead = false;
+            return json(503, { error: { code: 'temporarily_unavailable' } });
+          }
           if (revokeAccessOnNextRead) {
             revokeAccessOnNextRead = false;
             return json(403, { error: { code: 'not_found' } });
@@ -365,6 +370,19 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
     install,
     enableCompleteOnReload() { completeOnReload = true; },
     triggerAccessRevocation() { revokeAccessOnNextRead = true; },
+    failNextAuthorizedHistoryRead() { failNextMessageRead = true; },
+    seedTurn(text, reply) {
+      const stamp = () => new Date(Date.UTC(2026, 10, 1, 0, nextSeq)).toISOString();
+      const nextId = () => `55555555-5555-4555-8555-${String(nextSeq++).padStart(12, '0')}`;
+      const user = { id: nextId(), childId: CHILD_1_ID, role: 'user', authorUserId: USER_ID, text, inReplyTo: null, createdAt: stamp() };
+      messagesByChild[CHILD_1_ID].push(user);
+      const appendReply = reply => messagesByChild[CHILD_1_ID].push({
+        id: nextId(), childId: CHILD_1_ID, role: 'model', authorUserId: null, inReplyTo: user.id,
+        text: reply.text, officialHelp: reply.officialHelp, createdAt: stamp(),
+      });
+      if (reply) appendReply(reply);
+      return appendReply;
+    },
     getUnroutedApi: () => [...unroutedApi],
   };
 }
@@ -510,6 +528,7 @@ test('E2E 2: Real DOM layout across desktop, mobile, keyboard-height simulation,
       await textbox.fill('BB笑到抽筋，之後失去意識');
       const alertNode = page.getByTestId('chat-official-help-urgent-notice');
       await alertNode.waitFor();
+      await page.getByRole('button', { name: '緊急／醫療官方求助入口', exact: true }).waitFor();
       assert.equal(await alertNode.getAttribute('role'), 'alert', `${cfg.label}: emergency notice must expose ARIA alert role`);
 
       if (cfg.scale > 1) {
@@ -597,6 +616,11 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
     assert.match(retainedText, /未核草稿不會作正式建議顯示/);
     assert.equal(await p1.getByRole('button', { name: '開始新訊息', exact: true }).count(), 1);
 
+    failBackend.failNextAuthorizedHistoryRead();
+    await p1.getByRole('button', { name: '重試原訊息回覆', exact: true }).click();
+    await p1.getByRole('button', { name: '重試讀取聊天', exact: true }).waitFor();
+    await p1.getByTestId('chat-progress-sources-retained-notice').waitFor();
+
     // Reload with completed reply clears retained ProgressSourceCards cleanly
     failBackend.enableCompleteOnReload();
     await p1.getByRole('button', { name: '選擇孩子，目前小昕', exact: true }).click();
@@ -606,7 +630,8 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
     await p1.getByRole('radio', { name: /小昕/ }).click();
     await p1.getByText('已完成回覆。', { exact: true }).waitFor({ timeout: 15000 });
     assert.equal(await p1.getByTestId('chat-progress-sources').count(), 0);
-    assert.deepEqual(e1, [], `E2E 4 Part A errors: ${JSON.stringify(e1)}`);
+    assert.ok(e1.some(item => item.startsWith('http-503:') && item.includes('/messages')));
+    assert.deepEqual(e1.filter(item => !item.includes('503')), [], `E2E 4 Part A errors: ${JSON.stringify(e1)}`);
   } finally {
     await c1.close();
   }
@@ -679,4 +704,46 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
   } finally {
     await c4.close();
   }
+});
+
+test('E2E 5: a failed retry of an older turn keeps its own feedback instead of the newer turn', async () => {
+  const backend = createSyntheticBackend({ failReplyWithSourcesOnly: true });
+  backend.seedTurn('較早的合成問題');
+  backend.seedTurn('稍後的合成問題', { text: '已完成合成回覆。', officialHelp: ['emergency-hk-v1'] });
+  const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend);
+  try {
+    const dock = page.getByTestId('chat-official-help-dock');
+    await page.getByText('已完成合成回覆。', { exact: true }).waitFor();
+    assert.equal(await dock.count(), 0, 'saved help on a completed turn belongs in history only');
+    await page.getByRole('button', { name: '要求這則已保存訊息的回覆', exact: true }).click();
+    await page.getByTestId('chat-progress-sources-retained-notice').waitFor();
+    assert.match(await page.getByTestId('chat-progress-sources').innerText(), /嬰幼兒飲食－引進固體食物過渡期/);
+    assert.equal(await dock.count(), 0, 'a retry cannot borrow the newer response’s emergency help');
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
+
+test('E2E 6: reload restores the active unfinished turn’s saved official help without replaying other turns', async () => {
+  const backend = createSyntheticBackend();
+  backend.seedTurn('已經處理的合成問題', { text: '已完成合成回覆。', officialHelp: ['medical-consult-hk-v1'] });
+  const appendResult = backend.seedTurn('請查看這個合成狀況', { text: '這次回覆未完成：合成中止。', officialHelp: ['emergency-hk-v1'] });
+  const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend);
+  try {
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass) await page.reload({ waitUntil: 'domcontentloaded' });
+      const dock = page.getByTestId('chat-official-help-dock');
+      await dock.getByTestId('chat-official-help-urgent-notice').waitFor();
+      assert.deepEqual(await dock.getByTestId('official-help-card').evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label'))), ['緊急求助']);
+      assert.equal(await page.getByTestId('chat-progress-sources').count(), 0, 'saved help does not fabricate streamed sources');
+    }
+    appendResult({ text: '原訊息已獲完整回覆。', officialHelp: ['medical-consult-hk-v1'] });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByText('原訊息已獲完整回覆。', { exact: true }).waitFor();
+    assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'a completed result supersedes a stopped row for the same user turn');
+    backend.seedTurn('新的合成問題', { text: '新回覆已完成。', officialHelp: ['emergency-hk-v1'] });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByText('新回覆已完成。', { exact: true }).waitFor();
+    assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'completed or superseded history must not re-open the dock');
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
 });

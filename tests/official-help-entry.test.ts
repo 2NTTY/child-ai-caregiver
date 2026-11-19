@@ -309,10 +309,11 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   let nodes = collectNodes(tree);
   assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'joke draft must not auto-open help panel');
   const helpButton = nodes.find(
-    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel,
+    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel,
   );
   assert.ok(helpButton, 'toolbar official help toggle button must render even with no child selected');
   assert.equal(collectText(helpButton), OFFICIAL_HELP_ENTRY_COPY.buttonLabel);
+  assert.equal(helpButton.props.accessibilityHint, OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
 
   // Trigger onPress() to verify interactive manual toggle renders emergency + medical help cards without AI calls.
   helpButton.props.onPress();
@@ -326,7 +327,7 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   assert.ok(toggledText.includes(OFFICIAL_HELP['medical-consult-hk-v1'].title));
 
   // Toggle back off.
-  nodes.find(n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel)!.props.onPress();
+  nodes.find(n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel)!.props.onPress();
   tree = runnerRef.render();
   assert.equal(collectNodes(tree).some(n => n.props?.testID === 'chat-official-help-panel'), false);
 
@@ -338,9 +339,10 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   assert.ok(urgentPanel, 'urgent convulsion draft must auto-surface help panel immediately');
   assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'urgent notice must render automatically');
   const urgentBtn = nodes.find(
-    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel,
+    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel,
   );
   assert.equal(collectText(urgentBtn), OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel);
+  assert.equal(urgentBtn.props.accessibilityHint, OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
   assert.ok(collectText(urgentPanel).includes(OFFICIAL_HELP['emergency-hk-v1'].title));
 
   // 3) Laugh-idiom prefix followed by unresponsiveness ("BB笑到抽筋，之後冇晒反應") must also auto-surface emergency help!
@@ -535,7 +537,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
 
   // Case D: Cross-child mismatch must NOT leak previous child's messages/feedback, and switching child/scope resets manual helpOpen.
   currentDraft = '';
-  const toggleBtn = nodes.find(n => n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
+  const toggleBtn = nodes.find(n => n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel);
   assert.ok(toggleBtn);
   toggleBtn.props.onPress();
   nodes = collectNodes(rerender());
@@ -608,8 +610,10 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'The newer message must not borrow active retry help');
   currentFeedback = olderFeedback;
   chatSelectedChildId = 'child-2';
+  currentDraft = 'BB呼吸困難';
   nodes = collectNodes(rerender());
-  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Child mismatch must suppress active server help');
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Child mismatch must suppress old draft text as well as active server help');
+  currentDraft = '';
   chatSelectedChildId = 'child-1';
   currentBusy = null;
   currentReplyingMessageId = null;
@@ -1068,6 +1072,26 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
     applicabilityStatus: 'applicable',
   }, 'read')!;
 
+  // A progress event carries retrieval status, not evidence that its excerpt
+  // was matched against the original. This also applies to older server events.
+  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
+  const { ProgressSourceCards } = loadModule('frontend/src/components/chat/OfficialHelpCards.tsx', {
+    'react/jsx-runtime': { jsx: jsxNode, jsxs: jsxNode, Fragment: 'Fragment' },
+    'react-native': { View: 'View', Linking: { openURL: async () => {} } },
+    'react-native-paper': { Text: 'Text' },
+    '../ui': { AppButton: 'AppButton' },
+  });
+  for (const stage of ['found', 'read'] as const) {
+    const preview = ProgressSourceCards({ sources: [{ ...sourceItem, stage }] });
+    const text = collectText(preview);
+    assert.ok(!text.includes(sourceItem.excerpt), `unverified ${stage} text must not appear as an official excerpt`);
+    assert.doesNotMatch(text, /來源片段/);
+    for (const metadata of [sourceItem.publisher, sourceItem.title, sourceItem.section, '02/2026 修訂']) {
+      assert.ok(text.includes(metadata), `source preview must retain ${metadata}`);
+    }
+    assert.ok(collectNodes(preview).some(n => n.props?.label === '開啟官方來源'));
+  }
+
   let completeOnReload = false;
   let denyNextReload = false;
   let replyAttempted = false;
@@ -1143,7 +1167,6 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
   assert.equal((afterFailure.feedback as any)?.draftText, undefined, 'retained progress must never expose unreviewed draft text');
 
   // Render ChatPage after failure: retained ProgressSourceCards must stay visible with non-approved notice.
-  const jsxNode = (type: unknown, props: unknown) => ({ type, props });
   const placeholder: Record<string, unknown> = {};
   let currentControllerState = afterFailure;
   let chatWritesAllowed = true;
@@ -1217,6 +1240,7 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
   runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
   let nodes = collectNodes(runnerRef.render());
   assert.ok(nodes.some(n => n.props?.testID === 'chat-progress-sources'), 'retained ProgressSourceCards must render after failure');
+  assert.ok(!collectText(nodes.find(n => n.props?.testID === 'chat-progress-sources')).includes(sourceItem.excerpt), 'retention after failure must not turn unverified metadata into a quote');
   assert.ok(nodes.some(n => n.props?.testID === 'chat-progress-sources-retained-notice'), 'retained failure banner must clarify draft is unapproved');
 
   // If write permission is lost / revoked before reload, retained sources immediately hide.
