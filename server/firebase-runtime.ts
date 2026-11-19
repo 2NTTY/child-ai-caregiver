@@ -39,6 +39,7 @@ import { createCloudStoragePhotoObjects, createFirebasePhotoObjects, type Fireba
 import { createCloudStorageErasureJournal, createFirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
+import { createAdminKnowledgeTreatments } from './admin-knowledge-treatments.ts';
 import { createFirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { readPublisherPdf } from './knowledge-cited-pdf.ts';
 import { createOfficialLivePages } from './official-live-pages.ts';
@@ -273,7 +274,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence },
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
-      knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined);
+      knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined,
+      knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
       knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, async read(target, signal) {
         signal.throwIfAborted();

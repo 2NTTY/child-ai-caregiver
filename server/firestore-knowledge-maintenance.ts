@@ -1,3 +1,4 @@
+import type { PdfAmendment } from "./knowledge-pdf-amendments.ts";
 import { assembleKnowledgePdfWindows, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
@@ -52,12 +53,15 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   focusedPage?: { priorWork: string; priorVersionHash: string; priorReader: string; priorQuestion: KnowledgePdfQuestion };
   isolatedComparison?: { destination: string; baseline: KnowledgeMaintenanceBaseline;
     previousVisual?: { priorWork: string; priorVersionHash: string } };
+  useIsolatedPlatformDailyLimit?: boolean;
+  reviseHeldPdf?: { priorWork: string; priorVersionHash: string; feedback: string; amendments?: PdfAmendment[] };
   isolatedFixturePublish?: boolean;
 }) {
-  if ((options.isolatedFixturePublish || options.isolatedComparison) && (!options.projectId.startsWith("demo-")
+  if ((options.isolatedFixturePublish || options.isolatedComparison || options.useIsolatedPlatformDailyLimit) && (!options.projectId.startsWith("demo-")
     || !/^127\.0\.0\.1:[0-9]+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? "")
     || process.env.YUYF_LOCAL_DEVELOPMENT !== "1")) reject("knowledge_fixture_publication_scope");
   if (!options.credentialBinding) reject("knowledge_maintenance_credential_binding");
+  if (options.useIsolatedPlatformDailyLimit && options.sponsor) reject("knowledge_fixture_publication_scope");
   const policy = createFirestoreAdmin(options, options.config);
   const work = createFirestoreKnowledgeWork(options);
   const root = new FirestoreRootBudget({ ...options, namespace: options.namespace + "_knowledge_budget" });
@@ -102,18 +106,22 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const config: AiConfig = { ...(personal?.config ?? { ...base, model: base.localModelOverride ?? current.model,
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
         timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
-      const configBinding = { config, limits, ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
+      const corpusPolicy = options.useIsolatedPlatformDailyLimit ? { isolatedMaintenanceProject: options.projectId } : {};
+      const configBinding = { config, limits, ...corpusPolicy, ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
       const focus = options.focusedPage;
       const comparison = options.isolatedComparison;
       const previousVisual = comparison?.previousVisual;
+      const revision = options.reviseHeldPdf;
+      if (revision && (windowed || focus || !definition.leafletPage || !revision.feedback.trim() || revision.feedback.length > 1000
+        || request.operationFingerprint !== knowledgeReviewHash(["knowledge-held-pdf-revision/1", revision]))) reject("knowledge_pdf_revision_binding_mismatch");
       const comparisonBinding = comparison ? { destination: comparison.destination, comparedVersionId: comparison.baseline.versionId,
         comparedHash: comparison.baseline.versionHash, comparedObservationHash: comparison.baseline.observationHash,
         ...(previousVisual ? { previousVisual } : {}) } : undefined;
       if (comparison && (windowed || focus || !definition.leafletPage || comparison.baseline.source.sourceId !== request.watchId
         || comparison.baseline.versionHash !== sourceVersionHash(comparison.baseline.source))) reject("knowledge_destination_baseline_conflict");
-      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}), ...(comparisonBinding ? { comparisonBinding } : {}) });
-      const publicationConfigHash = knowledgeReviewHash({ config, limits, policyVersion:current.version, credentialBinding,
+      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}), ...(revision ? {revision} : {}), ...(comparisonBinding ? { comparisonBinding } : {}) });
+      const publicationConfigHash = knowledgeReviewHash({ config, limits, ...corpusPolicy, ...(revision ? {revision} : {}), policyVersion:current.version, credentialBinding,
         watchRevision:registration.data.revision, question:options.pdfQuestion ?? null, focus:focus ?? null, ...(comparisonBinding ? { comparisonBinding } : {}) });
       if (focus && (!options.pdfQuestion || !recordedCheckId || !definition.leafletPage
         || (reusedOrganizationFrom ?? request.operationFingerprint) !== focusedKnowledgeWorkId(focus.priorWork, focus.priorVersionHash, options.pdfQuestion))) reject("knowledge_focus_binding_mismatch");
@@ -204,6 +212,12 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               }, windowed ? tx=>quotaReader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts) : undefined);
             const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               comparison,
+              ...(revision ? { async heldDraft() {
+                const previous = await work.inspect({ ...request, operationFingerprint:revision.priorWork });
+                if (!previous?.prepared || previous.receipt || previous.result?.status !== "candidate_held"
+                  || previous.prepared.versionHash !== revision.priorVersionHash) reject("knowledge_pdf_revision_binding_mismatch");
+                return { work: revision.priorWork, prepared: previous.prepared, feedback: revision.feedback, amendments: revision.amendments };
+              } } : {}),
               ...(previousVisual ? { async previousVisual(candidate: BackgroundKnowledgeCandidate) {
                 const old = await work.inspect({ ...request, operationFingerprint: previousVisual.priorWork });
                 const proof = old?.prepared?.provenance.nativePdf;
@@ -304,7 +318,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 for (const document of pending) {
                   const origin = priorInputs.has(document.hash) ? focusProof!.priorWork : request.operationFingerprint;
                   await session.reserveWorkUnit("embedding:" + document.hash);
-                  const embedding = createEmbeddingGateway({ config, provider: providers?.embedding ?? createVertexEmbeddingProvider(config),
+                  const embedding = createEmbeddingGateway({ config, ...corpusPolicy, provider: providers?.embedding ?? createVertexEmbeddingProvider(config),
                     billingSource: daily.billingSource, usage: createFirestoreOperatorEmbeddingUsage(options, session.deadlineAtMs,
                       sponsor ? { userId: payerId, dailyLimit: config.dailyUserAttempts, binding: credentialBinding } : undefined) });
                   await options.knowledge.embedDocument(document, () => embedding.embed({
