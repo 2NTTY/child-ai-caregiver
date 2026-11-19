@@ -157,6 +157,30 @@ export class ProductAgentOwner {
     this.update({ runs: { ...this.snapshot.runs, [result.runId]: run } });
     return run;
   }
+  async readChatEvidence(scopeKey: string, runIds: readonly string[], signal: AbortSignal) {
+    const scope = this.scope, epoch = this.epoch;
+    if (!scope || scope.key !== scopeKey) return;
+    const current = () => !signal.aborted && epoch === this.epoch && this.snapshot.model.online && this.snapshot.model.readState !== 'denied';
+    // Explicit decisions keep their own API recovery state. Reading a past answer only fills its display cache.
+    const api = this.createApi();
+    for (const id of new Set(runIds)) {
+      if (!current()) return;
+      if (this.snapshot.runs[id]) continue;
+      try {
+        const result = await api.getRun(scope.childId, id, signal, scope.userId);
+        if (!current()) return;
+        if (!this.snapshot.runs[id]) {
+          this.update({ runs: { ...this.snapshot.runs, [id]: projectAgentRun(result, scope.childId, null) } });
+        }
+      } catch (error) {
+        if (!current()) return;
+        if (error instanceof ProductAgentApiError && error.status !== 404 && accessLost(error)) {
+          this.deny(error);
+          return;
+        }
+      }
+    }
+  }
   selectRun = (runId: string, background = false) => {
     const model = this.snapshot.model;
     if (!this.scope || !model.online || model.busy || model.pendingDecision && model.pendingDecision.runId !== runId || model.writesBlocked || model.readState === "denied") return;

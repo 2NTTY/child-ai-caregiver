@@ -156,7 +156,8 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
     </View> : null}
   </View>;
 }
-function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; initialOpen: boolean }) {
+type MaintenanceEntry = (sourceId: string) => ReactNode;
+function CatalogSeries({ items, workspace, initialOpen, maintenanceEntry }: { maintenanceEntry?: MaintenanceEntry; items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; initialOpen: boolean }) {
   const [details, setDetails] = useState(initialOpen), [linkFailed, setLinkFailed] = useState(false);
   useEffect(() => { if (initialOpen) setDetails(true); }, [initialOpen]);
   const [exportNotice, setExportNotice] = useState(''), active = useRef(true);
@@ -193,6 +194,8 @@ function CatalogSeries({ items, workspace, initialOpen }: { items: PersonalLibra
       <Metadata label="最近成功取得">{memoryDateLabel(item.lastSuccessfulCheckAt ?? item.fetchedAt ?? null)}</Metadata>
       <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt ?? null)}</Metadata>
       <Metadata label="讀取及整理方式">{item.methods?.join('、') || '未有已核對的方法'}</Metadata>
+      <Text style={styles.meta}>精細保留數字、步驟和限制。概括整理保留背景。結構化欄位可按原值查找。不進問答索引的內容仍保留原文。</Text>
+      {maintenanceEntry?.(item.sourceId)}
       <AppButton label="查看現行網站" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(item.url).catch(() => setLinkFailed(true)); }} />
     </View>)}
     {linkFailed ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
@@ -260,7 +263,7 @@ function ImportLibrary({ catalog, workspace }: { catalog: readonly PersonalLibra
 }
 const referenceFilters: Record<string, string> = { official_guidance: '官方指引', recent_information: '近期資訊',
   feeding: '餵食', development: '兒童發展', play: '遊戲', vision: '視力', checkup: '健康檢查' };
-function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue }) {
+function ReferenceSection({ model, workspace, maintenanceEntry }: { maintenanceEntry?: MaintenanceEntry; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue }) {
   const sources = visibleKnowledgeReferences(model.references), catalog = model.references.data?.catalog;
   const { series: originalSeries, sourceDocument } = useLocalSearchParams<{ series?: string; sourceDocument?: string }>();
   const currentDocument = sourceDocument && catalog?.find(item => item.sourceId === sourceDocument);
@@ -287,7 +290,7 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
       ? <ImportLibrary catalog={catalog} workspace={workspace} /> : null}
     {catalog ? shown.map(institution => <View key={institution.id} style={styles.section}>
       <Text accessibilityRole="header" style={styles.sectionTitle}>{institution.name}</Text>
-      {institution.series.map(([key, items]) => <CatalogSeries key={key} items={items} workspace={workspace} initialOpen={key === requested} />)}
+      {institution.series.map(([key, items]) => <CatalogSeries key={key} items={items} workspace={workspace} initialOpen={key === requested} maintenanceEntry={maintenanceEntry} />)}
     </View>) : sources.map(source => <ReferenceCard key={source.chunkId} source={source} />)}
     {(catalog?.length ?? 0) > 0 && !shown.length ? <Text style={styles.meta}>沒有符合篩選的來源庫。</Text> : null}
     {filter === 'all' && registered.length ? <View style={styles.details}>
@@ -305,8 +308,8 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
     {model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.loadMoreReferences} /> : null}
   </View>;
 }
-type MemoryReferenceViewProps = { tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
-function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
+type MemoryReferenceViewProps = { maintenanceEntry?: MaintenanceEntry; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
+function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
   const { series } = useLocalSearchParams<{ series?: string }>();
@@ -365,13 +368,13 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
           {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
       </ReadNotice>
     </View></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} maintenanceEntry={maintenanceEntry} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps) {
+export function MemoryReferenceView({ maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
   const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
+  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} maintenanceEntry={maintenanceEntry} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({

@@ -52,6 +52,26 @@ function harness() {
   h.sync(); return h;
 }
 
+test('saved chat evidence loads without selecting a run and drops late replies when the child changes', async () => {
+  const h = harness(), signal = new AbortController().signal;
+  await h.owner.readChatEvidence(scope(childA).key, [runA, runA], signal);
+  assert.equal(h.owner.getSnapshot().runs[runA].id, runA);
+  assert.equal(h.calls.length, 1);
+  assert.equal(h.calls[0].method, 'GET');
+  assert.equal(h.owner.getSnapshot().model.run, null);
+  await h.owner.readChatEvidence(scope(childA).key, [runA], signal);
+  assert.equal(h.calls.length, 1);
+  h.sync(childB);
+  const slow = deferred();
+  h.setGet(() => slow.promise);
+  const pending = h.owner.readChatEvidence(scope(childB).key, [runB], signal);
+  h.sync(childA);
+  slow.resolve(Response.json({ result: result(childB) }));
+  await pending;
+  assert.deepEqual(h.owner.getSnapshot().runs, {});
+  assert.equal(h.posts().length, 0);
+});
+
 test('same-scope close/navigation preserves the actual API tuple and only GET can unlock explicit original retry', async () => {
   const h = harness(); await h.unknown(); const model = h.owner.getSnapshot().model, pending = model.pendingDecision, api = h.owner.api;
   h.owner.collapseInbox(); h.owner.syncContext(scope(childA), true, context());
@@ -289,7 +309,7 @@ async function startupRecoveryHarness(route) {
   }
   function render(nextChild = child) {
     child = nextChild; const snapshot = owner.owner.getSnapshot();
-    ui.production({ identityKey: context().identityKey, scopeKey: currentScope(), selectedChildId: child,
+    ui.production({ identityKey: context().identityKey, scopeKey: currentScope(), selectedChildId: child, sharedChild: { target: null },
       recordsState: { auth: 'signedIn', online: true, children: [{ id: childA }, { id: childB }], childrenLoading: false,
         childrenError: null, childrenLoadedAt: '2026-10-22', selectedChildId: child }, controller: { reloadChildren: noop },
       chatState: { loading: false, loadedAt: '2026-10-22' }, chatController: { reloadMessages: noop },
