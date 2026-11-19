@@ -132,8 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts hints={operationHints} child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
-          <NotificationBell />
-          <ToolbarIconButton ref={railAnchor} icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
+          <NotificationBell quiet={pathname === "/chat"} />
+          <ToolbarIconButton quiet={pathname === "/chat"} ref={railAnchor} icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             expanded={railExpanded} onPress={() => {
               if (wide) setRailOpen(value => !value);
               else { railContext.current = { path: pathname, scope: motionScope }; setRailModal(true); }

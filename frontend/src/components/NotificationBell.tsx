@@ -11,7 +11,7 @@ import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePersonalHistoryWorkspace } from "../production/usePersonalHistory";
 import { PersonalNotificationContent } from "./history/PersonalHistoryViews";
 
-export function NotificationBell() {
+export function NotificationBell({ quiet = false }: { quiet?: boolean }) {
   const [open, setOpen] = useState(false);
   const owner = usePersonalHistoryWorkspace();
   const current = useRef(owner); current.current = owner;
@@ -20,7 +20,7 @@ export function NotificationBell() {
   useEffect(() => { setOpen(false); }, [scope]);
   return <>
     <View style={styles.anchor}>
-      <ToolbarIconButton icon="bell-outline" label="開啟最近消息" onPress={() => {
+      <ToolbarIconButton quiet={quiet} icon="bell-outline" label="開啟最近消息" onPress={() => {
         if (owner?.online && owner.access !== "revoked" && owner.notifications.state === "unavailable" && !owner.notificationUnavailable) owner.actions.loadNotifications();
         setOpen(true);
       }} />

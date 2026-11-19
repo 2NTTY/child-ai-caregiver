@@ -22,6 +22,7 @@ function setup(initial = run()) {
   const motion = { MotionDisclosure: p => h.jsx('Disclosure', { ...p, children: p.expanded ? p.children : null }),
     MotionFeedback: p => h.jsx('Feedback', p), MotionReveal: p => h.jsx('Reveal', { children: p.children(p.value) }) };
   mocks['../../motion'] = motion; mocks['../motion'] = motion;
+  for (const prefix of ['../chat/', '../components/chat/']) mocks[prefix + 'ChatAction'] = { ChatAction: 'Button' };
   mocks['../chat/ChatMessage'] = { ChatMessage: 'ChatMessage' };
   mocks['../components/chat/chat-presentation'] = { chatColors: {}, chatType: {} };
   mocks['../components/chat/locateCitationSource'] = { locateCitationSource: (...args) => calls.push(['locate', ...args]) };
@@ -46,7 +47,7 @@ function setup(initial = run()) {
   const { AgentRunView } = h.load('src/components/agent/AgentRunView.tsx');
   const { AgentConversation } = h.load('src/production/AgentConversation.tsx');
   const render = (activity = false) => h.render(h.jsx(AgentRunView, { model: state.agentModel, actions: state.agentActions, activity }));
-  const conversation = (visible = true) => { h.production(state); return h.render(h.jsx(AgentConversation, { visible, onDismiss: action('close'), onClosed: action('closed') })); };
+  const conversation = (visible = true, entry = 'detail') => { h.production(state); return h.render(h.jsx(AgentConversation, { visible, entry, onDismiss: action('close'), onClosed: action('closed') })); };
   const button = label => h.hosts().find(n => n.type === 'Button' && n.props.label === label);
   const named = name => h.hosts().find(n => n.props.accessibilityLabel === name);
   const text = () => h.hosts().filter(n => n.type === 'Text').map(n => n.props.children).flat(Infinity).filter(x => typeof x === 'string' || typeof x === 'number').join(' ');
@@ -210,7 +211,7 @@ test('activity has one title and close action, returns through the original owne
   const p = proposal('pending'), s = setup(run([p]));
   s.state.agentPending.entries = [{ runId: 'synthetic-run', proposal: p }, { runId: 'older-run', proposal: proposal('older') }];
   s.state.agentPending.nextCursor = 'synthetic-next'; s.conversation();
-  assert.deepEqual(s.h.hosts().filter(n => n.type === 'Title').map(n => n.props.children), ['活動']);
+  assert.deepEqual(s.h.hosts().filter(n => n.type === 'Title').map(n => n.props.children), ['回覆詳情']);
   assert.equal(s.button('助手設定'), undefined); assert.equal(s.button('重新讀取聊天'), undefined);
   assert.equal(s.h.hosts().filter(n => n.props.accessibilityLabel === '核對待確認事項：Synthetic pending').length, 0);
   assert.equal(s.h.node('agent-activity-list'), undefined, 'discovery cards are a list, not mixed into the open detail');
@@ -292,9 +293,9 @@ test('saved failure keeps its actual confirmation question and works before the 
 test('activity title and loaded count remain compact without normal ready refresh controls', () => {
   const s = setup(run([proposal('pending')])); s.conversation();
   const header = s.h.node('agent-activity-header');
-  assert.ok(header); assert.equal(header.props.style[1].flexWrap, 'nowrap');
+  assert.ok(header); assert.equal(header.props.style.flexWrap, 'nowrap');
   assert.equal(s.h.hosts().filter(n => n.type === 'Title').length, 1);
-  assert.equal(s.h.hosts().find(n => n.type === 'Title').props.children, '活動');
+  assert.equal(s.h.hosts().find(n => n.type === 'Title').props.children, '回覆詳情');
   assert.equal(s.h.node('agent-activity-count').props.children, '1 項待確認');
   assert.equal(s.h.node('agent-run-summary'), undefined, 'the same count is not repeated below the header');
   assert.equal(s.named('更新活動結果'), undefined);
@@ -483,4 +484,21 @@ test('failed inbox read keeps loaded cards and shows only contextual retry, neve
   s.conversation(); assert.ok(s.h.node('activity-card-run-old-run')); assert.ok(s.button('重新載入活動記錄'));
   assert.match(s.text(), /顯示上次讀取/); assert.doesNotMatch(s.text(), /目前沒有其他活動/);
   s.state.agentInbox.state = 'ready'; s.conversation(); assert.equal(s.button('更新活動記錄'), undefined); assert.equal(s.button('重新載入活動記錄'), undefined);
+});
+
+test('toolbar opens the pending list even with a cached reply, while message details open that reply', () => {
+  const item = proposal('on-list');
+  const s = setup(run([item]));
+  s.state.agentPending.entries = [{runId: 'synthetic-run', proposal: item}];
+  s.conversation(true, 'list');
+  assert.ok(s.h.node('activity-card-proposal-synthetic-run-on-list'));
+  assert.equal(s.h.node('agent-activity-detail'), undefined);
+  s.h.node('activity-card-proposal-synthetic-run-on-list').props.onPress();
+  s.conversation(true, 'list');
+  assert.ok(s.h.node('agent-activity-detail'));
+  s.button('返回活動').props.onPress(); s.conversation(true, 'list');
+  assert.ok(s.h.node('agent-activity-list'));
+  s.conversation(false); s.state.agentModel = { ...s.state.agentModel, readState: 'ready', run: run() };
+  s.conversation(true, 'detail');
+  assert.ok(s.h.node('agent-activity-detail'));
 });

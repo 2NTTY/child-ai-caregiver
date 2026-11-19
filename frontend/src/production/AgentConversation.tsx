@@ -10,6 +10,7 @@ import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
 import { AppStatusBadge } from "../components/AppStatusBadge";
 import { AppIcon } from "../components/AppIcon";
+import { ChatAction } from "../components/chat/ChatAction";
 import { proposalContextLabel, proposalPrimaryText } from "../components/agent/proposal-presentation";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
@@ -25,7 +26,7 @@ const resourceKinds = { care_record: "照護記錄", private_note: "私人備註
 function ActivityDetails({ label, scopeKey, children }: { label: string; scopeKey: string; children: ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   return <View style={styles.details}>
-    <AppButton label={label} expanded={expanded} variant="quiet" density="compact" onPress={() => setExpanded(value => !value)} style={styles.inlineButton} />
+    <ChatAction label={label} expanded={expanded} disclosure onPress={() => setExpanded(value => !value)} />
     <MotionDisclosure expanded={expanded} scopeKey={scopeKey}><View style={styles.details}>{children}</View></MotionDisclosure>
   </View>;
 }
@@ -72,7 +73,6 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
   const hasSnapshot = !denied && !!model.loadedAt;
   return <View testID="agent-activity-background" style={styles.section}>
       <Text accessibilityRole="header" style={styles.heading}>其他活動</Text>
-      <Text style={styles.label}>只限你本人查看，最多展示 20 項。</Text>
       {model.state === "idle" ? <Text style={styles.label}>尚未載入其他活動。</Text> : null}
       {loading ? <ReadStateNotice state="loading" refreshing={hasSnapshot} message="正在載入其他活動…" /> : null}
       {model.state === "failed" ? <Text style={styles.error}>{hasSnapshot ? "未能更新其他活動，顯示上次讀取的內容。" : "未能載入其他活動，請重試。"}</Text> : null}
@@ -89,7 +89,7 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
   </View>;
 }
 
-export function AgentConversation({ visible, onDismiss, onClosed }: { visible: boolean; onDismiss(): void; onClosed?(): void; onOpenSettings(): void; onReloadChat(): void; reloadDisabled: boolean }) {
+export function AgentConversation({ visible, entry, onDismiss, onClosed }: { visible: boolean; entry: "list" | "detail"; onDismiss(): void; onClosed?(): void; onOpenSettings(): void; onReloadChat(): void; reloadDisabled: boolean }) {
   const { scopeKey, agentModel, agentActions, agentInbox, agentInboxActions, agentPending, readAgentPending, readAgentActivity, selectAgentRun, authorization, authorizationActions } = useProduction();
   const activityRead = useRef(readAgentActivity); activityRead.current = readAgentActivity;
   useEffect(() => {
@@ -105,9 +105,10 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
   const pendingReturn = useRef(false), focusedSelection = useRef<string | null>(null);
   const visibleScope = useRef<string | null>(null);
   const [selection, setSelection] = useState<{ scopeKey: string; runId: string; cardKey: string; label: string; serial: number; target?: ActivityProposalTarget } | null>(null);
-  const [listRequested, setListRequested] = useState(false);
+  const [listRequested, setListRequested] = useState<boolean | null>(null);
   const selected = selection?.scopeKey === scopeKey ? selection : null;
-  const showDetails = !listRequested && (!!selected || !!agentModel.pendingDecision || agentModel.readState !== "idle");
+  const preferList = listRequested ?? (entry === "list" && !agentModel.pendingDecision && !agentModel.writesBlocked);
+  const showDetails = !preferList && (!!selected || !!agentModel.pendingDecision || agentModel.readState !== "idle");
   const cannotNavigate = !scopeKey || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied";
   const cannotReturn = agentModel.busy === "write" || !!agentModel.writesBlocked || agentModel.readState === "denied";
   function cardRef(key: string, node: View | null) { if (node) cardRefs.current.set(key, node); else cardRefs.current.delete(key); }
@@ -134,11 +135,11 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
   }
   useLayoutEffect(() => {
     if (selection && selection.scopeKey !== scopeKey) {
-      setSelection(null); setListRequested(false); returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
+      setSelection(null); setListRequested(null); returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
     }
     if (!visible) {
       if (selection) setSelection(null);
-      setListRequested(false);
+      setListRequested(null);
       returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
       return;
     }
@@ -168,19 +169,22 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
   }, [visible, scopeKey, agentModel.online]);
   const onLocateSource = (target: View | null, horizontalScroll?: ScrollView | null, verticalTarget?: View | null) =>
     locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
-  const run = agentModel.readState === "ready" ? agentModel.run : null;
+  const run = showDetails && agentModel.readState === "ready" ? agentModel.run : null;
   const receipt = run ? authorization.receipts[run.id] : undefined;
   useEffect(() => { if (visible && run && !receipt) authorizationActions.readReceipts(run.id); }, [visible, run?.id, receipt?.state]);
   const pendingEntries = agentPending.entries.filter(entry => !run || entry.runId !== run.id
     || !run.proposals.some(proposal => proposal.id === entry.proposal.id && proposal.version >= entry.proposal.version));
   const showPending = !run || pendingEntries.length > 0 || agentPending.state !== "ready" || !!agentPending.nextCursor;
   const showReceipts = !!run && (receipt?.state !== "ready" || receipt.items.length > 0 || !authorization.online);
+  const emptyList = agentModel.online && agentInbox.online && !agentModel.pendingDecision && !agentInbox.locked
+    && agentPending.state === "ready" && !agentPending.entries.length && !agentPending.nextCursor
+    && agentInbox.state === "ready" && !agentInbox.entries.length;
   const loadedPendingCount = (run?.proposals.filter(proposal => proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal)).length ?? 0)
     + (agentPending.state === "ready" ? pendingEntries.filter(entry => entry.proposal.status === "pending" && entry.proposal.contentState !== "invalidated" && !proposalExpired(entry.proposal)).length : 0);
   const pendingCountKnown = agentModel.online && agentPending.state === "ready" && (agentModel.readState === "idle" || agentModel.readState === "ready");
   const activityHeading = <View style={styles.activityHeading}>
-    <AppDialog.Title style={styles.activityTitle}>活動</AppDialog.Title>
-    {(!showDetails || loadedPendingCount > 0 || !!agentPending.nextCursor) && <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
+    <AppDialog.Title style={styles.activityTitle}>{showDetails ? selected?.target ? "確認事項" : "回覆詳情" : "對話活動"}</AppDialog.Title>
+    {(loadedPendingCount > 0 || !!agentPending.nextCursor) && <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
       ? `已載入 ${loadedPendingCount} 項待確認${agentPending.nextCursor ? "，仍有更多待讀取" : ""}` : "待確認數量尚未核對"}>
       {pendingCountKnown ? `${loadedPendingCount}${agentPending.nextCursor ? "+" : ""} 項待確認` : "待確認未核對"}
     </Text>}
@@ -200,21 +204,27 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
           : agentPending.state === "ready" && agentModel.online ? <Text style={styles.label}>{agentPending.nextCursor ? "已載入頁面暫無其他待確認事項；仍可繼續讀取。" : "目前沒有待確認或過期事項。"}</Text> : null : null}
         {agentPending.nextCursor ? <AppButton label="讀取下一頁候選" variant="quiet" density="compact" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => readAgentPending(true)} style={styles.inlineButton} /> : null}
       </View> : null;
-  return <AppDialog visible={visible} onDismiss={onDismiss} onClosed={onClosed} accessibilityLabel="活動" style={styles.dialog}>
+  return <AppDialog visible={visible} onDismiss={onDismiss} onClosed={onClosed} accessibilityLabel={showDetails ? "活動詳情" : "對話活動"} style={styles.dialog}>
+    <View testID="agent-activity-header" style={styles.activityToolbar}>
+      {showDetails ? <ChatAction label="返回活動" accessibilityLabel="返回活動列表" iconOnly icon="arrow-left" disabled={cannotReturn} onPress={returnToCards} /> : null}
+      {activityHeading}
+      <ChatAction label="關閉" accessibilityLabel="關閉活動" icon="close" iconOnly onPress={onDismiss} />
+    </View>
     <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.contents}
       onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}>
       {showDetails ? <View ref={detailRef} tabIndex={-1} testID="agent-activity-detail" accessibilityLabel={`活動詳情${selected ? `：${selected.label}` : ""}`} style={styles.details}>
-        <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeading={activityHeading} proposalTarget={selected?.target} proposalOnly={!!selected?.target}
-          activityNavigation={<View style={styles.details}><AppButton label="返回活動" accessibilityLabel="返回活動列表" variant="quiet" density="compact" disabled={cannotReturn} onPress={returnToCards} style={styles.inlineButton} />
-            {cannotReturn ? <Text style={styles.label}>{"目前正在處理或未能核對存取權，暫時不能返回。"}</Text> : null}</View>} />
+        <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeaderVisible proposalTarget={selected?.target} proposalOnly={!!selected?.target}
+          activityNavigation={cannotReturn ? <Text style={styles.label}>目前正在處理或未能核對存取權，暫時不能返回。</Text> : null} />
       </View>
-        : <View testID="agent-activity-header" style={styles.activityToolbar}>{activityHeading}</View>}
+        : null}
       {!showDetails ? <View ref={listRef} tabIndex={-1} accessibilityLabel="活動列表" testID="agent-activity-list" style={styles.details}>
         {agentModel.pendingDecision ? <AppButton label="查看待確認結果" variant="quiet" density="compact"
           disabled={!agentModel.online || !!agentModel.busy || agentModel.readState === "denied"}
           onPress={() => { setListRequested(false); selectAgentRun(agentModel.pendingDecision!.runId); }} style={styles.inlineButton} /> : null}
-        {pendingContent}
-        <BackgroundRuns key={scopeKey} model={agentInbox} actions={agentInboxActions} onSelect={openBackground} cardRef={cardRef} />
+        {emptyList ? <Text style={styles.label}>目前沒有待確認事項或其他活動。</Text> : <>
+          {pendingContent}
+          <BackgroundRuns key={scopeKey} model={agentInbox} actions={agentInboxActions} onSelect={openBackground} cardRef={cardRef} />
+        </>}
       </View> : null}
       {showDetails && !selected?.target && showReceipts && run && (!selected || selected.runId === run.id) ? <View testID="agent-operation-receipts" style={styles.section}>
         <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.heading}>操作結果</Text>
@@ -231,15 +241,14 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
         </ActivityDetails>)}
       </View> : null}
     </AppScrollView></AppDialog.ScrollArea>
-    <AppDialog.Actions><AppButton label="關閉" variant="quiet" onPress={onDismiss} /></AppDialog.Actions>
   </AppDialog>;
 }
 const styles = StyleSheet.create({
-  dialog: { maxWidth: 720 }, scrollArea: { paddingHorizontal: 0, minHeight: 0 },
-  contents: { gap: spacing.lg, minWidth: 0, padding: spacing.md },
-  activityToolbar: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  dialog: { maxWidth: 500, paddingTop: 0 }, scrollArea: { paddingHorizontal: 0, minHeight: 0, flexGrow: 0, borderTopWidth: 0, borderBottomWidth: 0 },
+  contents: { gap: spacing.md, minWidth: 0, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+  activityToolbar: { flexDirection: "row", alignItems: "center", flexWrap: "nowrap", gap: spacing.xs, minWidth: 0, marginTop: 0, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   activityHeading: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
-  activityTitle: { marginHorizontal: 0, marginVertical: 0, flexShrink: 0, fontSize: 22, lineHeight: 28 },
+  activityTitle: { marginHorizontal: 0, marginVertical: 0, flexShrink: 1, fontSize: 18, lineHeight: 24 },
   activityCount: { fontFamily: chatFont, color: chatColors.secondary, fontSize: 13, lineHeight: 18, flexShrink: 1, minWidth: 0 },
   section: { gap: spacing.sm, minWidth: 0, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   row: { gap: spacing.sm, minWidth: 0, paddingVertical: spacing.sm },
