@@ -24,7 +24,7 @@ const taskActions = { reschedule: "改期／轉派", complete: "記錄完成", c
 export function projectLiveCitation(source: import('../../../src/shared/live-source-citation.ts').LiveSourceCitation): ChatCitationView {
   return { id: source.id, sourceId: source.documentId, acquisition: 'live', seriesName: source.series?.name ?? source.publisher,
     seriesId: source.series?.id, title: source.title, publisher: source.publisher, section: source.section ?? '原文未有段落標示',
-    pageStart: source.page ?? undefined, excerpt: source.excerpt ?? '只獲准保存原文位置。',
+    pageStart: source.page ?? undefined, excerpt: source.excerpt ?? '',
     termsUrl: source.termsUrl, originalRange: String(source.range.start + 1) + '–' + source.range.end,
     readSegments: source.excerpt ? [source.excerpt] : [], versionId: source.version ?? '', versionHash: source.contentHash,
     checkedAt: '', fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: null, sourceDate: source.sourceDate,
@@ -35,7 +35,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
   const age = source.applicability;
   const segments = citedOriginalSpans(source), quote = source.citedExcerpt ?? source.sourceExcerpt;
   const excerpt = source.originalKind === 'visual_page' ? [...source.text].slice(0, 300).join('')
-    : segments.some(part => part.includes(quote)) ? quote : segments[0]!.slice(0, 300);
+    : segments.some(part => part.includes(quote)) ? quote : '';
   return {
     sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
     acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',

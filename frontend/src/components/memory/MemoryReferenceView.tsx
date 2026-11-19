@@ -5,6 +5,7 @@ import { exportSeriesReferences, libraryPickLimit, readSeriesReferences } from '
 import { EmptyListCard } from "../EmptyListCard";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SourceDocumentCard } from "./SourceDocumentCard";
 import { AppDialog } from "../AppDialog";
 import { sourceSeries } from "../../../../src/shared/source-series";
 import { useFocusEffect, useRouter, useLocalSearchParams, type Href } from "expo-router";
@@ -61,9 +62,9 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   const currentHistory = history?.factVersion === fact.version ? history : undefined;
   const available = factIsApplicable(fact);
   const source = factSources[fact.source.kind];
-  return <View testID={`memory-reference-fact-${fact.id}`} style={styles.card}>
+  return <View testID={`memory-reference-fact-${fact.id}`} style={styles.factRow}>
     <View style={styles.titleRow}><Text accessibilityRole="header" style={styles.factTopic}>{fact.key}</Text>
-      <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "confirmed" && available ? "success" : fact.status === "candidate" ? "warning" : "neutral"} /></View>
+      {fact.status !== "confirmed" || !available ? <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "candidate" ? "warning" : "neutral"} /> : null}</View>
     <Text selectable style={styles.factContent}>{fact.content}</Text>
     <View style={styles.factContext}>
       <View style={styles.metadataLine}><AppIcon name={fact.visibility === "private" ? "lock-outline" : "account-group-outline"} size={15} /><Text accessibilityLabel={`可見範圍：${visibilityLabels[fact.visibility]}`} style={styles.meta}>{visibilityLabels[fact.visibility]}</Text></View>
@@ -73,8 +74,8 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
       </Pressable>
     </View>
     {!available ? <Text style={styles.warning}>{factUnavailableReason(fact)}</Text> : null}
-    {onQuestion ? <View style={styles.actions}><AppButton label="請 Agent 核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /></View> : null}
     {details ? <View style={styles.details}>
+      {onQuestion ? <View style={styles.actions}><AppButton label="請 Agent 核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /></View> : null}
       <Metadata label="來源">{factSourceLabel(fact.source)}</Metadata>
       <Metadata label="記憶版本">{fact.version}</Metadata>
       <Metadata label="來源狀態">{fact.sourceState === "current" ? "目前版本" : "來源已更改，須重新核對"}</Metadata>
@@ -108,16 +109,15 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
     </View> : null}
   </View>;
 }
-function SummaryCard({ summary, emptyReady }: { emptyReady: boolean; summary: Readonly<MemorySummaryView> | null }) {
+function SummaryCard({ summary }: { summary: Readonly<MemorySummaryView> }) {
   const [details, setDetails] = useState(false);
-  return <View style={styles.card}><View style={styles.titleRow}><Text accessibilityRole="header" style={styles.cardTitle}>對話摘要</Text><AppStatusBadge label="私人 · 整理內容" /></View>
-    {summary ? <><Text selectable style={styles.body}>{summary.text}</Text><Text style={styles.meta}>整理自你的對話，供延續脈絡時參考</Text>
-      <AppButton label={details ? "收起摘要來源" : "查看摘要來源"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} />
-      {details ? <View style={styles.details}><Metadata label="建立時間">{memoryDateLabel(summary.createdAt)}</Metadata><Metadata label="摘要版本">{summary.version}</Metadata>
-        <Metadata label="摘要識別">{summary.id}</Metadata>{summary.previousId ? <Metadata label="前一摘要">{summary.previousId}</Metadata> : null}
-        <Metadata label="已涵蓋訊息">{summary.coveredMessageIds.join("、") || "未提供"}</Metadata><Metadata label="最後涵蓋訊息">{summary.lastCoveredMessageId}</Metadata>
-        <Text style={styles.meta}>摘要是整理出的內容，須與原訊息及事實一併核對。</Text></View> : null}</>
-      : <Text style={styles.meta}>{emptyReady ? "目前沒有可用摘要" : "摘要尚未重新核對"}</Text>}
+  return <View style={styles.summary}><View style={styles.summaryTitle}><AppIcon name="file-document-outline" size={19} /><Text accessibilityRole="header" style={styles.cardTitle}>對話摘要</Text></View>
+    <Text selectable style={styles.body} numberOfLines={details ? undefined : 4}>{summary.text}</Text>
+    <AppButton label={details ? "收起摘要" : "查看完整摘要及來源"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} />
+    {details ? <View style={styles.details}><Metadata label="建立時間">{memoryDateLabel(summary.createdAt)}</Metadata><Metadata label="摘要版本">{summary.version}</Metadata>
+      <Metadata label="摘要識別">{summary.id}</Metadata>{summary.previousId ? <Metadata label="前一摘要">{summary.previousId}</Metadata> : null}
+      <Metadata label="已涵蓋訊息">{summary.coveredMessageIds.join("、") || "未提供"}</Metadata><Metadata label="最後涵蓋訊息">{summary.lastCoveredMessageId}</Metadata>
+      </View> : null}
   </View>;
 }
 function readableReferenceUrl(value: string): string | null {
@@ -166,9 +166,8 @@ const topicArt: Record<string, { icon: AppIconName; tint: string }> = {
 function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry }) {
   const [metadata, setMetadata] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const fetched = item.lastSuccessfulCheckAt ?? item.fetchedAt;
-  return <View style={styles.document} testID={`memory-catalog-source-${item.sourceId}`}>
-    <Text accessibilityRole="header" style={styles.cardTitle}>{item.title}</Text>
-    <Text style={styles.meta}>{item.coverage ?? '部分收錄'} · {item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}</Text>
+  return <SourceDocumentCard testID={`memory-catalog-source-${item.sourceId}`} title={item.title}
+    byline={`${item.coverage ?? '部分收錄'} · ${item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}`}>
     <View style={styles.actions}>
       <AppButton label="開啟來源網站" variant="secondary" density="compact" onPress={() => {
         setLinkFailed(false); void Linking.openURL(item.url).catch(() => setLinkFailed(true));
@@ -185,11 +184,11 @@ function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem
       {item.methods?.length ? <Metadata label="整理方式">{item.methods.join('、')}</Metadata> : null}
     </View> : null}
     {maintenanceEntry?.(item.sourceId)}
-  </View>;
+  </SourceDocumentCard>;
 }
-function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenanceEntry, width }: {
+function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenanceEntry, width, requestedDocument }: {
   items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; details: boolean;
-  onOpen: () => void; onClose: () => void; maintenanceEntry?: MaintenanceEntry; width: `${number}%`;
+  onOpen: () => void; onClose: () => void; maintenanceEntry?: MaintenanceEntry; requestedDocument?: string; width: `${number}%`;
 }) {
   const [section, setSection] = useState<'files' | 'settings'>('files');
   const tabsId = useId();
@@ -208,6 +207,8 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       workspace.reads?.refreshContext?.();
     }
   };
+  const firstDocument = requestedDocument && items.find(item => item.sourceId === requestedDocument);
+  const documents = firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items;
   const requiresSelection = items.some(item => item.preference?.eligible === false);
   const enabled = preference?.enabled !== false;
   const state = !enabled ? '已停用' : requiresSelection ? '待選版本' : '使用中';
@@ -230,7 +231,7 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
       {requiresSelection && enabled ? <Text style={styles.warning}>收錄範圍已更改。請在「設定與匯出」選用新版本。</Text> : null}
       <AppTabPanel tabsId={tabsId} tabKey="files" active={section === 'files'}><View style={styles.section}>
-        {items.map(item => <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}
+        {documents.map(item => <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
       {preference ? <Metadata label="我的設定">{state} · {preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版'}</Metadata> : null}
@@ -336,7 +337,7 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
     {catalog ? shown.map(institution => <View key={institution.id} style={styles.section}>
       <Text accessibilityRole="header" style={styles.sectionTitle}>{institution.name}</Text>
       <View style={styles.deck}>{institution.series.map(([key, items]) => <CatalogSeries key={key} items={items} width={cardWidth}
-        workspace={workspace} details={key === opened} onOpen={() => setOpened(key)} onClose={() => setOpened(undefined)} maintenanceEntry={maintenanceEntry} />)}</View>
+        workspace={workspace} requestedDocument={key === requested ? sourceDocument : undefined} details={key === opened} onOpen={() => setOpened(key)} onClose={() => setOpened(undefined)} maintenanceEntry={maintenanceEntry} />)}</View>
     </View>) : sources.map(source => <ReferenceCard key={source.chunkId} source={source} />)}
     {(catalog?.length ?? 0) > 0 && !shown.length ? <Text style={styles.meta}>沒有符合篩選的來源庫。</Text> : null}
     {filter === 'all' && registered.length ? <View style={styles.details}>
@@ -376,14 +377,14 @@ function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDispl
     onPrepareQuestion(memoryClarificationQuestion(model.childName, fact));
   } : undefined;
   function renderFact(fact: Readonly<MemoryFactView>) {
-    return <View key={`${fact.id}:${fact.version}`} style={[styles.factSlot, container.width < 760 && styles.fullWidth]}>
-      <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} /></View>;
+    return <FactCard key={`${fact.id}:${fact.version}`} fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} />;
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
     <TabToolbar actions={tabActions} stacked={container.width < 480}><UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} /></TabToolbar>
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
-      <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" online={model.online} emptyTitle="目前暫無可顯示的工作脈絡" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
-        {model.shortTerm.data?.works ? <PersistentWorkCards items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
+      <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" online={model.online} emptyTitle="暫無近期工作或對話" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
+        {model.shortTerm.data?.works?.length ? <View style={styles.agenda}><View style={styles.sectionHead}><AppIcon name="clipboard-check-outline" size={21} /><Text accessibilityRole="header" style={styles.sectionTitle}>工作事項</Text></View>
+          <PersistentWorkCards compact items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
           onMessage={workspace.reads?.readWorkMessage ? id => {
             if (current.current !== workspace || !current.current.model.shortTerm.data?.works?.some(work => work.sourceMessageIds.includes(id))) return;
             workspace.reads?.readWorkMessage?.(id);
@@ -392,8 +393,15 @@ function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDispl
           onContinue={onPrepareQuestion ? work => {
             if (current.current !== workspace || !current.current.model.shortTerm.data?.works?.some(item => item.id === work.id && item.version === work.version)) return;
             onPrepareQuestion(personalWorkQuestion(model.childName, work));
-          } : undefined} /> : null}
-        {model.shortTerm.data?.messages.map(message => <View key={message.id} style={styles.card}><Text style={styles.meta}>{message.role === "user" ? "你的訊息" : "Agent 回覆"}</Text><Text selectable style={styles.body}>{message.text}</Text></View>)}
+          } : undefined} /></View> : null}
+        {model.shortTerm.data?.messages.length ? <View style={styles.timeline}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>近期對話</Text>
+          {model.shortTerm.data.messages.map(message => <View key={message.id} style={styles.turn}>
+            <View style={styles.rail}><View style={[styles.dot, message.role === 'user' && styles.parentDot]} /><View style={styles.stem} /></View>
+            <View style={styles.turnBody}><Text style={styles.speaker}>{message.role === 'user' ? '你' : '助手'}</Text>
+              <Text selectable style={styles.body}>{message.text}</Text></View>
+          </View>)}
+        </View> : null}
         {model.shortTerm.data?.hasMoreWorks ? <AppButton label="載入更多工作" variant="quiet" disabled={!model.online || workspace.reads?.workBusy} onPress={() => workspace.reads?.loadMoreWork?.()} /> : null}
       </ReadNotice>
       {["error", "unavailable", "stale"].includes(model.shortTerm.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取工作脈絡" variant="quiet" disabled={!model.online || workspace.reads.workBusy} onPress={workspace.reads.refreshContext} /> : null}
@@ -405,14 +413,14 @@ function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDispl
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
-        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
-          {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
+        <View style={styles.section}><View style={styles.sectionHead}><AppIcon name="notebook-outline" size={22} /><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></View>
+          {confirmed.length ? <View style={styles.notebook}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="暫無已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
         </View>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />
           : <BackgroundSurface padded><Text style={styles.meta}>仍有記憶未載入</Text></BackgroundSurface> : null}
-        <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
-        {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
-          {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
+        {model.longTerm.data?.summary ? <SummaryCard key={`${model.longTerm.data.summary.id}:${model.longTerm.data.summary.version}`} summary={model.longTerm.data.summary} /> : null}
+        {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用（${other.length}）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
+          {otherOpen ? <View style={styles.notebook}>{other.map(renderFact)}</View> : null}</View> : null}
       </ReadNotice>
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} width={container.width} maintenanceEntry={maintenanceEntry} workspace={workspace} /></AppTabPanel>
@@ -445,8 +453,20 @@ const styles = StyleSheet.create({
   scrollArea: { paddingHorizontal: 0, flexShrink: 1 },
   dialogContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
   document: { gap: spacing.sm, padding: spacing.md, backgroundColor: colors.canvas, borderRadius: radius.small, minWidth: 0 },
-  factGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 },
-  factSlot: { flexGrow: 1, flexBasis: "47%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
+  notebook: { borderTopWidth: 2, borderTopColor: colors.ink, minWidth: 0 },
+  factRow: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingVertical: spacing.md, gap: spacing.xs, minWidth: 0 },
+  summary: { gap: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.sage, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.quietSurface },
+  summaryTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  agenda: { gap: spacing.sm, minWidth: 0 },
+  timeline: { gap: spacing.sm, minWidth: 0 },
+  turn: { flexDirection: 'row', gap: spacing.md, minWidth: 0 },
+  rail: { width: 12, alignItems: 'center', paddingTop: 6 },
+  dot: { width: 11, height: 11, borderRadius: 6, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.sage },
+  parentDot: { backgroundColor: colors.paper },
+  stem: { width: 1, flexGrow: 1, backgroundColor: colors.line, marginTop: spacing.xs },
+  speaker: { color: colors.muted, fontFamily: chineseFont, ...readingType.meta, fontWeight: '700' },
+  turnBody: { flex: 1, gap: spacing.xs, paddingBottom: spacing.md },
   card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   cardTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },

@@ -48,6 +48,7 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === 'react-native') return { View: nativeElement('div'), Pressable: nativeElement('button'), StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}), useFocusEffect() {} };
+    if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
     if (name === '../AppDialog') return { AppDialog: nativeElement('dialog') };
     if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package',
       '../../../../src/shared/source-series', '../../../../src/shared/personal-library'].includes(name)) return {};
@@ -204,7 +205,7 @@ test('missing read ports, denied access and summary-null have honest visible sta
   assert.doesNotMatch(references, /暫無可顯示來源|官方指引|近期資訊/);
   assert.doesNotMatch(references, /已接通|即時新聞|共有 0|已驗證/);
   value.model.longTerm.data.summary = null;
-  assert.match(renderView(value).html, /目前沒有可用摘要/);
+  assert.doesNotMatch(renderView(value).html, /對話摘要|目前沒有可用摘要/);
   assert.doesNotMatch(renderView(value).html, /已清空|已遺忘/);
   assert.doesNotMatch(renderView(null).html, /睡前觀察|本人觀察筆記/);
   const hidden = { ...value, model: { ...value.model, longTerm: { scopeKey, state: 'loading', revision: null, asOf: null, data: null } } };
