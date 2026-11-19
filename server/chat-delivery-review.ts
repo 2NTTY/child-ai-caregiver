@@ -264,7 +264,8 @@ const MUTABLE_STATE_PREMISE_COPULA = /(?:現為|目前為|現時為|現已|而�
 const CLAUSE_QUESTION_INTENT = /(?:^(?:請問)?(?:你?想|你?要|是否|會唔會|係咪|定|which|what|when|where|who|how|do\s+you|would\s+you)|幾點|幾時|幾多|哪[一每個項筆條]?|邊[一每個項筆條]?|什麼|甚麼|咩|定係?|還是|\bor\b|\bwhether\b)/iu;
 
 function splitOperationClauses(text: string): string[] {
-  return text.split(/[。！!；;，,（）()\n]+/u).map(part => part.trim()).filter(Boolean);
+  // Keep a verb and its entity in the same clause, including unpunctuated alternatives.
+  return text.split(/[。！!；;，,（）()\n]+|而(?:不是|非)/u).map(part => part.trim()).filter(Boolean);
 }
 
 function clauseIsResultOrStateAssertion(clause: string): boolean {
@@ -274,7 +275,10 @@ function clauseIsResultOrStateAssertion(clause: string): boolean {
   if (/[？?]\s*$/u.test(clause) && CLAUSE_QUESTION_INTENT.test(clause)) {
     return false;
   }
-  return MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_COPULA_OR_ACTION.test(clause);
+  // A prospective relative clause ("要完成的任務") describes what remains to do.
+  // Explicit completed or changed states above and other assertions still count.
+  const stateText = clause.replace(/(?:要|須|需|有待|尚待)(?:完成|清空|清走|刪除|取消|移除|處理好)(?=[的嘅])/gu, '');
+  return MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_COPULA_OR_ACTION.test(stateText);
 }
 
 function hasOperationOrStateAssertion(text: string): boolean {

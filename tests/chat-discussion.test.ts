@@ -33,7 +33,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const linkedQuestion = { ...base, id: 'b955733f-1f95-42fa-bfb4-da02c7ad90c0', discussion: true,
     discussionOf: previousAnswer.id, text: '討論這個回答。' };
   const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '看書要預備甚麼？放工後家長可能只想輕鬆唱歌。', '回應預備時間的問題，可以先唱熟悉的童謠，周末再試圖畫書。'];
-  const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '當晚按大家的精神揀一樣便可。'];
+  const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '讓遊戲成為探索的過程而非一定要完成的任務。'];
   const taskDetails = '已經準備藍色圖畫書。';
   const taskRestatement = '按這項待辦，準備好了的是那本藍色的圖畫書。';
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
