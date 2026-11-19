@@ -33,7 +33,12 @@ function setup() {
     '../components/chat/ChatTimeline': { ChatTimeline: 'ChatTimeline' },
     '../components/chat/locateCitationSource': { locateCitationSource() {} },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => action => action() },
-    'expo-router': { usePathname: () => '/chat', useRouter: () => ({ push() {} }) },
+    '../production/RegisteredReadingCard': { RegisteredReadingCard: 'ReadingCard' },
+    '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => false },
+    '../production/NotificationChatTarget': { NotificationChatTarget: () => null },
+    '../production/ChatInlineSteps': { ChatInlineSteps: () => null },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View', useCustomBackground: () => false },
+    'expo-router': { useLocalSearchParams: () => ({}), usePathname: () => '/chat', useRouter: () => ({ push() {} }) },
   };
   const h = harness(mocks);
   const { AgentComposer } = h.load('src/components/agent/AgentComposer.tsx');
@@ -52,7 +57,7 @@ function production() {
     chatController: { cancelReply: action('cancel'), reloadMessages: action('reload'), confirmFoundMessage: action('confirm'), unlockCheckedSave: action('unlock'), startNewMessage: action('new') },
     chatDraft: '', setChatDraft: action('draft'), agentAttachments: [], addAgentAttachment: action('attachment'), removeAgentAttachment: action('remove'), composerFocusRequest: 0, sendChat: action('send'), requestChatReply: action('reply'),
     agentRuns: {}, agentModel: { readState: 'ready', run: null, busy: null, pendingDecision: null }, agentPending: { state: 'ready', entries: [] }, readAgentPending: action('readPending'),
-    voiceUpload: {}, fileUpload: {}, checkVoiceUpload: action('voiceCheck'), checkFileUpload: action('fileCheck'), authorization: {}, chatWritesAllowed: true, selectAgentRun: action('selectRun'), openAgentSource: action('source') };
+    owner: {}, photoUpload: {}, voiceUpload: {}, fileUpload: {}, checkVoiceUpload: action('voiceCheck'), checkFileUpload: action('fileCheck'), authorization: {}, chatWritesAllowed: true, selectAgentRun: action('selectRun'), openAgentSource: action('source') };
 }
 
 test('the dock separates attachments from voice/send and preserves 320–1440 control budgets', () => {
@@ -63,7 +68,7 @@ test('the dock separates attachments from voice/send and preserves 320–1440 co
     assert.equal(s.h.hosts().filter(node => node.props.accessibilityLabel === '語音輸入').length, 1);
     const toolbar = s.h.node('agent-input-toolbar');
     assert.equal(toolbar.props.children[2], null, 'voice is not duplicated in attachment controls');
-    for (const label of ['拍照', '加入文件', '語音輸入', '預覽輸入']) {
+    for (const label of ['拍照', '加入附件', '語音輸入', '預覽輸入']) {
       const control = s.button(label), style = flatten(control.props.style({}));
       assert.equal(style.width, width < 600 ? 48 : 40);
       assert.equal(style.height, width < 600 ? 48 : 40);
@@ -78,10 +83,10 @@ test('suggestions disappear in an established conversation; file/voice cancel pr
   const s = setup(); const changes = [], removed = [];
   s.renderComposer({ suggestionsAvailable: false, draft: '保留合成草稿', onChangeDraft: value => changes.push(value), onRemoveAttachment: id => removed.push(id) });
   assert.equal(s.h.node('composer-suggestions-toggle'), undefined);
-  for (const label of ['加入文件', '語音輸入']) {
+  for (const label of ['加入附件', '語音輸入']) {
     s.button(label).props.onPress(); s.h.render();
     const modal = s.h.hosts().find(node => node.type === 'InputDialog');
-    assert.equal(modal.props.kind, label === '加入文件' ? 'file' : null);
+    assert.equal(modal.props.kind, label === '加入附件' ? 'file' : null);
     if (label === '語音輸入') {
       const capture = s.h.hosts().find(node => node.type === 'VoiceCapture');
       assert.equal(capture.props.visible, true); capture.props.onDismiss();
@@ -99,7 +104,7 @@ test('attachment removal uses the original callback and unknown locks all input 
   s.renderComposer({ attachments: [attachment], onRemoveAttachment: id => removed.push(id) });
   s.button('移除附件：synthetic.txt').props.onPress(); assert.deepEqual(removed, ['synthetic-file']);
   s.renderComposer({ enabled: false, draft: '不可重送', attachments: [attachment] });
-  for (const label of ['加入文件', '語音輸入', '預覽輸入', '移除附件：synthetic.txt']) assert.equal(s.button(label).props.disabled, true);
+  for (const label of ['加入附件', '語音輸入', '預覽輸入', '移除附件：synthetic.txt']) assert.equal(s.button(label).props.disabled, true);
   assert.equal(s.h.hosts().find(node => node.type === 'Input').props.disabled, true);
 });
 
@@ -124,10 +129,12 @@ test('ordinary status is a quiet row while failure, unknown and original recover
   const render = () => s.h.render(s.h.jsx(s.ChatPage, {}));
   // Render the timeline footer through the real components in this bounded harness.
   const footer = () => { const timeline = s.h.hosts().find(node => node.type === 'ChatTimeline'); s.h.render(timeline.props.footer); };
-  p.chatState.busy = 'reply'; p.chatState.feedback = { phase: 'reading', cards: [] };
+  p.chatState.busy = 'reply'; p.chatState.replyingMessageId = 'current';
+  p.chatState.messages = [{ id: 'current', role: 'user', text: '合成問題', authorUserId: 'user' }];
+  p.chatState.feedback = { messageId: 'current', runId: 'run', phase: 'reading', cards: [] };
   render(); footer(); assert.ok(s.h.node('chat-operation-status'));
   assert.match(s.h.hosts().map(text).join(''), /正在讀取相關資料/);
-  s.button('停止回覆').props.onPress(); assert.deepEqual(p.calls.at(-1), ['cancel']);
+  render(); s.button('停止回覆').props.onPress(); assert.deepEqual(p.calls.at(-1), ['cancel']);
   p.chatState.busy = null; p.chatState.drafts.child = { phase: 'save_unknown', notice: '合成保存結果未知' };
   p.fileUpload = { unknown: true, notice: '合成原檔待核對' };
   render(); footer(); s.button('查核原檔案上傳').props.onPress(); assert.deepEqual(p.calls.at(-1), ['fileCheck']);
