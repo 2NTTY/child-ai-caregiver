@@ -59,7 +59,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
 
-**REQ-006 免費加入平台卡**已完成本機驗收。候選 `203cb61c` 以 master `ca3492d2` 為基線。家長從來源庫、聊天入口或當前版本的引用可免費加入同一已發布系列。Edge 在模型關閉時完成加入，兩個並行重試均取得相同偏好版次，私人卡新增零張。聊天分頁顯示系列，可按完整網址找出後頁的卡，選定後才讀取該系列的版本綁定。匯入 ZIP 的固定版本及停用設定可保留。正式發布由整合包跟進。[加入與聊天收據](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
+**REQ-006 免費加入平台卡已上線。** 家長可從來源庫、聊天入口或當前版本的引用加入已發布系列。Edge 關閉模型後仍可加入，並行重試只保存一次本人偏好。聊天按頁列出系列，可按網址找到後頁的卡；選定後才取其版本綁定。匯入 ZIP 的固定版本及停用設定保留。Web、API 和 worker 均已核對 `36434a23`，Android 版本 8 的 preview 已提供相容更新。真人手機點按和使用付費網站的真實帳戶可留待體驗驗收。[加入與聊天收據](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json) · [發布與裝置更新](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json)
 
 2026-11-19 從 `3b51b971` 並行接續[原有三項需求](docs/REQUIREMENTS_BACKLOG.md)，沿用 [REQ-005 的摘要、歷史及用量證據](#req005-closeout01)。家庭健康服務 20 頁小冊子已在正式站發布，13 個段落復用同一批已驗向量。第 6 頁的圖像細節經獨立覆核，先前未通過的版本及其原因保留在[官方原件收據](artifacts/verification/REQ004_NATIVE_PDF_CHP_20261119.json)。
 
