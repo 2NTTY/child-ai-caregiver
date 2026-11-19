@@ -177,7 +177,7 @@ function createFirestoreKnowledgeFixture(sourceIds: readonly string[], audience:
     definitions: SOURCE_WATCHES,
     readControl: tx => authority.readControl(tx),
   });
-  const nativeStore = createFirestoreKnowledgeStore({ ...domain, sourceIds, audience, observations: refresh.gate });
+  const nativeStore = createFirestoreKnowledgeStore({ ...domain, sourceIds, audience, observations: refresh.gate }, { KNOWLEDGE_FIRESTORE_TIMELY_WRITES: "reviewed-v1" });
   const store = {
     ...nativeStore,
     async importSource(input: unknown) {
@@ -504,6 +504,115 @@ test("Firestore store retains reviewed recalls across RSS churn and original age
   await f.store.disable(newSourceId, "synthetic operator withdrawal");
   assert.deepEqual(await hints(), []);
   assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "安全警報" }), []);
+});
+
+// Only synthetic internal fixtures opt in to the new write format.
+async function timedFixture(now: number) {
+  const f = createFirestoreKnowledgeFixture(["chp-recent"], "internal");
+  await f.authority.initializeControl({ enabled: true, generation });
+  await f.refresh.register("chp-recent", "synthetic-operator");
+  const watch = (await f.refresh.jobs()).find(job => job.definition.id === "chp-recent")!;
+  const setup = async (key: string, ageDays: number, event: Pick<KnowledgeSourceInput, "timelyEvent" | "validUntil">) => {
+    const date = new Date(now - ageDays * 86_400_000).toISOString();
+    const url = `https://www.chp.gov.hk/tc/features/synthetic-${key}.html`;
+    const body = `Synthetic notice about ${key}.`;
+    const rss = buildChpRssPayload(url, "合成公告", body, date);
+    await f.refresh.process(watch.data, randomUUID(), async () => rss.fetchResult, new AbortController().signal);
+    const document = parseKnowledgeSource({ sourceId: observationId(watch.definition, rss.observation), url,
+      title: "合成公告", publisher: watch.definition.publisher, classification: watch.definition.classification,
+      sourcePublishedAt: date, sourceUpdatedAt: null, fetchedAt: new Date(now).toISOString(), termsUrl: watch.definition.termsUrl,
+      ...event, chunks: [makeChunk(key, { sourceExcerpt: body, originalText: body, text: body })] });
+    return { rss, document };
+  };
+  return { f, watch, setup };
+}
+
+test("Firestore store defaults to reader-first rollout and never silently downgrades a typed edition", async t => {
+  const now = Date.parse("2026-11-19T09:00:00Z");
+  t.mock.timers.enable({ apis: ["Date"], now });
+  const { f, setup } = await timedFixture(now);
+  const options = { ...f.domain, sourceIds: ["chp-recent"], audience: "internal" as const, observations: f.refresh.gate };
+  const reader = createFirestoreKnowledgeStore(options, {});
+  const watchPath = "synthetic_timely_knowledge_watches/chp-recent";
+  const keys = () => Object.keys(f.records.get(watchPath)!).sort();
+  const snapshot = () => structuredClone([...f.records.entries()]);
+  const typed = await setup("typed", 1, { timelyEvent: { kind: "recall", status: "active" } });
+  const before = snapshot();
+  await assert.rejects(reader.importSource(typed.document), /knowledge_timely_writes_disabled/);
+  assert.deepEqual(snapshot(), before);
+  const legacy = await setup("ordinary", 1, {});
+  const legacyKeys = keys(); // Polling may legitimately add legacy confirmedGone metadata.
+  assert.ok(!legacyKeys.includes("retainedSourceIds") && !legacyKeys.includes("retainedWindows"));
+  const v = await reader.importSource(legacy.document);
+  for (let i = 0; i < 16; i++) if ((await reader.prepareSearch(v.versionId, v.hash)).complete) break;
+  await reader.review(v.versionId, v.hash, "synthetic-operator", makeAssessment(legacy.document, observationHash(legacy.rss.observation)));
+  await reader.publish(v.versionId, v.hash, makeEmbeddings(legacy.document));
+  await f.refresh.register("chp-recent", "synthetic-operator");
+  assert.deepEqual(keys(), legacyKeys);
+  const { chunks: _chunks, ...legacyHeader } = legacy.document;
+  assert.deepEqual(f.records.get("synthetic_timely_knowledge_versions/" + v.versionId)!.header, legacyHeader);
+  const next = await f.store.importSource(typed.document);
+  const assessment = makeAssessment(typed.document, observationHash(typed.rss.observation));
+  const beforeReview = snapshot();
+  await assert.rejects(reader.review(next.versionId, next.hash, "synthetic-operator", assessment), /knowledge_timely_writes_disabled/);
+  assert.deepEqual(snapshot(), beforeReview);
+  await f.store.review(next.versionId, next.hash, "synthetic-operator", assessment);
+  const beforePublish = snapshot();
+  await assert.rejects(reader.publish(next.versionId, next.hash, makeEmbeddings(typed.document)), /knowledge_timely_writes_disabled/);
+  assert.deepEqual(snapshot(), beforePublish);
+  await f.store.publish(next.versionId, next.hash, makeEmbeddings(typed.document));
+  const currentIds = async () => (await reader.candidates(recentFilter, vector, { query: "合成公告" })).map(hit => hit.versionId);
+  assert.ok((await currentIds()).includes(next.versionId));
+  // An operator can still withdraw a typed publication from a reader-compatible rollback.
+  await reader.disable(typed.document.sourceId, "synthetic operator withdrawal");
+  assert.deepEqual(await currentIds(), [v.versionId]);
+});
+
+test("Firestore store retains verified deadlines and policy changes independently of recent RSS until exact expiry", async t => {
+  const now = Date.parse("2026-11-19T09:00:00Z");
+  t.mock.timers.enable({ apis: ["Date"], now });
+  const { f, watch, setup } = await timedFixture(now);
+  const until = new Date(now + 2 * 3_600_000).toISOString();
+  const deadline = await setup("deadline", 181, { timelyEvent: { kind: "deadline", status: "active" }, validUntil: until });
+  const policy = await setup("policy", 14, { timelyEvent: { kind: "policy_change", status: "corrected" }, validUntil: until });
+  const rolling = await setup("no-horizon", 14, { timelyEvent: { kind: "deadline", status: "active" } });
+  const reviewed = async (row: typeof deadline) => {
+    const v = await f.store.importSource(row.document);
+    await f.store.review(v.versionId, v.hash, "synthetic-operator", makeAssessment(row.document, observationHash(row.rss.observation)));
+    return v;
+  };
+  const ids = [deadline, policy].map(row => row.document.sourceId).sort();
+  const hints = () => f.database.runTransaction(tx => f.refresh.gate.retainedInternalSourceIds(tx, ["chp-recent"]));
+  for (const row of [deadline, policy, rolling]) {
+    const v = await reviewed(row);
+    assert.ok(!(await hints()).includes(row.document.sourceId), "Review alone must not retain a notice");
+    await f.store.publish(v.versionId, v.hash, makeEmbeddings(row.document));
+  }
+  for (const page of [0, 1]) {
+    const items = Array.from({ length: 30 }, (_, i) => buildChpRssPayload(
+      `https://www.chp.gov.hk/tc/features/synthetic-churn-${page}-${i}.html`, "新消息", "普通合成消息。", new Date(now).toISOString()).observation);
+    await f.refresh.process(watch.data, randomUUID(), async () => ({ status: "ok", items,
+      original: { mimeType: "application/rss+xml", bytes: Buffer.from(`<rss><channel>${items.map(x => x.rssItem!.xml).join("")}</channel></rss>`) } }),
+    new AbortController().signal);
+  }
+  const hits = async () => (await f.store.candidates(recentFilter, vector, { query: "合成公告" })).map(hit => hit.sourceId).sort();
+  assert.deepEqual(await hits(), ids);
+  await f.refresh.register("chp-recent", "synthetic-operator");
+  assert.deepEqual(await hints(), ids);
+  t.mock.timers.tick(2 * 3_600_000 - 1);
+  assert.deepEqual(await hits(), ids);
+  t.mock.timers.tick(1);
+  assert.deepEqual(await hits(), []);
+  assert.deepEqual(await hints(), []);
+  assert.equal((await f.store.publishedEdition(deadline.document.sourceId))?.source.validUntil, until);
+  // Two expired timed slots cannot block the next reviewed publication; active slots remain intact.
+  const path = "synthetic_timely_knowledge_watches/chp-recent", current = f.records.get(path)!;
+  const active = Array.from({ length: 58 }, (_, i) => `chp-recent-${i.toString(16).padStart(32, "0")}`);
+  f.records.set(path, { ...current, retainedSourceIds: active });
+  const third = await setup("another-deadline", 20, { timelyEvent: { kind: "deadline", status: "active" }, validUntil: new Date(now + 86_400_000).toISOString() });
+  const v = await reviewed(third);
+  await f.store.publish(v.versionId, v.hash, makeEmbeddings(third.document));
+  assert.deepEqual((await hints()).sort(), [...active, third.document.sourceId].sort());
 });
 
 test("Postgres SQL eligibility clause and row mapping preserve timelyEvent parity", async () => {

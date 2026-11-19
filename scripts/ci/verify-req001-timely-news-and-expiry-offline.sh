@@ -44,7 +44,7 @@ TEST_FILES=(
   tests/knowledge-transfer-zip.test.mjs
   tests/knowledge-transfer-flow.test.mjs
 )
-TEST_CASES=(7 8 3 6 13 4 16 9 7 10 1 15 2 2)
+TEST_CASES=(9 8 3 6 13 4 16 9 7 10 1 15 2 2)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

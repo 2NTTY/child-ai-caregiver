@@ -79,6 +79,14 @@ function resolveTimelyPolicy(overrides: Partial<TimelyEligibilityPolicy> = {}): 
   };
 }
 
+/** Retrieval and bounded Firestore discovery use the same classification; a hint never establishes eligibility. */
+export function timelyRetentionClass(input: Pick<TimelyEligibilityInput, "classification" | "timelyEvent" | "validUntil">): TimelyEligibilityDecision["retentionClass"] {
+  if (input.classification !== "recent_information") return "durable";
+  const kind = input.timelyEvent?.kind ?? "news";
+  if (isPersistentTimelyKind(kind)) return "persistent_until_resolved";
+  return (kind === "policy_change" || kind === "deadline") && input.validUntil ? "bounded_by_valid_until" : "rolling_recent_window";
+}
+
 /** Deterministic retention & retrieval eligibility for official guidance and B-class timely events. */
 export function evaluateTimelyEligibility(
   input: TimelyEligibilityInput,
@@ -106,13 +114,8 @@ export function evaluateTimelyEligibility(
     };
   }
 
-  const kind = input.timelyEvent?.kind ?? "news";
   const status = input.timelyEvent?.status ?? "active";
-  const retentionClass = isPersistentTimelyKind(kind)
-    ? "persistent_until_resolved"
-    : (kind === "policy_change" || kind === "deadline") && Boolean(input.validUntil)
-      ? "bounded_by_valid_until"
-      : "rolling_recent_window";
+  const retentionClass = timelyRetentionClass(input);
 
   if (status === "lifted") {
     return { eligible: false, reason: "event_lifted", retentionClass, retainProvenanceOnly: true };

@@ -32,6 +32,7 @@ export function parseKnowledgeObservation(input: unknown): ObservedContent { ret
 const MAX_RETAINED_PER_FEED = 60;
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
   retainedSourceIds: z.array(id).max(MAX_RETAINED_PER_FEED).optional(),
+  retainedWindows: z.array(z.strictObject({ sourceId: id, until: date })).max(MAX_RETAINED_PER_FEED).optional(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
   priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
   lease: z.strictObject({ jobId: z.uuid(), token: z.uuid(), until: date }).nullable() });
@@ -54,7 +55,7 @@ export interface FirestoreKnowledgeObservation { watch: Watch; observation: Obse
 export interface FirestoreKnowledgeObservationPort {
   recentSourceIds(transaction: Transaction, watchIds: readonly string[], documentUrl?: string): Promise<string[]>;
   retainedInternalSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
-  setRetainedInternalSource(transaction: Transaction, context: FirestoreKnowledgeObservation, retain: boolean): void;
+  setRetainedInternalSource(transaction: Transaction, context: FirestoreKnowledgeObservation, retain: { until: string | null } | null): void;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
   recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
@@ -102,7 +103,9 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     const snapshot = await tx.get(watchRef(id)); if (!snapshot.exists) return null;
     const row = parse(watchSchema, snapshot.data());
     if (row.id !== id || row.definition.id !== id || row.definitionHash !== definitionHash(row.definition)) reject("knowledge_binding_invalid");
-    if (row.retainedSourceIds?.some(sourceId => !sourceId.startsWith(id + "-") || !/^[a-f0-9]{32}$/u.test(sourceId.slice(id.length + 1))))
+    const ids = [...row.retainedSourceIds ?? [], ...(row.retainedWindows ?? []).map(window => window.sourceId)];
+    if (ids.length > MAX_RETAINED_PER_FEED || new Set(ids).size !== ids.length
+      || ids.some(sourceId => !sourceId.startsWith(id + "-") || !/^[a-f0-9]{32}$/u.test(sourceId.slice(id.length + 1))))
       reject("knowledge_binding_invalid");
     return row;
   }
@@ -125,16 +128,30 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     async retainedInternalSourceIds(tx, watchIds) {
       const feeds = watchIds.filter(id => catalog.get(id)?.kind === "rss" && catalog.get(id)?.audience === "internal_noncommercial");
       const watches = await Promise.all(feeds.map(id => watch(tx, id)));
-      return watches.flatMap(row => row?.enabled && matches(row) ? row.retainedSourceIds ?? [] : []);
+      const now = Date.now();
+      return watches.flatMap(row => row?.enabled && matches(row)
+        ? [...row.retainedSourceIds ?? [], ...(row.retainedWindows ?? []).filter(window => Date.parse(window.until) > now).map(window => window.sourceId)]
+        : []).sort();
     },
     setRetainedInternalSource(tx, { watch: row, observation, catalogMatches }, retain) {
       if (!observation || row.definition.kind !== "rss" || row.definition.audience !== "internal_noncommercial") return;
-      const sourceId = observation.sourceId, ids = row.retainedSourceIds ?? [];
+      const sourceId = observation.sourceId, ids = row.retainedSourceIds ?? [], windows = row.retainedWindows ?? [];
       if (sourceId !== row.id + "-" + knowledgeHash(observation.url).slice(0, 32)) reject("knowledge_binding_invalid");
-      if (ids.includes(sourceId) === retain) return;
+      const oldUntil = ids.includes(sourceId) ? null : windows.find(entry => entry.sourceId === sourceId)?.until;
+      if (oldUntil === retain?.until) return;
       if (retain && (!catalogMatches || !row.enabled || observation.unavailable)) reject("knowledge_observation_review_mismatch");
-      if (retain && ids.length >= MAX_RETAINED_PER_FEED) reject("knowledge_retained_feed_full");
-      tx.set(watchRef(row.id), { ...row, retainedSourceIds: retain ? [...ids, sourceId].sort() : ids.filter(id => id !== sourceId) });
+      const now = Date.now(), nextIds = ids.filter(id => id !== sourceId);
+      const nextWindows = windows.filter(window => window.sourceId !== sourceId && Date.parse(window.until) > now);
+      if (retain) {
+        if (retain.until === null) nextIds.push(sourceId);
+        else if (Date.parse(date.parse(retain.until)) > now) nextWindows.push({ sourceId, until: retain.until });
+        else reject("knowledge_version_expired");
+      }
+      if (nextIds.length + nextWindows.length > MAX_RETAINED_PER_FEED) reject("knowledge_retained_feed_full");
+      // Omit empty extension fields rather than changing legacy watch documents for ordinary news.
+      const { retainedSourceIds: _ids, retainedWindows: _windows, ...watch } = row;
+      tx.set(watchRef(row.id), { ...watch, ...(nextIds.length ? { retainedSourceIds: nextIds.sort() } : {}),
+        ...(nextWindows.length ? { retainedWindows: nextWindows.sort((a, b) => a.sourceId.localeCompare(b.sourceId)) } : {}) });
     },
     async read(tx, sourceId) {
       id.parse(sourceId);
@@ -283,6 +300,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           lastAttemptAt: old?.lastAttemptAt ?? null, lastSuccessfulCheckAt: old?.lastSuccessfulCheckAt ?? null, lastStatus: old?.lastStatus ?? null,
           ...(old?.confirmedGone !== undefined ? { confirmedGone: old.confirmedGone } : {}),
           ...(unchanged && old.retainedSourceIds ? { retainedSourceIds: old.retainedSourceIds } : {}),
+          ...(unchanged && old.retainedWindows ? { retainedWindows: old.retainedWindows } : {}),
           ...(unchanged && old.lastScheduledFor ? { lastScheduledFor: old.lastScheduledFor } : {}),
           lease: unchanged ? old.lease : null };
         bounded([row]); tx.set(watchRef(id), row);
