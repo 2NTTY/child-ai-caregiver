@@ -221,7 +221,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
     actions: {
       refresh, searchHistory: (query: string) => searchHistory(query), moreHistory: () => { const query = latest.current.history.data?.query; if (query !== undefined) searchHistory(query, true); },
       readMessage: (id: string) => readMessage(id), moreMessage: () => { const id = latest.current.message.data?.id; if (id) readMessage(id, true); },
-      closeMessage, moreWork: () => readWork(true), loadNotifications: () => readNotifications(),
+      closeMessage, loadWork: () => readWork(), moreWork: () => readWork(true), loadNotifications: () => readNotifications(),
       moreNotifications: () => readNotifications(true), moreReferences: () => readReferences(true),
       exportLibraryArchive: (selection: import('../../../src/shared/source-series').LibraryArchiveSelection) => runtime.request(async (signal, current) => {
         if (!current() || !env.childId || !env.userId || !env.online || !env.allows('private')) throw Error('請重新確認登入及目前的孩子。');
