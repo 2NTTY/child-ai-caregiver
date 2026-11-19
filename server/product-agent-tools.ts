@@ -2,6 +2,8 @@ import { materialQuery, selectedMaterialCitations, type MaterialQuery, type Mate
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
 import { createRegisteredSourceTools, type AgentSourceCards } from './agent-registered-source-tools.ts';
+import { createRegisteredDocumentTools } from './agent-registered-document-tools.ts';
+import type { SourceReading } from '../src/shared/source-card-reading.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
 import { officialHelpIdSchema, toAgentProgressSource, type AgentProgressSource, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
@@ -129,6 +131,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   registeredSourceCards?: AgentSourceCards;
+  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedMaterials?: {
     search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;
@@ -192,6 +195,7 @@ export function createProductAgentTools(options: {
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
+  const accountReadings = new Map<string, SourceReading>();
   const precedingHistoryMatch = new Map<string, string>();
   const historyQuoteHandles = new Map<string, string>();
   const registerHouseholdRead: RegisterHouseholdRead = (kind, item, reread) => {
@@ -485,6 +489,8 @@ export function createProductAgentTools(options: {
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
+    const citedLocations = new Set(parsed.paragraphs.flatMap(p => p.citationIds).filter(id => accountReadings.has(id)));
+    if (citedLocations.size > 6) throw new FamilyError(400, 'invalid_citation');
     const candidateDraft: ChatDeliveryDraft = {
       ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
@@ -901,6 +907,13 @@ export function createProductAgentTools(options: {
     ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if (registeredSources) tools.splice(tools.length - 1, 0, ...registeredSources.tools);
+  if (registeredSources && options.registeredSourceDocuments)
+    tools.splice(tools.length - 1, 0, ...createRegisteredDocumentTools(options.registeredSourceDocuments, scope.userId, runId, authorize,
+      (id, target, source, valid) => {
+        selectedEvidence.set(id, source);
+        accountReadings.set(id, target);
+        householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
+      }));
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
@@ -1136,7 +1149,8 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
-      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), privateSourceCitations, retrievalMode: mode };
+      const sourceCardReadings = ids.flatMap(id => accountReadings.has(id) ? [accountReadings.get(id)!] : []);
+      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;

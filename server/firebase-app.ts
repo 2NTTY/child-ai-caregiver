@@ -1,3 +1,5 @@
+import { sourceReadingSchema } from '../src/shared/source-card-reading.ts';
+import { readSourceCardExcerpt } from './agent-registered-document-tools.ts';
 import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
 import { citedPdfRoute, openCitedPdf, type KnowledgeOriginalPort } from './knowledge-cited-pdf.ts';
 import { handleSharingControlRequest, type SharingControl } from './sharing-control-api.ts';
@@ -87,6 +89,7 @@ export interface FirebaseRequestHandlerOptions {
   accountData?: FirebaseAccountDataPort;
   library?: PersonalLibrary;
   registeredSourceCards?: Pick<import('./firestore-registered-source-cards.ts').FirestoreRegisteredSourceCards, 'get' | 'list' | 'command' | 'credential'>;
+  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
   knowledgeOriginal?: KnowledgeOriginalPort;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
@@ -319,17 +322,28 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         if (request.headers.get('x-expected-user-id') !== userId) throw new RequestError('identity_changed', 409);
-        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential)?)?$/iu.exec(path);
+        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential|\/reading)?)?$/iu.exec(path);
         if (!match) throw new RequestError('not_found', 404);
-        const [, cardId, credential] = match;
+        const [, cardId, route] = match;
         let result: unknown;
-        if (request.method === 'GET' && !cardId) result = await store.list(userId, new URL(request.url).searchParams.get('cursor'));
-        else if (request.method === 'GET' && !credential) {
+        if (request.method === 'GET' && route === '/reading') {
+          const documents = options.registeredSourceDocuments;
+          if (!documents) throw new RequestError('not_found', 404);
+          const params = new URL(request.url).searchParams;
+          const target = sourceReadingSchema.safeParse({ cardId, documentId: params.get('documentId'), version: params.get('version'),
+            ...(params.has('page') ? { page: Number(params.get('page')) } : {}), offset: Number(params.get('offset') ?? '0'),
+            ...(params.has('kind') || params.has('hash') || params.has('incarnation')
+              ? { fact: { type: params.get('kind'), hash: params.get('hash'), incarnation: params.get('incarnation') } } : {}) });
+          if (!target.success) throw new RequestError('invalid_input', 400);
+          result = await readSourceCardExcerpt(documents, userId, target.data, request.signal);
+          if (!result) throw new RequestError('source_document_unavailable', 404);
+        } else if (request.method === 'GET' && !cardId) result = await store.list(userId, new URL(request.url).searchParams.get('cursor'));
+        else if (request.method === 'GET' && !route) {
           const card = await store.get(userId, cardId);
           if (!card) throw new RequestError('source_card_not_found', 404);
           result = { card };
         } else if (request.method === 'POST' && !cardId) result = await store.command(userId, await readJson(request));
-        else if (request.method === 'POST' && credential) result = await store.credential(userId, cardId, await readJson(request, 32 * 1024));
+        else if (request.method === 'POST' && route === '/credential') result = await store.credential(userId, cardId, await readJson(request, 32 * 1024));
         else throw new RequestError('method_not_allowed', 405);
         try {
           if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);

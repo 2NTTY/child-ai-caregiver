@@ -222,7 +222,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
     const usageFinancialEvidence = () => readFinancialEvidence(env.AI_USAGE_RECONCILIATION_JSON);
-    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, registeredSourceCards, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, registeredSourceCards, registeredSourceDocuments, concerns, growth, contact,
       liveSourceReader: knowledge && (userId => createOfficialLivePages({ sourceIds: config.knowledgeSourceIds ?? [],
         mayRead: sourceId => knowledge.mayReadLivePage(userId, sourceId) })),
       summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),
@@ -281,7 +281,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined,
       knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
-      registeredSourceCards,
+      registeredSourceCards, registeredSourceDocuments,
       knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, async read(target, signal) {
         signal.throwIfAborted();
         const archived = await knowledgeRefresh.originals.findPdf(target.sourceId, target.sha256);
