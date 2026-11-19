@@ -613,21 +613,28 @@ test("retains care measurement sequences without exempting adjacent contact deta
   }
 });
 
-test("enforces the same outbound minimization in a childless, zero-memory scratch session without storing memory or adding a classifier LLM", async t => {
+test("rejects identifying search text before embedding in a child-scoped run with empty fixture context", async t => {
   const budget = createTestBudget(t);
+  let runtimeBudget: AgentBudget | undefined;
   let modelCalls = 0;
+  let embeddingReservations = 0;
+  let embeddingRecords = 0;
+  let contextReads = 0;
   let embedCalls = 0;
   let storeSearchCalls = 0;
   let citationRevalidationCalls = 0;
   let readFactsCalls = 0;
   let readHistoryCalls = 0;
   const storeQueries: string[] = [];
-  const savedFacts: unknown[] = [];
+  let factProposals = 0;
   const candidate = syntheticCandidate();
 
   const gateway = createEmbeddingGateway({
     config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
-    usage: { reserve: async () => true, record: async () => {} },
+    usage: {
+      reserve: async () => { embeddingReservations++; return true; },
+      record: async () => { embeddingRecords++; },
+    },
     provider: {
       embed: async input => {
         embedCalls++;
@@ -645,7 +652,8 @@ test("enforces the same outbound minimization in a childless, zero-memory scratc
     },
   }, gateway);
 
-  // Storage isolation (no loaded profile/facts and no persistent writes) never exempts outbound query minimization.
+  // This is an ordinary child-scoped run. Only the injected context is empty;
+  // this fixture does not implement a temporary session or storage lifecycle.
   const runtime = createAgentRuntime({
     config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} },
@@ -667,6 +675,12 @@ test("enforces the same outbound minimization in a childless, zero-memory scratc
           assert.equal(lastResponse?.status, "rejected");
           assert.equal(lastResponse?.data?.code, "public_query_required");
           assert.equal(lastResponse?.data?.nextAction, "search_knowledge");
+          assert.equal(runtimeBudget?.counts.queryEmbeddings, 0);
+          assert.equal(embeddingReservations, 0);
+          assert.equal(embeddingRecords, 0);
+          assert.equal(embedCalls, 0);
+          assert.equal(storeSearchCalls, 0);
+          assert.equal(citationRevalidationCalls, 0);
           return {
             finishReason: FinishReason.STOP,
             content: { role: "model", parts: [{ functionCall: {
@@ -699,24 +713,29 @@ test("enforces the same outbound minimization in a childless, zero-memory scratc
     messages: [{ role: "user", text: "我叫陳大文，BB於2025年3月14日出生，住沙田瀝源邨福海樓，電話91234567。請問6個月大BB發燒3日點算？" }],
     authorize: async () => true,
     tools: runContext => {
+      runtimeBudget = runContext.budget;
       toolsSurface = createProductAgentTools({
         run: runContext,
         authorize: async () => true,
         memory: {
-          context: async () => ({
-            profile: { childId, version: 0, data: null },
-            profileApplicable: false,
-            facts: [],
-            topics: [],
-            summary: null,
-            recentMessages: [],
-            conflictingKeys: [],
-            unavailableFactKeys: [],
-            truncated: { facts: false, topics: false, messages: false },
-          }),
+          context: async (_userId: string, requestedChildId: string) => {
+            contextReads++;
+            assert.equal(requestedChildId, childId);
+            return {
+              profile: { childId, version: 0, data: null },
+              profileApplicable: false,
+              facts: [],
+              topics: [],
+              summary: null,
+              recentMessages: [],
+              conflictingKeys: [],
+              unavailableFactKeys: [],
+              truncated: { facts: false, topics: false, messages: false },
+            };
+          },
           facts: async () => { readFactsCalls++; return { items: [], nextAfterId: null }; },
           prepareSummary: async () => null,
-          proposeFact: async () => { savedFacts.push(true); return {}; },
+          proposeFact: async () => { factProposals++; return {}; },
         } as unknown as Parameters<typeof createProductAgentTools>[0]["memory"],
         tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
         store: {
@@ -726,28 +745,36 @@ test("enforces the same outbound minimization in a childless, zero-memory scratc
       });
       return toolsSurface.tools;
     },
-    finalize: async () => (await toolsSurface!.presentation())?.text ?? null,
+    finalize: async (_result, runContext) => {
+      // The clean retry spent one unit; the English rejection must not spend another.
+      assert.equal(runContext.budget.counts.queryEmbeddings, 1);
+      const tool = toolsSurface!.tools.find(item => item.name === "search_knowledge")!;
+      const blocked = await tool.execute(
+        { query: "my child's name is Leo phone 9123-4567 cough", classification: "official_guidance" },
+        { scope, runId, callId: "c-scratch-en-block", signal: runContext.budget.signal },
+      );
+      assert.equal(blocked.status, "rejected");
+      assert.equal(blocked.data?.code, "public_query_required");
+      assert.equal(runContext.budget.counts.queryEmbeddings, 1);
+      return (await toolsSurface!.presentation())?.text ?? null;
+    },
   });
 
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(modelCalls, 3);
+  assert.ok(contextReads > 0, "the clean query consults the empty child-scoped context stub");
+  assert.equal(result.counts.queryEmbeddings, 1);
+  assert.equal(embeddingReservations, 1);
+  assert.equal(embeddingRecords, 1);
   assert.equal(embedCalls, 1);
   assert.equal(storeSearchCalls, 1);
   assert.equal(citationRevalidationCalls, 1);
   assert.equal(readFactsCalls, 0);
   assert.equal(readHistoryCalls, 0);
-  assert.equal(savedFacts.length, 0);
+  assert.equal(factProposals, 0);
   assert.deepEqual(storeQueries, ["6個月大嬰兒 發燒3日 沙田區", "6個月大嬰兒 發燒3日 沙田區"]);
 
-  // Verify English PII + direct retriever invocation under profileless visibility also fail before quota debit.
-  const scratchTool = toolsSurface!.tools.find(item => item.name === "search_knowledge")!;
-  const englishBlocked = await scratchTool.execute(
-    { query: "my child's name is Leo phone 9123-4567 cough", classification: "official_guidance" },
-    { scope, runId, callId: "c-scratch-en-block", signal: budget.signal },
-  );
-  assert.equal(englishBlocked.status, "rejected");
-  assert.equal(englishBlocked.data?.code, "public_query_required");
-
+  // The direct retriever uses a fresh in-memory budget, independent of the runtime.
   const scratchRun = knowledge.createRun({
     actor: { kind: "query_embedding", actorId: "synthetic-scratch-user", operationId: runId },
     budget,
@@ -757,6 +784,10 @@ test("enforces the same outbound minimization in a childless, zero-memory scratc
     scratchRun.search("陳先生 14 March 2025 Flat A 12/F 咳嗽", baseFilter),
     error => error instanceof FamilyError && error.code === "public_query_required",
   );
+  assert.equal(budget.counts.queryEmbeddings, 0);
+  assert.equal(embeddingReservations, 1);
+  assert.equal(embeddingRecords, 1);
   assert.equal(embedCalls, 1);
   assert.equal(storeSearchCalls, 1);
+  assert.equal(citationRevalidationCalls, 1);
 });
