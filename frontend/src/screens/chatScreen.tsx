@@ -11,6 +11,8 @@ import {
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
+import { failedChatReply } from '../components/chat/failed-reply';
+import { CHILD_PROFILES_CHAT_TEXT } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
@@ -262,19 +264,27 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
           && !hasModelReply
           && !stoppedWithoutQueue;
-        return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
-          phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : undefined, sources: sourcesMatch ? publicAnswerSources(run) : undefined }}
-          phaseLabel={effectiveRunStatus === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
+        const failure = message.role === "model" && (effectiveRunStatus === "stopped" || effectiveRunStatus === "unknown" || !effectiveRunStatus)
+          ? failedChatReply(message.text, run?.stopReasonLabel) : null;
+        const childProfiles = message.role === "model" && !!message.agentRunId && !!child && child.id === chat.selectedChildId
+          && message.text === CHILD_PROFILES_CHAT_TEXT && (!run || run.showChildProfiles && sourcesMatch);
+        const inlineSteps = failure && run?.readOnlyStop ? run.tools.map(tool => ({
+          id: tool.id, label: tool.nameLabel, state: tool.status === "succeeded" ? "succeeded" as const : "failed" as const,
+        })) : undefined;
+        return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: childProfiles && model.children.length
+          ? model.children.map(item => item.displayName).join("、") : failure?.body ?? message.text,
+          phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : failure ? "stopped" : undefined, activities: inlineSteps,
+          sources: sourcesMatch && !failure ? publicAnswerSources(run) : undefined }}
+          phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
             {message.photo?<ChatPhotoMessage key={`${scopeKey}:${message.photo.id}`} photo={message.photo}/>:null}
             {message.file?<ChatFileMessage messageId={message.id} file={message.file}/>:null}
             {message.voice?<VoiceMessage messageId={message.id} voice={message.voice}/>:null}
             {message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : null}
-            {run && (run.status === "stopped" || run.status === "unknown") && run.stopReasonLabel && !message.text.startsWith("這次回覆未完成：")
-              ? <Text accessibilityRole="alert" style={styles.warning}>這次回覆未完成：{run.stopReasonLabel}。</Text> : null}
           </>}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
+            {childProfiles ? <ChatAction label="查看子女檔案" compact={compact} onPress={() => actions.open("profile")} /> : null}
             {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
               <RegisteredReadingCard key={JSON.stringify(target)} target={target} active={displayedMessages.some(item => item.id === message.id)} />)}
             {message.role === 'model' && sourcesMatch && run?.sourceCardLinks?.map(link =>
@@ -286,7 +296,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
             {message.role === 'model' && sourcesMatch && run?.platformSeriesIds?.map(series =>
               <ChatAction key={series} label="查看已加入的平台卡" compact={compact}
                 onPress={() => navigate(() => router.push({ pathname: '/memory', params: { series } }), 'workspace')} />)}
-            {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
+            {message.agentRunId && !inlineSteps ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
               onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
             {pendingReply ? <ChatAction label={chat.replyingMessageId === message.id ? "正在等候回覆" : message.agentRunId ? "查核原回覆" : "取得回覆"}
