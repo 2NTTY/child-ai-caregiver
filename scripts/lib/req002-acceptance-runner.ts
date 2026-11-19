@@ -31,6 +31,7 @@ import {
   classifyTerminalCategory,
   createProviderBoundaryGuard,
   createRunMilestoneTracker,
+  observeReq002Reply,
   findCanaryLeaks,
   inspectCaseCHelpMatch,
   verifyCitedVersionsInStore,
@@ -394,7 +395,7 @@ function createScriptedOfflineSliceModel(
               args: {
                 kind: "clarification",
                 paragraphs: [{
-                  text: "現時系統已收錄的官方來源沒有涵蓋嬰兒發燒或嘔吐的具體護理與用藥判斷；如寶寶出現持續高燒、反覆嘔吐或任何危急徵狀，請使用畫面上的官方醫療／緊急求助入口或盡快求醫。",
+                  text: "暫無相關資料。",
                   citationIds: [],
                 }],
               },
@@ -589,6 +590,7 @@ export function createProductAgentHttpHarness(input: {
     store,
     agent,
     handle,
+    getClaimedRunId: (messageId: string) => runByMessage.get(messageId) ?? null,
     getRunResult: (messageId: string) => {
       const runId = runByMessage.get(messageId);
       return runId ? runResults.get(runId) ?? null : null;
@@ -598,7 +600,7 @@ export function createProductAgentHttpHarness(input: {
 }
 
 /**
- * Verifies real mid-stream SSE disconnect, reconnect recovery (`GET .../reply`),
+ * Verifies an in-memory HTTP/SSE stream disconnect, reconnect recovery (`GET .../reply`),
  * out-of-order frame deduplication, stopped card retention, and 403 revocation cleanup.
  */
 export async function runSseDisconnectAndRecoverySuite(): Promise<Req002AcceptanceReceipt["sseDisconnectRecovery"]> {
@@ -682,6 +684,7 @@ export async function runSseDisconnectAndRecoverySuite(): Promise<Req002Acceptan
       const decoder = new TextDecoder();
       const proxied = new ReadableStream<Uint8Array>({
         async pull(controller) {
+          if (abortedMidStream) return;
           const { value, done } = await upstream.read();
           if (done) {
             controller.close();
@@ -697,18 +700,16 @@ export async function runSseDisconnectAndRecoverySuite(): Promise<Req002Acceptan
               if (payload.progress.sources?.length) {
                 retainedSourcesBeforeAbort = Math.max(retainedSourcesBeforeAbort, payload.progress.sources.length);
               }
-              controller.enqueue(value);
-              if (payload.progress.sources?.length && !abortedMidStream) {
-                abortedMidStream = true;
-                setTimeout(() => {
-                  try { controller.error(new Error("Synthetic mid-stream SSE TCP drop")); } catch { /* stream already closed */ }
-                }, 0);
-                return;
-              }
+              if (payload.progress.sources?.length) abortedMidStream = true;
             }
           }
-          if (!abortedMidStream) controller.enqueue(value);
+          controller.enqueue(value); // Each upstream chunk is forwarded exactly once.
+          if (abortedMidStream) {
+            await upstream.cancel();
+            setTimeout(() => controller.error(new Error("Synthetic mid-stream SSE disconnect")), 0);
+          }
         },
+        cancel: () => upstream.cancel(),
       });
       return new Response(proxied, { status: serverRes.status, headers: serverRes.headers });
     }
@@ -739,7 +740,9 @@ export async function runSseDisconnectAndRecoverySuite(): Promise<Req002Acceptan
     assert.ok(snapAfterDrop.remoteReply?.runId);
 
     // Wait until server model enters second turn, then let background execution finish & persist.
-    while (!secondTurnReached) await new Promise(resolve => setTimeout(resolve, 5));
+    const turnDeadline = Date.now() + 5000;
+    while (!secondTurnReached && Date.now() < turnDeadline) await new Promise(resolve => setTimeout(resolve, 5));
+    assert.ok(secondTurnReached, "Gated offline model did not reach the second turn");
     releaseGate();
     const waitDeadline = Date.now() + 5000;
     while (Date.now() < waitDeadline) {
@@ -800,6 +803,7 @@ export async function runSseDisconnectAndRecoverySuite(): Promise<Req002Acceptan
       const afterRevoke = revController.getSnapshot();
       const revocationClearedCards = afterRevoke.feedback === null;
       return {
+        transport: "in_memory_http_sse",
         abortedMidStream,
         preAbortPhases,
         retainedSourcesBeforeAbort,
@@ -891,6 +895,8 @@ export async function runBaselineVsBoundedComparison(): Promise<Req002Acceptance
   const warmReusedEmbeddings = coldEmbeddings - (embeddingsDispatched - coldEmbeddings);
 
   return {
+    measurement: "scripted_provider_and_local_map",
+    productCache: "not_measured",
     sampleSize: 1,
     sequentialBaselineModelCalls: sequential.counts.modelCalls,
     boundedBatchModelCalls: bounded.counts.modelCalls,
@@ -899,7 +905,7 @@ export async function runBaselineVsBoundedComparison(): Promise<Req002Acceptance
     boundedBatchToolCalls: bounded.counts.toolCalls,
     coldEmbeddings,
     warmReusedEmbeddings,
-    note: "Single paired synthetic benchmark (sequential 3-turn vs 1-batch 3-read turn + warm vector cache); no invented p50/p95 thresholds.",
+    note: "One scripted runtime pair with a probe-local Map, not a production cache, live-provider speed measurement or latency distribution.",
   };
 }
 
@@ -912,8 +918,14 @@ export async function executeReq002AcceptanceSuite(options: {
   rawProvider?: AgentModelProvider;
   rawEmbedding?: EmbeddingProvider;
   budgetCaps?: Partial<Req002BudgetCaps>;
-  includeGreetingCase?: boolean;
+  offlineGreetingOnly?: boolean;
 }): Promise<Req002AcceptanceReceipt> {
+  if (options.mode === "offline" && (options.rawProvider || options.rawEmbedding)) {
+    throw new Error("Offline verification always uses the built-in scripted providers.");
+  }
+  if (options.mode === "live" && (!options.rawProvider || !options.rawEmbedding || options.offlineGreetingOnly)) {
+    throw new Error("Live verification requires both explicit adapters and the core scenarios.");
+  }
   const seed = await createSeededOfficialKnowledgeStore();
   const capturedLogs: string[] = [];
   const rawProvider = options.rawProvider ?? createScriptedOfflineSliceModel(seed.publishedChunksByKey);
@@ -928,7 +940,6 @@ export async function executeReq002AcceptanceSuite(options: {
     onLog: line => capturedLogs.push(line),
   });
 
-  const activeTracker = { current: null as ReturnType<typeof createRunMilestoneTracker> | null };
   const harness = createProductAgentHttpHarness({
     config: options.config,
     provider: boundary.provider,
@@ -936,27 +947,26 @@ export async function executeReq002AcceptanceSuite(options: {
     knowledgeStore: seed.store,
     onDiagnostic: event => {
       capturedLogs.push(JSON.stringify(event));
-      activeTracker.current?.noteDiagnostic(event);
     },
   });
 
   const scenariosToRun: {
     id: string;
     text: string;
-    cacheMode: "cold" | "warm" | "not_applicable";
-  }[] = [
-    ...(options.includeGreetingCase === true ? [{ id: "case_g_greeting_short_path", text: REQ002_CORE_SCENARIOS.greetingShortPath, cacheMode: "not_applicable" as const }] : []),
-    { id: "case_a_half_year_solid_food", text: REQ002_CORE_SCENARIOS.halfYearSolidFoodWithCanary, cacheMode: "cold" as const },
-    { id: "case_b_two_month_restriction", text: REQ002_CORE_SCENARIOS.twoMonthRestriction, cacheMode: "warm" as const },
-    { id: "case_c_uncovered_fever_vomiting", text: REQ002_CORE_SCENARIOS.uncoveredFeverVomiting, cacheMode: "cold" as const },
-  ];
+  }[] = options.offlineGreetingOnly
+    ? [{ id: "case_g_greeting_short_path", text: REQ002_CORE_SCENARIOS.greetingShortPath }]
+    : [
+        { id: "case_a_half_year_solid_food", text: REQ002_CORE_SCENARIOS.halfYearSolidFoodWithCanary },
+        { id: "case_b_two_month_restriction", text: REQ002_CORE_SCENARIOS.twoMonthRestriction },
+        { id: "case_c_uncovered_fever_vomiting", text: REQ002_CORE_SCENARIOS.uncoveredFeverVomiting },
+      ];
 
   const scenarioReceipts: Req002AcceptanceReceipt["scenarios"] = [];
   for (const item of scenariosToRun) {
-    const tracker = createRunMilestoneTracker();
-    activeTracker.current = tracker;
-    const callsBefore = boundary.snapshot().modelCalls;
-
+    const previous = boundary.snapshot();
+    if (previous.capBlocked || previous.runsStarted >= boundary.caps.maxRuns
+      || previous.modelCalls >= boundary.caps.maxModelCalls) break;
+    const callsBefore = previous.modelCalls;
     boundary.beginRun(item.id);
     const userMessage = await harness.chat.createUserMessageForUser(harness.userId, harness.childId, item.text);
     assert.ok(userMessage);
@@ -966,6 +976,7 @@ export async function executeReq002AcceptanceSuite(options: {
       : { cards: [], respectsExistingEmergencyBoundaries: true };
     assert.equal(helpCheck.respectsExistingEmergencyBoundaries, true);
 
+    const tracker = createRunMilestoneTracker();
     const sseRes = await harness.handle(new Request(`${harness.origin}/api/children/${harness.childId}/messages/${userMessage.id}/reply`, {
       method: "POST",
       headers: {
@@ -976,16 +987,16 @@ export async function executeReq002AcceptanceSuite(options: {
       },
       body: "{}",
     }));
-    const rawSse = await sseRes.text();
-    for (const frame of rawSse.split("\n\n")) {
-      if (!frame.startsWith("data: ")) continue;
-      const parsed = JSON.parse(frame.slice(6)) as { type?: string; progress?: AgentProgress };
-      if (parsed.type === "progress" && parsed.progress) tracker.noteProgress(parsed.progress);
-    }
+    const isGreeting = item.id === "case_g_greeting_short_path";
+    await observeReq002Reply(sseRes, tracker, userMessage.id, () => harness.getClaimedRunId(userMessage.id), () => {
+      const saved = harness.getRunResult(userMessage.id);
+      // A/B owe independent review. A greeting or safe uncovered-topic limitation can
+      // be cleared by the product's normal completion path without a review binding.
+      const owesCitationReview = item.id === "case_a_half_year_solid_food" || item.id === "case_b_two_month_restriction";
+      return saved?.status === "completed" && (!owesCitationReview || saved.deliveryReview?.decision === "pass") ? saved.runId : null;
+    });
 
     const result = harness.getRunResult(userMessage.id);
-    tracker.markTerminalSettled(Boolean(result?.status === "completed"));
-
     const replayBeforeCalls = boundary.snapshot().modelCalls;
     const getReplyRes = await harness.handle(new Request(`${harness.origin}/api/children/${harness.childId}/messages/${userMessage.id}/reply`, {
       method: "GET",
@@ -994,27 +1005,33 @@ export async function executeReq002AcceptanceSuite(options: {
     const getReplyJson = getReplyRes.ok ? (await getReplyRes.json()) as { reply?: ChatReplyState | null } : null;
     const getReplyReplaySameRunId = Boolean(
       result
-      && getReplyJson?.reply?.runId === result.runId
+      && result.status !== "running"
+      && getReplyJson?.reply?.runId === result.runId && getReplyJson.reply.status === result.status
+      && getReplyJson.reply.messageId === userMessage.id
       && boundary.snapshot().modelCalls === replayBeforeCalls,
     );
+
+    if (getReplyReplaySameRunId) tracker.markTerminalSettled();
 
     const citations = result?.citations ?? [];
     const originalVersionVerified = citations.length > 0
       ? await verifyCitedVersionsInStore(citations, chunk => seed.readChunkByIdentity(chunk))
       : false;
 
-    const helpCards = [...helpCheck.cards];
-    if (result?.tools.some(t => t.name === "show_official_help" && t.reference === "medical-consult-hk-v1") && !helpCards.includes("medical-consult-hk-v1")) {
-      helpCards.push("medical-consult-hk-v1");
+    // Report the actual product help events/tool receipts, never the expected classifier output.
+    const helpCards = tracker.helpCards();
+    for (const t of result?.tools ?? []) {
+      if (t.name === "show_official_help" && t.status === "succeeded"
+        && (t.reference === "medical-consult-hk-v1" || t.reference === "emergency-hk-v1") && !helpCards.includes(t.reference)) helpCards.push(t.reference);
     }
 
     scenarioReceipts.push({
       id: item.id,
       runId: result?.runId ?? null,
-      status: result?.status ?? "stopped",
+      status: result?.status ?? "not_observed",
       stopReason: result?.stopReason ?? null,
       terminalCategory: classifyTerminalCategory(result),
-      cacheMode: item.cacheMode,
+      cacheMode: isGreeting ? "not_applicable" : "not_measured",
       counts: result?.counts ?? { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 },
       providerBoundaryCalls: boundary.snapshot().modelCalls - callsBefore,
       reviewDecision: result?.deliveryReview?.decision ?? null,
@@ -1025,6 +1042,9 @@ export async function executeReq002AcceptanceSuite(options: {
       deterministicHelpCards: helpCards,
       milestones: tracker.snapshot(),
     });
+    const observed = boundary.snapshot();
+    if (result?.status !== "completed" || !getReplyReplaySameRunId || observed.capBlocked
+      || findCanaryLeaks([observed.searchQueryArgs, observed.embeddingPayloads, capturedLogs]).length) break;
   }
 
   const snap = boundary.snapshot();
@@ -1038,11 +1058,13 @@ export async function executeReq002AcceptanceSuite(options: {
   return buildSanitizedAcceptanceReceipt({
     candidateSha: options.candidateSha,
     mode: options.mode === "live" ? "live" : "offline_scripted",
+    suite: options.offlineGreetingOnly ? "offline_greeting_smoke" : "core_abc",
     provider: options.providerName,
     model: options.config.model,
     executedAt: new Date().toISOString(),
     budgetCaps: boundary.caps,
     totals: {
+      capBlocked: snap.capBlocked,
       runsStarted: snap.runsStarted,
       modelCalls: snap.modelCalls,
       reviewOrRepairCalls: snap.reviewOrRepairCalls,

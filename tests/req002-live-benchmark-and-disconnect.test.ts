@@ -45,7 +45,7 @@ test("provider boundary guard counts generation, review/repair, and query embedd
   let upstreamEmbeddings = 0;
   const logs: string[] = [];
 
-  const guard = createProviderBoundaryGuard({
+  const makeGuard = () => createProviderBoundaryGuard({
     caps: { maxRuns: 2, maxModelCalls: 3, maxQueryEmbeddings: 1 },
     provider: {
       async generate(request) {
@@ -66,6 +66,7 @@ test("provider boundary guard counts generation, review/repair, and query embedd
     onLog: line => logs.push(line),
   });
 
+  const guard = makeGuard();
   guard.beginRun("run-1");
   await guard.provider.generate({ contents: [], config: { tools: [{ functionDeclarations: [{ name: "search_knowledge" }] }] }, toolsDict: {}, liveConnectConfig: {} }, new AbortController().signal);
   await guard.provider.generate({ contents: [], config: {}, toolsDict: {}, liveConnectConfig: {} }, new AbortController().signal);
@@ -77,15 +78,21 @@ test("provider boundary guard counts generation, review/repair, and query embedd
     guard.provider.generate({ contents: [], config: {}, toolsDict: {}, liveConnectConfig: {} }, new AbortController().signal),
     err => err instanceof BudgetCapExceededError && err.kind === "model_calls" && err.limit === 3,
   );
+  await assert.rejects(guard.embedding!.embed({ task: "RETRIEVAL_QUERY", text: "later" }, new AbortController().signal),
+    err => err instanceof BudgetCapExceededError && err.kind === "model_calls");
+  const embeddingGuard = makeGuard();
+  await embeddingGuard.embedding!.embed({ task: "RETRIEVAL_QUERY", text: "first query" }, new AbortController().signal);
   await assert.rejects(
-    guard.embedding!.embed({ task: "RETRIEVAL_QUERY", text: "second query" }, new AbortController().signal),
+    embeddingGuard.embedding!.embed({ task: "RETRIEVAL_QUERY", text: "second query" }, new AbortController().signal),
     err => err instanceof BudgetCapExceededError && err.kind === "query_embeddings" && err.limit === 1,
   );
-  guard.beginRun("run-2");
-  assert.throws(() => guard.beginRun("run-3"), err => err instanceof BudgetCapExceededError && err.kind === "runs" && err.limit === 2);
+  const runGuard = makeGuard();
+  runGuard.beginRun("run-1");
+  runGuard.beginRun("run-2");
+  assert.throws(() => runGuard.beginRun("run-3"), err => err instanceof BudgetCapExceededError && err.kind === "runs" && err.limit === 2);
 
   assert.equal(upstreamModelCalls, 3, "Blocked 4th call must never reach upstream model provider");
-  assert.equal(upstreamEmbeddings, 1, "Blocked 2nd embedding must never reach upstream embedding provider");
+  assert.equal(upstreamEmbeddings, 2, "Only the first embedding in each of two independent guard tests was dispatched");
   const snap = guard.snapshot();
   assert.equal(snap.modelCalls, 3);
   assert.equal(snap.reviewOrRepairCalls, 2);
@@ -170,17 +177,18 @@ test("receipt builder refuses any serialized canary token", () => {
     candidateSha: "abcdef1234567",
     mode: "offline_scripted",
     provider: "scripted_offline",
+    suite: "core_abc",
     model: REQ002_SYNTHETIC_CANARY.name,
     executedAt: new Date().toISOString(),
     budgetCaps: REQ002_DEFAULT_BUDGET_CAPS,
-    totals: { runsStarted: 1, modelCalls: 1, reviewOrRepairCalls: 0, queryEmbeddings: 0, promptTokens: 0, candidateTokens: 0, totalTokens: 0 },
+    totals: { capBlocked: false, runsStarted: 1, modelCalls: 1, reviewOrRepairCalls: 0, queryEmbeddings: 0, promptTokens: 0, candidateTokens: 0, totalTokens: 0 },
     scenarios: [{
       id: "case_a",
       runId: "run-1",
       status: "completed",
       stopReason: null,
       terminalCategory: "completed",
-      cacheMode: "cold",
+      cacheMode: "not_measured",
       counts: { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 },
       providerBoundaryCalls: 1,
       reviewDecision: "pass",
@@ -192,6 +200,7 @@ test("receipt builder refuses any serialized canary token", () => {
       milestones: { firstMeaningfulProgressMs: 1, firstUsableSourceMs: null, firstApprovedAnswerMs: 2, terminalSettledMs: 3 },
     }],
     sseDisconnectRecovery: {
+      transport: "in_memory_http_sse",
       abortedMidStream: true,
       preAbortPhases: ["started", "searching"],
       retainedSourcesBeforeAbort: 1,
@@ -202,6 +211,7 @@ test("receipt builder refuses any serialized canary token", () => {
       revocationClearedCards: true,
     },
     baselineComparison: {
+      measurement: "scripted_provider_and_local_map", productCache: "not_measured",
       sampleSize: 1,
       sequentialBaselineModelCalls: 4,
       boundedBatchModelCalls: 2,
@@ -219,17 +229,20 @@ test("receipt builder refuses any serialized canary token", () => {
 });
 
 test("seeded 5-source offline suite covers Case G, A, B, C, SSE mid-stream disconnect recovery, and baseline benchmark with zero leaks", async () => {
-  const receipt = await executeReq002AcceptanceSuite({
+  const options = {
     candidateSha: "deadbeef12345",
-    mode: "offline",
+    mode: "offline" as const,
     config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-req002-suite", AI_AGENT_MAX_RETRIES: "0" }),
     providerName: "scripted_offline",
-    includeGreetingCase: true,
-    budgetCaps: { maxRuns: 4, maxModelCalls: 16, maxQueryEmbeddings: 4 },
-  });
+  };
+  const receipt = await executeReq002AcceptanceSuite(options);
+  const greetingReceipt = await executeReq002AcceptanceSuite({ ...options, offlineGreetingOnly: true });
 
+  assert.deepEqual(receipt.verdict, { status: "passed", failures: [] });
+  assert.deepEqual(greetingReceipt.verdict, { status: "passed", failures: [] });
   const byId = new Map(receipt.scenarios.map(item => [item.id, item]));
-  const caseG = byId.get("case_g_greeting_short_path")!;
+  const caseG = greetingReceipt.scenarios[0]!;
+  assert.equal(caseG.id, "case_g_greeting_short_path");
   assert.equal(caseG.status, "completed");
   assert.equal(caseG.counts.modelCalls, 1);
   assert.equal(caseG.counts.queryEmbeddings, 0);
@@ -272,6 +285,8 @@ test("seeded 5-source offline suite covers Case G, A, B, C, SSE mid-stream disco
   assert.equal(receipt.sseDisconnectRecovery.stoppedRetainsQualifiedCards, true);
   assert.equal(receipt.sseDisconnectRecovery.revocationClearedCards, true);
 
+  assert.ok(receipt.scenarios.every(s => s.cacheMode === "not_measured"));
+  assert.equal(receipt.baselineComparison.productCache, "not_measured");
   assert.ok(receipt.baselineComparison.modelCallReduction >= 1);
   assert.equal(receipt.baselineComparison.warmReusedEmbeddings, receipt.baselineComparison.coldEmbeddings);
 

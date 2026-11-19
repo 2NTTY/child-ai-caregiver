@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/req002-live-benchmark-and-disconnect.test.ts
+  tests/req002-harness-boundaries.test.ts
   tests/search-official-evidence.test.ts
   tests/knowledge-ranking.test.ts
   tests/knowledge-a04.test.ts
@@ -52,7 +53,7 @@ TEST_FILES=(
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(6 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
+TEST_CASES=(6 7 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -95,7 +96,15 @@ if "$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs >/dev/null 2>&
   echo "FAIL unflagged verify-req002-live.mjs must refuse execution" >&2
   exit 1
 fi
-"$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs --offline > "$TMPDIR/req002-offline-receipt.json"
+receipt="$TMPDIR/req002-offline-receipt.json"
+"$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs --offline --write-receipt="$receipt" >/dev/null
+"$NODE_BIN" -e 'const r=require(process.argv[1]); if (r.verdict.status !== "passed" || r.mode !== "offline_scripted") process.exit(1)' "$receipt"
+receipt="$TMPDIR/req002-stopped-receipt.json"
+if "$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs --offline --max-model-calls=1 --write-receipt="$receipt" >/dev/null; then
+  echo "FAIL stopped or incomplete acceptance must exit nonzero" >&2
+  exit 1
+fi
+"$NODE_BIN" -e 'const r=require(process.argv[1]); if (r.verdict.status !== "failed" || r.totals.modelCalls !== 1 || r.scenarios.length !== 1) process.exit(1)' "$receipt"
 
 stage=full-server-root-and-frontend-types
 timeout 240s "$NODE_BIN" --max-old-space-size=3072 node_modules/typescript/bin/tsc \

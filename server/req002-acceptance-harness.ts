@@ -1,11 +1,15 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { z } from "zod";
 import { AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
-import type { AgentDiagnostic } from "./agent-observer.ts";
+import type { readLocalAgentModel } from "./local-agent-model.ts";
+import { readAgentFeedback } from "../src/client/agent-feedback-reader.ts";
 import type { EmbeddingInput, EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
-import { matchOfficialHelpForText, officialHelpIdSchema, type AgentProgress, type OfficialHelpId } from "../src/shared/agent-feedback.ts";
+import { matchOfficialHelpForText, officialHelpIdSchema, reconcileAgentProgress, type ReconciledAgentProgress, type OfficialHelpId } from "../src/shared/agent-feedback.ts";
 import type { KnowledgeEvidence } from "../src/shared/knowledge.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
 
@@ -57,10 +61,10 @@ export interface Req002CliOptions {
   readonly budgetCaps: Req002BudgetCaps;
 }
 
-function parsePositiveIntFlag(raw: string, flagName: string): number {
+function parsePositiveIntFlag(raw: string, flagName: string, maximum: number): number {
   const value = Number(raw);
-  if (!Number.isSafeInteger(value) || value < 1 || value > 100) {
-    throw new Error(`Invalid integer for ${flagName}: ${raw}`);
+  if (!/^[1-9][0-9]*$/u.test(raw) || !Number.isSafeInteger(value) || value > maximum) {
+    throw new Error(`Invalid integer for ${flagName}; expected 1..${maximum}`);
   }
   return value;
 }
@@ -96,15 +100,15 @@ export function parseReq002LiveCliArgs(argv: readonly string[]): Req002CliOption
       continue;
     }
     if (arg.startsWith("--max-runs=")) {
-      maxRuns = parsePositiveIntFlag(arg.slice("--max-runs=".length), "--max-runs");
+      maxRuns = parsePositiveIntFlag(arg.slice("--max-runs=".length), "--max-runs", REQ002_DEFAULT_BUDGET_CAPS.maxRuns);
       continue;
     }
     if (arg.startsWith("--max-model-calls=")) {
-      maxModelCalls = parsePositiveIntFlag(arg.slice("--max-model-calls=".length), "--max-model-calls");
+      maxModelCalls = parsePositiveIntFlag(arg.slice("--max-model-calls=".length), "--max-model-calls", REQ002_DEFAULT_BUDGET_CAPS.maxModelCalls);
       continue;
     }
     if (arg.startsWith("--max-embeddings=")) {
-      maxQueryEmbeddings = parsePositiveIntFlag(arg.slice("--max-embeddings=".length), "--max-embeddings");
+      maxQueryEmbeddings = parsePositiveIntFlag(arg.slice("--max-embeddings=".length), "--max-embeddings", REQ002_DEFAULT_BUDGET_CAPS.maxQueryEmbeddings);
       continue;
     }
     throw new Error(`Unknown CLI option: ${arg}`);
@@ -115,6 +119,31 @@ export function parseReq002LiveCliArgs(argv: readonly string[]): Req002CliOption
     writeReceiptPath,
     budgetCaps: { maxRuns, maxModelCalls, maxQueryEmbeddings },
   };
+}
+
+/** Select before constructing SDKs: a callable embedding adapter can be an unconfigured placeholder. */
+export function selectReq002LocalAdapters<Config, Pair>(
+  local: Pick<ReturnType<typeof readLocalAgentModel>, "provider" | "embeddingConfigured"> & { providers?: (config: Config) => Pair },
+  config: Config, fromAdc: (config: Config) => Pair,
+): Pair {
+  if (local.embeddingConfigured !== true) throw new Error("Required query embedding is not configured; no provider dispatched.");
+  if (local.provider === "vertex-adc") return fromAdc(config);
+  if (!local.providers) throw new Error("Selected key mode has no provider factory; ADC fallback is forbidden.");
+  return local.providers(config);
+}
+
+/** No caller cwd, inherited Git overrides, or dirty tracked state may supply the receipt identity. */
+export function resolveReq002CandidateSha(entrypoint: string | URL): string {
+  const root = realpathSync(fileURLToPath(new URL("../", entrypoint)));
+  const git = (...args: string[]) => execFileSync("git", ["--no-optional-locks", "-c", "core.fsmonitor=false", ...args], {
+    cwd: root, encoding: "utf8", env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, GIT_CONFIG_NOSYSTEM: "1" },
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+  if (realpathSync(git("rev-parse", "--show-toplevel")) !== root) throw new Error("Entrypoint does not belong to the expected checkout root.");
+  if (git("status", "--porcelain", "--untracked-files=no")) throw new Error("Acceptance requires a clean tracked checkout.");
+  const sha = git("rev-parse", "--verify", "HEAD");
+  if (!/^[0-9a-f]{40}$/u.test(sha)) throw new Error("Cannot identify the candidate");
+  return sha;
 }
 
 /** Recursively scans any value for synthetic PII canary tokens. */
@@ -155,6 +184,7 @@ export interface ProviderBoundaryCallLog {
 }
 
 export interface ProviderBoundarySnapshot {
+  readonly capBlocked: boolean;
   readonly runsStarted: number;
   readonly modelCalls: number;
   readonly reviewOrRepairCalls: number;
@@ -190,7 +220,8 @@ function extractSearchQueryArgs(request: LlmRequest): string[] {
 /**
  * Wraps the true provider boundary (`AgentModelProvider.generate` and
  * `EmbeddingProvider.embed`) so every generation, delivery review, repair,
- * query embedding, and SDK retry is counted against hard ceilings BEFORE dispatch.
+ * query embedding, and gateway retry is counted BEFORE dispatch. Supported SDKs
+ * have internal transport retries disabled; these are adapter attempts, not billing data.
  */
 export function createProviderBoundaryGuard(input: {
   caps?: Partial<Req002BudgetCaps>;
@@ -198,7 +229,13 @@ export function createProviderBoundaryGuard(input: {
   embedding?: EmbeddingProvider;
   onLog?: (line: string) => void;
 }) {
-  const caps: Req002BudgetCaps = { ...REQ002_DEFAULT_BUDGET_CAPS, ...input.caps };
+  const caps = Object.freeze({ ...REQ002_DEFAULT_BUDGET_CAPS, ...input.caps });
+  for (const key of Object.keys(REQ002_DEFAULT_BUDGET_CAPS) as (keyof Req002BudgetCaps)[]) {
+    if (!Number.isSafeInteger(caps[key]) || caps[key] < 1 || caps[key] > REQ002_DEFAULT_BUDGET_CAPS[key]) {
+      throw new Error(`Invalid integer for ${key}; expected 1..${REQ002_DEFAULT_BUDGET_CAPS[key]}`);
+    }
+  }
+  let capBlocked = false;
   let runsStarted = 0;
   let modelCalls = 0;
   let reviewOrRepairCalls = 0;
@@ -210,10 +247,17 @@ export function createProviderBoundaryGuard(input: {
   const searchQueryArgs: string[] = [];
   const callLogs: ProviderBoundaryCallLog[] = [];
 
+  // A gateway may swallow a stop and attempt a repair or degraded fallback. No later dispatch is allowed.
+  let halted: AgentStopped | null = null;
+  function checkActive() { if (halted) throw halted; }
+  function halt(error: AgentStopped): never { halted ??= error; throw halted; }
+
   function beginRun(label: string) {
+    checkActive();
     if (runsStarted + 1 > caps.maxRuns) {
+      capBlocked = true;
       input.onLog?.(`cap_blocked kind=runs label=${label} limit=${caps.maxRuns}`);
-      throw new BudgetCapExceededError("runs", caps.maxRuns, runsStarted + 1);
+      halt(new BudgetCapExceededError("runs", caps.maxRuns, runsStarted + 1));
     }
     runsStarted += 1;
   }
@@ -222,16 +266,20 @@ export function createProviderBoundaryGuard(input: {
     ...(input.provider.preflight ? { preflight: input.provider.preflight.bind(input.provider) } : {}),
     ...(input.provider.countInput ? { countInput: input.provider.countInput.bind(input.provider) } : {}),
     async generate(request: LlmRequest, signal: AbortSignal): Promise<LlmResponse> {
+      checkActive();
       if (modelCalls + 1 > caps.maxModelCalls) {
+        capBlocked = true;
         input.onLog?.(`cap_blocked kind=model_calls limit=${caps.maxModelCalls}`);
-        throw new BudgetCapExceededError("model_calls", caps.maxModelCalls, modelCalls + 1);
+        halt(new BudgetCapExceededError("model_calls", caps.maxModelCalls, modelCalls + 1));
       }
+      const queries = extractSearchQueryArgs(request);
+      searchQueryArgs.push(...queries);
+      if (findCanaryLeaks(queries).length) halt(new AgentStopped("invalid_tool"));
       modelCalls += 1;
       const callIndex = modelCalls;
       const roleKind = classifyProviderRequest(request);
       if (roleKind === "review_or_repair") reviewOrRepairCalls += 1;
       const response = await input.provider.generate(request, signal);
-      for (const query of extractSearchQueryArgs(request)) searchQueryArgs.push(query);
       for (const part of response.content?.parts ?? []) {
         if (part.functionCall?.name === "search_knowledge" && typeof part.functionCall.args?.query === "string") {
           searchQueryArgs.push(part.functionCall.args.query);
@@ -244,6 +292,7 @@ export function createProviderBoundaryGuard(input: {
       candidateTokens += cTok;
       totalTokens += tTok;
       callLogs.push({ callIndex, roleKind, promptTokens: pTok, candidateTokens: cTok, totalTokens: tTok });
+      if (findCanaryLeaks(searchQueryArgs).length) halt(new AgentStopped("invalid_tool"));
       return response;
     },
   };
@@ -251,14 +300,17 @@ export function createProviderBoundaryGuard(input: {
   const embedding: EmbeddingProvider | undefined = input.embedding
     ? {
         async embed(request: EmbeddingInput, signal: AbortSignal): Promise<EmbeddingReply> {
-          if (request.task === "RETRIEVAL_QUERY") {
-            if (queryEmbeddings + 1 > caps.maxQueryEmbeddings) {
-              input.onLog?.(`cap_blocked kind=query_embeddings limit=${caps.maxQueryEmbeddings}`);
-              throw new BudgetCapExceededError("query_embeddings", caps.maxQueryEmbeddings, queryEmbeddings + 1);
-            }
-            queryEmbeddings += 1;
-            embeddingPayloads.push(request.text);
+          checkActive();
+          // Documents are seeded locally. Only query embeddings may use this adapter.
+          if (request.task !== "RETRIEVAL_QUERY") halt(new AgentStopped("invalid_tool"));
+          embeddingPayloads.push(request.text);
+          if (findCanaryLeaks(request.text).length) halt(new AgentStopped("invalid_tool"));
+          if (queryEmbeddings + 1 > caps.maxQueryEmbeddings) {
+            capBlocked = true;
+            input.onLog?.(`cap_blocked kind=query_embeddings limit=${caps.maxQueryEmbeddings}`);
+            halt(new BudgetCapExceededError("query_embeddings", caps.maxQueryEmbeddings, queryEmbeddings + 1));
           }
+          queryEmbeddings += 1;
           return input.embedding!.embed(request, signal);
         },
       }
@@ -266,7 +318,7 @@ export function createProviderBoundaryGuard(input: {
 
   function snapshot(): ProviderBoundarySnapshot {
     return {
-      runsStarted,
+      capBlocked, runsStarted,
       modelCalls,
       reviewOrRepairCalls,
       queryEmbeddings,
@@ -292,7 +344,7 @@ export interface CoreMilestones {
 }
 
 export function classifyTerminalCategory(result: Pick<ProductAgentResult, "status" | "stopReason" | "citations"> | null): TerminalCategory {
-  if (!result) return "failed";
+  if (!result || result.status === "running") return "unknown";
   if (result.status === "completed") return "completed";
   if (result.status === "unknown") return "unknown";
   if (result.stopReason === "cancelled") return "cancelled";
@@ -303,7 +355,7 @@ export function classifyTerminalCategory(result: Pick<ProductAgentResult, "statu
 /**
  * Tracks REQ-002 §7.1 timing milestones for one run without recording any message text or prompts.
  */
-export function createRunMilestoneTracker(now: () => number = () => Date.now()) {
+export function createRunMilestoneTracker(now: () => number = () => performance.now()) {
   const startedAt = now();
   let firstMeaningfulProgressMs: number | null = null;
   let firstUsableSourceMs: number | null = null;
@@ -312,16 +364,11 @@ export function createRunMilestoneTracker(now: () => number = () => Date.now()) 
 
   const elapsed = () => Math.max(0, Math.round(now() - startedAt));
 
-  function noteDiagnostic(event: AgentDiagnostic): void {
-    const t = Math.max(0, Math.round(event.elapsedMs));
-    if (firstMeaningfulProgressMs === null && (event.phase === "model_start" || event.phase === "tool_start")) {
-      firstMeaningfulProgressMs = t;
-    }
-  }
-
-  function noteProgress(event: AgentProgress): void {
+  const cards = new Set<OfficialHelpId>();
+  function noteProgress(event: ReconciledAgentProgress): void {
+    for (const card of event.cards) cards.add(card);
     const t = elapsed();
-    if (firstMeaningfulProgressMs === null && event.phase !== "started") {
+    if (firstMeaningfulProgressMs === null && (event.phase !== "started" || event.cards.length || event.sources.length)) {
       firstMeaningfulProgressMs = t;
     }
     if (firstUsableSourceMs === null && (event.sources?.length ?? 0) > 0) {
@@ -333,10 +380,8 @@ export function createRunMilestoneTracker(now: () => number = () => Date.now()) 
     if (firstApprovedAnswerMs === null) firstApprovedAnswerMs = elapsed();
   }
 
-  function markTerminalSettled(approved: boolean): void {
-    const t = elapsed();
-    if (approved && firstApprovedAnswerMs === null) firstApprovedAnswerMs = t;
-    if (terminalSettledMs === null) terminalSettledMs = t;
+  function markTerminalSettled(): void {
+    if (terminalSettledMs === null) terminalSettledMs = elapsed();
   }
 
   function snapshot(): CoreMilestones {
@@ -348,7 +393,31 @@ export function createRunMilestoneTracker(now: () => number = () => Date.now()) 
     };
   }
 
-  return { noteDiagnostic, noteProgress, markApprovedAnswer, markTerminalSettled, snapshot };
+  return { noteProgress, markApprovedAnswer, markTerminalSettled, snapshot, helpCards: () => [...cards] };
+}
+
+/** Observe qualified frames at the client boundary, not after buffering the response.
+ * There is no earlier approved-answer frame in this protocol. Recoverability is checked separately by GET. */
+export async function observeReq002Reply(response: Response, tracker: ReturnType<typeof createRunMilestoneTracker>,
+  messageId: string, claimedRunId: () => string | null, approvedRunId: () => string | null): Promise<void> {
+  if (!response.ok || response.headers.get("content-type")?.split(";")[0] !== "text/event-stream") {
+    throw new Error("Expected a successful event stream");
+  }
+  let previous: ReconciledAgentProgress | null = null;
+  await readAgentFeedback(response, event => {
+    // The product persists the message→run claim before publishing any progress.
+    if (event.messageId !== messageId || event.runId !== claimedRunId()) return;
+    const next = reconcileAgentProgress(previous, event);
+    if (next !== previous) tracker.noteProgress(next);
+    previous = next;
+  }, result => {
+    const message = (result.body as { message?: Partial<{ role: string; text: string; inReplyTo: string; agentRunId: string }> } | null)?.message;
+    const runId = approvedRunId();
+    if (result.status >= 200 && result.status < 300 && runId && runId === claimedRunId() && message?.role === "model"
+      && message.agentRunId === runId && message.inReplyTo === messageId && typeof message.text === "string" && message.text.trim()) {
+      tracker.markApprovedAnswer();
+    }
+  });
 }
 
 export const req002ReceiptScenarioSchema = z.strictObject({
@@ -357,7 +426,7 @@ export const req002ReceiptScenarioSchema = z.strictObject({
   status: z.string().min(1).max(32),
   stopReason: z.string().max(80).nullable(),
   terminalCategory: z.enum(["completed", "partial", "failed", "cancelled", "unknown"]),
-  cacheMode: z.enum(["cold", "warm", "not_applicable"]),
+  cacheMode: z.enum(["not_measured", "not_applicable"]),
   counts: z.strictObject({
     modelCalls: z.number().int().min(0),
     toolCalls: z.number().int().min(0),
@@ -381,15 +450,18 @@ export const req002ReceiptScenarioSchema = z.strictObject({
 export const req002AcceptanceReceiptSchema = z.strictObject({
   candidateSha: z.string().min(7).max(64),
   mode: z.enum(["live", "offline_scripted"]),
+  suite: z.enum(["core_abc", "offline_greeting_smoke"]),
+  verdict: z.strictObject({ status: z.enum(["passed", "failed"]), failures: z.array(z.string()) }),
   provider: z.string().min(1).max(80),
   model: z.string().min(1).max(120),
   executedAt: z.iso.datetime({ offset: true }),
   budgetCaps: z.strictObject({
-    maxRuns: z.number().int().min(1),
-    maxModelCalls: z.number().int().min(1),
-    maxQueryEmbeddings: z.number().int().min(1),
+    maxRuns: z.number().int().min(1).max(REQ002_DEFAULT_BUDGET_CAPS.maxRuns),
+    maxModelCalls: z.number().int().min(1).max(REQ002_DEFAULT_BUDGET_CAPS.maxModelCalls),
+    maxQueryEmbeddings: z.number().int().min(1).max(REQ002_DEFAULT_BUDGET_CAPS.maxQueryEmbeddings),
   }),
   totals: z.strictObject({
+    capBlocked: z.boolean(),
     runsStarted: z.number().int().min(0),
     modelCalls: z.number().int().min(0),
     reviewOrRepairCalls: z.number().int().min(0),
@@ -400,6 +472,7 @@ export const req002AcceptanceReceiptSchema = z.strictObject({
   }),
   scenarios: z.array(req002ReceiptScenarioSchema).min(1),
   sseDisconnectRecovery: z.strictObject({
+    transport: z.literal("in_memory_http_sse"),
     abortedMidStream: z.boolean(),
     preAbortPhases: z.array(z.string().min(1).max(32)),
     retainedSourcesBeforeAbort: z.number().int().min(0),
@@ -410,6 +483,8 @@ export const req002AcceptanceReceiptSchema = z.strictObject({
     revocationClearedCards: z.boolean(),
   }),
   baselineComparison: z.strictObject({
+    measurement: z.literal("scripted_provider_and_local_map"),
+    productCache: z.literal("not_measured"),
     sampleSize: z.number().int().min(1),
     sequentialBaselineModelCalls: z.number().int().min(1),
     boundedBatchModelCalls: z.number().int().min(1),
@@ -433,7 +508,7 @@ export type Req002AcceptanceReceipt = z.infer<typeof req002AcceptanceReceiptSche
 
 /** Validates a receipt and rejects any accidental PII canary leakage before persistence. */
 export function buildSanitizedAcceptanceReceipt(
-  raw: Omit<Req002AcceptanceReceipt, "privacyCheck"> & {
+  raw: Omit<Req002AcceptanceReceipt, "privacyCheck" | "verdict"> & {
     outboundQueryLeakCount: number;
     embeddingPayloadLeakCount: number;
     diagnosticAndLogLeakCount: number;
@@ -442,6 +517,7 @@ export function buildSanitizedAcceptanceReceipt(
   const { outboundQueryLeakCount, embeddingPayloadLeakCount, diagnosticAndLogLeakCount, ...body } = raw;
   const preliminary: Req002AcceptanceReceipt = {
     ...body,
+    verdict: { status: "failed", failures: [] },
     privacyCheck: {
       canaryFingerprint: createHash("sha256").update(REQ002_SYNTHETIC_CANARY.tokens.join("|")).digest("hex").slice(0, 16),
       outboundQueryLeakCount,
@@ -452,9 +528,43 @@ export function buildSanitizedAcceptanceReceipt(
   };
   const receiptLeaks = findCanaryLeaks(preliminary);
   if (receiptLeaks.length > 0) {
-    throw new Error(`Sanitized receipt leaked synthetic canary tokens: ${receiptLeaks.join(", ")}`);
+    throw new Error("Sanitized receipt leaked synthetic canary tokens; receipt suppressed.");
   }
-  return req002AcceptanceReceiptSchema.parse(preliminary);
+  const checked = req002AcceptanceReceiptSchema.parse(preliminary);
+  checked.verdict = evaluateReq002Receipt(checked);
+  return checked;
+}
+
+export function evaluateReq002Receipt(receipt: Omit<Req002AcceptanceReceipt, "verdict">): Req002AcceptanceReceipt["verdict"] {
+  const failures: string[] = [];
+  const { totals, budgetCaps, scenarios, sseDisconnectRecovery: recovery } = receipt;
+  const greeting = "case_g_greeting_short_path", a = "case_a_half_year_solid_food", b = "case_b_two_month_restriction", c = "case_c_uncovered_fever_vomiting";
+  const expected = receipt.suite === "offline_greeting_smoke" ? [greeting] : [a, b, c];
+  if (receipt.suite === "offline_greeting_smoke" && receipt.mode !== "offline_scripted") failures.push("wrong_mode");
+  if (scenarios.length !== expected.length || !expected.every((id, i) => scenarios[i]?.id === id)) failures.push("incomplete_scenarios");
+  if (totals.capBlocked || totals.runsStarted !== scenarios.length || totals.runsStarted > budgetCaps.maxRuns
+    || totals.modelCalls > budgetCaps.maxModelCalls || totals.queryEmbeddings > budgetCaps.maxQueryEmbeddings
+    || scenarios.reduce((n, s) => n + s.providerBoundaryCalls, 0) !== totals.modelCalls) failures.push("budget_or_accounting");
+  const privacy = receipt.privacyCheck;
+  if (privacy.outboundQueryLeakCount || privacy.embeddingPayloadLeakCount || privacy.diagnosticAndLogLeakCount || privacy.receiptLeakCount) failures.push("privacy");
+  for (const s of scenarios) {
+    if (s.status !== "completed" || s.terminalCategory !== "completed" || s.stopReason !== null || !s.runId
+      || !s.getReplyReplaySameRunId || s.providerBoundaryCalls < 1 || s.milestones.firstApprovedAnswerMs === null
+      || s.milestones.terminalSettledMs === null || s.milestones.firstMeaningfulProgressMs === null) failures.push("scenario_not_delivered");
+    if ((s.id === a || s.id === b) && (s.reviewDecision !== "pass" || !s.originalVersionVerified || !s.citedChunkIds.length
+      || !s.citedSourceIds.includes("fhs-solid-food") || s.milestones.firstUsableSourceMs === null)) failures.push("unverified_official_answer");
+    if (s.id === c && (s.citedChunkIds.length || s.citedSourceIds.length || !s.deterministicHelpCards.includes("medical-consult-hk-v1")
+      || s.deterministicHelpCards.includes("emergency-hk-v1"))) failures.push("uncovered_case_boundary");
+    if (s.id === greeting && (s.providerBoundaryCalls !== 1 || s.counts.queryEmbeddings || s.reviewDecision !== null)) failures.push("greeting_not_short");
+  }
+  const paired = receipt.baselineComparison;
+  if (paired.sequentialBaselineModelCalls <= paired.boundedBatchModelCalls
+    || paired.modelCallReduction !== paired.sequentialBaselineModelCalls - paired.boundedBatchModelCalls
+    || paired.boundedBatchToolCalls !== paired.sequentialToolCalls || paired.coldEmbeddings !== 3
+    || paired.warmReusedEmbeddings !== paired.coldEmbeddings) failures.push("synthetic_probe");
+  if (!recovery.abortedMidStream || !recovery.retainedSourcesBeforeAbort || recovery.duplicatePostCalls !== 0
+    || !recovery.lateOutOfOrderIgnored || !recovery.stoppedRetainsQualifiedCards || !recovery.revocationClearedCards) failures.push("recovery");
+  return { status: failures.length ? "failed" : "passed", failures: [...new Set(failures)] };
 }
 
 /**
