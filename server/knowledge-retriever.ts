@@ -1,22 +1,15 @@
 import type { KnowledgeFilter, KnowledgeResult, KnowledgeEvidence, KnowledgeContextCursor, KnowledgeContextResult, KnowledgeContextChunk } from "../src/shared/knowledge.ts";
 import { AgentStopped, agentBudgetFingerprint, type AgentBudget } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
-import { EmbeddingFailure } from "./embedding-gateway.ts";
+import { EmbeddingFailure } from "./embedding-failure.ts";
 import type { EmbeddingActor, EmbeddingGateway } from "./embedding-gateway.ts";
 import { parseKnowledgeFilter, parseKnowledgeQuery } from "./knowledge-inputs.ts";
 import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { rankKnowledge } from "./knowledge-ranking.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
-export function isKnowledgeEvidenceFresh(
-  chunk: Pick<KnowledgeEvidence, "reviewState" | "validUntil">,
-  now = Date.now(),
-): boolean {
-  if (chunk.reviewState !== "reviewed") return false;
-  if (chunk.validUntil === undefined || chunk.validUntil === null) return true;
-  const expiresAt = Date.parse(chunk.validUntil);
-  return Number.isFinite(expiresAt) && expiresAt > now;
-}
+import { isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
+export { isKnowledgeEvidenceFresh } from "./agent-evidence-reuse.ts";
 
 function canonicalFilterKey(filter: KnowledgeFilter): string {
   return JSON.stringify({
@@ -28,7 +21,7 @@ function canonicalFilterKey(filter: KnowledgeFilter): string {
   });
 }
 
-export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates">, embeddings: EmbeddingGateway) {
+export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates"> & { readonly enforcesPersonalLibrarySelection?: boolean }, embeddings: EmbeddingGateway) {
   return {
     /** One instance per authorized Agent run; never share queries or caches between families. */
     createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway }) {
@@ -47,10 +40,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
         const current = await budget.wait(() => readCandidates(parseKnowledgeFilter(applicability), null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
         const now = Date.now();
-        const matched = citations.map(citation => current.find(chunk => chunk.chunkId === citation.chunkId
-          && chunk.versionId === citation.versionId
-          && chunk.contentHash === citation.contentHash
-          && isKnowledgeEvidenceFresh(chunk, now)));
+        const matched = citations.map(citation => current.find(chunk => sameReviewedEdition(citation, chunk, applicability, now)));
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
         if (matched.some(chunk => !chunk)) return null;
         return matched.map(chunk => {
@@ -59,6 +49,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
         });
       }
       return {
+        supportsScopedEvidenceReuse: store.enforcesPersonalLibrarySelection === true,
         async search(input: string, applicability: KnowledgeFilter, queryEmbeddingAttemptKey?: string): Promise<KnowledgeResult> {
           const query = assertPublicKnowledgeQuery(parseKnowledgeQuery(input));
           const filter = parseKnowledgeFilter(applicability);
@@ -104,16 +95,19 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           budget.check();
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           const filter = parseKnowledgeFilter(applicability);
-          const live = await budget.wait(() => readCandidates(filter, null, { chunkIds: [anchor.chunkId], versionId: anchor.versionId, limit: 1 }));
-          const now = Date.now();
-          if (!live.some(item => item.contentHash === anchor.contentHash && isKnowledgeEvidenceFresh(item, now))) {
-            loaded.delete(anchor.chunkId);
-            throw new FamilyError(409, "knowledge_context_source_changed");
-          }
-          const contextCacheKey = cursor === null
+          const contextCacheKey = store.enforcesPersonalLibrarySelection === true && cursor === null
             ? JSON.stringify({ chunkId: anchor.chunkId, versionId: anchor.versionId, filter: canonicalFilterKey(filter), maxResponseCharacters })
             : null;
           const cachedRead = contextCacheKey ? contextReadCache.get(contextCacheKey) : undefined;
+          const required = [anchor, ...(cachedRead?.chunks ?? [])];
+          const chunkIds = [...new Set(required.map(chunk => chunk.chunkId))];
+          const live = await budget.wait(() => readCandidates(filter, null, { chunkIds, versionId: anchor.versionId, limit: chunkIds.length }));
+          const now = Date.now();
+          if (!required.every(chunk => live.some(item => sameReviewedEdition(chunk, item, filter, now)))) {
+            if (contextCacheKey) contextReadCache.delete(contextCacheKey);
+            for (const id of chunkIds) loaded.delete(id);
+            throw new FamilyError(409, "knowledge_context_source_changed");
+          }
           if (cachedRead && cachedRead.contentHash === anchor.contentHash && cachedRead.result.complete) {
             for (const item of cachedRead.chunks) loaded.set(item.chunkId, item);
             if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
@@ -126,6 +120,9 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           const afterKey = first[0]?.key ?? cursor?.afterKey ?? anchor.key;
           const following = await budget.wait(() => readCandidates(filter, null, { versionId: anchor.versionId, afterKey, limit: 4 }));
           const queue = [...first, ...following], output: KnowledgeContextChunk[] = [];
+          if (queue.some(item => item.sourceId !== anchor.sourceId || item.versionId !== anchor.versionId
+            || item.versionHash !== anchor.versionHash || item.classification !== filter.classification || !isKnowledgeEvidenceFresh(item)))
+            throw new FamilyError(409, "knowledge_context_source_changed");
           let nextCursor: KnowledgeContextCursor | null = null, characters = 0, processed = 0;
           const result = (): KnowledgeContextResult => ({ versionId: anchor.versionId, anchorChunkId: anchor.chunkId, chunks: output,
             start: output.length ? { key: output[0].key, offset: output[0].original.offset } : null,
@@ -188,43 +185,19 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           priorCitations: readonly KnowledgeEvidence[],
           applicability: KnowledgeFilter,
         ): Promise<{ valid: KnowledgeEvidence[]; invalidated: KnowledgeEvidence[] }> {
-          const unique: KnowledgeEvidence[] = [];
-          const seen = new Set<string>();
-          for (const citation of priorCitations) {
-            if (seen.has(citation.chunkId)) continue;
-            seen.add(citation.chunkId);
-            unique.push(citation);
-            if (unique.length >= 6) break;
-          }
-          if (!unique.length) return { valid: [], invalidated: [] };
-          const filter = parseKnowledgeFilter(applicability);
-          const valid: KnowledgeEvidence[] = [];
-          const invalidated: KnowledgeEvidence[] = [];
           budget.check();
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-          const current = await budget.wait(() => store.candidates(filter, null, { chunkIds: unique.map(item => item.chunkId), limit: 6 }));
-          const now = Date.now();
-          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-          for (const prior of unique) {
-            const matched = current.find(chunk =>
-              chunk.chunkId === prior.chunkId
-              && chunk.versionId === prior.versionId
-              && chunk.contentHash === prior.contentHash
-              && isKnowledgeEvidenceFresh(chunk, now));
-            if (!matched) {
-              loaded.delete(prior.chunkId);
-              invalidated.push(prior);
-              continue;
-            }
-            const { distance: _distance, rankScore: _rankScore, originalText: _originalText, ...reviewed } = matched;
-            const entry: KnowledgeEvidence = {
-              ...reviewed,
-              readCoverage: prior.readCoverage ?? { kind: "reviewed_text_and_excerpt" as const, complete: false },
-            };
-            loaded.set(entry.chunkId, entry);
-            valid.push(entry);
+          // Legacy/global readers can accept the option but cannot attest to this owner's grants.
+          if (store.enforcesPersonalLibrarySelection !== true) {
+            for (const item of priorCitations) loaded.delete(item.chunkId);
+            return { valid: [], invalidated: [...priorCitations] };
           }
-          return { valid, invalidated };
+          const result = await readReusableEvidence(actor.actorId, parseKnowledgeFilter(applicability), priorCitations,
+            (filter, selection) => budget.wait(() => readCandidates(filter, null, selection)));
+          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+          for (const item of result.invalidated) loaded.delete(item.chunkId);
+          for (const item of result.valid) loaded.set(item.chunkId, item);
+          return result;
         },
         seedEvidence(items: readonly KnowledgeEvidence[]) {
           for (const item of items) loaded.set(item.chunkId, item);

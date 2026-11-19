@@ -417,7 +417,7 @@ export function createProductAgent(options: {
           if (priorCandidates.length >= 6) break;
         }
         if (priorCandidates.length > 0 && typeof options.knowledge?.createRun === "function") {
-          const preBudget = new AgentBudget(cancellation.signal, 5000);
+          const preBudget = new AgentBudget(signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, 5000);
           try {
             const preContext = await preBudget.wait(() => options.memory.context(userId, childId, "private", {}));
             if (!preContext) throw new AgentStopped("unauthorized");
@@ -427,18 +427,17 @@ export function createProductAgent(options: {
               budget: preBudget,
               authorize,
             });
-            if (typeof preRun.revalidateAndSeedEvidence === "function") {
+            if (preRun.supportsScopedEvidenceReuse === true && typeof preRun.revalidateAndSeedEvidence === "function") {
               const checked = await preRun.revalidateAndSeedEvidence(priorCandidates, preFilter);
               seededOfficialEvidence = checked.valid.map(chunk => ({ chunk, filter: preFilter }));
               reusedEvidenceInvalidated = checked.invalidated.length > 0;
-            } else if (typeof preRun.readReviewedCitations === "function") {
-              const checked = await preRun.readReviewedCitations(priorCandidates, preFilter);
-              if (checked) seededOfficialEvidence = checked.map(chunk => ({ chunk, filter: preFilter }));
-              else reusedEvidenceInvalidated = true;
+            } else {
+              reusedEvidenceInvalidated = true;
             }
           } catch {
             // Leave fail-closed runtime authorization and live retrieval to the canonical runtime.run path.
             seededOfficialEvidence = [];
+            reusedEvidenceInvalidated = true;
           } finally {
             preBudget.close();
           }

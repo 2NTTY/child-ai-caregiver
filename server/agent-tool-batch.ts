@@ -184,6 +184,9 @@ export async function runReadToolBatch(options: {
           abortFatal(error);
           return;
         }
+        // A sibling may have stopped the batch while this independent permit was pending.
+        if (batchController.signal.aborted) return;
+        budget.check();
         if (!itemAuthorized) {
           outcomes.set(item.callId, {
             callId: item.callId,

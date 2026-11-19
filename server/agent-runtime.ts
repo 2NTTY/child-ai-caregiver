@@ -1,3 +1,5 @@
+import { durableSessionEvents, uniqueEvent, queryEmbeddingAttemptKey } from "./agent-native-attempt.ts";
+import { needsQueryEmbeddingKey } from "./agent-evidence-reuse.ts";
 import { randomUUID } from "node:crypto";
 import { boundedTelemetryCallback, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
@@ -63,17 +65,6 @@ function projectSystemInstruction(value: NonNullable<LlmRequest["config"]>["syst
   return projected as typeof value;
 }
 
-/** Only acknowledged native events in this exact invocation/branch can anchor a later attempt. */
-function durableSessionEvents(context: Context, scope: Readonly<AgentScope>, runId: string) {
-  const invocation = context.invocationContext, session = invocation.session;
-  if (session.id !== runId || session.userId !== scope.userId || session.appName !== "yuban_hk") throw new AgentStopped("unavailable");
-  return session.events.filter(event => !event.partial && event.invocationId === context.invocationId
-    && event.branch === invocation.branch);
-}
-function uniqueEvent(context: Context, event: Event) {
-  if (!event.id || context.invocationContext.session.events.filter(item => item.id === event.id).length !== 1) throw new AgentStopped("unavailable");
-  return event.id;
-}
 function modelAttemptKey(context: Context, scope: Readonly<AgentScope>, runId: string, trigger: { kind: string; reference: string }) {
   const events = durableSessionEvents(context, scope, runId);
   const original = events.filter(event => event.author === "user" && event.content?.role === "user");
@@ -89,15 +80,6 @@ function modelAttemptKey(context: Context, scope: Readonly<AgentScope>, runId: s
   return "model:" + agentBudgetFingerprint([runId, context.agentName, context.invocationContext.branch ?? null,
     uniqueEvent(context, predecessor), "next-model"]);
 }
-function queryEmbeddingAttemptKey(context: Context | undefined, scope: Readonly<AgentScope>, runId: string, name: string, args: unknown) {
-  if (!context?.functionCallId) throw new AgentStopped("unavailable");
-  const matches = durableSessionEvents(context, scope, runId).flatMap(event => (event.content?.parts ?? []).flatMap(part =>
-    part.functionCall && part.functionCall.id === context.functionCallId ? [{ event, call: part.functionCall }] : []));
-  if (matches.length !== 1 || matches[0].event.author !== context.agentName || matches[0].call.name !== name
-    || agentBudgetFingerprint(matches[0].call.args ?? {}) !== agentBudgetFingerprint(args)) throw new AgentStopped("unavailable");
-  return "embedding:" + agentBudgetFingerprint([runId, uniqueEvent(context, matches[0].event), context.functionCallId, "query-embedding"]);
-}
-
 export interface AgentScope {
   userId: string; workspaceId: string; childId: string; authorizationVersion: string; dataVersion: string;
 }
@@ -126,6 +108,8 @@ export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; b
   voice?: Readonly<VoiceMessageReference>;
   /** Server-selected model for this run, including personal routing. */
   model?: string;
+  /** Live checks for previously retrieved evidence carried in model input; never authorize tool operations. */
+  authorizeModelEvidence?: () => Promise<boolean>;
   billingSource?: import('../src/shared/model-settings.ts').ModelBillingSource;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
@@ -579,9 +563,8 @@ export function createAgentRuntime(options: {
               authorize,
               checkDurable: durable ? () => budget.checkDurable() : undefined,
               executeItem: async (item, parsedArgs, itemSignal) => {
-                const itemContext = Object.assign(Object.create(Object.getPrototypeOf(context)), context, { functionCallId: item.callId }) as Context;
-                const embeddingKey = budget.durable && item.tool.name === "search_knowledge"
-                  ? queryEmbeddingAttemptKey(itemContext, scope, runId, item.tool.name, item.args)
+                const embeddingKey = needsQueryEmbeddingKey(budget.durable, item.tool.name)
+                  ? queryEmbeddingAttemptKey(context, scope, runId, item.tool.name, item.args, item.callId)
                   : undefined;
                 return await budget.wait(() => item.tool.execute(parsedArgs, {
                   scope,
@@ -622,7 +605,7 @@ export function createAgentRuntime(options: {
               // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
               // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
               trackToolSignature(tool.name, args);
-              const embeddingKey = budget.durable && (tool.name === "search_knowledge" || tool.name === "search_source_card_evidence")
+              const embeddingKey = needsQueryEmbeddingKey(budget.durable, tool.name)
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };
               result.tools.push(progress);
@@ -694,7 +677,8 @@ export function createAgentRuntime(options: {
           // Provider-only policy renders must not change ADK's native instruction anchor.
           const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+          const authorizeModel = async () => await authorize() && (!runContext.authorizeModelEvidence || await runContext.authorizeModelEvidence());
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize: authorizeModel, terminalToolNames, audio, images: ids => images.inputs(ids),
             ...(input.recipeId === 'memory-refresh' ? { purpose: 'summary' as const } : {}),
             ...(syncPolicy ? { syncPolicy } : {}),
             refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
@@ -773,7 +757,7 @@ export function createAgentRuntime(options: {
                 budget,
                 userId: scope.userId,
                 childId: scope.childId,
-                authorize,
+                authorize: authorizeModel,
                 ...(syncPolicy ? { syncPolicy } : {}),
                 reserveDeliveryReview,
                 ...(durable ? { modelAttemptKey: (request: LlmRequest) => compactionAnchors.get(request) } : {}),

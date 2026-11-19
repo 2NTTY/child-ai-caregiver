@@ -1,3 +1,4 @@
+import { bindRepairSourceChecks } from "./agent-evidence-reuse.ts";
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
@@ -316,6 +317,14 @@ export function createProductAgentTools(options: {
   const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,trackedStore,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
+  let activeRepairChecks: (() => Promise<boolean>) | undefined;
+  const seeded = options.seededOfficialEvidence ?? [];
+  // Original seed text persists in native events, and the first draft persists in the rereview payload.
+  // Never recursively call the gateway's evidence check from the underlying source reader.
+  run.authorizeModelEvidence = async () => {
+    if (seeded.length && (retrieval.supportsScopedEvidenceReuse !== true || !await retrieval.revalidateCitations(seeded.map(item => item.chunk), seeded[0]!.filter))) return false;
+    return !activeRepairChecks || await activeRepairChecks();
+  };
   if (options.seededOfficialEvidence?.length) {
     for (const item of options.seededOfficialEvidence) {
       evidence.set(item.chunk.chunkId, { chunk: item.chunk, filter: item.filter });
@@ -1214,18 +1223,32 @@ export function createProductAgentTools(options: {
       return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations,
         retrievalMode: citations.length > 0 && mode === "not_used" ? "vector_keyword" : mode };
     },
-    reusableEvidenceSummary() {
-      const official = Array.from(evidence.values()).slice(0, 6).map(({ chunk }) => ({
-        citationId: chunk.chunkId,
-        title: chunk.title,
-        section: chunk.section,
-        sourceExcerpt: chunk.sourceExcerpt,
-      }));
-      const privateList = Array.from(selectedEvidence.values())
-        .filter(item => item.classification === "private")
-        .slice(0, 6)
-        .map(item => ({ citationId: item.citationId, excerpt: item.excerpt }));
-      return { official, private: privateList };
+    // Bind only the sources selected for the draft. Do not copy unrelated retrieved excerpts into a repair.
+    bindRepairEvidence() {
+      const previous = new Map(selectedSources.map(source => [source.citationId, source]));
+      activeRepairChecks = bindRepairSourceChecks([...previous.keys()], id => {
+        const bound = previous.get(id)!;
+        const grounded = [...memoryGrounding.values()].find(value => value.source.citationId === id);
+        const staged = grounded?.source ?? deliverySource(id, originalQuotes);
+        if (!staged || staged.version !== bound.version || staged.contentHash !== bound.contentHash
+          || staged.classification !== bound.classification || staged.excerpt !== bound.excerpt
+          || staged.excerptComplete !== bound.excerptComplete) return undefined;
+        const household = householdEvidence.get(id);
+        if (household) return household.isCurrent;
+        const personal = privateSources?.evidence.get(id);
+        if (personal) return () => privateSources!.revalidate(personal);
+        const live = liveEvidence.get(id);
+        if (live && liveReader) return () => liveReader.mayUse(live, budget.signal);
+        const item = evidence.get(id);
+        if (item && retrieval.supportsScopedEvidenceReuse === true) return () => retrieval.revalidateCitations([item.chunk], item.filter);
+        if (grounded && typeof memory.getFact === "function") return async () => {
+          const fact = await memory.getFact!(scope.userId, scope.childId, grounded.fact.id);
+          return !!fact && usableMemoryFact(fact) && fact.version === grounded.fact.version
+            && chatDeliveryContentHash(fact.content) === chatDeliveryContentHash(grounded.fact.content);
+        };
+        return undefined;
+      });
+      return activeRepairChecks;
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;

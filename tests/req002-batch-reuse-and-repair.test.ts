@@ -534,6 +534,7 @@ test("retriever readContext reuses unchanged chunks and invalidates on content h
   let storedChunk = makeCandidate(CHUNK_A, { validUntil: new Date(Date.now() + 60_000).toISOString() });
   const retriever = createKnowledgeRetriever(
     {
+      enforcesPersonalLibrarySelection: true,
       async candidates(_filter, _vector, opts) {
         candidateCalls++;
         if (opts?.chunkIds) {
@@ -623,6 +624,7 @@ test("follow-up reply reuses valid prior official citations without re-searching
     let embeddingsCount = 0;
     const knowledge = createKnowledgeRetriever(
       {
+        enforcesPersonalLibrarySelection: true,
         async candidates(filter, _vector, opts) {
           const matchesAge = (chunk: KnowledgeCandidate) => {
             if (!filter.age) return true;
@@ -800,6 +802,7 @@ test("present_answer deduplicates duplicate citationIds and exposes availableOff
           search: async () => ({ mode: "vector_keyword", degradationReason: null, chunks: [chunk] }),
           readContext: async () => ({ chunks: [], complete: true, nextCursor: null }),
           readReviewedCitations: async () => [chunk],
+          supportsScopedEvidenceReuse: true,
           revalidateAndSeedEvidence: async () => ({ valid: [chunk], invalidated: [] }),
           seedEvidence: () => {},
           revalidateCitations: async () => true,
@@ -850,13 +853,13 @@ test("present_answer deduplicates duplicate citationIds and exposes availableOff
     assert.ok(pres);
     assert.deepEqual(pres.citations.map(c => c.chunkId), [CHUNK_A]);
     assert.deepEqual(toolsSurface.deliveryDraft()?.paragraphs[0]?.citationIds, [CHUNK_A]);
-    assert.equal(toolsSurface.reusableEvidenceSummary?.().official[0]?.citationId, CHUNK_A);
+    assert.equal(await toolsSurface.bindRepairEvidence()(), true);
   } finally {
     budget.close();
   }
 });
 
-test("delivery repair receives reusable evidence, recomputes live hash, blocks no-op repairs, and stops citation stripping", async () => {
+test("delivery repair receives only the bound draft evidence, recomputes live hash, blocks no-op repairs, and stops citation stripping", async () => {
   const chunk = makeEvidence(CHUNK_A);
   const initialDraft = (): ChatDeliveryDraft => ({
     kind: "caregiving",
@@ -875,7 +878,7 @@ test("delivery repair receives reusable evidence, recomputes live hash, blocks n
     images: [],
   });
 
-  // Scenario A: Partial repair receives retrievedEvidence without re-searching, updates text+hash, passes rereview.
+  // Scenario A: Partial repair receives bound evidence without re-searching, updates text+hash, passes rereview.
   {
     const budget = new AgentBudget();
     let current = initialDraft();
@@ -897,10 +900,7 @@ test("delivery repair receives reusable evidence, recomputes live hash, blocks n
           sources: next.paragraphs[0]?.citationIds?.length ? current.sources : [],
         };
       },
-      reusableEvidenceSummary: () => ({
-        official: [{ citationId: chunk.chunkId, title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt }],
-        private: [],
-      }),
+      bindRepairEvidence: () => async () => true,
     };
     try {
       const outcome = await enforceChatDeliveryReview({
@@ -914,7 +914,7 @@ test("delivery repair receives reusable evidence, recomputes live hash, blocks n
           completeText: async (input: { purpose?: string; user: string }) => {
             const payload = JSON.parse(input.user.slice(input.user.indexOf("{")));
             if (input.purpose === "delivery_repair") {
-              repairSawEvidence = payload.retrievedEvidence?.official?.[0]?.citationId === CHUNK_A;
+              repairSawEvidence = payload.sources?.[0]?.citationId === CHUNK_A && !("retrievedEvidence" in payload);
               return JSON.stringify({
                 kind: "caregiving",
                 paragraphs: [{ text: "嬰兒發燒時應保持室內通風及定時量度體溫，切勿包裹過多衣物。", citationIds: [CHUNK_A] }],
@@ -952,6 +952,7 @@ test("delivery repair receives reusable evidence, recomputes live hash, blocks n
     const current = initialDraft();
     let completeCalls = 0;
     const surface = {
+      bindRepairEvidence: () => async () => true,
       deliveryDraft: () => current,
       presentation: async () => ({ text: current.paragraphs[0]!.text, citations: [chunk], retrievalMode: "vector_keyword" as const }),
       replaceDeliveryAnswer: () => {},
@@ -989,6 +990,7 @@ test("delivery repair receives reusable evidence, recomputes live hash, blocks n
     const budget = new AgentBudget();
     let current = initialDraft();
     const surface = {
+      bindRepairEvidence: () => async () => true,
       deliveryDraft: () => current,
       presentation: async () => ({
         text: current.paragraphs[0]!.text,
