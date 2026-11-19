@@ -15,11 +15,11 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { summaryManifestHash, summaryRevisionId } from '../server/private-summary-work.ts';
 
 const former = '疫苗接種時帶綠色手巾。', corrected = '疫苗接種時改帶藍色布兔。', siblingText = '疫苗接種時帶黃色小熊。';
-const question = '下次去打針要帶邊樣安撫物？請引返我最後確認嘅原句。';
+const question = '下次帶阿B去健康院補返支預防針，我最後話要帶咩畀佢攬住定驚？可唔可以引返我嗰句？';
 const blocked = async () => { throw new Error('external_transport_disabled'); };
 
 // Callers supplying a live provider retain the existing account, policy, daily ledger and spending ceiling.
-export async function verifyPrivateFactRecall({ options, user, config, liveProviders, beforeReply, cases = ['recent', 'cold'] }) {
+export async function verifyPrivateFactRecall({ options, user, config, liveProviders, beforeReply, onReceipt, coldQuestion = question, cases = ['recent', 'cold'] }) {
   assert.match(process.env.FIRESTORE_EMULATOR_HOST ?? '', /^127\.0\.0\.1:\d{1,5}$/u);
   assert.match(options.projectId, /^demo-/u);
   const authority = createFirestoreAuthority(options), online = createFirestoreOnlineStore(options);
@@ -58,8 +58,8 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
     assert.ok(['cold', 'recent'].includes(scenario));
     if (scenario === 'cold') for (let i = 0; i < 6; i++) await chat.createUserMessageForUser(user, child.id, '另一段獨立話題 ' + i);
     const reference = correction;
-    const message = await chat.createUserMessageForUser(user, child.id, scenario === 'cold' ? question : '請引返我上一句講嘅安排。');
-    let contextReads = 0, modelCalls = 0, reviewerCalls = 0, hasSearched = false;
+    const message = await chat.createUserMessageForUser(user, child.id, scenario === 'cold' ? coldQuestion : '請引返我上一句講嘅安排。');
+    let contextReads = 0, modelCalls = 0, reviewerCalls = 0, hasSearched = false, hasReadFact = false;
     const scripted = { async generate(request) {
       modelCalls++;
       assert.ok(!JSON.stringify(request.contents).includes(siblingText));
@@ -79,7 +79,20 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
         let name, args;
         if (scenario === 'cold' && !hasSearched) {
           if (!request.toolsDict.search_history) { name = 'load_capabilities'; args = { capabilities: ['history'] }; }
-          else { name = 'search_history'; args = { kind: 'memory_fact', query: '打針' }; hasSearched = true; }
+          else { name = 'search_history'; args = { query: '攬住定驚' }; hasSearched = true; }
+        } else if (scenario === 'cold' && !hasReadFact) {
+          const search = parts.find(part => part.functionResponse?.name === 'search_history');
+          const topics = search?.functionResponse?.response?.data?.result?.currentFactTopics;
+          assert.ok(topics?.length);
+          const topic = topics.find(item => item.key === '接種日安排');
+          assert.ok(topic);
+          if (!request.toolsDict.read_memory_facts) { name = 'load_capabilities'; args = { capabilities: ['memory_facts'] }; }
+          else { name = 'read_memory_facts'; args = { factId: topic.factId }; hasReadFact = true; }
+        } else if (scenario === 'cold') {
+          const factRead = parts.find(part => part.functionResponse?.name === 'read_memory_facts');
+          args = factRead?.functionResponse?.response?.data?.result?.quoteAnswer;
+          assert.equal(args?.kind, 'private_reference');
+          name = 'present_answer';
         } else {
           name = 'present_answer';
           // A scripted speaker selects the evidence returned by the Server. It may not invent an H handle or inject answer text.
@@ -100,7 +113,8 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
       assert.equal(await product.agent.reply(user, child.id, randomUUID(), async () => true), null);
       assert.equal(modelCalls, 0);
     }
-    await beforeReply?.({ scenario, childId: child.id, messageId: message.id });
+    await beforeReply?.({ scenario, childId: child.id, messageId: message.id, factId: current.id, factVersion: current.version,
+      originalMessageId: correction.id });
     const result = await product.agent.reply(user, child.id, message.id, async () => true);
     const sources = result?.deliveryReview?.sourceVersions ?? [];
     const receipt = { scenario, provider: liveProviders ? 'live' : 'scripted', runId: result?.runId, status: result?.status,
@@ -110,6 +124,7 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
       factVersionBound: sources.some(source => source.citationId === 'memory-fact:' + fact.id && source.version === String(current.version)),
       unrelatedOrFormerValue: !!result && [former, siblingText].some(value => result.text.includes(value)) };
     console.log(JSON.stringify(receipt));
+    await onReceipt?.(receipt, { answer: result?.text, sources });
     assert.equal(result?.status, 'completed');
     assert.ok(receipt.exactQuote && receipt.originalBound && !receipt.unrelatedOrFormerValue);
     assert.equal(receipt.review, 'pass');
