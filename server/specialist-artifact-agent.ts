@@ -246,13 +246,14 @@ export async function runSpecialistArtifactLoop(
       latestVerification = verification;
       completedRepairs = attempt;
 
-      if (verification.passed) {
+      // Rebuilding cannot supply a missing verification capability.
+      if (verification.passed || (verification.defects.length === 0 && verification.unverifiedChecks.length > 0)) {
         return {
           result: specialistArtifactResultSchema.parse({
             policyVersion: SPECIALIST_ARTIFACT_POLICY_VERSION,
-            status: "verified",
+            status: verification.passed ? "verified" : "partial",
             repairIterations: completedRepairs,
-            stopReason: "verified",
+            stopReason: verification.passed ? "verified" : "verification_incomplete",
             formalSave: false,
             published: false,
             requiresFormalConfirmation: true,
@@ -293,22 +294,23 @@ export function createSpecialistArtifactTools(options: {
   repairFaultMode?: ArtifactFaultMode;
 }): AgentTool[] {
   const authorize = options.run.authorize ?? options.authorize;
+  const noDraft = { draftAvailable: false, formalSave: false, published: false, requiresFormalConfirmation: true } as const;
   const guard = async (action: () => Promise<AgentToolResult>): Promise<AgentToolResult> => {
-    if (!await authorize()) return { status: "rejected", data: { formalSave: false } };
+    if (!await authorize()) return { status: "rejected", data: noDraft };
     try {
       return await action();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return { status: "rejected", data: { code: "invalid_input", formalSave: false } };
+        return { status: "rejected", data: { code: "invalid_input", ...noDraft } };
       }
       if (error instanceof AgentStopped) {
         if (["cancelled", "deadline", "unauthorized", "quota_exceeded"].includes(error.reason)) throw error;
-        return { status: "rejected", data: { code: error.reason, formalSave: false } };
+        return { status: "rejected", data: { code: error.reason, ...noDraft } };
       }
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) {
         return {
           status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected",
-          data: { code: error.code, formalSave: false },
+          data: { code: error.code, ...noDraft },
         };
       }
       throw error;
@@ -336,17 +338,21 @@ export function createSpecialistArtifactTools(options: {
           status: "rejected",
           data: {
             code: outcome.blockedCode ?? outcome.result.stopReason,
-            formalSave: false,
-            published: false,
-            requiresFormalConfirmation: true,
+            ...noDraft,
           },
         };
       }
 
+      // No handoff exists for these in-memory bytes. Never turn a diagnostic
+      // report, transient identifier, or document excerpt into a delivery receipt.
       return {
-        status: "succeeded",
-        reference: outcome.result.artifact?.artifactId ?? outcome.result.policyVersion,
-        data: outcome.result,
+        status: "failed",
+        data: {
+          code: "specialist_draft_unavailable",
+          inspectionStatus: outcome.result.status,
+          inspectionReason: outcome.result.stopReason,
+          ...noDraft,
+        },
       };
     }),
   }];

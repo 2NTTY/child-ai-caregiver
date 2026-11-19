@@ -86,6 +86,7 @@ export const specialistArtifactResultSchema = z.object({
   stopReason: z.enum([
     "verified",
     "repair_limit_reached",
+    "verification_incomplete",
     "tool_limit",
     "model_limit",
     "deadline",

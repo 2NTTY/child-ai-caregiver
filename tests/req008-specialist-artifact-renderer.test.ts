@@ -155,8 +155,8 @@ test("1. zero-network A4 PDF build and isolated worker verification extracts Tra
       },
     });
     assert.equal(outcome.result.policyVersion, SPECIALIST_ARTIFACT_POLICY_VERSION);
-    assert.equal(outcome.result.status, "verified");
-    assert.equal(outcome.result.stopReason, "verified");
+    assert.equal(outcome.result.status, "partial");
+    assert.equal(outcome.result.stopReason, "verification_incomplete");
     assert.equal(outcome.result.repairIterations, 0);
     assert.equal(outcome.result.formalSave, false);
     assert.equal(outcome.result.published, false);
@@ -166,7 +166,7 @@ test("1. zero-network A4 PDF build and isolated worker verification extracts Tra
     assert.equal(outcome.result.artifact.mimeType, "application/pdf");
     assert.equal(outcome.result.artifact.artifactVersion, 1);
     assert.ok(outcome.result.verification);
-    assert.equal(outcome.result.verification.passed, true);
+    assert.equal(outcome.result.verification.passed, false);
     assert.deepEqual(outcome.result.verification.defects, []);
     assert.deepEqual(outcome.result.verification.unverifiedChecks, [PIXEL_SCREENSHOT_UNVERIFIED_CHECK]);
     assert.ok(outcome.result.verification.extractedTextSample.includes("兒科覆診準備單"));
@@ -208,9 +208,10 @@ test("2. multi-page A4 PDF pagination and safe HTTPS link keep footers separated
         includeSources: true,
       },
     });
-    assert.equal(outcome.result.status, "verified");
+    assert.equal(outcome.result.status, "partial");
     assert.ok(outcome.result.artifact && outcome.result.artifact.pageCount >= 2);
-    assert.ok(outcome.result.verification?.passed);
+    assert.equal(outcome.result.verification?.passed, false);
+    assert.equal(outcome.result.stopReason, "verification_incomplete");
     assert.deepEqual(outcome.result.verification?.defects, []);
   } finally {
     budget.close();
@@ -288,13 +289,13 @@ test("4. specialist bounded loop auto-repairs initial defects and binds final re
         includeSources: true,
       },
     });
-    assert.equal(outcome.result.status, "verified");
-    assert.equal(outcome.result.stopReason, "verified");
+    assert.equal(outcome.result.status, "partial");
+    assert.equal(outcome.result.stopReason, "verification_incomplete");
     assert.equal(outcome.result.repairIterations, 1);
     assert.ok(outcome.result.artifact);
     assert.equal(outcome.result.artifact.artifactVersion, 2);
     assert.ok(outcome.result.verification);
-    assert.equal(outcome.result.verification.passed, true);
+    assert.equal(outcome.result.verification.passed, false);
     assert.equal(outcome.result.verification.artifactVersion, 2);
     assert.equal(outcome.result.verification.artifactHash, outcome.result.artifact.artifactHash);
     assert.equal(budget.counts.toolCalls, 2);
@@ -400,7 +401,8 @@ test("7. isolated HTML verifier catches script/unsafe-URI/overflow and specialis
     expectedTitle: cleanView.title,
     requiredSections: cleanView.sections.map(s => s.title),
   });
-  assert.equal(cleanReport.passed, true);
+  assert.equal(cleanReport.passed, false);
+  assert.deepEqual(cleanReport.defects, []);
   assert.deepEqual(cleanReport.unverifiedChecks, [PIXEL_SCREENSHOT_UNVERIFIED_CHECK]);
 
   const { budget, run } = createBudgetedContext(6);
@@ -423,7 +425,7 @@ test("7. isolated HTML verifier catches script/unsafe-URI/overflow and specialis
         includeSources: true,
       },
     });
-    assert.equal(repaired.result.status, "verified");
+    assert.equal(repaired.result.status, "partial");
     assert.equal(repaired.result.repairIterations, 1);
     assert.equal(repaired.result.artifact?.mimeType, "text/html");
     assert.equal(repaired.result.artifact?.artifactVersion, 2);
@@ -468,11 +470,13 @@ test("8. single-flight lock rejects overlapping specialist runs and rejects sour
       intent: "第二個併發呼叫",
     }, { functionCallId: "overlap-1" } as unknown as Parameters<typeof tool.execute>[1]);
     assert.equal(overlapping.status, "conflict");
-    assert.deepEqual(overlapping.data, { code: "specialist_task_in_progress", formalSave: false });
+    assert.deepEqual(overlapping.data, {
+      code: "specialist_task_in_progress", draftAvailable: false, formalSave: false, published: false, requiresFormalConfirmation: true,
+    });
 
     releaseFirstBuild();
     const firstDone = await firstPromise;
-    assert.equal(firstDone.result.status, "verified");
+    assert.equal(firstDone.result.status, "partial");
 
     const sourceMismatch = await tool.execute({
       documentId,
@@ -548,6 +552,22 @@ test("9. corrupt PDF returns render_error cleanly and VisualArtifactRendererPort
     });
     assert.equal(cleanVisual.result.status, "verified");
     assert.deepEqual(cleanVisual.result.verification?.unverifiedChecks, []);
+    assert.equal(cleanVisual.result.verification?.passed, true);
+    // Even passing the internal inspection is not delivery of usable draft bytes.
+    const adapter = createSpecialistArtifactTools({
+      documents: store, run, authorize: async () => true, trustedUserMessage: "帶像素截圖檢查器產出PDF",
+      visualRenderer: { verifyRenderedVisuals: async () => ({ defects: [], unverifiedChecks: [] }) },
+    })[0]!;
+    const delivery = await adapter.execute({
+      documentId, expectedVersion: 3, authorityVersion, format: "pdf",
+      sourceQuote: "帶像素截圖檢查器產出PDF", intent: "核對交付狀態",
+    }, { scope: run.scope, runId: run.runId, callId: "inspect-only", signal: budget.signal });
+    assert.equal(delivery.status, "failed");
+    assert.equal(delivery.reference, undefined);
+    assert.deepEqual(delivery.data, {
+      code: "specialist_draft_unavailable", inspectionStatus: "verified", inspectionReason: "verified",
+      draftAvailable: false, formalSave: false, published: false, requiresFormalConfirmation: true,
+    });
 
     const flaggedVisual = await runSpecialistArtifactLoop({
       documents: store,
@@ -576,7 +596,7 @@ test("9. corrupt PDF returns render_error cleanly and VisualArtifactRendererPort
   }
 });
 
-test("10. createProductAgent dynamically loads document_compose and executes prepare_family_artifact without formal saves", async () => {
+test("10. document_compose loads the existing compose action but does not offer an undeliverable artifact preview", async () => {
   let claimed = false;
   let saved: ProductAgentResult | null = null;
   const { store, getMutationCalls } = createFakeDocumentStore(makeFamilyDocument());
@@ -603,20 +623,14 @@ test("10. createProductAgent dynamically loads document_compose and executes pre
       return call("load_capabilities", { capabilities: ["document_compose"] }, "load-doc-compose");
     }
     if (modelTurn === 2) {
-      return call(SPECIALIST_ARTIFACT_TOOL_NAME, {
-        documentId,
-        expectedVersion: 3,
-        authorityVersion,
-        format: "pdf",
-        sourceQuote: "整理兒科覆診準備單的PDF預覽",
-        intent: "產出可列印PDF草稿預覽",
-        includeRevision: false,
-        includeSources: true,
-      }, "prepare-pdf");
+      const declarations = (request.config?.tools ?? []).flatMap(tool =>
+        "functionDeclarations" in tool ? tool.functionDeclarations?.map(decl => decl.name) ?? [] : []);
+      assert.ok(declarations.includes("compose_family_data"), "existing compose action remains available");
+      assert.ok(!declarations.includes(SPECIALIST_ARTIFACT_TOOL_NAME), "no parent-openable draft is available");
     }
     return call("present_answer", {
       kind: "operation",
-      paragraphs: [{ text: "已整理好兒科覆診準備單的 PDF 草稿預覽，並完成隔離版面核對，尚待你確認後才可正式保存。", citationIds: [] }],
+      paragraphs: [{ text: "這個對話沒有可開啟的專家草稿，本次沒有建立、保存或發布附件。", citationIds: [] }],
     }, "present-done");
   };
 
@@ -672,7 +686,6 @@ test("10. createProductAgent dynamically loads document_compose and executes pre
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.deepEqual(result.tools.map(t => [t.name, t.status]), [
     ["load_capabilities", "succeeded"],
-    [SPECIALIST_ARTIFACT_TOOL_NAME, "succeeded"],
     ["present_answer", "succeeded"],
   ]);
   assert.equal(getMutationCalls(), 0);
