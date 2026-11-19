@@ -66,6 +66,7 @@ export const privateSourceCitationSchema=z.object({citationId:z.string().max(80)
   nature:z.enum(["unspecified","external_material","claimed_official","personal_observation"])}).strict();
 export type PrivateSourceCitation=z.infer<typeof privateSourceCitationSchema>;
 export interface AgentPresentation {
+  discussion?: import('./chat-discussion.ts').DiscussionTranscript;
   sourceCardReadings?: import('./source-card-reading.ts').SourceReading[];
   text: string;
   /** Persisted worker outcome, not a chat message or a completed care task. */

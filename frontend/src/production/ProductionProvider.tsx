@@ -210,7 +210,7 @@ function useProductionValue(owner: ProductionOwner) {
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
     chatDraft: chatDraft?.text ?? "", setChatDraft: (value: string) => { if (currentScope()) owner.chatController.setText(value); },
-    sendChat: async () => {
+    sendChat: async (options?: import('../../../src/shared/chat').ChatSendOptions) => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
       const attachments=owner.draftOwner.getSnapshot().attachments;
       if(attachments.length&&(attachments.length!==1||!['voice','file','photo'].includes(attachments[0].kind)))return;
@@ -221,7 +221,7 @@ function useProductionValue(owner: ProductionOwner) {
       const photo=attachment?.kind==='photo'?(attachment.photoReference
         ?await owner.photoOwner.prepareReference(attachment.photoReference,attachment.id):attachment.photo?await owner.photoOwner.prepare({id:attachment.id,photo:attachment.photo}):null):null;
       if(!currentScope()||attachments.length&&!voice&&!file&&!photo||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined);
+      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined,options);
       if(currentScope()&&photo){const saved=owner.chatController.getSnapshot().messages.find(item=>!known.has(item.id)&&item.photo?.id===photo.id);
         if(saved){owner.draftOwner.remove(snapshot.scopeKey,attachment.id);owner.photoOwner.linked(saved.id,photo.id);}}
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();

@@ -1,0 +1,65 @@
+{
+  "package": "REQ-009",
+  "dateHongKong": "2026-11-20",
+  "implementationBase": "9cba3fe86d3d0fd0a167ede792dbf7a4bc7e26d0",
+  "environment": "Node 24.22.1, local Firebase emulators, production Web and Agent adapters, synthetic family",
+  "live": {
+    "question": "歲半孩子，放工後只得十分鐘，按疲勞與孩子興趣比較共讀和唱童謠。",
+    "model": "gemini-3.1-flash-lite",
+    "location": "global",
+    "billingSource": "platform",
+    "runId": "f0641d91-e299-4f23-b72c-291ea878ba0b",
+    "questionId": "80f040b4-f706-4106-8a51-daccd2e592e2",
+    "source": "fhs-toddler-development",
+    "sourceVersion": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+    "sourceVersionHash": "91365018235f8e28d39d5cce6f191cdd927b0da61a16e85be9b2f0b647974479",
+    "libraryJoinReadBack": true,
+    "status": "completed",
+    "deliveryReview": "pass",
+    "modelCalls": 8,
+    "promptTokens": 93929,
+    "candidateTokens": 1790,
+    "queryEmbeddings": 1,
+    "successfulPreparationEmbeddings": 1,
+    "embeddingRegion": "us-central1",
+    "nativeTools": [
+      ["search_knowledge", "succeeded"],
+      ["share_knowledge_view", "succeeded"],
+      ["ask_parent_view", "rejected"],
+      ["ask_parent_view", "succeeded"],
+      ["compare_methods_view", "succeeded"],
+      ["present_answer", "succeeded"]
+    ],
+    "observedExchange": "知識觀點按疲倦及孩子主動拿書分別建議；新手家長接住放鬆互動的建議，追問疲倦時如何回應；第三位針對這個疑問比較做法。主答獨立顯示並附同一來源。",
+    "proposals": 0,
+    "historyMatchesRunText": true,
+    "reopenMatchesOriginalRun": true,
+    "qualityLimit": "首個新手家長工具輸入未通過 schema。雖然整份交付通過語義審核，仍出現比來源更強的成效比較。其後收緊角色措辭，將發言歸屬綁入審核雜湊及證據要求；改後只作離線驗證。"
+  },
+  "recovery": {
+    "afterAnswer": "兩次並行 POST、後續重讀都返回同一討論題；單純建立連結沒有生成。另一個孩子讀取收到 404。",
+    "sourceSelection": "取消選取卡後，原 run 返回 stopped/source_changed，發言及引用為零。還原選取後，同一 run 的三段原文相符。",
+    "cancel": "離線於新手家長生成中中止；返回 stopped/cancelled，不披露已擬好的發言，後續角色沒有執行。",
+    "ordinary": "同服務的普通問候僅有原來的一次生成，沒有討論工具或發言。",
+    "lateFollowup": "離線把舊題及已答內容置於最新訊息頁之外，按原連結核權取回，三位角色仍處理原題。"
+  },
+  "web": {
+    "browser": "Microsoft Edge, Playwright",
+    "viewports": [[390, 844], [1100, 850]],
+    "controls": "實際點選與取消逐題選項，展開三個具名 AI 角色，收合後再展開。主回答可獨立閱讀。",
+    "replyPostsDuringReopen": 0,
+    "initialNavigation": "分頁偏好選擇已授權合成孩子，沿正式 session 與 API 載入。"
+  },
+  "operationalNotes": [
+    "舊合成帳已有 114 次嘗試。隔離驗收暫調日限，結束後讀回每人 20、全局 100 及原管理設定；原帳本保留。",
+    "兩次向量準備因繼承的 ADC 路徑不存在而失敗，免費認證預檢重現 ENOENT，保留本地原收據。使用已授權 ADC 後，按同一內容雜湊在 us-central1 完成一次建立及一次查詢。",
+    "雲端監測截至 2026-11-20 02:39 香港時間。共享窗口的 Flash-Lite 為 1360208 輸入、9327 輸出；較測前增量與本題的生成收據一致。"
+  ],
+  "localChecks": {
+    "nodeTests": ["tests/chat-discussion.test.ts", "tests/chat-stop-feedback.test.ts", "tests/agent-feedback.test.ts"],
+    "passed": 9,
+    "httpEnvironment": "HTTP 進度及斷線測試首次在沙盒無法連接 loopback，沿原 127.0.0.1 測試服務補驗通過。",
+    "typecheck": ["frontend/tsconfig.json", "tsconfig.server.json"]
+  },
+  "deferred": ["三線合併後的頁內提問與頁面來源綁定", "REQ-003 模式 PR 整合", "正式部署及 Android 真機"]
+}

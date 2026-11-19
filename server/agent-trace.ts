@@ -197,6 +197,7 @@ const VALID_RECIPES = new Set([
   "photo-capture", "shared-capture", "voice-transcription", "chat-delivery-review", "data-compose", "data-compose-review",
 ]);
 const VALID_TOOLS = new Set<string>([PRODUCT_AGENT_TOOL_CATALOG.loader.name,
+  'share_knowledge_view', 'ask_parent_view', 'compare_methods_view',
   ...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...PRODUCT_AGENT_TOOL_CATALOG.groups.flatMap(group => [...group.toolNames] as string[]),
   "read_selected_tasks", "prepare_selected_tasks", "search_selected_care", "search_selected_materials",
 ]);

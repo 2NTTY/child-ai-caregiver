@@ -31,6 +31,7 @@ import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
+import { createQuestionDiscussion } from './chat-discussion.ts';
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
@@ -134,6 +135,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  discussion?: boolean;
   accountChildren?: AccountDirectory;
   registeredSourceCards?: AgentSourceCards;
   platformLibrary?: import('./agent-registered-source-tools.ts').AgentPlatformLibrary;
@@ -664,7 +666,8 @@ export function createProductAgentTools(options: {
     return { ...data, citationId: id, evidenceType: 'private_reference',
       presentation: { kind: 'private_reference', citationIds: [id] } };
   }
-  const tools: AgentTool[] = [];
+  const discussion = options.discussion ? createQuestionDiscussion(permitted, acceptPresentedAnswer) : undefined;
+  const tools: AgentTool[] = [...discussion?.tools ?? []];
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;
     let permittedForMessage: Promise<boolean> | undefined;
@@ -985,7 +988,9 @@ export function createProductAgentTools(options: {
             return { kind: 'private_reference', text, citationIds: [source.citationId] };
           }) };
         }
-        const parsedRaw = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const main = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const parsedRaw = discussion && main.kind !== 'no_action'
+          ? discussion.assemble({ ...main, kind: main.kind }) : main;
         const parsed = parsedRaw.kind === "no_action" ? parsedRaw : {
           ...parsedRaw,
           paragraphs: parsedRaw.paragraphs.map(paragraph => ({
@@ -996,7 +1001,7 @@ export function createProductAgentTools(options: {
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
         // must not stand in for propose_fact. Questions / read-backs are unaffected.
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
+        if (!discussion && !options.background && !options.mixedTasks && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
           && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
@@ -1285,6 +1290,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
+    discussionInstruction: discussion?.instruction,
     recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
     tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
@@ -1382,14 +1388,14 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         const labels = paragraph.citationIds.map(citationLabel).join('');
         return labels ? text + ' ' + labels : text;
-      }).join('\n\n');
+      });
       // Some private readers (chat history, selected records) expose a citation only
       // during presentation. Count revalidated selected originals, never inventory labels.
       if (run.trace && !budget.signal.aborted) {
         run.trace.markUsableSource(ids.filter(id => householdEvidence.has(id) && !!selectedEvidence.get(id)?.excerpt).length);
       }
       const sourceCardReadings = ids.flatMap(id => accountReadings.has(id) ? [accountReadings.get(id)!] : []);
-      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations,
+      return { ...(discussion ? discussion.render(rendered) : { text: rendered.join('\n\n') }), citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations,
         retrievalMode: citations.length > 0 && mode === "not_used" ? "vector_keyword" : mode };
     },
     // Bind only the sources selected for the draft. Do not copy unrelated retrieved excerpts into a repair.
@@ -1459,6 +1465,7 @@ export function createProductAgentTools(options: {
         : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] }));
       const draft: ChatDeliveryDraft = {
         ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
+        ...(discussion && !serverReceiptText ? { discussionRoles: discussion.roles() } : {}),
         kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
         serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
         serverSubstitutedReceiptText: serverReceiptText !== null,
@@ -1474,6 +1481,7 @@ export function createProductAgentTools(options: {
     },
     replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);
+      if (discussion && !discussion.allowsRepair(parsed)) throw new AgentStopped('delivery_review_incomplete');
       acceptPresentedAnswer(parsed);
       answer = parsed;
       serverReceiptText = null;

@@ -54,6 +54,7 @@ export interface TreatmentEdition {
   source: KnowledgeSourceInput; observationHash: string | null;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  citationsCurrent(tx: Transaction, owner: string, citations: readonly Pick<KnowledgeCandidate, 'sourceId' | 'versionId' | 'chunkId' | 'contentHash'>[]): Promise<boolean>;
   readonly enforcesPersonalLibrarySelection?: boolean;
   recheckPdfRange(input: PdfRangeRequest, readPdf: (id: string, sha256: string) => Promise<Buffer>): Promise<{ versionId: string; versionHash: string; pageStart: number; pageEnd: number }>;
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
@@ -294,11 +295,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   async function catalogIds(tx: Transaction, url?: string) {
     return [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds, url) ?? []])].sort(compareId);
   }
-  async function corpus(tx: Transaction): Promise<Corpus> {
+  async function corpus(tx: Transaction, only?: ReadonlySet<string>): Promise<Corpus> {
     const sources: Corpus["sources"] = [], editions: Edition[] = [];
     const retained = options.audience === "internal" ? await options.observations?.retainedInternalSourceIds(tx, sourceIds) ?? [] : [];
     const selected = [...new Set([...await catalogIds(tx), ...retained])].sort(compareId);
     for (const id of selected) {
+      if (only && !only.has(id)) continue;
       const source = await readSource(tx, id); sources.push({ id, source });
       if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition, 'read')) editions.push(edition); }
     }
@@ -323,8 +325,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   function readSelections(tx: Transaction, owner?: string) {
     return owner && selections ? selections.read(tx, owner) : [];
   }
-  async function personalCorpus(tx: Transaction, owner?: string) {
-    const current = await corpus(tx), preferences = await readSelections(tx, owner);
+  async function personalCorpus(tx: Transaction, owner?: string, only?: ReadonlySet<string>) {
+    const current = await corpus(tx, only), preferences = await readSelections(tx, owner);
     if (!preferences.length) return { ...current, preferences };
     const editions: Edition[] = [];
     for (const active of current.editions) {
@@ -596,6 +598,11 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         return { base: view(current), selected: view(selected) };
       };
       return transaction ? read(transaction) : database.runTransaction(read, { readOnly:true });
+    },
+    async citationsCurrent(tx, owner, citations) {
+      const selected = await personalCorpus(tx, owner, new Set(citations.map(c => c.sourceId)));
+      return citations.every(c => selected.editions.some(e => e.document.sourceId === c.sourceId && e.version.versionId === c.versionId
+        && e.version.chunks.some(chunk => !chunk.excluded && chunk.chunkId === c.chunkId && chunk.contentHash === c.contentHash)));
     },
     async publishedEdition(id) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);

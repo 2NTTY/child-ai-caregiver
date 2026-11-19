@@ -72,6 +72,7 @@ export type SummaryFastProbeClaim = { kind: 'claimed'; claim: AgentRunClaim; run
 export const firestoreAgentClaimSchema = z.object({ runId: uuid, mixedChat:mixedRunScopeSchema.optional() }).strict();
 export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
+  discussionCitationsCurrent?: (binding: Binding, citations: ProductAgentResult['citations']) => Promise<boolean>;
   memory: FirestoreMemoryStore;
   care?: Pick<FirestoreCareStore, 'readRecord'>;
   serverClock?: () => number;
@@ -149,6 +150,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };
   }
   async function sourcesCurrent(b: Binding, value: ProductAgentResult) {
+    if (value.status === 'completed' && value.discussion?.length && value.citations.length
+      && !await options.discussionCitationsCurrent?.(b, value.citations)) return false;
     return value.status !== 'completed' || !value.deliveryReview?.sourceVersions.length
       || Date.now() < await options.chat.reviewedMemoryDeadline(b, value.deliveryReview.sourceVersions);
   }
@@ -572,7 +575,9 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         const original = await read(b, runId), run = expired(original);
         if (cancelledOnly && !(run.state === 'stopped' && run.stopReason === 'cancelled' && run.result === null)) return null;
         const receipt = { ...(run.result ?? empty(run)), status: run.state, stopReason: run.stopReason };
-        const value = await projection.read(b, run, await sourcesCurrent(b, receipt) ? receipt : withheld(receipt, 'source_changed'));
+        const questionCurrent = !receipt.discussion || !run.sourceMessageId
+          || !!await options.chat.readMessage(b, childId, run.sourceMessageId, 'memory');
+        const value = await projection.read(b, run, questionCurrent && await sourcesCurrent(b, receipt) ? receipt : withheld(receipt, 'source_changed'));
         if (run.state !== original.state) write(b, run);
         return value;
       });
@@ -593,7 +598,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
           || run.workerGeneration === b.generation && await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);
         let result = value;
         if (!authorized) result = withheld(value, 'unauthorized');
-        else if (!await sourcesCurrent(b, value)) result = withheld(value, 'source_changed');
+        else if ((value.discussion && run.sourceMessageId && !await options.chat.readMessage(b, run.childId, run.sourceMessageId, 'memory'))
+          || !await sourcesCurrent(b, value)) result = withheld(value, 'source_changed');
         // A stale summary is optional; an invalid authority/read is not a silent empty summary.
         let prepared: Awaited<ReturnType<FirestoreMemoryStore['prepareSummaryWrite']>> | undefined;
         if (summary && result.status === 'completed') {

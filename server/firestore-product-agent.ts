@@ -94,14 +94,16 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const workerInstance = randomUUID();
   const routing = options.routing ?? createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
-  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
-    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
-    await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
-  }, async continuationKnowledge(b, ids) {
-    if (!ids.length) return [];
-    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
-    return options.knowledge.continuationSources(b.transaction, ids);
-  } });
+  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds,
+    discussionCitationsCurrent: async (b, citations) => !!await options.knowledge?.citationsCurrent(b.transaction, b.scope.ownerUserId, citations),
+    async validateKnowledge(binding, sourceId) {
+      if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+      await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
+    }, async continuationKnowledge(b, ids) {
+      if (!ids.length) return [];
+      if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+      return options.knowledge.continuationSources(b.transaction, ids);
+    } });
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget',
     recordToolAdmission: async (transaction, version, at, units) => {

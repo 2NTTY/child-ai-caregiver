@@ -25,7 +25,7 @@ import type { ChatStore } from './chat.ts';
 import type { ChatMessage } from '../src/shared/chat.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, firestoreDomainUuid, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { FieldPath } from '@google-cloud/firestore';
@@ -36,7 +36,7 @@ import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid();
 const text = messageText.refine(value => value.trim().length > 0);
-const inputSchema = z.object({ text: messageText, voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
+const inputSchema = z.object({ text: messageText, discussion: z.literal(true).optional(), voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
   .refine(v => [v.voice, v.file, v.photo].filter(Boolean).length <= 1 && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
 const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
@@ -139,12 +139,19 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
   }
   async function memoryDeadline(b: FirestoreAuthorityTransaction, value: StoredChatMessage, visited = new Set<string>()): Promise<number> {
     let until = value.memorySummaryUntil ? Date.parse(value.memorySummaryUntil) : Infinity;
+    if (value.discussionOf) {
+      if (visited.has(value.id) || visited.size >= 4) return 0;
+      const answer = await original(b, value.discussionOf);
+      if (!answer || answer.role !== 'model') return 0;
+      until = Math.min(until, await memoryDeadline(b, answer, new Set([...visited, value.id])));
+    }
     if (value.role === 'user' || until <= Date.now()) return until;
     if (visited.has(value.id) || visited.size >= 4) return 0;
     if (value.inReplyTo) {
       const parent = await original(b, value.inReplyTo);
       if (!parent || parent.role !== 'user') return 0;
       if (parent.memorySummaryUntil) until = Math.min(until, Date.parse(parent.memorySummaryUntil));
+      if (parent.discussionOf) until = Math.min(until, await memoryDeadline(b, parent, new Set([...visited, value.id])));
     }
     let sources = value.memorySources;
     if (!sources && value.agentRunId) {
@@ -188,7 +195,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
       if (!match) domainReject('not_found', 404);
       const childId = domainParse(uuid, match[1].toLowerCase()), input = domainParse(inputSchema, submission.payload);
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: binding.scope.ownerUserId,
-        role: 'user', text: input.text, inReplyTo: null, createdAt: new Date().toISOString() };
+        role: 'user', text: input.text, ...(input.discussion && { discussion: true }), inReplyTo: null, createdAt: new Date().toISOString() };
       if (input.voice && !options.voice) domainReject('voice_unavailable', 503);
       if (input.file && !options.files) domainReject('chat_file_unavailable', 503);
       if (input.photo && !options.photos) domainReject('photo_unavailable', 503);
@@ -203,6 +210,31 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
   };
   return {
     ...contact,
+    async questionForDiscussion(userId, childId, answerId, create) {
+      return authority.runTransaction(userId, childId, async b => {
+        const answer = await readMessage(b, childId, answerId, 'memory');
+        if (b.sharedAccess || !answer?.agentRunId || answer.role !== 'model' || !answer.inReplyTo) domainReject('not_found', 404);
+        const question = await readMessage(b, childId, answer.inReplyTo, 'memory');
+        if (question?.role !== 'user' || question.authorUserId !== userId) domainReject('not_found', 404);
+        if (question.discussion) return question;
+        const id = firestoreDomainUuid(['chat-discussion', b.scope, answerId]);
+        const existing = await readMessage(b, childId, id);
+        if (existing) {
+          if (existing.discussionOf !== answerId || !existing.discussion) domainReject('chat_binding', 500);
+          return existing;
+        }
+        if (!create) return null;
+        const row = await b.transaction.get(data.ref('agent_runs', 'agent-run', answer.agentRunId));
+        const run = data.open('agent-run', answer.agentRunId, b.scope, firestoreAgentRunSchema, row);
+        if (run.state !== 'completed' || run.sourceMessageId !== question.id || run.ownerUserId !== userId
+          || run.authorizationVersion !== b.authorizationVersion || run.childId !== childId) domainReject('not_found', 404);
+        const next: ChatMessage = { id, childId, authorUserId: userId, role: 'user', text: '討論這個回答。',
+          inReplyTo: null, createdAt: new Date().toISOString(), discussion: true, discussionOf: answerId };
+        const write = await prepare(b, next, id);
+        write.commit();
+        return next;
+      });
+    },
     getOriginalMessageForUser: (userId,childId,id,purpose) => authority.runTransaction(userId,childId,b => readMessage(b,childId,id,purpose)),
     markSeenForUser: (userId,childId,id) => authority.runTransaction(userId,childId,b => contact.markSeen(b,id)),
     mixed: createFirestoreMixedChat(options), mutation, readMessage, readImportedMessage, memoryDeadline, reviewedMemoryDeadline,

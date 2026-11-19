@@ -29,6 +29,7 @@ import { useProduction } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
 import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { NotificationChatTarget } from "../production/NotificationChatTarget";
+import { QuestionDiscussion } from '../components/chat/QuestionDiscussion';
 import { useChatExposure, useChatForeground } from "../production/useChatExposure";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { proposalNeedsConfirmation, publicAnswerSources } from "../agent-view-model";
@@ -68,6 +69,7 @@ function ChatContents({ compact, onPaneLayout }: {
   const detailsTrigger = useRef<View | null>(null);
   const [activityEntry, setActivityEntry] = useState<"list" | "detail">("list");
   const [paneHeight, setPaneHeight] = useState(0);
+  const [discussNext, setDiscussNext] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const handlePaneLayout = (event: LayoutChangeEvent) => {
     setPaneHeight(event.nativeEvent.layout.height);
@@ -108,7 +110,9 @@ function ChatContents({ compact, onPaneLayout }: {
     && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file", "photo"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file"||v.kind==="photo")) && chatDraft.length <= 10_000;
   function send() {
     if (!canSend) return;
-    setFollowRequest(`send-${Date.now()}`); return sendChat();
+    setFollowRequest(`send-${Date.now()}`);
+    setDiscussNext(false);
+    return discussNext ? sendChat({ discussion: true }) : sendChat();
   }
   function restoreDetailsFocus() {
     const target = detailsTrigger.current as unknown as HTMLElement | null;
@@ -260,6 +264,17 @@ function ChatContents({ compact, onPaneLayout }: {
         const failure = message.role === "model" && (effectiveRunStatus === "stopped" || effectiveRunStatus === "unknown" || !effectiveRunStatus)
           ? failedChatReply(message.text, run?.stopReasonLabel) : null;
         const original = message.inReplyTo ? scopedMessages.find(row => row.id === message.inReplyTo && row.role === "user") : undefined;
+        const followup = message.role === 'model' ? scopedMessages.find(row => row.discussionOf === message.id) : undefined;
+        const discussionReply = followup && scopedMessages.find(row => row.role === 'model' && row.inReplyTo === followup.id);
+        const discussionRun = discussionReply?.agentRunId ? agentRuns[discussionReply.agentRunId] : original?.discussion ? run : undefined;
+        const discussionQuestion = followup ?? (original?.discussion ? original : message.discussion && !hasModelReply ? message : undefined);
+        const discussionActive = !!discussionQuestion && activeReplyId === discussionQuestion.id && replyRunning;
+        const discussionState = discussionActive ? (scopedFeedback?.messageId === discussionQuestion?.id
+          ? AGENT_PROGRESS_LABELS[scopedFeedback.phase] : '討論進行中，發言核對後會在這裏顯示。')
+          : discussionRun?.status === 'completed' ? discussionRun.discussion?.length ? '已完成部分觀點。' : '這次討論沒有可顯示的觀點。'
+          : discussionRun?.stopReasonLabel ?? (discussionRun?.status === 'unknown' ? '結果待核對。'
+            : chat.remoteReply?.messageId === discussionQuestion?.id && chat.remoteReply?.status === 'stopped' ? '討論已停止。'
+            : message.role === 'user' && !message.agentRunId ? '討論尚未開始。' : '正在等候原討論結果。');
         const directoryMarker = message.role === "model" && message.text === CHILD_PROFILES_CHAT_TEXT;
         const mismatchedDirectory = directoryMarker && !!original && !matchesLegacyDirectoryQuestion(original.text);
         const childProfiles = message.role === "model" && !!message.agentRunId && !!child && child.id === chat.selectedChildId
@@ -280,6 +295,13 @@ function ChatContents({ compact, onPaneLayout }: {
             {message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : null}
           </>}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
+            {discussionQuestion ? <QuestionDiscussion key={discussionQuestion.id} runId={discussionReply?.agentRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
+              status={discussionRun?.status} state={discussionState} online={chat.online}
+              read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
+              onOpenSource={id => { const runId = discussionReply?.agentRunId ?? message.agentRunId; if (runId) openAgentSource(runId, id); }} />
+              : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId
+                ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || !chat.online || !chatWritesAllowed}
+                  onPress={() => { setFollowRequest(`discuss-${Date.now()}`); void chatController.discussAnswer(message.id); }} /> : null}
             {childProfiles ? <ChatAction label="查看子女檔案" compact={compact} onPress={() => actions.open("profile")} /> : null}
             {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
               <RegisteredReadingCard key={JSON.stringify(target)} target={target} active={displayedMessages.some(item => item.id === message.id)} />)}
@@ -301,7 +323,11 @@ function ChatContents({ compact, onPaneLayout }: {
           </> : undefined} />;
       }} />
     {officialHelpPanel}
-    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
+    <AgentComposer discussionControl={childScopedChat && !replyRunning && phase === 'draft' && <ChatAction label={discussNext ? '已選討論' : '討論'}
+      accessibilityLabel={discussNext ? '取消這一題的討論' : '為這一題開啟三個 AI 觀點討論'}
+      icon={discussNext ? 'check' : 'account-group-outline'} compact disabled={busy || !chat.online || !chatWritesAllowed}
+      onPress={() => setDiscussNext(value => !value)} />}
+      enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
       allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
       onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
       queueAction={childScopedChat && chatWritesAllowed && chat.online && !stopPending && phase === "replying" && activeReplyId && draft?.savedUserMessageId === activeReplyId && !!composerText.trim() && composerText.length <= 10_000

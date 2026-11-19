@@ -10,12 +10,13 @@ import {
   type OfficialHelpId,
 } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
-import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
+import type { ChatReplyState, ChatMessage, ChatSendOptions } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
 
 type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" | "reply_failed";
 
 export interface ChatDraft {
+  discussion?: true;
   text: string;
   nextText?: string;
   file?: Pick<ChatFileMessageReference,"id"|"version">;
@@ -469,7 +470,7 @@ export class ChatController {
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
         const matches = authoritativePage.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
-          && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
+          && item.discussion === draft.discussion && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
             notice: "找到一則相同原文的新訊息。請核對下方聊天記錄，確認是否屬於這次提交。" });
@@ -816,7 +817,7 @@ export class ChatController {
     this.updateDraft(childId,{photo:undefined});return true;
   }
 
-  async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<void> {
+  async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">, options?: ChatSendOptions): Promise<void> {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt || this.state.remoteReply?.status === "running" && !this.state.messages.some(item => item.role === "model" && item.inReplyTo === this.state.remoteReply?.messageId)) return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
@@ -836,9 +837,9 @@ export class ChatController {
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
-      this.updateDraft(childId, { text, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
+      this.updateDraft(childId, { text, discussion: options?.discussion, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo);
+      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo, options);
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
@@ -868,6 +869,36 @@ export class ChatController {
       this.finishTextQueue(scope, savedId);
       this.release(scope);
     }
+  }
+
+  async discussAnswer(answerId: string): Promise<void> {
+    const childId = this.state.selectedChildId;
+    if (!childId || !this.api.questionForDiscussion || this.state.busy || !this.state.online || this.state.loading
+      || !this.state.messages.some(message => message.role === 'model' && message.id === answerId)) return;
+    const scope = this.scope();
+    this.update({ busy: 'save', replyError: null });
+    let question: ChatMessage | null = null;
+    try {
+      if (!await this.verifyIdentity(scope)) return;
+      const read = (create: boolean) => this.api.questionForDiscussion!(childId, answerId, create, scope.controller.signal, scope.userId);
+      // A lost create response reconciles against the answer's persistent relationship.
+      try { question = await read(true); }
+      catch (error) { if (!unknownSave(error) || !this.current(scope)) throw error; question = await read(false); if (!question) throw error; }
+      if (!question || !this.current(scope) || !await this.verifyIdentity(scope)) return;
+      if (!this.state.messages.some(item => item.id === question!.id))
+        this.update({ messages: [...this.state.messages, question] });
+    } catch (error) {
+      if (this.current(scope)) {
+        if (sessionError(error)) this.invalidateIdentity();
+        else if (childAccessDenied(error)) this.forgetChild(childId);
+        else this.update({ replyError: '未能核對討論，請重新讀取原對話。' });
+      }
+      return;
+    } finally {
+      if (this.current(scope)) this.update({ busy: null });
+      this.release(scope);
+    }
+    if (this.current(scope) && question) await this.requestReply(question.id);
   }
 
   async requestReply(messageId: string): Promise<void> {
