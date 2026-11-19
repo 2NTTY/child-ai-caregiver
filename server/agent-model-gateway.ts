@@ -25,6 +25,11 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 import { nativeContextPreflight, nativeTokenCounter, type ContextPreflight, type NativeContextPayload } from './model-context-preflight.ts';
 
+/** The shared daily ledger explicitly declined a maintenance stage before its root reservation or provider dispatch. */
+export class KnowledgeDailyAdmissionRefused extends AgentStopped {
+  constructor() { super("quota_exceeded"); }
+}
+
 export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string; highDetail: boolean }>;
 const verifiedKnowledgePdfs = new WeakSet<AgentKnowledgePdf>();
 export function originalKnowledgePdf(bytes: Buffer, sha256: string, highDetail = false): AgentKnowledgePdf {
@@ -336,7 +341,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (provider.countInput) await countInput(outgoing);
       if (inspect(outgoing)?.exceedsCapacity) throw new AgentStopped('model_context_exceeded');
       let preparedFingerprint: string | undefined;
-      let modelAttempt: import("./durable-root-budget.ts").BudgetAttempt | undefined;
+      let modelAttempt: Extract<import("./durable-root-budget.ts").BudgetAttempt, {kind:"model"}> | undefined;
       const modelKey = retry && originalModelKey ? originalModelKey + ":retry:" + retry : originalModelKey;
       let retryDelay: number | undefined;
       let providerFailure: unknown;
@@ -361,7 +366,7 @@ export class AgentGatewayModel extends BaseLlm {
             throw new AgentStopped('unavailable');
         }
         modelAttempt = { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 };
-        await budget.admitModel(this.options, modelAttempt);
+        if (daily?.context.binding.trigger.kind !== 'knowledge-maintenance') await budget.admitModel(this.options, modelAttempt);
         preparedFingerprint = requestFingerprint;
       } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
@@ -370,9 +375,19 @@ export class AgentGatewayModel extends BaseLlm {
           : this.options.purpose === 'compose' ? 'delegate' : this.options.purpose === 'compaction' ? 'compact'
           : this.options.purpose === 'summary' ? 'summary' : 'generate';
         const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!, undefined, { activity, retry: retry > 0 }));
-        if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
+        if (admission.decision === "quota_exceeded") {
+          if (daily.context.binding.trigger.kind === 'knowledge-maintenance' && retry === 0) throw new KnowledgeDailyAdmissionRefused();
+          throw new AgentStopped("quota_exceeded");
+        }
         if (admission.decision !== "execute") throw new AgentStopped("unavailable");
         dailyPreparationToken = admission.preparationToken;
+        if (daily.context.binding.trigger.kind === 'knowledge-maintenance') {
+          try { await budget.admitModel(this.options, modelAttempt); }
+          catch (error) {
+            await daily.adapter.record(dailyRequest, { kind: 'model', outcome: 'unavailable', durationMs: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0 });
+            throw error;
+          }
+        }
       } else if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
         throw new AgentStopped("quota_exceeded");
       }

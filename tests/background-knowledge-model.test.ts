@@ -102,6 +102,10 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
     versionId: "11111111-1111-4111-8111-111111111111", observationHash: null };
   const growthRules = [{ id: "test-rule", revision: "v1", sourceId: source.sourceId,
     key: source.chunks[0]!.key, hash: knowledgeHash(source.chunks[0]) }];
+  const firstPublication = await prepareKnowledgeMaintenance({ candidate: observed, baseline: null, fetchedAt,
+    growthRules, completeText: provider([]) });
+  assert.ok(firstPublication.source.chunks.every(chunk => chunk.key !== growthRules[0]!.key));
+  assert.equal(firstPublication.review.decision, "approve_candidate");
   const calls: Parameters<Completion>[0][] = [];
   const unchanged = await prepareKnowledgeMaintenance({ candidate: observed, baseline, fetchedAt, growthRules,
     completeText: provider(calls) });
@@ -113,6 +117,21 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
   assert.equal(unchanged.versionHash, baseline.versionHash);
   assert.match(unchanged.provenance.organizeAttemptKey, /^reused-originals:/u);
   assert.equal(unchanged.review.decision, "approve_candidate");
+
+  // A new unit outside a complete pinned range may publish without rewriting that range.
+  const originalText = observed.observed.text.padEnd(3000, "甲");
+  const pinned = { ...source.chunks[0]!, originalText };
+  const prior = { ...source, chunks: [pinned] };
+  const addition = { ...observed.observed, text: originalText + "\n另附開放時間。" };
+  const extended = await prepareKnowledgeMaintenance({
+    candidate: { ...observed, observed: addition, observationHash: observationHash(addition) },
+    baseline: { ...baseline, source: prior, versionHash: sourceVersionHash(prior) }, fetchedAt,
+    growthRules: [{ ...growthRules[0]!, hash: knowledgeHash(pinned) }], completeText: provider([]),
+  });
+  assert.deepEqual(extended.source.chunks[0], pinned);
+  assert.equal(extended.source.chunks.length, 2);
+  assert.equal(extended.assessment.growthRuleImpact, "none");
+  assert.equal(extended.review.decision, "approve_candidate");
 
   const changedObservation = { ...observed.observed, text: observed.observed.text + "\n另帶已填寫的表格。" };
   const changedCalls: Parameters<Completion>[0][] = [];
