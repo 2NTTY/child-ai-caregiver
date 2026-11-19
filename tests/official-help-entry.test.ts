@@ -143,6 +143,7 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '醫生開咗撲熱息痛同抗生素，點樣餵藥？',
     '想問母嬰健康院同埋安全用藥劑量問題',
     'What is the paracetamol dosage for my baby?',
+    'Is the prescribed dose 5 ml or 5ml?',
   ]) {
     const matched = matchOfficialHelpForText(text);
     assert.ok(matched.includes('medical-consult-hk-v1'), `must match medical-consult-hk-v1 for: ${text}`);
@@ -165,10 +166,14 @@ test('matchOfficialHelpForText deterministically identifies emergency and medica
     '個故仔好好笑，笑到抽筋',
     '搞笑到抽筋',
     '今日下晝飲咗 120ml 奶同埋換咗兩次片',
+    '今日下晝飲咗 120 ml 奶同埋換咗兩次片',
+    '沖奶要幾多 ml 水？',
     '請問六個月大加固食咩蔬果好？',
   ]) {
     assert.deepEqual(matchOfficialHelpForText(ordinary), [], `ordinary text must not false-trigger urgent help: ${ordinary}`);
   }
+  assert.deepEqual(matchOfficialHelpForText('BB飲咗 120 ml 奶，之後呼吸困難'), ['emergency-hk-v1']);
+  assert.deepEqual(matchOfficialHelpForText('BB飲咗 120 ml 奶，想問退燒藥水嘅劑量'), ['medical-consult-hk-v1']);
 });
 
 test('OFFICIAL_HELP copy and chatScreen structure expose fixed help cards outside the child guard', async () => {
@@ -375,6 +380,8 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   let currentDrafts: Record<string, any> = {};
   let currentReplyError: string | null = null;
   let currentFeedback: any = null;
+  let currentReplyingMessageId: string | null = null;
+  let currentBusy: 'reply' | null = null;
   let currentRuns: Record<string, any> = {};
   let viewport = { width: 1024, height: 800, fontScale: 1 };
   let runnerRef: any = null;
@@ -387,7 +394,8 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
     actions: { refresh() {}, open() {} },
     scopeKey,
     chatState: {
-      busy: null,
+      busy: currentBusy,
+      replyingMessageId: currentReplyingMessageId,
       loading: false,
       online: true,
       loadedAt: '2026-11-16T00:00:00.000Z',
@@ -572,6 +580,61 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   nodes = collectNodes(rerender());
   assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'H2 UI: retained Server SSE help card must render panel even when busy=null');
   assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'H2 UI: retained Server SSE emergency card must render urgent notice when busy=null');
+
+  // A newly read normal-looking answer is not yet proof of completion. Keep the same-turn
+  // feedback while the controller verifies the authoritative status, then let explicit clear hide it.
+  currentDrafts = { 'child-1': { phase: 'draft', savedUserMessageId: null } };
+  currentMessages = [...currentMessages, { id: 'pending-answer', role: 'model', inReplyTo: 'u4', text: 'Synthetic saved result', agentRunId: 'run-sse-1' }];
+  currentReplyError = null;
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'A saved answer awaiting authoritative verification must retain same-turn help');
+  const pendingHelp = currentFeedback;
+  currentFeedback = null;
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Clearing verified feedback must hide the old help');
+  currentFeedback = pendingHelp;
+  currentMessages = currentMessages.filter(item => item.id !== 'pending-answer');
+
+  // An explicit retry may target an older saved message. Its current server help belongs to that
+  // retry, not to the newest other message and never to another child.
+  const olderFeedback = currentFeedback;
+  currentMessages = [...currentMessages, { id: 'u-newer', role: 'user', text: '你好' }];
+  currentBusy = 'reply';
+  currentReplyingMessageId = 'u4';
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'An older explicit retry must display its own server help');
+  currentFeedback = { ...olderFeedback, messageId: 'u-newer', sources: [] };
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'The newer message must not borrow active retry help');
+  currentFeedback = olderFeedback;
+  chatSelectedChildId = 'child-2';
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Child mismatch must suppress active server help');
+  chatSelectedChildId = 'child-1';
+  currentBusy = null;
+  currentReplyingMessageId = null;
+
+  currentMessages = [{ id: 'u4', role: 'user', text: 'BB呼吸困難' }];
+  currentDrafts = { 'child-1': { phase: 'draft', savedUserMessageId: null, dismissedHelpMessageId: 'u4' } };
+  currentFeedback = null;
+  currentReplyError = null;
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Start New must not re-infer help from the dismissed old message');
+  currentDraft = 'BB呼吸困難';
+  nodes = collectNodes(rerender());
+  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'Start New must still recognize emergency in the new draft');
+  currentDraft = '';
+
+  // A different older turn's failure cannot reactivate help for a completed newer turn.
+  currentMessages = [
+    { id: 'older', role: 'user', text: 'Synthetic request' },
+    { id: 'finished-urgent', role: 'user', text: 'BB呼吸困難' },
+    { id: 'finished-reply', role: 'model', inReplyTo: 'finished-urgent', text: 'Synthetic approved result' },
+  ];
+  currentReplyError = 'Synthetic failure on an older turn';
+  nodes = collectNodes(rerender());
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Another turn error must not reopen completed help');
+  currentReplyError = null;
 
   // H2 Controller + UI E2E: ChatController.requestReply emits SSE help card, then fails -> feedback.cards is retained when busy=null, then cleared after completed reply reloads.
   let storedMessages: any[] = [{ id: 'u-sse', childId: 'child-1', authorUserId: 'parent-1', role: 'user', text: '幫我睇下呢張相應該點處理？', createdAt: '2026-11-16T00:00:00.000Z' }];

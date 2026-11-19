@@ -74,7 +74,7 @@ function startStaticDistServer() {
   });
 }
 
-function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = false, failReplyWithSourcesOnly = false, completeWithCitation = false, replyDelayMs = 0 } = {}) {
+function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = false, failReplyWithSourcesOnly = false, failBeforeRead = false, completeWithCitation = false, replyDelayMs = 0 } = {}) {
   const child1 = { id: CHILD_1_ID, workspaceId: WORKSPACE_ID, displayName: '小昕', createdAt: '2026-11-01T00:00:00.000Z', accessRole: 'owner' };
   const child2 = { id: CHILD_2_ID, workspaceId: WORKSPACE_ID, displayName: '阿樂', createdAt: '2026-11-01T00:00:00.000Z', accessRole: 'owner' };
   const messagesByChild = { [CHILD_1_ID]: [], [CHILD_2_ID]: [] };
@@ -234,8 +234,10 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
             const sse = failReplyWithSourcesOnly
               ? [
                 `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 1, phase: 'searching', sources: [syntheticProgressSource('found')] } })}\n\n`,
-                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 2, phase: 'reading', sources: [syntheticProgressSource('read')] } })}\n\n`,
-                `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 3, phase: 'reviewing' } })}\n\n`,
+                ...(failBeforeRead ? [] : [
+                  `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 2, phase: 'reading', sources: [syntheticProgressSource('read')] } })}\n\n`,
+                  `data: ${JSON.stringify({ type: 'progress', progress: { runId, messageId: msgId, sequence: 3, phase: 'reviewing' } })}\n\n`,
+                ]),
                 `data: ${JSON.stringify({ type: 'result', status: 503, body: { error: { code: 'ai_unavailable' } } })}\n\n`,
               ].join('')
               : [
@@ -446,6 +448,7 @@ test('E2E 1: Permanent toolbar toggle works with keyboard + ARIA roles even with
     await page.getByText('先選擇孩子。', { exact: true }).waitFor();
     const toggle = page.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
     await toggle.waitFor();
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
     assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'help dock should start collapsed');
 
     // Keyboard activation
@@ -456,12 +459,14 @@ test('E2E 1: Permanent toolbar toggle works with keyboard + ARIA roles even with
 
     await page.getByTestId('chat-official-help-dock').waitFor();
     await page.getByTestId('chat-official-help-panel').waitFor();
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     assert.equal(await page.getByTestId('official-help-card').count(), 2, 'manual toggle reveals both emergency & medical cards');
     const cardLabels = await page.getByTestId('official-help-card').evaluateAll(els => els.map(el => el.getAttribute('aria-label')));
     assert.deepEqual(cardLabels, ['緊急求助', '醫療與用藥諮詢']);
     assert.equal(await page.getByRole('textbox', { name: '撰寫對話問題', exact: true }).isDisabled(), true, 'composer disabled without child but still mounted cleanly');
 
     await toggle.press('Enter');
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
     assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'second keyboard press collapses help dock');
     assert.deepEqual(errors, [], `unexpected browser errors: ${JSON.stringify(errors)}`);
   } finally {
@@ -642,5 +647,36 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
     assert.deepEqual(e3, [], `E2E 4 Part C errors: ${JSON.stringify(e3)}`);
   } finally {
     await c3.close();
+  }
+
+  // Part D: Start New leaves the old message in history, not in the next draft's help or sources.
+  const foundBackend = createSyntheticBackend({ failReplyWithSourcesOnly: true, failBeforeRead: true });
+  const { context: c4, page: p4, errors: e4 } = await openChatPage(browser, serverInfo.baseUrl, foundBackend, { width: 390, height: 844 });
+  try {
+    const textbox = p4.getByRole('textbox', { name: '撰寫對話問題', exact: true });
+    const urgent = p4.getByTestId('chat-official-help-urgent-notice');
+    const toggle = p4.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
+    await textbox.fill('BB突然呼吸困難');
+    await p4.getByRole('button', { name: '送出', exact: true }).click();
+    const retained = p4.getByTestId('chat-progress-sources-retained-notice');
+    await retained.waitFor();
+    await urgent.waitFor();
+    assert.doesNotMatch(await retained.innerText(), /已讀取/);
+    assert.match(await p4.getByTestId('chat-progress-source-card').innerText(), /已找到官方來源/);
+    await p4.getByRole('button', { name: '開始新訊息', exact: true }).click();
+    await p4.getByTestId('chat-official-help-dock').waitFor({ state: 'hidden' });
+    await p4.getByTestId('chat-progress-sources').waitFor({ state: 'hidden' });
+    assert.equal(await textbox.inputValue(), '');
+    await p4.getByText('BB突然呼吸困難', { exact: true }).waitFor();
+    await toggle.click();
+    await p4.getByTestId('chat-official-help-panel').waitFor();
+    assert.equal(await p4.getByTestId('official-help-card').count(), 2);
+    assert.equal(await urgent.count(), 0, 'manual access does not revive the old emergency');
+    await toggle.click();
+    await textbox.fill('BB而家抖唔到氣');
+    await urgent.waitFor();
+    assert.deepEqual(e4, [], `E2E 4 Part D errors: ${JSON.stringify(e4)}`);
+  } finally {
+    await c4.close();
   }
 });

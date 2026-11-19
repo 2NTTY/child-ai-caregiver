@@ -30,10 +30,11 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/official-help-entry.test.ts
+  tests/d634-reply-recovery.test.ts
   tests/chat-web-sources-copy.test.ts
   tests/chat-delivery-review.test.ts
 )
-TEST_CASES=(7 7 44)
+TEST_CASES=(7 3 7 44)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

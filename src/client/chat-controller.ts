@@ -22,6 +22,8 @@ export interface ChatDraft {
   photo?: Pick<PhotoMessageReference,"id"|"version">;
   phase: DraftPhase;
   savedUserMessageId: string | null;
+  /** A fresh draft must not restore this abandoned turn's automatic help. */
+  dismissedHelpMessageId?: string;
   candidateMessageId: string | null;
   notice: string | null;
   knownIds: string[];
@@ -335,6 +337,8 @@ export class ChatController {
         }
       }
       const page = await this.api.listMessages(childId, scope.controller.signal);
+      let authoritativePage = page;
+      let checkedOriginal: ChatReplyState | null = null;
       if (!this.current(scope)) return;
       if (page.messages.some(item => item.role === "user" && item.authorUserId !== scope.userId)) {
         this.invalidateIdentity();
@@ -348,12 +352,17 @@ export class ChatController {
       const latestUser = [...page.messages].reverse().find(item => item.role === "user");
       if (latestUser && !page.messages.some(item => item.inReplyTo === latestUser.id)) {
         try {
-          const original = await this.readOriginal(scope, latestUser.id);
+          checkedOriginal = await this.readOriginal(scope, latestUser.id);
           if (!this.current(scope)) return;
-          if (original?.status === "completed") {
+          if (checkedOriginal?.status === "completed") {
             const refreshed = await this.api.listMessages(childId, scope.controller.signal);
             if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+            if (refreshed.messages.some(item => item.role === "user" && item.authorUserId !== scope.userId)) {
+              this.invalidateIdentity();
+              return;
+            }
             if (refreshed.messages.some(item => item.role === "model" && item.inReplyTo === latestUser.id)) {
+              authoritativePage = refreshed;
               const refreshedIds = new Set(refreshed.messages.map(item => item.id));
               const keepOlder = this.state.messages.length > refreshed.limit && this.state.messages.some(item => refreshedIds.has(item.id));
               this.update({
@@ -369,7 +378,9 @@ export class ChatController {
         }
         catch (error) {
           if (sessionError(error) || childAccessDenied(error)) throw error;
-          if (this.current(scope)) this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
+          if (this.current(scope) && this.state.drafts[childId]?.dismissedHelpMessageId !== latestUser.id) {
+            this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
+          }
         }
         if (!this.current(scope)) return;
       } else this.update({ remoteReply: null, replyError: null });
@@ -380,14 +391,14 @@ export class ChatController {
       }
       if (this.state.feedback) {
         const fbId = this.state.feedback.messageId;
-        const matchingReply = page.messages.find(item => item.role === "model" && item.inReplyTo === fbId);
+        const matchingReply = authoritativePage.messages.find(item => item.role === "model" && item.inReplyTo === fbId);
         let hasCompletedReply = Boolean(matchingReply && !isIncompleteModelReplyText(matchingReply.text));
         if (hasCompletedReply && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0) && matchingReply) {
           if (this.state.remoteReply?.messageId === fbId && this.state.remoteReply.status !== "completed") {
             hasCompletedReply = false;
           } else {
             try {
-              if (this.api.getOriginalReply) {
+              if (checkedOriginal?.messageId !== fbId && this.api.getOriginalReply) {
                 const orig = await this.api.getOriginalReply(childId, fbId, scope.controller.signal, scope.userId);
                 if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
                 if (orig && orig.status !== "completed") hasCompletedReply = false;
@@ -404,7 +415,8 @@ export class ChatController {
             }
           }
         }
-        const superseded = Boolean(latestUser && latestUser.id !== fbId);
+        const latestTurn = [...authoritativePage.messages].reverse().find(item => item.role === "user");
+        const superseded = Boolean(latestTurn && latestTurn.id !== fbId);
         if (hasCompletedReply || superseded) this.update({ feedback: null });
       }
       if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
@@ -412,7 +424,7 @@ export class ChatController {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: null,
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
-        const matches = page.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
+        const matches = authoritativePage.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
           && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
@@ -444,7 +456,8 @@ export class ChatController {
     const result = await this.api.getOriginalReply(scope.childId, messageId, scope.controller.signal, scope.userId);
     if (!this.current(scope)) return null;
     const alreadyReplied = this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId);
-    if (alreadyReplied) {
+    const dismissedTerminal = this.state.drafts[scope.childId]?.dismissedHelpMessageId === messageId && result?.status !== "running";
+    if (alreadyReplied || dismissedTerminal) {
       this.update({
         remoteReply: null,
         replyError: null,
@@ -605,8 +618,11 @@ export class ChatController {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
+        if (activeRunId !== null && activeRunId !== event.runId) return;
         activeRunId = event.runId;
-        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback : null;
+        // Only a frame from an actual replacement run supersedes the retained original.
+        const previous = this.state.feedback?.messageId === messageId && this.state.feedback.runId === event.runId
+          ? this.state.feedback : null;
         const next = reconcileAgentProgress(previous, event);
         if (next !== previous) this.update({ feedback: next });
       });
@@ -762,7 +778,7 @@ export class ChatController {
       if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
         feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
-      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, notice: "聊天已保存，正在等候 AI 回覆。" });
+      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: "聊天已保存，正在等候 AI 回覆。" });
       await this.performReply(scope, saved.id);
     } catch (error) {
       if (!this.current(scope)) return;
@@ -797,7 +813,11 @@ export class ChatController {
     const savedDraft = this.state.drafts[childId]?.savedUserMessageId === messageId;
     if ((!original && !savedDraft) || this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId)) return;
     const scope = this.scope();
-    this.update({ feedback: null, busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
+    this.update({ feedback: this.state.feedback?.messageId === messageId ? this.state.feedback : null,
+      busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
+    if (this.state.drafts[childId]?.dismissedHelpMessageId === messageId) {
+      this.updateDraft(childId, { dismissedHelpMessageId: undefined });
+    }
     try {
       const existing = await this.readOriginal(scope, messageId);
       if (!this.current(scope)) return;
@@ -849,8 +869,19 @@ export class ChatController {
 
   startNewMessage(): void {
     const childId = this.state.selectedChildId;
-    if (!childId || this.state.busy || this.state.drafts[childId]?.phase !== "reply_failed") return;
-    this.updateDraft(childId, { ...emptyDraft(), notice: "舊訊息已保存；可在聊天記錄中再次要求 AI 回覆。" });
+    if (!childId || this.state.busy) return;
+    const draft = this.state.drafts[childId];
+    if (draft?.phase !== "reply_failed" || !draft.savedUserMessageId) return;
+    const id = draft.savedUserMessageId;
+    const remote = this.state.remoteReply;
+    const noticeOwner = remote?.messageId ?? this.state.feedback?.messageId ?? id;
+    this.update({
+      drafts: { ...this.state.drafts, [childId]: { ...emptyDraft(), dismissedHelpMessageId: id,
+        notice: "舊訊息已保存；可在聊天記錄中再次要求 AI 回覆。" } },
+      ...(this.state.feedback?.messageId === id ? { feedback: null } : {}),
+      ...(remote?.messageId === id && remote.status !== "running" ? { remoteReply: null } : {}),
+      ...(noticeOwner === id ? { replyError: null, cancelNotice: null } : {}),
+    });
   }
 
   dispose(): void {

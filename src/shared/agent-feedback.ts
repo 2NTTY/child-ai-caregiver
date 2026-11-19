@@ -71,7 +71,8 @@ function hasUrgentConvulsionCue(normalized: string): boolean {
     .replace(NON_URGENT_CRAMP_EXERCISE_PATTERN, '');
   return /抽筋|暈低/u.test(remaining);
 }
-const MEDICAL_CONSULT_HELP_PATTERN = /(?:退燒藥|藥水|藥物|食藥|餵藥|服藥|劑量|毫克|幾多\s*(?:ml|mg|毫升|毫克)\b|抗生素|撲熱息痛|布洛芬|阿士匹靈|處方|開藥|改動醫囑|母嬰健康院|睇醫生|求醫|診斷|\b(?:dosage|medication|medicine|paracetamol|ibuprofen|aspirin|antibiotics?|administer|drops?|tablets?|pills?|capsules?|teaspoons?|tablespoons?|syrup|ml|mg|mcg)\b)/iu;
+// Millilitres measure feeds as well as medicine; match the medication or dosing cue, not the volume.
+const MEDICAL_CONSULT_HELP_PATTERN = /(?:退燒藥|藥水|藥物|食藥|餵藥|服藥|用藥|藥量|劑量|毫克|抗生素|撲熱息痛|布洛芬|阿士匹靈|處方|開藥|改動醫囑|母嬰健康院|睇醫生|求醫|診斷|\b(?:doses?|dosing|dosage|medications?|medicines?|paracetamol|ibuprofen|aspirin|antibiotics?|administer|drops?|tablets?|pills?|capsules?|teaspoons?|tablespoons?|syrup|mg|mcg)\b)/iu;
 
 /**
  * Deterministic client/server matcher for surfacing candidate official help cards
