@@ -913,7 +913,7 @@ export function createProductAgentTools(options: {
         selectedEvidence.set(id, source);
         accountReadings.set(id, target);
         householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
-      }, attemptKey => async (query, authorizeSource) => {
+      }, attemptKey => run.billingSource !== 'personal' ? null : async (query, authorizeSource) => {
         if (!run.embeddings) throw new AgentStopped('unavailable');
         const request = { task: 'RETRIEVAL_QUERY' as const, text: query };
         const permitted = async () => await authorize() && await authorizeSource();

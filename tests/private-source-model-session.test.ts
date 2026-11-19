@@ -18,7 +18,7 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import type { ModelBillingSource } from '../src/shared/model-settings.ts';
 
 const stopped = (reason: string) => (error: unknown) => error instanceof AgentStopped && error.reason === reason;
-async function fixture(billingSource: ModelBillingSource = 'platform', interactive = false) {
+async function fixture(billingSource: ModelBillingSource = 'personal', interactive = false) {
   const f = firestoreUsageFixture(Date.now());
   const daily = new FirestoreAiUsage({ ...f.options, billingSource });
   const root = new FirestoreRootBudget({ ...f.options, namespace: 'synthetic_private_root' });
@@ -56,8 +56,17 @@ async function fixture(billingSource: ModelBillingSource = 'platform', interacti
     afterEmbedding: (callback: () => void) => { onEmbedding = callback; } };
 }
 
-for (const payer of ['platform', 'personal'] as const) test(`private stages retain ${payer} payer and charge model/PDF and document vectors once`, async () => {
-  const f = await fixture(payer), session = await createPrivateSourceModelSession(f.options);
+test('private stages refuse a platform payer before any provider or usage reservation', async () => {
+  for (const interactive of [false, true]) {
+    const f = await fixture('platform', interactive);
+    await assert.rejects(createPrivateSourceModelSession(f.options), { code: 'personal_source_key_required' });
+    assert.deepEqual(f.counts(), { models: 0, vectors: 0 });
+    assert.equal((await f.daily.getForUser(f.options.owner)).attempts, 0);
+  }
+});
+
+test('private stages charge the owner once for model/PDF and document vectors', async () => {
+  const payer = 'personal', f = await fixture(payer), session = await createPrivateSourceModelSession(f.options);
   try {
     assert.equal(session.billingSource, payer); assert.equal(session.settingsVersion, 'synthetic-settings:policy:1');
     assert.equal(await session.completeText(f.input), 'Synthetic reviewed content');
@@ -84,7 +93,7 @@ test('interactive sessions only admit query vectors, while background sessions o
     await assert.rejects(session.completeText(f.input), stopped('unauthorized'));
     await assert.rejects(session.embed({ task: 'RETRIEVAL_DOCUMENT', title: 'Source', text: 'Synthetic' }, 'embedding:document'), stopped('unauthorized'));
     assert.equal((await session.embed({ task: 'RETRIEVAL_QUERY', text: 'Synthetic query' }, 'embedding:query')).length, 1024);
-    assert.deepEqual(f.triggers, ['interactive']);
+    assert.deepEqual(f.triggers, ['private-source-query']);
     assert.deepEqual(f.counts(), { models: 0, vectors: 1 });
     const global = await f.daily.getGlobal(new Date().toISOString().slice(0, 10));
     assert.equal(global.breakdown.queryEmbedding, 1); assert.equal(global.breakdown.documentEmbedding, 0);

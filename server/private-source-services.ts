@@ -11,6 +11,10 @@ export function createPrivateSourceServices(domain: FirestoreDomainOptions, docu
   const rootBudget = new FirestoreRootBudget({...domain,namespace:domain.namespace+'_root_budget'});
   const openSession: OpenPrivateSession = input => createPrivateSourceModelSession({...input,rootBudget,routing});
   const {process,readPrivateEvidence,privateIndexStatus} = createPrivateSourceIndex({domain,documents,routing,currentAuth,openSession});
-  const searchPrivate = createPrivateSourceSearch({domain:new FirestoreDomainData(domain),documents,currentAuth,openSession});
+  const searchPrivate = createPrivateSourceSearch({domain:new FirestoreDomainData(domain),documents,currentAuth,openSession,
+    async canChargeOwner(binding) {
+      const settings = await routing.settings.readIn(binding);
+      return settings.mode === 'personal' && settings.keyConfigured;
+    }});
   return {process,readPrivateEvidence,privateIndexStatus,searchPrivate};
 }

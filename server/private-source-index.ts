@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { AgentStopped } from './agent-budget.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
-import { FirestoreDomainData, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { FirestoreDomainData, FirestoreDomainError, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { firestoreBackgroundReference, readFirestoreBackgroundClaim, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import type { createFirestoreSourceCardDocuments } from './firestore-source-card-documents.ts';
@@ -87,7 +87,19 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
     }
     const authorize = async () => !signal.aborted && await identity(owner) && await current(async () => true);
     if (!await authorize()) return stopped;
-    const start = await current(async (b,head) => ({row:await progress(b,head),head}));
+    const start = await current(async (b,head) => {
+      const row = await progress(b,head);
+      if (!row.attempt && ['organize','review','embed'].includes(row.stage)) {
+        const profile = await routing.readWorkerProfileIn(b);
+        const issue = !profile.personal ? 'personal_source_key_required' : !profile.enabled ? 'background_model_disabled' : null;
+        if (issue) {
+          if (row.issue !== issue) save(b,{...row,issue});
+          return {row,head,waiting:true};
+        }
+      }
+      return {row,head,waiting:false};
+    });
+    if (start.waiting) return defer(900000);
     const row = start.row, stage = row.stage;
     if (stage === 'complete' || stage === 'unreadable') return completed;
     if (stage === 'unknown') return {state:'unknown' as const};
@@ -115,7 +127,10 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
       const prior = await progress(b,h);
       if (firestoreDomainHash(prior) !== firestoreDomainHash(row)) return null;
       const profile = await routing.readWorkerProfileIn(b);
-      const capacity = profile.enabled && await routing.usage[profile.billingSource].modelCapacity(b.transaction,owner,
+      if (!profile.personal) {
+        save(b,{...row,issue:'personal_source_key_required'}); return {wait:'personal_source_key_required'} as const;
+      }
+      const capacity = profile.enabled && await routing.usage.personal.modelCapacity(b.transaction,owner,
         profile.selectedConfig.dailyUserAttempts,profile.selectedConfig.dailyGlobalAttempts);
       if (!capacity) {
         const issue = profile.enabled ? 'awaiting_daily_capacity' : 'background_model_disabled';
@@ -189,6 +204,10 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
       if (signal.aborted) throw error;
       const known = await current(async (b,h)=>progress(b,h));
       if (known.attempt?.rootRunId !== attempt.rootRunId) return defer();
+      if (!session && error instanceof FirestoreDomainError && error.code === 'personal_source_key_required') {
+        await commit(b=>save(b,{...row,attempt:null,issue:error.code}),false);
+        return defer(900000);
+      }
       if (error instanceof AgentStopped && !providerStarted && (error.reason === 'quota_exceeded' || error.reason === 'embedding_not_configured')) {
         const daily = error.reason === 'quota_exceeded';
         await commit(b=>save(b,{...row,attempt:null,issue:daily ? 'awaiting_daily_capacity' : 'embedding_not_configured'}),false);

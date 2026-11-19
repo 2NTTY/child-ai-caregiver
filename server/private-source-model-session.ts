@@ -1,4 +1,5 @@
 import { AgentBudget, AgentStopped, agentBudgetFingerprint } from './agent-budget.ts';
+import { domainReject } from './firestore-domain-data.ts';
 import { AgentGatewayModel } from './agent-model-gateway.ts';
 import type { DurableRootBudget, RootBudgetContext } from './durable-root-budget.ts';
 import type { EmbeddingInput } from './embedding-gateway.ts';
@@ -26,7 +27,8 @@ export async function createPrivateSourceModelSession(options: PrivateSourceMode
   const scope = workRecoveryScopeSchema.parse(options.scope);
   const interactive = options.interactive === true;
   if (scope.ownerUserId !== options.owner) throw new AgentStopped('unauthorized');
-  const selected = await options.routing.resolve(options.owner, interactive ? 'interactive' : 'private-source-worker');
+  const selected = await options.routing.resolve(options.owner, interactive ? 'private-source-query' : 'private-source-worker');
+  if (selected.billingSource !== 'personal') domainReject('personal_source_key_required', 409);
   const deadlineAtMs = options.deadlineAtMs;
   const budget = new AgentBudget(options.signal, selected.runLimits.deadlineMs, deadlineAtMs);
   const context: RootBudgetContext = { generation: 1, binding: {
