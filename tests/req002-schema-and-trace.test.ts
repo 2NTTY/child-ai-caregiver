@@ -306,7 +306,7 @@ test("data_compose, compose_review, knowledge_organize and knowledge_review pass
       },
     } as never;
     const built = await composeFamilyDocumentDraft({
-      intent: { documentId: docId, expectedVersion: 3, authorityVersion: "epoch:1", intent: "帶溫水壺" },
+      intent: { documentId: docId, expectedVersion: 3, authorityVersion: "epoch:1", intent: "帶溫水壺", sourceQuote: "帶溫水壺" },
       snapshot, context,
     });
     assert.equal(built.documentId, docId);
@@ -322,7 +322,7 @@ test("data_compose, compose_review, knowledge_organize and knowledge_review pass
   const definition = SOURCE_WATCHES.find(item => item.id === "fhs-solid-food")!;
   const observed = { url: definition.url, title: "Fixture", text: "請攜帶健康記錄。",
     sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
-  const candidate = { watchId: "fhs-solid-food", definition, observed, observationHash: observationHash(observed), previousObservationHash: null };
+  const candidate = { watchId: "fhs-solid-food" as const, definition, observed, observationHash: observationHash(observed), previousObservationHash: null };
   const seenKnowledge: { role?: string; purpose?: string; hasSchema: boolean }[] = [];
   const prepared = await prepareKnowledgeMaintenance({
     candidate, baseline: null, growthRules: [], fetchedAt: "2026-10-20T00:00:00.000Z",
@@ -385,7 +385,7 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
       store: {
         claim: async () => ({ runId, scope: { userId, childId, workspaceId: "ws", authorizationVersion: "1", dataVersion: "epoch:1" }, created: true, expiresAt: new Date(Date.now() + 90_000).toISOString() }),
         authorize: async () => true,
-        finish: async (_s, result) => { saved = productAgentResultSchema.parse(JSON.parse(JSON.stringify(result))); return true; },
+        finish: async (_s: unknown, result: unknown) => { saved = productAgentResultSchema.parse(JSON.parse(JSON.stringify(result))); return true; },
         get: async () => saved,
       } as never,
       memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) } as never,
