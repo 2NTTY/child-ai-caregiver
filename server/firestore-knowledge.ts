@@ -59,7 +59,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
   saveLibraryPreference(tx: Transaction, owner: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
-    source: KnowledgeSourceInput; enabled: boolean } | null>;
+    source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
@@ -68,7 +68,8 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   prepareSearch(versionId: string, expectedHash: string, guard?: (tx: Transaction) => Promise<void>): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
     complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
-  listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
+  growthReviewCandidate(versionId: string): Promise<{ versionId: string; hash: string; source: KnowledgeSourceInput; assessment: KnowledgeReviewAssessment }>;
+  listVersions(afterVersionId?: string, includeGrowthReview?: boolean): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean; growthRuleReason?: string; comparedVersionId?:string|null }[]; nextVersionId: string | null }>;
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
@@ -86,6 +87,7 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/), uuid = z.uuid(), sourceId = z.s
 const date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
 const sourceSchema = z.strictObject({ ...binding, sourceId, url: z.url(), activeVersionId: uuid.nullable(), enabled: z.boolean(),
+  heldGrowthUpdate: z.strictObject({ previousVersionId: uuid, previousHash: hash, candidateId: uuid, observationHash: hash, observedAt: date, watchRevision: uuid }).optional(),
   revision: z.string().regex(/^(0|[1-9][0-9]{0,18})$/), disabledReason: z.string().min(1).max(400).nullable() });
 const headerSchema = z.strictObject({ series: sourceSeriesSchema.optional(), sourceId, url: z.url(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   classification: z.enum(["official_guidance", "recent_information"]), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
@@ -252,12 +254,22 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       && document.classification === 'official_guidance' && proof.sourceId === document.sourceId && proof.versionId === version.versionId
       && proof.versionHash === version.versionHash && proof.pdfHash === document.extraction?.contentHash && proof.reviewHash === version.review?.assessmentHash);
   }
+  function previousPageUnderGrowthReview(edition: Edition) {
+    const { source, version, document, observed } = edition, hold = source.heldGrowthUpdate;
+    const watch = observed?.watch, row = observed?.observation, approved = row?.approved;
+    return !!(hold && watch && row && approved && observed.catalogMatches && watch.enabled && !(watch.confirmedGone ?? watch.lastStatus === "unavailable")
+      && !row.unavailable && watch.definition.kind === 'page' && watch.definition.audience === 'public_noncommercial'
+      && document.classification === 'official_guidance' && hold.previousVersionId === version.versionId
+      && hold.previousHash === version.versionHash && hold.observationHash === row.contentHash && hold.observedAt === row.fetchedAt && hold.watchRevision === watch.revision
+      && approved.versionId === version.versionId && approved.contentHash === version.review?.assessment.observationHash
+      && approved.watchRevision === watch.revision && version.review.watchRevision === watch.revision);
+  }
   function publication(edition: Edition, operation: 'read' | 'publish' = 'publish'): boolean {
     const now = Date.now();
     const { source, version, document } = edition, review = version.review;
     return source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
       && version.publishedAt !== null && review !== null && review.assessment.decision === "approve" && review.assessment.growthRuleImpact !== "requires_review"
-      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && verifiedPdfRange(edition))
+      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && (verifiedPdfRange(edition) || previousPageUnderGrowthReview(edition)))
       && (options.audience === "internal" || !internalKnowledgeSource(document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial")
       && (document.classification !== "recent_information" || document.sourcePublishedAt !== null
         && Date.parse(document.sourcePublishedAt) <= now && Date.parse(document.sourcePublishedAt) >= now - 7 * 86400_000
@@ -557,7 +569,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const edition = await load(tx, source.activeVersionId, source);
         return { versionId: edition.version.versionId, versionHash: edition.version.versionHash,
           observationHash: edition.version.review?.assessment.observationHash ?? null,
-          source: edition.document, enabled: source.enabled };
+          source: edition.document, enabled: source.enabled, current: publication(edition) };
       }, { readOnly: true });
     },
     prepareSearch,
@@ -574,7 +586,18 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       if (start > (version.search?.completed ?? 0)) reject("knowledge_search_prefix_incomplete");
       return writeSearchPageIn(tx, edition, start, true);
     },
-    async listVersions(afterVersionId) {
+    async growthReviewCandidate(versionId) {
+      return database.runTransaction(async tx => {
+        const { document, version, observed } = await load(tx, versionId);
+        const assessment = version.review?.assessment;
+        if (version.reviewState !== "draft" || assessment?.growthRuleImpact !== "requires_review"
+          || document.classification !== "official_guidance" || observed?.watch.definition.audience !== "public_noncommercial"
+          || observed.watch.definition.kind !== "page" || internalKnowledgeSource(document.url))
+          reject("knowledge_growth_review_candidate_unknown", 404);
+        return { versionId, hash: version.versionHash, source: document, assessment };
+      }, { readOnly: true });
+    },
+    async listVersions(afterVersionId, includeGrowthReview = false) {
       if (afterVersionId !== undefined && !uuid.safeParse(afterVersionId).success) reject("knowledge_version_invalid", 400);
       return database.runTransaction(async tx => {
         let query = database.collection(namespace + "_knowledge_versions").orderBy("versionId").limit(21);
@@ -585,6 +608,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           if (snapshot.id !== row.versionId || row.projectId !== projectId || row.namespace !== namespace) reject("knowledge_binding_invalid", 503);
           if (!allowedId(row.sourceId)) return [];
           return { id: row.versionId, sourceId: row.sourceId, hash: row.versionHash, state: row.reviewState, publishedAt: row.publishedAt,
+            ...(includeGrowthReview && row.review?.assessment.growthRuleImpact === 'requires_review' ? {
+              growthRuleReason: row.review.assessment.growthRuleReason, comparedVersionId: row.review.assessment.comparedVersionId } : {}),
             searchReady: row.search?.completed === KNOWLEDGE_LEXICAL_BUCKETS };
         });
         return { items, nextVersionId: page.size > 20 ? page.docs[19]!.id : null };
@@ -766,7 +791,15 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
           checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };
-        const nextSource = bump(source); writeBudget([next, nextSource]);
+        const nextSource = bump(source);
+        if (nextSource.heldGrowthUpdate?.candidateId === versionId) delete nextSource.heldGrowthUpdate;
+        if (reviewer === "agent-knowledge-maintenance" && treatmentGuard && expectedObservation && compared && compared.version.versionId !== versionId
+          && assessment.decision === "approve" && assessment.growthRuleImpact === "requires_review"
+          && observed?.observation && observed.watch.definition.kind === "page" && observed.watch.definition.audience === "public_noncommercial") {
+          nextSource.heldGrowthUpdate = { previousVersionId: compared.version.versionId, previousHash: compared.version.versionHash,
+            candidateId: versionId, observationHash: expectedObservation.contentHash, observedAt: observed.observation.fetchedAt, watchRevision: observed.watch.revision };
+        }
+        writeBudget([next, nextSource]);
         if (approved && observed && !treatmentGuard) options.observations!.approve(tx, observed, versionId, reviewer, reviewedAt);
         tx.set(versionRef(versionId), next); tx.set(sourceRef(source.sourceId), nextSource);
         return approved ? { status: "reviewed" as const } : { status: "held" as const, reason: assessment.decision === "hold" ? "operator_hold" : "growth_rules_require_review" };
@@ -828,6 +861,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (treatmentTransfer) options.observations!.approve(tx,edition.observed!,versionId,review.reviewer,publishedAt);
         const nextVersion = { ...version, publishedAt: version.publishedAt ?? publishedAt };
         const nextSource = { ...bump(source), activeVersionId: versionId, enabled: true, disabledReason: null };
+        delete nextSource.heldGrowthUpdate;
         writeBudget([nextVersion, nextSource, ...updated]);
         for (const chunk of updated) if (edition.chunks.find(old => old.chunkId === chunk.chunkId)!.embedding === null) tx.set(chunkRef(chunk.chunkId), chunk);
         tx.set(versionRef(versionId), nextVersion); tx.set(sourceRef(source.sourceId), nextSource);

@@ -7,7 +7,7 @@ import {
   type BackgroundKnowledgeRunRequest, type BackgroundKnowledgeRunResult,
   type BackgroundKnowledgeWorkBudget, type M03InitialWatchId,
 } from "../src/shared/background-knowledge-maintenance.ts";
-import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
+import { publicMaintenanceWatch, SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import type { ObservedContent, SourceFetchResult, SourceFetcher, SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 
@@ -42,7 +42,7 @@ export interface BackgroundKnowledgeObservationState {
 }
 
 export interface BackgroundKnowledgeCandidate {
-  watchId: M03InitialWatchId;
+  watchId: string;
   definition: SourceWatchDefinition;
   observed: ObservedContent;
   observationHash: string;
@@ -209,9 +209,9 @@ export function createProgrammaticKnowledgeReviewStub(): KnowledgeSemanticReview
       const notes: string[] = [];
       let decision: BackgroundKnowledgeReviewBinding["decision"] = "approve_candidate";
       let growthRuleImpact: BackgroundKnowledgeReviewBinding["growthRuleImpact"] = "none";
-      if (!isInitialWatchId(candidate.watchId)) {
+      if (!publicMaintenanceWatch(candidate.watchId)) {
         decision = "reject_out_of_scope";
-        notes.push("watch outside M03 first-round allowlist");
+        notes.push("watch outside reviewed public maintenance scope");
       }
       if (candidate.definition.audience !== "public_noncommercial") {
         decision = "reject_out_of_scope";
@@ -462,12 +462,9 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       }, budget);
     }
 
-    if (!isInitialWatchId(request.watchId)) {
-      return finish({ status: "rejected", code: "watch_out_of_scope", watchId: request.watchId, published: false, publishMode: request.publishMode });
-    }
-    const definition = resolveM03Watch(request.watchId);
+    const definition = publicMaintenanceWatch(request.watchId);
     if (!definition) {
-      return finish({ status: "rejected", code: "watch_not_in_catalog", watchId: request.watchId, published: false, publishMode: request.publishMode });
+      return finish({ status: "rejected", code: "watch_out_of_scope", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
     // This runner never constructs a live network fetcher itself. Production may
     // wire createKnowledgeSourceFetcher only when config.liveFetch is true.

@@ -184,32 +184,29 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 : latest.enabled && latest.version === current.version;
             };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
-            const quotaReader = windowed && personal
+            const quotaReader = personal
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
-            let model: AgentGatewayModel | undefined;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) =>
-              session.completeText({ system: input.system, user: input.user, attemptKey: input.attemptKey }, async () => {
-                if (!model || windowed) {
-                  if (windowed) budget?.close();
-                  const context: RootBudgetContext = { generation: 1, binding: {
-                    rootRunId: windowed ? knowledgeReviewHash([request.operationFingerprint,input.attemptKey]) : request.operationFingerprint, ownerId: payerId, workspaceId: NIL, childId: NIL,
-                    authorizationVersion: registration.data.revision, storageEpoch: request.workerGeneration,
-                    trigger: { kind: "knowledge-maintenance", reference: request.watchId },
-                    workflowVersion: "knowledge-maintenance/1", promptPackVersion: prompt.packVersion,
-                    settingsVersion: String(current.version), billingVersion: credentialBinding,
-                    limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings },
-                    deadlineAtMs: session.deadlineAtMs,
-                  } };
-                  budget = new AgentBudget(signal, AGENT_LIMITS.deadlineMs, session.deadlineAtMs);
-                  budget.configurePersonal(limits);
-                  budget.configureInputCharacters(base.agentMaxInputCharacters ?? AGENT_LIMITS.inputCharacters);
-                  await budget.initializeDurable({ adapter: root, context, dailyUsage: daily, runLimits: limits });
-                  model = new AgentGatewayModel({ config, budget, provider: providers?.agent ?? createVertexAgentProvider(config),
-                    usage: requireDurableUsage, userId: payerId, childId: NIL, authorize,
-                    durableDailyUsage: { adapter: daily, context } });
-                }
+              session.completeText({ system: input.system, user: input.user, attemptKey: input.attemptKey }, async rootRunId => {
+                budget?.close();
+                const context: RootBudgetContext = { generation: 1, binding: {
+                  rootRunId, ownerId: payerId, workspaceId: NIL, childId: NIL,
+                  authorizationVersion: registration.data.revision, storageEpoch: request.workerGeneration,
+                  trigger: { kind: "knowledge-maintenance", reference: request.watchId },
+                  workflowVersion: "knowledge-maintenance/1", promptPackVersion: prompt.packVersion,
+                  settingsVersion: String(current.version), billingVersion: credentialBinding,
+                  limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings },
+                  deadlineAtMs: session.deadlineAtMs,
+                } };
+                budget = new AgentBudget(signal, AGENT_LIMITS.deadlineMs, session.deadlineAtMs);
+                budget.configurePersonal(limits);
+                budget.configureInputCharacters(base.agentMaxInputCharacters ?? AGENT_LIMITS.inputCharacters);
+                await budget.initializeDurable({ adapter: root, context, dailyUsage: daily, runLimits: limits });
+                const model = new AgentGatewayModel({ config, budget, provider: providers?.agent ?? createVertexAgentProvider(config),
+                  usage: requireDurableUsage, userId: payerId, childId: NIL, authorize,
+                  durableDailyUsage: { adapter: daily, context } });
                 return model.completeText(input);
-              }, windowed ? tx=>quotaReader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts) : undefined);
+              }, tx => quotaReader.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts));
             const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               comparison,
               ...(revision ? { async heldDraft() {
@@ -237,7 +234,21 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               review: {
                 async review(candidate, abort) {
                   const saved = await session.readPrepared(candidate);
-                  if (saved) { assertPreparedKnowledgePdfLayout(saved, options.pdfQuestion, options.acceptance); return saved.review; }
+                  if (saved) assertPreparedKnowledgePdfLayout(saved, options.pdfQuestion, options.acceptance);
+                  if (definition.kind === "page") {
+                    const review = saved?.review ?? await reviewer.review(candidate, abort);
+                    if (request.publishMode === "live" && review.growthRuleImpact === "requires_review") {
+                      const held = saved ?? await session.readPrepared(candidate);
+                      if (!held || !await authorize()) reject("knowledge_work_lease_lost");
+                      const draft = await options.knowledge.importSource(held.source);
+                      if (draft.versionId !== held.assessment.comparedVersionId) {
+                        await options.knowledge.review(draft.versionId, draft.hash, "agent-knowledge-maintenance", held.assessment,
+                          { sourceId: candidate.watchId, contentHash: candidate.observationHash }, session.verifyLease);
+                      }
+                    }
+                    return review;
+                  }
+                  if (saved) return saved.review;
                   if (candidate.observed.nativeWindowMethod) {
                     if (!windowed || focus) reject("knowledge_window_binding_changed");
                     const baseline = await readBaseline(), extraction = candidate.observed.extraction!;
