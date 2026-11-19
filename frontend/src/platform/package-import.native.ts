@@ -9,10 +9,11 @@ import { registerPackageCacheBody, supportsPackageCacheBody } from './package-ca
 // Older binaries retain their original buffered attachment bound.
 export const PACKAGE_IMPORT_MAX_BYTES = supportsPackageCacheBody() ? HANDOVER_UPLOAD_MAX_BYTES : CHAT_FILE_LIMITS.bytes;
 const nativeSizeError = () => Object.assign(new Error('package_native_size_exceeded'), { maxBytes: PACKAGE_IMPORT_MAX_BYTES });
-export async function pickImportPackage(signal: AbortSignal): Promise<SelectedPackage | null> {
+export async function pickImportPackage(signal: AbortSignal, maximum = PACKAGE_IMPORT_MAX_BYTES): Promise<SelectedPackage | null> {
   signal.throwIfAborted();
   const chosen = await File.pickFileAsync({ mimeTypes: '*/*', multipleFiles: false });
   signal.throwIfAborted(); if (chosen.canceled) return null;
+  if (chosen.result.size > maximum) throw new Error("invalid_package_file");
   return prepareImportPackage(chosen.result, signal);
 }
 /** Picker and explicit Android share choices use the same bounded, disposable package copy. */

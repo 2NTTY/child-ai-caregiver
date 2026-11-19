@@ -1,3 +1,5 @@
+import { createKnowledgeSourceFetcher } from "../server/knowledge-source-fetch.ts";
+import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseSourceContent } from "../server/knowledge-source-parser.ts";
@@ -178,4 +180,31 @@ test("RSS title, description, date and input overflow fail without silent trunca
   assert.equal(parseSourceContent(rss, feed(entry({ date: "d".repeat(200) })))[0]!.sourceDateText!.length, 200);
   assertInvalid(feed(entry({ date: "d".repeat(201) })), rss);
   assertInvalid(feed(entry()) + " ".repeat(1024 * 1024), rss);
+});
+
+test("registered leaflet discovery recovers an exact standard anchor and rejects conflicting methods", async () => {
+  const definition = SOURCE_WATCHES.find(source => source.id === "fhs-feeding-booklet-en")!;
+  let html = '<main><h1>Registered guide</h1><a href="14727.pdf">Download</a></main>';
+  const fetched: string[] = [];
+  const fetcher = createKnowledgeSourceFetcher({
+    transport: async (url, validate) => {
+      validate(url);
+      fetched.push(url);
+      const landing = url === definition.leafletPage;
+      return { status: "response", response: { status: 200, contentType: landing ? "text/html" : "application/pdf",
+        body: Buffer.from(landing ? html : "%PDF-fixture") } };
+    },
+    pdfReader: async () => ({ fileHash: "a".repeat(64), totalPages: 33, startPage: 1,
+      pages: Array.from({ length: 8 }, (_, index) => ({ page: index + 1, text: "Fixture", status: "text" as const })),
+      nextPage: 9, complete: false, extractionQuality: "requires_review" }),
+  });
+  const recovered = await fetcher(definition, new AbortController().signal);
+  assert.ok(recovered.status === "ok");
+  assert.equal(recovered.readMethod, "fhs-registered-pdf-anchor/1");
+  assert.equal(recovered.items[0]?.nativeWindowMethod, "native-pdf-window/1");
+  assert.equal(recovered.items[0]?.extraction?.complete, false);
+  assert.deepEqual(fetched, [definition.leafletPage, definition.url]);
+  html += '<script>leafletBlock("Different guide","available","98765");</script>';
+  assert.deepEqual(await fetcher(definition, new AbortController().signal), { status: "failed", reason: "parse" });
+  assert.equal(fetched.length, 3);
 });

@@ -15,7 +15,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   const pending = useRef<{ opId: string; expectedVersion: number } | null>(null);
   const patch = (value: Partial<ModelSettingsViewModel>) => setState(current => ({ ...current, ...value }));
   const fail = (error: unknown, saving = false) => {
-    if (settingsAccessError(env, error, true)) { pending.current = null; patch({ catalog: null, originalOperationId: null, snapshot: null, authorized: settingsFailure(error).status === 403, keyCheck: null, needsRead: false,
+    if (settingsAccessError(env, error, true)) { pending.current = null; patch({ catalog: null, monthReport: null, originalOperationId: null, snapshot: null, authorized: settingsFailure(error).status === 403, keyCheck: null, needsRead: false,
       secretRevision: latest.current.secretRevision + 1, notice: settingsFailure(error).status === 403 ? "目前模型設定不可讀取或修改；內容及密鑰輸入已清除，請重新讀取。" : "身份或權限已改變，模型設定已清除。" }); return; }
     const failure = error instanceof ModelSettingsApiError ? error : new ModelSettingsApiError();
     if (saving && !failure.unknownResult) pending.current = null;
@@ -70,12 +70,21 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
     finally { if (request.current()) patch({ busy: null }); request.finish(); }
   };
   const actions: ModelSettingsActions = { setDraftEditing, refresh: () => { void refresh(); },
+    readMonth() {
+      if (!env.userId || !api.month || !latest.current.snapshot || !latest.current.authorized || latest.current.needsRead) return;
+      const request = requests.start(); if (!request) return;
+      patch({ busy: 'read', monthReport: null });
+      void api.month(request.signal, env.userId).then(monthReport => {
+        if (request.current()) patch({ monthReport });
+      }).catch(error => { if (request.current()) fail(error); })
+        .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
+    },
     save(command) {
       const current = latest.current;
       if (!env.userId || !current.snapshot || current.needsRead || !current.authorized || command.expectedVersion !== current.snapshot.settings.version) return;
       const request = requests.start(true); if (!request) return;
       const opId = crypto.randomUUID(); pending.current = { opId, expectedVersion: command.expectedVersion };
-      patch({ originalOperationId: opId, catalog: null, busy: "save", needsRead: true, keyCheck: null, operation: "saving", secretRevision: current.secretRevision + 1 });
+      patch({ originalOperationId: opId, catalog: null, monthReport: null, busy: "save", needsRead: true, keyCheck: null, operation: "saving", secretRevision: current.secretRevision + 1 });
       // Do not retain the command or entered key in a retry buffer or cache.
       void api.save({ ...command, opId }, request.signal, env.userId).then(async settings => {
         if (!request.current()) return;
@@ -139,5 +148,6 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   useDomainWriteGuard(false, state.operation === "unknown" || state.busy === "save", "account");
   const user = env.owner.getSnapshot().records.user;
   return { model: { ...state, scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: user?.name ?? "", online: env.online,
+    monthReport: env.currentIdentity() && state.snapshot && state.authorized && state.monthReport?.month === state.snapshot.usage.personal.day.slice(0, 7) ? state.monthReport : null,
     snapshot: env.currentIdentity() ? state.snapshot : null, authorized: env.currentIdentity() && state.authorized }, actions };
 }

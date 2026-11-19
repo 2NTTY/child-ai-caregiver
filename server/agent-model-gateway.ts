@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
 import { setTimeout as delay } from 'node:timers/promises';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
@@ -5,7 +7,7 @@ import type { VoiceMessageReference } from '../src/shared/voice.ts';
 import { AGENT_IMAGE_LIMIT, type AgentImageInput } from './agent-images.ts';
 import { BaseLlm, createEvent, populateClientFunctionCallId } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
-import { ApiError, GoogleGenAI } from "@google/genai";
+import { ApiError, GoogleGenAI, createPartFromBase64, PartMediaResolutionLevel } from "@google/genai";
 import type { FunctionCall, GoogleGenAIOptions } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
@@ -23,6 +25,21 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 import { nativeContextPreflight, nativeTokenCounter, type ContextPreflight, type NativeContextPayload } from './model-context-preflight.ts';
 
+/** The shared daily ledger explicitly declined a maintenance stage before its root reservation or provider dispatch. */
+export class KnowledgeDailyAdmissionRefused extends AgentStopped {
+  constructor() { super("quota_exceeded"); }
+}
+
+export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string; highDetail: boolean }>;
+const verifiedKnowledgePdfs = new WeakSet<AgentKnowledgePdf>();
+export function originalKnowledgePdf(bytes: Buffer, sha256: string, highDetail = false): AgentKnowledgePdf {
+  if (bytes.length > KNOWLEDGE_PDF_MAX_BYTES || bytes.subarray(0, 5).toString() !== "%PDF-"
+    || createHash("sha256").update(bytes).digest("hex") !== sha256) throw new AgentStopped("input_limit");
+  const pdf = Object.freeze({ sha256, data: bytes.toString("base64"), highDetail });
+  verifiedKnowledgePdfs.add(pdf);
+  return pdf;
+}
+
 export interface AgentModelProvider {
   preflight?(request: LlmRequest, audioDurationMs?: number, counted?: number): ContextPreflight;
   countInput?(request: LlmRequest): Promise<number | undefined>;
@@ -30,12 +47,16 @@ export interface AgentModelProvider {
 }
 
 /** One logical request accounting path for both current and projected native requests. */
-export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "config">, audio?: AgentAudioInput, images: readonly AgentImageInput[] = []): number {
-  let pictures = 0, sounds = 0;
+export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "config">, audio?: AgentAudioInput, images: readonly AgentImageInput[] = [], pdf?: AgentKnowledgePdf): number {
+  let pictures = 0, sounds = 0, documents = 0;
   const contents = request.contents.map(content => ({ ...content, parts: content.parts?.map(part => {
     if (part.fileData) throw new AgentStopped("input_limit");
     if (!part.inlineData) return part;
     if (content.role !== "user") throw new AgentStopped("input_limit");
+    if (part.inlineData.mimeType === "application/pdf") {
+      if (++documents !== 1 || !pdf || !verifiedKnowledgePdfs.has(pdf) || part.inlineData.data !== pdf.data) throw new AgentStopped("input_limit");
+      return { ...part, inlineData: { mimeType: "application/pdf", data: pdf.sha256 } };
+    }
     if (audio && part.inlineData.mimeType === audio.mimeType) {
       if (++sounds > 1) throw new AgentStopped("input_limit");
       if (part.inlineData.mimeType !== audio.mimeType || part.inlineData.data !== audio.data) throw new AgentStopped("input_limit");
@@ -117,6 +138,7 @@ export class AgentGatewayModel extends BaseLlm {
     reserveDeliveryReview?: AgentReviewReserve;
     purpose?: AgentModelPurpose;
     onProviderStart?: () => void;
+    pdf?: AgentKnowledgePdf;
     audio?: AgentAudioInput;
     voice?: Readonly<VoiceMessageReference>;
     reloadAudio?: () => Promise<AgentAudioInput>;
@@ -153,7 +175,7 @@ export class AgentGatewayModel extends BaseLlm {
     return request;
   }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
-  async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
+  async completeText(input: { system: string; user: string; attemptKey: string; pdf?: AgentKnowledgePdf; responseJsonSchema?: Record<string, unknown>; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
     purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
     await this.checkAuthorizeAndPolicy();
     let audio: AgentAudioInput | undefined;
@@ -180,8 +202,9 @@ export class AgentGatewayModel extends BaseLlm {
           ...(this.options.roleProfileOverrides ? { profileOverrides: this.options.roleProfileOverrides } : {}),
         }) });
     const request: LlmRequest = {
-      contents: [{ role: "user", parts: [{ text: input.user }, ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
-      config: { systemInstruction: roleInstruction() },
+      contents: [{ role: "user", parts: [{ text: input.user }, ...(input.pdf ? [createPartFromBase64(input.pdf.data, "application/pdf",
+        input.pdf.highDetail ? PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH : undefined)] : []), ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
+      config: { systemInstruction: roleInstruction(), ...(input.responseJsonSchema ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema } : {}) },
       toolsDict: {},
       liveConnectConfig: {},
     };
@@ -190,7 +213,7 @@ export class AgentGatewayModel extends BaseLlm {
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
       syncPolicy, roleProfileOverrides,
       refreshPolicyConfig: async (request, reserved) => ({ ...request.config, systemInstruction: roleInstruction(reserved) }),
-      durableDailyUsage, audio, modelAttemptKey: () => input.attemptKey,
+      durableDailyUsage, audio, pdf: input.pdf, modelAttemptKey: () => input.attemptKey,
       reserveDeliveryReview: this.options.reserveDeliveryReview, purpose: input.purpose, onProviderStart: input.onProviderStart,
       ...(input.imageIds?.length ? { images: () => {
         if (!this.options.images) throw new AgentStopped('unauthorized');
@@ -218,7 +241,7 @@ export class AgentGatewayModel extends BaseLlm {
     const images = this.options.images?.() ?? [];
     // Include the same generation config the native provider adds, even before quota admission.
     const requestSize = (value: Pick<LlmRequest, "contents" | "config">) => agentRequestCharacters(
-      { ...value, config: agentGenerationConfig(config, value.config) }, this.options.audio, images);
+      { ...value, config: agentGenerationConfig(config, value.config) }, this.options.audio, images, this.options.pdf);
     budget.check();
     const daily = this.options.durableDailyUsage;
     if (daily && (!budget.durable || daily.context.binding.ownerId !== userId || daily.context.binding.childId !== childId))
@@ -318,7 +341,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (provider.countInput) await countInput(outgoing);
       if (inspect(outgoing)?.exceedsCapacity) throw new AgentStopped('model_context_exceeded');
       let preparedFingerprint: string | undefined;
-      let modelAttempt: import("./durable-root-budget.ts").BudgetAttempt | undefined;
+      let modelAttempt: Extract<import("./durable-root-budget.ts").BudgetAttempt, {kind:"model"}> | undefined;
       const modelKey = retry && originalModelKey ? originalModelKey + ":retry:" + retry : originalModelKey;
       let retryDelay: number | undefined;
       let providerFailure: unknown;
@@ -334,6 +357,8 @@ export class AgentGatewayModel extends BaseLlm {
         const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
         if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
           bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
+          ...(daily.adapter.billingSource === 'personal' && daily.context.binding.trigger.kind === 'knowledge-maintenance'
+            ? { budgetPurpose: 'knowledge_maintenance' as const } : {}),
           deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
         if (this.options.privateSummaryAdmission) {
           if (!dailyRequest || await budget.wait(() => this.options.privateSummaryAdmission!.reserveModel({
@@ -341,7 +366,7 @@ export class AgentGatewayModel extends BaseLlm {
             throw new AgentStopped('unavailable');
         }
         modelAttempt = { key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 };
-        await budget.admitModel(this.options, modelAttempt);
+        if (daily?.context.binding.trigger.kind !== 'knowledge-maintenance') await budget.admitModel(this.options, modelAttempt);
         preparedFingerprint = requestFingerprint;
       } else await budget.admitModel(this.options);
       if (daily && dailyRequest) {
@@ -350,9 +375,19 @@ export class AgentGatewayModel extends BaseLlm {
           : this.options.purpose === 'compose' ? 'delegate' : this.options.purpose === 'compaction' ? 'compact'
           : this.options.purpose === 'summary' ? 'summary' : 'generate';
         const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!, undefined, { activity, retry: retry > 0 }));
-        if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
+        if (admission.decision === "quota_exceeded") {
+          if (daily.context.binding.trigger.kind === 'knowledge-maintenance' && retry === 0) throw new KnowledgeDailyAdmissionRefused();
+          throw new AgentStopped("quota_exceeded");
+        }
         if (admission.decision !== "execute") throw new AgentStopped("unavailable");
         dailyPreparationToken = admission.preparationToken;
+        if (daily.context.binding.trigger.kind === 'knowledge-maintenance') {
+          try { await budget.admitModel(this.options, modelAttempt); }
+          catch (error) {
+            await daily.adapter.record(dailyRequest, { kind: 'model', outcome: 'unavailable', durationMs: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0 });
+            throw error;
+          }
+        }
       } else if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
         throw new AgentStopped("quota_exceeded");
       }

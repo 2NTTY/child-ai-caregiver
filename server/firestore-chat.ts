@@ -1,4 +1,9 @@
-import { messageText, firestoreChatMessageSchema } from './chat-message-schema.ts';
+import { messageText, firestoreChatMessageStorageSchema, type StoredChatMessage } from './chat-message-schema.ts';
+import type { ChatDeliverySourceVersion } from '../src/shared/chat-delivery-review.ts';
+import { chatDeliveryContentHash } from './chat-delivery-review.ts';
+import { firestoreFactStorageSchema, validMemoryFactAttribution } from './firestore-memory.ts';
+import { factIsApplicable } from './memory-policy.ts';
+import { contentVisible } from './firestore-disclosure.ts';
 import { createFirestoreMixedChat } from './firestore-mixed-chat.ts';
 import { createParentContact, proactiveReceiptSchema } from './proactive-chat.ts';
 import type { FirestoreNativePush } from './firestore-native-push.ts';
@@ -39,11 +44,13 @@ const lockSchema = z.object({ leases: z.array(z.object({ messageId: uuid, token:
   expiresAtMs: z.number().int().nonnegative() }).strict()).max(4) }).strict();
 
 export interface FirestoreChatStore extends ChatStore, ReturnType<typeof createParentContact> {
-  getOriginalMessageForUser(userId: string, childId: string, messageId: string): Promise<ChatMessage|null>;
+  getOriginalMessageForUser(userId: string, childId: string, messageId: string, purpose?: 'memory'): Promise<ChatMessage|null>;
   markSeenForUser(userId: string, childId: string, messageId: string): Promise<{seen:true}>;
   mixed: ReturnType<typeof createFirestoreMixedChat>;
   mutation: FirestoreOnlineMutation;
-  readMessage(binding: FirestoreAuthorityTransaction, childId: string, messageId: string): Promise<ChatMessage | null>;
+  readMessage(binding: FirestoreAuthorityTransaction, childId: string, messageId: string, purpose?: 'memory'): Promise<ChatMessage | null>;
+  memoryDeadline(binding: FirestoreAuthorityTransaction, message: StoredChatMessage): Promise<number>;
+  reviewedMemoryDeadline(binding: FirestoreAuthorityTransaction, sources: ChatDeliverySourceVersion[]): Promise<number>;
   readImportedMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string): Promise<ImportedChatMessage | null>;
   listImportedForUser(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedForUser(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
@@ -73,22 +80,93 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
     const row = await binding.transaction.get(importedRef(id));
     return row.exists ? openImported(row, scopeFor(binding, childId), id) : null;
   }
-  function open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): ChatMessage {
+  function open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string) {
     const tags = data.tags(scope), raw = snapshot.data();
     if (Object.entries(tags).some(([key, value]) => raw?.[key] !== value)) domainReject('not_found', 404);
-    const message = data.open('chat-message', id, scope, firestoreChatMessageSchema, snapshot);
+    const message = data.open('chat-message', id, scope, firestoreChatMessageStorageSchema, snapshot);
     if (message.id !== id || message.childId !== scope.childId || snapshot.get('messageId') !== id
       || message.createdAt !== snapshot.get('createdAt') || snapshot.get('recordVersion') !== 1
       || (message.role === 'user' ? message.authorUserId !== scope.ownerUserId || message.inReplyTo !== null
         : message.authorUserId !== null || (message.inReplyTo === null) !== !!message.proactive)) domainReject('chat_binding', 500);
     return message;
   }
-  async function readMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string) {
+  const chatRows = new WeakMap<FirestoreAuthorityTransaction, Map<string, StoredChatMessage | null>>();
+  function originals(b: FirestoreAuthorityTransaction) {
+    let entries = chatRows.get(b);
+    if (!entries) { entries = new Map(); chatRows.set(b, entries); }
+    return entries;
+  }
+  async function original(b: FirestoreAuthorityTransaction, id: string) {
+    const entries = originals(b);
+    if (!entries.has(id)) {
+      const row = await b.transaction.get(messageRef(id));
+      entries.set(id, row.exists ? open(row, b.scope, id) : null);
+    }
+    return entries.get(id) ?? null;
+  }
+  const recallSources = (sources: ChatDeliverySourceVersion[]) => sources.filter(source =>
+    source.citationId.startsWith('memory-fact:') || source.version === '1' && source.citationId.startsWith('chat:'));
+  async function reviewedMemoryDeadline(b: FirestoreAuthorityTransaction, sources: ChatDeliverySourceVersion[], visited = new Set<string>()) {
+    let until = Infinity;
+    for (const source of recallSources(sources)) {
+      const [kind, id, offset, length] = source.citationId.split(':');
+      if (b.sharedAccess || !uuid.safeParse(id).success) return 0;
+      if (kind === 'chat') {
+        const parent = await original(b, id);
+        if (!parent || !/^\d+$/u.test(offset) || !/^\d+$/u.test(length)) return 0;
+        const text = parent.text.slice(Number(offset), Number(offset) + Number(length));
+        if (text.length !== Number(length) || chatDeliveryContentHash(JSON.stringify({ role: parent.role, createdAt: parent.createdAt, text })) !== source.contentHash) return 0;
+        until = Math.min(until, await memoryDeadline(b, parent, visited));
+      } else {
+        const row = await b.transaction.get(data.ref('memory_facts', 'memory-fact', id));
+        if (!row.exists || row.get('live') !== true || String(row.get('recordVersion')) !== source.version) return 0;
+        const fact = data.open('memory-fact', id, b.scope, firestoreFactStorageSchema, row);
+        if (fact.id !== id || fact.childId !== b.scope.childId || String(fact.version) !== source.version
+          || !validMemoryFactAttribution(fact, b.scope) || !factIsApplicable(fact)
+          || chatDeliveryContentHash(fact.content) !== source.contentHash) return 0;
+        if (fact.source.kind === 'care_record' && !await contentVisible(data, b, 'care', fact.source.recordId, fact.source.version, true)) return 0;
+        if (fact.source.kind === 'private_chat') {
+          const parent = fact.source.messageId && await original(b, fact.source.messageId);
+          if (!parent || parent.role !== 'user') return 0;
+        }
+        if (fact.validUntil) until = Math.min(until, Date.parse(fact.validUntil));
+      }
+      if (until <= Date.now()) break;
+    }
+    return until;
+  }
+  async function memoryDeadline(b: FirestoreAuthorityTransaction, value: StoredChatMessage, visited = new Set<string>()): Promise<number> {
+    let until = value.memorySummaryUntil ? Date.parse(value.memorySummaryUntil) : Infinity;
+    if (value.role === 'user' || until <= Date.now()) return until;
+    if (visited.has(value.id) || visited.size >= 4) return 0;
+    if (value.inReplyTo) {
+      const parent = await original(b, value.inReplyTo);
+      if (!parent || parent.role !== 'user') return 0;
+      if (parent.memorySummaryUntil) until = Math.min(until, Date.parse(parent.memorySummaryUntil));
+    }
+    let sources = value.memorySources;
+    if (!sources && value.agentRunId) {
+      // Older replies keep their source versions in the original reviewed run.
+      const row = await b.transaction.get(data.ref('agent_runs', 'agent-run', value.agentRunId));
+      if (!row.exists) return 0;
+      const run = data.open('agent-run', value.agentRunId, b.scope, firestoreAgentRunSchema, row);
+      if (run.id !== value.agentRunId || run.sourceMessageId !== value.inReplyTo || run.childId !== value.childId
+        || run.ownerUserId !== b.scope.ownerUserId || run.state !== 'completed' || !run.result?.deliveryReview) return 0;
+      sources = run.result.deliveryReview.sourceVersions;
+    }
+    if (sources?.length) until = Math.min(until, await reviewedMemoryDeadline(b, sources, new Set([...visited, value.id])));
+    return until;
+  }
+  async function readMessage(binding: FirestoreAuthorityTransaction, childId: string, id: string, purpose?: 'memory') {
     domainParse(uuid, id); if (!await binding.readChild(childId)) domainReject('not_found', 404);
     const row = await binding.transaction.get(messageRef(id));
-    return row.exists ? open(row, scopeFor(binding, childId), id) : null;
+    if (!row.exists) return null;
+    const stored = open(row, scopeFor(binding, childId), id);
+    if (purpose === 'memory' && Date.now() >= await memoryDeadline(binding, stored)) return null;
+    const { memorySummaryUntil, memorySources, ...message } = stored;
+    return message;
   }
-  async function prepare(binding: FirestoreAuthorityTransaction, message: ChatMessage, opId: string) {
+  async function prepare(binding: FirestoreAuthorityTransaction, message: StoredChatMessage, opId: string) {
     const scope = scopeFor(binding, message.childId);
     if (!await binding.readChild(message.childId)) domainReject('not_found', 404);
     const ref = messageRef(message.id);
@@ -97,7 +175,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
       { chatOnly: true, userMessageId: message.role === 'user' ? message.id : undefined });
     const change = await binding.prepareChange(opId, 'chat', false, message.childId);
     const envelope = { ...data.tags(scope), messageId: message.id, createdAt: message.createdAt, sortKey: data.sortKey(change.changeSeq),
-      ...data.seal('chat-message', message.id, scope, firestoreChatMessageSchema, message) };
+      ...data.seal('chat-message', message.id, scope, firestoreChatMessageStorageSchema, message) };
     return { changeSeq: change.changeSeq, commit() { change.commit(); summaryChange(); binding.transaction.create(ref, envelope); } };
   }
   const contact = createParentContact(data,readMessage,prepare,options.notifications);
@@ -123,9 +201,9 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
   };
   return {
     ...contact,
-    getOriginalMessageForUser: (userId,childId,id) => authority.runTransaction(userId,childId,b => readMessage(b,childId,id)),
+    getOriginalMessageForUser: (userId,childId,id,purpose) => authority.runTransaction(userId,childId,b => readMessage(b,childId,id,purpose)),
     markSeenForUser: (userId,childId,id) => authority.runTransaction(userId,childId,b => contact.markSeen(b,id)),
-    mixed: createFirestoreMixedChat(options), mutation, readMessage, readImportedMessage,
+    mixed: createFirestoreMixedChat(options), mutation, readMessage, readImportedMessage, memoryDeadline, reviewedMemoryDeadline,
     getImportedForUser: (userId, childId, id) => authority.runTransaction(userId, childId, b => readImportedMessage(b, childId, id)),
     async listImportedForUser(userId, childId, cursor = null) {
       return authority.runTransaction(userId, childId, async b => {
@@ -160,7 +238,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
         ...data.seal('chat-imported-message', value.id, b.scope, importedChatMessageSchema, value, value.version) };
       return { value, changeSeq: change.changeSeq, commit() { change.commit(); b.transaction.set(ref, envelope); } };
     },
-    async listForUser(userId, childId, before = null) {
+    async listForUser(userId, childId, before = null, purpose) {
       if (before !== null) domainParse(uuid, before);
       return authority.runTransaction(userId, childId, async binding => {
         const tags = data.tags(binding.scope);
@@ -175,8 +253,20 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
           query = query.startAfter(anchorRow.get('sortKey'));
         }
         const rows = await binding.transaction.get(query);
-        const messages = rows.docs.slice(0, 100).map(row => open(row, binding.scope, domainParse(uuid, row.get('messageId'), 'chat_binding', 500)));
-        return { messages: [...messages].reverse(), limit: 100, nextCursor: rows.size > 100 ? messages.at(-1)!.id : null };
+        const sourceDeadlines: Record<string, string> = {};
+        const items = rows.docs.slice(0, 100).map(row => open(row, binding.scope, domainParse(uuid, row.get('messageId'), 'chat_binding', 500)));
+        if (purpose === 'agent') {
+          const entries = originals(binding);
+          for (const item of items) entries.set(item.id, item);
+          for (const item of items) {
+            const until = await memoryDeadline(binding, item);
+            if (Number.isFinite(until)) sourceDeadlines[item.id] = new Date(until).toISOString();
+          }
+        }
+        const messages = items.map(({ memorySummaryUntil, memorySources, ...message }) => message);
+        const page = { messages: [...messages].reverse(), limit: 100, nextCursor: rows.size > 100 ? messages.at(-1)!.id : null };
+        if (purpose !== 'agent') return page;
+        return { ...page, dataVersion: binding.scope.storageEpoch + ':' + binding.changeSeq, sourceDeadlines };
       });
     },
     async createUserMessageForUser(userId, childId, raw) {
@@ -198,6 +288,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
         const claimKey = JSON.stringify([userId, childId, 'interactive', inReplyTo]);
         const claimRow = await binding.transaction.get(data.ref('agent_claims', 'agent-claim', claimKey));
         let saved = message;
+        let memorySources: ChatDeliverySourceVersion[] | undefined;
         let deliver = false;
         if (claimRow.exists) {
           const { runId } = data.open('agent-claim', claimKey, binding.scope, firestoreAgentClaimSchema, claimRow);
@@ -210,8 +301,12 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
           const result = run.result;
           deliver = run.state === 'completed' && result?.status === 'completed' && result.outcome !== 'no_action'
             && !!result.text.trim() && (saved.text === result.text || saved.text.startsWith(result.text + '\n\n'));
+          memorySources = recallSources(result?.deliveryReview?.sourceVersions ?? []);
+          if (deliver || memorySources.length) {
+            if (Date.now() >= await memoryDeadline(binding, { ...saved, memorySources })) domainReject('source_changed');
+          }
         }
-        const write = await prepare(binding, saved, saved.id);
+        const write = await prepare(binding, { ...saved, ...(memorySources && { memorySources }) }, saved.id);
         const marker = data.seal('chat-reply', replyId, binding.scope, z.object({ messageId: uuid }).strict(), { messageId: message.id });
         const dispatch = deliver ? await options.notifications?.prepareChatDeliveries(binding,saved.id) : null;
         write.commit(); dispatch?.commit(); binding.transaction.create(replyRef, { ...data.tags(binding.scope), ...marker }); return saved;

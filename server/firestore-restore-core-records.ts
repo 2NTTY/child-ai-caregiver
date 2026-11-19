@@ -11,7 +11,8 @@ import { handoverImportItemSchema, handoverImportMappingSchema, handoverImportIt
 import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
-import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
+import { firestoreChatRecoverySchemas } from './firestore-chat.ts';
+import { firestoreChatMessageStorageSchema } from './chat-message-schema.ts';
 import { proactiveMessageId } from './proactive-chat.ts';
 import { proactivePolicySchema, proactiveSettingReceiptSchema, proactiveAssessmentSchema,proactiveRevisitSchema, proactiveCueSchema, proactiveReservationSchema } from './firestore-proactive-wakes.ts';
 import { importedChatMessageSchema } from '../src/shared/chat-imports.ts';
@@ -39,7 +40,7 @@ export const coreRestoreSchemas = {
   'child-profile': { suffix: 'child_profiles', schema: firestoreProfileSchema },
   'profile-revision': { suffix: 'profile_revisions', schema: firestoreProfileSchema },
   'context-version': { suffix: 'context_versions', schema: firestoreContextRecoverySchema },
-  'chat-message': { suffix: 'chat_messages', schema: firestoreChatMessageSchema },
+  'chat-message': { suffix: 'chat_messages', schema: firestoreChatMessageStorageSchema },
   'chat-imported-message': { suffix: 'chat_imported_messages', schema: importedChatMessageSchema },
   'chat-reply': { suffix: 'chat_replies', schema: firestoreChatRecoverySchemas.reply },
   'chat-reply-leases': { suffix: 'chat_reply_leases', schema: firestoreChatRecoverySchemas.leases },
@@ -176,7 +177,7 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
     return { messageId: id, createdAt: value.message.createdAt };
   }
   if (kind === 'chat-message') {
-    const value = firestoreChatMessageSchema.parse(raw);
+    const value = firestoreChatMessageStorageSchema.parse(raw);
     requireValue(value.id === id && value.childId === scope.childId && recordVersion === 1 && (value.role === 'user'
       ? value.authorUserId === scope.ownerUserId && value.inReplyTo === null : value.authorUserId === null && (value.inReplyTo === null) === !!value.proactive));
     return { messageId: id, createdAt: value.createdAt, sortKey: z.string().regex(/^[0-9]{19}$/u).parse(original.sortKey) };

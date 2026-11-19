@@ -1,23 +1,32 @@
 import assert from 'node:assert/strict';
-import type { Firestore } from '@google-cloud/firestore';
+import { VectorValue, FieldValue, type Firestore } from '@google-cloud/firestore';
 
 /** Serial synthetic range/order/cursor queries. This does not verify native indexes or cloud concurrency. */
 export function firestoreDomainFixture() {
+  // Firestore snapshots retain the vector type when stored documents are copied.
+  function copy(value: any): any {
+    if (value instanceof VectorValue) return FieldValue.vector(value.toArray());
+    if (Array.isArray(value)) return value.map(copy);
+    if (value && Object.getPrototypeOf(value) === Object.prototype)
+      return Object.fromEntries(Object.entries(value).map(([key, field]) => [key, copy(field)]));
+    return structuredClone(value);
+  }
   const records = new Map<string, any>();
   const versions = new Map<string, number>(); let revision = 0;
   type Ref = { id: string; path: string; collection(name: string): Query };
   type Query = Ref & { query: true; filters: [string, string, any][]; orders: [string, string][]; count: number; cursor: any[] | null;
     doc(id: string): Ref; where(key: string, op: string, value: any): Query; orderBy(key: string, direction?: string): Query;
-    limit(count: number): Query; startAfter(...values: any[]): Query };
+    get(): Promise<any>; limit(count: number): Query; startAfter(...values: any[]): Query };
   const ref = (path: string): Ref => ({ id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name) });
   const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, cursor: any[] | null = null): Query => ({
     id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name), query: true, filters, orders, count, cursor, doc: id => ref(path + '/' + id),
+    async get() { return read(this); },
     where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count, cursor),
     orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [key, direction]], count, cursor),
     limit: count => query(path, filters, orders, count, cursor), startAfter: (...values) => query(path, filters, orders, count, values),
   });
   const snapshot = (path: string): any => ({ exists: records.has(path), id: path.split('/').at(-1), ref: ref(path), updateTime: versions.get(path),
-    data: () => structuredClone(records.get(path)), get: (field: string) => structuredClone(records.get(path)?.[field]) });
+    data: () => copy(records.get(path)), get: (field: string) => copy(records.get(path)?.[field]) });
   const compare = (a: any[], b: any[], orders: Query['orders']) => {
     for (let i = 0; i < orders.length; i++) {
       const delta = a[i] < b[i] ? -1 : a[i] > b[i] ? 1 : 0;
@@ -45,7 +54,7 @@ export function firestoreDomainFixture() {
   let tail = Promise.resolve(), discard = false, lost = false, abortCommit = false, afterDiscard: (() => Promise<void>) | undefined;
   const attempt = async (callback: (tx: any) => Promise<any>, rollback: boolean) => {
     const writes = new Map<string, any>();
-    const write = (target: Ref, value: any) => { writes.set(target.path, structuredClone(value)); };
+    const write = (target: Ref, value: any) => { writes.set(target.path, copy(value)); };
     const get = async (target: Ref | Query) => { assert.equal(writes.size, 0, 'All reads must precede writes'); return read(target); };
     const result = await callback({ get, getAll: (...refs: Ref[]) => Promise.all(refs.map(get)), set: write,
       create: (ref: Ref, value: any) => { assert.equal(records.has(ref.path) || writes.has(ref.path), false, 'Create must be unique'); write(ref, value); },

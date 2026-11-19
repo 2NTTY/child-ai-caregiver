@@ -140,6 +140,17 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
   const empty = (run: FirestoreAgentRun): ProductAgentResult => ({ runId: run.id, status: run.state,
     stopReason: run.stopReason, provenance: null, countsKnown: false, text: '', citations: [], privateSourceCitations: [],
     retrievalMode: 'not_used', tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] });
+  function withheld(value: ProductAgentResult, reason: 'unauthorized' | 'source_changed'): ProductAgentResult {
+    return { runId: value.runId, provenance: value.provenance, counts: value.counts,
+      ...(value.countsKnown !== undefined && { countsKnown: value.countsKnown }),
+      status: 'stopped', stopReason: reason,
+      text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
+      citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };
+  }
+  async function sourcesCurrent(b: Binding, value: ProductAgentResult) {
+    return value.status !== 'completed' || !value.deliveryReview?.sourceVersions.length
+      || Date.now() < await options.chat.reviewedMemoryDeadline(b, value.deliveryReview.sourceVersions);
+  }
   async function originalRun(b: Binding, kind: 'interactive' | 'worker', reference: string) {
     const id = claimId(b, kind, reference), snapshot = await b.transaction.get(data.ref('agent_claims', 'agent-claim', id));
     if (!snapshot.exists) return null;
@@ -559,7 +570,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       return authority.runTransaction(userId, childId, async b => {
         const original = await read(b, runId), run = expired(original);
         if (cancelledOnly && !(run.state === 'stopped' && run.stopReason === 'cancelled' && run.result === null)) return null;
-        const value = await projection.read(b, run, { ...(run.result ?? empty(run)), status: run.state, stopReason: run.stopReason });
+        const receipt = { ...(run.result ?? empty(run)), status: run.state, stopReason: run.stopReason };
+        const value = await projection.read(b, run, await sourcesCurrent(b, receipt) ? receipt : withheld(receipt, 'source_changed'));
         if (run.state !== original.state) write(b, run);
         return value;
       });
@@ -576,12 +588,11 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
         const unresolved = run.state === 'running' || run.state === 'unknown' && run.stopReason === 'interrupted';
         if (!unresolved || run.result !== null || !matches(b, scope, run, false)) return false;
         if (value.outcome === 'no_action' && run.trigger.kind !== 'worker') domainReject('invalid_result', 500);
-        const unchanged = matches(b, scope, run) && (run.trigger.kind !== 'worker'
+        const authorized = matches(b, scope, run) && (run.trigger.kind !== 'worker'
           || run.workerGeneration === b.generation && await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);
-        const result: ProductAgentResult = unchanged ? value : { ...value, status: 'stopped', stopReason: 'unauthorized',
-          text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
-          citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };
-        if (!unchanged) { delete result.outcome; delete result.deliveryReview; }
+        let result = value;
+        if (!authorized) result = withheld(value, 'unauthorized');
+        else if (!await sourcesCurrent(b, value)) result = withheld(value, 'source_changed');
         // A stale summary is optional; an invalid authority/read is not a silent empty summary.
         let prepared: Awaited<ReturnType<FirestoreMemoryStore['prepareSummaryWrite']>> | undefined;
         if (summary && result.status === 'completed') {

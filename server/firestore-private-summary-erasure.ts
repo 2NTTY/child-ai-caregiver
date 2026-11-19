@@ -17,8 +17,9 @@ export function privateSummaryRevisionErasedBy(revision: PrivateSummarySourceRev
   const intent = firebaseErasureIntentSchema.parse(rawIntent);
   return intent.type === 'content-delete' && revision.scope.ownerUserId === intent.scope.ownerUserId
     && revision.scope.workspaceId === intent.scope.workspaceId && revision.scope.childId === intent.scope.childId
-    && revision.manifest.dependencies.some(dependency => dependency.kind === intent.content!.kind
-      && dependency.id === intent.assetId && dependency.version <= intent.content!.throughVersion);
+    && (revision.manifest.dependencies.some(dependency => dependency.kind === intent.content!.kind
+      && dependency.id === intent.assetId && dependency.version <= intent.content!.throughVersion)
+      || intent.content?.kind === 'fact' && !!intent.content.sourceMessageId && revision.manifest.coveredMessageIds.includes(intent.content.sourceMessageId));
 }
 
 export function redactPrivateSummaryWork(work: PrivateSummaryWork): PrivateSummaryWork {

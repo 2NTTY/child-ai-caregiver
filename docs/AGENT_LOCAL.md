@@ -126,13 +126,25 @@ npm run agent:local -- --inspect-knowledge
 
 維護時會復用與已發布版本一對一相同的完整原文片段及頁碼，不重新編寫其摘要或改 key；只有真正新增／改變範圍才進編製。新觀察的審核仍保留；原成長規則綁定改變時必須待核，不因本地模式放寬。
 
-模型審核判斷原文是否支持整理內容；執行規則依賴由 Server 的 catalog 判定，不把所有健康主題都當成規則變更。工作報告保留具體語義理由及必要規則待核理由。各角色可讀本次共同預算，沒有各自重開額度；背景知識維護目前仍是最多兩次生成的獨立流程，亦受管理員較低上限約束。
+模型審核判斷原文是否支持整理內容，Server 的 catalog 判斷變更是否影響執行規則。工作報告保存兩者的理由。一般來源整理與審核共用最多兩次生成。長 PDF 分窗共用原工作的管理員及出資方上限，按已保存的頁段接續。
 
-真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
+真網站模式加 `--live-source`，可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。後者從官方目錄定位小冊子，按原件 SHA 和實體頁碼整理。超出單批時保存進度，續作沿用原工作。第一次改模式或來源須加 `--new-knowledge-work`。網站與用途沿用現有 catalog。
 
 命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
 
 若首次以 `--no-model` 啟動後保存了關閉的管理政策，之後提供憑證不會自行取消該政策。先在同一本機 `/admin` 明確啟用平台 AI，再執行維護；`background_knowledge_disabled` 是開關阻止執行，不代表 key 或模型不支援。不要重設資料或清零用量來排除此情況。
+
+### 查回小冊子的已發布原件
+
+完成家庭健康服務英文加固小冊子的整本整理及獨立審核後，可用同一個本地環境驗一次聊天點讀。啟動本地網站時將 `fhs-feeding-booklet-en` 列入 `FIREBASE_KNOWLEDGE_SOURCE_IDS`，從本次維護收據取已發布的版本雜湊和原始 PDF 的 SHA-256。這兩個值在合規匯出匯入後仍可核對，每個資料庫的本地版本 ID 可不同。在另一個終端執行：
+
+```sh
+node --experimental-strip-types scripts/verify-agent-local.mjs --real-booklet-query <published-version-hash> <original-pdf-sha256>
+```
+
+命令先確認該版在帳戶的來源庫可見，再發一則關於圖解的自然問話。它讀回保存的回答、來源頁碼及原件，核對 PDF 位元組。已停止的 run 保留原收據；這個命令每次明確執行才會發送一則新問題。
+
+畫面點閱可直接重開上一步保存的回答。若 API 已有來源系列，畫面仍顯示舊目錄，先看瀏覽器對來源庫發出的 `Accept` 是否包含 `application/vnd.yuyoufang.library-series.v2+json`。若只送出舊格式，核對 Metro 載入的專案路徑，從目前分支的前端目錄重啟 Web，沿用同一個 API、孩子及回答。
 
 ## 保存、停止與重設
 

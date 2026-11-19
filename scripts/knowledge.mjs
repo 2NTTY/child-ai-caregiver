@@ -82,7 +82,10 @@ try {
       } finally { await archive.close(); }
     }
   }
-  if (operation === "list") console.log(JSON.stringify(await store.listVersions(option("--after-version"))));
+  if (operation === "list") {
+    const versionId = option("--version");
+    console.log(JSON.stringify(versionId ? await store.growthReviewCandidate(versionId) : await store.listVersions(option("--after-version"), true)));
+  }
   if (operation === "prepare-search") {
     if (!persistence) throw new Error("knowledge_search_requires_firestore");
     // One bounded maintenance page per invocation. Reuse version/hash until complete; no model calls.

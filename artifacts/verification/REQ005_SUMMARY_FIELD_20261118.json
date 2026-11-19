@@ -1,0 +1,53 @@
+{
+  "requirement": "REQ-005",
+  "environment": "Hong Kong production Firestore, one new synthetic child",
+  "backendCommit": "0a47c9b36f1384610af413dec72dc226cda263a0",
+  "startedAt": "2026-11-18T15:26:02.374750Z",
+  "closedAt": "2026-11-18T15:27:49.122693Z",
+  "hostReceipt": "/var/lib/yuyoufang-site-release/req005-one-child-20261118.jsonl",
+  "hostReceiptSha256": "c074a3d4afee21f019658410df77e97bff2f1a84046722f1db37a39b5b84b058",
+  "exitCode": 0,
+  "cutover": {
+    "scope": "new child created while holding the site release lock",
+    "inventory": "empty, completed under continuous container generation checks",
+    "inventoryHash": "7d7850cc7b765123f56665895d02b1a84b40d46247bd25a562ccfa81695d877d"
+  },
+  "sponsor": {
+    "payer": "platform",
+    "provider": "Vertex AI",
+    "model": "gemini-3.1-flash-lite",
+    "modelCallsPerWork": 1,
+    "toolCallsPerWork": 2,
+    "maximumJobsInPilot": 2,
+    "expiresAt": "2026-11-18T17:26:07.843Z",
+    "afterProcessExit": "blocked:policy_missing"
+  },
+  "batches": [
+    {
+      "jobId": "e318ca7c2bd5643a43929a0d16b5d8eb8b0de2b48a8c26fa40989ae776ce5c1e",
+      "sourceMessageId": "b511d6b9-5383-45dd-b1bd-fffcaf5022b6",
+      "summaryId": "ab15edd8-f571-48a3-b1f1-3a94f93f2151",
+      "contained": "海星室",
+      "dailyAttemptsAdded": 1
+    },
+    {
+      "jobId": "ed966c7b755233fec5b29c2b44833ca73830d641d8b4161831822ae046ecb938",
+      "sourceMessageId": "8ca5bb66-f9e2-4e4c-8d24-8ce7008bf784",
+      "summaryId": "8946f0ea-9b5a-4e70-ab7f-638b0b0a52ad",
+      "contained": "青竹室",
+      "dailyAttemptsAdded": 1
+    }
+  ],
+  "coldRead": {
+    "batchesWithOriginalSourceIds": 2,
+    "latestContainsCorrection": true,
+    "additionalGenerations": 0,
+    "multipartWorkRows": 0,
+    "multipartUsageReservations": 0
+  },
+  "limitsOfEvidence": [
+    "Both production sources fit in one request each.",
+    "No existing family was migrated and no ongoing sponsor was configured.",
+    "Provider settlement was unavailable."
+  ]
+}

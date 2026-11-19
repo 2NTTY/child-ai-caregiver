@@ -1,6 +1,7 @@
 import type { MemoryFactView, MemorySummaryView } from "./memory-view-model";
 import type { AgentWork } from "../../src/shared/agent-work";
 import type { PersonalLibraryItem } from "../../src/shared/personal-library";
+import type { LibraryPreferenceChange } from "../../src/shared/source-series";
 import type { HistoryMessageRead } from "./history-view-model";
 
 // Frontend read projections, not new HTTP contracts or separate memory databases.
@@ -52,10 +53,20 @@ export interface KnowledgeReferenceView {
     readonly topics: readonly string[]; readonly conditions: readonly string[];
   };
 }
+export type SeriesPreferenceAction = 'toggle' | LibraryPreferenceChange['mode'];
+export function seriesPreferenceChange(seriesId: string, items: readonly PersonalLibraryItem[], action: SeriesPreferenceAction): LibraryPreferenceChange | null {
+  const preference = items[0]?.preference;
+  if (!preference || items.some(item => item.preference?.revision !== preference.revision)) return null;
+  // The current editions fence the displayed catalogue. Only "pin current" replaces the saved snapshot.
+  return { seriesId, expectedRevision: preference.revision, editions: items.map(({ sourceId, versionId }) => ({ sourceId, versionId })),
+    enabled: action === 'toggle' ? !preference.enabled : preference.enabled,
+    mode: action === 'toggle' ? preference.mode : action, adopt: action === 'fixed' };
+}
 export interface KnowledgeReferencesView {
   readonly audience: "public" | "internal";
   readonly items: readonly KnowledgeReferenceView[];
   readonly catalog?: readonly PersonalLibraryItem[];
+  readonly registered?: readonly import('../../src/shared/personal-library').RegisteredLibrarySource[];
   readonly hasMore: boolean;
 }
 export interface MemoryReferenceModel {
@@ -78,6 +89,8 @@ export interface MemoryReferenceWorkspaceValue {
     readFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreReferences?(): void;
+    exportLibraryArchive?(selection: import('../../src/shared/source-series').LibraryArchiveSelection): Promise<{ message: string; sha256: string; share?: () => Promise<void> } | undefined>;
+    setLibraryPreference?(change: import('../../src/shared/source-series').LibraryPreferenceChange): void;
     loadMoreWork?(): void;
     readWorkMessage?(id: string): void;
     loadMoreWorkMessage?(): void;

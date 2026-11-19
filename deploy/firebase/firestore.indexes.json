@@ -4662,6 +4662,16 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "yuban_authority_library_preferences",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_original_manifests",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
       "collectionGroup": "yuban_authority_knowledge_transfers",
       "fieldPath": "*",
       "indexes": []
@@ -4810,6 +4820,16 @@
       "collectionGroup": "yuban_authority_notification_outbox",
       "fieldPath": "*",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_photos",
+      "fieldPath": "importPending",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     },
     {
       "collectionGroup": "yuban_authority_photos",

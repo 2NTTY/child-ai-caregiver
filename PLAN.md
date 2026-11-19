@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. [主動通知](#proactive-notifications)已交付，本輪目標為整個 P4。家庭附件庫直接上傳已合併。班級待辦由老師在每部裝置啟用一次，接收指派給自己的到期事項。其餘五包、正式交付及待驗項從[P4 接手清單](docs/P4_RESUME.md)接續。[P3](#phase-3)餘項沿原包追蹤。
+2. 本輪從[助手原件、引用與私人記憶](#agent-evidence)接續。[主動通知](#proactive-notifications)與家庭附件庫直接上傳已交付；P4 留待人工驗收，恢復位置見[P4 接手清單](docs/P4_RESUME.md)。[P3](#phase-3)餘項沿原包追蹤。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -56,6 +56,27 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="agent-evidence"></a>
+### 助手原件、引用與私人記憶
+
+2026-11-19 從 `3b51b971` 並行接續[原有三項需求](docs/REQUIREMENTS_BACKLOG.md)，沿用 [REQ-005 的摘要、歷史及用量證據](#req005-closeout01)。家庭健康服務 20 頁小冊子已在正式站發布，13 個段落復用同一批已驗向量。第 6 頁的圖像細節經獨立覆核，先前未通過的版本及其原因保留在[官方原件收據](artifacts/verification/REQ004_NATIVE_PDF_CHP_20261119.json)。
+
+| 工作包 | 可獨立交付的結果 | 必要驗收 |
+|---|---|---|
+| REQ-004 官方原件 | 背景 Agent 從官方目錄找到並下載正確的 PDF，保存檔案版本，以原生 PDF 輸入整理及獨立審核；同步追蹤官方動態公告。 | 家庭健康服務全冊 20 頁均有處理結果，一項視覺細節能定位原頁。衞生防護中心公告遇實質修改才重評，同版無新增模型用量，中斷可接續。 |
+| REQ-006 來源庫 | 來源維護者管理公共版本的分類及整理精細度，家長管理自己的啟停、固定快照及跟隨選擇。 | 從回答先看實際引用的短原文，再開對應版本及頁段。已入庫與即時搜尋可區分，來源升版、改名後舊引用可追查。 |
+| REQ-007 私人記憶 | 以同義問法找回最後有效的已確認事實；更正、刪除和撤權傳播到相關衍生結果。 | 同批合成資料核對更正原句、另一孩子隔離、刪除後重建及晚到結果。已有足夠上下文時零額外召回。 |
+
+004 與 006 共用[來源與已讀範圍契約](docs/API.md#knowledge-a04-contract)。[原站及 Web 收據](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json)記錄全冊發布、4 至 5 個月查詢命中的第 3 頁、第 6 頁引用的原 PDF，以及衞生防護中心通告的組內使用範圍。真模型已在隔離家庭回答廣東話問題。重開同一則回答後，Edge 第一次點按顯示當次的第 6 頁節錄，第二次開啟該頁原件。
+
+007 的真模型以「預防針、攬住、定驚」找回家長最後更正的「藍色布兔」，交付經獨立審核，綁定原訊息及第 3 版事實。刪除後重開同一則回答回傳 `409 source_changed`，額外模型呼叫為零。[私人記憶驗收](artifacts/verification/REQ007_PRIVATE_FACT_RECALL_20261119.json)保留先前未交付的嘗試與成功版本。三線真模型驗收合計每 12 小時最多 US$5。
+
+三個分對話各自審定計劃、維持完成目標並決定實作與必要驗收。004 將已審版本和原件直接交給 006，007 可獨立交付。需產品取捨或跨包協調時，由主對話作決定並記入原驗收表。主對話統籌共用預算、最終審查及正式發布。
+
+**來源卡定時維護（004／006 續作）。** 新增卡選取單文件、文件目錄或公告、網址範圍、巡查頻率與保存目標；頁面及助手透過同一操作新增、調整、開停及查閱狀態。登入資料在本人授權頁綁定至該卡及來源網站。排程沿原工作取得新原件，按內容類型處理 PDF、Word、圖片與普通資料，同版重用；付費及私人來源按原授權讀回。驗收須涵蓋從聊天配置後的實際工作收據、卡片讀回及撤權。已驗過的 20 頁閱讀、舊引用及私人更正不重跑。
+
+2026-11-19 12:33 香港，正式定時維護恢復完成。照片匯入清理與知識巡查共用同一輪，正式 Firestore 缺少 `photos.importPending` 單欄索引，停在 11 月 4 日。補齊後，原 Scheduler 已自行完成加固指引和衞生防護中心公告的到期取材，兩筆均為未變。自動取材、模型整理、審核及可供家長查詢的發布各按自己的收據記錄。
+
 ### 每日原站部署（主責 A）
 
 每日香港 04:17 由 GCP 觸發 GitHub 檢查受保護 master 的固定 SHA。原 VM 接收通過必要檢查的候選；各服務版本相同或只有文件等改動時，工作流記為 `skipped`。歷史發布、操作及回退見[部署手冊](docs/DEPLOYMENT.md)。
@@ -85,7 +106,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **P4 已於 11 月 18 日恢復。** REQ-001 搜索示範保留以上入口，P4 第④組沿用現有檢索與引用接點。時效及即時來源後續按 C 擴展，完整背景同步、整本 PDF 處理及來源庫管理按 D 接續。P4 公共知識批量維運和其餘四組欠項保留原驗收門檻；恢復位置及證據見[接手清單](docs/P4_RESUME.md)。
 
-**REQ-005 驗收對照：**26 項場景、分支證據及 11 項待決事項見[收束紀錄](#req005-closeout01)。11 月 18 日真模型已找回最後更正的原句並通過獨立審核，正式站三個服務已同步更新至 `0a47c9b3`。
+**REQ-005 本輪已完成實作及可自行執行的驗收。** 正式 Web、API、worker 版本為 `c144104e`。真查詢、持久摘要、容量、雙 worker 政策及月結的證據，以及首宗真人告警與實費對帳的接手條件，見[原驗收表](#req005-closeout01)。
 
 **本輪成長依據閱讀修復：**[GR-F01](#gr-f01-profile-evidence-read) 已完成最小 client／閱讀文案候選、四整檔 33 案及完整 frontend／root 型別；server 原完整型別兩次程序失敗，仍為 NOT_PASSED。待整包獨立 review 與精確 head 必要 CI，未合併、未部署。
 
@@ -97,7 +118,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本輪 Agent 收據閱讀修復：**[AGENT-F01](#agent-f01-receipt-read) 已由 [PR #503](https://github.com/2NTTY/child-ai-caregiver/pull/503) 正常合併至 `4a9f6bd9`；精確 head 的兩次必要離線 CI 已成功。formal48 及原完整流程／設備缺口維持未驗，未部署。
 
-**本輪指定摘要修復：**#447 已合併入 master（commit a162e65e），見 [REQ005-SUMMARY01](#req005-summary01)。單一候選已完成本地程式驗收，durable 摘要未啟用、未部署，正式啟用仍有前置；不改下列 P4 交付與未驗狀態。
+**本輪指定摘要修復：**#447 的持久摘要及 #635 的出資接線已隨 API／worker 發布。11 月 18 日在正式站的一個新合成孩子完成兩次真模型增量摘要，已結束試行出資。其餘家庭沿用現行摘要。見[摘要試行及啟用條件](#req005-summary01)。
 
 **單輪壓縮：**ADK 壓縮沿用原生門檻，時間或隔離範圍可能遮蔽未壓縮歷史時延後；runtime `appendEvent` 保證事件時間戳嚴格遞增，避免同毫秒／ADK pre-LLM timestamp 導致壓縮卡滯。單輪瞬態壓縮已於 `createProductAgent` 預設啟用；`#447` 持久跨輪摘要仍預設關閉／未啟用。[實作與驗證](#req005-compaction01)
 
@@ -180,9 +201,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **失敗／未驗：**最初缺依賴的 baseline／candidate server 同有 12 條診斷；補本地既有 lock 同版套件的只讀引用後完整通過，保留原失敗。舊六案仍是 4 PASS／2 既有 shallow harness fail，未改成全過；早期 mounted loader／轉譯順序／rAF／oracle 失敗亦保留。formal48 全部 NOT_RUN；三渠道、binding／contact、真模型、真家庭資料、全站／原生及部署不在此包。已合併但未部署、不稱已上線修復，不改其他包的未驗狀態。
 
 <a id="req005-summary01"></a>
-### REQ005-SUMMARY01：#447 持久摘要整合（隔離範圍已驗，正式站未啟用）
+### REQ005-SUMMARY01：#447 持久摘要整合（已完成單一正式範圍試行）
 
 2026-11-18 已接通正式工作所讀的帳戶背景授權、出資路由及每項工作的累積額度。一個獨立 Firestore Emulator 範圍完成舊寫入者切換、兩次增量、重啟後免生成讀回更正、撤權拒讀。模型使用 scripted provider。正式站擴大啟用前仍需指定出資範圍及連續的舊 worker 停用證明。[隔離收據](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) · [啟用與交接](docs/summary-durable-integration-handoff.md#funded-pilot)
+
+另外沿正式聊天入口，在全新程序擷取送往模型的請求。兩批摘要帶有各自的來源訊息 ID。更正第二批依賴的事實後，下一個程序只送出仍有效的第一批。兩次聊天均直接復用已保存摘要；撤權後再開同一訊息，模型收到零個請求。
+
+同日香港時間 23:26 至 23:27，原站測試孩子的兩批短訊各耗一次 Vertex 生成。冷啟動讀回兩個原訊息 ID，最後一次更正為「青竹室」。出資隨測試程序結束，其他家庭維持原狀。正式站這次只走短訊路徑。[正式試行收據](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json)
 
 - **基線／來源：**候選已接 master `f0149b79e2f7f653f63559a237f53ee3b7a34b4c`，保留上游原件記憶／私人交代還原、知識傳送與既有 P4 能力。#410 已合併，本包是其後續修復。#447 原 head `dc1f16cfb39ac74fe5d4d13ef250b88fdf7ffc34` 保留追溯；替換前 head `c14cea1e1b9a65c7c22665ed1c5116632a8a7e6c` 經獨立核對只是 rebase，原四項 blocker 未修。本包採下述單一方案替換，驗收按封定基線分開記錄。
 - **唯一方案：**Firestore 長來源／repair 只沿 durable work、原 grant、lineage 及原帳續跑；不引入普通 `summarySave.part` 或第二套 `conversation-summary-progress` store。完整 prefix fast 與 SQL 原路徑保留，partial 不可冒充完整 coverage。完整 native request fitting、來源／授權重驗、終態先保存後 cleanup、sourcePeriod 與 expiry 均沿現有契約，接口見[整合交接](docs/summary-durable-integration-handoff.md)。
@@ -197,6 +222,24 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="req005-closeout01"></a>
 ### REQ005-CLOSEOUT01：REQ-005 驗收對照及整合紀錄
 
+11 月 19 日接手時，先按下表查看本輪五項交付。下方保留各候選版本當時的結果。
+
+管理員及個人密鑰持有人可分開設定一般使用與公共知識維護的日、月對帳預算。維護工作可使用平台憑證，或使用已同意資助維護的用戶密鑰。每筆用量保留原出資者、用途及 UTC 帳日。可核實的帳單及估價分列，未設定的金額保持空白。[財務契約](docs/API.md#admin-usage-quota)
+
+正式 Web、API 及 worker 已更新至 `c144104e`，部署收據為 `r44368913799-1`。下表記錄本輪交付。歷史矩陣仍保留當時的測試範圍。[月度對帳發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44368913799)
+
+已用 Firestore Emulator 和正式個人供應商接線驗過整理、獨立審核、文件向量各一次。維護帳三筆，聊天及平台零筆。重送沿原收據，撤回授權後停止。供應商網絡由替身接管，實際費用仍待帳單。[重現驗證](tests/firestore-knowledge-maintenance-emulator.mjs)
+
+| 交付 | 已取得的證據 | 適用範圍 |
+|---|---|---|
+| 跨會話摘要與真查詢 | 真 Vertex 回答「青竹室」並引用更正原句。正式站單一合成孩子保存兩批短摘要，讀回零生成。長來源在獨立程序分兩段完成，重送零新增用量。[查詢](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json) · [正式摘要](artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json) · [分段](artifacts/verification/REQ005_SUMMARY_PILOT_20261118.json) | 正式試行出資已結束，其他家庭維持原政策。 |
+| 模型輸入預檢 | 對送給供應商的完整請求核對指令、工具、媒體及輸出預留。分開記錄實算、估算與未知，128k tokens 為軟目標。[派送前測試](tests/model-context-preflight.test.ts) | 媒體或相容端點缺精確計數時保留原精度。 |
+| 每輪與重試額度 | 64／256／32 可設定上限在原 root 帳本驗過重開、重試和還原。[容量驗收](tests/firestore-root-budget.test.ts) | 生產預設及歷史用量維持原值。 |
+| 用量、告警與日／月對帳 | 管理員收件及重複確認已在隔離環境驗過。11 月 19 日香港時間 02:36 核對正式告警清單，當時為空。從正式 worker 讀取 2026 年 11 月截至 18 日（UTC）的平台月結，一般使用 7 次待對帳，公共維護 0 次，兩項均有 0 次已結算。兩項平台月預算均未設定。[告警收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json) · [月結及配額接口](docs/API.md#admin-usage-quota) | 首宗自然告警出現後由維護者在管理後台確認。出資者設定實際預算、且供應商帳單可綁定原呼叫後，再核實可用餘額。本次觀測時，本站專案可見的 BigQuery 資料集為 0。 |
+| 成長分頁與政策切換 | 香港 Firestore 同時間 32 筆按 30＋2 續讀。Edge 已驗翻頁。兩個隔離 worker 驗過舊 run 收緊、新 run 取得新額度及重啟防重。[分頁](artifacts/verification/REQ005_GROWTH_PAGING_20261118.json) · [政策](artifacts/verification/REQ005_WORKER_ROLLOUT_20261118.json) | 真庫查詢、Web 互動及兩程序測試的環境分列於收據。 |
+
+11 月 19 日 00:28（香港），原站 API 讀回帳日 `2026-11-18`（UTC）的兩項 Google 觀測。`gemini-embedding-001` 是 100,000 RPM，`global` 地區所有模型共用的 predict 配額是 30,000 RPM。其他日期及個人用量均未帶入這兩個值。正式收件箱仍為空，本站專案可見 BigQuery 資料集為零，管理頁尚無可對應原嘗試的帳單。接手先看首宗正式告警；如收到對帳來源，再按原收據核對金額。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44344694283) · [管理接口](docs/API.md#admin-usage-quota)
+
 **2026-11-18 更正原文查詢**　從 `codex/req005-history-query` 以 `node scripts/verify-agent-local.mjs --real-history-query` 驗一個合成孩子。第一次真 Vertex 執行 `4f71c7ee` 沒有查回原話。第二次 `bb96c47a` 找到原地點，漏了省略主題的更正。接入同一孩子的相鄰原訊息並整合 #608 後，`7ff33001` 的正式回覆為「根據之前的記錄，學校簡介會最後改為在『青竹室』舉行。」共四次模型、三次工具及零次向量呼叫，沒有混入另一個孩子或寫入業務資料。該次收據欠更正原句的引用綁定。其後修正連續家長訊息的本輪歸屬，並讓原話與助手新操作的收據分開核對。新會話 686ce07b 已用真 Vertex 正式交付「你當時說：「改咗去青竹室」」，獨立審核通過，引用綁至更正原句。共三次生成、兩次工具、零次向量查詢；隔離帳本由 85 至 88，已恢復上限 20。見[隔離實測收據](artifacts/verification/REQ005_REVIEWED_HISTORY_20261118.json)。
 
 本機用專案支援的 Node 24.22.3 完成 Emulator 檢查點匯出及重開，沿用原帳本。先前 Windows Node 24.11.0 的 `dest already exists` 失敗仍保留。這份證據只涵蓋開發資料保存。
@@ -205,7 +248,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 預檢、可設上限、每日分項帳本及維護者收件箱已隨 #632、#633 合併。#635 已完成[單一隔離範圍的摘要切換](#req005-summary01)。32,000 字元配置下，助手按需取得工具，原有待辦修正與審核流程能在上限內完成。在啟用及停用管理政策的兩種配置均已核對。
 
-維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據、正式摘要啟用及供應商未提供的結算／配額各自待核。
+維護者收件箱已用本機管理員會話核對。背景用量觸及政策門檻後，管理 API 可讀到一宗新告警，重複確認返回相同收據，零模型及外發。[收件箱收據](artifacts/verification/REQ005_MAINTAINER_INBOX_20261118.json)。維護者在正式站看到「目前沒有用量告警」。首宗正式告警的確認收據及供應商未提供的結算／配額各自待核。
 
 11 月 18 日場景 23 續驗：下表記錄的兩個舊測試曾在 Vertex 補齊生成設定前量度封包。改用正式 payload builder 後，八項離線檢查通過。互動與 worker 分別接受配置的 64,000／32,000 字元，多一個字元便於扣額前停止。載入工具後也按完整封包保留下一步空間。[輸入邊界](tests/agent-input-limit.test.ts) · [工具空間](tests/agent-capability-reserve.test.ts)
 
@@ -375,6 +418,18 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
   - 擴充 `agentProgressSchema`（`.strict()`），支援最多 `AGENT_PROGRESS_MAX_SOURCES = 6` 張已過濾之官方來源預覽卡（`chunkId`、`sourceId`、`title`、`section`、`publisher`、僅限 `https://` 且 `internal_noncommercial` 置 `null` 之 `url`、`excerpt`、`fetchedAt` 可為 `null`、`sourceUpdatedAt`、`sourceDateText`、`stage: "found" | "read"`、`applicabilityStatus`），嚴格遵守 `server/agent-feedback-stream.ts` 既有 48 事件與 256KB 串流預算，且絕不夾帶未審核草稿文字或虛構優先權重；`applicable` 僅標示「已找到官方來源片段（尚待獨立核對回覆）」，缺日期時不偽造 `1970-01-01` 且介面不顯示日期列。
   - 於 `search_knowledge` 及 `read_knowledge_context` 完成時即時透過 SSE 發布 `found`／`read` 階段來源預覽，並於 `src/shared/agent-feedback.ts` 的 `mergeAgentProgressSources` 透過 `src/client/chat-controller.ts` 進行單調匯聚（遲到的 `found` 絕不覆寫已 `read` 之 `stage`、`excerpt` 或 `applicabilityStatus`；超過 6 筆時優先保留 `read` 卡片），在 `frontend/src/screens/chatScreen.tsx` 回覆生成期間（`chat.busy === "reply"`）渲染 `ProgressSourceCards`。
 - **驗收限制聲明**：本分支僅於本地進行離線單元測試與型別檢查，未執行真實 Gemini/Vertex 調用、未連接真實資料庫或進行遠端推送；`tests/agent-feedback-sources.test.ts` 已改用 in-memory injected `fetch` 驗證完整 SSE 串流（相容 `family-cleanup-network-guard.mjs` 與 `unshare --net`），既有 `tests/agent-feedback.test.ts` 因第 58 行含 `127.0.0.1` loopback listener，僅於無 socket 阻擋之本機環境單獨複驗（4/4 通過）。
+
+### 固定官方求助入口與遲發失敗來源預覽保留（`codex/search-help-entry` — Ready for Review）
+
+- **對應需求**：REQ-001 §4.3 (`:178-184`)、REQ-002 §5.1–§5.2 (`:456-470`) 與 §7.2 (`:519, 521, 523`)、REQ-002 AC (`:471`)。
+- **治理狀態（Ready for Review — PR 合併門檻已齊；實體手機實測與真模型納最終發布門檻）**：
+  - **PR 合併驗證門檻（已滿足）**：已正向無改歷史合併最新 `origin/master`（`03a46ead`，含 `#600`–`#602`、`#606`–`#608`、`#630`–`#644`），完成離線 Hosted CI 核心套件（`scripts/ci/verify-search-help-entry-offline.sh` `58/58`：`tests/official-help-entry.test.ts` `7/7`、`tests/chat-web-sources-copy.test.ts` `7/7`、`tests/chat-delivery-review.test.ts` `44/44`）、相關回歸與本機 loopback 整合測試、三項 `tsc --noEmit` 型別檢查，以及 Microsoft Edge Playwright Web DOM E2E（`frontend/scripts/official-help-entry.browser.test.mjs` `4/4`）。依現行治理口徑，以上離線 CI 與 Web E2E 構成合併至 `master` 的充分條件，PR `#634` 由 Draft 轉為 **Ready for Review**。
+  - **已補強之 Web／離線驗證範圍**：
+    - 在原有無孩子鍵盤 `Enter` 切換、ARIA 角色、桌機與手機多視窗幾何回歸、CSS 200% 放大文字與 `503` 官方求助卡保留基礎上，新增第四項 Playwright Web DOM E2E 及第七項離線合約測試：實測 SSE 漸進 `ProgressSourceCards` 於回覆／獨立核對在 `503`／未完成失敗時保留合格官方來源預覽（附明確未經審核草稿提示與「重試原訊息回覆／開始新訊息／重新讀取並查核原保存」恢復入口，絕不把未核草稿升格為正式建議），於真實 HTTP `403` 撤權、`!chatWritesAllowed`、切換孩子或完成回覆載入後立即清除；並驗證 `ProgressSourceCards` 與 `StatusAnnouncement` 更新期間絕不搶奪鍵盤焦點（`document.activeElement` 保留）、已緩衝正式回覆整段即時呈現（無假打字機延遲）及活動／來源詳情對話框不外洩內部思維或原始工具參數。
+  - **仍未覆蓋（納最終發布前真機驗證門檻，不阻斷本 PR 合併）**：桌面瀏覽器 CSS 縮放與縮矮視窗**不能代替** Android／iOS 實體手機軟鍵盤彈出與 insets、原生系統 `PixelRatio.getFontScale()`、真實螢幕閱讀器（TalkBack／VoiceOver）、真機原生打包或真實 Gemini／生產資料庫端對端驗證，以上項目持續列入 `PLAN.md` 最終發布門檻追蹤至後續發布前收尾 PR 一併關閉。
+- **定案設計與技術實作摘要**：
+  1. **入口位置與有界結構**：於 `chat-top-toolbar` 保留常駐「官方求助入口」切換按鈕（`accessibilityLabel={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel}`），並將 `officialHelpPanel` 掛載於 `<AgentComposer>` 正上方之有界非捲動區域 `chat-official-help-dock`（附 `ScrollView`、`marginBottom: chatLayout.composerOverlap` 以抵銷 `<AgentComposer>` 既有負 `marginTop` 重疊，以及依實測 `paneHeight` 與 `viewportHeight`／`compact`／`fontScale` 自適應上限之 `maxHeight`），無論是否已選孩子（`!child`）、發生錯誤或離線皆可即時顯示且不遮擋輸入欄與時間軸。
+  2. **觸發與遲發失敗狀態隔離規則**：於 `src/shared/agent-feedback.ts`（`NFKC` 正規化 `matchOfficialHelpForText`）雙向覆蓋 `失去意識`／`意識喪失`／`知覺喪失`／`反應全無`／`失知覺`／`暈倒`／`無晒反應` 等急症線索並優先高於純玩笑排除，且於非急症修飾詞組（如 `non-emergency`、`not an emergency`、`非急症`）僅切走修飾片段而不豁免混有危急症狀之語句；一般用藥問題僅命中 `medical-consult-hk-v1` 並顯示溫和用藥提示 `chat-official-help-consult-notice`；`src/client/chat-controller.ts`（`performReply` / `verifyResolvedReplyCompleted` / `reloadMessages` / `forgetChild`）與 `chatScreen.tsx`、`OfficialHelpCards.tsx`（`ProgressSourceCards` `retainedAfterFailure`）以 `child && chat.selectedChildId === child.id`、`scopedFeedback.messageId === latestUserMessage.id` 及 `chatWritesAllowed` 嚴格隔離與收斂，於未完成回覆後同時保留 `feedback.cards` 與 qualified `feedback.sources`，並在完成回覆、開新訊息或失去存取權（`403`）後即時清除。
 - **嚴格正向提交**：無 `git commit --amend`，維護 append-only 歷史完整性。
 - **原始交接紀錄：**11 月 8 日各分支保留待審；11 月 11 日按上方整合安排處理。
 
@@ -589,7 +644,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 同日進一步收窄：只提供Web／Android共用的憑證、模型及限額接口，由用戶自行配置；不代每位用戶建立Google身份或要求逐key／逐模型先驗收。不按國籍、居住地或本機測試結果封鎖；metadata核對屬可選診斷，不作保存或使用前置。實際請求由供應商判斷憑證、權限、地區及配額，失敗回報對應原因；取得key不等於所有請求必然成功。既有基本保存、隔離與呼叫接線仍須正確，未接能力不能因有表單便標為完成。
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
-- run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
+- run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護可由平台或明確授權的用戶 key 付款，維護獨立分帳。本地亦可使用開發者指定的維護憑證。
 - 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex AI本身支援向量，原 MODEL-SELF01 的個人 `vertex` adapter 只接 Express 生成；MODEL-SELF03／#317 已補獨立 key／專案／地區的 embedding，metadata 仍非通用目錄；這是接入路徑缺口，不能概括為Vertex不支援。平台／本機ADC向量路徑已有實作，但不借其付款身份補個人請求。保留該缺口及[官方向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)，不為本輪另建認證平台或改組織政策。新收據含備份／還原與帳戶清理接點，未跑真雲端還原；角色及Android待驗不變。
 - 2026-10-20 已按使用者要求建立僅限Gemini API的受限授權key，工程外保存。正式本地設定服務可保存，唯一metadata核對回 `region_unavailable`；已移除業務設定中的key並恢復原模式，用量不變。這只代表該次Developer API請求被拒，不是生成／embedding通過，也不能推論所有香港用戶、GCP／Vertex或其他key不可用；ADC本地流程維持可用。真key結果保留未驗，不再把取得另一把key列為入口交付前置。
 

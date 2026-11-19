@@ -1,4 +1,6 @@
-import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
+import { treatmentView, treatmentResult, type TreatmentCommand, treatmentSourceId } from '../../../src/shared/admin-knowledge-treatment.ts';
+import { monthlyFinanceSchema } from '../../../src/shared/monthly-finance.ts';
+import { adminDayBudgetSchema, adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
 import { z } from 'zod';
 import { budgetAlertSchema, type BudgetAlert } from '../../../src/shared/budget-alerts.ts';
 import { emptyIndex, indexTargetLimit, indexGroupTargetLimit, indexGroupReplySchema, matchesGroupTargets, adminIndexVersionPageSchema, adminIndexBatchPageSchema, adminIndexBatchReplySchema,
@@ -17,12 +19,14 @@ export interface AdminKnowledgeState { open: boolean; status: 'unread' | 'loadin
 const emptyKnowledge = (): AdminKnowledgeState => ({ open: false, status: 'unread', page: null, notice: null });
 const alertPage = z.object({ items: z.array(budgetAlertSchema).max(20), nextCursor: z.string().nullable() }).strict();
 const emptyAlerts = () => ({ items: [] as BudgetAlert[], nextCursor: null as string | null, busy: false, loaded: false, notice: null as string | null });
+const monthlyReportSchema = z.object({ report: monthlyFinanceSchema, budgets: z.object({ general: adminDayBudgetSchema.nullable(), maintenance: adminDayBudgetSchema.nullable() }).strict() }).strict();
 export interface AdminState { userId: string | null; access: 'unread' | 'loading' | 'allowed' | 'denied' | 'error'; busy: boolean;
   overview: AdminOverview | null; invitations: AdminPage<AdminInvitation>; audit: AdminPage<AdminReceipt>;
+  month: z.infer<typeof monthlyReportSchema> | null;
   usage: { platform: AdminUsage; personal: AdminUsage } | null; alerts: ReturnType<typeof emptyAlerts>; lookup: AdminInvitation | null | undefined;
   pending: AdminCommand | null; notice: string | null; receipt: AdminReceipt | null; knowledge: AdminKnowledgeState; index: AdminIndexState; transfers: AdminTransferState; demo: AdminDemoState }
 const empty = (userId: string | null): AdminState => ({ userId, access: 'unread', busy: false, overview: null,
-  invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, usage: null, alerts: emptyAlerts(), lookup: undefined,
+  invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null }, month: null, usage: null, alerts: emptyAlerts(), lookup: undefined,
   pending: null, notice: null, receipt: null, knowledge: emptyKnowledge(), index: emptyIndex(), transfers: emptyTransfers(), demo: emptyDemo() });
 export function adminError(error: unknown) {
   const code = error instanceof AdminApiError ? error.code : '';
@@ -51,7 +55,7 @@ export class AdminOwner {
   private clearReadAccess(error: unknown, access: 'error' | 'denied' = 'error') {
     this.generation++; this.controllers.forEach(controller => controller.abort()); this.controllers.clear();
     this.update({ access, busy: false, overview: null, invitations: { items: [], nextCursor: null }, audit: { items: [], nextCursor: null },
-      usage: null, alerts: emptyAlerts(), lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
+      month: null, usage: null, alerts: emptyAlerts(), lookup: undefined, receipt: null, knowledge: emptyKnowledge(), index: { ...emptyIndex(), pending: this.state.index.pending },
       transfers: { ...emptyTransfers(), pending: this.state.transfers.pending }, demo: { ...emptyDemo(), pending: this.state.demo.pending, recoveryStored: this.state.demo.recoveryStored }, notice: adminError(error) });
   }
   setUser(userId: string | null) {
@@ -77,6 +81,15 @@ export class AdminOwner {
       if (generation !== this.generation || userId !== this.state.userId) throw new AdminApiError(409, 'identity_changed');
       if (!response.ok) throw new AdminApiError(response.status, value?.error?.code ?? value?.code ?? 'unavailable'); return value as T;
     } finally { this.controllers.delete(controller); }
+  }
+  async readTreatment(sourceId: string, versionId?: string) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');
+    const path='/admin/knowledge-treatments/'+treatmentSourceId.parse(sourceId);
+    return treatmentView.parse(await this.request(path+(versionId?'?version='+z.uuid().parse(versionId):'')));
+  }
+  async submitTreatment(sourceId:string, command:TreatmentCommand) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');
+    return treatmentResult.parse(await this.request('/admin/knowledge-treatments/'+treatmentSourceId.parse(sourceId), command));
   }
   async checkAccess() {
     if (!this.state.userId || this.state.access === 'loading') return;
@@ -537,10 +550,24 @@ export class AdminOwner {
     try { await this.readTransferRecovery(current.pending, generation, this.transferSelection); }
     finally { if (generation === this.generation) this.updateTransfers({ busy: false }); }
   }
+  loadMonth = (month: string) => this.read(async () => {
+    this.update({ month: null });
+    const result = monthlyReportSchema.parse(await this.request('/admin/usage/month?month=' + encodeURIComponent(month)));
+    if (result.report.month !== month || (['general', 'maintenance'] as const).some(pool => {
+      const budget = result.budgets[pool]; return budget && (budget.pool !== pool || budget.day !== month);
+    })) throw new Error('Inconsistent monthly usage response');
+    return { month: result };
+  });
   load = (day: string) => this.read(async () => {
     const [overview, invitations, usage, audit] = await Promise.all([
       this.request<AdminOverview>('/admin/policy'), this.request<AdminPage<AdminInvitation>>('/admin/invitations'),
       this.request<AdminState['usage']>('/admin/usage?day=' + encodeURIComponent(day)), this.request<AdminPage<AdminReceipt>>('/admin/audit')]);
+    const receipt = this.state.receipt;
+    if (this.state.month && receipt?.command.kind === 'money_budget' && receipt.command.day === this.state.month.report.month && 'pool' in receipt.result) {
+      const current = this.state.month, budget = receipt.result;
+      if ((current.budgets[budget.pool]?.version ?? 0) < budget.version)
+        return { overview, invitations, usage, audit, month: { ...current, budgets: { ...current.budgets, [budget.pool]: budget } } };
+    }
     return { overview, invitations, usage, audit };
   });
   lookup = (email: string) => this.read(async () => ({ lookup: (await this.request<{ invitation: AdminInvitation | null }>('/admin/invitation?email=' + encodeURIComponent(email))).invitation }));

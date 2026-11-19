@@ -1,4 +1,6 @@
+import { feedingBookletId, fullBookletDefinitionHash, matchesPriorPdfRevision, selectedBookletDefinitionHash, pdfReadMethod, pdfReadback, type PdfRangeRequest } from './knowledge-reviewed-pdf.ts';
 import { randomUUID } from "node:crypto";
+import { createFirestoreKnowledgeOriginals, type KnowledgeOriginalBucket } from "./firestore-knowledge-originals.ts";
 import { FieldPath, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
 import { knowledgeExtractionSchema, knowledgeHash } from "./knowledge-inputs.ts";
@@ -10,21 +12,27 @@ import { domainReject } from './firestore-domain-data.ts';
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
 const definitionSchema = z.strictObject({ id, url: z.url(), kind: z.enum(["page", "rss", "pdf"]), title: z.string().max(300).optional(),
+  leafletPage: z.url().optional(),
   pdfPages: z.strictObject({ startPage: z.number().int().positive(), endPage: z.number().int().positive() }).optional(),
   classification: z.enum(["official_guidance", "recent_information"]), publisher: z.string().min(1).max(160), termsUrl: z.url(),
   audience: z.enum(["public_noncommercial", "internal_noncommercial"]), itemHosts: z.array(z.string().min(1).max(255)).max(8).optional(),
   selector: z.string().min(1).max(500).optional() });
 const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), title: z.string().min(1).max(300),
-  text: z.string().min(1).max(256020).refine(text => text.isWellFormed()), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
+  text: z.string().max(256020).refine(text => text.isWellFormed()), nativeWindowMethod: z.literal("native-pdf-window/1").optional(), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
-  pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(8).optional() });
+  rssItem: z.strictObject({ xml: z.string().min(1).max(48000), copyright: z.string().min(1).max(160) }).optional(),
+  pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() }).refine(doc => doc.nativeWindowMethod
+    ? !doc.pages && doc.text === "" && doc.extraction?.format === "text_pdf" && doc.extraction.complete === false
+      && doc.extraction.pageStart === 1 && doc.extraction.pageEnd === doc.extraction.totalPages
+    : doc.text.length > 0);
 /** Hash the same normalized representation that the durable observation stores. */
 export function parseKnowledgeObservation(input: unknown): ObservedContent { return bodySchema.parse(input); }
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
-  lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
+  priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
   lease: z.strictObject({ jobId: z.uuid(), token: z.uuid(), until: date }).nullable() });
 const observationSchema = z.strictObject({ ...binding, sourceId: id, watchId: id, url: z.url(), contentHash: hash,
+  feedOriginalHash: hash.optional(), pdfReadback: pdfReadback.optional(),
   bodyHash: hash, parts: z.number().int().min(1).max(40), fetchedAt: date, lastSuccessfulCheckAt: date, unavailable: z.boolean(),
   sourcePublishedAt: date.nullable(), approved: z.strictObject({ contentHash: hash, versionId: z.uuid(), watchRevision: z.uuid(),
     operator: z.string().min(1).max(80), at: date }).nullable() });
@@ -33,6 +41,7 @@ const checkSchema = z.strictObject({ ...binding, jobId: z.uuid(), watchId: id, r
   state: z.enum(["running", "recorded", "unknown"]), attempts: z.number().int().min(1).max(2), checkedAt: date,
   status: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(), itemCount: z.number().int().min(0).max(50),
   changedCount: z.number().int().min(0).max(50), failureCode: z.enum(["network", "timeout", "response", "parse"]).nullable(),
+  readMethod: z.string().min(1).max(80).optional(), originalHash: hash.optional(), itemHashes: z.array(z.strictObject({ sourceId: id, contentHash: hash })).max(50).optional(),
   httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() });
 const adminStatusCursorSchema = z.object({ checkedAt: date, jobId: z.uuid() }).strict();
 type Watch = z.infer<typeof watchSchema>;
@@ -42,9 +51,11 @@ export interface FirestoreKnowledgeObservationPort {
   recentSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
+  recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
   approve(transaction: Transaction, context: FirestoreKnowledgeObservation, versionId: string, operator: string, at: string): void;
 }
 export interface FirestoreKnowledgeRefreshOptions {
+  originalBucket?: KnowledgeOriginalBucket;
   database: Firestore; projectId: string; namespace: string; definitions: readonly SourceWatchDefinition[];
   readControl(transaction: Transaction): Promise<{ enabled: boolean; generation: string }>;
 }
@@ -68,6 +79,7 @@ function parts(text: string): string[] {
 /** Trusted source maintenance only. No family context, model, embedding or automatic publication. */
 export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefreshOptions) {
   const { database, projectId, namespace } = options, scope = { schemaVersion: 1 as const, projectId, namespace };
+  const originals = createFirestoreKnowledgeOriginals(options);
   const definitions = options.definitions.map(definition => definitionSchema.parse(definition));
   if (definitions.length > 32 || new Set(definitions.map(row => row.id)).size !== definitions.length) reject("knowledge_watch_catalog_invalid");
   const catalog = new Map(definitions.map(row => [row.id, row]));
@@ -122,6 +134,33 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       if (observationHash(document) !== observed.contentHash || document.url !== observed.url) reject("knowledge_binding_invalid");
       return document;
     },
+    async recordPdfReadback(tx, context, request, reviewHash, reviewedRevision) {
+      const { watch, observation } = context;
+      const snap = await tx.get(checkRef(request.checkId)), control = await options.readControl(tx);
+      const check = snap.exists ? parse(checkSchema, snap.data()) : null;
+      const method = pdfReadMethod.safeParse(check?.readMethod);
+      if (!observation?.approved || watch.definitionHash !== fullBookletDefinitionHash
+        || !matchesPriorPdfRevision(watch.priorPdfRevision, reviewedRevision, request.confirmedLegacyExpansion)
+        || !['changed', 'unchanged'].includes(watch.lastStatus ?? '') || !control.enabled || !check || !method.success || check.state !== 'recorded' || check.jobId !== request.checkId
+        || !['changed', 'unchanged'].includes(check.status ?? '') || check.watchId !== request.sourceId
+        || check.workerGeneration !== control.generation || check.revision !== watch.revision || check.originalHash !== request.pdfHash
+        || check.checkedAt !== observation.lastSuccessfulCheckAt || check.checkedAt !== watch.lastSuccessfulCheckAt
+        || check.itemHashes?.length !== 1 || check.itemHashes[0]?.sourceId !== request.sourceId
+        || check.itemHashes[0]?.contentHash !== request.observationHash) reject('knowledge_pdf_range_check_mismatch');
+      // The deployed collection only indexes checkedAt. Read one extra receipt to detect a truncated millisecond.
+      const receiptLimit = 8;
+      const concurrent = await tx.get(database.collection(namespace + '_knowledge_checks')
+        .where('checkedAt', '==', check.checkedAt).limit(receiptLimit + 1));
+      if (concurrent.size > receiptLimit) reject('knowledge_pdf_range_check_mismatch');
+      const sameWatch = concurrent.docs.filter(doc => {
+        const receipt = parse(checkSchema, doc.data());
+        if (receipt.jobId !== doc.id) reject('knowledge_binding_invalid');
+        return receipt.watchId === watch.id;
+      });
+      if (sameWatch.length !== 1 || sameWatch[0]?.id !== request.checkId) reject('knowledge_pdf_range_check_mismatch');
+      const proof = { ...request, watchRevision: watch.revision, reviewHash, readMethod: method.data, checkedAt: check.checkedAt };
+      tx.set(observationRef(request.sourceId), { ...observation, pdfReadback: proof });
+    },
     approve(tx, context, versionId, by, at) {
       if (!context.observation || !context.watch.enabled || !context.catalogMatches || context.observation.unavailable) reject("knowledge_observation_review_mismatch");
       const row = context.observation;
@@ -129,7 +168,48 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     },
   };
   return {
-    gate,
+    gate, originals,
+    /** Organization-internal exact RSS evidence, never a public summary or a full article. */
+    async internalFeedOriginal(sourceId: string, expectedHash: string) {
+      const selected = await database.runTransaction(async tx => {
+        const state = await gate.read(tx, sourceId), current = state?.observation;
+        if (!state?.catalogMatches || !state.watch.enabled || state.watch.id !== "chp-recent"
+          || state.watch.definition.audience !== "internal_noncommercial" || !current?.feedOriginalHash
+          || current.unavailable || current.contentHash !== expectedHash) reject("knowledge_feed_edition_unavailable");
+        const document = await gate.content(tx, current);
+        if (!document.rssItem) reject("knowledge_feed_original_missing");
+        return { sourceId, contentHash: expectedHash, feedHash: current.feedOriginalHash, fetchedAt: current.fetchedAt,
+          url: document.url, publisher: state.watch.definition.publisher, termsUrl: state.watch.definition.termsUrl,
+          audience: state.watch.definition.audience, rssItem: document.rssItem, feedUrl: state.watch.definition.url };
+      }, { readOnly: true });
+      const feed = await originals.readFeed("chp-recent", selected.feedHash);
+      if (!feed.includes(Buffer.from(selected.rssItem.xml))) reject("knowledge_feed_original_mismatch");
+      return selected;
+    },
+    async resumeCheck(job: RefreshJob, jobId: string, includeObservationTime = false) {
+      return database.runTransaction(async tx => {
+        const snap = await tx.get(checkRef(jobId));
+        if (!snap.exists) return null;
+        const receipt = parse(checkSchema, snap.data());
+        if (receipt.watchId !== job.watchId || receipt.revision !== job.revision
+          || receipt.workerGeneration !== job.workerGeneration || receipt.state !== "recorded") return null;
+        if (receipt.status === "unavailable" && receipt.httpStatus)
+          return { status: "unavailable" as const, httpStatus: receipt.httpStatus };
+        if (receipt.status === "failed" && receipt.failureCode)
+          return { status: "failed" as const, reason: receipt.failureCode };
+        if (!receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
+        const items: ObservedContent[] = [];
+        let firstObservedAt: string | undefined;
+        for (const pin of receipt.itemHashes) {
+          const current = await gate.read(tx, pin.sourceId);
+          if (!current?.catalogMatches || !current.watch.enabled || current.watch.revision !== job.revision
+            || current.observation?.contentHash !== pin.contentHash || current.observation.unavailable) return null;
+          if (includeObservationTime && receipt.itemHashes.length === 1) firstObservedAt = current.observation.fetchedAt;
+          items.push(await gate.content(tx, current.observation));
+        }
+        return { status: "ok" as const, items, ...(firstObservedAt ? {firstObservedAt} : {}) };
+      }, { readOnly: true });
+    },
     async adminStatus(cursor: string | null = null): Promise<AdminKnowledgeStatus> {
       let after: z.infer<typeof adminStatusCursorSchema> | null = null;
       if (cursor !== null) {
@@ -169,10 +249,17 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     async register(id: string, by: string) {
       operator(by); const definition = catalog.get(id); if (!definition) reject("knowledge_watch_not_in_catalog");
       await database.runTransaction(async tx => {
-        const old = await watch(tx, id), unchanged = old?.enabled && old.definitionHash === definitionHash(definition);
-        const row: Watch = { ...scope, id, definition, definitionHash: definitionHash(definition), enabled: true,
+        const old = await watch(tx, id), nextHash = definitionHash(definition);
+        const unchanged = old?.enabled && old.definitionHash === nextHash;
+        const priorPdfRevision = unchanged ? old.priorPdfRevision
+          : nextHash === fullBookletDefinitionHash && old?.enabled && !old.confirmedGone && old.definitionHash === selectedBookletDefinitionHash
+            ? old.revision : null;
+        const row: Watch = { ...scope, id, definition, definitionHash: nextHash, enabled: true,
+          ...(id === feedingBookletId && priorPdfRevision !== undefined ? { priorPdfRevision } : {}),
           revision: unchanged ? old.revision : randomUUID(), registeredBy: by, registeredAt: new Date().toISOString(),
           lastAttemptAt: old?.lastAttemptAt ?? null, lastSuccessfulCheckAt: old?.lastSuccessfulCheckAt ?? null, lastStatus: old?.lastStatus ?? null,
+          ...(old?.confirmedGone !== undefined ? { confirmedGone: old.confirmedGone } : {}),
+          ...(unchanged && old.lastScheduledFor ? { lastScheduledFor: old.lastScheduledFor } : {}),
           lease: unchanged ? old.lease : null };
         bounded([row]); tx.set(watchRef(id), row);
       });
@@ -181,7 +268,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       await database.runTransaction(async tx => {
         const row = await watch(tx, id); if (!row) reject("knowledge_watch_unknown");
         // A new revision invalidates every prior approval without an unbounded fan-out write.
-        tx.set(watchRef(id), { ...row, enabled: false, revision: randomUUID(), lease: null });
+        tx.set(watchRef(id), { ...row, ...(row.id === feedingBookletId ? { priorPdfRevision: null } : {}), enabled: false, revision: randomUUID(), lease: null });
       });
     },
     async inspect(sourceId: string) {
@@ -206,7 +293,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },
-    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal) {
+    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string) {
+      if (scheduledFor !== undefined) date.parse(scheduledFor);
       const job = refreshJobSchema.parse(raw); z.uuid().parse(jobId);
       const token = randomUUID(), now = new Date().toISOString();
       const claim = await database.runTransaction(async tx => {
@@ -215,15 +303,26 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (receipt && (receipt.watchId !== job.watchId || receipt.revision !== job.revision || receipt.workerGeneration !== job.workerGeneration)) reject("knowledge_job_conflict");
         if (receipt?.state === "recorded") return { status: "already_recorded" as const };
         if (!row?.enabled || !matches(row) || row.revision !== job.revision || !control.enabled || control.generation !== job.workerGeneration || signal.aborted) return { status: "inactive" as const };
+        if (scheduledFor && row.lastScheduledFor && Date.parse(scheduledFor) < Date.parse(row.lastScheduledFor)) return { status: "superseded" as const };
         if (row.lease && Date.parse(row.lease.until) > Date.now()) reject("knowledge_check_in_progress");
         if (receipt && (receipt.state === "unknown" || receipt.attempts >= 2)) return { status: "unknown" as const };
         const check = { ...scope, ...job, jobId, token, state: "running" as const, attempts: (receipt?.attempts ?? 0) + 1,
           checkedAt: now, status: null, itemCount: 0, changedCount: 0, failureCode: null, httpStatus: null };
-        tx.set(checkRef(jobId), check); tx.set(watchRef(row.id), { ...row, lease: { jobId, token, until: new Date(Date.now() + 90_000).toISOString() } });
+        tx.set(checkRef(jobId), check); tx.set(watchRef(row.id), { ...row, ...(scheduledFor ? { lastScheduledFor: scheduledFor } : {}), lease: { jobId, token, until: new Date(Date.now() + 90_000).toISOString() } });
         return { status: "execute" as const, definition: row.definition };
       });
       if (claim.status !== "execute") return { status: claim.status };
       const fetched = await fetcher(claim.definition, signal);
+      const original = fetched.status === "ok" ? fetched.original : undefined;
+      if (fetched.status === "ok" && claim.definition.leafletPage && (!original || original.mimeType !== "application/pdf"))
+        reject("knowledge_original_missing");
+      if (fetched.status === "ok" && claim.definition.id === "chp-recent"
+        && (!original || original.mimeType !== "application/rss+xml" || !fetched.items.length
+          || fetched.items.some(item => !item.rssItem || !original.bytes.includes(Buffer.from(item.rssItem.xml)))))
+        reject("knowledge_feed_original_missing");
+      const originalHash = original ? await originals.save(job.watchId, original.mimeType, original.bytes) : undefined;
+      if (claim.definition.leafletPage && fetched.status === "ok" && fetched.items[0]?.extraction?.contentHash !== originalHash)
+        reject("knowledge_original_hash_mismatch");
       const items = fetched.status === "ok" ? fetched.items.map(parseKnowledgeObservation) : [];
       if (items.length > 50 || fetched.status === "ok" && claim.definition.kind !== "rss" && items.length !== 1) reject("knowledge_fetch_items_invalid");
       const prepared = items.map(document => {
@@ -249,11 +348,24 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         }
         const at = new Date().toISOString(); let changed = 0;
         const writes: { ref: ReturnType<typeof observationRef>; value: unknown }[] = [];
+        if (eligible && row.definitionHash === fullBookletDefinitionHash && fetched.status === 'failed'
+          && (fetched.reason === 'parse' || fetched.reason === 'response')) {
+          const snapshot = await tx.get(observationRef(row.id));
+          const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;
+          if (observed?.pdfReadback) {
+            if (observed.watchId !== row.id || observed.sourceId !== row.id) reject('knowledge_binding_invalid');
+            const { pdfReadback: _invalidated, ...next } = observed;
+            writes.push({ ref: observationRef(row.id), value: next });
+          }
+        }
         if (eligible) for (const item of prepared) {
           const old = previous.get(item.sourceId), same = old?.contentHash === item.contentHash;
           if (!same || old.unavailable) changed++;
+          const proof = old?.pdfReadback;
           const next: Observation = { ...scope, sourceId: item.sourceId, watchId: job.watchId, url: item.document.url, contentHash: item.contentHash,
-            bodyHash: item.bodyHash, parts: item.segments.length, fetchedAt: at, lastSuccessfulCheckAt: at, unavailable: false,
+            ...(same && !old.unavailable && proof && fetched.status === 'ok' && proof.readMethod === fetched.readMethod && proof.pdfHash === originalHash ? { pdfReadback: proof } : {}),
+            ...(item.document.rssItem && originalHash ? { feedOriginalHash: same && old.feedOriginalHash ? old.feedOriginalHash : originalHash } : {}),
+            bodyHash: item.bodyHash, parts: item.segments.length, fetchedAt: same ? old.fetchedAt : at, lastSuccessfulCheckAt: at, unavailable: false,
             sourcePublishedAt: item.document.sourcePublishedAt, approved: old?.approved ?? null };
           writes.push({ ref: observationRef(item.sourceId), value: next });
           if (!same) item.segments.forEach((text, part) => writes.push({ ref: partRef(item.sourceId, item.contentHash, part),
@@ -262,11 +374,16 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         const status = !eligible ? "superseded" as const : fetched.status === "ok" ? changed ? "changed" as const : "unchanged" as const
           : fetched.status === "unavailable" ? "unavailable" as const : "failed" as const;
         const nextCheck = { ...receipt, state: "recorded" as const, status, itemCount: eligible ? prepared.length : 0, changedCount: changed,
+          ...(eligible && fetched.status === "ok" ? { itemHashes: prepared.map(({ sourceId, contentHash }) => ({ sourceId, contentHash })),
+            ...(fetched.readMethod ? { readMethod: fetched.readMethod } : {}), ...(originalHash ? { originalHash } : {}) } : {}),
           checkedAt: at, failureCode: eligible && fetched.status === "failed" ? fetched.reason : null, httpStatus: eligible && fetched.status === "unavailable" ? fetched.httpStatus : null };
         if (row?.lease?.token === token) writes.push({ ref: watchRef(row.id), value: { ...row, lease: null,
           ...(eligible ? { lastAttemptAt: at, lastStatus: status, lastSuccessfulCheckAt: fetched.status === "ok" ? at : row.lastSuccessfulCheckAt,
-            // Invalidate old editions immediately, while a network failure merely records a failed attempt.
-            revision: fetched.status === "unavailable" ? randomUUID() : row.revision } : {}) } });
+            // A single 404 or feed outage cannot withdraw its items. Explicit 410 on a document invalidates its revision.
+            confirmedGone: fetched.status === "ok" ? false : fetched.status === "unavailable" && fetched.httpStatus === 410
+              && row.definition.kind !== "rss" || (row.confirmedGone ?? row.lastStatus === "unavailable"),
+            ...(fetched.status === 'unavailable' && fetched.httpStatus === 410 && row.id === feedingBookletId ? { priorPdfRevision: null } : {}),
+            revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
         for (const write of writes) tx.set(write.ref, write.value);
         return { status, items: nextCheck.itemCount, changed };

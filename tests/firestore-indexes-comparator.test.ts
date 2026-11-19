@@ -39,6 +39,13 @@ test('growth attention cursor pagination query has the complete scoped descendin
     && shape(entry) === shape(index(fields))), 'Growth attention descending pagination requires a deployable composite index');
 });
 
+test('the scheduled sweep can discover pending photo imports with default field indexing disabled', () => {
+  const config = JSON.parse(readFileSync(new URL('../deploy/firebase/firestore.indexes.json', import.meta.url), 'utf8'));
+  assert.ok(config.fieldOverrides.some((entry: {collectionGroup: string; fieldPath: string; indexes: {order?: string; queryScope: string}[]}) =>
+    entry.collectionGroup === 'yuban_authority_photos' && entry.fieldPath === 'importPending'
+    && entry.indexes.some(index => index.order === 'ASCENDING' && index.queryScope === 'COLLECTION')));
+});
+
 test('explicit document-id direction distinguishes bounded ascending pages from descending heads', () => {
   for (const scope of [['workspaceTag', 'epochTag', 'userTag', 'childTag'], ['workspaceTag', 'userTag', 'childTag']]) {
     const fields = scope.map(name => field(name));

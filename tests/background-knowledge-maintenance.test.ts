@@ -216,10 +216,12 @@ test("unchanged hash skips organize and stays unpublished", async () => {
 });
 
 test("PDF fixture follows reviewed page window; unreadable page stays candidate", async () => {
+  const first = pdf.pdfPages?.startPage ?? 1;
+  const last = pdf.pdfPages?.endPage ?? first;
   const bad: ObservedContent = {
     ...pdfItem(),
-    pages: [{ page: 3, text: "", status: "unreadable" }],
-    extraction: pdfItem().extraction,
+    pages: Array.from({ length: last - first + 1 }, (_, offset) => ({ page: first + offset, text: "", status: "unreadable" })),
+    extraction: { ...pdfItem().extraction!, pageStart: first, pageEnd: last, totalPages: last, complete: first === 1 },
   };
   const runner = createBackgroundKnowledgeMaintenanceRunner(
     { enabled: true, liveFetch: false, livePublish: false },

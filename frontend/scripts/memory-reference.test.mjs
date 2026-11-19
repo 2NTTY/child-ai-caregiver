@@ -47,7 +47,11 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: nativeElement('div'), Pressable: nativeElement('button'), StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
-    if (name === 'expo-router') return { useRouter: () => ({ push() {} }) };
+    if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}), useFocusEffect() {} };
+    if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
+    if (name === '../AppDialog') return { AppDialog: nativeElement('dialog') };
+    if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package',
+      '../../../../src/shared/source-series', '../../../../src/shared/personal-library'].includes(name)) return {};
     if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => ({ navigate: action => action() }) };
     if (name.endsWith('/history-view-model')) return compile('../src/history-view-model.ts', require);
     if (name.endsWith('/PersistentWorkCards')) return { PersistentWorkCards: () => null };
@@ -100,10 +104,22 @@ test('memory tabs replace duplicate introductions but keep real content headings
     } else if (tab === 'short') {
       assert.match(html, /Synthetic saved context/); assert.doesNotMatch(html, /工作是 Agent 的整理內容，供核對及接續；不代表已確認的事實。/);
     } else {
-      assert.match(html, /role="heading">官方指引</); assert.match(html, /role="heading">近期資訊</);
-      assert.match(html, /未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答/);
+      assert.match(html, /暫無可讀來源/);
+      assert.doesNotMatch(html, /官方指引|近期資訊/);
     }
   }
+});
+
+test('the source deck groups editions by series and keeps version details off its cover', () => {
+  const value = snapshot();
+  const series = { institutionId: 'public', id: 'test-feeding', name: '餵食指南' };
+  const item = { series, publisher: '合成機構', classification: 'official_guidance', title: '文件甲', versionId: 'private-test-version' };
+  value.model.references = { scopeKey, state: 'ready', data: { audience: 'public', items: [], hasMore: false,
+    catalog: [{ ...item, sourceId: 'file-a' }, { ...item, sourceId: 'file-b', title: '文件乙' }] } };
+  const { html } = renderView(freeze(value), { tab: 'references' });
+  assert.equal((html.match(/aria-label="餵食指南，2 份文件，使用中"/g) ?? []).length, 1);
+  assert.match(html, /合成機構/);
+  assert.doesNotMatch(html, /文件甲|文件乙|private-test-version|匯出版本參照/);
 });
 
 test('read provider passes the exact owner value and masks all scope, child and access mismatches', () => {
@@ -173,7 +189,7 @@ test('all long-term disclosures remain read-only and clarification only hands an
   const draftRoute = fs.readFileSync(new URL('../src/production/ProductionProvider.tsx', import.meta.url), 'utf8');
   const prepareQuestion = draftRoute.match(/prepareQuestion\(question\) \{([\s\S]*?)\n    \},/)?.[1];
   assert.ok(prepareQuestion, 'The current production draft action must remain present');
-  assert.match(prepareQuestion, /if \(!currentScope\(\)\) return;/);
+  assert.match(prepareQuestion, /if \(!currentScope\(\) \|\| snapshot\.sharedChild\.target\) return;/);
   assert.match(prepareQuestion, /if \(chatDraft\?\.text\.trim\(\)\) setLocalNotice/);
   assert.match(prepareQuestion, /else owner\.chatController\.setText\(question\)/);
   assert.match(prepareQuestion, /openAgentDraft\(true\)/);
@@ -189,7 +205,7 @@ test('missing read ports, denied access and summary-null have honest visible sta
   assert.doesNotMatch(references, /暫無可顯示來源|官方指引|近期資訊/);
   assert.doesNotMatch(references, /已接通|即時新聞|共有 0|已驗證/);
   value.model.longTerm.data.summary = null;
-  assert.match(renderView(value).html, /目前沒有可用摘要/);
+  assert.doesNotMatch(renderView(value).html, /對話摘要|目前沒有可用摘要/);
   assert.doesNotMatch(renderView(value).html, /已清空|已遺忘/);
   assert.doesNotMatch(renderView(null).html, /睡前觀察|本人觀察筆記/);
   const hidden = { ...value, model: { ...value.model, longTerm: { scopeKey, state: 'loading', revision: null, asOf: null, data: null } } };
@@ -206,11 +222,11 @@ test('one scoped production memory owner and an independent preview owner keep c
   assert.doesNotMatch(layout, /preview\/MemoryReferenceWorkspaceProvider/);
   const domains = fs.readFileSync(new URL('../src/production/ProductionDomains.tsx', import.meta.url), 'utf8');
   assert.equal((domains.match(/<ProductionTaskKnowledgeDomains>/g) ?? []).length, 1);
-  const connected = fs.readFileSync(new URL('../src/production/TaskKnowledgeDomains.tsx', import.meta.url), 'utf8');
-  assert.equal((connected.match(/useTaskKnowledgeMemory\(env, history\)/g) ?? []).length, 1);
+  const connected = fs.readFileSync(new URL('../src/production/TaskKnowledgeDomains.tsx', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+  assert.equal((connected.match(/useTaskKnowledgeMemory\(scopes\.memory, history\)/g) ?? []).length, 1);
   assert.equal((connected.match(/<MemoryReferenceWorkspaceProvider\s/g) ?? []).length, 1);
   assert.match(connected, /snapshot\.scopeKey === env\.scopeKey \? snapshot : null/);
-  assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
+  assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{env\.allows\('memory'\)\?current\?\.memory\.value \?\? null:null\}>/);
   for (const filename of ['../src/screens/memoryScreen.tsx', '../src/components/memory/MemoryReferenceView.tsx', '../src/workspaces/MemoryReferenceWorkspace.tsx']) {
     const source = fs.readFileSync(new URL(filename, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /useMemoryPreview|useSourcesPreview|MemoryEditorPanel|MemoryTopicList|beginFact|beginTopic|applyMemoryPreviewWrite|\.submit\(/);
@@ -221,10 +237,10 @@ test('one scoped production memory owner and an independent preview owner keep c
   const childBridge = connected.match(/const DomainBridge = memo\(function DomainBridge[\s\S]*?return null;\n\}\);/)?.[0];
   const accountBridge = connected.match(/const AccountHistoryBridge = memo\(function AccountHistoryBridge[\s\S]*?return null;\n\}\);/)?.[0];
   assert.ok(childBridge && accountBridge, 'Both scoped owner branches must be present');
-  assert.equal((childBridge.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
+  assert.equal((childBridge.match(/usePersonalHistory\(scopes\.private\)/g) ?? []).length, 1);
   assert.equal((accountBridge.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
-  assert.equal((connected.match(/usePersonalHistory\(env\)/g) ?? []).length, 2);
-  assert.match(childBridge, /useTaskKnowledgeMemory\(env, history\)/);
+  assert.equal((connected.match(/usePersonalHistory\(/g) ?? []).length, 2);
+  assert.match(childBridge, /useTaskKnowledgeMemory\(scopes\.memory, history\)/);
   assert.doesNotMatch(accountBridge, /useTaskKnowledge(?:Tasks|Memory|Summary|Growth)|useFamilyDocuments/);
   assert.match(connected, /env\.scopeKey && env\.userId && env\.childId \? <DomainBridge[^>]*\/>\s*: historyScope && env\.userId \? <AccountHistoryBridge[^>]*\/> : null/);
   assert.match(view, /current\.current !== workspace/);
