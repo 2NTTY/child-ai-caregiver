@@ -43,6 +43,23 @@
     "ordinary": "同服務的普通問候僅有原來的一次生成，沒有討論工具或發言。",
     "lateFollowup": "離線把舊題及已答內容置於最新訊息頁之外，按原連結核權取回，三位角色仍處理原題。"
   },
+  "reviewCorrection": {
+    "baseline": "8c99218d642075186ba204d7edc5d4a637fc5b15",
+    "supersedes": "recovery.sourceSelection 記錄基線行為。以下為修正後同一運行的讀回結果。",
+    "history": {
+      "method": "在本機 Firebase 模擬器匯入原驗收快照，使用正式登入、知識卡及 run API。",
+      "runId": "f0641d91-e299-4f23-b72c-291ea878ba0b",
+      "personalRemoval": "移除個人卡期間及還原後，完整 API 結果與移除前一致。三段發言、主回答及計數亦與原真題收據相符。",
+      "originalVersion": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+      "crossChildStatus": 404,
+      "platformWithdrawal": "在用完即棄的模擬器副本停用來源後，同一 run 返回 stopped/source_changed，零發言、零引用。",
+      "editionFixture": "發布新版後，舊討論仍可核對原版本。更改版本雜湊、片段雜湊、網址或片段 ID 均未能通過，撤回原版後亦無法讀取。新交付只接受該使用者目前選取的版本。"
+    },
+    "presentation": "離線原生工具回合逐位報出主回答尚餘五、四、三段。三位發言後交四段會返回 discussion_main_too_long 及上限 3。重交三段後，獨立審核收到原來的三段發言及三段主答。",
+    "nodeTests": ["tests/chat-discussion.test.ts", "tests/firestore-knowledge.test.ts（兩位使用者的版本選取個案）"],
+    "paidModelCalls": 0,
+    "embeddingCalls": 0
+  },
   "web": {
     "browser": "Microsoft Edge, Playwright",
     "viewports": [[390, 844], [1100, 850]],

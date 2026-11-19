@@ -32,10 +32,11 @@ test('a question binds three successive native turns, the main reply and one ind
   const linkedQuestion = { ...base, id: 'b955733f-1f95-42fa-bfb4-da02c7ad90c0', discussion: true,
     discussionOf: previousAnswer.id, text: '討論這個回答。' };
   const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '看書要預備甚麼？放工後家長可能只想輕鬆唱歌。', '回應預備時間的問題，可以先唱熟悉的童謠，周末再試圖畫書。'];
-  const main = '照顧者當晚精神好時一同看書，想省準備便唱熟悉的童謠。';
-  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' }),
-    chatDeliveryReviewModelCalls: 6, usage: { reserve: async () => true, record: async () => {} },
-    provider: { generate: async request => {
+  const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '當晚按大家的精神揀一樣便可。'];
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
+  const unused = async () => { throw new Error('Unexpected provider or usage call'); };
+  const usage = { reserve: async () => true, record: async () => {}, getForUser: unused };
+  const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
       if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
@@ -50,24 +51,33 @@ test('a question binds three successive native turns, the main reply and one ind
         return { content: { role: 'model', parts: [{ functionCall: { id: 'hi', name: 'present_answer',
           args: { kind: 'operation', paragraphs: [{ text: '你好！', citationIds: [] }] } } }] }, finishReason: FinishReason.STOP };
       }
-      if (i === 5) {
+      if (i === 6) {
         const content = inputs.map(p => p.text ?? '').join('');
         const payload = JSON.parse(content.slice(content.indexOf('{')));
-        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, main]);
+        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...main]);
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
         return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
       assert.ok(!('propose_fact' in request.toolsDict));
-      const previous = inputs.map(p => p.functionResponse?.response?.data).filter(Boolean).at(-1) as { nextTurn?: string; contribution?: { text: string } } | undefined;
+      if (i === 5) {
+        const rejection = inputs.filter(p => p.functionResponse?.name === 'present_answer').at(-1)?.functionResponse?.response?.data;
+        assert.partialDeepStrictEqual(rejection, { code: 'discussion_main_too_long', maxParagraphs: 3 });
+      }
+      const previous = inputs.map(p => p.functionResponse?.response?.data).filter(Boolean).at(-1) as { nextTurn?: string; contribution?: { text: string }; maxMainParagraphs?: number } | undefined;
       if (i === 2 || i === 3) assert.equal(previous?.contribution?.text, turns[i - 2]);
+      if (i >= 2 && i <= 4) assert.equal(previous?.maxMainParagraphs, 7 - i);
       const name = i === 0 ? 'search_knowledge' : i <= 3 ? discussionToolNames[i - 1] : 'present_answer';
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
         : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
-        : { kind: 'caregiving', paragraphs: [{ text: main, citationIds: [chunkId] }] };
+        : { kind: 'caregiving', paragraphs: (i === 4 ? [...main, '可以遲些再揀。'] : main).map(text => ({ text, citationIds: [chunkId] })) };
       const parts = [{ functionCall: { id: 'step-' + i, name, args } }];
       return { content: { role: 'model', parts: followup && i === 0
         ? [{ functionCall: { id: 'page-task', name: 'read_context', args: {} } }, ...parts] : parts }, finishReason: FinishReason.STOP };
-    } } });
+    } };
+  const runtime = createAgentRuntime({ config, usage, provider, resolve: async () => ({
+    config, provider, usage, authorize: async () => true, model: { generate: unused }, embeddings: { embed: unused },
+    runLimits: { modelCalls: 7, queryEmbeddings: 1 },
+  }) });
   const service = createProductAgent({ runtime,
     readPageItem: async (userId: string, childId: string, item: unknown) => {
       assert.equal(userId, scope.userId);
@@ -92,9 +102,9 @@ test('a question binds three successive native turns, the main reply and one ind
   const result = await reply();
   assert.equal(result?.status, 'completed', JSON.stringify(result));
   assert.deepEqual(result.discussion?.map(t => t.text), turns.map(t => t + ' [1]'));
-  assert.equal(result.text, main + ' [1]');
+  assert.equal(result.text, main.map(text => text + ' [1]').join('\n\n'));
   assert.equal(result.deliveryReview?.decision, 'pass');
-  assert.equal(result.counts.modelCalls, 6);
+  assert.equal(result.counts.modelCalls, 7);
   const wire = { ...result, citations: [] };
   assert.ok(productAgentResultSchema.safeParse(wire).success);
   assert.equal(productAgentResultSchema.safeParse({ ...wire, deliveryReview: undefined }).success, false);
@@ -103,7 +113,7 @@ test('a question binds three successive native turns, the main reply and one ind
   assert.equal(await reply('another-child'), null);
   allowed = false;
   assert.equal(await reply(), null);
-  assert.equal(calls, 6);
+  assert.equal(calls, 7);
   allowed = true; discussion = false; claimed = false; calls = 0;
   const ordinary = await reply();
   assert.equal(ordinary?.status, 'completed');

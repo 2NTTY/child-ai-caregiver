@@ -202,6 +202,8 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   }
   const a = await account('synthetic-alice'), b = await account('synthetic-bob');
   const one = await f.publish(), old = await a.catalog(), original = (await store.candidates(filter, null))[0]!;
+  const canReopen = (citation = original) => f.database.runTransaction(tx => store.historicalCitationsReadable(tx, [citation]));
+  const canDeliver = (user: string) => f.database.runTransaction(tx => store.citationsCurrent(tx, user, [original]));
   const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
     editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
   assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: true });
@@ -221,6 +223,13 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   await a.change({ ...change, mode: 'fixed', imported: true, editions: [{ sourceId: old.sourceId, versionHash: one.hash }] });
   const two = await f.publish({ ...one.document, title: 'Renamed selected guidance' }, one);
   assert.deepEqual(await a.search(), [one.versionId]); assert.deepEqual(await b.search(), [two.versionId]);
+  assert.equal(await canReopen(), true, 'A reviewed historical citation remains readable after a new publication');
+  assert.equal(await canDeliver('synthetic-alice'), true, 'A new delivery can still use a selected fixed edition');
+  assert.equal(await canDeliver('synthetic-bob'), false, 'A new delivery must follow the selected successor');
+  assert.equal(await canReopen({ ...original, versionHash: two.hash }), false);
+  assert.equal(await canReopen({ ...original, contentHash: '0'.repeat(64) }), false);
+  assert.equal(await canReopen({ ...original, url: 'https://example.org/other' }), false);
+  assert.equal(await canReopen({ ...original, chunkId: crypto.randomUUID() }), false);
   const latest = await a.catalog();
   assert.equal(latest.series!.id, old.series!.id); assert.equal(latest.preference!.selectedVersionHash, one.hash);
   assert.equal(original.title, old.title); assert.equal(original.series!.name, old.series!.name);
@@ -230,6 +239,8 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   await a.join(join);
   assert.deepEqual([...f.records.entries()], afterPin);
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), [two.versionId]);
+  assert.equal(await canReopen(), true, 'Removing a personal card leaves the bound historical version readable');
+  assert.equal(await canDeliver('synthetic-alice'), false, 'Removing a personal card prevents new delivery with that citation');
   await assert.rejects(a.change({ ...next, enabled: true, mode: 'fixed' }), { status: 409 });
   const disabled = await a.catalog();
   assert.equal(disabled.preference!.selectedVersionId, one.versionId);
@@ -252,12 +263,16 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   await store.review(one.versionId, one.hash, 'synthetic-operator', { ...assessment(one.document, wide), decision: 'hold' });
   assert.equal((await a.catalog()).preference!.eligible, false);
   assert.deepEqual(await a.search(), [], 'A withdrawn snapshot cannot be served even with a valid successor');
+  assert.equal(await canReopen(), false, 'An explicitly withdrawn original edition cannot be disclosed');
   await assert.rejects(a.change({ ...imported, expectedRevision: (await a.catalog()).preference!.revision }), { status: 409 });
   const afterWithdrawal = await a.catalog();
   await a.change({ ...next, mode: 'platform', expectedRevision: afterWithdrawal.preference!.revision,
     editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
   assert.deepEqual(await a.search(), [wide.versionId], 'An explicit reset releases a stored fixed selection to the current platform publication');
+  const currentCitation = (await store.candidates(filter, null))[0]!;
+  assert.equal(await canReopen(currentCitation), true);
   await store.disable(old.sourceId, 'Synthetic withdrawal');
+  assert.equal(await canReopen(currentCitation), false, 'Platform withdrawal also blocks historical disclosure');
   await assert.rejects(b.join(join), { status: 409 });
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
 });

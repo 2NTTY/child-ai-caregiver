@@ -95,7 +95,11 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const routing = options.routing ?? createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
   const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds,
-    discussionCitationsCurrent: async (b, citations) => !!await options.knowledge?.citationsCurrent(b.transaction, b.scope.ownerUserId, citations),
+    discussionCitationsReadable: async (b, citations, purpose) => {
+      if (!options.knowledge) return false;
+      return purpose === 'history' ? options.knowledge.historicalCitationsReadable(b.transaction, citations)
+        : options.knowledge.citationsCurrent(b.transaction, b.scope.ownerUserId, citations);
+    },
     async validateKnowledge(binding, sourceId) {
       if (!options.knowledge) domainReject('knowledge_not_ready', 503);
       await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
