@@ -12,7 +12,11 @@ interface DecisionRecovery {
 }
 export interface AgentPendingDiscovery { state: AgentReadState; hasSnapshot?: boolean; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
 export interface ProductAgentSnapshot { pending: AgentPendingDiscovery; model: AgentRunModel; inbox: AgentInboxModel; runs: Readonly<Record<string, AgentRunView>> }
-const runsSchema = z.object({ runs: z.array(z.object({ runId: z.uuid(), createdAt: z.iso.datetime({ offset: true }) })).max(20) });
+const runsSchema = z.object({ runs: z.array(z.object({ runId: z.uuid(), createdAt: z.iso.datetime({ offset: true }),
+  activityKind: z.enum(["memory_refresh", "work_followup", "background"]).optional().catch(undefined),
+  status: z.enum(["running", "completed", "stopped", "unknown"]).optional().catch(undefined),
+})).max(20) });
+const activityLabels = { memory_refresh: "整理記憶", work_followup: "跟進交辦事項", background: "助手背景活動" };
 const accessLost = (error: unknown) => error instanceof ProductAgentApiError
   && ([401, 403, 404].includes(error.status) || ["session_changed", "unauthorized", "not_found"].includes(error.code ?? ""));
 function initial(online: boolean): ProductAgentSnapshot {
@@ -356,7 +360,7 @@ export class ProductAgentOwner {
       if (request.controller.signal.aborted || !this.snapshot.model.online) throw new ProductAgentApiError();
       if (!parsed.success || new Set(parsed.data.runs.map(item => item.runId)).size !== parsed.data.runs.length) throw new ProductAgentApiError();
       this.update({ inbox: { ...this.snapshot.inbox, state: "ready", loadedAt: new Date().toISOString(),
-        entries: parsed.data.runs.map(item => ({ ...item, label: "已保存背景運行" })) } });
+        entries: parsed.data.runs.map(item => ({ runId: item.runId, createdAt: item.createdAt, status: item.status, label: activityLabels[item.activityKind ?? "background"] })) } });
     } catch (error) {
       if (!request.current()) return;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);

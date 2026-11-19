@@ -108,7 +108,7 @@ REQ-006 本人來源卡已完成本機 Web、權限及排程介面驗收。原�
 三種喚醒及一鍵示範已接入原站。隔離環境的真 Gemini 已分別完成按約定主動聯絡及安靜結束。Android 版本 6 已由本人確認關閉 App 後收到示範、點入回覆，同一回覆可在 Web 讀回。原站 `954ee312` 在保存後直接派送，每分鐘排程負責補查未派送工作。Android 版本 8 的實機示範已確認狀態列圖示、助手頭像及該則正式訊息的正文預覽。這一筆入隊後 0.973 秒開始交送，2.108 秒時收據記下 FCM 接受。NOTIFY-01～03 已交付；下一包接 REQ-001 搜索。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 <a id="agent-search-first"></a>
-**主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）與 `#634`／`#640` 已合併主線，候選分支只有各自版本的離線收據。**#675–#677 組合驗收：受阻（未執行）。** 真模型 `--live`、原站部署及手機實機仍須分別驗收（詳見 [REQ-002 收束與 24 組／19 場景對照](#req002-closeout01)）。
+**主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）與 `#634`／`#640` 已合併主線，先前分支收據保留作歷史對照。**#675–#677 組合驗收：同一版本的離線定向檢查已通過。** 真模型 `--live`、原站部署及手機實機仍須分別驗收（詳見 [REQ-002 收束與 24 組／19 場景對照](#req002-closeout01)）。
 
 - **B-P1 外部檢索 Query 最小化（`codex/search-query-minimization`，基線 `origin/master` `cd1193b2`）：** 新增 [query 最小化守衛](server/knowledge-query-minimization.ts) 並同時接於 [`search_knowledge`](server/product-agent-tools.ts) 與 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（先於 cache、embedding 扣額或候選查詢前攔截 `public_query_required`），搭配工具重試引導與描述更新；僅檢查確定性規律（覆蓋無空格「叫＋姓名」及已測的粵語動詞／疑問詞／症狀詞、粗粒度地區與時長、醫院樓層及英文照護詞反例，不宣稱全語境零誤報）及本次三個資料讀取工具載入的非泛稱兒童姓名，**不宣稱匿名化、不增開分類 LLM**。未標籤獨立人名仍依賴模型依指引去識別；目前僅離線合成測試及 TypeScript 核對，尚未經真 Gemini／部署實測。[離線驗證 workflow](.github/workflows/search-query-minimization-offline.yml) · [驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh)
 
@@ -1604,16 +1604,97 @@ Current implementation skips the initial conversation summary only for a pure gr
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
 
+## REQ-008 specialist artifact loop and isolated renderer verification
+
+目前僅有內部組件及離線驗收；家長聊天的 `document_compose` 保留原有資料編製，未提供專家 PDF／HTML 預覽。啟用前須能在既有授權範圍內交付可開啟、與已檢版號及雜湊一致的草稿，並驗證真實畫面與字形。
+
+- The internal specialist loop validates `sourceQuote`, expected document/authority versions, and `readState === "ready"` before building an A4 PDF 1.4 Unicode draft or CSP-isolated HTML draft (`formalSave: false`, `published: false`, `requiresFormalConfirmation: true`).
+- Post-build verification runs in isolation without network access: PDF inspection uses `pdfjs-dist` in a memory-bounded `node:worker_threads` worker (`128MB` old generation limit, `15s` timeout, muted stdio) checking bounding-box overflow, clipping, overlap, footer intrusion, empty pages, missing/control/replacement glyphs, unsafe link URIs, and required title/section presence; HTML inspection uses `cheerio` under `default-src 'none'` CSP rules; missing pixel screenshot verification is reported explicitly in `unverifiedChecks` (`["pixel_screenshot_render"]`) unless a `VisualArtifactRendererPort` supplies visual results. A clear structural check without completed visual checks remains partial, not verified; text extraction does not establish visible glyph quality.
+- Automated repair is bounded on the caller's single `AgentBudget` (`maxRepairIterations = 2`), rebinding each verification report to the repaired `(artifactVersion, artifactHash)` and enforcing an in-memory per-scope single-flight lock (`specialist_task_in_progress`).
+- Offline gate (`scripts/ci/verify-req008-specialist-artifact-renderer-offline.sh`, `.github/workflows/req008-specialist-artifact-renderer-offline.yml`): `tests/req008-specialist-artifact-renderer.test.ts` (10 cases) plus 11 baseline suites (`12` files / `145` cases total) and three strict `tsc --noEmit` checks (`tsconfig.server.json`, `tsconfig.json`, `frontend/tsconfig.json`).
+
+
+### REQ-001 B 類時效資訊生命週期與主聊天檢索閉環 (`codex/req001-timely-news-and-expiry`)
+
+- **對應需求**：REQ-001 §3.2 (`:107-125`)、§6 階段 3 (`:259-264`)、§7 (`:294-296`)。
+- **基線與範圍**：基於 `origin/master` (`3c02633a`)，於隔離 worktree 實作，未改動進行中的 REQ-002 收尾分支（`#675`–`#678`）或 `docs/REQUIREMENTS_BACKLOG.md`。
+- **核心設計與契約**：
+  - 新增 [`src/shared/knowledge-timely.ts`](src/shared/knowledge-timely.ts)（`TIMELY_EVENT_KINDS`、`TIMELY_EVENT_STATUSES`、`timelyEventLifecycleSchema`、`isTimelyEventActive`、`isPersistentTimelyKind`），並於 `src/shared/knowledge.ts` 及 `src/shared/product-agent-result.ts` 擴充可選 `timelyEvent` metadata（不破壞既有未標註版本 hash）。
+  - 新增 [`server/knowledge-timely-policy.ts`](server/knowledge-timely-policy.ts)（`evaluateTimelyEligibility`、`proactiveKindForTimelyEvent`、`sqlTimelyEligibilityClause`、`TIMELY_KNOWLEDGE_POLICY_DEFAULTS`），統一 Firestore 與 Postgres 保留與退場規則：有效／已更正之 `recall` 與 `safety_alert` 超過 7 天仍可檢索（需符合 `sourcePublishedAt <= now`、`lastSuccessfulCheckAt <= 24h` 及 `validUntil`）；具明確 `validUntil` 之 `policy_change`／`deadline` 保留至期限屆滿；一般 `news`／`announcement` 與無標註項目維持 7 天滾動窗口；任何標記為 `lifted`、`superseded` 或 `expired` 之項目立即退出日常檢索與主動通知派發，並保留版本溯源與歷史回覆不可變快照。
+  - 接通 `server/knowledge-inputs.ts`、`server/firestore-knowledge.ts`、`server/firestore-knowledge-refresh.ts`（`recentSourceIds` 沿用既有 composite index 並將觀察回溯窗放寬至 180 天）、`server/knowledge-store.ts`、`server/proactive-event-sources.ts`，以及前端 `frontend/src/chat-view-model.ts`、`frontend/src/production/agent-projection.ts`、`frontend/src/components/chat/chat-copy.ts` 與 `frontend/src/components/chat/AnswerSources.tsx`（維持摺疊引用卡精簡，只於展開後 `OriginalCard` 顯示時效類型、狀態、失效警告及取代來源）。
+- **離線驗證範圍與限制**：本分支僅於本地進行離線合成測試（[`tests/req001-timely-news-and-expiry.test.ts`](tests/req001-timely-news-and-expiry.test.ts) 7/7 通過，離線清單 14 檔／103 案全過；`tests/firestore-knowledge.test.ts` 於無網路守衛下 22/22 通過）及三組嚴格 `tsc --noEmit`；尚未執行真實外部 RSS 抓取、真實 Gemini／Vertex 調用、原站部署或手機實機驗收。[離線驗證 workflow](.github/workflows/req001-timely-news-and-expiry-offline.yml) · [驗證腳本](scripts/ci/verify-req001-timely-news-and-expiry-offline.sh)
+
+
+### REQ-002 唯讀並行批次檢索、證據重用失效與針對性局部修復 (`codex/req002-batch-reuse-and-repair`)
+
+- **對應需求**：REQ-002 §§3.1、3.4、3.5、3.6、5.2；AC 507–513、515–516、520、522（基線 `origin/master` `3b51b971`）。
+- **核心設計與邊界**：
+  - **有界唯讀並行工具排程（`server/agent-tool-batch.ts`、`server/agent-runtime.ts`）**：為連續的 `effect === "read"` 唯讀工具建立 `runReadToolBatch`（預設 `maxConcurrent: 3`、`maxBatchSize: 6`、`itemTimeoutMs: 8000`），在不改動 `@google/adk` 套件本體與保留 `beforeToolCallback` / `afterToolCallback` / `result.tools` 順序前提下並行執行相鄰唯讀查詢並降低模型往返次數；遇寫入／終端／能力載入／`show_official_help` 屏障即止，對溢出項回傳 `batch_limit_exceeded`、單項逾時或失敗隔離保留同批成功結果，並於中斷撤銷或授權失效時即時停止剩餘排隊項且不洩漏部份資料；全數純讀工具皆已顯式標註 `effect: "read"`。
+  - **證據重用與即時失效（`server/knowledge-retriever.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts`）**：於 `search`、`readContext`、`readReviewedCitations` 及新增的 `revalidateAndSeedEvidence` 強制執行 `isKnowledgeEvidenceFresh`（`reviewState === "reviewed"` 與未逾期 `validUntil`）；同次 run 重複呼叫 `readContext` 於內容 hash 與時效未變時重用快取，來源變更時擲回 `409 knowledge_context_source_changed`；跨回合 `ProductAgent.reply` 僅嚴格重驗同 `(userId, childId)` 近三次已完成回覆之官方引用並於版本變更、撤回、過期或子女年齡／地區切換時失效重建。
+  - **引用診斷與針對性局部修復（`server/product-agent-tools.ts`、`server/chat-delivery-review.ts`）**：`present_answer` 自動去除同段重複 `citationIds` 並於引用拒絕錯誤提供 `availableOfficialCitationIds`；`delivery_repair` 注入 `retrievedEvidence` 免重搜、拒絕零修改空轉修復（`delivery_review_rejected`）、重算 `liveHash` 及禁止修復時抽走應附之官方引用（除非屬伺服器驗證之純範圍限制拒答）。
+  - **背景／延後帳本隔離與主回覆優先（`tests/req002-batch-reuse-and-repair.test.ts`）**：補齊離線契約測試，驗證 continuation worker 綁定原 `rootRunId`、不可變上限與絕對期限、公開知識維運帳本隔離私域、以及主回覆 `store.finish` 優先提交。
+- **驗收限制與離線門檻**：本分支全程於本機離線驗證（含 [REQ-002 離線驗證腳本](scripts/ci/verify-req002-batch-reuse-repair-offline.sh) 與 [CI workflow](.github/workflows/req002-batch-reuse-repair-offline.yml)，涵蓋 31 個測試檔、276 個離線案例與三組嚴格 TypeScript 檢查），未連接真實 Gemini / Vertex、PostgreSQL / Firestore 或進行雲端／真機實測。
+
+### 無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`，基線 `origin/master` `5ddc68e4`）
+
+- **對應需求**：REQ-002 §§3.8、4.4、7.1；AC 514、524。
+- **核心實作**：
+  - 統一 `server/structured-output-schema.ts`（`nativeResponseSchema`），為所有無工具 `completeText` 角色（`delivery_review`、`delivery_repair`、`data_compose`、`compose_review`、`knowledge_organize`、`knowledge_review` 及 PDF windowed/focus 檢查）傳遞原生 `responseMimeType: "application/json"` 與 `responseJsonSchema`。
+  - Provider 明確聲明結構化能力（Vertex / Gemini 宣告 `native_json_schema`，OpenAI 相容供應商宣告 `prompt_strict_json`）；不支援原生 schema 時，gateway 於請求移除不支援欄位、加入嚴格 JSON 指令並於 trace 標記 `schemaMode: "degraded_prompt_strict_json"` 與 `schemaDegradationReason: "provider_native_schema_unsupported"`；任何結構化成功均不放行錯誤 hash 或缺失來源／語義檢查。
+  - 新增 `server/agent-trace.ts` 嚴格白名單 metadata collector 與 `formatOtelMetadataSpan`，統一覆蓋 `main_chat`、`background`、`work_followup`、`summary`、`compaction` 與各 `completeText` 專責角色之啟始、重試、錯誤、取消、上下文組裝分類與四項核心里程碑時間點（`firstMeaningfulProgressMs`、`firstUsableSourceMs`、`firstApprovedAnswerMs`、`terminalSettledMs`），並隔離任何輸入／輸出正文或 PII 字串。
+- **驗證門檻**：[離線驗證 workflow](.github/workflows/req002-schema-trace-offline.yml) · [驗證腳本](scripts/ci/verify-req002-schema-trace-offline.sh)。本輪為本地離線驗證與型別檢查，未連真 Vertex/OpenAI 模型或 Firestore，未推送遠端。
+
+### REQ-002 有界真實基準與 SSE 斷線恢復門檻（`codex/req002-live-benchmark-and-disconnect`，基線 `origin/master` `dc9b23d8`）
+
+- **對應需求**：REQ-002 §§6–7.2、AC 506／511／517–518。
+- **交付內容**：
+  - `server/req002-acceptance-harness.ts` 與 `scripts/lib/req002-acceptance-runner.ts`：建立 provider 邊界硬預算計數器與 pre-dispatch fail-stop（預設 `runs <= 3`、`modelCalls <= 10`、`queryEmbeddings <= 4`，覆蓋生成、獨立審核／修復、查詢嵌入與重試）、合成 PII 金絲雀（`陳大文`／`沙田第一城 1 座`／`2026年5月18日`）外送掃描、`POST .../reply` 與 `GET .../reply` 同 `runId` 零重跑復原、`hk-official-seed.json` 5 份官方來源匯入及同版 `versionId`/`contentHash` 核對、SSE 串流途中中止後之 `remoteReply=running` 與 `refreshOriginalReply`／亂序幀忽略／`403` 清卡驗證，以及合成的序貫／有界批次量測與本機 Map 冷暖對照；不是正式向量快取或服務效能證據。
+  - `scripts/verify-req002-live.mjs`：執行合成基準須明確指定 `--offline`；收據核對實際收到的回覆、向量檢索未退化及 B／C 的預期語意。現有合成文件向量與真實供應商的查詢向量不相容；`--live` 只回報基準尚未支援，非零退出，不讀取憑據或呼叫供應商，也不能產生通過收據。
+- **誠實驗證邊界**：本分支僅於本地執行離線合成測試、離線 CLI 模式與既有 `127.0.0.1` loopback SSE 回歸測試；沒有執行真實 Gemini／Vertex、線上或付費測試；正式基準仍須用同模型產生的文件向量及另行核准的實測。[離線驗證 workflow](.github/workflows/req002-live-benchmark-offline.yml) · [驗證腳本](scripts/ci/verify-req002-live-benchmark-offline.sh)
+
+### REQ-008：每輪最小個人背景裝配、對話模式隔離與一般聊天日常需求盲區發現（`codex/req008-context-and-blindspot-discovery`）
+
+- **對應需求**：REQ-008 §1.1（單 Agent 回合最小背景裝配與健康狀態邊界）、§1.2（一般聊天日常需求、缺漏條件與相關盲區主動發現，不以多角色討論為前置）、§9（模式與授權邊界及遙測去敏）。
+- **核心設計與邊界**：
+  - 於 `server/agent-context-assembly.ts` 新增 `assembleTurnBackground`、`formatTurnBackgroundForPrompt`、`revalidateTurnBackground` 與六態分段狀態（`provided`、`not_loaded`、`empty_authorized`、`read_failed`、`invalidated`、`omitted_for_capacity`）：嚴格區分無資料、讀取失敗、容量截斷與授權失效；純寒暄短路徑（`needsPersonalizedTurnBackground`）與低階 `ephemeral` 測試路徑略過個人背景裝配；維持 `allowTaskPreload: false` 延後至按需讀取；所有透過 `onContextAssembly` 輸出的 `assemblyMetadata` 僅保留筆數、游標與版本雜湊指紋，絕不記錄任何原文事實、出生日期或個資。
+  - 於 `server/daily-needs-discovery.ts` 新增 `discoverDailyNeeds`，在一般聊天直接偵測已知過敏／安全限制（`known_constraint_reminder`）、關鍵月齡缺漏（`missing_condition`）及與目前問題重疊的活躍成長關注／進行中關注（`relevant_blindspot`），均附 `knownBasis`、`unknownOrLimits` 與 `skippable: true`；自動排除已停用主題、未到期延後項與已結束關注；命中急症入口（`emergency-hk-v1`）時設定 `suppressedForUrgency: true` 並讓路；僅在涉及取捨比較話題時附帶非強制 `suggestOptionalDiscussion` 提示（`discussionAutoStarted: false`、`canMutateTasksOrMemory: false`）。
+  - 於 `server/product-agent.ts` 擴充 `reply()` 的可選 `replyOptions`（`conversationMode` 與 `onContextAssembly`）：正式 Firestore 入口在讀取歷史前拒絕 `ephemeral`；低階合成用例不能當成正式臨時會話隔離或後續對話的證據。`chat_only` 只容許授權讀取，不消耗確認，不開候選／寫入／聯絡工具；結算及當次回傳回覆時重驗所用的背景範圍和有效期，不宣稱已處理日後重播的自然到期。
+- **離線驗證範圍與限制**：於獨立本地工作樹完成 `tests/req008-context-and-blindspot-discovery.test.ts`（9 項）連同 11 份核心基線測試共 12 份受網絡守衛隔離測試（167 項案例，0 失敗／0 跳過）及三份嚴格 `tsc --noEmit` 型別檢查，並備妥 `.github/workflows/req008-context-and-blindspot-discovery-offline.yml` 與 `scripts/ci/verify-req008-context-and-blindspot-discovery-offline.sh`；未執行真實 Gemini／Vertex 調用、未連接實體資料庫。上列為歷史分支證據；以最新提交的同版離線 CI 及整合結果為準。
+
+### REQ-008：高風險照護審核觸發政策定案與審核分支收斂（`codex/req008-highrisk-policy-and-cleanup`）
+
+- **對應需求**：REQ-008 §3.3（高風險照護內容安全邊界與正式可測審核觸發政策）、§8 階段 4（清理過時／失效審核分支並保留真實短路徑）。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review-policy.ts` 新增並鎖定版本化政策（`HIGH_RISK_CARE_POLICY_VERSION = "req008-highrisk-care-policy/1"`），透過 `detectHighRiskCareClaims` 涵蓋四大高風險兒科類別（用藥及劑量 `medication_dosing`、急症分流及居家急救風險 `emergency_triage_safety`、嬰兒禁忌及飲食安全 `infant_safety_restriction`、免就醫保證／診斷定論／擅停處方或疫苗 `clinical_directive_diagnosis`），並提供 `evaluateHighRiskPolicyMatrix` 對漏判、誤判、類別歸因、官方來源要求及受控短路徑豁免進行量化矩陣校準（28 宗標註情境全過，0 漏判／0 誤判）。
+  - 於 `server/chat-delivery-review.ts` 新增無副作用之權威政策評估入口 `evaluateChatDeliveryReviewPolicy`，統一收斂引用義務、高風險類別、媒介原件、操作收據、單調黏性義務（`obligation.required`）與六類受控短路徑豁免（`server_substituted_source`、`server_substituted_receipt`、`server_allowlisted_emergency_entry`、`pure_greeting`、`pure_clarification`、`ordinary_uncited_non_care`）；並強化多段混合草稿隔離（第 0 段官方引用不得掩護未引用高風險段落）及整理過時草稿註解；同時完整避開並行待機合併之交付與追蹤改動區段。
+- **離線驗證範圍與限制**：於獨立本地工作樹完成 `tests/req008-highrisk-policy-and-cleanup.test.ts`（9 項）連同 12 份關聯回歸測試共 13 份受網絡守衛隔離測試（195 項案例，0 失敗／0 跳過）及三份嚴格 `tsc --noEmit` 型別檢查，並備妥 `.github/workflows/req008-highrisk-policy-and-cleanup-offline.yml` 與 `scripts/ci/verify-req008-highrisk-policy-and-cleanup-offline.sh`；未執行真實 Gemini／Vertex `--live` 調用、未連接實體資料庫，本分支維持僅於本地提交而未推送遠端。
+
+
+### REQ-001 C 類按需即時社群／商品搜索、原文讀取與呈現區分 (`codex/req001-live-community-product-search`)
+
+- **對應需求**：REQ-001 §2.3 (`:82-89`)、§3.3 (`:127-143`)、§3.4 (`:145-150`)、§4.1 (`:163-168`)、§5.1 (`:193-195`)、§6 階段 4 (`:266-272`)、§7 (`:297-298`)；REQ-006 §2.2 (`:1075-1080`)。
+- **核心設計與契約**：
+  - 擴充 [`src/shared/live-source-citation.ts`](src/shared/live-source-citation.ts) 與 [`server/live-source-citation.ts`](server/live-source-citation.ts)：新增向後相容之 `sourceKind`（`official_page`、`community_discussion`、`product_spec`、`service_info`、`public_news`）、`productSpec`（品牌／型號／段數／地區版本／批次／價格）、`cautions`（`self_reported_unverified`、`suspected_promotional`、`stale_source`、`conflicting_claims`、`partial_read`）與 `limitations`（`login_or_access_restricted`、`original_unreadable`、`stale_only`、`no_matching_results`、`suspected_promotional_only`、`unapproved_host`）契約及 `LiveSourceReader.searchDetailed?`。
+  - 新增 [`server/live-community-product-search.ts`](server/live-community-product-search.ts)：實作零長期建庫之 `createLiveCommunityProductSearch`（嚴格執行 `assertPublicKnowledgeQuery` 外送邊界、公開白名單及登入／會員路徑封鎖、抓取實際 HTML 原文並拒絕以搜尋摘要充當證據、擷取結構化商品欄位及矛盾／過舊／疑似宣傳警訊、不杜撰缺失日期）、`composeLiveSourceReaders`（整合 A 類官方即時頁面與 C 類即時搜尋並容忍部分讀取失敗），以及 `validateLiveSourceClaims`（於 `server/product-agent-tools.ts` 拒絕針對社群／商品即時引用的虛構整體統計、商業推薦或已驗證購買／臨床證明宣稱）。
+  - 更新前端 [`frontend/src/chat-view-model.ts`](frontend/src/chat-view-model.ts)、[`frontend/src/production/agent-projection.ts`](frontend/src/production/agent-projection.ts)、[`frontend/src/components/chat/chat-copy.ts`](frontend/src/components/chat/chat-copy.ts)、[`frontend/src/components/chat/CitationMarker.tsx`](frontend/src/components/chat/CitationMarker.tsx)、[`frontend/src/components/chat/CitationMarker.web.tsx`](frontend/src/components/chat/CitationMarker.web.tsx) 與 [`frontend/src/components/chat/AnswerSources.tsx`](frontend/src/components/chat/AnswerSources.tsx)：保留既有兩步展開，於行內引用與來源卡片同時使用適度暖琥珀配色及非色彩標籤（`【n·即時】`、`即時搜尋 · <來源性質>`），展開後顯示商品規格／型號、警訊與可驗證時間欄位，未建庫即時來源不產生假「查看來源庫」連結。
+- **離線驗證範圍與限制**：本分支於本機完成離線合成測試（[`tests/req001-live-community-product-search.test.ts`](tests/req001-live-community-product-search.test.ts) 8/8 通過；離線清單 12 檔／155 案全過）及三組嚴格 `tsc --noEmit`；尚未執行真實外網 discovery API／真實論壇網站抓取、真實 Gemini／Vertex 調用、原站部署或手機實機驗收。[離線驗證 workflow](.github/workflows/req001-live-community-product-search-offline.yml) · [驗證腳本](scripts/ci/verify-req001-live-community-product-search-offline.sh)
+
+- **啟用狀態**：社群／商品搜尋器僅備妥獨立元件及合成驗證。正式服務仍只注入官方讀取器；沒有開啟任何外部社群或商品來源。任何正式連接仍需另行審查來源權利及讀取範圍。
+
 <a id="req002-closeout01"></a>
 ### REQ002-CLOSEOUT01：REQ-002 驗收對照、19 項場景映射與待決收束紀錄
 
 - **歷史基線：**文件起草於 `dc9b23d8bc25f14858a9fd8af1b1a156121c6cf2`；下表為 #678 對齊 `master` 的 `3c02633a4160f097732c4b56812cb882e54de48b` 後所引用的分支快照，不是整合版本。
 - **怎樣讀本表：**24 組需求、19 項場景及 8 項待決事項是索引，不是 24／19／8 次通過。表中的 PR 3、4、5 分別指 #675、#676、#677；同列多個 PR 只表示各有部分證據，測試數不可相加。#678 的結構測試只核對文件，不能驗證產品。
-- **#675–#677 組合驗收：受阻（未執行）。** 要解除此狀態，須記錄採用的三個修正後 head 與同一整合 SHA，解決共用 runtime／審核／文件衝突，在該版本以合成資料執行下列定向檢查，保存命令和逐項結果。單一分支 CI、乾淨合併或本表齊備均不能代替。
-  1. #675：私有引用復用及修正提示都重查當下來源權限；停用或無關的片段不得進模型輸入。批次私人來源讀取要沿原嘗試鍵計量。
-  2. #676 與 #675：每次實際派發及結束對應同一個唯讀工具呼叫；取消的排隊項不可當成已執行。摘要未載入與載入後為空要分清，降級後傳入的提示須仍含所要求的 schema。
-  3. #677：用零付費測試檢查超限參數拒絕、失敗／洩漏收據回傳非零，以及串流逐事件計時。原版的腳本模型與記憶體 `Map` 對照不能證明產品提速或正式快取命中；loopback 斷線測試另計。
+- **#675–#677 組合驗收：同一版本的離線定向檢查已通過。** 三個 PR 已合併至 master；[#677 合併提交 `7bd8cbbfcf24ac577048ea24a8bd221f5beb6055`](https://github.com/2NTTY/child-ai-caregiver/commit/7bd8cbbfcf24ac577048ea24a8bd221f5beb6055) 與受驗提交檔案樹相同。這不是原站部署收據。
+- **整合收據：**採用 [#675](https://github.com/2NTTY/child-ai-caregiver/pull/675) `7bf1652eee6ccd5a97c721a476793f02e84fb309`、[#676](https://github.com/2NTTY/child-ai-caregiver/pull/676) `0b5a4afac7da13a52e7f2b7ffe28ef4c81c33db5`、[#677](https://github.com/2NTTY/child-ai-caregiver/pull/677) `29cee08024a2068192e11c2eee2febb32ecfb5fd`；同一整合 SHA [`29cee08024a2068192e11c2eee2febb32ecfb5fd`](https://github.com/2NTTY/child-ai-caregiver/commit/29cee08024a2068192e11c2eee2febb32ecfb5fd)；[GitHub Actions 44566154835（job 135708316545）](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)。
+- **執行及逐項結果：**受保護的離線步驟執行 `bash scripts/ci/verify-req002-live-benchmark-offline.sh`（[verify-req002-live-benchmark-offline.sh](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/scripts/ci/verify-req002-live-benchmark-offline.sh)）。同一工作去重計 41 檔 337/337；CLI 無旗標拒絕、未支援的 live 設定零呼叫、離線成功及預算不足非零退出均通過；`tsc --noEmit` 的 Server／root／frontend 三份設定通過。下列為同次作業的子集，不另加總：
+  - #675 引用復用、修正與批次讀取：[req002-batch-reuse-and-repair](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-batch-reuse-and-repair.test.ts) 10/10；[req002-reuse-policy](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-reuse-policy.test.ts) 9/9；[req002-mixed-repair](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-mixed-repair.test.ts) 3/3。
+  - #676 schema 降級、摘要裝配與逐工具追蹤：[req002-schema-and-trace](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-schema-and-trace.test.ts) 13/13；[req002-trace-settlement](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-trace-settlement.test.ts) 4/4；[initial-conversation-summary](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/initial-conversation-summary.test.ts) 6/6。
+  - #677 腳本基準、斷線契約與收據判定：[req002-live-benchmark-and-disconnect](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-live-benchmark-and-disconnect.test.ts) 6/6；[req002-harness-boundaries](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-harness-boundaries.test.ts) 9/9。
 - **獨立門檻：**真模型 `--live` 付費比較待批准；原站部署與線上 OTel exporter 待核；Android／iOS 實機鍵盤、`fontScale`、TalkBack／VoiceOver 待驗。即使組合離線測試通過，也不會解除這些門檻。
+
+> **歷史對照的範圍：**下列第 1–5 節完整保留起草時的分支收據、矩陣及待驗判斷。其「組合待驗」是當時狀態；本次定向離線結果以上方整合收據為準。舊的腳本計數、loopback 及 DOM 證據不能升格為真模型速度、線上 OTel 或手機實機收據。
 
 #### 1. 已合併主線與候選分支的歷史收據
 

@@ -5,23 +5,23 @@ import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import {
   AGENT_PROGRESS_LABELS,
-  ALL_OFFICIAL_HELP_IDS,
   isIncompleteModelReplyText,
   matchOfficialHelpForText,
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { failedChatReply } from '../components/chat/failed-reply';
-import { CHILD_PROFILES_CHAT_TEXT } from '../../../src/shared/chat-workspace-view';
+import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import { Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
+import { Platform, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AppDialog } from "../components/AppDialog";
 import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
+import { ChatAction } from "../components/chat/ChatAction";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
@@ -31,31 +31,28 @@ import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { NotificationChatTarget } from "../production/NotificationChatTarget";
 import { useChatExposure, useChatForeground } from "../production/useChatExposure";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { proposalExpired, publicAnswerSources } from "../agent-view-model";
+import { proposalNeedsConfirmation, publicAnswerSources } from "../agent-view-model";
 import { colors, mobileLayout } from "../theme";
 import type { ChatReplyPhase } from "../chat-view-model";
 
 const attachmentLeaveCopy = { message: "離開將移除未送出的附件；文字仍在本次暫存保留。", actionLabel: "移除附件並離開" };
-// All widths use layout units (Web onLayout uses offsetWidth), never zoomed DOM rectangles.
-const activityRail = { width: 152, inset: 8, gap: 16 };
-const activityRailMinimum = chatLayout.maxWidth + 2 * (activityRail.width + activityRail.inset + activityRail.gap);
 const runPhases = { running: "thinking", completed: "complete", stopped: "stopped", unknown: "unknown" } satisfies Record<string, ChatReplyPhase>;
 export default function ChatPage() {
   const { scopeKey } = useProduction();
   const { messageId } = useLocalSearchParams<{ messageId?: string }>();
   const customBackground = useCustomBackground();
   const viewportWidth = useWindowDimensions().width;
-  const [paneWidth, setPaneWidth] = useState(0), [pageWidth, setPageWidth] = useState(0);
+  const [paneWidth, setPaneWidth] = useState(0);
   return <View style={[styles.root, customBackground && styles.customRoot]} role="region" accessibilityLabel="助手" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <View testID="chat-page-layout" style={styles.pageLayout} onLayout={event => setPageWidth(event.nativeEvent.layout.width)}>
+    <View testID="chat-page-layout" style={styles.pageLayout}>
       <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
-        externalActivity={pageWidth >= activityRailMinimum} onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
+        onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
     </View>
     <NotificationChatTarget key={`${scopeKey}:${messageId}`} />
   </View>;
 }
-function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
-  compact: boolean; externalActivity?: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
+function ChatContents({ compact, onPaneLayout }: {
+  compact: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
@@ -69,14 +66,13 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
   const [followRequest, setFollowRequest] = useState<string>();
   const detailsTrigger = useRef<View | null>(null);
-  const currentHelpScope = `${scopeKey ?? ""}:${child?.id ?? ""}`;
+  const [activityEntry, setActivityEntry] = useState<"list" | "detail">("list");
   const [paneHeight, setPaneHeight] = useState(0);
-  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false), [helpState, setHelpState] = useState<{ open: boolean; scope: string }>({ open: false, scope: currentHelpScope });
+  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const handlePaneLayout = (event: LayoutChangeEvent) => {
     setPaneHeight(event.nativeEvent.layout.height);
     onPaneLayout?.(event);
   };
-  const helpOpen = helpState.scope === currentHelpScope && helpState.open;
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
   const displayedMessages = visibleIds.length ? chat.messages.filter(message => visibleIds.includes(message.id)) : chat.messages.slice(-6);
@@ -93,15 +89,22 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   useLayoutEffect(() => { previous.current = { ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy }; }, [chat.messages, chat.busy]);
   useEffect(() => { if (agentModel.pendingDecision) setDetailsOpen(true); }, [agentModel.pendingDecision?.runId, agentModel.pendingDecision?.proposalId]);
   useEffect(() => { if (scopeKey && chat.online) readAgentPending(); }, [scopeKey, chat.online]);
-  const needsDecision = agentModel.readState === "ready" && agentModel.run?.proposals.some(item => item.status === "pending" && !proposalExpired(item))
-    || agentPending.state === "ready" && agentPending.entries.some(item => item.proposal.status === "pending" && !proposalExpired(item.proposal));
+  const needsDecision = agentModel.readState === "ready" && agentModel.run?.proposals.some(proposalNeedsConfirmation)
+    || agentPending.state === "ready" && agentPending.entries.some(item => proposalNeedsConfirmation(item.proposal));
   const pendingReadLabel = agentPending.state === "idle" ? "尚未讀取" : agentPending.state === "loading" ? "讀取中"
     : agentPending.state === "failed" ? "讀取失敗" : agentPending.state === "denied" ? "無法讀取" : null;
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
   usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", voiceUpload.busy || voiceUpload.unknown || fileUpload.busy || fileUpload.unknown || photoUpload.busy || photoUpload.unknown, "child", attachmentLeaveCopy);
-  const canSend = !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
+  const remoteReplyStillRunning = chat.remoteReply?.status === "running"
+    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === chat.remoteReply?.messageId);
+  const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
+  const activeReplyId = chat.replyingMessageId ?? (remoteReplyStillRunning ? chat.remoteReply?.messageId : null);
+  const stopPending = chat.cancelling || !!activeReplyId && chat.cancelAcceptedFor === activeReplyId;
+  const submittedDraft = !!draft?.savedUserMessageId && (phase === "replying" || phase === "reply_failed");
+  const composerText = submittedDraft ? draft.nextText ?? "" : chatDraft;
+  const canSend = !replyRunning && !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
     && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file", "photo"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file"||v.kind==="photo")) && chatDraft.length <= 10_000;
   function send() {
     if (!canSend) return;
@@ -119,9 +122,6 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     setDetailsOpen(false);
     navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
-  const remoteReplyStillRunning = chat.remoteReply?.status === "running"
-    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === chat.remoteReply?.messageId);
-  const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
   const childScopedChat = !!child && chat.selectedChildId === child.id;
   const scopedMessages = childScopedChat ? chat.messages : [];
   const scopedFeedback = childScopedChat && chatWritesAllowed ? chat.feedback : null;
@@ -155,7 +155,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const savedHelp = !turnFeedback?.cards?.length && unfinishedReply && (!turnFeedback || !currentReply.agentRunId || turnFeedback.runId === currentReply.agentRunId)
     ? currentReply.officialHelp ?? [] : [];
   const currentDraftHelp = (childScopedChat && (chatWritesAllowed || phase === "draft") || !child && !chat.selectedChildId)
-    ? matchOfficialHelpForText(chatDraft) : [];
+    ? matchOfficialHelpForText(composerText) : [];
   const autoHelpIds = [
     ...new Set([
       ...currentDraftHelp,
@@ -166,25 +166,19 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   ];
   const hasEmergencyHelp = autoHelpIds.includes("emergency-hk-v1");
   const hasMedicalConsultHelp = !hasEmergencyHelp && autoHelpIds.includes("medical-consult-hk-v1");
-  const activeHelpIds = [
-    ...new Set([
-      ...(helpOpen ? ALL_OFFICIAL_HELP_IDS : []),
-      ...autoHelpIds,
-    ]),
-  ];
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : replying ? (turnFeedback ? AGENT_PROGRESS_LABELS[turnFeedback.phase] : "已保存，正在等候回覆…")
       : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
-  // Fixed official help dock: permanent toolbar entry + bounded dock directly above AgentComposer (outside ChatTimeline), compensating for composerOverlap and measured paneHeight so the composer stays visible on short viewports.
+  // Leave room for the composer when a contextual card opens on a short screen.
   const measuredPaneHeight = paneHeight > 0 ? paneHeight : Math.max(0, (viewportHeight || 640) - 180);
   const preferredDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
   const maxHelpDockHeight = Math.min(preferredDockHeight, Math.max(56, measuredPaneHeight - 168));
-  const officialHelpPanel = (autoHelpIds.length || activeHelpIds.length) ? <View testID="chat-official-help-dock" style={[styles.helpDock, { maxHeight: maxHelpDockHeight }]}>
+  const officialHelpPanel = autoHelpIds.length > 0 ? <View testID="chat-official-help-dock" style={[styles.helpDock, compact && styles.compactColumn, { maxHeight: maxHelpDockHeight }]}>
     <ScrollView nestedScrollEnabled style={styles.helpDockScroll} contentContainerStyle={styles.helpDockContent}>
       <BackgroundSurface testID="chat-official-help-panel" style={styles.feedback}>
         {hasEmergencyHelp ? <Text testID="chat-official-help-urgent-notice" accessibilityRole="alert" style={styles.warning}>{OFFICIAL_HELP_ENTRY_COPY.urgentNotice}</Text> : null}
         {hasMedicalConsultHelp ? <Text testID="chat-official-help-consult-notice" accessibilityLiveRegion="polite" style={styles.meta}>{OFFICIAL_HELP_ENTRY_COPY.medicalConsultNotice}</Text> : null}
-        {activeHelpIds.length ? <OfficialHelpCards ids={activeHelpIds} /> : null}
+        <OfficialHelpCards ids={autoHelpIds} />
       </BackgroundSurface>
     </ScrollView>
   </View> : null;
@@ -201,9 +195,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
     {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
-      <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
-      {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
-        disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
+      <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{stopPending && replyRunning ? "正在停止…" : progressLabel}</Text></View>
     </View> : null}
     {turnFeedback?.sources?.length
       ? <ProgressSourceCards sources={turnFeedback.sources} reviewing={replying && turnFeedback.phase === "reviewing"} retainedAfterFailure={!replying} />
@@ -238,13 +230,12 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊什麼？</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
-    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, externalActivity && styles.externalToolbar]}>
+    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
       <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
       <View style={styles.toolbarActions}>
-        <ChatAction label={hasEmergencyHelp ? OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel : OFFICIAL_HELP_ENTRY_COPY.buttonLabel}
-          accessibilityHint={OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel} expanded={helpOpen} onPress={() => setHelpState(prev => ({ open: !(prev.scope === currentHelpScope && prev.open), scope: currentHelpScope }))} compact={compact} />
-        <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
-          accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
+        <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? "對話活動 · 待查核" : needsDecision ? "對話活動 · 待確認" : "對話活動"}
+          accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"}
+          onPress={target => { detailsTrigger.current = target; setActivityEntry("list"); setDetailsOpen(true); }} compact={compact} disabled={!child} />
       </View>
     </BackgroundSurface>
     <BackgroundSurface frosted testID="chat-reading-panel" onLayout={handlePaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
@@ -259,20 +250,25 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
           && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
         const stoppedWithoutQueue = run?.status === "stopped" && run.stopReasonLabel === agentStopMessage("busy")
           || chat.remoteReply?.messageId === message.id && chat.remoteReply.status === "stopped" && chat.remoteReply.stopReason === "busy";
-        const hasModelReply = chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const repliesToMessage = message.role === "user" ? scopedMessages.filter(item => item.role === "model" && item.inReplyTo === message.id) : [];
+        const hasModelReply = repliesToMessage.length > 0;
+        const detailsOnReply = !!message.agentRunId && repliesToMessage.some(item => item.agentRunId === message.agentRunId);
         const effectiveRunStatus = run?.status === "running" && (message.role === "model" || hasModelReply) ? "completed" : run?.status;
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
           && !hasModelReply
           && !stoppedWithoutQueue;
         const failure = message.role === "model" && (effectiveRunStatus === "stopped" || effectiveRunStatus === "unknown" || !effectiveRunStatus)
           ? failedChatReply(message.text, run?.stopReasonLabel) : null;
+        const original = message.inReplyTo ? scopedMessages.find(row => row.id === message.inReplyTo && row.role === "user") : undefined;
+        const directoryMarker = message.role === "model" && message.text === CHILD_PROFILES_CHAT_TEXT;
+        const mismatchedDirectory = directoryMarker && !!original && requestedWorkspaceView(original.text) !== "child_profiles";
         const childProfiles = message.role === "model" && !!message.agentRunId && !!child && child.id === chat.selectedChildId
-          && message.text === CHILD_PROFILES_CHAT_TEXT && (!run || run.showChildProfiles && sourcesMatch);
+          && directoryMarker && !!original && !mismatchedDirectory && !!run?.showChildProfiles && sourcesMatch;
         const inlineSteps = failure && run?.readOnlyStop ? run.tools.map(tool => ({
           id: tool.id, label: tool.nameLabel, state: tool.status === "succeeded" ? "succeeded" as const : "failed" as const,
         })) : undefined;
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: childProfiles && model.children.length
-          ? model.children.map(item => item.displayName).join("、") : failure?.body ?? message.text,
+          ? model.children.map(item => item.displayName).join("、") : mismatchedDirectory ? "這則舊回覆未能回答你的問題。" : failure?.body ?? message.text,
           phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : failure ? "stopped" : undefined, activities: inlineSteps,
           sources: sourcesMatch && !failure ? publicAnswerSources(run) : undefined }}
           phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
@@ -296,25 +292,30 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
             {message.role === 'model' && sourcesMatch && run?.platformSeriesIds?.map(series =>
               <ChatAction key={series} label="查看已加入的平台卡" compact={compact}
                 onPress={() => navigate(() => router.push({ pathname: '/memory', params: { series } }), 'workspace')} />)}
-            {message.agentRunId && !inlineSteps ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
+            {message.agentRunId && !inlineSteps && !detailsOnReply ? <ChatAction label="回覆詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
-              onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
-            {pendingReply ? <ChatAction label={chat.replyingMessageId === message.id ? "正在等候回覆" : message.agentRunId ? "查核原回覆" : "取得回覆"}
+              onPress={target => { detailsTrigger.current = target; setActivityEntry("detail"); selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
+            {pendingReply && !(replyRunning && activeReplyId === message.id) ? <ChatAction label={message.agentRunId ? "查核原回覆" : "取得回覆"}
               accessibilityLabel="要求這則已保存訊息的回覆" compact={compact} disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
               onPress={() => { void requestChatReply(message.id); }} /> : null}
           </> : undefined} />;
       }} />
     {officialHelpPanel}
-    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
-      attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
-      suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat} inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "按送出會保存照片，並交給目前選用的模型按你的要求處理。" : undefined}
-      onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
+    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
+      allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
+      onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
+      queueAction={childScopedChat && chatWritesAllowed && chat.online && !stopPending && phase === "replying" && activeReplyId && draft?.savedUserMessageId === activeReplyId && !!composerText.trim() && composerText.length <= 10_000
+        ? { queued: chat.queuedTextAfter === activeReplyId, press: () => chat.queuedTextAfter === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}
+      stopDisabled={stopPending || !chat.online} stopTarget={activeReplyId ?? undefined}
+      attachments={submittedDraft ? [] : agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
+      suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat}
+      onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle />
       {child ? <ChatAction label="平台來源卡" accessibilityLabel="查看可免費加入的平台來源卡"
         onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
-    <AgentConversation visible={detailsOpen} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
+    <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
     <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
       <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。獲授權的文字或照片會交由 Google 或你選用的模型供應商處理；私人來源不加入公共知識庫，通知及分享仍需另外授權。</Text></AppDialog.Content>
@@ -322,32 +323,22 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     </AppDialog>
   </>;
 }
-function ChatAction({ label, accessibilityLabel = label, accessibilityHint, expanded, onPress, disabled = false, compact = false, subtle = false }: {
-  label: string; accessibilityLabel?: string; accessibilityHint?: string; expanded?: boolean; onPress(target: View | null): void; disabled?: boolean; compact?: boolean; subtle?: boolean;
-}) {
-  const actionRef = useRef<View | null>(null);
-  return <Pressable ref={actionRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint} accessibilityState={{ disabled, expanded }} aria-disabled={disabled} aria-expanded={expanded}
-    disabled={disabled} onPress={() => onPress(actionRef.current)} style={({ pressed, hovered, focused }: PressableStateCallbackType & { hovered?: boolean; focused?: boolean }) => [
-      styles.action, compact && styles.compactAction, subtle && styles.subtleAction, disabled && styles.disabled,
-      !disabled && (pressed || hovered) && styles.actionActive, focused && styles.actionFocused,
-    ]}><Text style={subtle ? styles.meta : styles.actionLabel}>{label}</Text></Pressable>;
-}
 const styles = StyleSheet.create({
   customRoot: { backgroundColor: "transparent", padding: 12 },
   pageLayout: { flex: 1, minHeight: 0, minWidth: 0, position: "relative" },
   readingPanel: { flex: 1, minHeight: 0, minWidth: 0, width: "100%" },
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
-  toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,
-    minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8 },
-  externalToolbar: { position: "absolute", top: 0, right: activityRail.inset, width: activityRail.width, paddingHorizontal: 8, zIndex: 1 },
-  compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
+  toolbar: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexShrink: 0,
+    paddingHorizontal: chatLayout.wideInset },
+  compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
-  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", overflow: "hidden", marginBottom: chatLayout.composerOverlap },
+  feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center",
+    paddingHorizontal: chatLayout.wideInset, overflow: "hidden", marginBottom: chatLayout.composerOverlap },
   helpDockScroll: { flexGrow: 0 }, helpDockContent: { paddingVertical: 4 },
   statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
@@ -356,10 +347,6 @@ const styles = StyleSheet.create({
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
-  action: { alignSelf: "flex-start", minHeight: 40, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10 },
-  compactAction: { minHeight: 48 }, subtleAction: { minHeight: 32, alignSelf: "center" },
-  actionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
-  actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
-  disabled: { opacity: .45 }, privacyFooter: { flexDirection: 'row', flexWrap: 'wrap', flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
+  privacyFooter: { flexDirection: 'row', flexWrap: 'wrap', flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
 

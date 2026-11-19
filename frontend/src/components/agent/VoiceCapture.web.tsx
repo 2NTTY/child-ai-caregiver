@@ -49,17 +49,16 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
   }
   if (!visible) return null;
   return <View testID="voice-capture" style={styles.stack}>
-    <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等待你允許咪高峰…可隨時取消" : state === "recording" ? "正在本機錄音，尚未送出" : state === "stopping" ? "正在完成本地錄音…" : recording ? "先試聽，再決定是否加入草稿" : "按「開始錄音」才會要求咪高峰權限"}</Text>
+    {state === "permission" || state === "stopping" ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等候咪高峰權限…" : "正在準備錄音…"}</Text> : null}
     {state === "recording" ? <VoiceRecordingTimer /> : null}
     {!available ? <Text style={styles.note}>這個瀏覽器不支援本地錄音或缺少安全連線，可改選已錄音訊。</Text> : null}
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => controller.stop()} /> :
       !recording ? <AppButton label="開始錄音" disabled={!available || busy} onPress={start} /> :
-      <AppButton label="加入未送出草稿" onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
+      <AppButton label="使用錄音" onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
       <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
-    </View><AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} />
-    <Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。</Text>
+    </View>{!recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} /> : null}
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

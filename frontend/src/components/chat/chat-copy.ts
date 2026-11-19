@@ -38,6 +38,41 @@ export const CHAT_CLASSIFICATION_LABELS = {
   synthetic: "合成來源示例",
 } as const;
 
+export const CHAT_TIMELY_EVENT_KIND_LABELS = {
+  news: "近期新聞",
+  announcement: "官方公告",
+  safety_alert: "安全警報",
+  recall: "產品召回",
+  policy_change: "政策變動",
+  deadline: "限期事項",
+} as const;
+
+export const CHAT_TIMELY_EVENT_STATUS_LABELS = {
+  active: "生效中",
+  corrected: "已更正",
+  lifted: "已解除",
+  superseded: "已被新版取代",
+  expired: "已過期",
+} as const;
+
+export const CHAT_LIVE_ACQUISITION_BADGE = "即時搜尋";
+
+export const CHAT_LIVE_SOURCE_KIND_LABELS = {
+  official_page: "官方頁面",
+  community_discussion: "社群經驗",
+  product_spec: "商品資料",
+  service_info: "服務資訊",
+  public_news: "近期事件",
+} as const;
+
+export const CHAT_LIVE_CAUTION_LABELS = {
+  self_reported_unverified: "論壇／社群發言屬使用者自述，未經獨立核實，不代表整體意見或已驗證購買經驗。",
+  suspected_promotional: "原文含疑似廣告、贊助或推廣線索，請審慎評估。",
+  stale_source: "來源日期較舊，請配合近期官方及商品資訊核對。",
+  conflicting_claims: "本次檢索到的不同來源在經驗、型號版本或價格上存在差異或矛盾。",
+  partial_read: "僅讀取到頁面部分相關段落；如需完整條件或最新資訊，請點擊開啟原網站核對。",
+} as const;
+
 export const CHAT_PHASE_LABELS = {
   thinking: "思考中",
   streaming: "正在回覆",

@@ -246,8 +246,17 @@ test("a reviewed daily repair withdraws the original observation and replays onl
     return calls === 1 ? call('search_knowledge', { query: '合成餵食主題', classification: 'official_guidance' }, 'source')
       : call('present_answer', { kind: 'caregiving', paragraphs: [{ text: originalText, citationIds: [chunk.chunkId] }], nextCheck }, 'observation-draft');
   }, 6);
-  f.options.knowledge = { createRun: () => ({ search: async () => ({ mode: 'vector_keyword', chunks: [chunk] }),
-    revalidateCitations: async () => true }) } as unknown as typeof f.options.knowledge;
+  // Fixture lookup keeps the daily worker's original zero-embedding search. Repair still needs a live, exact grant.
+  let granted: KnowledgeEvidence | null = structuredClone(chunk), exactChecks = 0;
+  const canUse = (owner: string, citation: KnowledgeEvidence) => owner === scope.userId && granted !== null
+    && citation.chunkId === granted.chunkId && citation.sourceId === granted.sourceId && citation.versionId === granted.versionId
+    && citation.versionHash === granted.versionHash && citation.contentHash === granted.contentHash && citation.classification === granted.classification;
+  f.options.knowledge = { createRun: ({ actor }: Parameters<typeof f.options.knowledge.createRun>[0]) => ({
+    supportsScopedEvidenceReuse: true,
+    search: async () => ({ mode: 'vector_keyword', chunks: canUse(actor.actorId, chunk) ? [chunk] : [] }),
+    revalidateCitations: async (citations: KnowledgeEvidence[]) => { exactChecks++;
+      return citations.length > 0 && citations.every(citation => canUse(actor.actorId, citation)); },
+  }) } as unknown as typeof f.options.knowledge;
   const input = { userId, childId, reference, context: { eventType: 'proactive_daily' }, authorize: async () => true };
   const result = await f.service().background(input);
   assert.equal(result?.status, 'completed', JSON.stringify(result));
@@ -257,6 +266,11 @@ test("a reviewed daily repair withdraws the original observation and replays onl
   assert.equal(reviews, 2); assert.equal(repairs, 1); assert.equal(calls, 5);
   assert.deepEqual(await f.service().background(input), result);
   assert.equal(calls, 5, 'Replaying the original worker run neither regenerates nor restores the withdrawn observation');
+  assert.ok(exactChecks > 0);
+  assert.equal(canUse("other-synthetic-user", chunk), false);
+  assert.equal(canUse(userId, { ...chunk, versionHash: "c".repeat(64) }), false);
+  granted = null;
+  assert.equal(canUse(userId, chunk), false);
 });
 
 test("read-only failure permits bounded recovery; each step uses a fresh non-cumulative summary", async () => {

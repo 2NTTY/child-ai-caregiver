@@ -139,7 +139,7 @@ export function createCompatibleProviders(config: AiConfig, apiKey: string, base
       throw error;
     }
   };
-  return { agent: { generate, preflight: request => compatibleContextPreflight(build(request)) }, model: {
+  return { agent: { structuredOutput: 'prompt_strict_json', generate, preflight: request => compatibleContextPreflight(build(request)) }, model: {
     preflight: (input, max) => compatibleContextPreflight(build(plain(input), max)),
     async generate(input, options) {
       const response = await generate(plain(input), options.signal, options.maxOutputTokens);

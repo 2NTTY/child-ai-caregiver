@@ -4,7 +4,7 @@ import test from "node:test";
 
 const PLAN = readFileSync(new URL("../PLAN.md", import.meta.url), "utf8");
 const BACKLOG = readFileSync(new URL("../docs/REQUIREMENTS_BACKLOG.md", import.meta.url), "utf8");
-const BLOCKED = "#675–#677 組合驗收：受阻（未執行）";
+const COMBINED = "#675–#677 組合驗收：同一版本的離線定向檢查已通過";
 
 function sectionAt(markdown: string, anchor: string): string {
   const marker = `<a id="${anchor}"></a>`;
@@ -21,11 +21,11 @@ function uniqueLine(section: string, prefix: string): string {
 
 const closeout = sectionAt(PLAN, "req002-closeout01");
 
-test("the active search entry links to the closeout and reports the blocked combined gate", () => {
+test("the active search entry links to the closeout and reports the verified offline gate", () => {
   const entry = sectionAt(PLAN, "agent-search-first").split("\n\n")[0];
   const line = uniqueLine(entry, "**主動通知交付後");
   assert.ok(line.includes("(#req002-closeout01)"));
-  assert.ok(line.includes(BLOCKED));
+  assert.ok(line.includes(COMBINED));
 });
 
 test("the matrix retains merged references, separate pinned branch receipts, 24 groups, 19 scenarios and 8 decisions", () => {
@@ -58,8 +58,13 @@ test("the matrix retains merged references, separate pinned branch receipts, 24 
 
 test("product acceptance requires combined execution and independent live, deployed and physical-device evidence", () => {
   const combined = uniqueLine(closeout, "- **#675–#677 組合驗收");
-  assert.ok(combined.includes(BLOCKED));
-  for (const token of ["修正後 head", "同一整合 SHA", "執行", "逐項結果"]) assert.ok(combined.includes(token));
+  assert.ok(combined.includes(COMBINED));
+  const receipt = uniqueLine(closeout, "- **整合收據：**");
+  for (const token of ["/pull/675) `7bf1652eee6ccd5a97c721a476793f02e84fb309`", "/pull/676) `0b5a4afac7da13a52e7f2b7ffe28ef4c81c33db5`", "/pull/677) `29cee08024a2068192e11c2eee2febb32ecfb5fd`", "/commit/29cee08024a2068192e11c2eee2febb32ecfb5fd)", "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545"]) assert.ok(receipt.includes(token));
+  const steps = uniqueLine(closeout, "- **執行及逐項結果：**");
+  for (const token of ["41 檔 337/337", "verify-req002-live-benchmark-offline.sh", "Server／root／frontend"]) assert.ok(steps.includes(token));
+  assert.ok(combined.includes("這不是原站部署收據"));
+  assert.match(uniqueLine(closeout, "> **歷史對照的範圍：**"), /組合待驗.*當時狀態/u);
   const external = uniqueLine(closeout, "- **獨立門檻：**");
   assert.match(external, /真模型 `--live` 付費比較待批准/u);
   assert.match(external, /原站部署與線上 OTel exporter 待核/u);
@@ -71,14 +76,14 @@ test("product acceptance requires combined execution and independent live, deplo
   assert.match(uniqueLine(closeout, "7. **"), /不構成付費授權/u);
 });
 
-test("both backlog entry points refer to branch-only evidence and the blocked combined gate", () => {
+test("both backlog entry points distinguish the verified offline gate from historical branch evidence", () => {
   const index = uniqueLine(BACKLOG, "| REQ-002 |");
   const [, body] = BACKLOG.split("\n# REQ-002｜Agent 提速、可見進度與分階段交付");
   assert.ok(body);
   const intro = uniqueLine(body.split("\n# REQ-", 1)[0], "**目前狀態：");
   for (const line of [index, intro]) {
     assert.ok(line.includes("../PLAN.md#req002-closeout01"));
-    assert.ok(line.includes(BLOCKED));
+    assert.ok(line.includes(COMBINED));
     assert.match(line, /分支.*收據/u);
     assert.doesNotMatch(line, /尚未實作/u);
   }

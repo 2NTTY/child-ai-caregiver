@@ -6653,9 +6653,74 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
 
+## 2026-11-19 REQ-008 複雜成品專家與隔離核對
+
+- 新增 `src/shared/specialist-artifact.ts`、`server/specialist-artifact-pdf-worker.ts`、`server/specialist-artifact-renderer.ts` 及 `server/specialist-artifact-agent.ts`，並將 `prepare_family_artifact` 掛載到 `server/product-agent-capabilities.ts` 的 `document_compose` 群組與 `server/product-agent-tools.ts`。
+- 專家工具只產生草稿與核對報告（`formalSave: false`、`published: false`、`requiresFormalConfirmation: true`），須檢驗 `sourceQuote`、文件版本、`authorityVersion` 及 `readState === "ready"`，並受同家庭單一併發鎖（`specialist_task_in_progress`）與同一個呼叫方 `AgentBudget` 限制。
+- PDF 建構採零網絡 A4 Type0 Unicode（分塊 `beginbfchar` `/ToUnicode` 與 `/W` 字寬）並於 `node:worker_threads`（128MB 上限、15s 逾時、`pdfjs-dist` 離線檢查）檢出邊界溢位、裁切、重疊、頁尾侵入、空白頁、缺字、不安全連結及缺少標題／章節；HTML 採 `default-src 'none'` CSP 與 `cheerio` 檢驗；自動修復最多兩輪並綁定新版本與雜湊；未接入截圖渲染器時誠實標示 `unverifiedChecks: ["pixel_screenshot_render"]`。
+- 離線驗證腳本 `scripts/ci/verify-req008-specialist-artifact-renderer-offline.sh` 與 workflow `.github/workflows/req008-specialist-artifact-renderer-offline.yml` 涵蓋 `tests/req008-specialist-artifact-renderer.test.ts`（10 項）等共 `12` 個檔案 `145` 項測試及三個嚴格 TypeScript 檢查，全數通過。
+
+### 2026-11-19　REQ-001 B 類時效資訊生命週期、召回保留與過期退場規則（`codex/req001-timely-news-and-expiry`）
+
+1）**集中式時效保留與退場契約（`src/shared/knowledge-timely.ts`、`server/knowledge-timely-policy.ts`）**：補齊 `timelyEvent`（`news`／`announcement`／`safety_alert`／`recall`／`policy_change`／`deadline` 與 `active`／`corrected`／`lifted`／`superseded`／`expired`），並於 `evaluateTimelyEligibility` 與 `sqlTimelyEligibilityClause` 對齊 Firestore／Postgres 檢索過濾：進行中召回與安全警報跨過 7 天後仍可查回、一般新聞與無標註項目沿用 7 天窗口、`lifted`／`superseded`／`expired` 立即退出日常搜索同時保留版本溯源，缺失或未來 `sourcePublishedAt` 維持排除；同步接通 `server/firestore-knowledge-refresh.ts`（`recentSourceIds` 保留既有複合索引並設 180 天回溯窗）、`server/proactive-event-sources.ts` 與展開後引用對話框 `frontend/src/components/chat/AnswerSources.tsx`（不改動摺疊卡版面）。
+2）**離線測試與型別核對**：新增 `tests/req001-timely-news-and-expiry.test.ts`（7/7 通過，涵蓋 schema、hash 相容、政策邊界、Firestore 14 日召回保留／無變更零更新／解除退場／取代更正、Postgres SQL 對齊、主聊天 `public_information` 問答與失效重驗、主動通知 `recall`／撤回、及前端展開卡呈現）；離線守衛清單 14 整檔共 103 案通過 `summary-progress-contract.mjs`，`tests/firestore-knowledge.test.ts` 無守衛 22/22 通過（第 9–10 案因 `yoga-layout` WASM 讀取被守衛攔截），三份嚴格 `tsc --noEmit` 皆 exit 0；基線 `3c02633a` 既有的 `tests/firestore-knowledge-scheduler.test.ts` 第 158 行日期夾具失敗不納入清單。
+3）**限制邊界**：本分支僅限離線合成測試與靜態型別檢查，未執行真實外部 RSS／網站抓取、真實 Gemini／Vertex 調用、原站部署或實體手機測試。
+### 2026-11-19　REQ-002 唯讀並行批次檢索、證據重用失效與針對性局部修復（本地分支驗證）
+
+- Branch / Commit Context：於本地分支 `codex/req002-batch-reuse-and-repair`（基線 `origin/master` `3b51b971`，依指示僅於本機完成提交與驗證，不執行 `git push` 或於 GitHub 開啟 PR）實作 REQ-002 §§3.1、3.4、3.5、3.6、5.2 及 AC 507–513、515–516、520、522。
+- Actual Work：
+  1. **有界唯讀並行與屏障排程（`server/agent-tool-batch.ts`、`server/agent-runtime.ts` 及唯讀工具模組）**：實作 `runReadToolBatch`、`collectContiguousReadSlice`、`isBatchableReadTool`（`maxConcurrent: 3`、`maxBatchSize: 6`、`itemTimeoutMs: 8000`），保留 ADK 生命週期與寫入／終端／`show_official_help` 順序屏障，對超出上限項回傳 `batch_limit_exceeded`、對逾時／讀錯／`embedding_limit` 作單項失敗隔離，並在 `AbortSignal` 或授權撤銷時中止排隊項且不洩漏部份資料；全數純讀工具皆補齊 `effect: "read"`。
+  2. **證據重用與即時失效（`server/knowledge-retriever.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts`）**：新增 `isKnowledgeEvidenceFresh`（檢查 `reviewState === "reviewed"` 及 `validUntil`）、同次 run `readContext` 快取與變更失敗關閉（`409 knowledge_context_source_changed`），並接通 `revalidateAndSeedEvidence` 讓同 `(userId, childId)` 後續提問重驗既有官方引用；過期、撤回、版本更新、年齡／地區切換及跨帳號／跨子女情況一律失效重建。
+  3. **針對性局部修復與近限預算收斂（`server/product-agent-tools.ts`、`server/chat-delivery-review.ts`）**：修正同段重複 `citationIds` 自動去重、引用錯誤回傳 `availableOfficialCitationIds`、為 `delivery_repair` 注入 `retrievedEvidence`、阻斷與原草稿同 hash 的空轉修復（`delivery_review_rejected`），並於 `acceptLivePass` 阻止修復階段擅自抽走應附官方引用（`delivery_review_no_sources`）。
+  4. **測試與離線 CI 檢查補完**：新增 [tests/req002-batch-reuse-and-repair.test.ts](tests/req002-batch-reuse-and-repair.test.ts)（10 cases）、[scripts/ci/verify-req002-batch-reuse-repair-offline.sh](scripts/ci/verify-req002-batch-reuse-repair-offline.sh) 與 [.github/workflows/req002-batch-reuse-repair-offline.yml](.github/workflows/req002-batch-reuse-repair-offline.yml)。
+- Verification：本機離線驗證（Node `v24.16.0` on Windows + `family-cleanup-network-guard.mjs` 阻斷真實網路）完整通過 offline manifest 全部 31 個測試檔 / 276 個案例、loopback `tests/agent-feedback.test.ts`（4/4），以及 `tsconfig.server.json`、`tsconfig.json`、`frontend/tsconfig.json` 三組 `tsc --noEmit`。
+- Limitations / Blockers：僅完成本機離線測試與靜態型別驗證，未執行真實 Gemini/Vertex API、真實 PostgreSQL／Firestore、GitHub Actions Hosted CI 或 Android/Web 實機 E2E；依用戶要求嚴格保留於本地提交，未 `git push` 或建立 GitHub PR。
+### 2026-11-19　無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`）
+
+- Recorded At：2026-11-19（Asia/Hong_Kong）
+- Work Date：2026-11-19
+- Step / Package：REQ-002 §§3.8、4.4、7.1（AC 514、524；基線 `origin/master` `5ddc68e4`）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理本地實作與離線驗證，未推送遠端）
+- Goal：為所有無工具結構化角色啟用原生 `responseJsonSchema` 及不支援供應商的顯式降級路徑，並建立覆蓋全部角色、階段、重試／失敗／取消、上下文組裝分類與 §7.1 四核心里程碑的嚴格白名單 metadata-only trace。
+- Actual Work：
+  - 抽取共用 `server/structured-output-schema.ts`（並保留 `server/knowledge-pdf-output.ts` re-export），統一為 `delivery_review`、`delivery_repair`、`data_compose`、`compose_review`、`knowledge_organize`、`knowledge_review`、`knowledge-pdf-focus` 與 `knowledge-pdf-windows` 傳入原生 JSON schema 與明確角色識別。
+  - 於 `server/agent-model-gateway.ts`、`server/gemini-key-provider.ts` 與 `server/openai-compatible-provider.ts` 加入供應商結構化輸出宣告及顯式降級，保持同根預算記帳與語義／雜湊／來源失敗關閉邊界。
+  - 建立 `server/agent-trace.ts` 並在 `server/agent-runtime.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts` 及 `server/chat-delivery-review.ts` 接入全角色 metadata trace、白名單 OTel span 屬性投影、上下文組裝類別／省略理由及四個核心時間指標（並於 `onSummaryCoverage` 與 collector sink 列表修復短路徑覆蓋及重覆訂閱問題）。
+  - 新增 `tests/req002-schema-and-trace.test.ts`（11 cases）、`scripts/ci/verify-req002-schema-trace-offline.sh` 與 `.github/workflows/req002-schema-trace-offline.yml`。
+- Verification：待最終本地離線檢查與型別驗證後於下一筆或確認結果記錄；依指示保留於本地工作樹，未執行 `git push` 或建立 PR。
+
+
+### 2026-11-19　完成 REQ-002 有界基準、SSE 斷線恢復與硬預算門檻離線實作（`codex/req002-live-benchmark-and-disconnect`）
+
+1）**Provider 邊界硬預算與 CLI 安全閘門（`server/req002-acceptance-harness.ts`、`scripts/verify-req002-live.mjs`）**：實作 `parseReq002LiveCliArgs`（未帶 `--live` 或 `--offline` 或同時帶兩個旗標即於任何調用前中止）與 `createProviderBoundaryGuard`（預設上限 `runs <= 3`、`modelCalls <= 10`、`queryEmbeddings <= 4`，在派發前先檢查並阻斷超額調用），支援顯式 `LOCAL_AGENT_CONFIG`、`P4_VERTEX_PROJECT`／`GCP_PROJECT_ID` 與 `GEMINI_API_KEY`（`AI_AGENT_MAX_RETRIES=1`）。
+2）**五份官方種子驗證、SSE 斷線恢復與配對基準（`scripts/lib/req002-acceptance-runner.ts`）**：匯入 `knowledge/hk-official-seed.json` 全部五份官方來源至向量記憶體 Firestore 雙工環境，核對純寒暄短回合（Case G：1 model call、0 embedding、跳過審核）、六個月加固含合成 PII 金絲雀（Case A：外搜與向量載荷 0 洩漏、`fhs-solid-food` 同版 `versionId`/`contentHash` 覆核、`GET .../reply` 同 `runId` 零重跑）、兩個月限制（Case B）、未涵蓋發燒嘔吐（Case C：不編造引用並保留既有醫療求助卡邊界）、真實 HTTP/SSE 串流中斷後 `ChatController.refreshOriginalReply()` 零重複發問復原與 `403` 清卡，以及序貫三輪（4 model calls）對單輪有界批次（2 model calls）＋冷／暖向量快取復用對比與 §7.1 四項核心里程碑統計。
+3）**離線測試、CLI `--offline`、型別與 CI 門檻**：新增 `tests/req002-live-benchmark-and-disconnect.test.ts`（6/6 通過）與離線 CI 設定（`.github/workflows/req002-live-benchmark-offline.yml`、`scripts/ci/verify-req002-live-benchmark-offline.sh`，共 22 檔 / 220 cases 與三份嚴格 `tsc --noEmit`）；本階段未執行 `--live` 計費實調用亦未推送遠端。
+
+### 2026-11-19　REQ-008 每輪最小個人背景裝配與日常需求盲區發現（`codex/req008-context-and-blindspot-discovery`）
+
+1）**分層最小個人背景裝配與模式隔離（`server/agent-context-assembly.ts`、`server/product-agent.ts`）**：實作 `assembleTurnBackground`、`formatTurnBackgroundForPrompt` 與 `revalidateTurnBackground`，落實六態區分、純寒暄／`ephemeral` 零私庫讀取（`ephemeral` 同時於工具層注入空白記憶替身並限制為 `search_knowledge`／`read_knowledge_context`／`show_official_help`／`present_answer`）、`chat_only` 唯讀工具白名單、範圍／授權／資料版本／模式漂移失效，以及純統計無個資 `onContextAssembly` 遙測。
+2）**一般聊天日常需求與盲區發現（`server/daily-needs-discovery.ts`）**：實作 `discoverDailyNeeds`，毋須展開可選多角色討論即可辨識 `known_constraint_reminder`、`missing_condition` 與 `relevant_blindspot`；停用主題、未到期延後與已結束關注自動靜音；急症 `emergency-hk-v1` 優先抑止一般提示；不自動改寫待辦或記憶，取捨話題僅提供可略過的可選討論提示。
+3）**離線測試與型別檢查（`tests/req008-context-and-blindspot-discovery.test.ts`、`scripts/ci/verify-req008-context-and-blindspot-discovery-offline.sh`）**：12 份受網絡守衛測試檔案共 167 項案例（包含新建 9 項情境與安全邊界測試）全數通過 `summary-progress-contract.mjs`，`tsconfig.server.json`、`tsconfig.json` 與 `frontend/tsconfig.json` 三項嚴格 `--noEmit` 通過；僅本地分支驗證與提交，未執行計費 `--live` 調用或遠端推送。
+
+### 2026-11-19　REQ-008 §3.3 高風險照護審核觸發政策定案與分支清理（`codex/req008-highrisk-policy-and-cleanup`）
+
+1）**正式高風險照護政策模組與校準矩陣（`server/chat-delivery-review-policy.ts`）**：建立 `HIGH_RISK_CARE_POLICY_VERSION = "req008-highrisk-care-policy/1"`，實作 `detectHighRiskCareClaims`（覆蓋兒童用藥劑量含保嬰丹／七星茶／退熱栓劑／類固醇藥膏、急症窒息／抽搐／燙傷搽牙膏／吞電池催吐、蜂蜜／趴睡／火酒／禁食禁飲／新生兒加鹽、以及保證無大礙／不用睇醫生／停用抗生素／不用打疫苗）與 `evaluateHighRiskPolicyMatrix`，同時確保「照片顯示傷口已經癒合？」、「寶寶今日飲了 120 ml 奶。」及純問候／澄清／一般非照護回覆維持原有受控短路徑。
+2）**交付審核分支收斂與多段隔離（`server/chat-delivery-review.ts`）**：透過 `evaluateChatDeliveryReviewPolicy` 統一 `requiresChatDeliveryReview` 判定順序與明確理由碼，阻止問句／禮貌語／拒答／待確認／已確認操作收據夾帶高風險主張繞過，補上單段獨立官方來源核對（防已引用段落掩護未引用高風險段），清理過時工程註解並確認棄用標記 `serverVerifiedMemoryGrounding` 維持無效。
+3）**離線測試與型別檢查（`tests/req008-highrisk-policy-and-cleanup.test.ts`、`scripts/ci/verify-req008-highrisk-policy-and-cleanup-offline.sh`）**：13 份受網絡守衛測試檔案共 195 項案例（含新建 9 項規則、反繞過、28 宗校準矩陣、受損審核員 fail-closed 及端到端 Runner 測試）全數通過 `summary-progress-contract.mjs`，`tsconfig.server.json`、`tsconfig.json` 與 `frontend/tsconfig.json` 三項嚴格 `--noEmit` 通過；僅本地驗證與提交，未執行 `--live` 或推送遠端。
+
+### 2026-11-19　REQ-001 C 類按需即時社群／商品搜索、原文讀取與呈現區分（`codex/req001-live-community-product-search`）
+
+1）**C 類按需即時搜尋與原文讀取（`src/shared/live-source-citation.ts`、`server/live-source-citation.ts`、`server/live-community-product-search.ts`）**：實作 `createLiveCommunityProductSearch`、`composeLiveSourceReaders`、`validateApprovedLiveUrl`、`extractLiveProductSpec` 與 `validateLiveSourceClaims`，於外搜查詢前置 `assertPublicKnowledgeQuery` 最小化、封鎖登入／會員受限路徑、對 401/403/登入牆/非 HTML 頁面明確輸出 `limitations` 而絕不以搜尋摘要充當原文，不杜撰缺失日期，並對社群自述、疑似廣告／贊助、過舊來源、不同地區版本／經驗矛盾與片段節錄自動標記 `cautions`；同時於 `server/product-agent-tools.ts` 接入 `searchDetailed` 限制回傳與 `unsupported_live_claim` 程式檢查，防止在社群／商品即時引用中虛構整體家長統計、作商業購買推薦或偽稱已驗證購買／臨床證明。
+2）**前端非色彩＋適度色彩區分與離線驗收（`frontend/src/components/chat/AnswerSources.tsx`、`CitationMarker*.tsx`、`agent-projection.ts`）**：為即時來源加入 `【n·即時】` 與「即時搜尋 · 社群經驗／商品資料」文字徽章及適度暖琥珀樣式（不動既有庫來源外觀及 `pressed` 狀態），展開對話框呈現 `productSpecLabel` 與 `cautionLabels` 警示；新增 `tests/req001-live-community-product-search.test.ts`（8/8 通過），離線守衛清單 12 整檔共 155 案通過 `summary-progress-contract.mjs`，三組嚴格 `tsc --noEmit` 皆 exit 0，並確認對 `_knowledge_`／`_library_preferences` 零持久寫入。
+3）**限制邊界**：本分支僅於本地進行離線合成測試、靜態型別與衛生檢查並本地提交，尚未推送遠端或執行真實外網搜索、真實 Gemini／Vertex 調用與實機驗收。
+
 ### 2026-11-19　完成 REQ-002 全量收束對照表、19 項場景映射與需求狀態校準（`codex/req002-acceptance-closeout`）
 
 1）**建立權威收束入口（`PLAN.md#req002-closeout01`、`PLAN.md#agent-search-first`）**：整理主線已合併核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）及 `#640`／`#634` 與獨立本地候選分支（`codex/req002-batch-reuse-and-repair` `2ddc0bbf`、`codex/req002-schema-and-metadata-trace` `54029065`、`codex/req002-live-benchmark-and-disconnect` `8e3b72ca`），補全 REQ-002 24 組需求群組矩陣（ID 01–24）、§7.2 全部 19 項驗收場景映射（`S72-01`–`S72-19`）、§6 階段 0–4 校準及 §8 全部 8 項待決事項定案與保留邊界。
 2）**同步校準需求狀態（`docs/REQUIREMENTS_BACKLOG.md`）**：更新索引與 §1「目前狀態」說明，移除過時之「尚未實作」，明確導引至 `PLAN.md#req002-closeout01`，同時嚴格保留真實 `--live` 付費模型基準、原站同步部署與 Android／iOS 實體手機無障礙實機待驗收口徑，不越權宣稱全包完成。
 3）**離線結構測試與 CI 門檻**：新增 `tests/req002-acceptance-closeout.test.ts`（4/4）與離線 CI 腳本（`.github/workflows/req002-acceptance-closeout-offline.yml`、`scripts/ci/verify-req002-acceptance-closeout-offline.sh`，共 22 檔 / 218 cases 與三份嚴格 `tsc --noEmit`）；本階段未推送遠端亦未開設 PR。
 4）**正向對齊 `origin/master`（`3c02633a`）與推送前核對**：同步 PR 3（`codex/req002-batch-reuse-and-repair` `65bea4a3`，25 檔 / 231 cases）與 PR 4（`codex/req002-schema-and-metadata-trace` `5e7f60d2`，31 檔 / 284 cases）正向合併後之最新 SHA 與離線測試 manifest，確認 4 個待開 PR 分支皆可無衝突併入 `master`。
+
+### REQ-002 三分支離線整合收據
+
+同一整合 SHA `29cee08024a2068192e11c2eee2febb32ecfb5fd`：[GitHub Actions 44566154835](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)，41 檔 337/337 及三份嚴格 TypeScript 設定通過。[採用版本、命令及各項結果](PLAN.md#req002-closeout01)。未執行付費模型、原站或實機驗收。

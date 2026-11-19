@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 
 import { chunkTreatmentSchema, sourceSeriesSchema } from '../src/shared/source-series.ts';
+import { timelyEventLifecycleSchema } from "../src/shared/knowledge-timely.ts";
 
 const text = (max: number) => z.string().min(1).max(max).refine(value => Boolean(value.trim()) && !/[\u0000\uD800-\uDFFF]/u.test(value));
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
@@ -47,7 +48,7 @@ const sourceSchema = z.strictObject({
   series: sourceSeriesSchema.optional(), sourceId: id, url: publicSourceUrl, title: text(300), publisher: text(160),
   classification: z.enum(["official_guidance", "recent_information"]),
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
-  validUntil: date.nullable().optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
+  validUntil: date.nullable().optional(), timelyEvent: timelyEventLifecycleSchema.optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
   chunks: z.array(z.strictObject({ key: id, treatment: chunkTreatmentSchema.optional(), section: text(240), sourceExcerpt: z.union([text(300), z.literal("")]),
     originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
     originalText: text(4000).optional(), pageStart: z.number().int().min(1).optional(), pageEnd: z.number().int().min(1).optional(),
@@ -74,6 +75,8 @@ const sourceSchema = z.strictObject({
   }
   // Unknown publication dates stay unknown and are excluded from recent retrieval, not fabricated at import.
   if (value.classification === "official_guidance" && /(^|\.)rthk\.hk$/.test(new URL(value.url).hostname)) ctx.addIssue({ code: "custom", message: "Media cannot be official care guidance" });
+  if (value.timelyEvent && value.classification !== "recent_information") ctx.addIssue({ code: "custom", message: "Timely event lifecycle requires recent_information classification" });
+  if (value.timelyEvent?.statusUpdatedAt && Date.parse(value.timelyEvent.statusUpdatedAt) > Date.now()) ctx.addIssue({ code: "custom", message: "Future timely event status date" });
   if ([value.sourcePublishedAt, value.sourceUpdatedAt].some(value => value !== null && Date.parse(value) > Date.now())
     || Date.parse(value.fetchedAt) > Date.now()) ctx.addIssue({ code: "custom", message: "Future source date" });
 });
