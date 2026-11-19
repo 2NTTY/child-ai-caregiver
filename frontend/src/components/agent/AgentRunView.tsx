@@ -27,12 +27,16 @@ type DecisionMotionIntent = { serial: number; proposalId: string; version: numbe
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "同意將這項資料分享給家庭";
 const destinations: Record<AgentProposalView["kind"], string> = {
+  care_record_create: "保存照護記錄", care_record_revise: "更正原照護記錄",
+  private_note_create: "保存私人備註", private_note_revise: "更正原私人備註",
   task_create: "新增待辦", task_change: "更新原待辦", family_document_change: "更新原家庭文件",
   memory_fact: "保存確認事實", memory_fact_revise: "更正原事實", memory_fact_deactivate: "停用原事實",
   private_source_create: "保存私人來源", private_source_change: "更新原私人來源",
   concern_create: "加入持續關注", concern_change: "更新原關注",
 };
 const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind"], string> = {
+  care_record: "已儲存照護記錄",
+  private_note: "已儲存私人備註",
   family_document: "已更新家庭文件",
   task: "已儲存待辦",
   memory_fact: "已儲存記憶",

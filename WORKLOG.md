@@ -6724,3 +6724,8 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### REQ-002 三分支離線整合收據
 
 同一整合 SHA `29cee08024a2068192e11c2eee2febb32ecfb5fd`：[GitHub Actions 44566154835](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)，41 檔 337/337 及三份嚴格 TypeScript 設定通過。[採用版本、命令及各項結果](PLAN.md#req002-closeout01)。未執行付費模型、原站或實機驗收。
+
+### 2026-11-19　REQ-003 助手預設確認模式與草稿編輯綁定
+
+- 在分支 `codex/req003-auth-mode-and-draft-binding` 落地助手執行授權模式（預設 `confirm_first` 先草稿確認後寫入，或明確切換為 `auto_authorized` 自動寫入），並補齊普通照護紀錄與私人筆記的建立／修訂草稿提案型別（`care_record_create`、`care_record_revise`、`private_note_create`、`private_note_revise`）、確認綁定與預先編輯接口 `editProposal`，同時於 `src/shared/operation-undo.ts` 建立操作撤銷能力目錄與未落庫草稿取消提示語意。
+- 離線驗證通過 `tests/req003-auth-mode-and-draft-binding.test.ts`（10 項）在內的 11 份測試共 99 項案例、`scripts/ci/verify-req003-auth-mode-and-draft-binding-offline.sh` 離線檢查規範，以及 Server、Shared、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。

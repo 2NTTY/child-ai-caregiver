@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
-import { agentPolicyUpdateSchema, agentPrivateNoteSchema, ordinaryRecordKinds } from "../shared/agent-actions.ts";
+import { agentExecutionModes, agentPolicyUpdateSchema, agentPrivateNoteSchema, ordinaryRecordKinds } from "../shared/agent-actions.ts";
 import type { AgentActionReceipt, AgentOperationPolicy, AgentPolicyUpdate, AgentPrivateNote } from "../shared/agent-actions.ts";
 import { contactBindingSchema, contactChannelSchema } from "../shared/contact.ts";
 
@@ -40,7 +40,9 @@ const timestamp = z.iso.datetime({ offset: true });
 const binding = contactBindingSchema.refine(value => value.bindingVersion <= 2147483647);
 const bindings = z.array(binding).max(2).refine(values => new Set(values.map(value => value.channel)).size === values.length);
 const policySchema = z.object({
-  version, effective: z.boolean(), recordKinds: z.array(z.enum(ordinaryRecordKinds)).max(4)
+  version, effective: z.boolean(),
+  executionMode: z.enum(agentExecutionModes).optional(),
+  recordKinds: z.array(z.enum(ordinaryRecordKinds)).max(4)
     .refine(values => new Set(values).size === values.length),
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(), reminderConsentVersion: version.nullable(), reminderBindings: bindings,
   allowRecordCorrections: z.boolean().default(false),

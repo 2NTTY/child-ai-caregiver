@@ -295,6 +295,10 @@ export function createProductAgentTools(options: {
   }
   function summarizeProposal(value: AgentProposalValue): { toolName: string; summary: string; dueAt?: string } {
     switch (value.kind) {
+      case "care_record_create": return { toolName: "save_ordinary_record", summary: value.text };
+      case "care_record_revise": return { toolName: "revise_ordinary_record", summary: value.text };
+      case "private_note_create": return { toolName: "save_private_instruction", summary: `${value.title}: ${value.text}` };
+      case "private_note_revise": return { toolName: "revise_private_instruction", summary: `${value.title}: ${value.text}` };
       case "memory_fact": return { toolName: "propose_fact", summary: value.content };
       case "memory_fact_revise": return { toolName: "propose_fact_revision", summary: value.content };
       case "memory_fact_deactivate": return { toolName: "propose_fact_deactivation", summary: value.reason };
@@ -1095,7 +1099,7 @@ export function createProductAgentTools(options: {
     tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, recordRecalledFacts,
       () => { pendingMemoryProposalCount += 1; }, registerChatSource, options.currentMessageId, noteRecallExpiry, options.trustedUserMessage));
   }
-  if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted)
+  if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted, trackedStore)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
     ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
