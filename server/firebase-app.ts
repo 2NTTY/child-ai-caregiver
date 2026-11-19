@@ -86,6 +86,7 @@ export interface FirebaseRequestHandlerOptions {
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
   library?: PersonalLibrary;
+  registeredSourceCards?: Pick<import('./firestore-registered-source-cards.ts').FirestoreRegisteredSourceCards, 'get' | 'list' | 'command' | 'credential'>;
   knowledgeOriginal?: KnowledgeOriginalPort;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
@@ -310,6 +311,33 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           throw error;
         }
         return json(result,request.method === 'POST' && !match[3] ? 201 : 200);
+      }
+      if (path === '/api/account/source-cards' || path.startsWith('/api/account/source-cards/')) {
+        const store = options.registeredSourceCards;
+        if (!store) throw new RequestError('source_cards_unavailable', 503);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        if (request.headers.get('x-expected-user-id') !== userId) throw new RequestError('identity_changed', 409);
+        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential)?)?$/iu.exec(path);
+        if (!match) throw new RequestError('not_found', 404);
+        const [, cardId, credential] = match;
+        let result: unknown;
+        if (request.method === 'GET' && !cardId) result = await store.list(userId, new URL(request.url).searchParams.get('cursor'));
+        else if (request.method === 'GET' && !credential) {
+          const card = await store.get(userId, cardId);
+          if (!card) throw new RequestError('source_card_not_found', 404);
+          result = { card };
+        } else if (request.method === 'POST' && !cardId) result = await store.command(userId, await readJson(request));
+        else if (request.method === 'POST' && credential) result = await store.credential(userId, cardId, await readJson(request, 32 * 1024));
+        else throw new RequestError('method_not_allowed', 405);
+        try {
+          if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        } catch (error) {
+          if (request.method === 'POST') throw new RequestError('operation_result_unknown', 503);
+          throw error;
+        }
+        return json(result);
       }
       if (path === '/api/account/messages' && !options.accountData) return errorResponse('message_history_unavailable', 503);
       if (options.accountData && (path === '/api/account/messages' || path === '/api/account/export' || path === '/api/account/packages' || path.startsWith('/api/account/packages/') || path === '/api/account/package-imports' || path.startsWith('/api/account/package-imports/') || path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/') || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
