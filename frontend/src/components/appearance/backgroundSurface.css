@@ -26,6 +26,10 @@
 }
 
 /* Named page regions replace removed visual page titles as stable keyboard return targets. */
+[data-chat-action="true"]:not([aria-disabled="true"]):hover { text-decoration: underline; }
+[data-chat-action="true"]:focus:not(:focus-visible) { outline: none; }
+[data-chat-action="true"]:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
 [data-page-surface="true"]:focus-visible {
   outline: 2px solid #272343;
   outline-offset: -2px;

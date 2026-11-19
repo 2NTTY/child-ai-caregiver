@@ -5,7 +5,7 @@ import { AppButton } from "../ui";
 import type { PhotoFilePickerProps } from "./PhotoFilePicker";
 import { photoStyles } from "./photo-styles";
 import { WebCameraCapture } from "./WebCameraCapture.web";
-import { prepareWebPhoto } from "./web-photo-file";
+import { readWebPhotoOriginal } from "./web-photo-file";
 
 export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = false, renderTrigger }: PhotoFilePickerProps) {
   const input = useRef<HTMLInputElement>(null);
@@ -24,23 +24,9 @@ export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = 
     if (disabledRef.current || reading) return;
     const started = ++generation.current; setReading(true);
     try {
-      file = await prepareWebPhoto(file);
-      if (generation.current !== started || disabledRef.current) return;
-      if (!globalThis.crypto?.subtle) throw new Error("File integrity unavailable");
-      const buffer = await file.arrayBuffer();
-      const hash = await crypto.subtle.digest("SHA-256", buffer);
-      if (generation.current !== started || disabledRef.current) return;
-      const uri = URL.createObjectURL(file);
-      onPick({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png", bytes: file.size,
-        sha256: [...new Uint8Array(hash)].map(value => value.toString(16).padStart(2, "0")).join(""), imageSource: { uri },
-        dispose: () => URL.revokeObjectURL(uri),
-        readBase64: () => new Promise((resolve, reject) => {
-          const reader = new FileReader(); reader.onerror = () => reject(new Error("File reading failed"));
-          reader.onload = () => { const value = reader.result; const comma = typeof value === "string" ? value.indexOf(",") : -1;
-            if (typeof value !== "string" || comma < 0) reject(new Error("File reading failed")); else resolve(value.slice(comma + 1)); };
-          reader.readAsDataURL(file);
-        }),
-      });
+      const original = await readWebPhotoOriginal(file);
+      if (generation.current !== started || disabledRef.current) { original.dispose?.(); return; }
+      onPick(original);
     } catch (cause) { if (generation.current === started && !disabledRef.current) onError(cause instanceof Error && /HEIC|4 MiB|JPEG/u.test(cause.message) ? cause.message : "未能讀取原照片或核對完整性。請使用安全連線並明確重選；現有輸入保留。"); }
     finally { if (generation.current === started) setReading(false); }
   }

@@ -1,5 +1,7 @@
 import { isKnownAgentStopReason } from "../src/shared/agent-stop-message.ts";
 import { PRODUCT_AGENT_TOOL_CATALOG } from "./product-agent-capabilities.ts";
+import { AsyncLocalStorage } from "node:async_hooks";
+import type { BatchReadSettlement } from "./agent-tool-batch.ts";
 import { createHash } from "node:crypto";
 import type { AgentStopReason, AgentModelPurpose } from "./agent-budget.ts";
 import type { TokenUsage } from "./ai-usage.ts";
@@ -198,7 +200,7 @@ const VALID_TOOLS = new Set<string>([PRODUCT_AGENT_TOOL_CATALOG.loader.name,
   ...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...PRODUCT_AGENT_TOOL_CATALOG.groups.flatMap(group => [...group.toolNames] as string[]),
   "read_selected_tasks", "prepare_selected_tasks", "search_selected_care", "search_selected_materials",
 ]);
-const VALID_CODES = new Set(["read_unavailable", "effect_unknown", "invalid_parameters", "not_authorized", "unknown",
+const VALID_CODES = new Set(["read_timeout", "embedding_limit", "read_unavailable", "effect_unknown", "invalid_parameters", "not_authorized", "unknown",
   "invalid_input", "invalid_assignee", "agent_run_expired", "confirmation_requires_interactive_scope",
   "invalid_citation", "citation_required", "citation_limit", "use_citation_ids", "not_found", "version_conflict",
   "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch",
@@ -518,8 +520,17 @@ export function createAgentRunTraceCollector(options: {
     return sanitized;
   };
 
+  // Product readers can finish after their item timed out. Hold their milestone until
+  // the scheduler accepts this call's result; detached work never emits it directly.
+  const batchSources = new AsyncLocalStorage<{ usable: number }>();
+  const openBatchReads = new Map<string, { usable: number }>();
   const handle: AgentRunTraceHandle = {
     markUsableSource(count = 1) {
+      const pending = batchSources.getStore();
+      if (pending) {
+        if (Number.isSafeInteger(count) && count > 0) pending.usable += count;
+        return;
+      }
       if (terminalSettledMs !== null || firstUsableSourceMs !== null || !Number.isSafeInteger(count) || count < 1) return;
       const t = elapsed();
       if (firstUsableSourceMs === null) firstUsableSourceMs = t;
@@ -564,6 +575,33 @@ export function createAgentRunTraceCollector(options: {
       return ++attemptCounter;
     },
     emit,
+    observeBatchSources<T>(callId: string, work: () => T): T {
+      const pending = openBatchReads.get(callId);
+      return pending ? batchSources.run(pending, work) : work();
+    },
+    beginBatchRead(tool: string, callId: string, counts: () => NonNullable<AgentTraceEvent["counts"]>) {
+      const started = elapsed();
+      const identity = { role: options.role, tool, callIdHash: hashSafeTraceId(callId) };
+      const pending = { usable: 0 };
+      openBatchReads.set(callId, pending);
+      if (tool === "load_capabilities") handle.noteLoaderCall("capabilityLoads");
+      else if (tool === "read_history" || tool === "search_history") handle.noteLoaderCall("historyReads");
+      else if (tool === "search_knowledge") handle.noteLoaderCall("knowledgeSearches");
+      emit({ ...identity, phase: "tool_start" });
+      let settled = false;
+      return ({ status, faultCode, stopReason }: BatchReadSettlement) => {
+        if (settled) return;
+        settled = true;
+        openBatchReads.delete(callId);
+        if (!stopReason && status === "succeeded" && pending.usable > 0) handle.markUsableSource(pending.usable);
+        const phase = stopReason || faultCode === "read_timeout" || faultCode === "read_unavailable" ? "tool_error"
+          : status === "succeeded" ? "tool_end" : "tool_rejection";
+        emit({ ...identity, phase, durationMs: Math.max(0, elapsed() - started), counts: counts(),
+          outcome: stopReason === "unauthorized" ? "unauthorized"
+            : stopReason === "deadline" || stopReason === "cancelled" ? "timeout" : status,
+          ...(faultCode ? { code: faultCode } : {}), ...(stopReason ? { stopReason } : {}) });
+      };
+    },
     emitGatewayEvent(event: AgentTraceEvent): void {
       emit({
         ...event,

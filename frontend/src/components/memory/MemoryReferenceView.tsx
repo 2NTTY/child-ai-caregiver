@@ -330,8 +330,7 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
     .filter(institution => institution.series.length);
   return <View style={styles.section}>
     {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{(currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
-    {catalog?.length ? <View><Text accessibilityRole="header" style={styles.sectionTitle}>平台來源卡</Text>
-      <Text style={styles.meta}>平台負擔整理及更新費用。免費加入後會跟隨同範圍的已審核更新。</Text></View> : null}
+    {catalog?.length ? <Text accessibilityRole="header" style={styles.sectionTitle}>平台來源卡</Text> : null}
     <View style={styles.tools}>
       {tags.length > 1 ? <View style={styles.filter}><AppSelect label="篩選來源庫" showLabel={false} value={filter} onChange={setFilter} options={[{ value: 'all', label: '全部來源' },
         ...tags.map(value => ({ value, label: referenceFilters[value] ?? value }))]} /></View> : null}

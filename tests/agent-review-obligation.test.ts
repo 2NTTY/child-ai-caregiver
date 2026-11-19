@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AgentBudget } from "../server/agent-budget.ts";
@@ -11,6 +12,20 @@ const ordinaryDraft: ChatDeliveryDraft = {
   kind: "record_restatement", visibility: "private", serverSubstitutedSourceText: false, scope,
   paragraphs: [{ text: "這個清單分為三個部分。", citationIds: [] }], sources: [],
 };
+
+// Test-only source authority: bind the original request's exact rows, not later draft contents.
+function syntheticSourceGrant(issued: ChatDeliveryDraft) {
+  const issuedScope = structuredClone(issued.scope), visibility = issued.visibility;
+  const live = new Map(issued.sources.map(row => [row.citationId, structuredClone(row)]));
+  return {
+    bind(draft: ChatDeliveryDraft) {
+      const bound = structuredClone(draft);
+      return async () => isDeepStrictEqual(bound.scope, issuedScope) && bound.visibility === visibility
+        && bound.sources.every(row => isDeepStrictEqual(live.get(row.citationId), row));
+    },
+    revoke(id: string) { live.delete(id); },
+  };
+}
 
 test("ordinary wording and unused source evidence do not automatically request a reviewer", () => {
   assert.equal(delivery.requiresChatDeliveryReview(ordinaryDraft), false);
@@ -99,10 +114,11 @@ test("rereview sees the original request, draft and repair issues as bounded dat
   let current = structuredClone(original), reviews = 0;
   const observed: Record<string, unknown>[] = [];
   const issues = [{ paragraph: 0, reason: "The count is incorrect", support: "The source lists three parts" }];
+  const grants = syntheticSourceGrant(original);
   const presentation = () => ({ text: current.paragraphs[0]!.text, citations: [], retrievalMode: "not_used" as const });
   try {
     const result = await delivery.enforceChatDeliveryReview({ presentation: presentation(),
-      tools: { deliveryDraft: () => current, presentation: async () => presentation(),
+      tools: { bindRepairEvidence: () => grants.bind(current), deliveryDraft: () => current, presentation: async () => presentation(),
         replaceDeliveryAnswer: value => { current = { ...current, kind: value.kind, paragraphs: value.paragraphs }; } },
       context: { scope, runId: "synthetic-run", budget, completeText: async input => {
         budget.take("modelCalls");
@@ -120,6 +136,10 @@ test("rereview sees the original request, draft and repair issues as bounded dat
     assert.deepEqual(observed[1]?.repairIssues, issues);
     assert.equal(observed[1]?.userRequest, original.userRequest);
     assert.equal(budget.counts.modelCalls, 3);
+    assert.equal(await grants.bind({ ...original, sources: [{ ...original.sources[0]!, version: "missing" }] })(), false);
+    const originalGrant = grants.bind(original);
+    grants.revoke("source-1");
+    assert.equal(await originalGrant(), false, "capturing a binding does not freeze a grant");
     assert.notEqual(result.review?.draftHash, delivery.chatDeliveryDraftHash(current), "The pass must also bind the reviewed repair context");
   } finally { budget.close(); }
 });
@@ -138,10 +158,11 @@ test("a second paragraph's valid citation does not override a rereview rejection
     ] };
   let current = structuredClone(original), reviews = 0;
   const issues = [{ paragraph: 0, reason: "The count is unsupported", support: "The source says three, not two" }];
+  const grants = syntheticSourceGrant(original);
   const presentation = () => ({ text: current.paragraphs.map(p => p.text).join("\n"), citations: [], retrievalMode: "not_used" as const });
   try {
     await assert.rejects(delivery.enforceChatDeliveryReview({ presentation: presentation(),
-      tools: { deliveryDraft: () => current, presentation: async () => presentation(),
+      tools: { bindRepairEvidence: () => grants.bind(current), deliveryDraft: () => current, presentation: async () => presentation(),
         replaceDeliveryAnswer: value => { current = { ...current, ...value }; } },
       context: { scope, runId: "synthetic-run", budget, deliveryReview: obligation, completeText: async input => {
         budget.take("modelCalls");
@@ -232,10 +253,11 @@ test("repair can withdraw a claim into a bounded clarification without clearing 
     sources: [{ citationId: "source-1", version: "1", contentHash: "a".repeat(64),
       classification: "official_guidance", excerpt: "三個部分。", excerptComplete: true }] };
   let calls = 0;
+  const grants = syntheticSourceGrant(current);
   const presentation = () => ({ text: current.paragraphs[0]!.text, citations: [], retrievalMode: "not_used" as const });
   try {
     const result = await delivery.enforceChatDeliveryReview({ presentation: presentation(),
-      tools: { deliveryDraft: () => current, presentation: async () => presentation(),
+      tools: { bindRepairEvidence: () => grants.bind(current), deliveryDraft: () => current, presentation: async () => presentation(),
         replaceDeliveryAnswer: value => { current = { ...current, ...value, sources: [] }; } },
       context: { scope, runId: "synthetic-run", budget, deliveryReview: obligation, completeText: async input => {
         calls++; budget.take("modelCalls");

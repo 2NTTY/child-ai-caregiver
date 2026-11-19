@@ -25,7 +25,7 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
       toolNames: ["generate_family_document"], promptModuleIds: ["module.summary-report"] },
     { id: "document_edit", description: "對已核對ID／版本的同一文件作局部修改、勾選或歸檔；正文替換按原候選及確認邊界。需先查原文時同時載入documents。",
       toolNames: ["change_family_document", "propose_family_document_change"], promptModuleIds: ["module.summary-report"] },
-    { id: "document_compose", description: "按需委派資料編製：整理可保存準備單／報告草稿，經獨立審核後再保存或提出確認；清楚普通操作仍用 document_create／document_edit。",
+    { id: "document_compose", description: "按需委派資料編製，整理可保存的準備單／報告草稿並經獨立審核；不交付可開啟的專家 PDF／HTML 預覽。一般文件建立或編修使用 document_create／document_edit。",
       toolNames: ["compose_family_data"], promptModuleIds: [] },
     { id: "concerns", description: "查看持續關注及經過，提出建立、追加觀察、結束、恢復或站內跟進候選。",
       toolNames: ["read_concerns", "propose_concern", "propose_concern_change"], promptModuleIds: ["module.product-concerns"] },

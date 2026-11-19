@@ -83,6 +83,7 @@ export interface ChatDeliverySurface {
   presentation(): Promise<AgentPresentation | null>;
   deliveryDraft(): ChatDeliveryDraft | null;
   replaceDeliveryAnswer(answer: AgentAnswer): void;
+  bindRepairEvidence?(): () => Promise<boolean>;
 }
 
 /** Server-owned, run-local state. Generator labels and repairs cannot clear it. */
@@ -1481,6 +1482,16 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
     })),
   };
 }
+/** A repair may drop support, never add a new source, edition or excerpt through implicit grounding. */
+export function repairSourcesRemainBound(original: readonly ChatDeliverySource[], current: readonly ChatDeliverySource[]): boolean {
+  const allowed = new Map(original.map(item => [item.citationId, item]));
+  return allowed.size === original.length && new Set(current.map(item => item.citationId)).size === current.length
+    && current.every(item => {
+      const previous = allowed.get(item.citationId);
+      return previous !== undefined && previous.version === item.version && previous.contentHash === item.contentHash
+        && previous.classification === item.classification && previous.excerpt === item.excerpt && previous.excerptComplete === item.excerptComplete;
+    });
+}
 function repairContextPayload(context: ChatDeliveryRepairContext) {
   return { previousDraft: reviewPayload(context.previousDraft, chatDeliveryDraftHash(context.previousDraft)),
     repairIssues: context.issues };
@@ -1546,6 +1557,8 @@ export async function enforceChatDeliveryReview(input: {
   onReviewStart?: () => void;
 }): Promise<{ presentation: AgentPresentation; review: ChatDeliveryReviewBinding | null }> {
   const draft = input.tools.deliveryDraft();
+  if (draft && (["userId", "childId", "workspaceId", "authorizationVersion", "dataVersion"] as const)
+    .some(key => draft.scope[key] !== input.context.scope[key])) throw new AgentStopped("unauthorized");
   const obligation = input.context.deliveryReview ??= createChatDeliveryReviewObligation();
   if (!draft || !requiresChatDeliveryReview(draft, obligation)) {
     input.context.trace?.markApprovedAnswer();
@@ -1569,6 +1582,7 @@ export async function enforceChatDeliveryReview(input: {
     judgedOutcome: { decision: { decision: string }; draftHash: string },
     _presentationHint: AgentPresentation,
     repairContext?: ChatDeliveryRepairContext,
+    originalSourcesCurrent?: () => Promise<boolean>,
   ) => {
     if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
     if (chatDeliveryPassNeedsSources(judged, obligation)) throw new AgentStopped("delivery_review_no_sources");
@@ -1583,12 +1597,19 @@ export async function enforceChatDeliveryReview(input: {
     }
     const liveDraft = input.tools.deliveryDraft();
     if (!livePresentation || !liveDraft) throw new AgentStopped("delivery_review_incomplete");
+    if (repairContext && (!repairSourcesRemainBound(repairContext.previousDraft.sources, liveDraft.sources)
+      || (originalSourcesCurrent && !await input.context.budget.wait(originalSourcesCurrent)))) throw new AgentStopped("unauthorized");
     const liveHash = chatDeliveryDraftHash(liveDraft, repairContext);
     if (liveHash !== judgedOutcome.draftHash) throw new AgentStopped("delivery_review_incomplete");
     const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion, repairContext)) throw new AgentStopped("delivery_review_incomplete");
     if (chatDeliveryPassNeedsSources(liveDraft, obligation)) throw new AgentStopped("delivery_review_no_sources");
     if (hasLiveUnverifiedOperationClaim(liveDraft)) throw new AgentStopped("delivery_review_rejected");
+    if (repairContext?.previousDraft.sources.some(source => source.classification === "official_guidance")
+      && !liveDraft.sources.some(source => source.classification === "official_guidance")
+      && !isPureScopeRefusalOrLimitation(liveDraft)) {
+      throw new AgentStopped("delivery_review_no_sources");
+    }
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     input.context.trace?.markApprovedAnswer();
     return { presentation: livePresentation, review };
@@ -1598,6 +1619,9 @@ export async function enforceChatDeliveryReview(input: {
   let outcome = await judge(current, "review");
   if (outcome.decision.decision === "revise" && input.context.budget.remainingModelCalls >= 2) {
     const repairContext = { previousDraft: structuredClone(current), issues: structuredClone(outcome.decision.issues) };
+    const currentSources = input.tools.bindRepairEvidence?.();
+    if ((current.sources.length && !currentSources) || (currentSources && !await input.context.budget.wait(currentSources)))
+      throw new AgentStopped("delivery_review_incomplete");
     const repaired = await spendText(input.context, `model:chat-delivery-repair:${outcome.draftHash}`, system,
       "Repair the draft using only the same evidence. This is a repair turn, not a review turn. "
       + "Return one JSON object matching the product answer schema (kind and paragraphs) and no other text. "
@@ -1606,6 +1630,9 @@ export async function enforceChatDeliveryReview(input: {
         outputContract: z.toJSONSchema(agentAnswerSchema) }), current.images, current.voice, "delivery_repair", undefined, REPAIR_RESPONSE_JSON_SCHEMA);
     const parsed = agentAnswerSchema.safeParse(readJson(repaired));
     if (!parsed.success) throw new AgentStopped("delivery_review_incomplete");
+    const boundIds = new Set(current.sources.map(source => source.citationId));
+    if (parsed.data.paragraphs.some(paragraph => paragraph.citationIds.some(id => !boundIds.has(id))))
+      throw new AgentStopped("delivery_review_incomplete");
     let nextPresentation: AgentPresentation | null = null;
     try {
       input.tools.replaceDeliveryAnswer(parsed.data);
@@ -1616,13 +1643,16 @@ export async function enforceChatDeliveryReview(input: {
     }
     const nextDraft = input.tools.deliveryDraft();
     if (!nextDraft || !nextPresentation) throw new AgentStopped("delivery_review_incomplete");
+    if (!repairSourcesRemainBound(repairContext.previousDraft.sources, nextDraft.sources)) throw new AgentStopped("unauthorized");
+    if (currentSources && !await input.context.budget.wait(currentSources)) throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryDraftHash(nextDraft) === outcome.draftHash) throw new AgentStopped("delivery_review_rejected");
     if (!requiresChatDeliveryReview(nextDraft, obligation)) {
       input.context.trace?.markApprovedAnswer();
       return { presentation: nextPresentation, review: null };
     }
     current = nextDraft;
     outcome = await judge(current, "rereview", repairContext);
-    return acceptLivePass(current, outcome, nextPresentation, repairContext);
+    return acceptLivePass(current, outcome, nextPresentation, repairContext, currentSources);
   }
   if (outcome.decision.decision === "revise") throw new AgentStopped("delivery_review_budget");
   if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");

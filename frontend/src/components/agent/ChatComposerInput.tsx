@@ -6,6 +6,9 @@ import { AppTextField } from "../ui";
 
 export type ChatComposerInputHandle = { focus(options?: { preventScroll?: boolean }): void; blur(): void };
 export type ChatComposerInputProps = {
+  onAttachment?(attachment: import("../../assistant-draft").AssistantAttachment): void;
+  onAttachmentError?(message: string): void;
+  onStop?(): void; stopTarget?: string;
   value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
   onFocus(): void; onBlur(): void;
 };

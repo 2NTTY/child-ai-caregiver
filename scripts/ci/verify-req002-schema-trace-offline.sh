@@ -62,8 +62,14 @@ TEST_FILES=(
   tests/agent-review-obligation.test.ts
   tests/chat-delivery-review.test.ts
   tests/agent-budget.test.ts
+  tests/req002-batch-reuse-and-repair.test.ts
+  tests/req002-reuse-policy.test.ts
+  tests/req002-mixed-repair.test.ts
+  tests/product-agent-execution-contract.test.ts
+  tests/chat-workspace-view.test.ts
+  tests/agent-context-topology.test.ts
 )
-TEST_CASES=(13 4 6 4 18 3 14 7 2 4 1 2 3 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9)
+TEST_CASES=(13 4 6 4 18 3 14 7 2 4 1 2 3 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 10 9 3 8 1 4)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
