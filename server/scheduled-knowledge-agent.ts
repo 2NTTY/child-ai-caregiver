@@ -1,5 +1,5 @@
 import { createFirestoreKnowledgeWork } from './firestore-knowledge-work.ts';
-import { publicMaintenanceWatch } from './knowledge-source-catalog.ts';
+import { publicMaintenanceWatch, SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import type { SourceFetcher } from './knowledge-refresh-types.ts';
 import { backgroundKnowledgeOperationFingerprint } from './background-knowledge-maintenance.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from './firestore-knowledge-maintenance.ts';
@@ -23,7 +23,9 @@ export function createScheduledKnowledgeAgent(options: Omit<Parameters<typeof cr
   if (!uid && options.payer !== 'platform') throw new Error('Invalid AI_KNOWLEDGE_MAINTENANCE_PAYER');
   const binding = firestoreDomainHash(['knowledge-agent-payer/1', options.payer]);
   const fetch = options.fetch ?? fetchKnowledgeSource;
-  const accepts = (id: string) => options.sourceIds.includes(id) && Boolean(publicMaintenanceWatch(id));
+  // The initial catalogue budget grants no recurring paid maintenance for newly discovered material.
+  const standing = new Set(SOURCE_WATCHES.filter(watch => publicMaintenanceWatch(watch.id)).map(watch => watch.id));
+  const accepts = (id: string) => options.sourceIds.includes(id) && standing.has(id);
   const work = createFirestoreKnowledgeWork(options);
   const runner = createFirestoreKnowledgeMaintenance({ ...options, credentialBinding: binding, fetch,
     ...(uid ? { sponsor: { userId: uid, routing: options.routing, async identityActive() {

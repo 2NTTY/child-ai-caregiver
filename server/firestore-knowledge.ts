@@ -545,7 +545,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const source = await readSource(tx, id);
         if (!source?.enabled || !source.activeVersionId) reject("knowledge_source_unavailable");
         const active = await metadata(tx, source.activeVersionId, source);
-        if (!publication(active)) reject("knowledge_source_unavailable");
+        const familyCard = familySeries && options.platformMaterials?.has(id) && active.observed?.watch.manualOnly;
+        if (!publication(active, familyCard ? 'read' : 'publish')) reject("knowledge_source_unavailable");
         if (familySeries && (sourceSeries(active.document).id !== familySeries || !familySharingAllowed(active.document)))
           reject("knowledge_source_not_shareable", 403);
         const isCurrent = active.version.versionHash === expectedHash;
@@ -562,7 +563,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
             values: vectorValues(chunk.embedding.toArray()) };
         });
         const observation = edition.observed?.observation;
-        const body = observation?.approved && options.observations ? await options.observations.content(tx, observation) : null;
+        const body = observation?.approved && observation.contentHash === edition.version.review?.assessment.observationHash && options.observations
+          ? await options.observations.content(tx, observation) : null;
         const library = portableSeries(edition.document, edition.observed, body);
         checkPortableSeries(edition.document, library);
         return { source: edition.document, versionHash: edition.version.versionHash, embeddings, library };

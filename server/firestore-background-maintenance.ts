@@ -206,13 +206,16 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   async function tick() {
     if (!options.enabled) return 0;
     const id = 'global', ref = stateRef(id), token = randomUUID(), minute = Math.floor(Date.now() / 60000);
-    const state = await options.database.runTransaction(async tx => {
-      if (!(await authority.readControl(tx)).enabled) return null;
+    const claim = await options.database.runTransaction(async tx => {
+      const control = await authority.readControl(tx);
+      if (!control.enabled) return null;
       const row = await tx.get(ref), value = row.exists ? data.open('maintenance-state', id, SYSTEM, cursorSchema, row) : empty();
       if (value.minute >= minute || value.until > Date.now()) return null;
-      value.token = token; value.until = Date.now() + 120000; tx.set(ref, stateEnvelope(id, SYSTEM, value)); return value;
+      value.token = token; value.until = Date.now() + 120000; tx.set(ref, stateEnvelope(id, SYSTEM, value));
+      return { state: value, generation: control.generation };
     });
-    if (!state) return 0;
+    if (!claim) return 0;
+    const { state, generation } = claim;
     let scanned = 0;
     // One bounded pass upgrades pre-R01 tombstones; normal writers enqueue their own barriers.
     if (options.journal) for (const suffix of ['care_records', 'child_profiles', 'memory_facts', 'memory_topics', 'shared_inputs']) {
@@ -253,16 +256,26 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       }
       state.after[stage] = rows.size === 5 ? rows.docs.at(-1)!.id : null;
     }
-    // Reuse the reviewed weekly/daily source schedule, including one missed occurrence, without downloading in the dispatcher.
-    for (const entry of await options.knowledge.jobs()) {
-      const slot = knowledgePeriod(entry.definition.classification === 'official_guidance');
-      if (slot < entry.registeredAt) continue;
+    async function queueKnowledgeCheck(entry: Awaited<ReturnType<FirestoreKnowledgeRefresh['jobs']>>[number], slot: string, authorizationVersion: string) {
+      if (slot < entry.registeredAt) return;
       await options.database.runTransaction(async tx => {
         const control = await authority.readControl(tx); if (!control.enabled || control.generation !== entry.data.workerGeneration) return;
         const queued = await prepareFirestoreBackgroundWork(data, tx, { kind: 'knowledge-check', scope: SYSTEM, resourceId: entry.definition.id,
-          basis: entry.data.revision + ':' + slot, generation: control.generation,
-          authorizationVersion: options.knowledgeAgent?.accepts(entry.definition.id) ? options.knowledgeAgent.binding : '0' }, new Date().toISOString()); queued.commit();
+          basis: entry.data.revision + ':' + slot, generation: control.generation, authorizationVersion }, new Date().toISOString()); queued.commit();
       });
+    }
+    for (const entry of await options.knowledge.jobs()) {
+      const authorization = options.knowledgeAgent?.accepts(entry.definition.id) ? options.knowledgeAgent.binding : '0';
+      await queueKnowledgeCheck(entry, knowledgePeriod(entry.definition.classification === 'official_guidance'), authorization);
+    }
+    // One bounded catalogue page per wake, once per official-guidance week and worker generation.
+    const slot = knowledgePeriod(true), period = generation + ':' + slot;
+    const samePeriod = state.after.publishedCardPeriod === period;
+    if (options.knowledge.publishedCardChecks && (!samePeriod || state.after.publishedCardCursor)) {
+      const page = await options.knowledge.publishedCardChecks(samePeriod ? state.after.publishedCardCursor! : null, slot);
+      for (const entry of page.entries) await queueKnowledgeCheck(entry, slot, '0');
+      state.after.publishedCardPeriod = period;
+      state.after.publishedCardCursor = page.next;
     }
     await options.database.runTransaction(async tx => {
       const row = await tx.get(ref), current = data.open('maintenance-state', id, SYSTEM, cursorSchema, row);
