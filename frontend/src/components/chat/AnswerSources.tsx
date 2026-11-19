@@ -149,13 +149,14 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
         {sources.length ? <View testID="answer-source-panel" style={styles.cards}>
           {sources.map((source, i) => {
             const page = pageLabel(source);
+            const preview = source.excerptKind === 'visual_page' ? '' : source.excerpt.replace(/\s+/gu, ' ').trim();
             return <Pressable key={source.id} testID={`citation-card-${i + 1}`}
               accessibilityRole="button" accessibilityLabel={`來源【${i + 1}】：${source.title}${page ? ' · ' + page : ''}`}
-              accessibilityHint={source.excerptKind === 'visual_page' || !source.excerpt ? undefined : source.excerpt}
+              accessibilityHint={preview || undefined}
               onPress={() => open(source.id)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
               <View style={styles.cardHead}><Text numberOfLines={2} style={styles.title}>{source.title}</Text>
                 {page ? <Text style={styles.page}>{page}</Text> : null}</View>
-              {source.excerpt && source.excerptKind !== 'visual_page' ? <Text numberOfLines={3} style={styles.excerpt}>{source.excerpt}</Text> : null}
+              {preview ? <Text numberOfLines={3} style={styles.excerpt}>{preview}</Text> : null}
             </Pressable>;
           })}
         </View> : null}
