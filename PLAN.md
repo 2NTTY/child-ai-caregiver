@@ -108,7 +108,7 @@ REQ-006 本人來源卡已完成本機 Web、權限及排程介面驗收。原�
 三種喚醒及一鍵示範已接入原站。隔離環境的真 Gemini 已分別完成按約定主動聯絡及安靜結束。Android 版本 6 已由本人確認關閉 App 後收到示範、點入回覆，同一回覆可在 Web 讀回。原站 `954ee312` 在保存後直接派送，每分鐘排程負責補查未派送工作。Android 版本 8 的實機示範已確認狀態列圖示、助手頭像及該則正式訊息的正文預覽。這一筆入隊後 0.973 秒開始交送，2.108 秒時收據記下 FCM 接受。NOTIFY-01～03 已交付；下一包接 REQ-001 搜索。[REQ-010](docs/REQUIREMENTS_BACKLOG.md#req-010) · [本機證據](artifacts/verification/PROACTIVE_NOTIFY_LOCAL_20261112.json) · [發布及 APK](artifacts/verification/PROACTIVE_NOTIFY_RELEASE_20261112.json)
 
 <a id="agent-search-first"></a>
-**主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。此流程待驗。
+**主動通知交付後做 REQ-001 的官方來源搜索。** 按[需求文件的 A–D 次序](docs/REQUIREMENTS_BACKLOG.md#2-跨包的首交付切片與依賴)，先核對一條查詢需要的來源版本、引用、權限、用量及原 run 恢復（A），再用現有核准來源走通一條 Web 查詢（B）。家長應看到真實進度、得到符合適用條件的回答，能從引用打開支持說法的原文。證據不足時說明缺口，斷線後可查回同一次結果。核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）與 `#634`／`#640` 已合併主線，先前分支收據保留作歷史對照。**#675–#677 組合驗收：同一版本的離線定向檢查已通過。** 真模型 `--live`、原站部署及手機實機仍須分別驗收（詳見 [REQ-002 收束與 24 組／19 場景對照](#req002-closeout01)）。
 
 - **B-P1 外部檢索 Query 最小化（`codex/search-query-minimization`，基線 `origin/master` `cd1193b2`）：** 新增 [query 最小化守衛](server/knowledge-query-minimization.ts) 並同時接於 [`search_knowledge`](server/product-agent-tools.ts) 與 [`createKnowledgeRetriever`](server/knowledge-retriever.ts) 外呼入口（先於 cache、embedding 扣額或候選查詢前攔截 `public_query_required`），搭配工具重試引導與描述更新；僅檢查確定性規律（覆蓋無空格「叫＋姓名」及已測的粵語動詞／疑問詞／症狀詞、粗粒度地區與時長、醫院樓層及英文照護詞反例，不宣稱全語境零誤報）及本次三個資料讀取工具載入的非泛稱兒童姓名，**不宣稱匿名化、不增開分類 LLM**。未標籤獨立人名仍依賴模型依指引去識別；目前僅離線合成測試及 TypeScript 核對，尚未經真 Gemini／部署實測。[離線驗證 workflow](.github/workflows/search-query-minimization-offline.yml) · [驗證腳本](scripts/ci/verify-search-query-minimization-offline.sh)
 
@@ -1680,3 +1680,111 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 - **離線驗證範圍與限制**：本分支於本機完成離線合成測試（[`tests/req001-live-community-product-search.test.ts`](tests/req001-live-community-product-search.test.ts) 8/8 通過；離線清單 12 檔／155 案全過）及三組嚴格 `tsc --noEmit`；尚未執行真實外網 discovery API／真實論壇網站抓取、真實 Gemini／Vertex 調用、原站部署或手機實機驗收。[離線驗證 workflow](.github/workflows/req001-live-community-product-search-offline.yml) · [驗證腳本](scripts/ci/verify-req001-live-community-product-search-offline.sh)
 
 - **啟用狀態**：社群／商品搜尋器僅備妥獨立元件及合成驗證。正式服務仍只注入官方讀取器；沒有開啟任何外部社群或商品來源。任何正式連接仍需另行審查來源權利及讀取範圍。
+
+<a id="req002-closeout01"></a>
+### REQ002-CLOSEOUT01：REQ-002 驗收對照、19 項場景映射與待決收束紀錄
+
+- **歷史基線：**文件起草於 `dc9b23d8bc25f14858a9fd8af1b1a156121c6cf2`；下表為 #678 對齊 `master` 的 `3c02633a4160f097732c4b56812cb882e54de48b` 後所引用的分支快照，不是整合版本。
+- **怎樣讀本表：**24 組需求、19 項場景及 8 項待決事項是索引，不是 24／19／8 次通過。表中的 PR 3、4、5 分別指 #675、#676、#677；同列多個 PR 只表示各有部分證據，測試數不可相加。#678 的結構測試只核對文件，不能驗證產品。
+- **#675–#677 組合驗收：同一版本的離線定向檢查已通過。** 三個 PR 已合併至 master；[#677 合併提交 `7bd8cbbfcf24ac577048ea24a8bd221f5beb6055`](https://github.com/2NTTY/child-ai-caregiver/commit/7bd8cbbfcf24ac577048ea24a8bd221f5beb6055) 與受驗提交檔案樹相同。這不是原站部署收據。
+- **整合收據：**採用 [#675](https://github.com/2NTTY/child-ai-caregiver/pull/675) `7bf1652eee6ccd5a97c721a476793f02e84fb309`、[#676](https://github.com/2NTTY/child-ai-caregiver/pull/676) `0b5a4afac7da13a52e7f2b7ffe28ef4c81c33db5`、[#677](https://github.com/2NTTY/child-ai-caregiver/pull/677) `29cee08024a2068192e11c2eee2febb32ecfb5fd`；同一整合 SHA [`29cee08024a2068192e11c2eee2febb32ecfb5fd`](https://github.com/2NTTY/child-ai-caregiver/commit/29cee08024a2068192e11c2eee2febb32ecfb5fd)；[GitHub Actions 44566154835（job 135708316545）](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)。
+- **執行及逐項結果：**受保護的離線步驟執行 `bash scripts/ci/verify-req002-live-benchmark-offline.sh`（[verify-req002-live-benchmark-offline.sh](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/scripts/ci/verify-req002-live-benchmark-offline.sh)）。同一工作去重計 41 檔 337/337；CLI 無旗標拒絕、未支援的 live 設定零呼叫、離線成功及預算不足非零退出均通過；`tsc --noEmit` 的 Server／root／frontend 三份設定通過。下列為同次作業的子集，不另加總：
+  - #675 引用復用、修正與批次讀取：[req002-batch-reuse-and-repair](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-batch-reuse-and-repair.test.ts) 10/10；[req002-reuse-policy](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-reuse-policy.test.ts) 9/9；[req002-mixed-repair](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-mixed-repair.test.ts) 3/3。
+  - #676 schema 降級、摘要裝配與逐工具追蹤：[req002-schema-and-trace](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-schema-and-trace.test.ts) 13/13；[req002-trace-settlement](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-trace-settlement.test.ts) 4/4；[initial-conversation-summary](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/initial-conversation-summary.test.ts) 6/6。
+  - #677 腳本基準、斷線契約與收據判定：[req002-live-benchmark-and-disconnect](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-live-benchmark-and-disconnect.test.ts) 6/6；[req002-harness-boundaries](https://github.com/2NTTY/child-ai-caregiver/blob/29cee08024a2068192e11c2eee2febb32ecfb5fd/tests/req002-harness-boundaries.test.ts) 9/9。
+- **獨立門檻：**真模型 `--live` 付費比較待批准；原站部署與線上 OTel exporter 待核；Android／iOS 實機鍵盤、`fontScale`、TalkBack／VoiceOver 待驗。即使組合離線測試通過，也不會解除這些門檻。
+
+> **歷史對照的範圍：**下列第 1–5 節完整保留起草時的分支收據、矩陣及待驗判斷。其「組合待驗」是當時狀態；本次定向離線結果以上方整合收據為準。舊的腳本計數、loopback 及 DOM 證據不能升格為真模型速度、線上 OTel 或手機實機收據。
+
+#### 1. 已合併主線與候選分支的歷史收據
+
+| 編號 | 分支名 | GitHub PR / Commit | 覆蓋章節 | 核心職責與已驗證範圍 | 交付狀態 |
+|---|---|---|---|---|---|
+| **Core 1** | `codex/search-query-minimization` | [#600](https://github.com/2NTTY/child-ai-caregiver/pull/600) (`82f44a08`) | REQ-001 / §3.4 | `server/knowledge-query-minimization.ts` 外搜 query 最小化守衛接通 `search_knowledge` 與 `createKnowledgeRetriever` | ✅ Merged in `master` |
+| **Core 2** | `codex/search-source-progress` | [#601](https://github.com/2NTTY/child-ai-caregiver/pull/601) (`4d54f7e4`) | §3.2, §4.1, §5.1 | 官方來源搜尋結果 metadata、漸進 `found`/`read` 來源預覽與適用核對 | ✅ Merged in `master` |
+| **Core 3** | `codex/search-run-recovery` | [#602](https://github.com/2NTTY/child-ai-caregiver/pull/602) (`4c631853`) | §4.1–§4.3 | `runId` 與單調序號去重恢復、來源進度重連與反倒退保護 | ✅ Merged in `master` |
+| **Core 4** | `codex/search-official-evidence` | [#606](https://github.com/2NTTY/child-ai-caregiver/pull/606) (`39f2f322`) | §3.2, §3.4 | 官方證據排名、`read_knowledge_context` 與原文同版 `versionId`/`contentHash` 綁定 | ✅ Merged in `master` |
+| **Core 5** | `codex/search-short-path-gaps` | [#607](https://github.com/2NTTY/child-ai-caregiver/pull/607) (`3d6c6d3c`) | §3.3, §7.2 | `server/chat-delivery-review.ts` 與 `server/product-agent.ts` 純寒暄／澄清短回合路徑與冗餘記憶讀取收斂 | ✅ Merged in `master` |
+| **Core 6** | `codex/search-review-boundaries` | [#608](https://github.com/2NTTY/child-ai-caregiver/pull/608) (`a3b6a24f`) | §3.5, §5.2 | Sticky review obligation、root budget 預留保護與逐子句純免責邊界 | ✅ Merged in `master` |
+| **PR 1** | `codex/search-query-minimization-scratch-scope` | [#640](https://github.com/2NTTY/child-ai-caregiver/pull/640) (`fcb231f3`) | REQ-001 / §3.4 | 無私人上下文／空記憶路徑之 `search_knowledge` 拒絕不消耗查詢向量額度（`tests/search-query-minimization.test.ts` 9 cases） | ✅ Merged in `master` |
+| **PR 2** | `codex/search-help-entry` | [#634](https://github.com/2NTTY/child-ai-caregiver/pull/634) (`3425c8f3`) | §4.2, §5.3 | 固定官方求助入口、非急症誤升 999 過濾、遲發失敗保留合格來源預覽及 Edge Web DOM E2E（`tests/official-help-entry.test.ts`、`frontend/scripts/official-help-entry.browser.test.mjs`） | ✅ Merged in `master` |
+| **PR 3** | `codex/req002-batch-reuse-and-repair` | [#675](https://github.com/2NTTY/child-ai-caregiver/pull/675) (`65bea4a3`) | §3.1, §3.4, §3.5, §3.6 | 批次唯讀、來源復用與局部修正（`tests/req002-batch-reuse-and-repair.test.ts` 10/10）。 | [分支離線 CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44490563606)：25 檔 231/231 |
+| **PR 4** | `codex/req002-schema-and-metadata-trace` | [#676](https://github.com/2NTTY/child-ai-caregiver/pull/676) (`5e7f60d2`) | §3.6, §3.8, §4.4, §5.1–§5.3 | 原生 schema／顯式降級與 metadata-only 追蹤（`tests/req002-schema-and-trace.test.ts` 11/11）。 | [分支離線 CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44490587749)：31 檔 284/284 |
+| **PR 5** | `codex/req002-live-benchmark-and-disconnect` | [#677](https://github.com/2NTTY/child-ai-caregiver/pull/677) (`8e3b72ca`) | §§6–7.1, §4.3, AC 517–518 | 五份官方種子、PII 金絲雀、腳本模型配對對照與獨立 loopback 斷線（`tests/req002-live-benchmark-and-disconnect.test.ts` 6/6）。 | [分支離線 CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44490611318)：22 檔 220/220；loopback 另計 4/4 |
+| **PR 6** | `codex/req002-acceptance-closeout` | [#678](https://github.com/2NTTY/child-ai-caregiver/pull/678) (`09b2a692`) | §§1–9, 24 組, 19 場景, §8 | 24 組需求、19 項場景及 8 項待決事項的文件結構；不含組合執行。 | [分支離線 CI](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44490633572)：文件結構 4/4；分支 22 檔 218/218 |
+
+#### 2. REQ-002 §6 官方實施階段校準
+
+| 階段 | 規格工作項目 | 已落實程式與離線驗證 | 目前狀態 |
+|---|---|---|---|
+| **0．建立基線** | 代表情境挑選、瓶頸拆解與統一時間點定義 | 腳本模型的 sequential／bounded 情境分別記下 4／2 次 model calls。 | **僅 #677 模擬；產品基線待量度** |
+| **1．減少必要往返** | 有界唯讀並行、較完整片段、證據復用與局部精準修復 | `server/agent-tool-batch.ts`（PR 3 `65bea4a3`）接通 `agent-runtime.ts`；`knowledge-retriever.ts`／`product-agent-tools.ts` 復用與失效；`chat-delivery-review.ts` 局部修復 | **LOCAL CANDIDATE VERIFIED (PR 3 `65bea4a3`) \| PENDING MERGE & LIVE CHECK** |
+| **2．接通真進度與恢復** | 真實事件進度、序列排序去重與同一 `runId` 重連恢復 | `#601`／`#602`／`#634` 已合併主線；`runSseDisconnectAndRecoverySuite`（PR 5 `8e3b72ca`）驗證真 SSE 斷線后 `refreshOriginalReply` 零重複復原 | **MERGED CORE + SSE DROP VERIFIED (PR 5 `8e3b72ca`) \| PRODUCTION DEPLOY CHECK PENDING** |
+| **3．驗證分階段交付** | 安全顯示來源預覽、未核草稿隔離與後段失敗保留 | `agent-feedback-sources`、`OfficialHelpCards.tsx`、`chat-controller.ts`（`#634`）；採來源卡先到＋完整核准答案一次交付，後段 `503` 保留合格來源卡並於 `403` 清卡 | **MERGED SAFETY CORE (`#634`) \| STAGGERED MULTI-SECTION ANSWER DEFERRED BY DESIGN** |
+| **4．有證據調校** | 瓶頸後對比快取、輪次、模型設定與事前預處理 | PR 5 以合成種子和記憶體 `Map` 示範冷暖計數，未量度產品查詢快取。 | **產品快取待驗；真模型比較另待批准** |
+
+#### 3. REQ-002 24 組需求的證據與缺口（ID 01–24）
+
+| ID | 需求群組與章節範圍 | 實施套件／檔案／符號 | 已記錄的測試／證據範圍 | 結論與保留邊界 |
+|---|---|---|---|---|
+| **01** | 整體 A／B／C 目標及共同契約（§§1–2） | `#600`–`#608`、`#634`、`#640`、PR 3–5 | 各分支分別有離線收據；四個里程碑有欄位，未在組合版本量度。 | **組合待驗；產品速度及品質待驗** |
+| **02** | §3.1 同輪多查詢及有界唯讀並行（AC 507–510） | PR 3 `server/agent-tool-batch.ts`（`collectContiguousReadSlice`、`runReadToolBatch`、`DEFAULT_READ_TOOL_BATCH_POLICY` `batchSize=4, maxConcurrent=2`）、`server/agent-runtime.ts` | PR 3 cases 1–4 涵蓋批次、串行屏障、逾時、取消及撤權；不量度真實模型延遲。 | **LOCAL SYNTHETIC VERIFIED (PR 3 `65bea4a3`) \| LIVE ADK PARALLEL LATENCY PENDING** |
+| **03** | §3.2 有界相關片段、版本／條件與按需原文（AC 511） | `#601`/`#606` `server/knowledge-retriever.ts`、`read_knowledge_context`、`server/knowledge-cited-pdf.ts` | `tests/search-official-evidence.test.ts`（16 cases）；PR 5 `verifyCitedVersionsInStore` 核對引用與 store 同版 `versionId`/`contentHash` | **MERGED & SEED VERIFIED \| PRODUCTION LIVE TEXT/TRUNCATION CHECK PENDING** |
+| **04** | §3.3 清晰查詢短路徑、純寒暄與不繞助手（AC 506） | `#607` (`3d6c6d3c`) `server/product-agent.ts`、`server/chat-delivery-review.ts` | PR 5 Case G（`你好，多謝`）：實測 `modelCalls: 1, queryEmbeddings: 0, reviewDecision: null` 且混合句不豁免 | **MERGED & VERIFIED \| LIVE LATENCY DELTA PENDING** |
+| **05** | §3.4 有效證據／追問復用及失效（AC 512） | PR 3 `server/knowledge-retriever.ts`、`server/product-agent-tools.ts` | `tests/req002-batch-reuse-and-repair.test.ts` cases 5–6：同版 chunk 零重查復用，contentHash 變更、撤回、過期、年齡／地區轉移或跨用戶／跨孩即失效 | **分支合成案例通過；私人來源選取權限重核待驗** |
+| **06** | §3.5 精準修正、保留成功結果與有限補驗（AC 513, 515） | `#608` + PR 3 `server/chat-delivery-review.ts`、`server/product-agent.ts` | `tests/req002-batch-reuse-and-repair.test.ts` cases 7–8：精準回傳 `availableOfficialCitationIds`、局部計算 live hash、阻斷無變更重送及阻斷為過關而刪引用 | **分支合成案例通過；修正提示的私人片段過濾待驗** |
+| **07** | §3.5／共用 root 審核預留與重審不另領額度（AC 516） | `#608` `server/agent-review-obligation.ts` + PR 3 case 9 + PR 5 `createProviderBoundaryGuard` | PR 3 case 9 驗證近餘額對照顧回覆安全預留審核而不錯扣澄清句；PR 5 邊界守衛計入 generation＋review/repair＋queryEmbeddings | **MERGED CORE + LOCAL SYNTHETIC VERIFIED \| LIVE PROVIDER BILLING CHECK PENDING** |
+| **08** | §3.6 解析／切段／索引與文件 embedding 預先完成 | `knowledge/hk-official-seed.json`（5 份種子）、`server/firestore-knowledge.ts` | `createSeededOfficialKnowledgeStore`（PR 5）與 `#606` 已證查詢期間使用已發佈向量，不重算文件向量；全站擴充屬 REQ-004/006 | **SEED BASELINE VERIFIED \| FULL CORPUS SYNC OUT OF REQ-002** |
+| **09** | §3.6 非關鍵背景工作與原 root 工作總帳對齊（AC 522） | PR 3 case 10 + PR 4 `server/agent-runtime.ts`、`firestore-product-agent.ts` | 兩分支分別覆蓋原 `rootRunId` 與延後保存，未在同一版本驗證總帳、授權及審核。 | **#675／#676 分支證據；組合待驗** |
+| **10** | §3.7 精簡完整答案與量測後調校 | `server/agent-prompt.ts` + PR 5 `runBaselineVsBoundedComparison` | 腳本模型／記憶體快取的對照不量度產品快取或答案品質。 | **產品品質與延遲另待同條件比較** |
+| **11** | §3.8 無工具角色原生 schema 與顯式降級（AC 514） | PR 4 `server/structured-output-schema.ts`、`server/agent-model-gateway.ts` | `tests/req002-schema-and-trace.test.ts` cases 3–6：覆蓋原生 `responseJsonSchema`／ADK `outputSchema` 及 `provider_native_schema_unsupported` 降級；合法 JSON 錯 hash／缺來源仍被拒絕 | **原生／降級訊號有分支收據；降級提示包含 schema 待驗** |
+| **12** | §4.1 真實事件驅動進度與不造百分比 | `#601`/`#602`/`#634` `src/shared/agent-feedback.ts` | `tests/agent-feedback.test.ts`（4/4 PASS on HEAD）、`createRunMilestoneTracker` 與 PR 5 SSE `preAbortPhases` 追蹤真實階段切換 | **MERGED & LOOPBACK VERIFIED** |
+| **13** | §4.2 簡潔主畫面、可展開詳情與跨端／無障礙一致 | `#634` (`3425c8f3`) `OfficialHelpCards.tsx`、`chatScreen.tsx` | `#634` 已交付 Edge Web DOM E2E（3+1 cases、`chat-official-help-dock` 零重疊、焦點維持及 `agent-run-view` 零內思洩漏）；原生手機實體軟鍵盤／`fontScale`／TalkBack／VoiceOver 待實機驗收 | **WEB DOM E2E MERGED (`#634`) \| NATIVE MOBILE PHYSICAL A11Y PENDING** |
+| **14** | §4.3 原 `runId` 序號、終態／unknown 與斷線恢復（AC 517–518） | `#602` + `#634` + PR 5 `runSseDisconnectAndRecoverySuite` | PR 5 真實 HTTP/SSE 途中中斷後驗證 `remoteReply.status === "running"`、`refreshOriginalReply()` 以 `duplicatePostCalls: 0` 復原、亂序／錯 `runId` 忽略及 `403` 清卡 | **主線核心與 #677 loopback 斷線收據；非原站實測** |
+| **15** | §4.4 角色級 metadata-only 追蹤與事件接點（AC 524） | PR 4 `server/agent-trace.ts`（`createAgentRunTraceCollector`、`sanitizeAgentTraceEvent`、`formatOtelMetadataSpan`）、`agent-runtime.ts`、`data-compose.ts`、`chat-delivery-review.ts` | `tests/req002-schema-and-trace.test.ts` cases 1–2, 7–10：主聊天、重試、取消與直接 `completeText` 角色均一次計量且白名單重建零 PII／正文外漏 | **僅 #676 分支；批次逐項追蹤及線上 exporter 待核** |
+| **16** | §4.4 上下文組裝版本、選取與省略理由追蹤 | PR 4 `server/agent-trace.ts`（`AGENT_CONTEXT_ASSEMBLY_POLICY_VERSION`、`AgentContextAssemblyMetadata`）、`server/product-agent.ts` | `tests/req002-schema-and-trace.test.ts` case 11：記錄 Prompt Pack 版本、受控來源版本、短回合省略原因與 loader 次數，且合成金絲雀零進 trace | **僅 #676 分支；未載入與已載空摘要的讀取計數待驗** |
+| **17** | §5.1 來源層先展示與 `found != read != 適用`（AC 519） | `#601`/`#602`/`#634`、`src/client/chat-controller.ts` | SSE 串流 `found`／`read` 來源卡早於最終正文到達；未核前不顯示正式建議，保留「已檢索官方來源預覽（未核草稿）」警語 | **MERGED IN `master` (`#634`)** |
+| **18** | §5.1 可獨立成立答案與後補詳情 | `#634` + PR 4 設計定案 | 採 **方案 A（來源層先到 ＋ 完整核准答案一次交付 ＋ 可展開引用詳情）**；未新增低效益逐段 LLM 審核平台，於 §8 待決 #6 明記設計取捨 | **DESIGN BOUNDED (SCHEME A) IN `master` & PR 4** |
+| **19** | §5.2 未核正文不外露與跨段一致性（AC 520） | `#608` + PR 3 `chat-delivery-review.ts` + `req002-acceptance-harness.ts` Case C | PR 5 Case C 在合成情境以 `delivery_review_no_sources` 停止，不代表已覆蓋修正後的跨分支路徑。 | **主線／#677 各自的證據；組合待驗** |
+| **20** | §5.2 緩衝核准答案立即顯示（無假打字延遲） | `server/agent-runtime.ts`（`StreamingMode.NONE`）、`src/client/chat-controller.ts`、`tests/official-help-entry.test.ts` | `#634` `tests/official-help-entry.test.ts` 與 Edge E2E 驗證完整核准答案到達即整段顯示，無人工逐字延遲 | **MERGED IN `master` (`#634`)** |
+| **21** | §5.3 後段失敗保留已核合格部分、缺項與下一步（AC 521） | `#634` `chat-controller.ts`、`OfficialHelpCards.tsx` + PR 5 `stoppedRetainsQualifiedCards` | 驗證 `503`／停止時保留合格來源卡及「重試原訊息回覆／開始新訊息」恢復選項，未核草稿絕不升格，遇 `!chatWritesAllowed` 或 `403` 即清除 | **MERGED & PR 5 VERIFIED** |
+| **22** | §6 實施基線、依賴及同條件對照 | PR 5 `scripts/lib/req002-acceptance-runner.ts` (`runBaselineVsBoundedComparison`) | 腳本對照：3-turn sequential（4 model calls / 3 tool calls）與 1-batch bounded（2 model calls / 3 tool calls）；冷／暖計數使用記憶體 `Map`。 | **僅示範計數；產品派發、快取及真模型比較待驗** |
+| **23** | §7.1 核心時間指標與品質／成本護欄 | PR 5 `createRunMilestoneTracker` & `req002AcceptanceReceiptSchema` | 收據含 `firstMeaningfulProgressMs`、`firstUsableSourceMs`、`firstApprovedAnswerMs`、`terminalSettledMs`、`terminalCategory`；原版讀完整個 SSE 回應後才處理進度幀。 | **未驗證首個使用者可見結果的實際到達時間；未有 p50/p95** |
+| **24** | §7.2 十九項場景與 §8 八項待決清單收束 | PR 6 `PLAN.md#req002-closeout01`、`docs/REQUIREMENTS_BACKLOG.md`、`tests/req002-acceptance-closeout.test.ts` | 19 項場景與 8 項待決逐項對齊、結構測試驗證零靜默遺漏與無越權結案聲明 | **IN CURRENT PR (`codex/req002-acceptance-closeout`)** |
+
+#### 4. REQ-002 §7.2 全部 19 項具體場景逐項收據映射
+
+| 場景編號 | §7.2 場景原文 | 對應程式與測試收據 | 結論與剩餘邊界 |
+|---|---|---|---|
+| **S72-01** | 單純 `hi／謝謝` 且沒有其他操作語義 | `#607` (`3d6c6d3c`) + PR 5 `case_g_greeting_short_path`（`modelCalls=1, queryEmbeddings=0, reviewDecision=null`） | **離線已驗證**；混合句強制進入完整檢索審核 |
+| **S72-02** | 三項已知互不依賴的搜索 | PR 3 `tests/req002-batch-reuse-and-repair.test.ts` case 1 + PR 5 `runBaselineVsBoundedComparison`（4→2 model calls） | **兩分支各自有合成案例；組合待驗**，4→2 是腳本計數，不是真模型的採用率或速度。 |
+| **S72-03** | 後一查詢依賴前一項型號／內容 | PR 3 `collectContiguousReadSlice` + test case 2（相依讀取與寫入屏障強制分輪順序執行） | **本地合成已驗證**（PR 3 `65bea4a3`） |
+| **S72-04** | 批次超限、一項逾時或失敗 | PR 3 `runReadToolBatch` + test case 3（`maxConcurrent=2`, `batchSize=4`, 單項失敗／配額受限保留同批其餘成功結果） | **本地合成已驗證**（PR 3 `65bea4a3`） |
+| **S72-05** | 查詢中取消或撤權 | PR 3 test case 4（中止排隊讀取與禁揭私資）+ PR 5 `revocationClearedCards`（HTTP `403` 清卡） | **排隊取消與 403 清卡分屬不同收據；撤權後的證據復用與修正待驗** |
+| **S72-06** | 搜索結果需補原文 | `#606` (`39f2f322`) `read_knowledge_context` + PR 5 `verifyCitedVersionsInStore`（核對 `versionId`／`contentHash`） | **主線＋離線已驗證**；線上多頁原件詳情參見 REQ-006 原站收據 |
+| **S72-07** | 追問復用與來源更新／失效 | PR 3 `tests/req002-batch-reuse-and-repair.test.ts` cases 5–6（同版免重搜；hash 改、撤回、過期、條件變、跨家庭即失效） | **既有分支案例通過；停用私人來源後的復用待驗** |
+| **S72-08** | 格式／引用拒絕之局部精準修正 | PR 3 test cases 7–8（回傳 `availableOfficialCitationIds`、重算 hash、禁無變更重送） | **既有分支案例通過；修正提示納入的證據須另驗授權** |
+| **S72-09** | 無工具角色的原生 schema 與降級 | PR 4 `tests/req002-schema-and-trace.test.ts` cases 3–6（原生 schema、顯式降級、錯引用／hash 仍拒） | **既有分支案例通過；降級提示是否包含原 schema 待驗** |
+| **S72-10** | 修正影響正文含義或證據 | `#608` (`a3b6a24f`) + PR 3 test case 8（重算內容 hash、強制重核受影響段落） | **主線＋本地合成已驗證** |
+| **S72-11** | 接近收尾餘額及修訂／重審 | `#608` (`tests/agent-review-obligation.test.ts` 17 cases) + PR 3 test case 9（近餘額按義務保留或誠實停止） | **主線＋本地合成已驗證** |
+| **S72-12** | 並行事件亂序／重複 | `#602` (`4c631853`) `reconcileAgentProgress` + PR 5 `lateOutOfOrderIgnored=true` | **主線＋PR 5 已驗證** |
+| **S72-13** | 斷線後原 `run` 完成 | PR 5 `runSseDisconnectAndRecoverySuite`（真 SSE 途中切斷，`refreshOriginalReply` `duplicatePostCalls=0` 查回同 `runId`） | **PR 5 已驗證**（`8e3b72ca`） |
+| **S72-14** | 來源先到、答案仍審核中 | `#601`/`#634` `ProgressSourceCards` 與未核草稿隔離提示 | **主線已驗證**（`#634`） |
+| **S72-15** | 分段答案涉及照護結論 | 採「來源卡先到 ＋ 完整核准答案一次交付」策略；未核照護正文絕不提前串流 | **設計與安全門檻已鎖定**（#608 / PR 4 / `#634`） |
+| **S72-16** | 最後補充失敗 | `#634`（`503`／停止保留合格來源預覽卡與重試／新問入口）+ PR 5 `stoppedRetainsQualifiedCards=true` | **主線＋PR 5 已驗證** |
+| **S72-17** | 非關鍵工作改為背景 | PR 3 case 10 + PR 4（繼承 `rootRunId`、不重領額度、不延後關鍵授權與審核） | **#675／#676 各自的分支收據；同一版本的背景工作與總帳待驗** |
+| **S72-18** | Web／手機／輔助閱讀一致性 | `#634` Edge Web DOM E2E（焦點保留、零重疊、展開詳情無內思外洩）；Android／iOS 真機軟鍵盤／`fontScale`／TalkBack／VoiceOver 待實機驗收 | **Web DOM 已驗證 (`#634`) \| 原生手機實機待驗** |
+| **S72-19** | 主聊天及專責角色追蹤與 OTel 禁收正文 | PR 4 `tests/req002-schema-and-trace.test.ts` cases 1–2, 7–11（全角色＋組裝 metadata 白名單，PII 零外漏） | **#676 白名單有分支收據；批次逐項關聯及線上 exporter 待核** |
+
+#### 5. REQ-002 §8 八項待決事項與不展開範圍結算
+
+1. **代表問題、基線環境、樣本量、時間點與品質／成本門檻（§8 #1）：** PR 5 定義 Case G／A／B／C、四項里程碑與建議 smoke 預算（`runs <= 3 / modelCalls <= 10 / queryEmbeddings <= 4`）。舊版旗標可放寬上限，不能用作付費執行保證；超限拒絕及逐事件量度待驗。
+2. **ADK JS 2.1.0 多工具採用率與 `batch_search` 需要性（§8 #2）：** *分支已實作* — 沿用原生多 tool calls 搭配 PR 3 `runReadToolBatch` 有界唯讀並行派發，不另行替換框架；真模型多呼觸發比例待 `--live` 實測。
+3. **並行上限、批次大小、逾時與義務預留（§8 #3）：** *工程預設已固定* — `DEFAULT_READ_TOOL_BATCH_POLICY` 預設 `batchSize = 4`、`maxConcurrent = 2`（PR 3 `server/agent-tool-batch.ts`），結合 `#608` `agent-review-obligation.ts` 按當次實際義務預留；正式生產調優參數待 `--live` 後核可。
+4. **片段上限、追問復用期限與版本失效（§8 #4）：** *分支案例已記錄，私人來源權限仍待驗* — 同 run 與追問核對 `versionId`／`contentHash`／withdrawal／expiry／年齡地區／跨家庭隔離（PR 3 `knowledge-retriever.ts`）；公開冷暖查詢快取 TTL 細部調優保留為運維參數。
+5. **進度契約、詳情層級與供應商推理摘要（§8 #5）：** *已定案* — 採用 `#602`/`#634` 真實階段＋來源預覽卡＋可展開詳情；**不採用供應商推理摘要亦不另開模型播報進度**，零額外呼叫與零思考外漏。
+6. **分段交付單位與逐段審核取捨（§8 #6）：** *已定案* — 採「來源卡先到 ＋ 完整核准答案一次交付 ＋ 按需展開引用原文」之低複雜度安全設計；不引入逐段 LLM 審核平台。
+7. **跨包責任次序與 `--live` 授權預算（§8 #7）：** 先完成上述同一版本的離線組合驗收。真實 Gemini／Vertex 另須專案擁有者明示批准計費專案、次數／成本上限與停止條件；離線收據不構成付費授權。
+8. **無工具 schema 降級契約與 trace 白名單／compaction（§8 #8）：** *原生支援與白名單有分支收據；降級提示及組合追蹤待驗* — PR 4 確定 `responseJsonSchema`／`outputSchema`＋`provider_native_schema_unsupported` 顯式降級、`sanitizeAgentTraceEvent` 與 `formatOtelMetadataSpan` 嚴格白名單、`AGENT_CONTEXT_ASSEMBLY_POLICY_VERSION = "context-assembly/1"`，同 run compaction 沿 REQ-005 `context-compactor.ts`；正式生產 exporter 接線須維持同一白名單過濾器。
+
+- **本包明確不展開項目：** 不更換 ADK／既有 Agent 框架、不建置通用多代理排程平台、不執行全量壓力測試、不擅自切換付費模型或提升配額、不繞過引用或獨立審核、不展示模型內部思考或轉錄，且不將真實家庭資料用於測試外發。

@@ -6713,3 +6713,14 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 1）**C 類按需即時搜尋與原文讀取（`src/shared/live-source-citation.ts`、`server/live-source-citation.ts`、`server/live-community-product-search.ts`）**：實作 `createLiveCommunityProductSearch`、`composeLiveSourceReaders`、`validateApprovedLiveUrl`、`extractLiveProductSpec` 與 `validateLiveSourceClaims`，於外搜查詢前置 `assertPublicKnowledgeQuery` 最小化、封鎖登入／會員受限路徑、對 401/403/登入牆/非 HTML 頁面明確輸出 `limitations` 而絕不以搜尋摘要充當原文，不杜撰缺失日期，並對社群自述、疑似廣告／贊助、過舊來源、不同地區版本／經驗矛盾與片段節錄自動標記 `cautions`；同時於 `server/product-agent-tools.ts` 接入 `searchDetailed` 限制回傳與 `unsupported_live_claim` 程式檢查，防止在社群／商品即時引用中虛構整體家長統計、作商業購買推薦或偽稱已驗證購買／臨床證明。
 2）**前端非色彩＋適度色彩區分與離線驗收（`frontend/src/components/chat/AnswerSources.tsx`、`CitationMarker*.tsx`、`agent-projection.ts`）**：為即時來源加入 `【n·即時】` 與「即時搜尋 · 社群經驗／商品資料」文字徽章及適度暖琥珀樣式（不動既有庫來源外觀及 `pressed` 狀態），展開對話框呈現 `productSpecLabel` 與 `cautionLabels` 警示；新增 `tests/req001-live-community-product-search.test.ts`（8/8 通過），離線守衛清單 12 整檔共 155 案通過 `summary-progress-contract.mjs`，三組嚴格 `tsc --noEmit` 皆 exit 0，並確認對 `_knowledge_`／`_library_preferences` 零持久寫入。
 3）**限制邊界**：本分支僅於本地進行離線合成測試、靜態型別與衛生檢查並本地提交，尚未推送遠端或執行真實外網搜索、真實 Gemini／Vertex 調用與實機驗收。
+
+### 2026-11-19　完成 REQ-002 全量收束對照表、19 項場景映射與需求狀態校準（`codex/req002-acceptance-closeout`）
+
+1）**建立權威收束入口（`PLAN.md#req002-closeout01`、`PLAN.md#agent-search-first`）**：整理主線已合併核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）及 `#640`／`#634` 與獨立本地候選分支（`codex/req002-batch-reuse-and-repair` `2ddc0bbf`、`codex/req002-schema-and-metadata-trace` `54029065`、`codex/req002-live-benchmark-and-disconnect` `8e3b72ca`），補全 REQ-002 24 組需求群組矩陣（ID 01–24）、§7.2 全部 19 項驗收場景映射（`S72-01`–`S72-19`）、§6 階段 0–4 校準及 §8 全部 8 項待決事項定案與保留邊界。
+2）**同步校準需求狀態（`docs/REQUIREMENTS_BACKLOG.md`）**：更新索引與 §1「目前狀態」說明，移除過時之「尚未實作」，明確導引至 `PLAN.md#req002-closeout01`，同時嚴格保留真實 `--live` 付費模型基準、原站同步部署與 Android／iOS 實體手機無障礙實機待驗收口徑，不越權宣稱全包完成。
+3）**離線結構測試與 CI 門檻**：新增 `tests/req002-acceptance-closeout.test.ts`（4/4）與離線 CI 腳本（`.github/workflows/req002-acceptance-closeout-offline.yml`、`scripts/ci/verify-req002-acceptance-closeout-offline.sh`，共 22 檔 / 218 cases 與三份嚴格 `tsc --noEmit`）；本階段未推送遠端亦未開設 PR。
+4）**正向對齊 `origin/master`（`3c02633a`）與推送前核對**：同步 PR 3（`codex/req002-batch-reuse-and-repair` `65bea4a3`，25 檔 / 231 cases）與 PR 4（`codex/req002-schema-and-metadata-trace` `5e7f60d2`，31 檔 / 284 cases）正向合併後之最新 SHA 與離線測試 manifest，確認 4 個待開 PR 分支皆可無衝突併入 `master`。
+
+### REQ-002 三分支離線整合收據
+
+同一整合 SHA `29cee08024a2068192e11c2eee2febb32ecfb5fd`：[GitHub Actions 44566154835](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)，41 檔 337/337 及三份嚴格 TypeScript 設定通過。[採用版本、命令及各項結果](PLAN.md#req002-closeout01)。未執行付費模型、原站或實機驗收。
