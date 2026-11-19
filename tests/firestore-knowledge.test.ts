@@ -23,7 +23,7 @@ import { knowledgeReviewHash, type KnowledgeReviewAssessment } from "../server/k
 import { rankKnowledge } from "../server/knowledge-ranking.ts";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
-import { createFirestoreKnowledgeRefresh } from "../server/firestore-knowledge-refresh.ts";
+import { createFirestoreKnowledgeRefresh, parseKnowledgeObservation } from "../server/firestore-knowledge-refresh.ts";
 import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
 import { createKnowledgeSourceFetcher } from '../server/knowledge-source-fetch.ts';
 import { verifyPortableMethod } from '../server/knowledge-portable-series.ts';
@@ -105,6 +105,81 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
   }
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
+test('the source maintainer can revise treatment without changing the published document until review and publication', async () => {
+  const { createAdminKnowledgeTreatments } = await import('../server/admin-knowledge-treatments.ts');
+  const { handleAdminRequest } = await import('../server/admin-api.ts');
+  const f = fixture();
+  const original = source('synthetic-guidance', [chunk('first', {
+    originalKind: 'page_transcription', pageStart: 1, pageEnd: 1, treatment: { kind: 'detailed', policyVersion: 1 },
+  })]);
+  const extraction = { format: 'text_pdf' as const, totalPages: 1, pageStart: 1, pageEnd: 1, contentHash: '3'.repeat(64), complete: true };
+  original.extraction = extraction;
+  const rule = {
+    id: original.sourceId, url: original.url, kind: 'pdf' as const, pdfPages: { startPage: 1, endPage: 1 }, title: original.title,
+    classification: original.classification, publisher: original.publisher, termsUrl: original.termsUrl, audience: 'public_noncommercial' as const
+  };
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [rule], readControl: async () => ({ enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }) });
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate });
+  const observation = { url: original.url, title: original.title, text: '', sourcePublishedAt: null, sourceUpdatedAt: null,
+    sourceDateText: null, nativeWindowMethod: 'native-pdf-window/1' as const, extraction: { ...extraction, complete: false } };
+  await refresh.register(rule.id, 'operator');
+  await refresh.process((await refresh.jobs())[0]!.data, crypto.randomUUID(), async () => ({ status: 'ok', items: [observation] }), new AbortController().signal);
+  const baseline = { ...await store.importSource(original), document: original }, observationId = observationHash(parseKnowledgeObservation(observation));
+  const originalAssessment = { ...assessment(original), observationHash: observationId };
+  await assert.rejects(store.review(baseline.versionId, baseline.hash, 'operator', originalAssessment), /knowledge_window_review_required/u);
+  await store.review(baseline.versionId, baseline.hash, 'operator', originalAssessment, {
+    sourceId: original.sourceId, contentHash: observationId, verifyWindowedReview: async (_tx, hash) => hash === baseline.hash,
+  });
+  while (!(await store.prepareSearch(baseline.versionId, baseline.hash)).complete) { }
+  await store.publish(baseline.versionId, baseline.hash, embeddings(original));
+  let enabled = true;
+  const workflow = createAdminKnowledgeTreatments(store, async () => ({ enabled }));
+  const id = baseline.document.sourceId, key = baseline.document.chunks[0]!.key;
+  const auth = (user: string) => ({ getSession: async () => ({ user: { id: user } }), assertRecentReauthentication: async () => ({ user: { id: user } }) });
+  const call = (user: string, body?: unknown, path = id) => handleAdminRequest(new Request('https://example.test/api/admin/knowledge-treatments/' + path, {
+    method: body ? 'POST' : 'GET', headers: { origin: 'https://example.test', 'x-expected-user-id': user }, ...(body ? { body: JSON.stringify(body) } : {})
+  }), {
+    admin: { treatments: workflow }, adminUid: 'maintainer', publicOrigin: 'https://example.test', auth: auth(user),
+    readJson: (request: Request) => request.json()
+  } as unknown as Parameters<typeof handleAdminRequest>[1]);
+  const expected = { baseId: baseline.versionId, baseHash: baseline.hash };
+  const edit = { action: 'draft', ...expected, changes: [{ key, treatment: { kind: 'overview', policyVersion: 1 } }] };
+  await assert.rejects(call('parent', edit), { code: 'forbidden' });
+  await assert.rejects(call('parent'), { code: 'forbidden' });
+  await assert.rejects(call('maintainer', edit, 'unregistered-source'), { code: 'knowledge_source_not_allowed' });
+  const prior = await (await call('maintainer')).json();
+  assert.equal(prior.versionId, baseline.versionId);
+  const draft = await (await call('maintainer', edit)).json();
+  assert.equal(draft.state, 'draft'); assert.equal((await store.publishedEdition(id))!.versionId, baseline.versionId);
+  const selected = await (await call('maintainer', undefined, id + '?version=' + draft.versionId)).json();
+  assert.equal(selected.chunks[0].treatment.kind, 'overview'); assert.equal(selected.chunks[0].sourceExcerpt, prior.chunks[0].sourceExcerpt);
+  const target = { ...expected, versionId: draft.versionId, versionHash: draft.versionHash };
+  await assert.rejects(call('maintainer', { ...target, action: 'publish' }), { code: 'knowledge_version_unreviewed' });
+  const changed = { ...baseline.document, chunks: baseline.document.chunks.map(c => ({ ...c, treatment: { kind: 'overview' as const, policyVersion: 1 as const } })) };
+  const review = { ...target, action: 'review', sourceAndTermsChecked: true, assessment: { ...assessment(changed, baseline), observationHash: observationId } };
+  await assert.rejects(call('maintainer', { ...review, assessment: { ...review.assessment, changes: [] } }), { code: 'knowledge_review_incomplete_diff' });
+  enabled = false;
+  await assert.rejects(call('maintainer', review), { code: 'knowledge_treatment_maintenance' });
+  enabled = true;
+  assert.equal((await (await call('maintainer', review)).json()).state, 'reviewed');
+  const reviewedRecords = structuredClone([...f.records.entries()]);
+  assert.equal((await (await call('maintainer', review)).json()).state, 'reviewed');
+  assert.deepEqual([...f.records.entries()], reviewedRecords);
+  assert.equal((await store.catalog(null)).items[0]!.versionId, baseline.versionId);
+  enabled = false;
+  await assert.rejects(call('maintainer', { ...target, action: 'publish' }), { code: 'knowledge_treatment_maintenance' });
+  enabled = true;
+  assert.equal((await (await call('maintainer', { ...target, action: 'publish' })).json()).state, 'published');
+  assert.equal((await store.publishedEdition(id))!.versionId, draft.versionId);
+  assert.equal((await store.catalog(null)).items[0]!.versionId, draft.versionId);
+  assert.equal((await (await call('maintainer', { ...target, action: 'publish' })).json()).state, 'published');
+  await assert.rejects(call('maintainer', edit), { code: 'knowledge_review_baseline_changed' });
+  const old = await (await call('maintainer', undefined, id + '?version=' + baseline.versionId)).json();
+  assert.equal(old.state, 'draft');
+  const contentChange = await store.importSource({ ...original, title: 'A different document title' });
+  await assert.rejects(call('maintainer', undefined, id + '?version=' + contentChange.versionId), { code: 'knowledge_treatment_content_changed' });
+});
+
 test('REQ-006 two authenticated library owners independently pin, follow, adopt and withdraw the same public edition', async () => {
   const f = fixture(), cipher = createStorageCipher(Buffer.alloc(32, 19));
   const store = createFirestoreKnowledgeStore({ ...f.options, cipher });

@@ -94,6 +94,10 @@ export function sourceVersionHash(source: KnowledgeSourceInput): string {
   const { fetchedAt: _fetchedAt, ...content } = source;
   return knowledgeHash(content);
 }
+/** Treatment-only versions may reuse the reviewed original only if all its content is identical. */
+export function treatmentContentHash(source: KnowledgeSourceInput): string {
+  return sourceVersionHash({ ...source, chunks: source.chunks.map(({ treatment: _, ...content }) => content) });
+}
 export function embeddingDocument(title: string, section: string, body: string): { title: string; text: string; hash: string } {
   const documentTitle = `${title} — ${section}`;
   return { title: documentTitle, text: body, hash: knowledgeHash([documentTitle, body]) };

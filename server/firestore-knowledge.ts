@@ -4,7 +4,7 @@ import { FieldValue, VectorValue, type Firestore, type Transaction } from "@goog
 import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { personalLibraryItemSchema, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
-import { embeddingDocument, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { embeddingDocument, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash, treatmentContentHash } from "./knowledge-inputs.ts";
 import { knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
@@ -40,10 +40,16 @@ export type FirestoreKnowledgeImportResult = { versionId: string; hash: string; 
 export type FirestoreKnowledgeImportCommit = (tx: Transaction, edition: FirestoreKnowledgeImportResult & { sourceId: string }) => Promise<void>;
 /** Trusted operator work participates in the publication transaction, never a model argument. */
 export interface FirestoreKnowledgePublicationFence {
+  /** A treatment-only draft keeps the old observation binding until atomic publication. */
+  treatmentBaseline?: string;
   prepare(transaction: Transaction, publication: {
     sourceId: string; versionId: string; versionHash: string; observationHash: string | null;
     previousVersionId: string | null; sourceEnabled: boolean;
   }): Promise<() => void>;
+}
+export interface TreatmentEdition {
+  versionId: string; versionHash: string; state: "draft" | "reviewed" | "withdrawn";
+  source: KnowledgeSourceInput; observationHash: string | null;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
   recheckPdfRange(input: PdfRangeRequest, readPdf: (id: string, sha256: string) => Promise<Buffer>): Promise<{ versionId: string; versionHash: string; pageStart: number; pageEnd: number }>;
@@ -54,18 +60,19 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   saveLibraryPreference(tx: Transaction, owner: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     source: KnowledgeSourceInput; enabled: boolean } | null>;
+  treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
   importSource(input: unknown, commit?: FirestoreKnowledgeImportCommit, library?: PortableSeries): Promise<FirestoreKnowledgeImportResult>;
-  prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
+  prepareSearch(versionId: string, expectedHash: string, guard?: (tx: Transaction) => Promise<void>): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
     complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
-    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<boolean> }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
+    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<boolean> }, treatmentGuard?: (tx: Transaction) => Promise<void>): Promise<{ status: "reviewed" | "held"; reason?: string }>;
   publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[],
     fence?: FirestoreKnowledgePublicationFence): Promise<{ status: "published" }>;
   disable(sourceId: string, reason: string): Promise<void>;
@@ -227,12 +234,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     if (sourceVersionHash(document) !== version.versionHash) reject("knowledge_binding_invalid", 503);
     return { ...edition, chunks: records, document };
   }
-  function observationCurrent(edition: Edition): boolean {
+  function observationCurrent(edition: Edition, approvedVersionId = edition.version.versionId): boolean {
     const context = edition.observed, review = edition.version.review;
     if (!context) return !review?.assessment.observationHash && !review?.watchRevision && edition.document.classification !== "recent_information";
     const observed = context.observation;
     return context.catalogMatches && context.watch.enabled && !(context.watch.confirmedGone ?? context.watch.lastStatus === "unavailable") && observed !== null && !observed.unavailable
-      && observed.approved?.contentHash === observed.contentHash && observed.approved?.versionId === edition.version.versionId
+      && observed.approved?.contentHash === observed.contentHash && observed.approved?.versionId === approvedVersionId
       && observed.approved?.watchRevision === context.watch.revision && review?.watchRevision === context.watch.revision
       && review.assessment.observationHash === observed.contentHash;
   }
@@ -340,10 +347,11 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     if (start !== end || !prior) tx.set(versionRef(versionId), next);
     return { complete: end === KNOWLEDGE_LEXICAL_BUCKETS, bucketsCompleted: end, bucketsTotal: KNOWLEDGE_LEXICAL_BUCKETS, termCount: index.termCount };
   }
-  async function prepareSearch(versionId: string, expectedHash: string) {
+  async function prepareSearch(versionId: string, expectedHash: string, guard?: (tx: Transaction) => Promise<void>) {
     if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
     return database.runTransaction(async tx => {
       const edition = await load(tx, versionId), version = edition.version;
+      await guard?.(tx);
       if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
       return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
@@ -514,6 +522,32 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (!snapshot.exists || checkedChunk(edition, snapshot.data()).contentHash !== citation.contentHash) return null;
         return { sourceId: source.sourceId, url: document.url, sha256: document.extraction.contentHash };
       }, { readOnly: true });
+    },
+    async treatmentEditions(id, candidateId, transaction) {
+      if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
+      const read = async (tx: Transaction) => {
+        const source = await readSource(tx, id);
+        if (!source?.enabled || !source.activeVersionId) reject("knowledge_source_unavailable");
+        const current = await load(tx, source.activeVersionId, source);
+        if (!isPublicEdition(current) || !publication(current)) reject("knowledge_source_unavailable");
+        const selected = candidateId && candidateId !== source.activeVersionId ? await load(tx, candidateId) : current;
+        if (selected.source.sourceId !== id || !isPublicEdition(selected)) reject("knowledge_source_not_allowed", 403);
+        const view = (edition: typeof current): TreatmentEdition => {
+          const { version } = edition;
+          const needsReview = version.versionId !== current.version.versionId && version.reviewState === 'reviewed'
+            && (version.review?.assessment.comparedVersionId !== current.version.versionId
+              || version.review.assessment.comparedHash !== current.version.versionHash
+              || version.review.assessment.observationHash !== (current.observed?.observation?.contentHash ?? null)
+              || version.review.watchRevision !== (current.observed?.watch.revision ?? null));
+          return {
+            versionId: version.versionId, versionHash: version.versionHash, source: edition.document,
+            state: needsReview ? 'draft' : version.reviewState,
+            observationHash: edition.observed?.observation?.contentHash ?? null,
+          };
+        };
+        return { base: view(current), selected: view(selected) };
+      };
+      return transaction ? read(transaction) : database.runTransaction(read, { readOnly:true });
     },
     async publishedEdition(id) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
@@ -691,11 +725,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         return result;
       });
     },
-    async review(versionId, expectedHash, reviewer, raw, expectedObservation) {
+    async review(versionId, expectedHash, reviewer, raw, expectedObservation, treatmentGuard) {
       if (!hash.safeParse(expectedHash).success || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/u.test(reviewer)) reject("knowledge_review_invalid", 400);
       const assessment = knowledgeReviewAssessmentSchema.parse(raw), assessmentHash = knowledgeReviewHash(assessment), reviewedAt = new Date().toISOString();
       return database.runTransaction(async tx => {
         const edition = await load(tx, versionId), { source, version, document } = edition;
+        await treatmentGuard?.(tx);
         if (version.versionHash !== expectedHash) reject("knowledge_review_version_mismatch");
         if (expectedObservation && (expectedObservation.sourceId !== source.sourceId || expectedObservation.contentHash !== assessment.observationHash))
           reject("knowledge_observation_review_mismatch");
@@ -705,16 +740,22 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (observed && (!observed.catalogMatches || (observed.watch.confirmedGone ?? observed.watch.lastStatus === "unavailable"))) reject("knowledge_observation_review_mismatch");
         if (options.audience !== "internal" && (internalKnowledgeSource(document.url) || observed?.watch.definition.audience === "internal_noncommercial")) reject("knowledge_source_internal_review_required", 403);
         const original = observed?.observation ? await options.observations!.content(tx, observed.observation) : null;
+        const windowBaseline = original?.nativeWindowMethod && treatmentGuard && source.activeVersionId
+          ? await load(tx, source.activeVersionId, source) : null;
+        // Only the original page evidence carries forward. The new treatment still needs its own assessment.
+        const retainedWindows = windowBaseline && windowBaseline.version.versionId === assessment.comparedVersionId
+          && windowBaseline.version.versionHash === assessment.comparedHash && publication(windowBaseline)
+          && treatmentContentHash(document) === treatmentContentHash(windowBaseline.document);
         const checkedWindows = Boolean(original?.nativeWindowMethod &&
-          (assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash ||
+          (retainedWindows || assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash ||
             expectedObservation?.verifyWindowedReview && await expectedObservation.verifyWindowedReview(tx, expectedHash)));
         checkKnowledgeObservation(document, observed?.watch, original && observed?.observation ? {
           document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash,checkedWindows);
         if (version.reviewState === "reviewed" && version.review?.assessmentHash === assessmentHash
           && (version.review.watchRevision ?? null) === (observed?.watch.revision ?? null)
-          && (!observed || observationCurrent(edition))
+          && (!observed || observationCurrent(edition) || treatmentGuard && assessment.comparedVersionId && observationCurrent(edition, assessment.comparedVersionId))
           && (source.activeVersionId === assessment.comparedVersionId || source.activeVersionId === versionId)) return { status: "reviewed" as const };
-        const compared = source.activeVersionId ? await load(tx, source.activeVersionId, source) : null;
+        const compared = windowBaseline ?? (source.activeVersionId ? await load(tx, source.activeVersionId, source) : null);
         if ((compared?.version.versionId ?? null) !== assessment.comparedVersionId || (compared?.version.versionHash ?? null) !== assessment.comparedHash)
           reject("knowledge_review_baseline_changed");
         validateKnowledgeAssessment(assessment, document, compared?.document ?? null);
@@ -726,7 +767,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
           checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };
         const nextSource = bump(source); writeBudget([next, nextSource]);
-        if (approved && observed) options.observations!.approve(tx, observed, versionId, reviewer, reviewedAt);
+        if (approved && observed && !treatmentGuard) options.observations!.approve(tx, observed, versionId, reviewer, reviewedAt);
         tx.set(versionRef(versionId), next); tx.set(sourceRef(source.sourceId), nextSource);
         return approved ? { status: "reviewed" as const } : { status: "held" as const, reason: assessment.decision === "hold" ? "operator_hold" : "growth_rules_require_review" };
       });
@@ -741,7 +782,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (version.reviewState !== "reviewed" || !review || review.assessment.decision !== "approve" || review.assessment.growthRuleImpact === "requires_review")
           reject("knowledge_version_unreviewed");
         if (version.search?.completed !== KNOWLEDGE_LEXICAL_BUCKETS) reject("knowledge_search_incomplete");
-        if (!observationCurrent(edition)) reject("knowledge_observation_review_required");
+        const treatmentTransfer = !!edition.observed && !!fence?.treatmentBaseline && source.enabled
+          && source.activeVersionId === fence.treatmentBaseline && review.assessment.comparedVersionId === fence.treatmentBaseline
+          && observationCurrent(edition, fence.treatmentBaseline);
+        if (!observationCurrent(edition) && !treatmentTransfer) reject("knowledge_observation_review_required");
         if (options.audience !== "internal" && (internalKnowledgeSource(edition.document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial"))
           reject("knowledge_source_internal_review_required", 403);
         if (edition.document.validUntil && Date.parse(edition.document.validUntil) <= Date.now()) reject("knowledge_version_expired");
@@ -781,6 +825,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (publication(edition) && updated.every((chunk, index) => chunk.vectorHash === edition.chunks[index]!.vectorHash)) {
           commitWork?.(); return { status: "published" as const };
         }
+        if (treatmentTransfer) options.observations!.approve(tx,edition.observed!,versionId,review.reviewer,publishedAt);
         const nextVersion = { ...version, publishedAt: version.publishedAt ?? publishedAt };
         const nextSource = { ...bump(source), activeVersionId: versionId, enabled: true, disabledReason: null };
         writeBudget([nextVersion, nextSource, ...updated]);

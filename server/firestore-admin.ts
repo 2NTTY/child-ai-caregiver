@@ -22,7 +22,8 @@ import type { createKnowledgeTransfers } from './firestore-knowledge-transfers.t
 export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFinancialEvidence?: () => DayFinancialEvidence[] | undefined }, config: AiConfig,
   knowledge?: Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'adminStatus'>, indexBatches?: KnowledgeIndexBatches,
   transfers?: Pick<ReturnType<typeof createKnowledgeTransfers>, 'list' | 'page' | 'control'>,
-  receiveArchive?: ReturnType<typeof import('./admin-knowledge-archive.ts').createKnowledgeArchiveReceiver>) {
+  receiveArchive?: ReturnType<typeof import('./admin-knowledge-archive.ts').createKnowledgeArchiveReceiver>,
+  treatments?: ReturnType<typeof import('./admin-knowledge-treatments.ts').createAdminKnowledgeTreatments>) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const policyRef = data.ref('admin_policy', 'platform-policy', 'current');
   const quotaKind = 'platform-quota-observation';
@@ -57,7 +58,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions & { usageFi
       if (saved.actorId !== actorId) domainReject('forbidden', 403); return saved;
     }, { readOnly: true });
   }
-  return { readPolicy, readPolicyIn, receiveArchive, budgetAlerts: createFirestoreBudgetAlerts(data, readPolicyIn),
+  return { readPolicy, readPolicyIn, receiveArchive, treatments, budgetAlerts: createFirestoreBudgetAlerts(data, readPolicyIn),
     knowledgeTransfers() { return transfers ?? domainReject('knowledge_transfers_unavailable', 503); },
     knowledgeIndexes() { return indexBatches ?? domainReject('knowledge_indexes_unavailable', 503); },
     knowledgeStatus(cursor: string | null = null) {
