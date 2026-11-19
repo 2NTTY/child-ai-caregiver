@@ -4,6 +4,7 @@ import { agentProposalSchema, privateSourceCitationSchema, proactiveNextCheckSch
 import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
 import { liveSourceCitationSchema } from './live-source-citation.ts';
 import { chunkTreatmentSchema, sourceSeriesSchema } from './source-series.ts';
+import { timelyEventLifecycleSchema } from './knowledge-timely.ts';
 
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u);
 const timestamp = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -29,7 +30,7 @@ export const agentCitationSchema = z.object({
   chunkId: uuid, sourceId: identifier, versionId: uuid, versionHash: z.string(), contentHash: z.string(),
   url: z.string(), title: z.string(), publisher: z.string(), classification: z.enum(['official_guidance', 'recent_information']),
   sourcePublishedAt: timestamp.nullable(), sourceUpdatedAt: timestamp.nullable(), sourceDateText: z.string().nullable().optional(),
-  validUntil: timestamp.nullable().optional(), fetchedAt: timestamp, checkedAt: timestamp,
+  validUntil: timestamp.nullable().optional(), timelyEvent: timelyEventLifecycleSchema.optional(), fetchedAt: timestamp, checkedAt: timestamp,
   lastSuccessfulCheckAt: timestamp.nullable().optional(), usageScope: z.enum(['public_noncommercial', 'internal_noncommercial']).optional(),
   reviewState: z.literal('reviewed'), applicabilityStatus: z.enum(['applicable', 'conditional', 'requires_clarification']).optional(),
   originalCoverage: z.enum(['chunk_original', 'excerpt_only']).optional(),

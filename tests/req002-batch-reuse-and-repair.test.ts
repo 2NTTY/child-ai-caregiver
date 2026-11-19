@@ -786,6 +786,58 @@ test("follow-up reply reuses valid prior official citations without re-searching
       }
     }
   }
+
+  // A reply can lose its live scope while an earlier turn's result is in flight.
+  // Discard that result before inspecting another run, profile or evidence source.
+  for (const mode of ["cancel", "revoke", "already_revoked"] as const) {
+    const runId = randomUUID(), prior = [randomUUID(), randomUUID()], messageId = randomUUID();
+    const entered = deferred<void>(), release = deferred<void>();
+    const priorReads: string[] = [];
+    let allowed = mode !== "already_revoked", contextReads = 0;
+    let stored: ProductAgentResult | undefined;
+    const reason = mode === "cancel" ? "cancelled" : "unauthorized";
+    const agent = createProductAgent({
+      runtime: { async run(input: AgentRunInput) {
+        assert.equal(input.signal?.aborted, mode === "cancel");
+        assert.equal(await input.authorize(), false);
+        assert.equal(input.context?.reusedOfficialEvidence, undefined);
+        return { runId, status: "stopped", stopReason: reason, text: null, tools: [],
+          counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
+      } } as never,
+      chat: { listForUser: async () => ({ messages: [
+        ...prior.map(id => ({ id: randomUUID(), role: "model", agentRunId: id, text: "synthetic prior answer" })),
+        { id: messageId, role: "user", text: "請核對上一輪的來源" },
+      ] }) } as never,
+      store: {
+        claim: async () => ({ created: true, runId, scope: SCOPE, expiresAt: new Date(Date.now() + 90_000).toISOString() }),
+        authorize: async () => allowed,
+        cancelReply: async () => { allowed = false; return true; },
+        get: async (_uid: string, _cid: string, id: string) => {
+          if (id === runId) return stored;
+          priorReads.push(id);
+          if (id === prior[0] && mode !== "already_revoked") { entered.resolve(); await release.promise; }
+          return { runId: id, status: "completed", citations: [makeEvidence(CHUNK_A)] };
+        },
+        finish: async (_scope: AgentScope, result: ProductAgentResult) => { stored = result; return true; },
+      } as never,
+      memory: { context: async () => { contextReads++; return emptyMemory(); } } as never, tasks: {} as never,
+      knowledge: { createRun: () => { throw new Error("unexpected evidence access"); } } as never,
+    });
+    const pending = agent.reply(USER_ID, CHILD_ID, messageId, async () => true);
+    try {
+      if (mode !== "already_revoked") {
+        await entered.promise;
+        if (mode === "cancel") assert.equal(await agent.cancelReply(USER_ID, CHILD_ID, messageId, async () => true), true);
+        else allowed = false;
+      }
+      release.resolve();
+      const stopped = await pending;
+      assert.equal(stopped?.stopReason, reason);
+      assert.deepEqual(stopped?.citations, []);
+      assert.deepEqual(priorReads, mode === "already_revoked" ? [] : [prior[0]]);
+      assert.equal(contextReads, 0);
+    } finally { release.resolve(); }
+  }
 });
 
 test("present_answer deduplicates duplicate citationIds and exposes availableOfficialCitationIds on citation errors", async () => {

@@ -386,6 +386,7 @@ export function createProductAgent(options: {
         && !item.photo && item.text.trim() && item.text.length <= 400);
       const sourceHandles = new Map(recentQuotes.map((item, i) => [item.id, 'R' + (i + 1)]));
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
+      const replySignal = signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal;
       activeReplies.set(key, cancellation);
       try {
       const authorize = async (): Promise<boolean> => Date.now() < recentValidUntil && (tools?.recalledFactsCurrent() ?? true)
@@ -406,39 +407,50 @@ export function createProductAgent(options: {
         const priorRunIds = [...new Set(recent.messages
           .filter((item): item is typeof item & { agentRunId: string } => item.role === "model" && typeof item.agentRunId === "string" && item.agentRunId !== claim.runId)
           .map(item => item.agentRunId))].slice(-3);
-        const priorCandidates: KnowledgeEvidence[] = [];
-        const seenChunkIds = new Set<string>();
-        for (const prevRunId of priorRunIds) {
-          const prevRun = await options.store.get(userId, childId, prevRunId);
-          if (!prevRun || prevRun.runId !== prevRunId || prevRun.status !== "completed" || !prevRun.citations?.length) continue;
-          for (const citation of prevRun.citations) {
-            if (seenChunkIds.has(citation.chunkId)) continue;
-            seenChunkIds.add(citation.chunkId);
-            priorCandidates.push(citation);
-            if (priorCandidates.length >= 6) break;
-          }
-          if (priorCandidates.length >= 6) break;
-        }
-        if (priorCandidates.length > 0 && typeof options.knowledge?.createRun === "function") {
-          const preBudget = new AgentBudget(signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, 5000);
+        if (priorRunIds.length && typeof options.knowledge?.createRun === "function") {
+          const preBudget = new AgentBudget(replySignal, 5000);
+          // A stopped or revoked reply must neither start another private read nor
+          // use a result from a read that was already in flight.
+          const readCurrent = async <T>(read: () => Promise<T>): Promise<T> => {
+            if (!await preBudget.wait(authorize)) throw new AgentStopped("unauthorized");
+            const value = await preBudget.wait(read);
+            if (!await preBudget.wait(authorize)) throw new AgentStopped("unauthorized");
+            preBudget.check();
+            return value;
+          };
           try {
-            const preContext = await preBudget.wait(() => options.memory.context(userId, childId, "private", {}));
-            if (!preContext) throw new AgentStopped("unauthorized");
-            const preFilter = baseAgentKnowledgeFilter(preContext);
-            const preRun = options.knowledge.createRun({
-              actor: { kind: "query_embedding", actorId: userId, operationId: claim.runId },
-              budget: preBudget,
-              authorize,
-            });
-            if (preRun.supportsScopedEvidenceReuse === true && typeof preRun.revalidateAndSeedEvidence === "function") {
-              const checked = await preRun.revalidateAndSeedEvidence(priorCandidates, preFilter);
-              seededOfficialEvidence = checked.valid.map(chunk => ({ chunk, filter: preFilter }));
-              reusedEvidenceInvalidated = checked.invalidated.length > 0;
-            } else {
-              reusedEvidenceInvalidated = true;
+            const priorCandidates: KnowledgeEvidence[] = [];
+            const seenChunkIds = new Set<string>();
+            for (const prevRunId of priorRunIds) {
+              const prevRun = await readCurrent(() => options.store.get(userId, childId, prevRunId));
+              if (!prevRun || prevRun.runId !== prevRunId || prevRun.status !== "completed" || !prevRun.citations?.length) continue;
+              for (const citation of prevRun.citations) {
+                if (seenChunkIds.has(citation.chunkId)) continue;
+                seenChunkIds.add(citation.chunkId);
+                priorCandidates.push(citation);
+                if (priorCandidates.length >= 6) break;
+              }
+              if (priorCandidates.length >= 6) break;
+            }
+            if (priorCandidates.length) {
+              const preContext = await readCurrent(() => options.memory.context(userId, childId, "private", {}));
+              if (!preContext) throw new AgentStopped("unauthorized");
+              const preFilter = baseAgentKnowledgeFilter(preContext);
+              const preRun = options.knowledge.createRun({
+                actor: { kind: "query_embedding", actorId: userId, operationId: claim.runId },
+                budget: preBudget,
+                authorize,
+              });
+              if (preRun.supportsScopedEvidenceReuse === true && typeof preRun.revalidateAndSeedEvidence === "function") {
+                const checked = await readCurrent(() => preRun.revalidateAndSeedEvidence!(priorCandidates, preFilter));
+                seededOfficialEvidence = checked.valid.map(chunk => ({ chunk, filter: preFilter }));
+                reusedEvidenceInvalidated = checked.invalidated.length > 0;
+              } else {
+                reusedEvidenceInvalidated = true;
+              }
             }
           } catch {
-            // Leave fail-closed runtime authorization and live retrieval to the canonical runtime.run path.
+            // Fall back to the canonical runtime: it owns stopped results and fresh authorized retrieval.
             seededOfficialEvidence = [];
             reusedEvidenceInvalidated = true;
           } finally {
@@ -512,7 +524,7 @@ export function createProductAgent(options: {
             onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
           });
           return tools.tools;
-        }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
+        }, authorize, signal: replySignal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {
           rendered.value = await tools!.presentation();
           // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
