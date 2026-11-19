@@ -6724,3 +6724,11 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 ### REQ-002 三分支離線整合收據
 
 同一整合 SHA `29cee08024a2068192e11c2eee2febb32ecfb5fd`：[GitHub Actions 44566154835](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)，41 檔 337/337 及三份嚴格 TypeScript 設定通過。[採用版本、命令及各項結果](PLAN.md#req002-closeout01)。未執行付費模型、原站或實機驗收。
+
+### 2026-11-20　FHS 平台卡庫、本人下載及主聊天歷史引用（`codex/fhs-platform-catalog`）
+
+C 從 `9cba3fe8` 開包。`b9c340f3` 保存 [201 項盤點](knowledge/fhs-child-inventory.json)及[抵免前後估價](artifacts/verification/FHS_CHILD_CATALOG_ESTIMATE_20261120.json)。管理員可新建／匯入教材、比較版本、記錄審核及同步上架。家長下載才把教材加入本人問答，可跟版、固定、停用、移除及重新下載。影音按卡預設關閉。開啟後先採官方字幕與講稿，已核對時間片段由平台共享。
+
+Node 24.22.3 下，平台卡與還原 57 項、引用流程 4 項及前端 13 項通過。合成帳戶在平台更新後停用或移除教材，新問答停止引用，主聊天舊訊息、版本及 PDF 位元組仍一致；平台撤回後原檔回傳 404。排程舊測試有一項在本分支及基線均重現，第二個模擬配額日仍延至翌日。[驗證範圍、路由及限制](artifacts/verification/FHS_PLATFORM_CARDS_20261120.json)
+
+首批沿用平台付款、US$30 抵免前總額、逐次預留及原工作收據，影音關閉。首份已上架，正式網站由主聊天整合發布。真實家長操作、影音模型及原站備份還原留待相應驗收。

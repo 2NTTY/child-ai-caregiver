@@ -1,4 +1,5 @@
 import { createContext, useContext, useRef, useState, type ReactNode, type RefObject } from "react";
+import { mediaPlaybackUrl, mediaTimestamp } from '../../../../src/shared/platform-media';
 import { PreviewLink } from "../../preview/PreviewNavigationGuard";
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
@@ -109,6 +110,8 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
         {source.cautionLabels?.length ? <View testID="live-source-cautions" style={styles.detail}>{source.cautionLabels.map((item, idx) => <Text key={idx} style={styles.warning}>{item}</Text>)}</View> : null}
         {source.productSpecLabel ? <Detail label="商品規格／型號" value={source.productSpecLabel} /> : null}
         {source.applicabilityLabel ? <Detail label="適用範圍" value={source.applicabilityLabel} /> : null}
+        {source.mediaClip ? <AppButton label={'播放引用片段 ' + mediaTimestamp(source.mediaClip.start) + '–' + mediaTimestamp(source.mediaClip.end)}
+          variant="secondary" onPress={() => { const clip = source.mediaClip!; void Linking.openURL(mediaPlaybackUrl(clip.url, clip.start)).catch(() => setLinkError(true)); }} /> : null}
         {source.savedPdf && onOpenSource ? <AppButton label="查看當時 PDF" variant="secondary" onPress={() => onOpenSource(source.id)} /> : null}
         {external ? <AppButton label="開啟現行網站" variant="quiet" onPress={() => { void Linking.openURL(external).catch(() => setLinkError(true)); }} /> : null}
         {linkError ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}

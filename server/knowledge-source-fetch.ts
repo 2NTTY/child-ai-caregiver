@@ -1,9 +1,19 @@
 import { load } from "cheerio";
+import { platformMediaLink } from '../src/shared/platform-media.ts';
+import { fhsPdfMediaPages } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
 import { fetchPublicSourceResponse } from "./public-source-transport.ts";
 export { publicSourceAddress } from "./public-source-transport.ts";
+
+function mediaLinksFromPage($: ReturnType<typeof load>, selector: string, page: string) {
+  const region = $(selector);
+  if (region.length !== 1) return undefined;
+  return [...new Set(region.find('a[href],iframe[src],audio[src],video[src],source[src]').toArray()
+    .map(node => platformMediaLink($(node).attr('href') ?? $(node).attr('src') ?? '', page))
+    .filter((link): link is string => !!link))].sort();
+}
 
 /** The official FHS catalogue emits its download control as one literal leafletBlock call. */
 export function fhsLeafletControl($: ReturnType<typeof load>, landing: string) {
@@ -68,8 +78,12 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (url.href !== expected) throw new Error("source_url_rejected");
       return url;
     };
-    let readMethod: string | undefined, title: string | undefined, revision: string | null = null;
-    if (definition.leafletPage) {
+    let readMethod: string | undefined, title: string | undefined, revision: string | null = null, mediaLinks: string[] | undefined;
+    if (definition.leafletPage === definition.url && pdf) {
+      title = definition.title;
+      if (!title) return { status: 'failed', reason: 'parse' };
+      readMethod = 'catalogue-pdf-original/1';
+    } else if (definition.leafletPage) {
       const page = await transport(definition.leafletPage, exact(definition.leafletPage), signal, "text/html");
       if (page.status !== "response") return page;
       if (page.response.status === 404 || page.response.status === 410) return { status: "unavailable", httpStatus: page.response.status };
@@ -94,6 +108,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         readMethod = "fhs-registered-pdf-anchor/1";
       }
       revision = $("#content-rev-date").text().trim() || null;
+      mediaLinks = mediaLinksFromPage($, '#content', definition.leafletPage);
     }
     const fetched = await transport(definition.url, definition.leafletPage || definition.id === "chp-recent" ? exact(definition.url) : value => sourceFetchUrl(value, definition), signal,
       pdf ? "application/pdf" : definition.kind === "rss" ? "application/rss+xml, application/xml, text/xml" : "text/html",
@@ -107,7 +122,21 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {
-          return await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
+          const original = await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
+          const landing = definition.leafletPage === definition.url && fhsPdfMediaPages.get(definition.url);
+          if (original.status === 'ok' && landing) {
+            try {
+              const page = await transport(landing, exact(landing), signal, 'text/html');
+              if (page.status === 'response' && page.response.status === 200 && (page.response.url ?? landing) === landing
+                && /^text\/html(?:;|$)/iu.test(page.response.contentType)) {
+                const $ = load(new TextDecoder('utf-8', { fatal: true }).decode(page.response.body));
+                const bound = fhsLeafletControl($, landing)?.url === definition.url || $('#content a[href]').toArray()
+                  .some(node => new URL($(node).attr('href')!, landing).href === definition.url);
+                if (bound) mediaLinks = mediaLinksFromPage($, '#content', landing);
+              }
+            } catch { signal.throwIfAborted(); }
+          }
+          return original.status === 'ok' && mediaLinks ? { ...original, mediaLinks } : original;
         }
         const parsed = await (adapters.pdfReader ?? extractKnowledgePdf)(result.body, { startPage: window!.startPage,
           pageLimit: window!.endPage - window!.startPage + 1, signal });
@@ -116,7 +145,14 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (!/^(text\/html|application\/(?:rss\+)?xml|text\/xml)(?:;|$)/i.test(result.contentType)) return { status: "failed", reason: "response" };
       const charset = /charset\s*=\s*["']?([^;\s"']+)/i.exec(result.contentType)?.[1] ?? "utf-8";
       if (!["utf-8", "utf8"].includes(charset.toLowerCase())) return { status: "failed", reason: "response" };
-      return { status: "ok", ...(definition.id === "chp-recent" ? { original: { mimeType: "application/rss+xml" as const, bytes: result.body } } : {}), items: parseSourceContent(definition, new TextDecoder("utf-8", { fatal: true }).decode(result.body)) };
+      const html = new TextDecoder("utf-8", { fatal: true }).decode(result.body);
+      const items = parseSourceContent(definition, html);
+      if (definition.kind === 'page' && definition.selector && new URL(definition.url).hostname === 'www.fhs.gov.hk'
+        && (result.url ?? definition.url) === definition.url) {
+        mediaLinks = mediaLinksFromPage(load(html), definition.selector, definition.url);
+      }
+      return { status: "ok", ...(mediaLinks ? { mediaLinks } : {}), ...(definition.id === "chp-recent"
+        ? { original: { mimeType: "application/rss+xml" as const, bytes: result.body } } : {}), items };
     } catch { return { status: "failed", reason: "parse" }; }
   };
 }

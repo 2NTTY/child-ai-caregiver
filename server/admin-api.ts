@@ -6,6 +6,7 @@ import { archiveContentPath } from './admin-knowledge-archive.ts';
 import { adminTransferView } from './knowledge-transfer-records.ts';
 import { z } from 'zod';
 import { adminTreatmentPath, treatmentReviewMaxBytes } from '../src/shared/admin-knowledge-treatment.ts';
+import { platformMaterials } from './platform-materials.ts';
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 
 async function transferRequest<T>(read: () => Promise<T>) {
@@ -41,14 +42,23 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   const treatmentPath = adminTreatmentPath.exec(url.pathname);
   const archivePath = archiveContentPath.exec(url.pathname);
   const demoPath = '/api/admin/proactive-demo';
+  const platformPath = url.pathname === '/api/admin/platform-cards';
   const alertsPath = '/api/admin/budget-alerts';
-  if (request.method === 'POST' && (url.pathname === alertsPath + '/ack' || url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath || treatmentPath)) {
+  if (request.method === 'POST' && (url.pathname === alertsPath + '/ack' || url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath || treatmentPath || platformPath)) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
-    const input = archivePath ? undefined : await options.readJson(request,treatmentPath ? treatmentReviewMaxBytes : url.pathname===groupBase ? 64*1024 : undefined);
+    const input = archivePath ? undefined : await options.readJson(request,treatmentPath || platformPath ? treatmentReviewMaxBytes : url.pathname===groupBase ? 64*1024 : undefined);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
-    else if (treatmentPath) {
+    else if (platformPath) {
+      if (!admin.platformCards) domainReject('knowledge_treatments_unavailable', 503);
+      try { result = await admin.platformCards.submit(input, 'web-' + firestoreDomainHash(['knowledge-treatment-reviewer', userId])); }
+      catch (error) {
+        if (error instanceof FirestoreKnowledgeError) domainReject(error.code, error.status);
+        if (error instanceof z.ZodError) domainReject('invalid_input', 400);
+        throw error;
+      }
+    } else if (treatmentPath) {
       if (!admin.treatments) domainReject('knowledge_treatments_unavailable',503);
       try { result = await admin.treatments.submit(treatmentPath[1]!,input,'web-' + firestoreDomainHash(['knowledge-treatment-reviewer',userId])); }
       catch (error) {
@@ -81,7 +91,17 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else result = await admin.knowledgeIndexes().control(userId, batchPath![1], batchPath![2] as 'stop'|'resume', input);
   } else if (request.method === 'GET') {
     const cursor = url.searchParams.get('cursor');
-    if (treatmentPath) {
+    if (platformPath) {
+      if (!admin.platformCards) domainReject('knowledge_treatments_unavailable', 503);
+      if (!url.search) return Response.json({ items: [...platformMaterials.values()].map(({ id, title, url }) => ({ id, title, url })) },
+        { headers: { 'Cache-Control': 'no-store' } });
+      const id = domainParse(z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u), url.searchParams.get('source'));
+        const media = url.searchParams.get('view') === 'media';
+        if ([...url.searchParams].length !== 2) domainReject('invalid_input', 400);
+        try { result = media ? await admin.platformCards.mediaStatus(id) : url.searchParams.get('view') === 'active' ? await admin.platformCards.active(id)
+          : await admin.platformCards.preview(id, domainParse(z.uuid(), url.searchParams.get('version'))); }
+      catch (error) { if (error instanceof FirestoreKnowledgeError) domainReject(error.code, error.status); throw error; }
+    } else if (treatmentPath) {
       if (!admin.treatments) domainReject('knowledge_treatments_unavailable',503);
       const query = [...url.searchParams];
       if(query.length>1 || query.some(([key])=>key!=='version')) domainReject('invalid_input',400);

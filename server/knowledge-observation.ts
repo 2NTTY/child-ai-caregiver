@@ -42,6 +42,7 @@ export function checkKnowledgeObservation(document: KnowledgeSourceInput,
     if (!expected || !actual || knowledgeReviewHash({ extractionQuality: "requires_review", ...expected })
       !== knowledgeReviewHash({ extractionQuality: "requires_review", ...actual })) throw new Error("knowledge_pdf_coverage_mismatch");
     for (const chunk of document.chunks) {
+      if (chunk.mediaClip) continue;
       const pages = observed.document.pages?.filter(page => page.page >= (chunk.pageStart ?? Infinity) && page.page <= (chunk.pageEnd ?? -Infinity));
       const original = pages?.map(page => page.text).join("\n\n");
       if (!chunk.originalText || !original?.includes(chunk.originalText) || !original.includes(chunk.sourceExcerpt))

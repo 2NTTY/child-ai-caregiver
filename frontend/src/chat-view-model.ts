@@ -1,5 +1,6 @@
 // Display projections only. Formal source payloads remain owned by the existing APIs.
 export interface ChatCitationView {
+  mediaClip?: import('../../src/shared/platform-media.ts').PlatformMediaClip;
   sourceId?: string; seriesId?: string; seriesName?: string; acquisition?: 'library' | 'live';
   termsUrl?: string | null; originalRange?: string;
   pageStart?: number; pageEnd?: number; excerptPage?: number; savedPdf?: boolean; readSegments?: string[];

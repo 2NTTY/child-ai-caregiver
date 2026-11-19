@@ -302,14 +302,14 @@ test('joining a cited platform card uses its displayed series editions and masks
     reads: { setLibraryPreference: change => sent.push(change) } };
   const show = citation => render(PlatformCardJoin, { seriesId, citation }).tree;
   const citation = { sourceId: item.sourceId, versionId: item.versionId };
-  button(show(citation), '免費加入平台卡').props.onPress();
+  button(show(citation), '下載到我的參考資料').props.onPress();
   assert.deepEqual(sent, [{ action: 'join', seriesId, expectedRevision: 0, editions: [citation, { sourceId: 'other-page', versionId: 'second' }] }]);
   assert.equal(show({ ...citation, versionId: 'historical' }), null);
   assert.equal(show({ ...citation, sourceId: 'moved' }), null);
   Object.assign(item.preference, { revision: 1, mode: 'fixed', enabled: false });
-  assert.match(content(show(citation)), /已加入.*固定快照.*已停用/);
+  assert.match(content(show(citation)), /已下載.*固定快照.*已停用/);
   workspace.model.references.data.hasMore = true;
-  assert.equal(show(citation), null);
+  assert.match(content(show(citation)), /已下載.*固定快照.*已停用/);
 });
 
 test('reference links use the exact existing URL and reveal the real URL after open failure', async () => {

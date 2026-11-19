@@ -804,7 +804,11 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 正式歷史沿A02工作／訊息原文cursor、各領域原清單與修訂API；通知沿A08本人notification_deliveries安全分頁，只代表本人渠道／聯絡／驗證信的投遞metadata，不冒稱全部屬當前孩子。搜尋及日期篩選須標示已掃範圍與續讀位置，不能以未載入當不存在。私人工作是Agent保存的目標／焦點／問題，不稱模型內部推理或完整run context。
 
-新增 GET /api/children/:childId/library?cursor=… 為唯讀公共來源目錄；核對session、expected user及孩子現行存取後，以sourceId keyset每頁最多10項。cursor綁本人／孩子及權限版本；只返回目前enabled、reviewed、published、未過期且符合既有watch／observation及公開使用範圍的版本metadata（sourceId、versionId、title、publisher、url、classification、checkedAt、sourceUpdatedAt、validUntil），附nextCursor／complete。目錄不判定每份內容適用該孩子，也不將來源存在當作支持某句回答；不返回私有来源、不呼叫模型或embedding。
+`GET /api/children/:childId/library?cursor=…` 核對 session、預期帳戶及孩子權限後，每頁回傳最多十份已審核、上架且仍可公開使用的文件。Firestore 先列本人已下載文件，同組按來源編號排序。回應附 `nextCursor` 及 `complete`，游標綁本人、孩子與權限版本。系列目錄 v3 提供每份教材的影音開關、版本及公開連結。舊版 client 沿其既有回應格式。
+
+`POST /api/children/:childId/library` 的 `action=join` 把已發布系列加入本人參考資料。選擇只屬該帳戶，下載復用平台向量。普通教材須已下載、已啟用並符合適用範圍才進入新問答。跟版採用同範圍的審核更新，固定版本沿已選快照。停用可再啟用，移除以 `mode=platform` 清除本人版本選擇。未載齊目錄時，`wholeSeries=true` 讓 Server 在同一交易核對畫面所示版本及系列成員。固定新快照或匯入指定版本須提交完整選擇。個人動作保留已交付主聊天訊息及其原引用。重開 PDF 再核本人 run、原版本、片段、授權和原件 SHA-256，平台撤回後回傳 404。
+
+管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音初始關閉，已確認的頁面查核可更新連結，網絡或解析失敗保留上次結果。啟用後優先讀官方時間字幕，其次以官方講稿對齊影音。已核對片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
 
 
 <a id="firestore-target"></a>
