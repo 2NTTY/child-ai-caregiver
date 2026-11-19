@@ -65,7 +65,7 @@ test('retrying the same saved turn retains both kinds of feedback throughout rea
         if (status === 'unavailable') throw new Error('Synthetic read failure');
         return original(status);
       };
-      const observed: Array<typeof feedback> = [];
+      const observed: Array<ReturnType<ChatController['getSnapshot']>['feedback']> = [];
       const off = ctrl.subscribe(() => observed.push(ctrl.getSnapshot().feedback));
       await ctrl.requestReply(question.id);
       off();
