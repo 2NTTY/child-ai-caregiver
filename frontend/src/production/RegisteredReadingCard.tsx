@@ -18,17 +18,17 @@ export function RegisteredReadingCard({ target, active }: { target: SourceReadin
   const [value, setValue] = useState<Reading | null>(null);
   const [error, setError] = useState(false);
   const [opened, setOpened] = useState(false);
-  const active = useRef<AbortController | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
   // The parent keys the component by the immutable location and remounts it on a scope change.
   const location = useRef(target).current;
   const { current, currentIdentity, online, sharedMode, userId } = env;
   const load = useCallback(() => {
-    active.current?.abort();
+    requestRef.current?.abort();
     setValue(null);
     setError(false);
     if (!userId || !online || sharedMode || !current() || !currentIdentity()) return;
     const request = new AbortController();
-    active.current = request;
+    requestRef.current = request;
     const visible = () => !request.signal.aborted && current() && currentIdentity();
     void api.reading(userId, request.signal, location).then(read => {
       if (visible()) setValue(read);
@@ -37,7 +37,7 @@ export function RegisteredReadingCard({ target, active }: { target: SourceReadin
   useFocusEffect(useCallback(() => {
     if (!active) return;
     load();
-    return () => { active.current?.abort(); setOpened(false); setValue(null); };
+    return () => { requestRef.current?.abort(); setOpened(false); setValue(null); };
   }, [active, load]));
   if (!userId || sharedMode) return null;
   const title = value?.title ?? '來源卡';
