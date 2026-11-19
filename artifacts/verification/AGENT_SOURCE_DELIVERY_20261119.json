@@ -1,7 +1,7 @@
 {
   "observedDateHongKong": "2026-11-19",
   "requirements": ["REQ-004", "REQ-006", "REQ-007"],
-  "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657],
+  "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660],
   "productionRelease": {
     "id": "r44402209727-1",
     "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44402209727",
@@ -112,6 +112,101 @@
     "reopenedOriginalBytes": 7944671,
     "reopenedOriginalSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
     "importReviewPublishAndQueriesModelCalls": 0
+  },
+  "familyQuestion": {
+    "environment": "local Firebase emulators, real Vertex model, synthetic family",
+    "operationId": "d70a8030-9186-489e-90e7-bee830120382",
+    "runId": "b8e6ff62-7b54-44eb-97aa-139a3967827b",
+    "saved": true,
+    "modelCalls": 8,
+    "toolCalls": 4,
+    "queryEmbeddings": 1,
+    "localEditionId": "e9200620-c1b7-5722-b8aa-eacc512d08cd",
+    "page": 6,
+    "originalPdfSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+    "webReadback": {
+      "at": "2026-11-19T00:33:23.846Z",
+      "browser": "Edge",
+      "series": "fhs-infant-feeding",
+      "listedPages": [1, 20],
+      "chunkId": "3ebe993a-d08a-579f-ac09-8460955dcb71",
+      "firstClickExcerptSha256": "d7417814f52a856d8e9ea7a9c61c0cb04beaef4a9838d8903b5fca1339a748b8",
+      "secondClick": { "httpStatus": 200, "mediaType": "application/pdf", "fragment": "#page=6", "bytes": 7944671 },
+      "additionalModelCalls": 0
+    }
+  },
+  "privateQuestion": {
+    "environment": "local Firebase emulators, real Vertex model, synthetic family",
+    "runId": "830efe79-4f62-4699-badc-be39fafb9c8b",
+    "originalMessageVersion": 1,
+    "currentFactVersion": 3,
+    "independentReview": "pass",
+    "afterDeletion": { "status": 409, "code": "source_changed", "additionalModelCalls": 0 },
+    "evidenceFile": "REQ007_PRIVATE_FACT_RECALL_20261119.json",
+    "sharedLocalDailyLimitsRestored": { "user": 20, "global": 100, "prior88ReceiptsPreserved": true }
+  },
+  "sourceLibrary": {
+    "package": {
+      "producerSha256": "a2a0513f1894ebe836d301a9c3f25c3347bb933751d12b6c16b45192265917a8",
+      "portableSha256": "36f7cabb5041f79f2cd3781709821d255a980aa76a4e45dbc558589bdd2eda28",
+      "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+      "destinationPublishedEdition": "e9200620-c1b7-5722-b8aa-eacc512d08cd",
+      "destinationPreviouslyEmpty": true,
+      "reviewedChunks": 13,
+      "compatibleVectors": 13,
+      "additionalDocumentEmbeddings": 0,
+      "officialReader": {
+        "kind": "pdf",
+        "startPage": 1,
+        "endPage": 20,
+        "parser": "pdfjs-dist",
+        "version": "6.4.299"
+      },
+      "sample": {
+        "key": "p1-45c0b61186f1134f4c55",
+        "excerptHash": "4f877fc895fdb8c26da7381efe607b1215b8434b773ff2809efadee330156164",
+        "titleHash": "b49f5876be1ccff199c8324bb62392d00f3135c2c136f48fac2c5f88b1deee20"
+      },
+      "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+      "verifiedLocally": true
+    },
+    "governance": {
+      "checkedAt": "2026-11-19T00:08:16.802Z",
+      "surface": "Edge Web",
+      "project": "demo-yuyf-63b42e54",
+      "sourceId": "fhs-solid-food",
+      "originalEdition": "6fb0a7d2-6d5d-56cb-bcc7-b877dddf76b5",
+      "candidate": "e7b36df9-2837-5779-9e13-e0616b87bea9",
+      "versionHash": "6673b0d1b7dc09de0dc857e798b13138514971ddf26a3e9c2cd8267a3db15ee4",
+      "steps": [
+        "memory-card",
+        "create-draft",
+        "review",
+        "publish",
+        "catalogue-applied-count"
+      ],
+      "modelCalls": 0,
+      "ordinaryUserReadWriteDenied": true,
+      "reviewedBeforePublish": true
+    },
+    "focusedTests": {
+      "libraryAdminAndCitations": 27,
+      "chatRecoveryAndQuietReads": 29,
+      "serverAndFrontendTypechecks": "passed"
+    },
+    "regressionEvidence": [
+      "independent account pin/follow/update/disable",
+      "ordinary chat reads without subscription writes",
+      "old citation after rename, split, merge or source upgrade; withdrawal blocks original",
+      "structured exact-match values and unindexed excluded text",
+      "live retrieval through Runner with a synthetic model"
+    ],
+    "realLiveReading": {
+      "receipt": "REQ006_LIVE_OFFICIAL_READING_20261119.json",
+      "registeredLivePage": "fhs-child-vision",
+      "firstUseDirectory": "dh-services-shs",
+      "documentsWritten": 0
+    }
   },
   "operatingDecisions": [
     "公用來源首次抓取沿既有 worker 和原件儲存。衞生防護中心通告採組內非商業範圍。",
