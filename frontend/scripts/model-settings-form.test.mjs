@@ -7,6 +7,26 @@ import {
 } from "../src/components/model-settings/model-settings-form.ts";
 const settings = { version: 7, mode: "personal", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: true, backgroundEnabled: true,
   dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, updatedAt: null };
+test("personal money amounts preserve six decimal places and clear only on an explicit edit", () => {
+  const saved = { ...settings, dailyMoneyBudget: { currency: "HKD", micros: 7 } };
+  const draft = { ...modelSettingsDraft(saved), consent: true };
+  assert.equal(draft.moneyText, "0.000007");
+  const monthly = modelCommandFromDraft({ ...draft, monthlyText: "0.000003", monthlyMaintenanceText: "1.25", monthlyMaintenanceCurrency: "USD" }, saved);
+  assert.deepEqual(monthly.monthlyMoneyBudget, { currency: "HKD", micros: 3 });
+  assert.deepEqual(monthly.monthlyMaintenanceBudget, { currency: "USD", micros: 1250000 });
+  assert.equal(modelCommandFromDraft(draft, saved).publicMaintenanceEnabled, undefined);
+  const sponsor = modelCommandFromDraft({ ...draft, backgroundEnabled: true, publicMaintenanceEnabled: true,
+    maintenanceText: "2.50", maintenanceCurrency: "USD" }, saved);
+  assert.equal(sponsor.publicMaintenanceEnabled, true);
+  assert.deepEqual(sponsor.maintenanceMoneyBudget, { currency: "USD", micros: 2500000 });
+  assert.equal(sponsor.dailyMoneyBudget, undefined);
+  const revoked = modelCommandFromDraft({ ...draft, backgroundEnabled: false }, { ...saved, publicMaintenanceEnabled: true });
+  assert.equal(revoked.publicMaintenanceEnabled, false);
+  assert.equal(modelCommandFromDraft(draft, saved).dailyMoneyBudget, undefined);
+  assert.deepEqual(modelCommandFromDraft({ ...draft, moneyText: "1.000007" }, saved).dailyMoneyBudget, { currency: "HKD", micros: 1000007 });
+  assert.equal(modelCommandFromDraft({ ...draft, moneyText: "" }, saved).dailyMoneyBudget, null);
+  assert.equal(modelSettingsSchema(true).safeParse({ ...draft, moneyText: "0.0000007" }).success, false);
+});
 test("provider changes use only its server catalog without silently selecting another model", () => {
   const entry = { provider: "vertex", id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", availability: "not_checked",
     capabilities: { tools: true, image: true, audio: true, textStreaming: true } };

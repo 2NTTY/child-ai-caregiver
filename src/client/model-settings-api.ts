@@ -1,13 +1,21 @@
+import { monthlyFinanceSchema, type MonthlyFinance } from '../shared/monthly-finance.ts';
 import { z } from "zod";
 import {
-  MODEL_SETTINGS_V4_MEDIA_TYPE,
+  MODEL_SETTINGS_V4_MEDIA_TYPE, MODEL_SETTINGS_FINANCE_PREFERENCE, MODEL_SETTINGS_MONTH_PREFERENCE,
   type ModelKeyCheck, type ModelSettings, type ModelSettingsCommand, type ModelSettingsView, type ModelSettingsOperation, type PersonalModelCatalog, type PersonalModelProvider,
 } from "../shared/model-settings.ts";
 import { publicModelSettingsSchema as settingsSchema, effectiveModelLimitsSchema, modelCheckReasonSchema,
   modelSettingsOperationSchema, personalModelCatalogSchema } from '../shared/model-settings-schema.ts';
 
 const count = z.number().int().nonnegative();
+const money = { currency: z.string().regex(/^[A-Z]{3}$/u), micros: z.string().regex(/^\d+(?:\.\d+)?$/u), attempts: count };
+const financeSchema = z.object({
+  estimates: z.array(z.object({ ...money, status: z.literal('estimated'), priceVersion: z.string() }).strict()),
+  settlement: z.discriminatedUnion('status', [z.object({ status: z.literal('unknown') }).strict(), z.object({ ...money, status: z.literal('settled') }).strict()]),
+  unestimatedAttempts: count, unsettledAttempts: count,
+}).strict();
 const usageSchema = z.object({
+  finance: financeSchema.optional(), maintenanceFinance: financeSchema.optional(),
   billingSource: z.enum(["platform", "personal"]).optional(),
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u), attempts: count, inputTokens: count,
   outputTokens: count, cachedTokens: count, unknownUsageAttempts: count,
@@ -39,6 +47,7 @@ export class ModelSettingsApiError extends Error {
 }
 
 export interface ModelSettingsApi {
+  month?(signal: AbortSignal, userId: string): Promise<MonthlyFinance>;
   read(signal: AbortSignal, userId: string): Promise<ModelSettingsView>;
   save(command: ModelSettingsCommand, signal: AbortSignal, userId: string): Promise<ModelSettings>;
   check(expectedVersion: number, signal: AbortSignal, userId: string): Promise<ModelKeyCheck>;
@@ -70,7 +79,7 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
       const response = await fetcher(`${apiUrl}/ai/settings${path}`, {
         method: body === undefined ? "GET" : "POST", body,
         credentials: "include", cache: "no-store", signal: controller.signal,
-        headers: { Accept: MODEL_SETTINGS_V4_MEDIA_TYPE, "x-expected-user-id": userId,
+        headers: { Accept: MODEL_SETTINGS_V4_MEDIA_TYPE, Prefer: [MODEL_SETTINGS_FINANCE_PREFERENCE, MODEL_SETTINGS_MONTH_PREFERENCE].join(', '), "x-expected-user-id": userId,
           ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       });
       if (controller.signal.aborted) throw new ModelSettingsApiError();
@@ -97,6 +106,9 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
   }
 
   return {
+    async month(signal, userId) {
+      return monthlyFinanceSchema.parse(await request('/usage/month', undefined, signal, userId));
+    },
     async read(signal, userId) {
       const parsed = viewSchema.safeParse(await request("", undefined, signal, userId));
       if (!parsed.success) throw new ModelSettingsApiError();
@@ -113,7 +125,7 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
         ...(command.removeKey === undefined ? {} : { removeKey: command.removeKey }),
         ...(command.embeddingApiKey === undefined ? {} : { embeddingApiKey: command.embeddingApiKey }),
         ...(command.removeEmbeddingKey === undefined ? {} : { removeEmbeddingKey: command.removeEmbeddingKey }),
-        ...Object.fromEntries((['provider', 'model', 'baseUrl', 'embeddingProvider', 'embeddingProject', 'embeddingLocation', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries', 'softBudgetRatio'] as const)
+        ...Object.fromEntries((['provider', 'model', 'baseUrl', 'embeddingProvider', 'embeddingProject', 'embeddingLocation', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries', 'softBudgetRatio', 'publicMaintenanceEnabled', 'dailyMoneyBudget', 'maintenanceMoneyBudget', 'monthlyMoneyBudget', 'monthlyMaintenanceBudget'] as const)
           .filter(key => command[key] !== undefined).map(key => [key, command[key]])),
       });
       return request("", body, signal, userId).then(value => {

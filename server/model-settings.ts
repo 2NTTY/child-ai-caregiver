@@ -5,13 +5,14 @@ import { ModelSettingsError } from "./model-settings-contract.ts";
 import type { ModelSettingsStore } from "./model-settings-contract.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { z } from 'zod';
-import { personalAdvancedShape, personalEmbeddingShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
+import { dailyMoneyBudgetSchema, personalAdvancedShape, personalEmbeddingShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
 
-const extraFields = ['opId', 'provider', 'model', 'baseUrl', 'embeddingApiKey', 'removeEmbeddingKey', ...Object.keys(personalEmbeddingShape), ...Object.keys(personalAdvancedShape)];
+const extraFields = ['opId', 'provider', 'model', 'baseUrl', 'embeddingApiKey', 'removeEmbeddingKey', 'dailyMoneyBudget', 'maintenanceMoneyBudget', 'monthlyMoneyBudget', 'monthlyMaintenanceBudget', 'publicMaintenanceEnabled', ...Object.keys(personalEmbeddingShape), ...Object.keys(personalAdvancedShape)];
 const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent", ...extraFields]);
 const extensionsSchema = z.object({ opId: z.uuid().optional(), provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(),
   baseUrl: personalBaseUrlSchema.optional(), embeddingApiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).optional(),
-  removeEmbeddingKey: z.boolean().optional(), ...personalEmbeddingShape, ...personalAdvancedShape }).strict();
+  removeEmbeddingKey: z.boolean().optional(), publicMaintenanceEnabled: z.boolean().optional(), dailyMoneyBudget: dailyMoneyBudgetSchema.nullable().optional(), maintenanceMoneyBudget: dailyMoneyBudgetSchema.nullable().optional(),
+  monthlyMoneyBudget: dailyMoneyBudgetSchema.nullable().optional(), monthlyMaintenanceBudget: dailyMoneyBudgetSchema.nullable().optional(), ...personalEmbeddingShape, ...personalAdvancedShape }).strict();
 const requiredFields = ["expectedVersion", "mode", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent"];
 const validKey = (value: unknown): value is string => typeof value === "string" && value.length >= 1 && value.length <= 512 && !/[^\x21-\x7e]/u.test(value);
 const unavailable = () => new ModelSettingsError("unavailable", 503);
@@ -38,6 +39,8 @@ export function parseModelSettingsCommand(input: unknown): ModelSettingsCommand 
   if (extensionKeys.some(key => Object.hasOwn(value, key) && value[key] === undefined)) throw new ModelSettingsError('invalid_input');
   const extensions = extensionsSchema.safeParse(Object.fromEntries(extensionKeys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])));
   if (!extensions.success) throw new ModelSettingsError('invalid_input');
+  if (extensions.data.publicMaintenanceEnabled && (value.mode !== 'personal' || !value.backgroundEnabled || !value.consent))
+    throw new ModelSettingsError('consent_required');
   if (extensions.data.embeddingApiKey && (value.removeKey || extensions.data.removeEmbeddingKey || !value.consent))
     throw new ModelSettingsError('invalid_input');
   return {

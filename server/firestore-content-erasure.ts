@@ -44,9 +44,10 @@ export const contentHistory = { care: ['care_revisions', 'care-revision'], profi
   private_source: ['shared_input_management_revisions', 'shared-input-management'] } as const;
 export type ContentErasureKind = ContentKind | 'private_source' | 'private_instruction';
 export function prepareContentErasure(data: FirestoreDomainData, binding: FirestoreAuthorityTransaction,
-  kind: ContentErasureKind, id: string, throughVersion: number, operationId: string, origin?: { at: string; sourceOperationId: string }) {
+  kind: ContentErasureKind, id: string, throughVersion: number, operationId: string, origin?: { at?: string; sourceOperationId?: string; sourceMessageId?: string }) {
   const value = contentErasureSchema.parse({ intent: { type: 'content-delete', scope: binding.scope, assetId: id, operationId,
     at: origin?.at ?? new Date().toISOString(), content: { kind, throughVersion,
+      ...(kind === 'fact' && origin?.sourceMessageId ? { sourceMessageId: origin.sourceMessageId } : {}),
       ...(kind === 'private_source' || kind === 'private_instruction' ? { sourceOperationId: origin?.sourceOperationId } : {}) } },
     journal: null, stage: kind === 'private_instruction' ? 'receipts' : 'revisions', after: null });
   const ref = data.ref('content_erasures', 'content-erasure', operationId);

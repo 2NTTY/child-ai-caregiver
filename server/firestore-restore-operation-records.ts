@@ -1,3 +1,4 @@
+import { librarySelectionRecord, librarySelectionScope } from './knowledge-library-selection.ts';
 import { messageSortMetadata } from './notification-message-content.ts';
 import { z } from 'zod';
 import { FirestoreDomainData, firestoreDomainHash, FIRESTORE_TASK_DISPATCH_SCOPE as SYSTEM } from './firestore-domain-data.ts';
@@ -36,6 +37,7 @@ export const operationRestoreSchemas = {
   'work-watch': { suffix: 'work_watches', schema: firestoreWorkWatchSchema },
   'work-event': { suffix: 'work_events', schema: firestoreWorkEventSchema },
   'work-daily-slot': { suffix: 'work_daily_slots', schema: firestoreWorkDailyRecoverySchema },
+  'library-preferences': { suffix: 'library_preferences', schema: librarySelectionRecord },
   'model-settings': { suffix: 'model_settings', schema: firestoreModelSettingsRecoverySchema },
   'model-settings-operation': { suffix: 'model_settings_operations', schema: firestoreModelSettingsOperationRecoverySchema },
   'model-key-checks': { suffix: 'model_key_checks', schema: firestoreModelChecksRecoverySchema },
@@ -160,6 +162,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       const v = firestoreWorkDailyRecoverySchema.parse(raw); check(id === JSON.stringify([scope, v.day]));
       if (target) id = JSON.stringify([target, v.day]); break;
     }
+    case 'library-preferences': check(id === scope.ownerUserId && same(scope, librarySelectionScope(id)) && version === 1); break;
     case 'model-settings': { const v = firestoreModelSettingsRecoverySchema.parse(raw); check(id === scope.ownerUserId && version === v.version); break; }
     case 'model-settings-operation': { const v = firestoreModelSettingsOperationRecoverySchema.parse(raw);
       check(id === JSON.stringify([scope.ownerUserId, v.opId]) && version === v.settings.version); break; }

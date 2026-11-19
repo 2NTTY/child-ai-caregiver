@@ -1,3 +1,5 @@
+import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
+import { createKnowledgeOriginalRecovery } from '../server/firebase-knowledge-original-recovery.ts';
 import { createCloudStorageAvatarObjects } from '../server/firebase-avatar-objects.ts';
 import { createAvatarRestoreAborter } from '../server/firebase-avatar-restore-abort.ts';
 import { createFirebaseAvatarRecovery, AVATAR_BACKUP_MAX_CIPHER_BYTES } from '../server/firebase-avatar-recovery.ts';
@@ -78,7 +80,9 @@ try {
       bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects:voiceObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})};
     if(command==='apply-managed-restore') chatFiles.objects={...chatFileObjects,read:createFirebaseManagedChatFileReader({
       bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects:chatFileObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})};
-    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,voices,chatFiles,avatars,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
+    const knowledgeOriginals = createKnowledgeOriginalRecovery(cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket),
+      cloudKnowledgeOriginalBucket(config.projectId, config.erasureBucket));
+    const operator=createFirebaseRecoveryOperator({...domain,knowledgeOriginals,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,voices,chatFiles,avatars,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
     if(command==='inspect-avatar-copies')result=await operator.inspectAvatarCopies();
     else if(command==='abandon-avatar-copies')result=await operator.abandonAvatarCopies(input);
     else if(command==='start-managed-restore')result=await managed.start(input.backupName);

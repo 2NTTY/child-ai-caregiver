@@ -140,6 +140,16 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   await assert.rejects(admin.savePlatformQuotaObservation({ ...observation, providerQuota: [{ ...quota, project: 'another-project' }] }),
     { code: 'invalid_quota_observation' });
   assert.equal((await admin.usage('2000-01-01')).platform.finance.providerQuota, null);
+  const month = day.slice(0, 7);
+  const monthly = { kind: 'money_budget', opId: randomUUID(), pool: 'maintenance', day: month,
+    amount: { currency: 'HKD', micros: 1200000 }, expectedVersion: 0 };
+  assert.equal((await http('operations', monthly)).status, 200);
+  const monthlyView = await (await http('usage/month?month=' + month)).json();
+  assert.deepEqual(monthlyView.budgets.maintenance.approved.micros, 1200000);
+  assert.equal(monthlyView.budgets.general, null);
+  assert.equal(monthlyView.report.general.unsettledAttempts, 0);
+  assert.deepEqual(monthlyView.report.general.settlements, [{ currency: 'HKD', micros: '0', attempts: 1 }]);
+  assert.equal(monthlyView.report.maintenance.unsettledAttempts, 0);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
   assert.deepEqual(totals.platform.finance.providerQuota, [quota]); assert.equal(totals.personal.finance.providerQuota, null);
   assert.equal(totals.platform.breakdown.model, 1);
@@ -147,6 +157,17 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal(totals.personal.finance.settlement.status, 'unknown');
   assert.doesNotMatch(JSON.stringify(totals), /admin-synthetic-run|synthetic-invoice-line/);
   assert.equal((await http('usage?day=2026-02-30')).status, 400);
+  const budgetCommand = { kind: 'money_budget', opId: randomUUID(), day: totals.platform.day, pool: 'maintenance',
+    expectedVersion: 0, amount: { currency: 'HKD', micros: 2500000 } };
+  const budgetResponse = await http('operations', budgetCommand);
+  assert.equal(budgetResponse.status, 200);
+  const budgetReceipt = await budgetResponse.json();
+  assert.deepEqual(await (await http('operations', budgetCommand)).json(), budgetReceipt);
+  assert.equal((await http('operations', { ...budgetCommand, opId: randomUUID() })).status, 409);
+  const updated = await (await http('usage')).json();
+  assert.equal(updated.platform.finance.approvedDailyBudget, null);
+  assert.equal(updated.platform.maintenanceFinance.approvedDailyBudget.micros, 2500000);
+  assert.deepEqual(updated.platform.budgetVersions, { general: 0, maintenance: 1 });
   const codec = createFirestoreRestoreCodec(options);
   for (const [path, data] of f.records) if (path.includes('_admin_policy/') || path.includes('_admin_operations/') || path.includes('_admin_invitations/')) {
     const decoded = codec.decode({ path, data });

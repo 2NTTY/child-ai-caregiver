@@ -21,7 +21,7 @@ const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
   collectionGroup: 'events', queryScope: 'COLLECTION', fields: [{ fieldPath: 'timestamp', order }, { fieldPath: 'id', order }],
 }));
 const metadataFields = new Set([
-  'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
+  'photos:scopeTag', 'photos:importPending', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
   'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
   'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
   'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort', 'knowledge_transfers:transferDigest',

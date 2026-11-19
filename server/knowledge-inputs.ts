@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 
+import { chunkTreatmentSchema, sourceSeriesSchema } from '../src/shared/source-series.ts';
+
 const text = (max: number) => z.string().min(1).max(max).refine(value => Boolean(value.trim()) && !/[\u0000\uD800-\uDFFF]/u.test(value));
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 const region = z.string().regex(/^[A-Z]{2}$/);
@@ -42,17 +44,28 @@ export const knowledgeQueryAgeSchema = z.strictObject({
   ? Boolean(value.messageId) && value.profileVersion === undefined
   : value.profileVersion !== undefined && value.messageId === undefined && value.offset === undefined));
 const sourceSchema = z.strictObject({
-  sourceId: id, url: publicSourceUrl, title: text(300), publisher: text(160),
+  series: sourceSeriesSchema.optional(), sourceId: id, url: publicSourceUrl, title: text(300), publisher: text(160),
   classification: z.enum(["official_guidance", "recent_information"]),
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
   validUntil: date.nullable().optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
-  chunks: z.array(z.strictObject({ key: id, section: text(240), sourceExcerpt: text(300), text: text(4000),
+  chunks: z.array(z.strictObject({ key: id, treatment: chunkTreatmentSchema.optional(), section: text(240), sourceExcerpt: z.union([text(300), z.literal("")]),
+    originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
     originalText: text(4000).optional(), pageStart: z.number().int().min(1).optional(), pageEnd: z.number().int().min(1).optional(),
-    keywords: z.array(text(80)).min(1).max(24), applicability })).min(1).max(32),
+    keywords: z.array(text(80)).min(1).max(24), applicability }).refine(chunk => chunk.originalKind === "visual_page"
+      ? !chunk.sourceExcerpt && !chunk.originalText : Boolean(chunk.sourceExcerpt.trim()))).min(1).max(32),
 }).superRefine((value, ctx) => {
   if (new Set(value.chunks.map(chunk => chunk.key)).size !== value.chunks.length) ctx.addIssue({ code: "custom", message: "Duplicate section key" });
+  if (value.series && value.series.institutionId !== new URL(value.url).hostname)
+    ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
-    if (value.extraction?.format === "text_pdf" && (!chunk.originalText || !chunk.pageStart || !chunk.pageEnd))
+    if (chunk.treatment?.kind === 'structured' && chunk.treatment.fields.some(field => !(chunk.originalText ?? chunk.sourceExcerpt).includes(field.value)))
+      ctx.addIssue({ code: 'custom', message: 'Structured values require exact source text' });
+    if (chunk.originalKind && value.extraction?.format !== "text_pdf")
+      ctx.addIssue({ code: "custom", message: "Invalid original representation" });
+    if (chunk.excerptPage !== undefined && (!chunk.originalKind || !chunk.pageStart || !chunk.pageEnd ||
+      chunk.excerptPage < chunk.pageStart || chunk.excerptPage > chunk.pageEnd))
+      ctx.addIssue({ code: "custom", message: "The physical evidence page must belong to the reviewed PDF section" });
+    if (value.extraction?.format === "text_pdf" && ((!chunk.originalText && chunk.originalKind !== "visual_page") || !chunk.pageStart || !chunk.pageEnd))
       ctx.addIssue({ code: "custom", message: "PDF chunks require original text and page coverage" });
     if ((chunk.pageStart === undefined) !== (chunk.pageEnd === undefined)
       || chunk.pageStart !== undefined && (chunk.pageStart > chunk.pageEnd! || value.extraction?.format !== "text_pdf"
@@ -80,6 +93,10 @@ export function sourceVersionHash(source: KnowledgeSourceInput): string {
   // Fetch/check timestamps do not turn unchanged public content into a new edition.
   const { fetchedAt: _fetchedAt, ...content } = source;
   return knowledgeHash(content);
+}
+/** Treatment-only versions may reuse the reviewed original only if all its content is identical. */
+export function treatmentContentHash(source: KnowledgeSourceInput): string {
+  return sourceVersionHash({ ...source, chunks: source.chunks.map(({ treatment: _, ...content }) => content) });
 }
 export function embeddingDocument(title: string, section: string, body: string): { title: string; text: string; hash: string } {
   const documentTitle = `${title} — ${section}`;

@@ -56,7 +56,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
-  const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, owner, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const { height: viewportHeight, fontScale = 1 } = useWindowDimensions();
@@ -76,6 +76,14 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const helpOpen = helpState.scope === currentHelpScope && helpState.open;
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
+  const displayedMessages = visibleIds.length ? chat.messages.filter(message => visibleIds.includes(message.id)) : chat.messages.slice(-6);
+  const displayedRuns = displayedMessages.flatMap(message => message.role === 'model' && message.agentRunId ? [message.agentRunId] : []).join(',');
+  useEffect(() => {
+    if (pathname !== '/chat' || !scopeKey || !chat.online || !displayedRuns || chat.selectedChildId !== child?.id) return;
+    const read = new AbortController();
+    void owner.agentOwner.readChatEvidence(scopeKey, displayedRuns.split(','), read.signal);
+    return () => read.abort();
+  }, [owner, pathname, scopeKey, chat.online, chat.selectedChildId, child?.id, displayedRuns]);
   const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
   const lastMessage = chat.messages[chat.messages.length - 1];
   const newReplyId = lastMessage?.role === "model" && !previous.current.ids.has(lastMessage.id) && previous.current.busy === "reply" ? lastMessage.id : undefined;

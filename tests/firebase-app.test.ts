@@ -76,6 +76,35 @@ function privateResponse(response: Response) {
   assert.equal(response.headers.get("Pragma"), "no-cache");
   assert.ok([...response.headers.keys()].every(key => !key.startsWith("access-control-")));
 }
+
+test("the original citation route returns only matching PDF bytes while the run and edition remain readable", async () => {
+  const f = fixture(), child = randomUUID(), run = randomUUID(), chunkId = randomUUID();
+  const path = `/api/children/${child}/agent/runs/${run}/citations/${chunkId}/original`;
+  const body = Buffer.from("%PDF-1.7\nsynthetic original");
+  const { createHash } = await import("node:crypto");
+  const citation = { chunkId, sourceId: "fhs-feeding-booklet-en", versionId: randomUUID() };
+  const target = { sourceId: citation.sourceId, url: "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    sha256: createHash("sha256").update(body).digest("hex") };
+  let canRead = true, replaceFile = false, revokeDuringRead = false, reads = 0;
+  const handler = createFirebaseRequestHandler({ ...f.options, product: { store: {
+    async get(uid: string, requestedChild: string, requestedRun: string) {
+      assert.deepEqual([uid, requestedChild, requestedRun], [USER_ID, child, run]);
+      return canRead ? { status: "completed", citations: [citation] } : null;
+    }
+  } } as NonNullable<Parameters<typeof createFirebaseRequestHandler>[0]["product"]>,
+    knowledgeOriginal: { async resolve(cited) { return cited === citation ? target : null; },
+      async read() { reads++; if (revokeDuringRead) canRead = false; return replaceFile ? Buffer.from("%PDF-1.7\nnew edition") : body; } } });
+  const open = (url = path) => handler(new Request(PUBLIC_ORIGIN + url, { headers: { "x-expected-user-id": USER_ID } }));
+  const ok = await open();
+  assert.equal(ok.status, 200); privateResponse(ok); assert.equal(ok.headers.get("content-type"), "application/pdf");
+  assert.equal(ok.headers.get("content-length"), String(body.byteLength));
+  assert.deepEqual(Buffer.from(await ok.arrayBuffer()), body);
+  assert.equal((await open(path.replace(chunkId, randomUUID()))).status, 404); assert.equal(reads, 1);
+  replaceFile = true;
+  await errorCode(await open(), 409, "citation_original_changed");
+  replaceFile = false; revokeDuringRead = true;
+  assert.equal((await open()).status, 404);
+});
 async function errorCode(response: Response, status: number, code: string) {
   assert.equal(response.status, status); privateResponse(response);
   const value = await response.json(); assert.equal(value.error.code, code); assert.equal(typeof value.error.message, "string");

@@ -13,10 +13,8 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 export interface EmbeddingInput { text: string; task: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"; title?: string }
 export interface EmbeddingReply { values: number[]; inputTokens: number | null; billableCharacters: number | null }
 export interface EmbeddingProvider { embed(input: EmbeddingInput, signal: AbortSignal): Promise<EmbeddingReply> }
-export class EmbeddingFailure extends Error {
-  readonly code: "unavailable" | "invalid_response" | "invalid_input" | "cancelled" | "quota_exceeded" | "unauthorized" | "disabled";
-  constructor(code: EmbeddingFailure["code"]) { super(`Embedding ${code}`); this.code = code; }
-}
+export { EmbeddingFailure } from "./embedding-failure.ts";
+import { EmbeddingFailure, EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 export interface EmbeddingActor {
   kind: "query_embedding" | "corpus_maintenance";
   actorId: string;
@@ -59,7 +57,11 @@ export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "p
     },
   };
 }
-export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource }) {
+export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource;
+  isolatedMaintenanceProject?: string }) {
+  if (options.isolatedMaintenanceProject !== undefined && (!options.isolatedMaintenanceProject.startsWith("demo-")
+    || process.env.YUYF_LOCAL_DEVELOPMENT !== "1" || !/^127\.0\.0\.1:[0-9]+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? "")
+    || options.billingSource !== "platform")) throw new EmbeddingFailure("unauthorized");
   return {
     async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>, durable?: DurableQueryEmbeddingUsage): Promise<number[]> {
       const { provider, usage } = options;
@@ -90,8 +92,8 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || !actor.actorId || actor.actorId.length > 160 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actor.operationId)
         || !["query_embedding", "corpus_maintenance"].includes(actor.kind)
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
-      // Maintenance has its own finite per-day counter but cannot increase the shared global limit.
-      const limit = actor.kind === "corpus_maintenance" ? Math.min(16, config.dailyGlobalAttempts) : config.dailyUserAttempts;
+      // The maintenance payer and chat have separate accounting; the provider-wide ceiling still applies.
+      const limit = actor.kind === "corpus_maintenance" ? Math.min(config.dailyUserAttempts, config.dailyGlobalAttempts) : config.dailyUserAttempts;
       let dailyRequest: DurableAiUsageRequest | undefined;
       if (daily) {
         dailyRequest = { kind: 'embedding', rootRunId: daily.context.binding.rootRunId, attemptKey: daily.attemptKey,
@@ -107,7 +109,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           // Missing or uncertain durable permission is never a SQL or keyword fallback.
           throw error instanceof AgentStopped ? error : new AgentStopped('unavailable');
         }
-      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingFailure("quota_exceeded");
+      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingAdmissionDeferred();
       const started = Date.now();
       const controller = new AbortController();
       const onAbort = () => controller.abort(new EmbeddingFailure("cancelled"));
@@ -125,6 +127,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           if (Date.now() >= daily.context.binding.deadlineAtMs) throw new AgentStopped('deadline');
           if (controller.signal.aborted) throw controller.signal.reason;
         }
+        if (!daily && actor.kind === "corpus_maintenance" && !await authority(authorize)) throw new EmbeddingFailure("unauthorized");
         const reply = await Promise.race([provider.embed(input, controller.signal), new Promise<never>((_, reject) => {
           onStop = () => reject(controller.signal.reason);
           controller.signal.addEventListener("abort", onStop, { once: true });

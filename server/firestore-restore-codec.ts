@@ -1,3 +1,4 @@
+import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
 import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
@@ -8,7 +9,7 @@ import { firestoreVoiceRowSchema } from './firestore-voice.ts';
 import { firestoreVoiceTranscriptSchema } from './firestore-voice-transcripts.ts';
 import { voiceObjectAddress, voiceObjectDescriptorSchema, type VoiceObjectDescriptor } from './firebase-voice-objects.ts';
 import { adminDirectorySchema } from './firestore-admin.ts';
-import { adminReceiptSchema, platformPolicySchema } from '../src/shared/admin.ts';
+import { adminDayBudgetSchema, adminReceiptSchema, platformPolicySchema } from '../src/shared/admin.ts';
 import { operationRestoreSchemas, isOperationRestoreKind, restoreOperationRecord, type OperationRestoreValue } from './firestore-restore-operation-records.ts';
 import { firestoreKnowledgeRefreshSchemas as knowledgeRefresh } from './firestore-knowledge-refresh.ts';
 import { definitionHash } from './knowledge-observation.ts';
@@ -60,6 +61,7 @@ const domainSchemas = {
   ...avatarRestoreSchemas,
   'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
   'platform-quota-observation': { suffix: 'admin_policy', schema: quotaSnapshotSchema },
+  'admin-day-budget': { suffix: 'admin_policy', schema: adminDayBudgetSchema },
   'admin-invitation': { suffix: 'admin_invitations', schema: adminDirectorySchema },
   'admin-receipt': { suffix: 'admin_operations', schema: adminReceiptSchema },
   ...operationRestoreSchemas,
@@ -92,10 +94,10 @@ const domainSchemas = {
   'agent-high-watermark': { suffix: 'agent_metrics', schema: agentHighWatermarkDocSchema },
   'agent-budget-alert': { suffix: 'agent_budget_alerts', schema: budgetAlertSchema },
 } as const;
-const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
+const knowledgeSchemas = { 'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
   'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
-const knowledgeSuffixes = { 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
+const knowledgeSuffixes = { 'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
   'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
   'knowledge-observation': 'knowledge_observations', 'knowledge-observation-part': 'knowledge_observation_parts', 'knowledge-check': 'knowledge_checks' } as const;
 export type FirestoreRestoreAuthorityKind = keyof typeof authoritySchemas;
@@ -255,7 +257,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     const { kind, id, scope, recordVersion } = context;
     requireBinding(context.envelopeVersion === 1 && recordVersion !== undefined);
     parse(workRecoveryScopeSchema, scope);
-    if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'platform-quota-observation', 'admin-invitation', 'admin-receipt', 'agent-high-watermark', 'agent-budget-alert'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
+    if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'platform-quota-observation', 'admin-day-budget', 'admin-invitation', 'admin-receipt', 'agent-high-watermark', 'agent-budget-alert'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
     const taskRecipient = (userId: string) => userId === scope.ownerUserId
       || scope.ownerUserId === 'space:' + scope.workspaceId && !userId.startsWith('space:');
@@ -280,9 +282,13 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           : normal.restoredFromEpoch === normal.operation.storageEpoch && normal.restoredFromEpoch !== scope.storageEpoch));
         idEquals(id, [normal.ownerUserId, normal.operation.opId]);
       }
-    } else if (kind === 'platform-policy' || kind === 'platform-quota-observation' || kind === 'admin-invitation' || kind === 'admin-receipt') {
+    } else if (kind === 'platform-policy' || kind === 'platform-quota-observation' || kind === 'admin-day-budget' || kind === 'admin-invitation' || kind === 'admin-receipt') {
       requireBinding(sameScope(scope, { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL })); versionMatches(1);
       if (kind === 'platform-policy') requireBinding(id === 'current');
+      else if (kind === 'admin-day-budget') {
+        const value = parse(adminDayBudgetSchema, raw);
+        requireBinding(id === value.day + '/' + value.pool);
+      }
       else if (kind === 'platform-quota-observation') {
         const value = parse(quotaSnapshotSchema, raw);
         requireBinding(id === value.day && value.providerQuota.every(q => q.project === options.projectId));
@@ -362,7 +368,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       parse(knowledgeChunkInputSchema, row.document);
       requireBinding((row.document.pageStart === undefined) === (row.document.pageEnd === undefined));
       if (row.document.pageStart !== undefined && row.document.pageEnd !== undefined)
-        requireBinding(row.document.pageStart <= row.document.pageEnd && typeof row.document.originalText === 'string');
+        requireBinding(row.document.pageStart <= row.document.pageEnd && (typeof row.document.originalText === "string"
+          || row.document.originalKind === "visual_page" && row.document.sourceExcerpt === ""));
       if (row.embedding === null) requireBinding([row.vectorHash, row.model, row.dimensions, row.pipeline].every(value => value === null));
       else {
         requireBinding(row.embedding instanceof VectorValue);
@@ -387,6 +394,9 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           requireBinding(values.length === KNOWLEDGE_EMBEDDING.dimensions && values.every(n => Number.isFinite(n) && Math.abs(n) <= 1e10)
             && values.some(n => n !== 0) && value.vectorHash === knowledgeHash(values));
         } else requireBinding(value.embedding === null && value.vectorHash === null);
+      } else if (kind === 'knowledge-original') {
+        const value = knowledgeOriginalManifest.parse(row);
+        requireBinding(id === value.sourceId + '-' + value.contentHash);
       } else if (kind === 'knowledge-watch') {
         const value = parse(knowledgeRefresh.watch, row); requireBinding(value.id === id && value.definition.id === id && value.definitionHash === definitionHash(value.definition));
       } else if (kind === 'knowledge-observation') requireBinding(parse(knowledgeRefresh.observation, row).sourceId === id);
@@ -463,10 +473,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       return { oldPath: decoded.path, path: decoded.path, data: object(value) };
     }
     if (context.family === 'domain' && isAvatarRestoreKind(context.kind)) return transformAvatarRestore(data, decoded, input);
-    if (context.family === 'domain' && ['platform-policy', 'platform-quota-observation', 'admin-invitation', 'admin-receipt'].includes(context.kind)) {
+    if (context.family === 'domain' && ['platform-policy', 'platform-quota-observation', 'admin-day-budget', 'admin-invitation', 'admin-receipt'].includes(context.kind)) {
       domainBinding(context as Extract<FirestoreRestoreDecoded['context'], { family: 'domain' }>, decoded.value);
       const original = originalEnvelopes.get(decoded); if (!original) reject('restore_admin_origin_missing');
-      if (context.kind === 'platform-quota-observation') return { oldPath: decoded.path, path: decoded.path, data: { ...original } };
+      if (context.kind === 'platform-quota-observation' || context.kind === 'admin-day-budget') return { oldPath: decoded.path, path: decoded.path, data: { ...original } };
       if (context.kind === 'platform-policy') {
         const row = parse(platformPolicySchema, decoded.value), disabled = { ...row, enabled: false, version: nextVersion(row.version) };
         return { oldPath: decoded.path, path: decoded.path, data: { ...data.seal('platform-policy', 'current', context.scope, platformPolicySchema, disabled) } };

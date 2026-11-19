@@ -11,6 +11,7 @@ export interface ModelSettingsViewModel {
   snapshot: ModelSettingsSnapshot | null; online: boolean; authorized: boolean;
   busy: "read" | "save" | "check" | "catalog" | null; operation: OperationState; notice: string;
   needsRead: boolean; formRevision: number; secretRevision: number;
+  monthReport?: import("../../src/shared/monthly-finance.ts").MonthlyFinance | null;
   keyCheck: ModelKeyCheck | null;
   catalog?: PersonalModelCatalog | null;
   originalOperationId?: string | null;
@@ -18,6 +19,7 @@ export interface ModelSettingsViewModel {
 export interface ModelSettingsActions {
   setDraftEditing?(editing: boolean): void;
   refresh(): void;
+  readMonth?(): void;
   save(command: ModelSettingsCommand): void;
   check(expectedVersion: number): void;
   refreshCatalog?(expectedVersion: number): void;

@@ -57,7 +57,7 @@ const SettingsChildBridge = memo(function SettingsChildBridge({ env, ownerKey, p
   return null;
 });
 function emptyPersonalDomains(env: SettingsEnvironment): PersonalDomains {
-  const modelSettings: PersonalDomains["modelSettings"] = { model: { scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: "", serverLabel: env.apiBaseUrl, snapshot: null,
+  const modelSettings: PersonalDomains["modelSettings"] = { model: { scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: "", serverLabel: env.apiBaseUrl, snapshot: null, monthReport: null,
     online: env.online, authorized: false, busy: "read", operation: "none", notice: "正在核對目前本人設定。", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null }, actions: { refresh: noop, save: noop, check: noop } };
   const family: PersonalDomains["family"] = { readState: "error", model: { families: [], family: null, selfUserId: env.userId ?? "", children: [], online: env.online,

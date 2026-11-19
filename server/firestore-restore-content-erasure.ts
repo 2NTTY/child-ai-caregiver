@@ -11,6 +11,8 @@ import { sourceHistoryRecordSchema, historyResourceForContent } from './handover
 import type { createFirestoreRestoreCodec, FirestoreRestoreDecoded } from './firestore-restore-codec.ts';
 import { firestoreAgentManualSchema } from './firestore-agent-actions.ts';
 import { firestoreAgentActionSavedSchema, redactErasedNoteEvidence } from './firestore-private-note-receipt.ts';
+import { firestoreChatMessageStorageSchema } from './chat-message-schema.ts';
+import { firestoreFactStorageSchema } from './firestore-memory.ts';
 
 // Legacy successful deletions recorded a request hash but no target ID. A stale backup cannot supply that identity by name.
 function checkLegacyNoteDeletions(records: readonly FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[],
@@ -61,6 +63,52 @@ function noteDeletionRequestHash(noteId: string, expectedVersion: number, operat
 
 import { replayPrivateSummaryContentErasure } from './firestore-private-summary-erasure.ts';
 
+function retainChatRestrictions(records: FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[], intents: readonly FirebaseErasureIntent[]) {
+  if (!records.some(row => row.context.kind === 'chat-message')) return;
+  const key = (scope: FirebaseErasureIntent['scope'], id: string) => JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.childId, id]);
+  const deadlines = new Map<string, number>();
+  const restrict = (scope: FirebaseErasureIntent['scope'], id: string, at: string) => {
+    const target = key(scope, id);
+    deadlines.set(target, Math.min(deadlines.get(target) ?? Infinity, Date.parse(at)));
+  };
+  const deleted = new Map<string, { through: number; at: string; sourceKnown: boolean; scopeKey: string }>();
+  const liveMessages = new Set<string>();
+  const lastDeletion = new Map<string, number>();
+  for (const intent of intents) if (intent.content?.kind === 'fact') {
+    const scopeKey = key(intent.scope, '');
+    lastDeletion.set(scopeKey, Math.max(lastDeletion.get(scopeKey) ?? 0, Date.parse(intent.at)));
+    deleted.set(key(intent.scope, intent.assetId), { through: intent.content.throughVersion, at: intent.at,
+      sourceKnown: !!intent.content.sourceMessageId, scopeKey });
+    if (intent.content.sourceMessageId) restrict(intent.scope, intent.content.sourceMessageId, intent.at);
+  }
+  for (const row of live) if (row.context.family === 'domain' && row.context.kind === 'chat-message') {
+    const value = firestoreChatMessageStorageSchema.parse(row.value);
+    liveMessages.add(key(row.context.scope, value.id));
+    if (value.memorySummaryUntil) restrict(row.context.scope, value.id, value.memorySummaryUntil);
+  }
+  // Old deletion journals may have only a fact ID. Resolve the original from authenticated revisions when present.
+  for (const row of records) if (row.context.family === 'domain' && (row.context.kind === 'memory-fact' || row.context.kind === 'memory-fact-revision')) {
+    const fact = firestoreFactStorageSchema.parse(row.value), intent = deleted.get(key(row.context.scope, fact.id));
+    if (intent && fact.version <= intent.through) {
+      if (fact.version === intent.through && (fact.source.kind !== 'private_chat' || fact.source.messageId)) intent.sourceKnown = true;
+      if (fact.source.kind === 'private_chat' && fact.source.messageId) restrict(row.context.scope, fact.source.messageId, intent.at);
+    }
+  }
+  const unresolved = new Map<string, number>();
+  for (const intent of deleted.values()) if (!intent.sourceKnown)
+    unresolved.set(intent.scopeKey, Math.max(unresolved.get(intent.scopeKey) ?? 0, Date.parse(intent.at)));
+  for (const row of records) if (row.context.family === 'domain' && row.context.kind === 'chat-message') {
+    const id = key(row.context.scope, row.context.id), scopeKey = key(row.context.scope, '');
+    const value = firestoreChatMessageStorageSchema.parse(row.value);
+    // When a deleted fact cannot be traced, keep the old raw conversation for its owner but withhold automatic reuse.
+    const unprovedThrough = liveMessages.has(id) ? unresolved.get(scopeKey) : lastDeletion.get(scopeKey);
+    const deadline = Math.min(deadlines.get(id) ?? Infinity,
+      unprovedThrough !== undefined && Date.parse(value.createdAt) <= unprovedThrough ? unprovedThrough : Infinity);
+    if (Number.isFinite(deadline) && (!value.memorySummaryUntil || deadline < Date.parse(value.memorySummaryUntil)))
+      row.value = { ...value, memorySummaryUntil: new Date(deadline).toISOString() };
+  }
+}
+
 /** Reapply independent content barriers before rebuilding any readable data graph. */
 export function replayContentErasures(data: FirestoreDomainData, codec: ReturnType<typeof createFirestoreRestoreCodec>,
   records: FirestoreRestoreDecoded[], live: readonly FirestoreRestoreDecoded[], journal: readonly FirebaseErasureIntent[], liveMetadata: ReadonlyMap<string, Record<string, unknown>>,
@@ -71,6 +119,7 @@ export function replayContentErasures(data: FirestoreDomainData, codec: ReturnTy
     if (!intents.some(v => firebaseErasureIntentHash(v) === firebaseErasureIntentHash(value.intent))) domainReject('restore_content_journal_pending');
   }
   checkLegacyNoteDeletions(records, live, intents, removedScopes);
+  retainChatRestrictions(records, live, intents);
   // Pre-upgrade tombstones must be journaled too; absence of a new job is not permission to resurrect them.
   for (const row of live) {
     const ctx = row.context; if (ctx.family !== 'domain') continue;

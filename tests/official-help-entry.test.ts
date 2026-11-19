@@ -394,6 +394,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
 
   const placeholder: Record<string, unknown> = {};
   const productionState = () => ({
+    owner: { agentOwner: { readChatEvidence: async () => {} } },
     model: { children, selectedChildId },
     actions: { refresh() {}, open() {} },
     scopeKey,

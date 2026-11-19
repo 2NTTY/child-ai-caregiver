@@ -1,0 +1,263 @@
+{
+  "observedDateHongKong": "2026-11-19",
+  "requirements": ["REQ-004", "REQ-006", "REQ-007"],
+  "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660, 661],
+  "finalApplicationRelease": {
+    "id": "r44431291572-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44431291572",
+    "observedAt": "2026-11-19T00:54:27+00:00",
+    "result": "deployed",
+    "services": {
+      "api": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:628edd5536806c6834c652cf7bb96b7df7f5e128671b14c89927be9de3967489"
+      },
+      "web": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:399131093fe68ef53ad48b79bfe7016b201c09bf5182e5a44d384fcc50ceef4e"
+      },
+      "worker": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:628edd5536806c6834c652cf7bb96b7df7f5e128671b14c89927be9de3967489"
+      }
+    },
+    "publicSiteRevision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "publicApiRevision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "publicHealth": "ok",
+    "rollback": [
+      {
+        "releaseId": "r44418436246-1",
+        "compatibility": "web-only"
+      },
+      {
+        "releaseId": "r44409256593-1",
+        "compatibility": "web-only"
+      }
+    ]
+  },
+  "androidPreviewDelivery": {
+    "buildVersionCode": 8,
+    "revision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "runtime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "group": "83a54d54-d24b-4ac1-8ce4-a7836b679ac3",
+    "url": "https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/83a54d54-d24b-4ac1-8ce4-a7836b679ac3",
+    "updateId": "01a1f14f-c6bb-73ce-bd00-4e4fe6e1cb0a",
+    "manifestHttpStatus": 200,
+    "manifestMatchedAt": "2026-11-19T00:59:17.787Z",
+    "newApkBuilds": 0,
+    "physicalDeviceInstallAndTaps": "not tested"
+  },
+  "productionRelease": {
+    "id": "r44402209727-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44402209727",
+    "observedAt": "2026-11-18T21:42:39Z",
+    "result": "deployed",
+    "webApiWorkerRevision": "f2db16f15d9c97af004fd28e5321bf6217320b26",
+    "siteVersionAndApiVersionMatch": true,
+    "apiHealth": "ok",
+    "rollbackToPrevious": "web-only",
+    "firestore": {
+      "indexesReady": 181,
+      "fieldOverridesReady": 177,
+      "missing": 0,
+      "pending": 0,
+      "failed": 0,
+      "fieldProblems": 0
+    }
+  },
+  "portableReaderRelease": {
+    "id": "r44409256593-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44409256593",
+    "observedAt": "2026-11-18T22:20:27Z",
+    "result": "deployed",
+    "apiAndWorkerRevision": "cd3746f29c7e3895c2439e7fc026826b60dad1e3",
+    "webRevision": "f2db16f15d9c97af004fd28e5321bf6217320b26",
+    "publicVersionProbesMatch": true,
+    "apiHealth": "ok"
+  },
+  "pageReviewRelease": {
+    "id": "r44418436246-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44418436246",
+    "observedAt": "2026-11-18T23:18:43Z",
+    "result": "deployed",
+    "apiAndWorkerRevision": "176a8af61d2a32aca9f28eaff94bfbf5456946f9",
+    "webRevision": "f2db16f15d9c97af004fd28e5321bf6217320b26",
+    "publicVersionProbesMatch": true,
+    "apiHealth": "ok"
+  },
+  "productionAcquisition": [
+    {
+      "source": "fhs-feeding-booklet-en",
+      "job": "5b2d9aca-81cd-4b39-8ac5-debe404e3da4",
+      "checkedAt": "2026-11-18T21:51:03.693Z",
+      "state": "recorded",
+      "method": "fhs-leaflet-block/1",
+      "pdfSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "observationHash": "74a11741c020df3b9459bb2fc821a74be2cea5f5b05903523c97036f8c27fd46",
+      "pages": 20,
+      "matchesIsolatedReviewOriginal": true,
+      "previousPublishedVersionId": "a9f9f85a-b91d-502e-b13b-f41b7829bb96",
+      "previousPublishedVersionHash": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98",
+      "previousPublishedPages": [3, 3],
+      "registrationTransition": {
+        "beforeAt": "2026-11-18T21:43:21.524Z",
+        "beforeRevision": "fb0214f5-599a-4e46-9357-67ad114de83f",
+        "beforeStatus": "unchanged",
+        "enabledBefore": true,
+        "previousReviewedRevisionMatches": true,
+        "latestPriorCheckId": "4557bd90-0f73-4c11-8b81-610eee2a1212",
+        "expandedAt": "2026-11-18T21:50:30.112Z",
+        "expandedRevision": "7c93f8c2-5f89-4533-8bba-749bccd849f8"
+      }
+    },
+    {
+      "source": "chp-recent",
+      "job": "70b05dff-9935-4fa4-86e7-cff00f07bb43",
+      "checkedAt": "2026-11-18T21:45:31.401Z",
+      "state": "recorded",
+      "rssSha256": "4e998f2649a054bb3dd32f73476b96635ccf71301a63ee54194843266a71093e",
+      "items": 10,
+      "changedItems": 10,
+      "audience": "internal_noncommercial"
+    }
+  ],
+  "bookletUpgradeReview": {
+    "comparedToActiveVersion": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98",
+    "firstCrossVersionCandidate": "7a367bce0329af1bf8f649b0bd04dd4fd11607f673daf6087653c90da20a5ec5",
+    "resultForThatCandidate": "held",
+    "runtimeReadback": { "at": "2026-11-18T22:22:47.736Z", "oldActivePointerIntact": true, "oldEditionAvailableToNewQueries": false },
+    "priorRangeRestored": {
+      "checkedAt": "2026-11-18T23:22:15.236Z",
+      "sourceCheckId": "1d0a3560-6c0c-4f8e-8a71-0643d726d0c9",
+      "recheckEvent": "knowledge_published_pdf_range_rechecked",
+      "fullObservationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+      "oldReviewedObservationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "listedForNewQueries": true,
+      "search": { "region": "HK", "topic": "feeding", "actualAgeMonths": [4, 5], "query": "introducing solid foods", "page": 3, "samePublishedVersion": true }
+    },
+    "diff": { "retiredKeys": 1, "addedKeys": 13, "boundExecutableGrowthRules": 0 },
+    "evidence": [
+      "The old page 3 appears verbatim in the new PDF. Its accessible age range and its feeding topic are missing from the new retrieval metadata.",
+      "Visual comparison on physical pages 4 and 10 found distorted numerals in the PDF text layer.",
+      "The review made against an empty catalogue cannot approve an upgrade from the existing site edition."
+    ]
+  },
+  "wholeBookletPublication": {
+    "readBackAt": "2026-11-19T00:06:23.320Z",
+    "sourceId": "fhs-feeding-booklet-en",
+    "versionId": "c57ddf18-aec6-5e21-a4af-0fdd95a860b8",
+    "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+    "archiveSha256": "a2a0513f1894ebe836d301a9c3f25c3347bb933751d12b6c16b45192265917a8",
+    "destinationAssessmentSha256": "9f3402260492e2b6e017f75503f24dc2dfceec968ea0370442e2aa46cb2e5fde",
+    "comparisonChanges": 14,
+    "pageCount": 20,
+    "reviewedChunks": 13,
+    "reusedVectors": 13,
+    "productionQueries": { "feedingAtFourToFiveMonths": 3, "illustration": 6, "illustrationChunkId": "9a339860-29dd-5051-9756-a2f9c4cee541" },
+    "reopenedOriginalBytes": 7944671,
+    "reopenedOriginalSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+    "importReviewPublishAndQueriesModelCalls": 0
+  },
+  "familyQuestion": {
+    "environment": "local Firebase emulators, real Vertex model, synthetic family",
+    "operationId": "d70a8030-9186-489e-90e7-bee830120382",
+    "runId": "b8e6ff62-7b54-44eb-97aa-139a3967827b",
+    "saved": true,
+    "modelCalls": 8,
+    "toolCalls": 4,
+    "queryEmbeddings": 1,
+    "localEditionId": "e9200620-c1b7-5722-b8aa-eacc512d08cd",
+    "page": 6,
+    "originalPdfSha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+    "webReadback": {
+      "at": "2026-11-19T00:33:23.846Z",
+      "browser": "Edge",
+      "series": "fhs-infant-feeding",
+      "listedPages": [1, 20],
+      "chunkId": "3ebe993a-d08a-579f-ac09-8460955dcb71",
+      "firstClickExcerptSha256": "d7417814f52a856d8e9ea7a9c61c0cb04beaef4a9838d8903b5fca1339a748b8",
+      "secondClick": { "httpStatus": 200, "mediaType": "application/pdf", "fragment": "#page=6", "bytes": 7944671 },
+      "additionalModelCalls": 0
+    }
+  },
+  "privateQuestion": {
+    "environment": "local Firebase emulators, real Vertex model, synthetic family",
+    "runId": "830efe79-4f62-4699-badc-be39fafb9c8b",
+    "originalMessageVersion": 1,
+    "currentFactVersion": 3,
+    "independentReview": "pass",
+    "afterDeletion": { "status": 409, "code": "source_changed", "additionalModelCalls": 0 },
+    "evidenceFile": "REQ007_PRIVATE_FACT_RECALL_20261119.json",
+    "sharedLocalDailyLimitsRestored": { "user": 20, "global": 100, "prior88ReceiptsPreserved": true }
+  },
+  "sourceLibrary": {
+    "package": {
+      "producerSha256": "a2a0513f1894ebe836d301a9c3f25c3347bb933751d12b6c16b45192265917a8",
+      "portableSha256": "36f7cabb5041f79f2cd3781709821d255a980aa76a4e45dbc558589bdd2eda28",
+      "versionHash": "e7f36ab93f76fee978384656dbc68a916b797281634a7cc1f3a01431d1a65896",
+      "destinationPublishedEdition": "e9200620-c1b7-5722-b8aa-eacc512d08cd",
+      "destinationPreviouslyEmpty": true,
+      "reviewedChunks": 13,
+      "compatibleVectors": 13,
+      "additionalDocumentEmbeddings": 0,
+      "officialReader": {
+        "kind": "pdf",
+        "startPage": 1,
+        "endPage": 20,
+        "parser": "pdfjs-dist",
+        "version": "6.4.299"
+      },
+      "sample": {
+        "key": "p1-45c0b61186f1134f4c55",
+        "excerptHash": "4f877fc895fdb8c26da7381efe607b1215b8434b773ff2809efadee330156164",
+        "titleHash": "b49f5876be1ccff199c8324bb62392d00f3135c2c136f48fac2c5f88b1deee20"
+      },
+      "observationHash": "8a36f9ac01f48521432b1e93124f3a533dc1e0c0356a8bc5d693d64ca798cb9b",
+      "verifiedLocally": true
+    },
+    "governance": {
+      "checkedAt": "2026-11-19T00:08:16.802Z",
+      "surface": "Edge Web",
+      "project": "demo-yuyf-63b42e54",
+      "sourceId": "fhs-solid-food",
+      "originalEdition": "6fb0a7d2-6d5d-56cb-bcc7-b877dddf76b5",
+      "candidate": "e7b36df9-2837-5779-9e13-e0616b87bea9",
+      "versionHash": "6673b0d1b7dc09de0dc857e798b13138514971ddf26a3e9c2cd8267a3db15ee4",
+      "steps": [
+        "memory-card",
+        "create-draft",
+        "review",
+        "publish",
+        "catalogue-applied-count"
+      ],
+      "modelCalls": 0,
+      "ordinaryUserReadWriteDenied": true,
+      "reviewedBeforePublish": true
+    },
+    "focusedTests": {
+      "libraryAdminAndCitations": 27,
+      "chatRecoveryAndQuietReads": 29,
+      "serverAndFrontendTypechecks": "passed"
+    },
+    "regressionEvidence": [
+      "independent account pin/follow/update/disable",
+      "ordinary chat reads without subscription writes",
+      "old citation after rename, split, merge or source upgrade; withdrawal blocks original",
+      "structured exact-match values and unindexed excluded text",
+      "live retrieval through Runner with a synthetic model"
+    ],
+    "realLiveReading": {
+      "receipt": "REQ006_LIVE_OFFICIAL_READING_20261119.json",
+      "registeredLivePage": "fhs-child-vision",
+      "firstUseDirectory": "dh-services-shs",
+      "documentsWritten": 0
+    }
+  },
+  "operatingDecisions": [
+    "公用來源首次抓取沿既有 worker 和原件儲存。衞生防護中心通告採組內非商業範圍。",
+    "正式站未設定三個付費背景整理開關，取材與獨立審核、公開發布各有自己的收據。",
+    "個人來源偏好只在選擇或匯入時保存。一般查閱沿用平台已發布版，歷史引用固定在當時使用的版本。",
+    "實測衞生署健康服務目錄的首次即時讀取沿其授權範圍。正式站維持目前五個家庭健康服務來源，衞生防護中心通告不對家長公開。",
+    "三條線共用原有 12 小時 US$5 測試限額。測試次數可經原隔離環境的管理設定提高，保留出資方、原工作及當日已用量。"
+  ]
+}

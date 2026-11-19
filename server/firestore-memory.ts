@@ -5,7 +5,7 @@ import { summaryDependencySchema, summaryBatchSchema } from './memory-validation
 import { prepareContentErasure } from './firestore-content-erasure.ts';
 import { factContentDate, summarySourcePeriod, summarySourcePeriodSchema, memoryUpdateDate } from './handover-memory-dates.ts';
 import { randomUUID } from 'node:crypto';
-import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
+import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { MemoryStore } from './memory.ts';
 import type { MemoryFact, MemoryTopic, ConversationSummary, SummaryInput, FactSource } from '../src/shared/memory.ts';
@@ -15,7 +15,8 @@ import { factIsApplicable, normalizedFactKey, profileIsApplicable, requireTopicT
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { readContextBasis, prepareContextChange } from './firestore-context-basis.ts';
-import { firestoreChatMessageSchema, type FirestoreChatStore } from './firestore-chat.ts';
+import type { FirestoreChatStore } from './firestore-chat.ts';
+import { firestoreChatMessageStorageSchema } from './chat-message-schema.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { readImportMapping, type HandoverImportResolution } from './handover-import-records.ts';
@@ -28,7 +29,8 @@ import type { HandoverImportRow } from './handover-import.ts';
 import type { HandoverIntegrity } from '../src/shared/handover.ts';
 import { selectSummaryBatchMessages } from './summary-window-helper.ts';
 import { historicalSummaryText, summaryExpiry } from './summary-projection.ts';
-import { preparePrivateSummaryScanProgress } from './firestore-private-summary-scan.ts';
+import { preparePrivateSummaryScanProgress, readPrivateSummaryScan } from './firestore-private-summary-scan.ts';
+import type { PrivateSummaryScan } from './private-summary-scan.ts';
 
 export const SUMMARY_PROJECTION_MAX_CHARS = 3000;
 
@@ -67,6 +69,7 @@ const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.strin
   : value.importedFrom === undefined);
 export { summarySchema as firestoreSummarySchema };
 const savedSummarySchema = z.object({ summary: summarySchema, basis: z.string().regex(/^[a-f0-9]{64}$/u),
+  checkedChatBasis: z.string().regex(/^[a-f0-9]{64}$/u).optional(),
   validUntil: time.nullable(), lastSortKey: z.string().regex(/^[0-9]{19}$/u), batch: summaryBatchSchema.optional() }).strict();
 export { savedSummarySchema as firestoreSavedSummarySchema };
 const keySchema = z.object({ id: uuid }).strict();
@@ -83,7 +86,8 @@ export type PreparedCompletedSummary = ({ kind: 'prepared' } & Prepared<Conversa
 export interface FirestoreMemoryStore extends MemoryStore, SummarySourceReader {
   readFreshMaintenance(binding: Binding): Promise<SummaryInput | null>;
   /** Bounded private scan readers; never advance coverage or change source admission. */
-  readSummaryScanHead(binding: Binding): Promise<{ basis: string; freshCaughtUp: boolean; upperSortKey: string | null }>;
+  readSummaryScanHead(binding: Binding): Promise<{ basis: string; freshCaughtUp: boolean; upperSortKey: string | null;
+    retiredChatPrefix?: PrivateSummaryScan['retiredChatPrefix'] }>;
   readSummaryScanPage(binding: Binding, input: { upperSortKey: string; after: { sortKey: string; id: string } | null; limit: number }):
     Promise<{ items: { id: string; sortKey: string; version: number }[]; exhausted: boolean }>;
   forSharedSpace(spaceId: string): MemoryStore;
@@ -147,14 +151,15 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     domainParse(uuid, id);
     return readRow(binding, kind, id, await binding.transaction.get(refFor(kind, id)));
   }
-  async function sourceCurrent(binding: Binding, source: FactSource) {
+  async function sourceCurrent(binding: Binding, source: FactSource, newDerivation = false) {
     if (source.kind === 'imported') return source.sourceState === 'current';
     if (source.kind === 'care_record') return contentVisible(data, binding, 'care', source.recordId, source.version, true);
-    if (source.kind === 'private_chat') return !!source.messageId && await options.chat.readMessage(binding, binding.scope.childId, source.messageId) !== null;
+    if (source.kind === 'private_chat') return !!source.messageId
+      && (await options.chat.readMessage(binding, binding.scope.childId, source.messageId, newDerivation ? 'memory' : undefined))?.role === 'user';
     return true;
   }
   async function factResult(binding: Binding, value: MemoryFact): Promise<MemoryFact> {
-    const sourceState = await sourceCurrent(binding, value.source) ? 'current' : 'changed';
+    const sourceState = await sourceCurrent(binding, value.source, value.status === 'candidate') ? 'current' : 'changed';
     const clean = firestoreFactSchema.parse(value);
     const source = binding.scope.ownerUserId !== binding.actorUserId ? publicSource(value.source) : value.source;
     return { ...clean, source, sourceState, applicable: factIsApplicable({ ...value, sourceState }) };
@@ -163,7 +168,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   async function checkSource(binding: Binding, source: FactSource, retained = false) {
     if (source.kind === 'imported' && !retained) domainReject('imported_source_not_retained', 400);
     if (binding.sharedAccess && binding.actorUserId !== binding.scope.ownerUserId && source.kind === 'private_chat' && !retained) domainReject('private_source_unavailable', 403);
-    if (!await sourceCurrent(binding, source)) domainReject('source_changed');
+    if (!await sourceCurrent(binding, source, true)) domainReject('source_changed');
   }
   function publicSource(source: FactSource): FactSource {
     if (!hasPrivateMessageReference(source)) return source;
@@ -174,6 +179,47 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   }
   function confirmShared(value: 'private' | 'family', confirmed: boolean) {
     if (value === 'family' && !confirmed) domainReject('sharing_confirmation_required', 400);
+  }
+  // A summary can predate the fact that was later confirmed from one of its messages.
+  // Keep the earliest restriction with that immutable original, including across retries.
+  async function prepareFactSourceCutoffs(binding: Binding, previous: MemoryFact | null, next: MemoryFact | null) {
+    const changes = new Map<string, number>();
+    if (previous?.source.kind === 'private_chat' && previous.source.messageId
+      && (!next || previous.status === 'confirmed' && (next.status !== 'confirmed' || previous.content !== next.content
+        || next.source.kind !== 'private_chat' || next.source.messageId !== previous.source.messageId)))
+      changes.set(previous.source.messageId, Date.now());
+    if (next?.status === 'confirmed' && next.source.kind === 'private_chat' && next.source.messageId && next.validUntil)
+      changes.set(next.source.messageId, Math.min(changes.get(next.source.messageId) ?? Infinity, Date.parse(next.validUntil)));
+    const writes: (() => void)[] = [];
+    for (const [id, cutoff] of changes) {
+      const ref = data.ref('chat_messages', 'chat-message', id), row = await binding.transaction.get(ref);
+      if (!row.exists) continue;
+      const original = open(binding, 'chat-message', id, firestoreChatMessageStorageSchema, row);
+      if (original.id !== id || original.childId !== binding.scope.childId) domainReject('chat_binding', 500);
+      if (original.memorySummaryUntil && Date.parse(original.memorySummaryUntil) <= cutoff) continue;
+      const sealed = data.seal('chat-message', id, binding.scope, firestoreChatMessageStorageSchema,
+        { ...original, memorySummaryUntil: new Date(cutoff).toISOString() });
+      writes.push(() => binding.transaction.update(ref, { ...sealed }));
+    }
+    return () => writes.forEach(write => write());
+  }
+  const coverageDeadlines = new WeakMap<Binding, Map<string, number>>();
+  async function messageSummaryExpiry(binding: Binding, ids: readonly string[]) {
+    const deadlines = coverageDeadlines.get(binding) ?? new Map<string, number>();
+    coverageDeadlines.set(binding, deadlines);
+    const missing = ids.filter(id => !deadlines.has(id));
+    // Coverage may contain a copy of a parent quote from an older reviewed assistant run.
+    for (let at = 0; at < missing.length; at += 30) {
+      const keys = missing.slice(at, at + 30);
+      const documents = keys.map(id => data.ref('chat_messages', 'chat-message', id).id);
+      const rows = await binding.transaction.get(data.collection('chat_messages').where(FieldPath.documentId(), 'in', documents));
+      for (const row of rows.docs) {
+        const id = row.get('messageId'), original = open(binding, 'chat-message', id, firestoreChatMessageStorageSchema, row);
+        if (!keys.includes(id) || original.id !== id || original.childId !== binding.scope.childId) domainReject('chat_binding', 500);
+        deadlines.set(id, await options.chat.memoryDeadline(binding, original));
+      }
+    }
+    return Math.min(...ids.map(id => deadlines.get(id) ?? 0));
   }
   const keyId = (binding: Binding, kind: Kind, value: MemoryFact | MemoryTopic) => JSON.stringify([
     binding.scope.ownerUserId, binding.scope.childId, kind, value.visibility,
@@ -214,6 +260,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const actionable = next !== null && (kind === 'facts' ? (next as MemoryFact).applicable && factIsApplicable(next as MemoryFact) : topicMayAsk(next as MemoryTopic));
     const commitKeys = await uniqueness(binding, kind, current, next), contextChange = await prepareContextChange(data, binding,
       { proactive: actionable, resource: { domain: kind === 'facts' ? 'memory_fact' : 'memory_topic', id } });
+    const sourceCutoffs = kind === 'facts' ? await prepareFactSourceCutoffs(binding, current as MemoryFact | null, next as MemoryFact | null) : null;
     const change = await binding.prepareChange(operationId, 'memory', deleted);
     const tags = data.tags(binding.scope);
     let envelope: Record<string, unknown>, revision: Record<string, unknown> | undefined, publicValue: MemoryFact | MemoryTopic | boolean = true;
@@ -246,9 +293,12 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           id, childId: binding.scope.childId, version: nextVersion, operationId, deletedAt: new Date().toISOString(),
         }, nextVersion) };
     }
-    const erase = deleted ? prepareContentErasure(data, binding, kind === 'facts' ? 'fact' : 'topic', id, current!.version, operationId) : null;
+    const erasedSource = deleted && kind === 'facts' ? (current as MemoryFact).source : null;
+    const erase = deleted ? prepareContentErasure(data, binding, kind === 'facts' ? 'fact' : 'topic', id, current!.version, operationId,
+      erasedSource?.kind === 'private_chat' ? { sourceMessageId: erasedSource.messageId } : undefined) : null;
     return { value: publicValue, changeSeq: change.changeSeq, commit() {
       erase?.();
+      sourceCutoffs?.();
       change.commit(); contextChange(); commitKeys(); binding.transaction.set(refFor(kind, id), envelope);
       if (revision) binding.transaction.create(revisionRef, revision);
     } };
@@ -339,8 +389,14 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     return { items, nextAfterId: rows.size > limit ? items.at(-1)!.id : null };
   }
   const summaryId = (binding: Binding) => JSON.stringify([binding.scope.ownerUserId, binding.scope.childId]);
+  const contextBases = new WeakMap<Binding, Awaited<ReturnType<typeof readContextBasis>>>();
+  async function contextBasis(binding: Binding) {
+    let value = contextBases.get(binding);
+    if (!value) { value = await readContextBasis(data, binding); contextBases.set(binding, value); }
+    return value;
+  }
   async function summaryBasis(binding: Binding) {
-    const revision = await readContextBasis(data, binding), now = new Date().toISOString(), profile = await options.care.readProfile(binding);
+    const revision = await contextBasis(binding), now = new Date().toISOString(), profile = await options.care.readProfile(binding);
     const query = scoped(binding, 'memory_facts').where('live', '==', true).where('status', '==', 'confirmed');
     const expired = await binding.transaction.get(query.where('validUntil', '<=', now).orderBy('validUntil', 'desc').limit(1));
     const future = await binding.transaction.get(query.where('validUntil', '>', now).orderBy('validUntil', 'asc').limit(1));
@@ -368,10 +424,19 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       if (dependency.kind === 'profile' && dependency.version === 0 && !row.exists) continue;
       if (!row.exists || row.get('live') === false || row.get('recordVersion') !== dependency.version
         || Object.entries(data.tags(binding.scope)).some(([key, value]) => row.get(key) !== value)) return false;
+      if (dependency.kind === 'fact') {
+        const fact = readRow(binding, 'facts', dependency.id, row) as MemoryFact | null;
+        if (!fact || !(await factResult(binding, fact)).applicable) return false;
+      }
     }
-    // Chat rows are immutable and removed with child/account access; the authority transaction already checked that scope.
-    // No per-message existence scan is needed on every model request.
-    return true;
+    return await chatCoverageCurrent(binding, saved);
+  }
+  async function chatCoverageCurrent(binding: Binding, saved: SavedSummary) {
+    if (saved.checkedChatBasis === (await contextBasis(binding)).basis) return Date.now() < summaryExpiry([saved.validUntil]);
+    // The fact and its expiry may have been registered after this batch was written.
+    const expiry = Math.min(summaryExpiry([saved.validUntil]), await messageSummaryExpiry(binding, saved.summary.coveredMessageIds));
+    if (Number.isFinite(expiry)) saved.validUntil = new Date(expiry).toISOString();
+    return Date.now() < expiry;
   }
   async function readSummaryRevision(binding: Binding, raw: unknown, includePeriod = false) {
     const saved = domainParse(savedSummarySchema, raw);
@@ -383,7 +448,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       if (!await batchValid(binding, saved)) return null;
     } else {
       const current = await summaryBasis(binding);
-      if (saved.basis !== current.basis || saved.validUntil && Date.parse(saved.validUntil) <= Date.now()) return null;
+      if (saved.basis !== current.basis || !await chatCoverageCurrent(binding, saved)) return null;
     }
     if (!includePeriod || saved.summary.sourcePeriod || saved.summary.previousId || saved.batch?.replaces) return saved.summary;
     const messages = [];
@@ -406,21 +471,52 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     }
     return { batches, more: rows.size > 4 };
   }
-  async function summaryInput(binding: Binding) {
-    const id = summaryId(binding), row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', id));
+  async function summaryHead(binding: Binding, row: DocumentSnapshot) {
+    const id = summaryId(binding);
     const saved = row.exists ? open(binding, 'conversation-summary-head', id, savedSummarySchema, row) : null;
     if (saved?.summary.coverageScope) domainReject('summary_binding', 500);
     const current = await summaryBasis(binding);
     const usable = saved !== null && (saved.batch ? await batchValid(binding, saved)
-      : saved.basis === current.basis && (saved.validUntil === null || Date.parse(saved.validUntil) > Date.now()));
+      : saved.basis === current.basis && await chatCoverageCurrent(binding, saved));
+    return { saved, current, usable };
+  }
+  async function summaryInput(binding: Binding) {
+    const row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', summaryId(binding)));
+    const { saved, current, usable } = await summaryHead(binding, row);
     // New batches never rewind their coverage watermark after a source edit. Legacy cumulative summaries remain conservative.
-    let query = scoped(binding, 'chat_messages').orderBy('sortKey', 'asc').limit(51);
-    if (saved && (saved.batch || usable)) query = query.startAfter(saved.lastSortKey);
-    const rows = await binding.transaction.get(query);
-    const messages = rows.docs.slice(0, 50).map(row => open(binding, 'chat-message', row.get('messageId'), firestoreChatMessageSchema, row));
-    const input: SummaryInput = { previous: usable ? saved.summary : null, previousVersion: saved?.summary.version ?? 0,
-      basis: current.basis, messages, moreUncovered: rows.size > 50, summaryMode: 'isolated_batch' };
-    return { input, current, rows, saved, usable };
+    const query = scoped(binding, 'chat_messages').orderBy('sortKey', 'asc').limit(51);
+    const after = saved && (saved.batch || usable) ? saved.lastSortKey : null;
+    const messages: SummaryInput['messages'] = [];
+    const sortKeys: string[] = [];
+    let moreUncovered = false, retiredChatPrefix: PrivateSummaryScan['retiredChatPrefix'];
+    // Keep each new batch contiguous. A retired prefix must not strand later, unrelated conversations.
+    async function readPage(cursor: string | null) {
+      const rows = await binding.transaction.get(cursor ? query.startAfter(cursor) : query);
+      moreUncovered = rows.size > 50;
+      for (const row of rows.docs.slice(0, 50)) {
+        const stored = open(binding, 'chat-message', row.get('messageId'), firestoreChatMessageStorageSchema, row);
+        if (Date.now() >= await options.chat.memoryDeadline(binding, stored)) {
+          if (messages.length) { moreUncovered = true; break; }
+          continue;
+        }
+        const { memorySummaryUntil, memorySources, ...message } = stored;
+        messages.push(message);
+        sortKeys.push(row.get('sortKey'));
+      }
+      retiredChatPrefix = !messages.length && moreUncovered
+        ? { after, through: rows.docs[49].get('sortKey'), changeSeq: binding.changeSeq } : undefined;
+    }
+    await readPage(after);
+    if (retiredChatPrefix) {
+      // The maintenance scan commits only a proved retired prefix. A changed scope or original sequence restarts discovery.
+      const { scan } = await readPrivateSummaryScan(data, binding), checkpoint = scan?.retiredChatPrefix;
+      if (checkpoint && scan.authorizationVersion === binding.authorizationVersion && scan.workerGeneration === binding.generation
+        && checkpoint.after === after && checkpoint.changeSeq === binding.changeSeq && checkpoint.through >= retiredChatPrefix.through)
+        await readPage(checkpoint.through);
+    }
+    const input: SummaryInput = { previous: usable && saved ? saved.summary : null, previousVersion: saved?.summary.version ?? 0,
+      basis: current.basis, messages, moreUncovered, summaryMode: 'isolated_batch' };
+    return { input, current, sortKeys, saved, usable, retiredChatPrefix };
   }
   async function summaryDependencies(binding: Binding) {
     const profile = await options.care.readProfile(binding), facts = await page(binding, 'facts', undefined, 20, false, true),
@@ -428,6 +524,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const dependencies: z.infer<typeof summaryDependencySchema>[] = [{ kind: 'profile', id: binding.scope.childId, version: profile.version, validUntil: profile.data?.validUntil
         ? new Date(Date.parse(profile.data.validUntil + 'T00:00:00Z') + 16 * 60 * 60 * 1000).toISOString() : null }];
     for (const fact of facts.items as MemoryFact[]) {
+      if (!fact.applicable) continue;
       dependencies.push({ kind: 'fact', id: fact.id, version: fact.version, validUntil: fact.validUntil });
       if (fact.source.kind === 'care_record') dependencies.push({ kind: 'care', id: fact.source.recordId, version: fact.source.version, validUntil: null });
     }
@@ -440,6 +537,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (!row.exists || row.get('currentBatch') !== true) return null;
     const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
     if (!saved.batch?.sourceCoverageComplete || await batchValid(binding, saved) || saved.batch.authorizationVersion !== binding.authorizationVersion) return null;
+    if (Date.now() >= await messageSummaryExpiry(binding, saved.summary.coveredMessageIds)) return null;
     const sources: unknown[] = [], dependencies: z.infer<typeof summaryDependencySchema>[] = [];
     for (const old of saved.batch.dependencies) {
       let value: { version: number; validUntil?: string | null } | null;
@@ -478,7 +576,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (binding.sharedAccess || binding.actorUserId !== binding.scope.ownerUserId) domainReject('private_scope_unavailable', 403);
   }
   async function resolvedChat(binding: Binding, messageId: string): Promise<SummaryResolvedSource | null> {
-    const message = await options.chat.readMessage(binding, binding.scope.childId, messageId);
+    const message = await options.chat.readMessage(binding, binding.scope.childId, messageId, 'memory');
     if (!message) return null;
     const row = await binding.transaction.get(data.ref('chat_messages', 'chat-message', messageId));
     const built = makeSummaryChatSource(message, domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'chat_binding', 500));
@@ -590,7 +688,8 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       z.object({ kind: z.literal('repair_batch'), summaryId: uuid }).strict()]), rawTarget);
     const head = await summaryInput(binding);
     if (target.kind === 'next_fresh') {
-      const first = head.input.messages[0]; if (!first) return { kind: 'no_work' };
+      const first = head.input.messages[0];
+      if (!first) return { kind: 'no_work' };
       const resolved = await resolvedChat(binding, first.id); if (!resolved) return { kind: 'suppressed', reason: 'source_missing' };
       const sourceRow = await binding.transaction.get(data.ref('chat_messages', 'chat-message', first.id));
       const observation = { target: { kind: 'fresh_message' as const, messageId: first.id },
@@ -834,6 +933,10 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   async function prepareSavedSummaryWrite(binding: Binding, saved: SavedSummary, operationId: string): Promise<Prepared<ConversationSummary>> {
     const value = saved.summary, batch = saved.batch;
     if (!batch) domainReject('summary_binding', 500);
+    const expiry = Math.min(await messageSummaryExpiry(binding, value.coveredMessageIds), summaryExpiry([saved.validUntil]));
+    if (expiry <= Date.now()) domainReject('summary_coverage_changed');
+    if (Number.isFinite(expiry)) saved.validUntil = new Date(expiry).toISOString();
+    saved.checkedChatBasis = (await contextBasis(binding)).basis;
     const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
     const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
     const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: true, lastMessageSortKey: batch.lastMessageSortKey,
@@ -858,7 +961,7 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (repair && input.coveredMessageIds.length !== repair.input.messages.length) domainReject('summary_coverage_changed');
     const period = summarySourcePeriod(expected.input.messages.slice(0, input.coveredMessageIds.length), expected.input.currentSources);
     if (period) value.sourcePeriod = period;
-    const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey');
+    const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.sortKeys[input.coveredMessageIds.length - 1];
     const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
     const sourceState = repair ?? await summaryDependencies(binding), dependencies = sourceState.dependencies;
     const expiry = summaryExpiry(dependencies.map(item => item.validUntil));
@@ -989,7 +1092,8 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
         upperSortKey = saved.batch.lastMessageSortKey;
       }
-      return { basis: head.input.basis, freshCaughtUp: head.input.messages.length === 0 && !head.input.moreUncovered, upperSortKey };
+      return { basis: head.input.basis, freshCaughtUp: head.input.messages.length === 0 && !head.input.moreUncovered, upperSortKey,
+        ...(head.retiredChatPrefix ? { retiredChatPrefix: head.retiredChatPrefix } : {}) };
     },
     async readSummaryScanPage(binding, input) {
       requirePrivateSummary(binding);
@@ -1207,11 +1311,15 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     history: (u, c, kind, id, before = 2147483647) => authority.runTransaction(u, c, binding => history(binding, kind, id, before)),
     summary: (u, c) => authority.runTransaction(u, c, async binding => ({ summary: (await summaryInput(binding)).input.previous })),
     initialConversationSummary: (u, c) => authority.runTransaction(u, c, async binding => {
-      const result = await summaryInput(binding);
+      const row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', summaryId(binding)));
+      if (!row.exists) return null;
+      const result = await summaryHead(binding, row);
       if (!result.saved?.batch) {
-        if (!result.input.previous) return null;
-        const { id, version, text, createdAt, lastCoveredMessageId } = result.input.previous;
-        return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis, validUntil: result.current.validUntil };
+        if (!result.usable || !result.saved) return null;
+        const { id, version, text, createdAt, lastCoveredMessageId } = result.saved.summary;
+        const expiry = summaryExpiry([result.current.validUntil, result.saved?.validUntil ?? null]);
+        return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis,
+          validUntil: Number.isFinite(expiry) ? new Date(expiry).toISOString() : null };
       }
       const recent = await recentBatches(binding), valid = recent.batches.filter(batch => batch.valid).reverse();
       if (!valid.length) return null;

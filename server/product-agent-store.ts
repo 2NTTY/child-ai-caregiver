@@ -298,7 +298,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         try { recorded = await documentReceiptsFor(client, workspaceId, row); }
         catch {
           return { ...value, status: "unknown", stopReason: "document_receipt_unavailable", text: "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。",
-            tools: value.tools.filter(tool => !documentTool(tool.name)), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+            tools: value.tools.filter(tool => !documentTool(tool.name)), liveCitations: [], citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
         if (!recorded) return null;
         if (!recorded.linked) return value;
@@ -308,7 +308,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (recorded.unavailable) return { ...value, status: value.status === "completed" ? "stopped" : value.status,
           stopReason: value.status === "completed" ? "document_source_changed" : value.stopReason,
           text: "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。",
-          tools: value.tools.filter(tool => !documentTool(tool.name)), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+          tools: value.tools.filter(tool => !documentTool(tool.name)), liveCitations: [], citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         if (recorded.receipts.length && !value.text) value.text = "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件，勿重複提交；已保存操作不代表成果完整或照護完成。";
         return value;
       });
@@ -360,7 +360,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if(row.data_version !== current.dataVersion){
           const contact=value.tools.filter(tool=>(["generate_family_document","change_family_document"].includes(tool.name) || tool.name==="contact_caregiver" || tool.name==="execute_ordinary_instruction" || Object.values(agentActionToolNames).includes(tool.name)) && tool.status==="succeeded" && tool.reference);
           if(!contact.length)return false;
-          value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],privateSourceCitations:[],retrievalMode:"not_used",proposals:[],tools:contact};
+          value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],liveCitations:[],privateSourceCitations:[],retrievalMode:"not_used",proposals:[],tools:contact};
           summary=undefined;
         }
         if (summary && row.trigger_kind === "interactive" && value.status === "completed") {

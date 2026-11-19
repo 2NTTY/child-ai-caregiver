@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { personalLibraryItemSchema, type PersonalLibraryItem } from "../src/shared/personal-library.ts";
+import { sourceSeries } from '../src/shared/source-series.ts';
 import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -98,7 +99,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       if (row.review_state !== "reviewed") throw new Error("Review public content before embedding");
       const result = await pool.query<{ embedding_hash: string; document: KnowledgeChunkInput }>(
         `SELECT DISTINCT ON (c.embedding_hash) c.embedding_hash,c.document FROM knowledge_chunks c
-         WHERE c.version_id = $4 AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
+         WHERE c.version_id = $4 AND COALESCE(c.document->'treatment'->>'kind','detailed') NOT IN ('structured','excluded') AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
          WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)
          ORDER BY c.embedding_hash`, [...embeddingKey, versionId]);
       return result.rows.map(chunk => embeddingDocument(row.document.title, chunk.document.section, chunk.document.text));
@@ -134,14 +135,14 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          WHERE ${knowledgeEligibility("false")} AND v.document->>'classification' IN ('official_guidance','recent_information')
            AND ($1::text IS NULL OR s.id>$1) ORDER BY s.id LIMIT 11`, [afterSourceId]);
       const items = result.rows.slice(0, 10).map(row => personalLibraryItemSchema.parse({
-        sourceId: row.source_id, versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
+        sourceId: row.source_id, series: sourceSeries(row.source_document), versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
         url: row.source_document.url, classification: row.source_document.classification, checkedAt: row.checked_at.toISOString(),
         sourceUpdatedAt: row.source_document.sourceUpdatedAt, validUntil: row.source_document.validUntil ?? null,
       }));
       return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
     },
     async candidates(input: KnowledgeFilter, vector: readonly number[] | null, selection: {
-      query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
+      libraryUserId?: string; query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
     } = {}): Promise<KnowledgeCandidate[]> {
       const filter = parseKnowledgeFilter(input);
       const values = vector === null ? null : vectorLiteral(vector);
@@ -157,9 +158,10 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       const keywordScore = `${tokenScore("source_document->>'title'", 4)} + ${tokenScore("document->>'section'", 3)}
         + (SELECT COALESCE(sum(${tokenScore("kw.value", 5)}),0) FROM jsonb_array_elements_text(document->'keywords') AS kw(value))
         + (SELECT COALESCE(sum(${tokenScore("tp.value", 4)}),0) FROM jsonb_array_elements_text(document->'applicability'->'topics') AS tp(value))
+        + (SELECT COALESCE(sum(${tokenScore("field->>'label'", 4)} + ${tokenScore("field->>'value'", 8)}),0) FROM jsonb_array_elements(document->'treatment'->'fields') AS field)
         + ${tokenScore("document->>'text'", 1)}`;
       const ranked = selection.query ? `, vector_top AS (SELECT id,row_number() OVER (ORDER BY distance,id) AS r
-        FROM eligible WHERE distance<=0.4 ORDER BY distance,id LIMIT 60),
+        FROM eligible WHERE distance<=0.4 AND document->'treatment'->>'kind' IS DISTINCT FROM 'structured' ORDER BY distance,id LIMIT 60),
         keyword_scores AS (SELECT id,${keywordScore} AS score FROM eligible),
         keyword_top AS (SELECT id,row_number() OVER (ORDER BY score DESC,id) AS r FROM keyword_scores
           WHERE score>0 ORDER BY score DESC,id LIMIT 60),
@@ -175,12 +177,14 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
            ELSE COALESCE(w.definition->>'audience','public_noncommercial') END AS usage_scope,
          ord.chunk_order,CASE WHEN $4::vector IS NULL THEN NULL ELSE e.embedding <=> $4::vector END AS distance
          FROM knowledge_sources s JOIN knowledge_versions v ON v.id = s.active_version_id AND v.source_id = s.id
-         JOIN knowledge_chunks c ON c.version_id = v.id ${vectorJoin}
+         JOIN knowledge_chunks c ON c.version_id = v.id LEFT ${vectorJoin}
          JOIN LATERAL (SELECT chunk_order FROM jsonb_array_elements(v.document->'chunks') WITH ORDINALITY AS listed(chunk,chunk_order)
            WHERE listed.chunk->>'key'=c.section_key) ord ON true
          LEFT JOIN knowledge_observations o ON o.source_id=s.id
          LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
          WHERE ${knowledgeEligibility("$11::boolean")}
+           AND c.document->'treatment'->>'kind' IS DISTINCT FROM 'excluded'
+           AND (e.input_hash IS NOT NULL OR c.document->'treatment'->>'kind' = 'structured')
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
            AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
@@ -199,15 +203,15 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
           filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal, filter.ageMatch ?? "contained",
           selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null]));
-      return rows.rows.map(row => ({ ...row.document, chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
-        versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, title: row.source_document.title,
+      return rows.rows.map(row => ({ ...row.document, series: sourceSeries(row.source_document), chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
+        versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, termsUrl: row.source_document.termsUrl, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,
         sourcePublishedAt: row.source_document.sourcePublishedAt, sourceUpdatedAt: row.source_document.sourceUpdatedAt,
         sourceDateText: row.source_document.sourceDateText ?? null, validUntil: row.source_document.validUntil ?? null,
         fetchedAt: row.source_document.fetchedAt, checkedAt: row.checked_at.toISOString(),
         lastSuccessfulCheckAt: row.last_successful_check_at?.toISOString() ?? null, usageScope: row.usage_scope,
         reviewState: "reviewed", extraction: row.source_document.extraction,
-        originalCoverage: row.document.originalText ? "chunk_original" : "excerpt_only",
+        originalCoverage: row.document.originalText && !row.document.originalKind ? "chunk_original" : "excerpt_only",
         applicabilityStatus: row.document.applicability.ageBasis === "any" ? "applicable"
           : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable",
         distance: row.distance, ...(row.rank_score === null ? {} : { rankScore: Number(row.rank_score) }) }));

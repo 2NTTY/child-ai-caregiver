@@ -674,6 +674,23 @@ test("age and region applicability mismatches block unapplicable advice from for
   );
 });
 
+test('overview evidence supports a public introduction but cannot be the sole source of precise figures or caregiving advice', async t => {
+  const item = mockChunk(chunkSolidId, { title: 'Programme overview', text: 'General programme introduction', keywords: ['programme'],
+    treatment: { kind: 'overview', policyVersion: 1 }, distance: 0.1 });
+  const retriever = createKnowledgeRetriever({ candidates: async () => [item] }, fakeEmbeddingGateway());
+  const budget = new AgentBudget(); t.after(() => budget.close());
+  const tools = createProductAgentTools({ authorize: async () => true, run: { scope, budget, runId, authorize: async () => true },
+    memory: { context: async () => emptyMemoryContext() } as any, tasks: {} as any, store: {} as any, knowledge: retriever });
+  const search = tools.tools.find(tool => tool.name === 'search_knowledge')!;
+  const present = tools.tools.find(tool => tool.name === 'present_answer')!;
+  const found = await search.execute({ query: 'programme', classification: 'official_guidance' }, { callId: 'find', queryEmbeddingAttemptKey: 'find' } as any);
+  assert.equal(found.status, 'succeeded');
+  const answer = (kind: string, text: string) => present.execute({ kind, paragraphs: [{ text, citationIds: [item.chunkId] }] }, { callId: kind + text.length } as any);
+  assert.equal((await answer('public_information', '計劃每月有 12 次活動。')).status, 'rejected');
+  assert.equal((await answer('caregiving', '按此概覽安排孩子照護。')).status, 'rejected');
+  assert.equal((await answer('public_information', '機構提供計劃概覽。')).status, 'succeeded');
+});
+
 test("long documents, tables and exception conditions maintain end-to-end traceability across chunks (REQ-001 §7 Line 5)", async (t) => {
   const gateway = fakeEmbeddingGateway();
   const anchorChunkId = "77777777-8888-4999-8aaa-111111111111";
@@ -887,6 +904,14 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   assert.ok(realSeedDraftSource.excerpt.includes("若孩子現已佩戴眼鏡"));
   assert.ok(realSeedDraftSource.excerpt.includes("請盡快到家庭或眼科醫生求診"));
   assert.ok(preschoolOriginalText.indexOf("請盡快到家庭或眼科醫生求診") >= 800, "Final eye-doctor clause lies past char 800");
+  const tool = realLongTools.tools.find(tool => tool.name === 'present_answer')!;
+  const cited = (text: string) => tool.execute({ kind: 'caregiving', paragraphs: [{ text: '引用普查指引。', citationIds: [realSeedLongChunk.chunkId] }],
+    originalQuotes: [{ chunkId: realSeedLongChunk.chunkId, text }] }, { callId: 'selected-original' } as any);
+  assert.equal((await cited('文字不在原件內')).status, 'rejected');
+  const actual = '請盡快到家庭或眼科醫生求診';
+  assert.equal((await cited(actual)).status, 'succeeded');
+  assert.equal((await realLongTools.presentation())?.citations[0]?.citedExcerpt, actual);
+  assert.ok(realLongTools.deliveryDraft()?.sources.find(source => source.citationId === realSeedLongChunk.chunkId)?.excerpt.startsWith(actual));
 });
 
 test("insufficient evidence cleanly stops with delivery_review_no_sources while retaining sources without hallucinated text (REQ-001 §7 Line 6)", async (t) => {

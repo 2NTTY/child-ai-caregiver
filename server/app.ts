@@ -148,7 +148,7 @@ export function createRequestHandler(options: {
       if (method === "OPTIONS") {
         const preflight = new Response(null, { status: 204, headers: {
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "content-type, x-expected-user-id, x-erasure-receipt",
+          "access-control-allow-headers": "content-type, prefer, x-expected-user-id, x-erasure-receipt",
         } });
         await writeResponse(preflight, response, permittedOrigin);
         return;

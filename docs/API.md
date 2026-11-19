@@ -159,6 +159,12 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 <a id="knowledge-a04-contract"></a>
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
+已保存回答的 PDF 點讀使用 `GET /api/children/{childId}/agent/runs/{runId}/citations/{chunkId}/original` 及現有裝置會話。服務以原 run 找回當時的版本、片段和原始 PDF 雜湊，在讀取前後核權；成功回傳 `application/pdf`、實際位元組長度及 `private, no-store`。舊版沒有保存原件時，服務可向登記的發布機構讀取同址檔案並核對雜湊。缺少可讀版本回 404，位元組與原版不符回 409，暫時取源故障回 503。
+
+即時查詢標示 `acquisition=live`。服務可即場讀取已啟用的家庭健康服務網頁；配置 `dh-services` 後，亦可從衞生署公開目錄揀出相關服務、讀取原頁，即使該機構尚未入庫也能引用。查詢字句留在 Server，由 Server 核對來源授權及選取原文。聊天保留當次取得時間、原文位置、可識別的日期及獲准留存的節錄。單次查閱不產生訂閱或已發布版本。
+
+REQ-004／006 共用的原件定位以 `sourceId`、`versionId`、`chunkId`、版本及片段 hash 為準，沿用既有 `fetchedAt`、`usageScope`、頁段與 `readCoverage`。原件檔案的 hash、整理版本的 hash 和片段 hash 各自綁定實際內容。網頁及其連結的 PDF 分別保存取得時間與版本。引用第一步呈現該次已讀原文及適用條件，第二步按當前可見權限開啟當時的原件或明示該版本不可開啟。普通來源網址可能指向新版，無法證明舊版時只可標為發布機構的現行頁。已入庫與即時搜尋的來源類型應可區分；較早紀錄缺少的取得時間或版本保留未知。此為整合目標，當前交付狀態見[根計劃](../PLAN.md#agent-evidence)。
+
 - Agent 自行按多輪情境提出公共主題查詢，不解析思考文字或按最後一句關鍵詞開能力。`search_knowledge` 可帶查詢年齡假設及原話依據；Server 核對本人／孩子的使用者訊息或目前檔案版本。這只供找資料，不能寫成生日、確認事實或精確時程資格。原話／數值詮釋／未知精度分開；條件性命中須補問或明說適用條件。
 - 精確已確認年齡沿既有包含範圍；數字約數按原 asOf 與經過時間作仍屬約數的檢索提示，回傳日期基準；無效／未來基準保持未知。約數／查詢假設可按相交年齡範圍找候選，未知年齡可找相關內容但回傳需要核對適用性。不因缺生日封死知識，也不把模型的數值解讀當 Server 已驗事實。地區、分類、公開範圍、來源有效性仍由 Server 控制。
 - SQL 先套用有效版本／權限／地域，再分別取有界向量及關鍵詞排名並 RRF；不先拉全庫，也不因總量超過 1,000 便失敗。最多六個結果；引用重驗按實際 ID 查，不能在排名前綴中找不到便判引用失效。embedding 及總 run 限額不變。
@@ -841,6 +847,8 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 <a id="knowledge-maintenance-model"></a>
 ### 背景候選的整理與模型審核
 
+部署者在 worker 的受保護設定指定 `AI_KNOWLEDGE_MAINTENANCE_PAYER=platform` 或 `user:<Firebase UID>`。缺省沿用來源巡查。啟用維護及實時來源讀取後，worker 才為支援的來源安排 Agent，發布仍依獨立開關。個人出資須本人啟用背景工作及 `publicMaintenanceEnabled`，可隨時撤回。工作綁定出資方和設定版本。整理、審核及文件向量分別用該出資方的模型及向量設定，全部記入維護預算。
+
 整理／審核共用正式 `AgentGatewayModel.completeText` 接點，由受信工作組裝注入已綁定的維護身份、共同預算及取消；角色不能選付款來源、另開 run 或自行重試。取得原文後，Server 產生固定單元、逐字原文預覽及真實 PDF 頁碼，模型只提出章節、摘要、關鍵詞與適用範圍。每單元恰好回傳一次；來源 URL、日期、發布者、原文、預覽及頁碼不由模型填寫。預覽不代表已完整引證，獨立審核仍讀完整原文。
 
 獨立審核接收候選的完整原文與整理、舊版原文及固定版本綁定，回傳既有 `KnowledgeReviewAssessment`；沿正式含義差異、原文引證、代表問題與規則影響檢查。模型不能把成長規則填成 `reviewed` 來創造核准。缺舊版、超出有界批次／上下文、部分原文、無效引用或儲存失敗均不產生批准；不靜默截斷。候選及審核證據由工作保存成功後才返回 `model_review` 結果；此結果不等於發布收據。
@@ -965,6 +973,12 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 管理員可從受保護的 Server 配置 `AI_USAGE_RECONCILIATION_JSON` 提供按日、出資來源、模型與原嘗試對應的價目或結算依據。API 分開返回估算、已結算額、已批准的金額及有日期的供應商配額。缺少依據的部分列為未知；管理回應省去原收據及帳單識別。每輪可設上限為生成 64、工具 256、查詢向量 32。舊設定與預設額度沿用，擴大後的單筆帳本須由支援擴大格式的後端處理。
 
 對帳設定中的 `settlement.reference` 識別一筆可歸屬至單次供應商呼叫的帳單明細。若帳單只提供局部行號，請連同帳戶及帳單編號組成唯一識別。同一份設定跨日期或出資方重用一筆明細會被拒絕。只有整日或整張帳單總額時，保留各次結算未知。
+
+用量中的 `platform.attempts` 保留平台技術總數。平台和個人分別提供 `finance`（一般用途）及 `maintenanceFinance`。維護生成、審核和文件向量以原收據的出資方及用途歸帳。管理員向原 operations 入口提交 `money_budget`，以 UTC 帳日、`general` 或 `maintenance`、該項 `expectedVersion` 及原 `opId` 保存。金額欄 `amount` 包含幣別和整數微單位，明確傳 `null` 清除。當日或未來日期可調，過往日可讀。受保護配置可提供日期預算，管理員對同一日及範圍的決定優先。
+
+個人模型 v4 接口可用 `Prefer: include-personal-finance` 取得本人當日費用。本人分開設定 `dailyMoneyBudget`（一般）及 `maintenanceMoneyBudget`（維護）的對帳預算，更新時沿原設定版本及收據保存，每個 UTC 日使用同一份本人設定，傳 `null` 清除。舊客戶端保留其設定。個人帳單列可帶 `ownerUserId` 以縮小讀取範圍。新舊帳單都按原嘗試的付款身份歸屬，明示的身份必須吻合；個人回應只含本人的小計及未對帳次數。財務餘額由已核准金額和可核對的帳單推導，原派送仍按各自的呼叫數與供應商限制執行。
+
+月結按需讀取同一帳本的原 UTC 帳日，每次最多讀一個月，四日一批。管理員以 `GET /api/admin/usage/month?month=YYYY-MM` 讀取平台兩項支出，`money_budget.day` 可指定該月。用戶加上 `Prefer: include-personal-finance, include-monthly-finance`，可在 v4 設定保存 `monthlyMoneyBudget` 及 `monthlyMaintenanceBudget`，並從 `GET /api/ai/settings/usage/month` 讀取本人本月的小計。估算按幣別和價目分列，結算按幣別分列。月底後才收到的帳單以原嘗試日期歸帳。
 
 <a id="admin-usage-quota"></a>
 

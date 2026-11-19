@@ -160,7 +160,7 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
         }) : null };
       });
     },
-    async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>): Promise<AgentHistoryMessage | null> {
+    async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>, _purpose?: 'memory'): Promise<AgentHistoryMessage | null> {
       const input = historyReadSchema.parse(raw);
       if (input.kind === 'imported_message') throw new FamilyError(400, 'imported_history_unavailable');
       return access(userId, childId, false, async client => {

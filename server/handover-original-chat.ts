@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Query } from '@google-cloud/firestore';
 import type { ChatMessage } from '../src/shared/chat.ts';
-import { firestoreChatMessageSchema } from './chat-message-schema.ts';
+import { firestoreChatMessageSchema, firestoreChatMessageStorageSchema, originalChatMessageSchema } from './chat-message-schema.ts';
 import type { FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
@@ -12,7 +12,7 @@ import type { HandoverAttachmentPorts } from './firestore-handover-attachments.t
 
 const positionSchema = z.object({ workspaceId:z.uuid(), sortKey:z.string().regex(/^[0-9]{19}$/u)
   .refine(value => BigInt(value) > 0n && BigInt(value) < 9223372036854775807n) }).strict();
-const backupSchema = firestoreChatMessageSchema.safeExtend({ originalPosition:positionSchema.optional(), version:z.literal(1).optional() });
+const backupSchema = originalChatMessageSchema.safeExtend({ originalPosition:positionSchema.optional(), version:z.literal(1).optional() });
 type Snapshot = { message:ChatMessage; position?:z.infer<typeof positionSchema>; needsLink?:boolean;
   state:'unchanged'|'unavailable'|'backup_newer'|'different'; reason?:string; localVersion:number };
 
@@ -84,11 +84,16 @@ export async function prepareOriginalChat(data:FirestoreDomainData,b:Binding,sna
   } else if (snapshot.needsLink) domainReject('chat_attachment_unavailable');
   const context = await prepareContextChange(data,b,{proactive:false});
   const change = await b.prepareHistoricalChatChange(opId,snapshot.position.sortKey);
+  const ref = data.ref('chat_messages','chat-message',message.id);
+  const local = await b.transaction.get(ref);
+  // Public backup rows carry the conversation, but cannot attest that it is still eligible for derived memory.
+  const previous = local.exists ? data.open('chat-message',message.id,b.scope,firestoreChatMessageStorageSchema,local) : null;
+  const memorySummaryUntil = previous ? previous.memorySummaryUntil : new Date(0).toISOString();
   const body = { ...data.tags(b.scope), messageId:message.id, createdAt:message.createdAt, sortKey:snapshot.position.sortKey,
-    ...data.seal('chat-message',message.id,b.scope,firestoreChatMessageSchema,message) };
+    ...data.seal('chat-message',message.id,b.scope,firestoreChatMessageStorageSchema,{ ...message,
+      ...(memorySummaryUntil && { memorySummaryUntil }), ...(previous?.memorySources && { memorySources: previous.memorySources }) }) };
   return { changeSeq:change.changeSeq, commit() {
     change.commit(); context(); link?.commit();
-    const ref = data.ref('chat_messages','chat-message',message.id);
     if (snapshot.state === 'different') b.transaction.update(ref,body);
     else b.transaction.create(ref,body);
   } };

@@ -16,7 +16,7 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
       enabled: config.taskWorkerEnabled, currentAuth: runtime.currentAuth };
     const worker = runtime.reminders;
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
-    const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,proactiveEvents:runtime.proactiveEvents,
+    const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh, knowledgeAgent: runtime.knowledgeAgent, proactiveEvents:runtime.proactiveEvents,
       journal: runtime.journal, summarySessions: runtime.product?.summarySessions,
       photos: runtime.photos, voices: runtime.voices, files: runtime.files, avatars: runtime.avatarCleanup, handover: runtime.handover, handoverUploads: runtime.handoverUploads, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),

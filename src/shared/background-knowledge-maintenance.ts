@@ -77,6 +77,7 @@ export const backgroundKnowledgeRunResultSchema = z.object({
     "unchanged",
     "candidate_held",
     "dry_run_ready",
+    "in_progress",
     "published",
     "fetch_failed",
     "unavailable",

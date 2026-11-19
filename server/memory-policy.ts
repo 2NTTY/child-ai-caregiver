@@ -1,8 +1,9 @@
 import type { MemoryFact, MemoryTopic } from "../src/shared/memory.ts";
 import { FamilyError } from "./family-access.ts";
 
-export function factIsApplicable(fact: Pick<MemoryFact, "status" | "validUntil" | "sourceState">, now = Date.now()) {
-  return fact.status === "confirmed" && fact.sourceState === "current" && (fact.validUntil === null || Date.parse(fact.validUntil) > now);
+export function factIsApplicable(fact: Pick<MemoryFact, "status" | "validUntil" | "sourceState" | "confirmedBy" | "confirmedAt">, now = Date.now()) {
+  return fact.status === "confirmed" && !!fact.confirmedBy && !!fact.confirmedAt && Date.parse(fact.confirmedAt) <= now
+    && fact.sourceState === "current" && (fact.validUntil === null || Date.parse(fact.validUntil) > now);
 }
 export function topicMayAsk(topic: Pick<MemoryTopic, "status" | "resumeAfter">, now = Date.now()) {
   return topic.status === "pending" || topic.status === "snoozed" && topic.resumeAfter !== null && Date.parse(topic.resumeAfter) <= now;

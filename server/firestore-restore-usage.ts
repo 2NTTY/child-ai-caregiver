@@ -1,3 +1,5 @@
+import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
+import { knowledgeWorkRecoverySchema } from './firestore-knowledge-work.ts';
 import { privateSummaryReservationSchema, summaryGrantRecordSchema, privateSummaryAttemptSchema, summaryLineageRecordSchema } from './private-summary-work.ts';
 import { firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { agentBudgetFingerprint } from './agent-budget.ts';
@@ -13,7 +15,7 @@ const envelopeSchema = z.object({ format: z.string(), version: z.literal(1), cip
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore usage binding rejected'), { code: 'restore_usage_binding', status: 409 }); }
 export function isRestoreProtocolOrUsage(namespace: string, path: string) {
-  return ['_sessions/', '_adk/', '_root_budget/', '_ai_usage/', '_ai_usage_detail/'].some(suffix => path.startsWith(namespace + suffix));
+  return ['_sessions/', '_adk/', '_root_budget/', '_ai_usage/', '_ai_usage_detail/', '_knowledge_work/', '_knowledge_budget/'].some(suffix => path.startsWith(namespace + suffix));
 }
 /** Keep spent quota, including operations after the snapshot. Protocol sessions are deliberately not resumed. */
 export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots: readonly FirebaseBackupDocument[],
@@ -28,6 +30,29 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
     data: { format, version: 1, ciphertext: cipher.encrypt(canonical(value), aad) } });
   for (const row of [...snapshots, ...current]) {
     const [collection, id, extra] = row.path.split('/');
+    if (collection === namespace + '_knowledge_work') {
+      check(extra === undefined && /^[a-f0-9]{64}$/u.test(id));
+      const format = 'knowledge-work', aad = JSON.stringify(['knowledge-work/1',projectId,namespace,row.path]);
+      const value = knowledgeWorkRecoverySchema.parse(open(row,format,aad));
+      const old = records.get(row.path), prior = old && knowledgeWorkRecoverySchema.parse(open(old,format,aad));
+      if ('request' in value) {
+        roots.set(hash(value.request.operationFingerprint),value.request.operationFingerprint);
+        check(id === knowledgeReviewHash(['work',value.request.operationFingerprint,'']));
+        if (prior) check('request' in prior && canonical(prior.request) === canonical(value.request)
+          && prior.configHash===value.configHash && prior.budget.usedUnits<=value.budget.usedUnits
+          && prior.budget.modelCalls<=value.budget.modelCalls && (!prior.receipt || canonical(prior.receipt)===canonical(value.receipt))
+          && (!prior.result || canonical(prior.result)===canonical(value.result)) && (!prior.preparedHash || prior.preparedHash===value.preparedHash));
+        value.lease = null;
+      } else if ('requestHash' in value) {
+        if(value.rootRunId)roots.set(hash(value.rootRunId),value.rootRunId);
+        if(prior)check('requestHash' in prior && prior.requestHash===value.requestHash
+          && (prior.state!=='ready'||value.state==='ready'&&value.text===prior.text)
+          && (prior.state!=='unknown'||value.state!=='pending'));
+      } else if(prior)check(canonical(prior)===canonical(value));
+      // Preserve the original JSON field order used by sourceVersionHash when sealing a prepared source.
+      records.set(row.path,{path:row.path,data:{format,version:1,ciphertext:cipher.encrypt(JSON.stringify(value),aad)}});
+      continue;
+    }
     if (collection === namespace + '_ai_usage_detail') {
       check(extra === undefined && /^daily_[a-f0-9]{64}$/u.test(id));
       const format = 'yuban-ai-daily-usage', aad = canonical([format, 1, projectId, namespace + '_ai_usage', 'detail/' + id]);
@@ -67,7 +92,7 @@ export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots
     }
   }
   for (const row of [...snapshots, ...current]) {
-    const [collection, id, extra] = row.path.split('/'); if (collection !== namespace + '_root_budget') continue;
+    const [collection, id, extra] = row.path.split('/'); if (collection !== namespace + '_root_budget' && collection !== namespace + '_knowledge_budget') continue;
     check(extra === undefined && /^[a-f0-9]{64}$/u.test(id));
     const rootId = roots.get(id);
     if (rootId === undefined) {
