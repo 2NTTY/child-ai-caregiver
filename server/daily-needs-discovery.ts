@@ -33,7 +33,28 @@ export interface DailyNeedsDiscoveryResult {
 
 const DOMAIN_CONSTRAINT_CUE = /(?:食|飲|餵|加固|糊|湯|零食|餐|奶|水果|蛋|奶製品|花生|麩質|塗|搽|藥|發燒|出疹|皮膚|洗澡|外出|\b(?:diet|eat|feed|food|solid|milk|snack|skin|medication|allerg)\b)/iu;
 const AGE_DEPENDENT_TOPIC_CUE = /(?:食幾多|加固|糊仔|奶量|睡眠時間|瞓幾耐|發燒|退燒|疫苗|打針|發展|行路|講嘢|刷牙|幾歲|幾多個月|\b(?:solid\s+food|weaning|sleep\s+schedule|fever|vaccine|milestone|dosage)\b)/iu;
-const QUERY_HAS_EXPLICIT_AGE = /(?:\d+(?:\.\d+)?\s*(?:個?月(?:大)?|歲(?:半)?|週|周|\s*(?:weeks?|months?|years?)(?:\s+old)?)|半歲|歲半|初生|新生兒)/iu;
+const CJK_AGE_AMOUNT = /(?:歲半|(?:\d+(?:\.\d+)?|[零〇一二兩三四五六七八九十半]+)\s*(?:個?月|星期|週|周|歲半?))/giu;
+const CHILD_BEFORE_AGE = /(?:BB|寶寶|嬰兒|小朋友|孩子|小孩|我個[仔女]|仔仔|囡囡|月齡|年齡)\s*(?:(?:而家|依家|宜家|現在|今年|剛滿|剛好|啱啱|已經|約|係|是|為|[:：])\s*)*$/iu;
+const CHILD_AFTER_AGE = /^\s*(?:嘅|的)?\s*(?:BB|寶寶|嬰兒|小朋友|孩子|小孩)/iu;
+
+function statesChildAge(text: string): boolean {
+  const normalized = text.normalize("NFKC");
+  if (/(?:初生|新生兒)|\bnewborn\b/iu.test(normalized)) return true;
+  if (/\b\d+(?:\.\d+)?[\s-]*(?:days?|weeks?|months?|years?)[\s-]+old\b/iu.test(normalized)
+    || /\b(?:baby|child|son|daughter|he|she)\s+(?:is|turned)\s+(?:now\s+)?\d+(?:\.\d+)?\s+(?:days?|weeks?|months?|years?)\b(?!\s+(?:ago|later|into|behind|ahead)\b)/iu.test(normalized)) return true;
+  for (const match of normalized.matchAll(CJK_AGE_AMOUNT)) {
+    const before = normalized.slice(0, match.index);
+    const after = normalized.slice(match.index + match[0].length);
+    // An elapsed interval is not the child's current age, even directly after "BB".
+    if (/(?:最近|過去|持續|連續|已經持續|相隔|隔咗|維持咗)\s*$/u.test(before)
+      || /^\s*(?:(?:之|以)?[前後]|以來|內|期間|都|一直|冇|沒有|未有|沒)/u.test(after)) continue;
+    // A terse age followed immediately by a care question is a common direct-age opening.
+    const opensQuestion = !before.trim() && /^\s*[,，、]\s*(?:可唔可以|可以|應唔應該|應該|食幾多|幾時)/u.test(after);
+    if (match[0].includes("歲") || /^\s*(?:大|齡)/u.test(after)
+      || CHILD_BEFORE_AGE.test(before) || CHILD_AFTER_AGE.test(after) || opensQuestion) return true;
+  }
+  return false;
+}
 const TRADE_OFF_TOPIC_PATTERN = /(?:戒尿片|戒奶嘴|分房睡|睡眠訓練|BLW|傳統餵食|揀幼稚園|選校|興趣班|管教方式|點揀好|利弊|取捨|\b(?:trade[-\s]?off|sleep\s+training|potty\s+training|baby[-\s]?led\s+weaning)\b)/iu;
 
 const GROWTH_TOPIC_PATTERNS: Readonly<Record<string, RegExp>> = {
@@ -104,7 +125,7 @@ export function discoverDailyNeeds(input: {
 
   const needsAgeClarification =
     AGE_DEPENDENT_TOPIC_CUE.test(trimmed)
-    && !QUERY_HAS_EXPLICIT_AGE.test(trimmed)
+    && !statesChildAge(trimmed)
     && (
       background.mode === "ephemeral"
       || background.childProfile.status === "empty_authorized"

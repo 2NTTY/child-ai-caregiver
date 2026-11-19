@@ -41,8 +41,9 @@ TEST_FILES=(
   tests/search-official-evidence.test.ts
   tests/search-query-minimization.test.ts
   tests/library-citation-roundtrip.test.mjs
+  tests/req008-age-clarification.test.ts
 )
-TEST_CASES=(9 21 17 6 4 8 12 17 44 16 9 4)
+TEST_CASES=(9 21 17 6 4 8 12 17 44 16 9 4 1)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
