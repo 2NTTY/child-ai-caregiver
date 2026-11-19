@@ -1,6 +1,7 @@
 import { load } from "cheerio";
+import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
-import { fhsPdfMediaPages } from './platform-materials.ts';
+import { fhsPdfMediaPages, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
@@ -27,7 +28,8 @@ export function fhsLeafletControl($: ReturnType<typeof load>, landing: string) {
 export function sourceFetchUrl(value: string, definition: SourceWatchDefinition): URL {
   const url = new URL(value), registered = new URL(definition.url);
   if (url.protocol !== "https:" || url.username || url.password || url.port || url.hash
-    || url.hostname !== registered.hostname || !["www.fhs.gov.hk","www.studenthealth.gov.hk","www.dh.gov.hk","www.chp.gov.hk","news.rthk.hk","rthk9.rthk.hk"].includes(url.hostname)) {
+    || url.hostname !== registered.hostname || (reviewedExternalOriginal(definition.url) ? url.href !== definition.url
+      : !["www.fhs.gov.hk","www.studenthealth.gov.hk","www.dh.gov.hk","www.chp.gov.hk","news.rthk.hk","rthk9.rthk.hk"].includes(url.hostname))) {
     throw new Error("source_url_rejected");
   }
   return url;
@@ -119,6 +121,9 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
     if (result.status !== 200) return { status: "failed", reason: "response" };
     try {
       if (pdf) {
+        const approvedHash = reviewedExternalOriginal(definition.url);
+        if (approvedHash && createHash('sha256').update(result.body).digest('hex') !== approvedHash)
+          return { status: 'failed', reason: 'response' };
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {

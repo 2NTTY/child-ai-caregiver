@@ -1064,6 +1064,43 @@ test("Firestore knowledge atomic publication and bounded reread return the curre
   assert.deepEqual(await f.store.candidates(filter, null, { chunkIds: [oldCitation.chunkId], versionId: first.versionId }), []);
 });
 
+test('external material admission binds each reviewed PDF to its exact publisher, terms and bytes', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { externalMaterialWatches, campaignMaterialWatches, platformMaterials, reviewedExternalOriginal } = await import('../server/platform-materials.ts');
+  const { createKnowledgeSourceFetcher, sourceFetchUrl } = await import('../server/knowledge-source-fetch.ts');
+  const { familySharingAllowed } = await import('../server/knowledge-portable-series.ts');
+  const rights = JSON.parse(readFileSync(new URL('../knowledge/fhs-external-rights.json', import.meta.url), 'utf8')).materials as {
+    sourceId: string; url: string; reason: string; sha256?: string; disposition: string }[];
+  const originals = JSON.parse(readFileSync(new URL('../knowledge/fhs-child-inventory.json', import.meta.url), 'utf8')).pdfOriginals as {url: string; sha256: string}[];
+  assert.deepEqual(rights.filter(row => row.sha256).map(row => row.sha256).sort(),
+    originals.filter(row => new URL(row.url).hostname !== 'www.fhs.gov.hk').map(row => row.sha256).sort());
+  assert.deepEqual(externalMaterialWatches.map(w => new URL(w.url).hostname).sort(), ['www.dh.gov.hk', 'www.swd.gov.hk']);
+  const selected = externalMaterialWatches.find(w => new URL(w.url).hostname === 'www.swd.gov.hk')!;
+  const f = fixture(), store = createFirestoreKnowledgeStore({ ...f.options, platformMaterials });
+  for (const row of rights) {
+    assert.ok(row.url && row.reason);
+    assert.equal(campaignMaterialWatches.some(w => w.id === row.sourceId), row.disposition === 'public_noncommercial');
+    assert.equal(platformMaterials.has(row.sourceId), row.disposition === 'public_noncommercial');
+  }
+  const doc: KnowledgeSourceInput = { ...source(selected.id, [chunk('one', { pageStart: 1, pageEnd: 1 })]),
+    url: selected.url, termsUrl: selected.termsUrl, publisher: selected.publisher,
+    extraction: { format: 'text_pdf', contentHash: reviewedExternalOriginal(selected.url)!, totalPages: 2, pageStart: 1, pageEnd: 2, complete: true } };
+  assert.equal((await store.importSource(doc)).state, 'draft');
+  assert.equal(familySharingAllowed(doc), true);
+  const changed = { ...doc, extraction: { ...doc.extraction!, contentHash: 'c'.repeat(64) } };
+  assert.equal(familySharingAllowed(changed), false);
+  for (const invalid of [changed, { ...doc, publisher: 'Another department' }, { ...doc, termsUrl: new URL('/other', doc.url).href },
+    { ...doc, sourceId: 'synthetic-guidance' }, { ...doc, sourceId: 'synthetic-guidance', url: rights.find(row => row.url.includes('www.cfs.gov.hk'))!.url }])
+    await assert.rejects(store.importSource(invalid), rejects('knowledge_transfer_source_binding_invalid'));
+  assert.equal(sourceFetchUrl(selected.url, selected).href, selected.url);
+  assert.throws(() => sourceFetchUrl(new URL('/other.pdf', selected.url).href, selected), /source_url_rejected/);
+  const fetch = createKnowledgeSourceFetcher({ transport: async (value, validate) => {
+    validate(value);
+    return { status: 'response', response: { status: 200, url: value, contentType: 'application/pdf', body: Buffer.from('%PDF-updated') } };
+  }, pdfReader: async () => { throw Error('Unapproved replacement reached the reader'); } });
+  assert.deepEqual(await fetch(selected, new AbortController().signal), { status: 'failed', reason: 'response' });
+});
+
 test('a downloaded card cites reviewed official captions outside the page text and excludes a removed clip from new retrieval', async () => {
   const { fhsMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { createPlatformMediaProcessor } = await import('../server/platform-media-processing.ts');
@@ -1075,7 +1112,8 @@ test('a downloaded card cites reviewed official captions outside the page text a
   await refresh.register(definition.id, 'synthetic-operator');
   const job = (await refresh.jobs())[0]!.data, url = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
   const observed = { url: definition.url, title: 'Synthetic', text: 'The printed source only.', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
-  const check = (links: string[]) => refresh.process(job, crypto.randomUUID(), async () => ({ status: 'ok', items: [observed], mediaLinks: links }), signal);
+  const check = (links: string[], text = observed.text) => refresh.process(job, crypto.randomUUID(),
+    async () => ({ status: 'ok', items: [{ ...observed, text }], mediaLinks: links }), signal);
   await check([url]);
   await f.database.runTransaction(async tx => { const state = await refresh.media.read(tx, definition.id); await refresh.media.toggle(tx, definition.id, true, state.revision); });
   const cue = { start: 2.5, end: 5.25, text: 'needle in the official captions' };
@@ -1093,10 +1131,17 @@ test('a downloaded card cites reviewed official captions outside the page text a
   await f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'parent', { action: 'join', seriesId: definition.id,
     expectedRevision: 0, editions: [{ sourceId: definition.id, versionId: imported.versionId }] }));
   const delivered = (await hits())[0]!;
-  assert.deepEqual(delivered.mediaClip, clip);
-  await check([]);
+  const { agentCitationSchema } = await import('../src/shared/product-agent-result.ts');
+  const savedCitation = JSON.stringify(agentCitationSchema.parse(delivered));
+  assert.deepEqual(JSON.parse(savedCitation).mediaClip, clip);
+  const changedText = 'A changed printed page awaiting independent review.';
+  await check([url], changedText);
+  assert.equal((await hits())[0]?.versionId, imported.versionId);
+  await check([], changedText);
   assert.deepEqual(await hits(), []);
-  assert.equal(delivered.mediaClip?.start, 2.5); assert.equal(delivered.mediaClip?.end, 5.25);
+  assert.deepEqual(agentCitationSchema.parse(JSON.parse(savedCitation)).mediaClip, { ...clip, start: 2.5, end: 5.25 });
+  await refresh.process(job, crypto.randomUUID(), async () => ({ status: 'unavailable', httpStatus: 410 }), signal);
+  assert.equal((await store.catalog()).items.length, 0);
 });
 
 test("F05 source observation fences changed or unavailable evidence and reuses unchanged vectors", async () => {

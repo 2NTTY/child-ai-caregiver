@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { mediaClip } from '../src/shared/platform-media.ts';
-import { approvedPublicChpUrls } from './platform-materials.ts';
 import { z } from "zod";
 import { platformPublisherHosts } from '../src/shared/platform-material.ts';
 import type { KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -97,7 +96,7 @@ export function parseKnowledgeFilter(input: unknown): KnowledgeFilter { return f
 export function parseKnowledgeQuery(input: unknown): string { return text(2000).parse(input); }
 export function internalKnowledgeSource(url: string): boolean {
   const host = new URL(url).hostname;
-  return host === "www.chp.gov.hk" && !approvedPublicChpUrls.has(url) || /(^|\.)rthk\.hk$/.test(host);
+  return host === "www.chp.gov.hk" || /(^|\.)rthk\.hk$/.test(host);
 }
 export function knowledgeHash(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 export function sourceVersionHash(source: KnowledgeSourceInput): string {

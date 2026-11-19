@@ -7,7 +7,7 @@ import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts'
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
 import { fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
-import { platformMaterials, fhsMaterialWatches } from '../server/platform-materials.ts';
+import { platformMaterials, campaignMaterialWatches } from '../server/platform-materials.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createVertexAgentProvider } from '../server/agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from '../server/vertex-embedding.ts';
@@ -29,7 +29,7 @@ try {
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
-    if (!fhsMaterialWatches.some(w => w.id === id)) throw Error('knowledge_campaign_source_not_approved');
+    if (!campaignMaterialWatches.some(w => w.id === id)) throw Error('knowledge_campaign_source_not_approved');
     const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
     const readControl = tx => authority.readControl(tx);
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
@@ -81,9 +81,10 @@ try {
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {
         process.exitCode = 2;
-        if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed'].includes(result.code)) {
+        if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold'].includes(result.code)) {
           const saved = await createFirestoreKnowledgeWork(domain).inspect(request), balance = await gate.status();
-          const retained = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && !saved.prepared && !saved.receipt;
+          const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
+          const retained = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;
           if (retained && saved.budget.modelCalls > 0 && balance?.held === 0 && balance.attempts === balance.settled && !balance.reconciliationRequired) process.exitCode = 3;
         }
       }
