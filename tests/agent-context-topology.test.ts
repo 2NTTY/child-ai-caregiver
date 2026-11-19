@@ -15,6 +15,7 @@ import { createFirestoreProductAgentStore } from '../server/firestore-product-ag
 import { createProductAgent } from '../server/product-agent.ts';
 import { createAgentRuntime, type AgentRunInput, type AgentRuntimePort } from '../server/agent-runtime.ts';
 import { readAiConfig } from '../server/ai-config.ts';
+import { CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { selectRecentConversation } from '../server/agent-context-window.ts';
 import { createKnowledgeRetriever } from '../server/knowledge-retriever.ts';
@@ -65,6 +66,41 @@ function captureRuntime(consume: (input: AgentRunInput) => void): AgentRuntimePo
   return { run: async input => { consume(input); return { runId: input.runId!, status: 'stopped', stopReason: 'unavailable', text: null,
     tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } }; } };
 }
+
+test('three successive questions in the same chat can only open the child directory on the listing turn', async () => {
+  const f = await fixture();
+  const turns = [
+    { question: '我有甚麼小孩', answer: null },
+    { question: '我是誰', answer: '你想問帳戶身份，還是我怎樣稱呼你？' },
+    { question: '幫我填寫孩子的資訊', answer: '你想填寫哪位孩子的哪些資料？' },
+  ];
+  const runIds = new Set<string>();
+  for (const [index, turn] of turns.entries()) {
+    const user = await f.chat.createUserMessageForUser('owner', f.childId, turn.question);
+    assert.ok(user);
+    const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-directory' }),
+      usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
+        const decl = JSON.stringify(request.config?.tools ?? []);
+        assert.equal(decl.includes('child_profiles'), index === 0);
+        if (index > 0) assert.ok(!JSON.stringify(request.contents).includes(CHILD_PROFILES_CHAT_TEXT), 'A previous UI shortcut must not instruct the next turn');
+        const args = turn.answer ? { kind: 'clarification', paragraphs: [{ text: turn.answer, citationIds: [] }] }
+          : { kind: 'operation', paragraphs: [{ showView: 'child_profiles' }] };
+        return { finishReason: FinishReason.STOP, content: { role: 'model', parts: [{ functionCall: { id: 'answer', name: 'present_answer', args } }] } };
+      } } });
+    const result = await f.product(runtime).reply('owner', f.childId, user.id, async () => true);
+    assert.equal(result?.status, 'completed', JSON.stringify(result));
+    assert.deepEqual(result.proposals, []);
+    assert.deepEqual(result.tools.map(step => step.name), ['present_answer']);
+    assert.equal(result.tools[0].reference === 'child_profiles', index === 0);
+    if (turn.answer) assert.equal(result.text, turn.answer);
+    else assert.match(result.text, /子女檔案/u);
+    runIds.add(result.runId);
+    const history = await f.chat.listForUser('owner', f.childId);
+    if (!history?.messages.some(row => row.role === 'model' && row.inReplyTo === user.id))
+      await f.chat.createModelMessageForUser('owner', f.childId, user.id, result.text);
+  }
+  assert.equal(runIds.size, 3);
+});
 
 test('provider receives every omitted prompt and reads both through the authorized native history tools', async () => {
   const f = await fixture(), m = await f.interleaved();
