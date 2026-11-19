@@ -15,7 +15,7 @@ import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema, type AgentHistoryMessage } from "../src/shared/agent-work.ts";
 import type { ChatMessage } from "../src/shared/chat.ts";
-import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/product-agent.ts";
+import { agentAnswerSchema, agentBackgroundAnswerSchema, MAX_ANSWER_PARAGRAPHS } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
@@ -54,7 +54,7 @@ const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).m
 const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
     originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
       .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'),
-    paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(6) });
+    paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(MAX_ANSWER_PARAGRAPHS) });
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -514,6 +514,10 @@ export function createProductAgentTools(options: {
   async function guard<T>(operation: () => Promise<T>): Promise<import("./agent-runtime.ts").AgentToolResult> {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
+      if (error instanceof FamilyError && error.code === 'discussion_main_too_long' && discussion) return { status: 'rejected', data: {
+        code: error.code, maxParagraphs: discussion.maxMainParagraphs(),
+        nextAction: '先前的角色發言已保留。請把主回答整合至 ' + discussion.maxMainParagraphs() + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
+      } };
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
       if (error instanceof HistoryExcerptMismatch) return { status: "rejected", data: {
         code: error.code, quoteOptions: error.quotes.map(item => ({ quoteHistory: item.citationIds[0], text: item.text })),

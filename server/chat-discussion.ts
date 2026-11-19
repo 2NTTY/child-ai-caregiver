@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { discussionRoles, discussionLabels } from '../src/shared/chat-discussion.ts';
-import { agentAnswerSchema, type AgentAnswer } from '../src/shared/product-agent.ts';
+import { agentAnswerSchema, MAX_ANSWER_PARAGRAPHS, type AgentAnswer } from '../src/shared/product-agent.ts';
 import type { AgentTool } from './agent-runtime.ts';
 import { FamilyError } from './family-access.ts';
 
@@ -22,6 +22,7 @@ export const discussionInstruction = '家長已選這一題討論。三個 AI �
 /** Each subsequent speaker needs a receipt returned only after the previous native tool turn. */
 export function createQuestionDiscussion(authorize: () => Promise<boolean>, validate: (answer: AgentAnswer) => void) {
   const paragraphs: AgentAnswer['paragraphs'] = [];
+  const maxMainParagraphs = () => MAX_ANSWER_PARAGRAPHS - paragraphs.length;
   let previous = 'start';
   const tools: AgentTool[] = discussionRoles.map((role, index) => ({
     name: discussionToolNames[index], description: discussionLabels[role] + '。' + viewpoints[index],
@@ -35,19 +36,22 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
       paragraphs.push(paragraph);
       previous = randomUUID();
       return { status: 'succeeded', data: { speaker: discussionLabels[role], contribution: paragraph,
-        next: discussionToolNames[paragraphs.length] ?? 'present_answer', nextTurn: previous,
+        next: discussionToolNames[paragraphs.length] ?? 'present_answer', nextTurn: previous, maxMainParagraphs: maxMainParagraphs(),
         instruction: viewpoints[paragraphs.length] ?? '主助手直接回答家長，引用已讀證據，可保留條件和分歧。' } };
     },
   }));
   return {
     tools,
+    maxMainParagraphs,
     roles: () => discussionRoles.slice(0, paragraphs.length),
     instruction: () => discussionInstruction + ' 每位用一小段家長看得明的香港繁體中文發言，直接回應這一題。比較家長目前的選擇條件，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
       ? ' 現在輪到「' + discussionLabels[discussionRoles[paragraphs.length]] + '」。' + viewpoints[paragraphs.length]
         + ' 使用 ' + discussionToolNames[paragraphs.length] + ' 提交此觀點和適用引用。'
-      : ' 三位已經發言。現在以主助手身份直接回答，用一至三段交代建議及選擇條件。'),
+      : ' 三位已經發言。現在以主助手身份直接回答，交代建議及選擇條件。')
+      + ' 現在提交 present_answer 時，主回答最多可用 ' + maxMainParagraphs() + ' 段。先前的發言已保留，毋須重複。',
     assemble(main: AgentAnswer): AgentAnswer {
       if (!paragraphs.length) return main;
+      if (main.paragraphs.length > maxMainParagraphs()) throw new FamilyError(400, 'discussion_main_too_long');
       return agentAnswerSchema.parse({ kind: 'mixed', paragraphs: [...paragraphs,
         ...main.paragraphs.map(p => ({ ...p, kind: p.kind ?? main.kind }))] });
     },

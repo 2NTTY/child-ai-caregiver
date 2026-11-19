@@ -35,7 +35,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
   authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
   readInteractiveRunSeconds?: FirestoreAgentRunOptions['readInteractiveRunSeconds'];
-  discussionCitationsCurrent?: FirestoreAgentRunOptions['discussionCitationsCurrent'];
+  discussionCitationsReadable?: FirestoreAgentRunOptions['discussionCitationsReadable'];
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore;
   contact?: FirestoreContact;
   validateKnowledge(binding: Binding, sourceId: string): Promise<void>;
