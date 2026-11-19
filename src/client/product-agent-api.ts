@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { librarySeriesMediaType, personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
 import { privateSourceCitationSchema } from "../shared/product-agent.ts";
-import { agentDecisionSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
+import { agentDecisionSchema, agentPendingPageSchema, agentProposalEditSchema, type AgentDecision, type AgentProposal, type AgentProposalEdit, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
 export type ProductAgentErrorCode = "invalid_input" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "version_conflict" | "confirmation_expired" | "confirmation_scope_changed"
@@ -34,6 +34,7 @@ export interface ProductAgentApi {
   getPendingProposals(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentPendingPage>;
   getRun(childId: string, runId: string, signal: AbortSignal, userId: string): Promise<ProductAgentResult>;
   decideProposal(childId: string, runId: string, proposalId: string, input: AgentDecision, signal: AbortSignal, userId: string): Promise<AgentProposal>;
+  editProposal?(childId: string, runId: string, proposalId: string, input: AgentProposalEdit, signal: AbortSignal, userId: string): Promise<AgentProposal>;
 }
 
 const uuid = z.uuid();
@@ -52,7 +53,7 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     if (!uuid.safeParse(childId).success || !uuid.safeParse(runId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, "invalid_input");
   }
   const path = (childId: string, runId: string) => `/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`;
-  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision | import('../shared/source-series.ts').LibrarySelectionCommand, accept = 'application/json'): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision | AgentProposalEdit | import('../shared/source-series.ts').LibrarySelectionCommand, accept = 'application/json'): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true });
@@ -162,6 +163,21 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
         }
         throw error;
       }
+    },
+    async editProposal(childId, runId, proposalId, raw, signal, userId) {
+      checkScope(childId, runId, userId);
+      const parsed = agentProposalEditSchema.safeParse(raw);
+      if (!uuid.safeParse(proposalId).success || !parsed.success) throw new ProductAgentApiError(400, "invalid_input");
+      const input = parsed.data;
+      const value = await request(`${path(childId, runId)}/proposals/${encodeURIComponent(proposalId)}/edit`, signal, userId, input);
+      const proposal = object(value) ? proposalSchema.safeParse(value.proposal) : null;
+      if (!proposal?.success || proposal.data.childId !== childId || proposal.data.runId !== runId
+        || proposal.data.id !== proposalId || proposal.data.version !== input.expectedVersion + 1
+        || proposal.data.status !== "pending") {
+        throw new ProductAgentApiError();
+      }
+      pending = null;
+      return proposal.data;
     },
   };
 }

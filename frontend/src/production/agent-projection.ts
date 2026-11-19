@@ -108,7 +108,41 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt, contentState: proposal.contentState,
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
-      label: `${proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+      label: `${proposal.result.kind === "care_record" ? "照護記錄" : proposal.result.kind === "private_note" ? "私人備註" : proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if (value.kind === "care_record_create" || value.kind === "care_record_revise") {
+    const kindNames = { note: "日常備註", feeding: "餵食", sleep: "睡眠", diaper: "換片" } as const;
+    return {
+      ...common, scope: "family",
+      title: `${kindNames[value.details.kind]} · ${value.kind === "care_record_create" ? "新增照護記錄" : "更正原照護記錄"}`,
+      content: value.text,
+      details: [
+        { label: "種類", value: kindNames[value.details.kind] },
+        ...(value.kind === "care_record_revise" ? [
+          { label: "原記錄與版本", value: `${value.recordId} · ${value.expectedVersion}` },
+          ...(value.previousText ? [{ label: "修改前內容", value: value.previousText }] : []),
+          { label: "建議內容", value: value.text },
+          { label: "原因", value: value.reason },
+        ] : [{ label: "建議內容", value: value.text }]),
+        ...(value.details.quantity ? [{ label: "數量", value: `${value.details.quantity.rawValue}${value.details.quantity.unit}` }] : []),
+      ],
+    };
+  }
+  if (value.kind === "private_note_create" || value.kind === "private_note_revise") {
+    return {
+      ...common, scope: "private",
+      title: value.title,
+      content: value.text,
+      details: [
+        ...(value.kind === "private_note_revise" ? [
+          { label: "原備註與版本", value: `${value.noteId} · ${value.expectedVersion}` },
+          ...(value.previousTitle ? [{ label: "修改前標題", value: value.previousTitle }] : []),
+          ...(value.previousText ? [{ label: "修改前內容", value: value.previousText }] : []),
+        ] : []),
+        { label: "建議內容", value: value.text },
+        { label: "接受後可見範圍", value: "只限你本人" },
+      ],
+    };
+  }
   if (value.kind === "family_document_change") {
     if (proposal.contentState === "invalidated") return { ...common, scope: "family", title: "原家庭文件修改",
       content: "原文件或來源已改變，候選正文已遮蔽；請重新核對", details: [{ label: "原文件及版本", value: `${value.documentId} · ${value.change.expectedVersion}` }] };

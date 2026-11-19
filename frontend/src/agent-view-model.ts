@@ -7,10 +7,10 @@ export type AgentDecisionKind = "accept" | "dismiss";
 export interface AgentDetailRow { label: string; value: string }
 export interface AgentProposalView {
   id: string; version: number; status: AgentProposalStatus;
-  kind: "family_document_change" | "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
+  kind: "care_record_create" | "care_record_revise" | "private_note_create" | "private_note_revise" | "family_document_change" | "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
   contentState?: "ready" | "invalidated"; title: string; content: string; scope: "family" | "private";
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
-  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
+  result: { kind: "care_record" | "private_note" | "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {

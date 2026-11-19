@@ -95,7 +95,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
           if (!work) throw conflict("work_cancelled"); workVersion = work.version;
         }
         const value = target.value.value;
-        let shared = ["family_document_change", "task_create", "task_change", "concern_create", "concern_change"].includes(value.kind) || value.kind === "memory_fact" && value.intendedVisibility === "family";
+        let shared = ["care_record_create", "care_record_revise", "family_document_change", "task_create", "task_change", "concern_create", "concern_change"].includes(value.kind) || value.kind === "memory_fact" && value.intendedVisibility === "family";
         if (value.kind === "family_document_change") {
           const borrowed = transactionPool(client);
           const document = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(userId, childId, value.documentId, value.change);
@@ -150,7 +150,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
               || target.row.authorization_version !== current.access_version || target.row.data_version.split(':')[0] !== current.storage_epoch
               || hash(target.value.value) !== saved.hash) continue;
             const value = target.value.value;
-            let shared = ['family_document_change', 'task_create', 'task_change', 'concern_create', 'concern_change'].includes(value.kind)
+            let shared = ['care_record_create', 'care_record_revise', 'family_document_change', 'task_create', 'task_change', 'concern_create', 'concern_change'].includes(value.kind)
               || value.kind === 'memory_fact' && value.intendedVisibility === 'family';
             // Reuse the request-time read checks; never call the effectful decision callback.
             if (value.kind === 'family_document_change') {

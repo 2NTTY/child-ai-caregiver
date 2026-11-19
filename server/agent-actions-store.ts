@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
-import { agentDirectActionSchema, agentPolicyUpdateSchema } from "../src/shared/agent-actions.ts";
+import { agentDirectActionSchema, agentPolicyUpdateSchema, allowsDirectActionByPolicy, resolveAgentExecutionMode } from "../src/shared/agent-actions.ts";
 import type { AgentActionReceipt, AgentDirectAction, AgentOperationPolicy, AgentPolicyUpdate, AgentPrivateNote } from "../src/shared/agent-actions.ts";
 import type { ContactBinding, ContactPage } from "../src/shared/contact.ts";
 import type { FamilyRole } from "../src/shared/family.ts";
@@ -28,7 +28,7 @@ interface RunRow { id: string; child_id: string; owner_user_id: string; source_m
   trigger_kind: string; authorization_version: string; data_version: string; state: string; unexpired: boolean }
 interface ManualRow { child_id: string; storage_epoch: string; kind: string; request_encrypted: string; result_encrypted: string }
 interface TaskAuthorizationRow { task_id: string; policy_version: number; grant_version: number }
-const emptyPolicy = (): AgentOperationPolicy => ({ version: 0, effective: false, recordKinds: [], allowPrivateNotes: false, allowRecordCorrections: false,
+const emptyPolicy = (): AgentOperationPolicy => ({ version: 0, effective: false, executionMode: "confirm_first", recordKinds: [], allowPrivateNotes: false, allowRecordCorrections: false,
   allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [] });
 const conflict = (code = "agent_action_changed") => new FamilyError(409, code);
 const missing = () => new FamilyError(404, "not_found");
@@ -56,7 +56,9 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
     const row = (await client.query<VersionRow>("SELECT version,payload_encrypted FROM agent_operation_policies WHERE user_id=$1 AND child_id=$2", [userId, childId])).rows[0];
     if (!row) return emptyPolicy();
     const saved = JSON.parse(cipher.decrypt(row.payload_encrypted, policyAad(userId, childId, row.version))) as PolicySaved;
-    return { ...saved.value, allowRecordCorrections: saved.value.allowRecordCorrections === true,
+    const allowRecordCorrections = saved.value.allowRecordCorrections === true;
+    const executionMode = resolveAgentExecutionMode({ ...saved.value, allowRecordCorrections });
+    return { ...saved.value, executionMode, allowRecordCorrections,
       effective: WRITE_ROLES.includes(role) && saved.accessVersion === space.access_version && saved.storageEpoch === space.storage_epoch };
   }
   async function manualResult<T>(client: PoolClient, space: Space, userId: string, childId: string, operationId: string, kind: string, request: unknown): Promise<{ found: false } | { found: true; value: T }> {
@@ -184,8 +186,12 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         if ((input.recordKinds.length || input.allowPrivateNotes || input.allowSelfTasks || input.allowRecordCorrections) && !WRITE_ROLES.includes(role)) throw missing();
         if (input.reminderBindings.length && !reminderMatches(input, await contactPage(client, userId, childId))) throw conflict("contact_consent_changed");
         const { recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections, reminderConsentVersion, reminderBindings } = input;
+        const executionMode = resolveAgentExecutionMode({
+          executionMode: input.executionMode,
+          recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections,
+        });
         const value: AgentOperationPolicy = { version: current.version + 1, effective: WRITE_ROLES.includes(role),
-          recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections, reminderConsentVersion, reminderBindings };
+          executionMode, recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections, reminderConsentVersion, reminderBindings };
         const { effective: _effective, ...permissions } = value;
         const payload = cipher.encrypt(JSON.stringify({ value: permissions, accessVersion: space.access_version, storageEpoch: space.storage_epoch } satisfies PolicySaved), policyAad(userId, childId, value.version));
         await client.query(`INSERT INTO agent_operation_policies(user_id,child_id,version,payload_encrypted) VALUES($1,$2,$3,$4)
@@ -280,6 +286,12 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         }
         const policy = await policyFor(client, space, role, scope.userId, scope.childId);
         if (!policy.effective || input.expectedPolicyVersion !== policy.version) throw conflict("agent_policy_changed");
+        const directGate = allowsDirectActionByPolicy(policy, input);
+        if (!directGate.allowed) {
+          if (directGate.reason === "confirm_first_mode") throw conflict("agent_confirm_first_required");
+          if (directGate.reason === "policy_inactive") throw conflict("agent_policy_changed");
+          throw conflict("agent_policy_denied");
+        }
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
         let resource: AgentActionReceipt["resource"], state: AgentActionReceipt["state"];
         let quantityGrounding: QuantityGrounding | undefined;
