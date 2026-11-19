@@ -46,15 +46,19 @@ import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 import { citedOriginalSpans } from '../src/shared/knowledge.ts';
-import { CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
+import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView, type ChatWorkspaceView } from '../src/shared/chat-workspace-view.ts';
 
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
-const workspaceView = z.enum(['child_profiles', 'conversation_memory']);
-const workspaceViewParagraph = z.strictObject({ showView: workspaceView.describe('Show the signed-in parent their profiles or the actual current chat window. Use alone, with kind=operation.') });
-const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
-  originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
-    .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'), paragraphs:
-  z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph, workspaceViewParagraph])).min(1).max(6) });
+function personalPresentationSchema(view: ChatWorkspaceView | null) {
+  const answerParagraph = agentAnswerSchema.shape.paragraphs.element;
+  const paragraph = view
+    ? z.union([answerParagraph, historyQuoteParagraph, z.strictObject({ showView: z.enum([view]).describe('Display this view alone with kind=operation.') })])
+    : z.union([answerParagraph, historyQuoteParagraph]);
+  return z.strictObject({ kind: agentAnswerSchema.shape.kind,
+    originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
+      .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'),
+    paragraphs: z.array(paragraph).min(1).max(6) });
+}
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -245,7 +249,9 @@ export function createProductAgentTools(options: {
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
-  let selectedView: z.infer<typeof workspaceView> | null = null;
+  const allowedView = options.currentMessageId && options.conversationWindow ? requestedWorkspaceView(options.trustedUserMessage) : null;
+  const chatPresentationInput = personalPresentationSchema(allowedView);
+  let selectedView: ChatWorkspaceView | null = null;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
   function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
@@ -534,6 +540,9 @@ export function createProductAgentTools(options: {
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
+    if (parsed.paragraphs.some(paragraph => paragraph.text.trim() === CHILD_PROFILES_CHAT_TEXT)) {
+      throw new FamilyError(400, 'invalid_input');
+    }
     const citedLocations = new Set(parsed.paragraphs.flatMap(p => p.citationIds).filter(id => accountReadings.has(id)));
     if (citedLocations.size > 6) throw new FamilyError(400, 'invalid_citation');
     const candidateDraft: ChatDeliveryDraft = {
@@ -813,7 +822,7 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；純澄清、超出範圍拒答、限制說明及純操作（用 operation 或記錄回述；兼答指引時用 mixed）可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
@@ -826,7 +835,7 @@ export function createProductAgentTools(options: {
           const wire = chatPresentationInput.parse(args);
           const view = wire.paragraphs.find(p => 'showView' in p);
           if (view && 'showView' in view) {
-            if (!options.conversationWindow || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
+            if (!options.conversationWindow || view.showView !== allowedView || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
               throw new FamilyError(400, 'invalid_input');
             if (!await permitted()) throw new AgentStopped('unauthorized');
             selectedView = view.showView;
@@ -1167,6 +1176,7 @@ export function createProductAgentTools(options: {
       serverReceiptText = null;
       if (!answer) return null;
       if (selectedView) {
+        if (selectedView !== allowedView) throw new FamilyError(400, 'invalid_input');
         if (!await permitted()) throw new AgentStopped('unauthorized');
         serverReceiptText = answer.paragraphs[0]!.text;
         return { text: serverReceiptText, citations: [], retrievalMode: 'not_used' };

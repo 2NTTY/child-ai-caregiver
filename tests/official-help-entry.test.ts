@@ -32,6 +32,9 @@ function loadModule(entry: string, overrides: Record<string, any>, cache = new M
   }).outputText;
   new Function('require', 'module', 'exports', code)((name: string) => {
     if (Object.hasOwn(overrides, name)) return overrides[name];
+    if (name === './chat-presentation' && overrides['../components/chat/chat-presentation']) return overrides['../components/chat/chat-presentation'];
+    if (name === '../production/RegisteredReadingCard') return { RegisteredReadingCard: 'RegisteredReadingCard' };
+    if (name === '../AppIcon') return { AppIcon: 'AppIcon' };
     if (!name.startsWith('.')) return require(name);
     let target = path.resolve(path.dirname(file), name);
     if (!existsSync(target) && existsSync(`${target}.ts`)) target += '.ts';
@@ -190,7 +193,7 @@ test('OFFICIAL_HELP copy and chatScreen structure expose fixed help cards outsid
   assert.match(screenCode, /timelineFooter = feedback \?/);
 });
 
-test('ChatPage real render surfaces official help on toolbar toggle and urgent draft without selected child or agent run', () => {
+test('ChatPage surfaces contextual official help for an urgent draft before a child or agent run is available', () => {
   let currentDraft = '';
   let currentMessages: any[] = [];
   let selectedChildId: string | null = null;
@@ -295,7 +298,7 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
 
@@ -303,34 +306,13 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   const chatModule = loadModule('frontend/src/screens/chatScreen.tsx', overrides);
   const ChatPage = chatModule.default;
 
-  // 1) No child selected, ordinary joke draft -> help panel is hidden until user clicks the toolbar entry button.
+  // An ordinary draft has no card or toolbar shortcut.
   currentDraft = '個故仔好好笑，笑到抽筋';
   runnerRef = renderWithHooks(() => jsxNode(ChatPage, {}));
   let tree = runnerRef.render();
   let nodes = collectNodes(tree);
   assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'joke draft must not auto-open help panel');
-  const helpButton = nodes.find(
-    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel,
-  );
-  assert.ok(helpButton, 'toolbar official help toggle button must render even with no child selected');
-  assert.equal(collectText(helpButton), OFFICIAL_HELP_ENTRY_COPY.buttonLabel);
-  assert.equal(helpButton.props.accessibilityHint, OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
-
-  // Trigger onPress() to verify interactive manual toggle renders emergency + medical help cards without AI calls.
-  helpButton.props.onPress();
-  tree = runnerRef.render();
-  nodes = collectNodes(tree);
-  const toggledPanel = nodes.find(n => n.props?.testID === 'chat-official-help-panel');
-  assert.ok(toggledPanel, 'clicking official help toggle must render panel when !child');
-  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'manual open on ordinary draft has no urgent warning');
-  const toggledText = collectText(toggledPanel);
-  assert.ok(toggledText.includes(OFFICIAL_HELP['emergency-hk-v1'].title));
-  assert.ok(toggledText.includes(OFFICIAL_HELP['medical-consult-hk-v1'].title));
-
-  // Toggle back off.
-  nodes.find(n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel)!.props.onPress();
-  tree = runnerRef.render();
-  assert.equal(collectNodes(tree).some(n => n.props?.testID === 'chat-official-help-panel'), false);
+  assert.equal(nodes.some(n => n.props?.icon === 'help-circle'), false);
 
   // 2) Urgent draft with accompanying danger signs ("BB激動到抽筋，雙眼反白") auto-surfaces panel & urgent notice with !child.
   currentDraft = 'BB激動到抽筋，雙眼反白';
@@ -339,11 +321,7 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
   const urgentPanel = nodes.find(n => n.props?.testID === 'chat-official-help-panel');
   assert.ok(urgentPanel, 'urgent convulsion draft must auto-surface help panel immediately');
   assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'urgent notice must render automatically');
-  const urgentBtn = nodes.find(
-    n => n.type === 'Pressable' && n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel,
-  );
-  assert.equal(collectText(urgentBtn), OFFICIAL_HELP_ENTRY_COPY.highlightedButtonLabel);
-  assert.equal(urgentBtn.props.accessibilityHint, OFFICIAL_HELP_ENTRY_COPY.accessibilityLabel);
+  assert.equal(collectText(urgentPanel).includes(OFFICIAL_HELP['medical-consult-hk-v1'].title), false);
   assert.ok(collectText(urgentPanel).includes(OFFICIAL_HELP['emergency-hk-v1'].title));
 
   // 3) Laugh-idiom prefix followed by unresponsiveness ("BB笑到抽筋，之後冇晒反應") must also auto-surface emergency help!
@@ -490,7 +468,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
   const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
@@ -539,21 +517,14 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   assert.equal(collectText(helpPanel).includes(OFFICIAL_HELP['emergency-hk-v1'].title), false, 'Ordinary medication query must NOT escalate to emergency card');
   assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'Ordinary medication query must NOT show urgent emergency alert');
 
-  // Case D: Cross-child mismatch must NOT leak previous child's messages/feedback, and switching child/scope resets manual helpOpen.
-  currentDraft = '';
-  const toggleBtn = nodes.find(n => n.props?.accessibilityLabel === OFFICIAL_HELP_ENTRY_COPY.buttonLabel);
-  assert.ok(toggleBtn);
-  toggleBtn.props.onPress();
-  nodes = collectNodes(rerender());
-  assert.ok(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), 'Manual toggle opens help panel for child-1');
-
+  // Switching children hides the previous child's active card, even before chat state catches up.
   selectedChildId = 'child-2';
   scopeKey = 'scope-child-2';
   chatSelectedChildId = 'child-1'; // stale chatState from child-1!
   currentMessages = [{ id: 'u-old', role: 'user', text: 'BB發燒抽筋冇反應' }];
   currentFeedback = { cards: ['emergency-hk-v1'] };
   nodes = collectNodes(rerender());
-  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'Child switch must reset manual helpOpen and must not leak child-1 messages or feedback');
+  assert.equal(nodes.some(n => n.props?.testID === 'chat-official-help-panel'), false, 'Child switch must not leak the previous draft, messages or feedback');
 
   // Case E: Mobile narrow + zoomed fontScale dock stays height-bounded while AgentComposer remains unobstructed.
   viewport = { width: 360, height: 640, fontScale: 2 };
@@ -794,7 +765,7 @@ test('H2-R: resolved stopped/unknown replies and catch-recovered unfinished save
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
   const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
@@ -1049,7 +1020,7 @@ test('BND-2: non-emergency medicine queries show consult notice only while mixed
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   }).default;
 
@@ -1262,7 +1233,7 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   }).default;
 

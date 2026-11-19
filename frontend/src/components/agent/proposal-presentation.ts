@@ -1,4 +1,4 @@
-import type { AgentDetailRow, AgentProposalView } from "../../agent-view-model";
+import { agentTime, type AgentDetailRow, type AgentProposalView } from "../../agent-view-model";
 import type { AppIconName } from "../AppIcon";
 
 // Display-only, exact-schema mappings. Unrecognised rows stay visible verbatim.
@@ -64,6 +64,18 @@ export function proposalPrimaryText(proposal: AgentProposalView): string {
 export function proposalDetailGroups(proposal: AgentProposalView): { visible: AgentDetailRow[]; supporting: AgentDetailRow[] } {
   const visible: AgentDetailRow[] = [], supporting: AgentDetailRow[] = [];
   for (const detail of proposal.details) {
+    if (proposal.kind === "task_create") {
+      if (detail.label === "種類" && detail.value === "普通任務") continue;
+      if (detail.label === "負責人識別" && proposal.details.some(row => row.label === "負責人" && row.value && row.value !== "未能確認對象")) continue;
+      if (detail.label === "時區" && detail.value === "Asia/Hong_Kong") continue;
+      if (detail.label === "到期時間" && Number.isFinite(Date.parse(detail.value))) {
+        const timeZone = proposal.details.find(row => row.label === "時區")?.value ?? "Asia/Hong_Kong";
+        try {
+          visible.push({ ...detail, value: agentTime(detail.value, timeZone) });
+          continue;
+        } catch { /* Keep the supplied date and timezone if the device cannot format them. */ }
+      }
+    }
     // Only the exact projected new-fact placeholder is omitted; candidate expiry is separate.
     if (proposal.kind === "memory_fact" && detail.label === "有效至" && detail.value === "未設定") continue;
     // The same visibility is already stated beside the lock/group icon. A mismatch is never hidden.

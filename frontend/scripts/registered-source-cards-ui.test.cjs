@@ -40,7 +40,7 @@ function setup(params = {}) {
     throw new Error(name);
   });
   const shared = require('../../src/shared/registered-source-card.ts');
-  const api = compile('registered-source-cards-api.ts', name => name.includes('/shared/registered-source-card') ? shared : require(name));
+  const api = compile('registered-source-cards-api.ts', name => name.startsWith('../../../src/shared/') ? require(name.slice(3)) : require(name));
   const components = new Proxy({}, { get: (_, key) => key });
   let focusCallback, focusCleanup;
   const loader = name => {
