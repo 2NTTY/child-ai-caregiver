@@ -48,7 +48,7 @@ type Watch = z.infer<typeof watchSchema>;
 type Observation = z.infer<typeof observationSchema>;
 export interface FirestoreKnowledgeObservation { watch: Watch; observation: Observation | null; catalogMatches: boolean }
 export interface FirestoreKnowledgeObservationPort {
-  recentSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
+  recentSourceIds(transaction: Transaction, watchIds: readonly string[], documentUrl?: string): Promise<string[]>;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
   recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
@@ -100,17 +100,18 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
   }
   const matches = (row: Watch) => Boolean(catalog.has(row.id) && definitionHash(catalog.get(row.id)!) === row.definitionHash);
   const gate: FirestoreKnowledgeObservationPort = {
-    async recentSourceIds(tx, watchIds) {
-      const feeds = watchIds.filter(id => catalog.get(id)?.kind === "rss");
+    async recentSourceIds(tx, watchIds, documentUrl) {
+      const feeds = watchIds.filter(id => catalog.get(id)?.kind === 'rss');
       if (!feeds.length) return [];
+      if (documentUrl && !feeds.some(id => catalog.get(id)?.audience === 'public_noncommercial')) return [];
       if (feeds.length > 10) reject("knowledge_watch_catalog_invalid");
       const page = await tx.get(database.collection(namespace + "_knowledge_observations").where("watchId", "in", feeds)
         .where("sourcePublishedAt", ">=", new Date(Date.now() - 7 * 86400_000).toISOString())
         .orderBy("sourcePublishedAt", "desc").orderBy("sourceId").limit(60));
-      return page.docs.map(snapshot => {
+      return page.docs.flatMap(snapshot => {
         const row = parse(observationSchema, snapshot.data());
         if (snapshot.id !== row.sourceId || !feeds.includes(row.watchId)) reject("knowledge_binding_invalid");
-        return row.sourceId;
+        return !documentUrl || new URL(row.url).href.split('#')[0] === documentUrl ? [row.sourceId] : [];
       });
     },
     async read(tx, sourceId) {

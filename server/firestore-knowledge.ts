@@ -20,7 +20,7 @@ import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
 import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
-import { createLibrarySelections, explicitlyDisabled, selectedEdition } from './knowledge-library-selection.ts';
+import { createLibrarySelections, explicitlyDisabled, selectedEdition, type ListedPlatformCard } from './knowledge-library-selection.ts';
 import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
 import { canonical } from './firestore-session-codec.ts';
 import type { StorageCipher } from './storage-crypto.ts';
@@ -58,6 +58,8 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
   catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
   saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
+  platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
+  joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
@@ -275,9 +277,12 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         && Date.parse(document.sourcePublishedAt) <= now && Date.parse(document.sourcePublishedAt) >= now - 7 * 86400_000
         && Date.parse(edition.observed!.observation!.lastSuccessfulCheckAt) >= now - 86400_000);
   }
+  async function catalogIds(tx: Transaction, url?: string) {
+    return [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds, url) ?? []])].sort(compareId);
+  }
   async function corpus(tx: Transaction): Promise<Corpus> {
     const sources: Corpus["sources"] = [], editions: Edition[] = [];
-    const selected = [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds) ?? []])].sort(compareId);
+    const selected = await catalogIds(tx);
     for (const id of selected) {
       const source = await readSource(tx, id); sources.push({ id, source });
       if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition, 'read')) editions.push(edition); }
@@ -286,6 +291,20 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   const isPublicEdition = (edition: Edition) => !internalKnowledgeSource(edition.document.url)
     && edition.observed?.watch.definition.audience !== 'internal_noncommercial';
+  async function activeHeads(tx: Transaction, ids: string[]) {
+    if (!ids.length) return [];
+    const snapshots = await tx.getAll(...ids.map(sourceRef));
+    return snapshots.flatMap(snap => {
+      if (!snap.exists) return [];
+      const source = scoped(parse(sourceSchema, snap.data()));
+      if (source.sourceId !== snap.id) reject('knowledge_binding_invalid', 503);
+      return source.enabled && source.activeVersionId && !internalKnowledgeSource(source.url) ? [source] : [];
+    });
+  }
+  async function publicEdition(tx: Transaction, source: Source) {
+    const edition = await metadata(tx, source.activeVersionId!, source);
+    return isPublicEdition(edition) && publication(edition, 'read') ? edition : null;
+  }
   function readSelections(tx: Transaction, owner?: string) {
     return owner && selections ? selections.read(tx, owner) : [];
   }
@@ -880,6 +899,46 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       });
     },
     catalog: after => catalog(after), catalogForUser: (owner, after) => catalog(after, owner),
+    async platformCards(tx, owner, after, url) {
+      // Ordinary private sites cannot appear in the public catalogue.
+      if (url && !personalLibraryItemSchema.shape.url.safeParse(url).success) return { cards: [], next: null };
+      const exact = url ? new URL(url).href.split('#')[0] : undefined;
+      const ids = (await catalogIds(tx, exact)).filter(id => !after || id > after);
+      const limit = 5;
+      const heads = await activeHeads(tx, exact ? ids : ids.slice(0, limit));
+      const matches = exact ? heads.filter(source => new URL(source.url).href.split('#')[0] === exact) : heads;
+      const cards = new Map<string, ListedPlatformCard>();
+      const preferences = matches.length ? await readSelections(tx, owner) : [];
+      for (const source of matches) {
+        const edition = await publicEdition(tx, source);
+        if (!edition) continue;
+        const series = sourceSeries(edition.document), pref = preferences.find(row => row.seriesId === series.id);
+        if (!cards.has(series.id)) cards.set(series.id, { seriesId: series.id, name: series.name, publisher: edition.document.publisher,
+          mode: pref?.mode ?? 'platform', enabled: pref?.enabled ?? true, revision: pref?.revision ?? 0,
+          sourceId: source.sourceId, versionId: edition.version.versionId });
+        if (exact && cards.size === limit) return { cards: [...cards.values()], next: source.sourceId };
+      }
+      return { cards: [...cards.values()], next: !exact && ids.length > limit ? ids[limit - 1]! : null };
+    },
+    async joinListedPlatformCard(tx, owner, card) {
+      if (!selections) reject('knowledge_preferences_unavailable', 503);
+      const heads = await activeHeads(tx, await catalogIds(tx));
+      if (!heads.some(row => row.sourceId === card.sourceId && row.activeVersionId === card.versionId)) reject('library_selection_changed');
+      // Membership is versioned. Read only the three identity fields for legacy and renamed series.
+      const refs = heads.map(source => versionRef(source.activeVersionId!));
+      const headers = await tx.getAll(...refs, { fieldMask: ['header.series', 'header.sourceId', 'header.url'] });
+      const editions = [];
+      for (const [index, snapshot] of headers.entries()) {
+        const source = heads[index]!, header = snapshot.get('header');
+        if (!header || snapshot.id !== source.activeVersionId || header.sourceId !== source.sourceId || header.url !== source.url)
+          reject('knowledge_binding_invalid', 503);
+        if (sourceSeries({ sourceId: source.sourceId, url: source.url, series: header.series, title: '' }).id !== card.seriesId) continue;
+        const edition = await publicEdition(tx, source);
+        if (edition) editions.push(selectionEdition(edition));
+      }
+      if (!editions.some(row => row.sourceId === card.sourceId && row.versionId === card.versionId)) reject('library_selection_changed');
+      return selections.save(tx, owner, { action: 'join', seriesId: card.seriesId, expectedRevision: card.revision, editions }, editions);
+    },
     async saveLibraryPreference(tx, owner, change) {
       if (!selections) reject('knowledge_preferences_unavailable', 503);
       const current = await corpus(tx);

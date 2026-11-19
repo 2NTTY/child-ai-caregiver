@@ -16,6 +16,10 @@ const nil = '00000000-0000-0000-0000-000000000000';
 export const librarySelectionScope = (ownerUserId: string) => ({ ownerUserId, workspaceId: nil, childId: nil, storageEpoch: nil });
 export type SavedSeries = z.infer<typeof saved>;
 export interface SelectionEdition { sourceId: string; versionId: string; seriesId: string; scopeHash: string; legacyScopeHash?: string }
+export interface ListedPlatformCard {
+  seriesId: string; name: string; publisher: string; mode: SavedSeries['mode']; enabled: boolean;
+  sourceId: string; versionId: string; revision: number;
+}
 
 export function explicitlyDisabled(rows: SavedSeries[], seriesId: string) {
   return rows.some(row => row.seriesId === seriesId && !row.enabled);

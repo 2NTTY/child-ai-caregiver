@@ -10,6 +10,7 @@ import { selectedLibraryEditions, type PersonalLibraryPage } from '../src/shared
 import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.ts';
 import { canonical } from './firestore-session-codec.ts';
 import { FamilyError } from './family-access.ts';
+import type { ListedPlatformCard } from './knowledge-library-selection.ts';
 
 import type { LibraryArchiveSelection, LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
@@ -19,12 +20,22 @@ const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeS
 /** Public catalogue reads retain the current child and account preconditions. */
 export function createFirestorePersonalLibrary(options: {
   authority: Pick<FirestoreAuthority, 'readScope'> & Partial<Pick<FirestoreAuthority, 'runTransaction'>>;
-  knowledge: Pick<FirestoreKnowledgeStore, 'catalog'> & Partial<Pick<FirestoreKnowledgeStore, 'catalogForUser' | 'saveLibraryPreference'>> & Partial<FirestoreKnowledgeEditionExporter>;
+  knowledge: Pick<FirestoreKnowledgeStore, 'catalog'> & Partial<Pick<FirestoreKnowledgeStore, 'catalogForUser' | 'saveLibraryPreference' | 'platformCards' | 'joinListedPlatformCard'>> & Partial<FirestoreKnowledgeEditionExporter>;
   cipher: StorageCipher; projectId: string; namespace: string;
 }) {
   const aad = (owner: string) => canonical(['yuban-library-cursor', 1, options.projectId, options.namespace, owner]);
   const changed = (): never => { throw new FamilyError(409, 'library_scope_changed'); };
   return {
+    async platformCards(userId: string, childId: string, after?: string, url?: string) {
+      const read = options.knowledge.platformCards;
+      if (!read || !options.authority.runTransaction) throw new Error('library_unavailable');
+      return options.authority.runTransaction(userId, childId, b => read(b.transaction, userId, after, url));
+    },
+    async joinListedCard(userId: string, childId: string, card: ListedPlatformCard) {
+      const join = options.knowledge.joinListedPlatformCard;
+      if (!join || !options.authority.runTransaction) throw new Error('library_unavailable');
+      return options.authority.runTransaction(userId, childId, b => join(b.transaction, userId, card));
+    },
     async exportArchive(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal) {
       const { catalogForUser, exportPublishedEdition } = options.knowledge;
       if (!catalogForUser || !exportPublishedEdition) throw new Error('library_unavailable');

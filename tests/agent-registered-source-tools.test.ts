@@ -26,7 +26,10 @@ test('chat updates the same account card, joins a repeated command and returns o
       }
       return { card };
     },
-  }, scope.userId, 'message-1', '訂閱學校通告 ' + url, async () => true);
+  }, scope.userId, 'message-1', '訂閱學校通告 ' + url, async () => true, [], {
+    childId: scope.childId, library: { platformCards: async () => assert.fail('private host triggered catalogue reads'),
+      joinListedCard: async () => assert.fail('private host triggered a platform join') },
+  });
   const invoke = (name: string, args: Record<string, unknown>, callId = 'call') => {
     const tool = tools.tools.find(candidate => candidate.name === name)!;
     return tool.execute(tool.parameters.parse(args), { scope, runId: 'run', callId, signal: new AbortController().signal });
@@ -48,18 +51,22 @@ test('chat updates the same account card, joins a repeated command and returns o
 test('chat joins only a previously listed platform card through the owner library and never registers its URL privately', async () => {
   const url = 'https://www.fhs.gov.hk/guide', versionId = crypto.randomUUID();
   const scope = { userId: 'parent', workspaceId: 'workspace', childId: 'child', authorizationVersion: '1', dataVersion: '1' };
-  const saved: unknown[] = [];
+  const saved: unknown[] = [], lookups: unknown[] = [];
+  let incomplete = false;
+  const card = { sourceId: 'guide', versionId, seriesId: 'guides', name: '育兒指南', publisher: '家庭健康服務',
+    mode: 'platform' as const, revision: 0, enabled: true };
+  const earlier = { ...card, sourceId: 'earlier', seriesId: 'earlier-guides' };
   const tools = createRegisteredSourceTools({ get: async () => null, list: async () => ({ items: [], nextCursor: null }),
     command: async () => assert.fail('unexpected private registration') }, scope.userId, 'message', '請加入平台來源卡 ' + url, async () => true,
     [], { childId: scope.childId, library: {
-      async page(owner, child) {
+      async platformCards(owner, child, after, lookupUrl) {
         assert.equal(owner, scope.userId); assert.equal(child, scope.childId);
-        return { complete: true, nextCursor: null, items: [{ sourceId: 'guide', versionId, url, title: '育兒指南', publisher: '家庭健康服務',
-          checkedAt: new Date().toISOString(), classification: 'official_guidance', validUntil: null, sourceUpdatedAt: null,
-          series: { id: 'guides', name: '育兒指南', institutionId: 'www.fhs.gov.hk' },
-          preference: { mode: 'platform', revision: 0, eligible: true, enabled: true, selectedVersionId: null } }] };
+        lookups.push([after, lookupUrl]);
+        if (lookupUrl && incomplete) return { cards: [], next: 'unresolved' };
+        if (lookupUrl === url) return { cards: [card], next: null };
+        return after === 'end-first' ? { cards: [earlier, card], next: null } : { cards: [earlier], next: 'end-first' };
       },
-      async save(owner, child, change) { assert.equal(owner, scope.userId); assert.equal(child, scope.childId); saved.push(change); return { revision: 1 }; },
+      async joinListedCard(owner, child, selected) { assert.equal(owner, scope.userId); assert.equal(child, scope.childId); saved.push(selected); return { revision: 1 }; },
     } });
   const invoke = (name: string, args: Record<string, unknown>) => {
     const tool = tools.tools.find(item => item.name === name)!;
@@ -67,10 +74,19 @@ test('chat joins only a previously listed platform card through the owner librar
   };
   assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).status, 'rejected');
   assert.equal((await invoke('register_source_card', { url, name: '育兒指南', kind: 'document' })).status, 'rejected');
-  assert.equal((await invoke('read_platform_source_cards', {})).status, 'succeeded');
+  const page = await invoke('read_platform_source_cards', {});
+  const cursor = (page.data as { nextCursor: string }).nextCursor;
+  assert.ok(cursor); assert.deepEqual(lookups, [[undefined, url], [undefined, undefined]]);
+  assert.equal((await invoke('read_platform_source_cards', { cursor: 'invented' })).status, 'rejected');
+  const next = await invoke('read_platform_source_cards', { cursor });
+  assert.deepEqual(next.data, { cards: [{ seriesId: 'guides', name: card.name, publisher: card.publisher, mode: 'platform', enabled: true }], nextCursor: null });
+  assert.deepEqual(lookups.at(-1), ['end-first', undefined]);
   assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).reference, 'guides');
-  assert.deepEqual(saved, [{ action: 'join', seriesId: 'guides', expectedRevision: 0, editions: [{ sourceId: 'guide', versionId }] }]);
+  assert.deepEqual(saved, [card]);
   assert.equal(tools.operations()[0]?.tool, 'join_platform_source_card');
+  incomplete = true;
+  const blocked = await invoke('register_source_card', { url, name: '育兒指南', kind: 'document' });
+  assert.deepEqual(blocked.data, { reason: 'platform_url_lookup_incomplete' });
 });
 
 test('formal chat advertises source settings only in the account owner conversation', () => {

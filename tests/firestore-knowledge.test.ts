@@ -262,6 +262,44 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
 });
 
+test('chat pages bound publication reads, match a later URL directly and bind only the selected series across pages', async () => {
+  const ids = Array.from({ length: 8 }, (_, i) => 'guide-' + i), f = fixture(ids);
+  const series = { id: 'shared-guides', name: 'Shared guides', institutionId: 'www.fhs.gov.hk' };
+  const versions: Awaited<ReturnType<typeof f.publish>>[] = [];
+  for (const id of ids) versions.push(await f.publish({ ...source(id), ...(id === ids[0] || id === ids[7] ? { series } : {}) }));
+  const store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) });
+  type Tx = import('@google-cloud/firestore').Transaction;
+  const reads: string[] = [];
+  const run = <T>(fn: (tx: Tx) => Promise<T>) => f.database.runTransaction(tx => {
+    const measured = { ...tx, get: async (ref: any) => { reads.push(ref.path); return tx.get(ref); },
+      getAll: (...args: any[]) => {
+        const mask = args.at(-1)?.fieldMask;
+        const refs = mask ? args.slice(0, -1) : args;
+        reads.push(...refs.map(ref => (mask ? 'projected:' : '') + ref.path));
+        return tx.getAll(...refs);
+      } } as Tx;
+    return fn(measured);
+  });
+  const fullVersions = () => reads.filter(path => path.startsWith('synthetic_knowledge_knowledge_versions/')).map(path => path.split('/').at(-1));
+  const first = await run(tx => store.platformCards(tx, 'parent'));
+  assert.equal(first.next, ids[4]); assert.equal(first.cards.length, 5); assert.equal(fullVersions().length, 5);
+  reads.length = 0;
+  const next = await run(tx => store.platformCards(tx, 'parent', first.next!));
+  assert.equal(next.next, null); assert.equal(fullVersions().length, 3);
+  reads.length = 0;
+  assert.deepEqual(await run(tx => store.platformCards(tx, 'parent', undefined, 'https://school.example/private')), { cards: [], next: null });
+  assert.equal(reads.length, 0);
+  const match = await run(tx => store.platformCards(tx, 'parent', undefined, versions[6]!.document.url + '#example'));
+  assert.equal(match.cards[0]!.sourceId, ids[6]); assert.deepEqual(fullVersions(), [versions[6]!.versionId]);
+  reads.length = 0;
+  const selected = next.cards.find(card => card.seriesId === series.id)!;
+  assert.equal(selected.sourceId, ids[7]);
+  await run(tx => store.joinListedPlatformCard(tx, 'parent', selected));
+  assert.deepEqual(fullVersions().sort(), [versions[0]!.versionId, versions[7]!.versionId].sort());
+  const followed = (await store.catalogForUser('parent', null)).items.filter(item => item.preference?.mode === 'follow');
+  assert.deepEqual(followed.map(item => item.preference!.selectedVersionId), [versions[0]!.versionId, versions[7]!.versionId]);
+});
+
 test('ordinary catalogue and chat reads follow platform publications without writes or cross-series exclusions', async () => {
   const f = fixture(['one', 'two', 'new-source']), store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) });
   const read = async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: 'parent' })).map(hit => hit.versionId).sort();
