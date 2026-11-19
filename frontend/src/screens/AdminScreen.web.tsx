@@ -1,3 +1,4 @@
+import { SiteCompanion } from '../components/companion/SiteCompanion';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -180,7 +181,7 @@ export default function AdminScreen() {
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
-  return <PageFrame title="網站管理">
+  return <View style={{flex:1}}><PageFrame title="網站管理">
     <View style={styles.masthead}>
       <View style={styles.identity}>
         <View style={[styles.brandMark, compact && styles.compactMark]}><AppIcon name="shield-check-outline" size={compact ? 23 : 30} color={colors.ink} /></View>
@@ -476,7 +477,7 @@ export default function AdminScreen() {
       </View>
       </AppTabPanel>
     </>}
-  </PageFrame>;
+  </PageFrame>{visible && <SiteCompanion />}</View>;
 }
 const styles = StyleSheet.create({ card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
   masthead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.ink, borderRadius: 18 },

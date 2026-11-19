@@ -1,3 +1,4 @@
+import { useSavedPageItem } from '../companion/CompanionSelection';
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon } from "../AppIcon";
 import { AppCheckbox } from "../AppCheckbox";
@@ -71,6 +72,8 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const contextChanged = previousContext.current !== contextKey;
   const selected = selectedKey === null || contextChanged ? current : items.find(item => item.key === selectedKey) ?? null;
   const archive = selected?.snapshot ?? null;
+  useSavedPageItem('document', model.childId ?? '', archive?.document?.id ?? '', archive?.document?.version ?? 0,
+    active && authorized && !!archive?.document && !!model.childId, archive?.id);
   const exportItem = items.find(item => item.key === exportKey) ?? null;
   const sectionRefs = useRef(new Map<string, View>());
   const reportRef = useRef<View>(null);
