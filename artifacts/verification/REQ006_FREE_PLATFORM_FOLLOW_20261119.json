@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-19",
+  "timezone": "Asia/Hong_Kong",
+  "base": "ca3492d2e3aebe94fc7187e66f49796eb2e4fcdb",
+  "candidate": "203cb61c1771fcda9c97d8b06afdffa37cca3f21",
+  "web": {
+    "verifiedImplementation": "48b856b9f0a3d6c7c8f4171a12c0e03d9766e53e",
+    "environment": "Isolated Firebase Auth and Firestore emulators, local Expo Web, Node 24.22.1, Edge 157.0.4341.60",
+    "sourceId": "fhs-solid-food",
+    "seriesId": "fhs-infant-feeding",
+    "publishedFixtureVersionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+    "path": "Selected child in chat, opened the platform source library with the keyboard, clicked the series and its free join button, and read back the authenticated library.",
+    "result": "The series showed follow mode. The selected version ID and version hash matched the existing local publication.",
+    "libraryWritesFromClick": 1,
+    "concurrentJoinsAfterReturningToPlatformMode": { "requests": 2, "returnedRevisions": [5, 5] },
+    "newPrivateCards": 0,
+    "externalModelRequests": 0,
+    "modelEnabled": false,
+    "fixture": "Existing repository source data, local publication and synthetic stored vectors."
+  },
+  "ownerAndVersionChecks": {
+    "scope": "Production client and personal library HTTP handler with an in-memory Firestore transaction fixture.",
+    "observed": [
+      "First join added one library preferences record; a second identical HTTP request changed no stored data.",
+      "The other account retained its separate selection. A later public edition became available to the follower.",
+      "Repeated join preserved an imported older fixed version, its disabled state, and its revision.",
+      "The handler rejected stale version IDs on first join and rejected a withdrawn source."
+    ]
+  },
+  "agent": {
+    "scope": "Formal Firestore Agent assembly, ADK Runner, encrypted result storage in a transaction fixture and frontend result projection. The provider and catalogue were scripted.",
+    "sequence": ["load_capabilities", "read_platform_source_cards", "join_platform_source_card", "present_answer"],
+    "scriptedModelResponses": 4,
+    "externalModelRequests": 0,
+    "persistedReceiptAndSeriesLink": true,
+    "privateRegistrationOfListedUrlRejected": true
+  },
+  "catalogueReview": {
+    "verifiedImplementation": "203cb61c1771fcda9c97d8b06afdffa37cca3f21",
+    "targetedTestsPassed": 4,
+    "eightDocumentFixture": {
+      "fullEditionReadsByBrowsePage": [5, 3],
+      "fullEditionReadsForLaterUrl": 1,
+      "catalogueReadsForPrivateHost": 0,
+      "fullEditionReadsForSelectedTwoDocumentSeries": 2,
+      "siblingOnOtherPageIncluded": true,
+      "repeatedSeriesOmittedOnContinuation": true,
+      "incompleteUrlLookupPreventsPrivateRegistration": true
+    },
+    "firebaseEmulator": {
+      "cardsReturnedByPage": [0, 1],
+      "toolSummaryFields": ["seriesId", "name", "publisher", "mode", "enabled"],
+      "selectedSeriesHeaderFieldMask": ["header.series", "header.sourceId", "header.url"],
+      "unchangedPersonalRevision": 5
+    },
+    "scriptedRunner": {
+      "sequence": ["load_capabilities", "read_platform_source_cards", "read_platform_source_cards", "join_platform_source_card", "present_answer"],
+      "simulatedModelResponses": 5,
+      "externalModelRequests": 0,
+      "reopenedReceiptAndSeriesLink": true
+    }
+  },
+  "checks": {
+    "serverAndZipTests": { "passed": 32, "files": ["tests/firestore-knowledge.test.ts", "tests/firestore-personal-library.test.ts", "tests/agent-registered-source-tools.test.ts", "tests/library-citation-roundtrip.test.mjs"] },
+    "frontendTests": { "passed": 26, "files": ["frontend/scripts/memory-reference.test.mjs", "frontend/scripts/memory-source-display.test.mjs"] },
+    "typescript": ["tsconfig.server.json", "frontend/tsconfig.json"]
+  },
+  "earlierAttempts": [
+    "The initial HTTP regression returned 400 for an unknown join shape; after implementation a stale edition returned 409.",
+    "The new chat tools were initially absent. The completed run returned the server receipt and a link to the series.",
+    "The sandbox could not start the emulator hub. The isolated runner started with sandbox approval.",
+    "Firebase Auth's local emulator banner intercepted the pointer on the chat footer. The same accessible link opened with Enter.",
+    "The browser traffic assertion initially counted POST care/search as a write. The next run classified that exact read endpoint separately and still required a single library mutation."
+  ],
+  "notExercised": ["Production deployment", "Android device", "Paid natural-language model call"]
+}
