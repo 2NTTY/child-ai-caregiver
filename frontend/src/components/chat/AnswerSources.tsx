@@ -17,6 +17,10 @@ type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
 export type LocateAnswerSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => void;
 const classificationLabels = CHAT_CLASSIFICATION_LABELS;
+function liveSourceLabel(source: ChatCitationView): string {
+  const kind = source.liveSourceKind ? CHAT_LIVE_SOURCE_KIND_LABELS[source.liveSourceKind] : classificationLabels[source.classification];
+  return `${CHAT_LIVE_ACQUISITION_BADGE} · ${kind}`;
+}
 function sourceTime(value: string | null): string {
   return !value ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
     ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`
@@ -93,7 +97,7 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
   const original = source.readSegments?.filter(Boolean) ?? [];
   return <AppDialog visible accessibilityLabel={source.title} onDismiss={onClose}>
     <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
-      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? CHAT_LIVE_ACQUISITION_BADGE : classificationLabels[source.classification], source.liveSourceKind ? CHAT_LIVE_SOURCE_KIND_LABELS[source.liveSourceKind] : null, page].filter(Boolean).join(' · ')}>
+      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? liveSourceLabel(source) : classificationLabels[source.classification], page].filter(Boolean).join(' · ')}>
         {source.section ? <Text style={styles.section}>{source.section}</Text> : null}
         {source.excerpt ? <View style={styles.quote}>
           {source.excerptKind === 'visual_page' ? <Text style={styles.meta}>圖像說明（助手整理）</Text>
@@ -158,7 +162,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           {sources.map((source, i) => {
             const page = pageLabel(source);
             const isLive = source.acquisition === 'live';
-            const liveLabel = isLive ? `${CHAT_LIVE_ACQUISITION_BADGE}${source.liveSourceKind ? ` · ${CHAT_LIVE_SOURCE_KIND_LABELS[source.liveSourceKind]}` : ''}` : null;
+            const liveLabel = isLive ? liveSourceLabel(source) : null;
             const preview = source.excerptKind === 'visual_page' ? '' : source.excerpt.replace(/\s+/gu, ' ').trim();
             return <Pressable key={source.id} testID={`citation-card-${i + 1}`}
               accessibilityRole="button" accessibilityLabel={`來源【${i + 1}】${liveLabel ? ' · ' + liveLabel : ''}：${source.title}${page ? ' · ' + page : ''}`}

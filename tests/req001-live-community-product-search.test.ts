@@ -675,6 +675,22 @@ test('Frontend AnswerSources & CitationMarker distinguish live sources with non-
     cautions: undefined,
   };
 
+  // The production official reader supplies the evidence class without an optional source kind.
+  const officialLiveView = { ...libView, acquisition: 'live' as const, seriesId: undefined };
+  for (const selectedId of [null, officialLiveView.id]) {
+    const view = createLoader(baseOverrides(selectedId))('frontend/src/components/chat/AnswerSources.tsx').AnswerSources({
+      sources: [officialLiveView], children: '官方原文【1】。',
+    });
+    const nodes = renderCollectNodes(view);
+    if (selectedId === null) {
+      const card = nodes.find(item => item.props?.testID === 'citation-card-1');
+      assert.ok(card?.props.accessibilityLabel.includes('即時搜尋 · 官方指引'));
+    } else {
+      const detail = nodes.find(item => item.type === 'SourceDocumentCard');
+      assert.ok(detail?.props.byline.includes('即時搜尋 · 官方指引'));
+    }
+  }
+
   // Test native & web CitationMarker non-color + moderate color cue.
   const nativeMarkerMod = createLoader(baseOverrides(null))('frontend/src/components/chat/CitationMarker.tsx');
   const nativeLiveTree = nativeMarkerMod.CitationMarker({ number: 1, label: '查看引用【1】（即時搜尋）', live: true, onPress() {} });
