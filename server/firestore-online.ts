@@ -36,7 +36,7 @@ const cursorSchema = z.object({ scope: workRecoveryScopeSchema, changeSeq: decim
   createdAt: z.iso.datetime({ offset: true }), childId: uuid }).strict();
 const taskPath = /^\/api\/children\/([0-9a-f-]{36})\/tasks(?:\/([0-9a-f-]{36})\/change)?$/iu;
 export interface FirestoreChildrenPage { children: Child[]; nextCursor: string | null }
-export interface FirestoreChildrenQuery { list(userId: string, cursor?: string | null): Promise<FirestoreChildrenPage> }
+export interface FirestoreChildrenQuery { list(userId: string, cursor?: string | null, pageSize?: number): Promise<FirestoreChildrenPage> }
 export interface FirestoreTasksQuery {
   forSharedSpace?(spaceId: string): FirestoreTasksQuery;
   list(userId: string, childId: string, afterId?: string | null): Promise<TaskPage>;
@@ -131,7 +131,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   const sealOutbox = (_id: string, scope: WorkRecoveryScope, job: FirestoreReminderOutbox) => sealFirestoreReminderOutbox(data, scope, job);
   const reminderView = (binding: FirestoreAuthorityTransaction, taskIds: string[]): Promise<Pick<TaskPage, 'reminders' | 'work' | 'workerEnabled'>> =>
     options.reminders ? options.reminders.view(binding, taskIds) : Promise.resolve({ workerEnabled: false });
-  const children: FirestoreChildrenQuery = { async list(userId, cursor = null) {
+  const children: FirestoreChildrenQuery = { async list(userId, cursor = null, pageSize = 50) {
+    if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) domainReject('invalid_page_size', 400);
     return authority.runTransaction(userId, null, async binding => {
       let after: z.infer<typeof cursorSchema> | null = null;
       if (cursor !== null) {
@@ -143,7 +144,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       }
       const tags = data.tags(binding.scope);
       let query = data.collection('children').where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
-        .where('userTag', '==', tags.userTag).orderBy('createdAt', 'asc').orderBy('childId', 'asc').limit(51);
+        .where('userTag', '==', tags.userTag).orderBy('createdAt', 'asc').orderBy('childId', 'asc').limit(pageSize + 1);
       if (after) query = query.startAfter(after.createdAt, after.childId);
       const page = await binding.transaction.get(query), result: Child[] = [];
       for (const [index, row] of page.docs.entries()) {
@@ -154,11 +155,11 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         const child = await binding.readChild(childId);
         if (child) {
           if (firestoreDomainHash(child) !== firestoreDomainHash(projected)) domainReject('projection_binding', 500);
-          if (index < 50) result.push(child);
+          if (index < pageSize) result.push(child);
         }
       }
-      const last = page.docs[Math.min(page.docs.length, 50) - 1];
-      const nextCursor = page.docs.length > 50 ? Buffer.from(JSON.stringify(data.seal('children-cursor', 'children', binding.scope, cursorSchema,
+      const last = page.docs[Math.min(page.docs.length, pageSize) - 1];
+      const nextCursor = page.docs.length > pageSize ? Buffer.from(JSON.stringify(data.seal('children-cursor', 'children', binding.scope, cursorSchema,
         { scope: binding.scope, changeSeq: binding.changeSeq, filter: 'children', createdAt: last.get('createdAt'), childId: last.get('childId') }))).toString('base64url') : null;
       return { children: result, nextCursor };
     });

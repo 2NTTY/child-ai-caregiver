@@ -24,6 +24,7 @@ import { handleFamilyDocumentRequest } from "./family-document-api.ts";
 import type { FamilyDocumentStore } from "./family-document-store.ts";
 import { handleFirebasePhotoRequest, type FirebasePhotoApiPort } from "./firebase-photo-api.ts";
 import { handlePersonalLibraryRequest, type PersonalLibrary } from "./personal-library-api.ts";
+import { displayAccountMessage } from './agent-account-directory.ts';
 import { handleChatRequest } from "./chat-api.ts";
 import type { ChatStore } from "./chat.ts";
 import type { FirestoreCareStore } from './firestore-care.ts';
@@ -594,7 +595,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const result = seen ? await options.chat.markSeenForUser?.(uid,child,id) : await options.chat.getOriginalMessageForUser?.(uid,child,id);
         if (!result) throw new RequestError('not_found',404);
         if ((await auth.getSession({headers:request.headers}))?.user.id !== uid) throw new RequestError('identity_changed',409);
-        return json(seen ? result : {message:result});
+        if (seen || !('text' in result)) return json(result);
+        const message = await displayAccountMessage(result, uid, options.product?.store.get);
+        if ((await auth.getSession({headers:request.headers}))?.user.id !== uid) throw new RequestError('identity_changed',409);
+        return json({ message });
       }
       const summaryPath = /^\/api\/children\/([0-9a-f-]{36})\/summary$/iu.exec(path);
       if (summaryPath && options.summary) {
@@ -625,7 +629,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
-        const response = await handleChatRequest(request, userId, options.chat);
+        const response = await handleChatRequest(request, userId, options.chat, options.product?.store.get);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }

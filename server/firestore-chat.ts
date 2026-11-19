@@ -1,3 +1,5 @@
+import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
+import { usedAccountDirectory } from './agent-account-directory.ts';
 import { messageText, firestoreChatMessageStorageSchema, type StoredChatMessage } from './chat-message-schema.ts';
 import type { ChatDeliverySourceVersion } from '../src/shared/chat-delivery-review.ts';
 import { chatDeliveryContentHash } from './chat-delivery-review.ts';
@@ -300,7 +302,8 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
           saved = { ...message, agentRunId: runId, officialHelp: officialHelpFromTools(run.result?.tools ?? []) };
           const result = run.result;
           deliver = run.state === 'completed' && result?.status === 'completed' && result.outcome !== 'no_action'
-            && !!result.text.trim() && (saved.text === result.text || saved.text.startsWith(result.text + '\n\n'));
+            && !!result.text.trim() && (saved.text === result.text || saved.text.startsWith(result.text + '\n\n')
+              || saved.text === ACCOUNT_DIRECTORY_ANSWER && usedAccountDirectory(result));
           memorySources = recallSources(result?.deliveryReview?.sourceVersions ?? []);
           if (deliver || memorySources.length) {
             if (Date.now() >= await memoryDeadline(binding, { ...saved, memorySources })) domainReject('source_changed');

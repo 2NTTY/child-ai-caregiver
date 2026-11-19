@@ -3,6 +3,7 @@ import {
   type HighWatermarkAlert,
   type HighWatermarkPersistenceErrorInfo,
 } from './agent-high-watermark.ts';
+import { directoryAnswerCurrent, type PrivateRunReader } from './agent-account-directory.ts';
 import { createChatFileAgentReader } from './chat-file-agent.ts';
 import type { AgentSourceCards } from './agent-registered-source-tools.ts';
 import { createMixedTaskBatches } from './firestore-mixed-task-batches.ts';
@@ -168,7 +169,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
   const mixedTaskBatches=createMixedTaskBatches({...options,runs:services.runs});
-  const agent = createProductAgent({ runtime, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
+  const agent = createProductAgent({ runtime, accountChildren: options.online.children, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge,
     registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments, platformLibrary: options.platformLibrary });
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
@@ -336,6 +337,10 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     authorize: async () => await input.authorize() && await summaryAuthority.runTransaction(input.userId, input.childId,
       async b => (await summaryWork.readEntryGate(b)).kind !== 'blocked') });
   const summarySessions = { prepareContentErasure: nativeSessionService.prepareContentErasure.bind(nativeSessionService) };
-  return { ...services, routing, runtime, agent, mixedTaskBatches, voiceTranscripts, transcribeVoice, summaryWork, maintainSummaryPart, summarySessions,
+  const get: PrivateRunReader = async (userId, childId, runId) => {
+    const result = await services.store.get(userId, childId, runId);
+    return result && await directoryAnswerCurrent(options.online.children, userId, result) ? result : null;
+  };
+  return { ...services, store: { ...services.store, get }, routing, runtime, agent, mixedTaskBatches, voiceTranscripts, transcribeVoice, summaryWork, maintainSummaryPart, summarySessions,
     maintainSummary, summaryScan, highWatermarkMonitor };
 }

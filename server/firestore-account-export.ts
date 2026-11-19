@@ -1,3 +1,5 @@
+import { usedAccountDirectory } from './agent-account-directory.ts';
+import { firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { avatarBinding, type AvatarHeadRecord } from './avatar-data.ts';
 import { avatarPublicState } from './avatar-policy.ts';
 import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
@@ -236,6 +238,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const message = firestoreChatMessageSchema.parse(value);
             items.push(packageOptions?.includeOriginalChatPosition && !classRequest ? { ...message, originalPosition:{ workspaceId:binding.scope.workspaceId,
               sortKey:domainParse(z.string().regex(/^[0-9]{19}$/u), row.get('sortKey'), 'export_scope_changed', 409) } } : message);
+          } else if (section === 'agent_runs' && (input.childId || classRequest || packageOptions)) {
+            const run = firestoreAgentRunSchema.parse(value);
+            if (!classRequest && !(run.result && usedAccountDirectory(run.result))) items.push(value);
           } else if (section === 'agent_work') {
             const work = await binding.readWork(context.id); if (!work) domainReject('export_scope_changed'); items.push(work);
           } else if (section === 'document_content' || section === 'document_versions') {

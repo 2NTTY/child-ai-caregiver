@@ -1,3 +1,4 @@
+import { displayAccountMessage, type PrivateRunReader } from './agent-account-directory.ts';
 import type { ChatStore } from "./chat.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
@@ -16,7 +17,7 @@ function validText(value: unknown): value is string {
 }
 
 /** userId must come from a freshly checked server session, never request input. */
-export async function handleChatRequest(request: Request, userId: string | null, store: Pick<ChatStore, "listForUser" | "createUserMessageForUser" | "listImportedForUser" | "getImportedForUser">): Promise<Response> {
+export async function handleChatRequest(request: Request, userId: string | null, store: Pick<ChatStore, "listForUser" | "createUserMessageForUser" | "listImportedForUser" | "getImportedForUser">, readRun?: PrivateRunReader): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   const url = new URL(request.url), imported = importedPath.exec(url.pathname);
   if (imported) {
@@ -45,7 +46,8 @@ export async function handleChatRequest(request: Request, userId: string | null,
       return apiError("invalid_input", "請重新讀取聊天歷史。", 400);
     const page = await store.listForUser(userId, childId, before);
     if (!page) return apiError("not_found", "找不到資料。", 404);
-    return jsonResponse(request.headers.get('x-chat-proactive') === '1' ? page : {...page,messages:page.messages.filter(message => !message.proactive)});
+    const visible = request.headers.get('x-chat-proactive') === '1' ? page.messages : page.messages.filter(message => !message.proactive);
+    return jsonResponse({ ...page, messages: await Promise.all(visible.map(message => displayAccountMessage(message, userId, readRun))) });
   }
   if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
 
