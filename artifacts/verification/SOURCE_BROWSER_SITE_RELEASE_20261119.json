@@ -1,0 +1,34 @@
+{
+  "dateHongKong": "2026-11-19",
+  "base": "1dbde645641eb64f76ac9b22d8acb205eb31c82d",
+  "sourceBrowserDependency": "ab3ede5689331f043639bdb85d8680afbb341ab4",
+  "local": {
+    "environment": "Windows Docker Desktop, Linux/amd64 containers, network disabled for the worker fixture and real renderer",
+    "rendererDigest": "sha256:83f2861d7cc51a0f71fe6fdeca986ac3076b9ab5dbaa8966ec39258455690cf9",
+    "digestScope": "Local Docker image store only. Production publication produces a registry receipt for the integrated commit.",
+    "contentBytes": 187394569,
+    "unpackedLayerBytes": 462491648,
+    "coldBytes": 649886217,
+    "composeChecks": [
+      "Started a dedicated renderer by exact digest and attached the existing worker image running a fixture process as UID 1000. Docker inspect showed the named volume was read-only on the worker. Its Unix socket GET /healthz returned 200 ready.",
+      "Repeated the two Compose up operations and confirmed both container IDs were stable.",
+      "Recreated the worker with the overlay and confirmed a new container ID and the same 200 ready response.",
+      "Switched to a pre-health-endpoint renderer digest and observed HTTP 400 through the worker. Restored the prior digest locally, confirmed live image ID matched, the worker container ID stayed the same and health returned 200 ready.",
+      "Recreated the worker with the original mount-free configuration and verified the socket mount was absent. Removed both fixture projects and their isolated volume."
+    ],
+    "stateMachine": "3 Linux unittest scenarios in deploy/site-release/tests/test_source_browser.py exercised the actual receiver override and operator journal with isolated filesystem, simulated GCP/Docker boundaries, capacity refusal before pull, interrupted first attach, replay, rollback of an unavailable renderer and failed candidate recovery. All passed.",
+    "existingReceiver": "All 12 existing deploy/site-release/tests/test_receiver.py tests passed.",
+    "shell": "Git Bash syntax check passed."
+  },
+  "production": {
+    "observedAt": "2026-11-19T13:36:30+08:00",
+    "receipt": "r44465380361-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44465380361",
+    "worker": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+    "masterChecked": "fcb231f30cc035a44987560fa1df609f395df414",
+    "sidecarOnMasterAtCheck": false,
+    "vmMutation": false,
+    "registryPush": false
+  },
+  "handoff": "docs/DEPLOYMENT.md#source-browser"
+}

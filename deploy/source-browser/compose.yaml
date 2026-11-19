@@ -1,0 +1,33 @@
+name: yuban-source-browser
+services:
+  source-browser:
+    image: ${SOURCE_BROWSER_IMAGE:?Set the verified source browser image reference}
+    user: '1000:1000'
+    init: true
+    network_mode: none
+    ipc: private
+    read_only: true
+    cpus: 1
+    mem_limit: 384m
+    memswap_limit: 384m
+    pids_limit: 160
+    shm_size: 64m
+    tmpfs: ['/tmp:size=96m,mode=1777,nosuid,nodev']
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./seccomp.json
+    cap_drop: [ALL]
+    volumes:
+      - source-browser-ipc:/run/source-browser
+    logging: {driver: none}
+    healthcheck:
+      test: [CMD, /usr/bin/test, -S, /run/source-browser/render.sock]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    stop_grace_period: 30s
+volumes:
+  source-browser-ipc:
+    external: true
+    name: ${SOURCE_BROWSER_IPC_VOLUME:-yuban-p1_source-browser-ipc}

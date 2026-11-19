@@ -1,6 +1,9 @@
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
+import { createRegisteredSourceTools, type AgentSourceCards } from './agent-registered-source-tools.ts';
+import { createRegisteredDocumentTools } from './agent-registered-document-tools.ts';
+import type { SourceReading } from '../src/shared/source-card-reading.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
 import { officialHelpIdSchema, toAgentProgressSource, type AgentProgressSource, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
@@ -23,7 +26,7 @@ import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowle
 import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descriptions.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
-import { AgentStopped } from "./agent-budget.ts";
+import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
@@ -127,6 +130,8 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  registeredSourceCards?: AgentSourceCards;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedMaterials?: {
     search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;
@@ -173,6 +178,11 @@ export function createProductAgentTools(options: {
   for (const identifier of options.knownPrivateIdentifiers ?? []) noteKnownPrivateIdentifier(identifier);
   const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
+  const registeredSources = options.registeredSourceCards && options.currentMessageId && options.trustedUserMessage
+    && !options.background && !options.mixedTasks && !options.reviewedGrowthPresentation && options.visibility !== 'family'
+    ? createRegisteredSourceTools(options.registeredSourceCards, scope.userId, options.currentMessageId, options.trustedUserMessage, authorize,
+      options.recentQuoteSources?.filter(message => message.authorUserId === scope.userId && message.role === 'user').map(message => message.text))
+    : undefined;
   const liveEvidence = new Map<string, LiveSourceCitation>();
   let originalQuotes = new Map<string, string>();
   const liveReader = options.background || options.mixedTasks || options.reviewedGrowthPresentation || options.visibility === 'family' ? undefined
@@ -185,6 +195,7 @@ export function createProductAgentTools(options: {
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
+  const accountReadings = new Map<string, SourceReading>();
   const precedingHistoryMatch = new Map<string, string>();
   const historyQuoteHandles = new Map<string, string>();
   const registerHouseholdRead: RegisterHouseholdRead = (kind, item, reread) => {
@@ -298,7 +309,7 @@ export function createProductAgentTools(options: {
     budget, authorize, embeddings: run.embeddings });
   async function refreshVerifiedOperations(includePending = true): Promise<ChatDeliveryVerifiedOperation[]> {
     if (options.background) { selectedVerifiedOperations = []; return []; }
-    const verified: ChatDeliveryVerifiedOperation[] = [];
+    const verified: ChatDeliveryVerifiedOperation[] = registeredSources?.operations() ?? [];
     if (options.actions && typeof options.actions.receipts === "function") {
       const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
       if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
@@ -478,6 +489,8 @@ export function createProductAgentTools(options: {
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
+    const citedLocations = new Set(parsed.paragraphs.flatMap(p => p.citationIds).filter(id => accountReadings.has(id)));
+    if (citedLocations.size > 6) throw new FamilyError(400, 'invalid_citation');
     const candidateDraft: ChatDeliveryDraft = {
       ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
@@ -893,6 +906,26 @@ export function createProductAgentTools(options: {
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
     ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
+  if (registeredSources) tools.splice(tools.length - 1, 0, ...registeredSources.tools);
+  if (registeredSources && options.registeredSourceDocuments)
+    tools.splice(tools.length - 1, 0, ...createRegisteredDocumentTools(options.registeredSourceDocuments, scope.userId, runId, authorize,
+      (id, target, source, valid) => {
+        selectedEvidence.set(id, source);
+        accountReadings.set(id, target);
+        householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
+      }, attemptKey => async (query, authorizeSource) => {
+        if (!run.embeddings) throw new AgentStopped('unavailable');
+        const request = { task: 'RETRIEVAL_QUERY' as const, text: query };
+        const permitted = async () => await authorize() && await authorizeSource();
+        if (!await budget.wait(permitted)) throw new AgentStopped('unauthorized');
+        if (budget.durable) {
+          if (!attemptKey) throw new AgentStopped('unavailable');
+          await budget.admit({ kind: 'embedding', key: attemptKey, fingerprint: agentBudgetFingerprint(request), units: 1 });
+          await budget.checkDurable();
+        } else budget.take('queryEmbeddings');
+        return run.embeddings.embed(request, { kind: 'query_embedding', actorId: scope.userId, operationId: runId },
+          budget.signal, permitted, attemptKey ? budget.queryEmbeddingDailyUsage(attemptKey) : undefined);
+      }));
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
@@ -1076,9 +1109,11 @@ export function createProductAgentTools(options: {
       if (answer.kind === "operation" && ids.length === 0 && options.actions) {
         const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
         if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
-        if (receipts.length) {
+        const sourceReceipts = registeredSources?.operations() ?? [];
+        if (receipts.length || sourceReceipts.length) {
           selectedVerifiedOperations = [];
-          serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          const saved = receipts.length ? [`已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`] : [];
+          serverReceiptText = [...saved, ...sourceReceipts.map(receipt => receipt.summary!)].join('\n');
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }
@@ -1126,7 +1161,8 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
-      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), privateSourceCitations, retrievalMode: mode };
+      const sourceCardReadings = ids.flatMap(id => accountReadings.has(id) ? [accountReadings.get(id)!] : []);
+      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;

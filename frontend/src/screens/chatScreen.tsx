@@ -1,5 +1,6 @@
 import { BackgroundSurface, useCustomBackground } from "../components/appearance/BackgroundSurface";
 import { ChatFileMessage } from '../production/ChatFileMessage';
+import { RegisteredReadingCard } from '../production/RegisteredReadingCard';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import {
@@ -274,6 +275,14 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
               ? <Text accessibilityRole="alert" style={styles.warning}>這次回覆未完成：{run.stopReasonLabel}。</Text> : null}
           </>}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
+            {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
+              <RegisteredReadingCard key={JSON.stringify(target)} target={target} active={displayedMessages.some(item => item.id === message.id)} />)}
+            {message.role === 'model' && sourcesMatch && run?.sourceCardLinks?.map(link =>
+              <ChatAction key={link.cardId} label={link.authorize ? '前往來源卡登入' : '查看來源卡'} compact={compact}
+                accessibilityLabel={link.authorize ? '前往這張來源卡填寫登入資料' : '查看這次操作的來源卡'}
+                onPress={() => navigate(() => router.push({ pathname: '/memory', params: {
+                  sourceCard: link.cardId, ...(link.authorize ? { sourceAction: 'authorize' } : {}),
+                } }), 'workspace')} />)}
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
               onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}

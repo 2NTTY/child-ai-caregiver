@@ -1,4 +1,5 @@
 import { librarySelectionRecord, librarySelectionScope } from './knowledge-library-selection.ts';
+import { sourceCardRecord, sourceCredentialRecord, sourceOperationRecord, sourceRecordId, sourceCardId, sourceRevision, sourceCardMetadata } from './registered-source-records.ts';
 import { messageSortMetadata } from './notification-message-content.ts';
 import { z } from 'zod';
 import { FirestoreDomainData, firestoreDomainHash, FIRESTORE_TASK_DISPATCH_SCOPE as SYSTEM } from './firestore-domain-data.ts';
@@ -23,6 +24,9 @@ import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from './kno
 import { transferBatchSchema, transferResultSchema, transferItemId } from './knowledge-transfer-records.ts';
 
 export const operationRestoreSchemas = {
+  'registered-source-card': { suffix: 'source_cards', schema: sourceCardRecord },
+  'registered-source-operation': { suffix: 'source_card_ops', schema: sourceOperationRecord },
+  'registered-source-credential': { suffix: 'source_credentials', schema: sourceCredentialRecord },
   'knowledge-transfer-batch': { suffix: 'knowledge_transfers', schema: transferBatchSchema },
   'knowledge-transfer-result': { suffix: 'knowledge_transfers', schema: transferResultSchema },
   'knowledge-index-batch': { suffix: 'knowledge_index_batches', schema: indexBatchSchema },
@@ -72,7 +76,7 @@ export function isOperationRestoreKind(kind: string): kind is OperationRestoreKi
 // Historical deliveries and their references retain original identity. They never become new work.
 export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference', 'handover-export', 'handover-upload',
   'knowledge-index-batch', 'knowledge-index-receipt', 'knowledge-transfer-batch', 'knowledge-transfer-result']);
-export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
+export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer', 'registered-source-credential']);
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore operation binding rejected'), { code: 'restore_binding', status: 409 }); }
 function same(a: unknown, b: unknown) { return firestoreDomainHash(a) === firestoreDomainHash(b); }
 
@@ -85,6 +89,21 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
   const metadata: Record<string, unknown> = {};
   check(context.family === 'domain' && context.envelopeVersion === 1 && version >= 1);
   switch (kind) {
+    case 'registered-source-card': {
+      const row = sourceCardRecord.parse(raw);
+      check(scope.childId === SYSTEM.childId && id === sourceRecordId(scope.ownerUserId, sourceCardId(row)) && version === sourceRevision(row));
+      const next = target && !row.removed ? { ...row, lease: null, finished: null, card: { ...row.card, enabled: false, credentialRef: null, nextCheckAt: null } } : row;
+      value = next; Object.assign(metadata, sourceCardMetadata(outputScope, next)); break;
+    }
+    case 'registered-source-operation': {
+      const receipt = sourceOperationRecord.parse(raw);
+      check(scope.childId === SYSTEM.childId && id === sourceRecordId(scope.ownerUserId, receipt.operationId) && version === 1); break;
+    }
+    case 'registered-source-credential': {
+      const credential = sourceCredentialRecord.parse(raw);
+      check(scope.childId === SYSTEM.childId && id === sourceRecordId(scope.ownerUserId, credential.credentialRef)
+        && new URL(credential.loginUrl).origin === credential.origin && version === 1); break;
+    }
     case 'knowledge-transfer-batch': {
       const batch = transferBatchSchema.parse(raw);
       check(same(scope, SYSTEM) && id === batch.id && version === batch.revision);

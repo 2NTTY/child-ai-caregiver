@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sourceReadingSchema } from './source-card-reading.ts';
 import { agentProposalSchema, privateSourceCitationSchema, proactiveNextCheckSchema } from './product-agent.ts';
 import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
 import { liveSourceCitationSchema } from './live-source-citation.ts';
@@ -47,10 +48,11 @@ export const productAgentResultSchema = z.object({
   nextCheck: proactiveNextCheckSchema.optional(),
   text: z.string(), citations: z.array(agentCitationSchema), retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
   liveCitations: z.array(liveSourceCitationSchema).max(6).optional(),
+  sourceCardReadings: z.array(sourceReadingSchema).max(6).optional(),
   privateSourceCitations: z.array(privateSourceCitationSchema).max(6).optional(),
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: count, toolCalls: count, queryEmbeddings: count }),
   proposals: z.array(agentSavedProposalSchema),
   deliveryReview: chatDeliveryReviewBindingSchema.optional(),
 }).refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
-  && value.citations.length === 0 && !value.liveCitations?.length && !value.privateSourceCitations?.length && value.proposals.length === 0, 'No-action cannot carry user content');
+  && value.citations.length === 0 && !value.liveCitations?.length && !value.privateSourceCitations?.length && !value.sourceCardReadings?.length && value.proposals.length === 0, 'No-action cannot carry user content');

@@ -26,6 +26,7 @@ const metadataFields = new Set([
   'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
   'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort', 'knowledge_transfers:transferDigest',
   'mixed_rooms:userTag',
+  'source_cards:targetTag', 'source_cards:dueAt', 'source_card_documents:targetTag', 'source_card_documents:cleanupAt', 'source_card_documents:sortKey',
 ].map(field => 'yuban_authority_' + field));
 try {
   if (!['--check-manifest', '--release-check', '--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode)) throw Error('explicit_mode_and_credentials_required');

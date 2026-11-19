@@ -529,7 +529,7 @@ export function createAgentRuntime(options: {
                   throw loopError;
                 }
               }
-              const embeddingKey = budget.durable && tool.name === "search_knowledge"
+              const embeddingKey = budget.durable && (tool.name === "search_knowledge" || tool.name === "search_source_card_evidence")
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
               const callId = context?.functionCallId ?? "";
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };

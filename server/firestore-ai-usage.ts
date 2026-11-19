@@ -182,16 +182,16 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return global.attempts < globalLimit && owner.attempts < userLimit;
   }
 
-  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
+  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance' | 'private_document_embedding', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
     if (embeddingPurpose !== undefined && (request.kind !== 'embedding'
-      || !['query_embedding', 'corpus_maintenance'].includes(embeddingPurpose))) reject('invalid_request');
+      || !['query_embedding', 'corpus_maintenance', 'private_document_embedding'].includes(embeddingPurpose))) reject('invalid_request');
     if (activity && (request.kind === 'embedding' || !MODEL_USAGE_ACTIVITIES.includes(activity.activity)
       || typeof activity.retry !== 'boolean')) reject('invalid_request');
     if (request.maintenanceLimit !== undefined && (this.#source !== 'personal' || embeddingPurpose !== 'corpus_maintenance'
       || request.budgetPurpose !== 'knowledge_maintenance')) reject('invalid_request');
     const dimension = request.kind !== 'embedding' ? 'model' : embeddingPurpose === 'query_embedding' ? 'queryEmbedding'
-      : embeddingPurpose === 'corpus_maintenance' ? 'documentEmbedding' : 'otherEmbedding';
+      : embeddingPurpose === 'corpus_maintenance' || embeddingPurpose === 'private_document_embedding' ? 'documentEmbedding' : 'otherEmbedding';
     return this.#database.runTransaction(async transaction => {
       const saved = await transaction.get(attemptRef);
       // No day, deadline, counter or limit change can turn an existing attempt into execute.

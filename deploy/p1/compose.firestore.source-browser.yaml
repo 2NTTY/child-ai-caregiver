@@ -1,0 +1,4 @@
+{
+  "services": {"worker": {"volumes": ["source-browser-ipc:/run/source-browser:ro"]}},
+  "volumes": {"source-browser-ipc": {"external": true, "name": "yuban-p1_source-browser-ipc"}}
+}

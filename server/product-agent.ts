@@ -115,6 +115,8 @@ function withDeliveryReview(
 }
 
 export function createProductAgent(options: {
+  registeredSourceCards?: import('./agent-registered-source-tools.ts').AgentSourceCards;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: import("./chat-file-agent.ts").ChatFileAgentReader;
   voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;
@@ -534,6 +536,7 @@ export function createProductAgent(options: {
         retrievalMode: presentation?.retrievalMode ?? retained?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         ...(presentation?.liveCitations?.length ? { liveCitations: presentation.liveCitations } : {}),
+        ...(result.status === 'completed' && presentation?.sourceCardReadings?.length ? { sourceCardReadings: presentation.sourceCardReadings } : {}),
         countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {

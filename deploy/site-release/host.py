@@ -16,6 +16,12 @@ from protocol import (BUCKET, ORIGIN, REPO, REV, SERVICES, check_command, check_
 HERE = Path(__file__).resolve().parent
 ROOT = Path("/var/lib/yuyoufang-site-release")
 STATE, JOURNAL, OVERRIDE = (ROOT/name for name in ("state.json", "journal.json", "images.json"))
+BROWSER_INSTALL = Path("/var/lib/yuyoufang-site-install")
+
+def browser_bundle(revision):
+    if not REV.fullmatch(revision):
+        raise ValueError("Invalid source browser bundle revision")
+    return BROWSER_INSTALL/revision/"deploy"
 
 def run(args, data=None, timeout=150):
     result = subprocess.run(args, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -98,19 +104,38 @@ def compose(state, args):
         cmd.extend(["-f",f])
     return run([*cmd,*args],timeout=210)
 
-def set_images(services):
+def set_images(services, *, browser=None):
     for info in services.values():
         if image_info(info["ref"])["Id"] != info["localId"]:
             raise RuntimeError("Selected image no longer matches its recorded local ID")
-    write(OVERRIDE,{"services":{s:{"image":services[s]["ref"]} for s in SERVICES}})
+    config = {"services": {s: {"image": services[s]["ref"]} for s in SERVICES}}
+    marker = ROOT/"source-browser.json"
+    if browser is None and marker.exists():
+        browser = read(marker)["current"]
+    if browser:
+        raw = (browser_bundle(browser["revision"])/"p1/compose.firestore.source-browser.yaml").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != browser["mountHash"]:
+            raise RuntimeError("Source browser worker overlay differs from the approved bundle")
+        overlay = json.loads(raw)
+        config["services"]["worker"]["volumes"] = overlay["services"]["worker"]["volumes"]
+        config["volumes"] = overlay["volumes"]
+    write(OVERRIDE, config)
 
-def check_live(services):
+def check_live(services, *, browser_mounted=None):
+    if browser_mounted is None:
+        marker = ROOT/"source-browser.json"
+        browser_mounted = marker.exists() and bool(read(marker)["current"])
     for s in SERVICES:
         c=container(s)
         if c["Image"] != services[s]["localId"] or not c["State"]["Running"]:
             raise RuntimeError("Runtime identity mismatch: "+s)
         if s!="web" and c["State"].get("Health",{}).get("Status")!="healthy":
             raise RuntimeError("Unhealthy "+s)
+        if s == "worker" and browser_mounted:
+            mount = [m for m in c.get("Mounts", []) if m["Destination"] == "/run/source-browser"]
+            if (len(mount) != 1 or mount[0]["Type"] != "volume" or
+                    mount[0]["Name"] != "yuban-p1_source-browser-ipc" or mount[0]["RW"] is not False):
+                raise RuntimeError("Worker lost its approved read-only source browser mount")
 
 def webhash():
     return run(["docker","exec","yuban-p1-web-1","sha256sum","/srv/index.html"]).split()[0]
@@ -415,6 +440,8 @@ if __name__=="__main__":
     import fcntl
     with open("/run/lock/yuyoufang-site-release.lock","a") as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
+        if (ROOT/"source-browser-pending.json").exists():
+            sys.exit("Recover the interrupted source browser switch first")
         if sys.argv[1:]==["adopt"]:
             adopt()
         elif sys.argv[1:]==["poll"]:

@@ -14,6 +14,8 @@ export interface AgentProposalView {
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
+  sourceCardReadings?: import('../../src/shared/source-card-reading.ts').SourceReading[];
+  sourceCardLinks?: { cardId: string; authorize: boolean }[];
   id: string; childId: string; status: AgentRunStatus; createdAt: string | null;
   text: string; stopReasonLabel: string | null; stopReasonDetail: string | null;
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number } | null;

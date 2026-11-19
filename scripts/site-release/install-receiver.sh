@@ -10,6 +10,7 @@ upstream=$(git ls-remote origin refs/heads/master | cut -f1)
 files=(activity.sh host.py install-host.sh protocol.py store.py site-release.service site-release.timer)
 paths=()
 for file in "${files[@]}"; do paths+=("deploy/site-release/$file"); done
+paths+=(deploy/source-browser/manage.py deploy/source-browser/compose.yaml deploy/source-browser/seccomp.json deploy/p1/compose.firestore.source-browser.yaml)
 git diff --quiet HEAD -- "${paths[@]}" || { echo 'Commit or set aside receiver edits first' >&2; exit 1; }
 tmp=$(mktemp -d)
 trap 'rm -f "$tmp/receiver.tgz"; rmdir "$tmp"' EXIT
