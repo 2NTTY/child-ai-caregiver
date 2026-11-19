@@ -6776,6 +6776,12 @@ Node 24.22.3 通過站外教材授權及已下載卡引用兩項針對性測試�
 
 八個針對性測試及 Server TypeScript 通過。腳本模型在同一討論重交後，審核可讀三段角色發言、主回答、待辦及教材原件。重開沒有再生成，審核期間待辦失效仍扣起發言。今次未重跑正常主回答或真模型，原失敗收據保留。[運行 ID、原輸出重播及驗證範圍](artifacts/verification/REQ009_QUESTION_DISCUSSION_20261120.json)
 
+### 2026-11-20　REQ-009 待辦頁三方討論的操作聲稱及家長驗收
+
+從 `1362ec14` 重現獨立審核通過後，家長的假設「如果家長只顧完成待辦」仍觸發操作收據檢查。唯讀討論現由同一次審核逐段指出聲稱助手已執行操作的發言；若有這類聲稱、判詞漏填或段號失效，整份討論會被扣起。真正的操作仍逐項核對 Server 收據。Web 展開長發言時按訊息闊度換行，並沿用對話的閱讀位置控制。
+
+香港時間 05:16，Edge 在隔離 Firebase 副本由已儲存待辦送出原題，復用相同雜湊的主答。真模型的三方討論 `aa2e6f02-3cb7-460e-bc7b-6b0a52ce9278` 在七次生成內完成。家長從該討論的卡打開原版教材。桌面及窄屏重開同一份討論均沒有重送。新增一次查詢向量，隔離副本的管理設定已還原。舊失敗題欠缺角色原文，無法確定當時觸發的原句。新題中「延長共處時間」一句較教材的直接支持為強。[新舊收據、三段發言、審核輸入輸出及畫面](artifacts/verification/REQ009_QUESTION_DISCUSSION_20261120.json)
+
 ### 2026-11-19　REQ-003 助手預設確認模式與草稿編輯綁定
 
 - 在分支 `codex/req003-auth-mode-and-draft-binding` 落地助手執行授權模式（預設 `confirm_first` 先草稿確認後寫入，或明確切換為 `auto_authorized` 自動寫入），並補齊普通照護紀錄與私人筆記的建立／修訂草稿提案型別（`care_record_create`、`care_record_revise`、`private_note_create`、`private_note_revise`）、確認綁定與預先編輯接口 `editProposal`，同時於 `src/shared/operation-undo.ts` 建立操作撤銷能力目錄與未落庫草稿取消提示語意。
@@ -6801,6 +6807,6 @@ Node 24.22.3 通過站外教材授權及已下載卡引用兩項針對性測試�
 
 ### 2026-11-20　REQ-003 Stage 5 跨 PR 合成驗收與收束（PR 5）
 
-- 在分支 `codex/req003-acceptance-closeout`（基於 PR 4 最新同步版本 `495e81cf`）新增跨 PR 合成驗收測試 `tests/req003-acceptance-closeout.test.ts`（6 項案例：PR 1＋PR 2 草稿確認編輯與七類操作撤銷邊界、PR 3 純聊天與 REQ-009 三角色討論正交性、切換回助手引用「把剛才那份記下來」、PR 4 臨時聊天隔離與 `server/firebase-runtime.ts`／`server/index.ts` 雙運行環境接線、`PLAN.md#req003-closeout01` 二十一項場景與七項待決結構檢查，以及 `docs/REQUIREMENTS_BACKLOG.md` 同步與清潔度檢查）。
+- 在分支 `codex/req003-acceptance-closeout`（基於 PR 4 最新同步版本 `5013853b`）新增跨 PR 合成驗收測試 `tests/req003-acceptance-closeout.test.ts`（6 項案例：PR 1＋PR 2 草稿確認編輯與七類操作撤銷邊界、PR 3 純聊天與 REQ-009 三角色討論正交性、切換回助手引用「把剛才那份記下來」、PR 4 臨時聊天隔離與 `server/firebase-runtime.ts`／`server/index.ts` 雙運行環境接線、`PLAN.md#req003-closeout01` 二十一項場景與七項待決結構檢查，以及 `docs/REQUIREMENTS_BACKLOG.md` 同步與清潔度檢查）。
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
-- 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 180 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
+- 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。

@@ -71,7 +71,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 共同驗收只串一條流程：家長下載一張已審核卡，在待辦頁點角色提問，開助手頁讀到同一原問題及回答，發起討論，再由引用打開當時的官方原件。每線實作、定向驗收、正式交付、仍待本人操作分開記錄。
 
-聯驗已在 Edge 從待辦角色送出，於主聊天讀回同一次回答及其對應版本的官方原文。A 續查「討論這個回答」在三位發言後未能交付的原運行。C 依首批帳本接續攝取。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
+聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
@@ -1836,20 +1836,20 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 <a id="req003-closeout01"></a>
 ## REQ-003 交付總結、二十一項場景對照與待決收束（Stage 0–5）
 
-> **離線合成驗證邊界與部署揭示：** 本階段所有驗證均於斷網沙盒內以腳本化模型、靜態嵌入替身與記憶體／假 Firestore 領域執行（合計 18 份測試、180 項案例及 Server／Root／Frontend 三份嚴格 `tsc --noEmit` 通過）。離線合成通過**不代表**已完成真實 Gemini／Vertex AI 回應品質、實際外部網路搜尋與官網抓取、線上 Firebase／PostgreSQL 叢集部署及 Android／iOS 實機無障礙驗收；多實例部署下，`TemporaryChatStore` 採用伺服器單體記憶體存放會話，須搭配單行程或 sticky session routing（若跨實例轉移則傳回 `404 temporary_session_not_found` 並重置為空白新會話而不寫入或洩漏資料）；此外，當使用者於正式環境啟用第三方模型或搜尋供應商時，請求文字與供應商側暫存／日誌受該供應商政策與協議約束，應用程式無法保證供應商側即時清除。
+> **離線合成驗證邊界與部署揭示：** 本階段所有驗證均於斷網沙盒內以腳本化模型、靜態嵌入替身與記憶體／假 Firestore 領域執行（合計 18 份測試、181 項案例及 Server／Root／Frontend 三份嚴格 `tsc --noEmit` 通過）。離線合成通過**不代表**已完成真實 Gemini／Vertex AI 回應品質、實際外部網路搜尋與官網抓取、線上 Firebase／PostgreSQL 叢集部署及 Android／iOS 實機無障礙驗收；多實例部署下，`TemporaryChatStore` 採用伺服器單體記憶體存放會話，須搭配單行程或 sticky session routing（若跨實例轉移則傳回 `404 temporary_session_not_found` 並重置為空白新會話而不寫入或洩漏資料）；此外，當使用者於正式環境啟用第三方模型或搜尋供應商時，請求文字與供應商側暫存／日誌受該供應商政策與協議約束，應用程式無法保證供應商側即時清除。
 
 ### 五階段 PR 堆疊與基線同步總覽
 
 - **Stage 0（盤點與契約對齊）：** 盤點既有「記錄與核對」提案／確認綁定、操作歷史、撤銷覆蓋矩陣（`src/shared/operation-undo.ts`）及雙運行環境入口（`server/firebase-runtime.ts`、`server/index.ts`），明確界定本包不新增平行待確認匣、不建全站通用撤銷引擎、且不增加額外意圖分類 LLM 回合。
-- **Stage 5（跨 PR 合成驗收與文件收束）：** 在分支 `codex/req003-acceptance-closeout` 交付 `tests/req003-acceptance-closeout.test.ts`（6 項跨 PR 合成驗收案例）、離線 CI 閘口（`scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，含 18 份測試共 180 項案例）及 `PLAN.md`／`docs/REQUIREMENTS_BACKLOG.md`／`WORKLOG.md` 同步。
+- **Stage 5（跨 PR 合成驗收與文件收束）：** 在分支 `codex/req003-acceptance-closeout` 交付 `tests/req003-acceptance-closeout.test.ts`（6 項跨 PR 合成驗收案例）、離線 CI 閘口（`scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，含 18 份測試共 181 項案例）及 `PLAN.md`／`docs/REQUIREMENTS_BACKLOG.md`／`WORKLOG.md` 同步。
 
 | PR | 分支與 GitHub 編號 | 驗證 SHA | 核心交付與整合測試結果 |
 |---|---|---|---|
-| **PR 1** | `codex/req003-auth-mode-and-draft-binding`（`#690`） | `b5cc97f152a5cb7c6647b57154833a74bacff70f` | `confirm_first`／`auto_authorized` 執行模式、普通照護與私人筆記草稿提案、確認綁定與 `editProposal` 版本保護、`OPERATION_UNDO_CAPABILITIES`；11 份測試 99 項 + 三份 `tsc` |
-| **PR 2** | `codex/req003-unified-pending-shortcut-ui`（`#691`） | `b680e0c048b641f06d532db1562daadbaae53212` | 頂欄右上 `PendingReviewShortcut` 與 `/care` 共用 `ProductAgentOwner` 佇列與 `PendingReviewList`、確認前行內編輯與差異對比、`DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY` 與執行模式選擇器；8 份測試 107 項 + 三份 `tsc` |
-| **PR 3** | `codex/req003-main-chat-mode-switch`（`#692`） | `e06fc298e5423bf1c3961f6d3f2af7e17f66a390` | 單一主聊天手動切換 `assistant`／`chat_only`、按孩保存模式與 `messageTopology` 標記、`CHAT_ONLY_ALLOWED_TOOL_NAMES` 與 `CHAT_ONLY_TOOL_CATALOG` 邊界、切換回助手引用前文、技術摘要 `sourceMessages` 傳遞 `chatMode`，並與 REQ-009 `discussion` 正交；13 份清單測試 144 項 + `tests/chat-discussion.test.ts` 3 項 = 147 項 + 三份 `tsc` |
-| **PR 4** | `codex/req003-ephemeral-temporary-chat`（`#693`） | `495e81cff0d666c00d3324a1122d4450006fd753` | 頂欄左上隔離 `TemporaryChatEntry`／`TemporaryChatModal`、純公共檢索與香港求助卡片、`TemporaryChatStore` 實體清除與 15m/60m TTL、斷線狀態區分，及同步接線 `server/firebase-runtime.ts` 與 PostgreSQL `server/index.ts`（含 `dispose()`）；16 份測試 171 項 + 三份 `tsc` |
-| **PR 5** | `codex/req003-acceptance-closeout`（本 PR） | 本 PR 分支提交 | 跨 PR 合成驗收 6 項（`tests/req003-acceptance-closeout.test.ts`）、§7 二十一項與 §8 七項待決收束對照、檔案同步與規範；18 份測試 180 項 + 三份 `tsc` |
+| **PR 1** | `codex/req003-auth-mode-and-draft-binding`（`#690`） | `9d4d9b44161fcf412a0ff0ab4bfb279e92efc6e5` | `confirm_first`／`auto_authorized` 執行模式、普通照護與私人筆記草稿提案、確認綁定與 `editProposal` 版本保護、`OPERATION_UNDO_CAPABILITIES`；11 份測試 99 項 + 三份 `tsc` |
+| **PR 2** | `codex/req003-unified-pending-shortcut-ui`（`#691`） | `571bb04a6250e01461e35ce6eae8cfe1cb30c065` | 頂欄右上 `PendingReviewShortcut` 與 `/care` 共用 `ProductAgentOwner` 佇列與 `PendingReviewList`、確認前行內編輯與差異對比、`DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY` 與執行模式選擇器；8 份測試 107 項 + 三份 `tsc` |
+| **PR 3** | `codex/req003-main-chat-mode-switch`（`#692`） | `c0775b280e537f2a2103d17ce24fa12a9d47aa69` | 單一主聊天手動切換 `assistant`／`chat_only`、按孩保存模式與 `messageTopology` 標記、`CHAT_ONLY_ALLOWED_TOOL_NAMES` 與 `CHAT_ONLY_TOOL_CATALOG` 邊界、切換回助手引用前文、技術摘要 `sourceMessages` 傳遞 `chatMode`，並與 REQ-009 `discussion` 正交；13 份清單測試 144 項 + `tests/chat-discussion.test.ts` 4 項 = 148 項 + 三份 `tsc` |
+| **PR 4** | `codex/req003-ephemeral-temporary-chat`（`#693`） | `5013853b3548ee285d8dccc6eca0463e12ea1de8` | 頂欄左上隔離 `TemporaryChatEntry`／`TemporaryChatModal`、純公共檢索與香港求助卡片、`TemporaryChatStore` 實體清除與 15m/60m TTL、斷線狀態區分，及同步接線 `server/firebase-runtime.ts` 與 PostgreSQL `server/index.ts`（含 `dispose()`）；16 份測試 171 項 + 三份 `tsc` |
+| **PR 5** | `codex/req003-acceptance-closeout`（本 PR） | 本 PR 分支提交 | 跨 PR 合成驗收 6 項（`tests/req003-acceptance-closeout.test.ts`）、§7 二十一項與 §8 七項待決收束對照、檔案同步與規範；18 份測試 181 項 + 三份 `tsc` |
 
 ### §7 二十一項驗收清單對照（S7-01 至 S7-21）
 

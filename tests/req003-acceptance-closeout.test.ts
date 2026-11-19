@@ -364,7 +364,7 @@ test("2. chat_only mode stays strictly orthogonal to REQ-009 three-role discussi
         const payload = JSON.parse(promptText.slice(promptText.indexOf("{")));
         assert.deepEqual(payload.discussionRoles, ["knowledge", "parent", "methods"]);
         return {
-          content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [] }) }] },
+          content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [], claimedAppChanges: [] }) }] },
           finishReason: FinishReason.STOP,
         };
       }
@@ -680,10 +680,10 @@ test("5. PLAN.md#req003-closeout01 maps all 5 PRs, all 21 §7 items, all 7 §8 d
   const section = plan.slice(idx);
 
   for (const marker of [
-    "codex/req003-auth-mode-and-draft-binding", "#690", "b5cc97f152a5cb7c6647b57154833a74bacff70f",
-    "codex/req003-unified-pending-shortcut-ui", "#691", "b680e0c048b641f06d532db1562daadbaae53212",
-    "codex/req003-main-chat-mode-switch", "#692", "e06fc298e5423bf1c3961f6d3f2af7e17f66a390",
-    "codex/req003-ephemeral-temporary-chat", "#693", "495e81cff0d666c00d3324a1122d4450006fd753",
+    "codex/req003-auth-mode-and-draft-binding", "#690", "9d4d9b44161fcf412a0ff0ab4bfb279e92efc6e5",
+    "codex/req003-unified-pending-shortcut-ui", "#691", "571bb04a6250e01461e35ce6eae8cfe1cb30c065",
+    "codex/req003-main-chat-mode-switch", "#692", "c0775b280e537f2a2103d17ce24fa12a9d47aa69",
+    "codex/req003-ephemeral-temporary-chat", "#693", "5013853b3548ee285d8dccc6eca0463e12ea1de8",
     "codex/req003-acceptance-closeout",
     "server/firebase-runtime.ts", "server/index.ts",
     "sticky session routing", "404 temporary_session_not_found",

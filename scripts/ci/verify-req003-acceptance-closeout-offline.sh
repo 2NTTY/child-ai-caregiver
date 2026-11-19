@@ -48,7 +48,7 @@ TEST_FILES=(
   tests/summary-progress.test.ts
   tests/summary-prompt-contract.test.ts
 )
-TEST_CASES=(6 3 12 6 10 5 10 10 44 9 7 2 14 11 3 9 18 1)
+TEST_CASES=(6 4 12 6 10 5 10 10 44 9 7 2 14 11 3 9 18 1)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
