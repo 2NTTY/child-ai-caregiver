@@ -46,6 +46,7 @@ import { createOfficialLivePages } from './official-live-pages.ts';
 import { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
+import { createFirestoreRegisteredSourceCards } from './firestore-registered-source-cards.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreCareSummary } from './firestore-care-summary.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
@@ -118,6 +119,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       publicOrigin: config.publicOrigin, production: config.production,
       ...(composition.local ? { localCookieName: '__local_session_' + createHash('sha256').update(config.projectId).digest('hex').slice(0, 8) } : {}) });
     const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace, messageHistoryEnabled: config.messageHistoryEnabled };
+    const registeredSourceCards = createFirestoreRegisteredSourceCards({ ...domain, authority });
     const objectOptions = { config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.photoBucket }, cipher };
     const journalOptions = { config: { ...objectOptions.config, bucketName: config.erasureBucket }, cipher };
     const objects = composition.local ? createFirebasePhotoObjects({ ...objectOptions, bucket: composition.local.bucket(config.photoBucket) }) : createCloudStoragePhotoObjects(objectOptions);
@@ -277,6 +279,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined,
       knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined);
     const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+      registeredSourceCards,
       knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, async read(target, signal) {
         signal.throwIfAborted();
         const archived = await knowledgeRefresh.originals.findPdf(target.sourceId, target.sha256);
@@ -289,6 +292,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const ownedApp = app;
     let closing: Promise<void> | undefined;
     return { proactive,proactiveEvents,knowledgeAgent,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+      registeredSourceCards,
       close() { return closing ??= (async () => {
         try { await nativeChatDelivery?.close(); }
         finally { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } }
