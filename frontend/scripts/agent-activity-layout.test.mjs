@@ -267,6 +267,28 @@ test('twenty identically titled background runs keep a human date-time and a dis
   controls[3].props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox-select', 'background-3']);
 });
 
+test('stopped activity shows one reason, real steps and no placeholder answer', () => {
+  const r = { ...run(), status: 'stopped', stopReasonLabel: '尚未通過獨立核對，未成為正式回覆',
+    stopReasonDetail: '獨立核對未能完成。未通過核對的內容不會成為正式回覆。',
+    text: '這則內容尚未通過獨立核對，未成為正式回覆。已保存的操作仍以收據為準。',
+    tools: [{ id: 'read', nameLabel: '讀取記憶', status: 'succeeded' }] };
+  const s = setup(r); s.conversation();
+  assert.equal(s.button('查看原回覆'), undefined);
+  assert.equal(s.h.node('agent-run-summary'), undefined);
+  assert.equal(s.h.node('agent-activity-count'), undefined);
+  s.button('處理步驟 · 1 項').props.onPress(); s.conversation();
+  assert.match(s.text(), /讀取記憶/);
+  assert.doesNotMatch(s.text(), /不代表照護事項|請核對以下結果|未通過核對的內容/);
+});
+
+test('saved failure keeps its actual confirmation question and works before the run details load', () => {
+  const { failedChatReply } = setup().h.load('src/components/chat/failed-reply.ts');
+  const old = '這次回覆未完成：缺少可核對的來源依據，未成為正式回覆。\n\n這則內容尚未通過獨立核對，未成為正式回覆。已保存的操作仍以收據為準。';
+  assert.deepEqual(failedChatReply(old), { reason: '找不到足夠資料核對這個回答', body: '' });
+  assert.equal(failedChatReply(old + '\n\n要建立這項待辦嗎？').body, '要建立這項待辦嗎？');
+  assert.equal(failedChatReply('正常回覆'), null);
+});
+
 test('activity title and loaded count remain compact without normal ready refresh controls', () => {
   const s = setup(run([proposal('pending')])); s.conversation();
   const header = s.h.node('agent-activity-header');
