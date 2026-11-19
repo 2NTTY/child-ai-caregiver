@@ -1,5 +1,6 @@
 import { displayAccountMessage, type PrivateRunReader } from './agent-account-directory.ts';
 import type { ChatStore } from "./chat.ts";
+import { isChatMode, type ChatMode } from "../src/shared/chat.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const messagePath = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/messages$/i;
@@ -65,9 +66,18 @@ export async function handleChatRequest(request: Request, userId: string | null,
     return apiError("invalid_input", "請檢查輸入資料。", 400);
   }
   const fields = Object.keys(body);
-  if (fields.length !== 1 || fields[0] !== "text") return apiError("invalid_input", "請檢查輸入資料。", 400);
-  const text = (body as { text: unknown }).text;
-  if (!validText(text)) return apiError("invalid_input", "請檢查輸入資料。", 400);
-  const message = await store.createUserMessageForUser(userId, childId, text);
+  if (!fields.includes("text") || fields.some(field => field !== "text" && field !== "chatMode")) {
+    return apiError("invalid_input", "請檢查輸入資料。", 400);
+  }
+  const parsedBody = body as { text: unknown; chatMode?: unknown };
+  if (!validText(parsedBody.text)) return apiError("invalid_input", "請檢查輸入資料。", 400);
+  let chatMode: ChatMode | undefined;
+  if ("chatMode" in body) {
+    if (!isChatMode(parsedBody.chatMode)) return apiError("invalid_input", "請檢查輸入資料。", 400);
+    chatMode = parsedBody.chatMode;
+  }
+  const message = chatMode !== undefined
+    ? await store.createUserMessageForUser(userId, childId, parsedBody.text, chatMode)
+    : await store.createUserMessageForUser(userId, childId, parsedBody.text);
   return message ? jsonResponse({ message }, 201) : apiError("not_found", "找不到資料。", 404);
 }

@@ -1,7 +1,7 @@
 import { chatPageContextSchema } from '../src/shared/chat-page-context.ts';
 import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
 import { usedAccountDirectory } from './agent-account-directory.ts';
-import { messageText, firestoreChatMessageStorageSchema, type StoredChatMessage } from './chat-message-schema.ts';
+import { chatModeSchema, messageText, firestoreChatMessageStorageSchema, type StoredChatMessage } from './chat-message-schema.ts';
 import type { ChatDeliverySourceVersion } from '../src/shared/chat-delivery-review.ts';
 import { chatDeliveryContentHash } from './chat-delivery-review.ts';
 import { firestoreFactStorageSchema, validMemoryFactAttribution } from './firestore-memory.ts';
@@ -37,7 +37,7 @@ import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid();
 const text = messageText.refine(value => value.trim().length > 0);
-const inputSchema = z.object({ text: messageText, pageContext: chatPageContextSchema.optional(), discussion: z.literal(true).optional(), voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
+const inputSchema = z.object({ text: messageText, chatMode: chatModeSchema.optional(), pageContext: chatPageContextSchema.optional(), discussion: z.literal(true).optional(), voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
   .refine(v => [v.voice, v.file, v.photo].filter(Boolean).length <= 1 && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
 const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
@@ -196,7 +196,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
       if (!match) domainReject('not_found', 404);
       const childId = domainParse(uuid, match[1].toLowerCase()), input = domainParse(inputSchema, submission.payload);
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: binding.scope.ownerUserId,
-        role: 'user', text: input.text, ...(input.discussion && { discussion: true }), inReplyTo: null, createdAt: new Date().toISOString() };
+        role: 'user', text: input.text, ...(input.chatMode ? { chatMode: input.chatMode } : {}), ...(input.discussion && { discussion: true }), inReplyTo: null, createdAt: new Date().toISOString() };
       if (input.pageContext) {
         const scope = scopeFor(binding, childId);
         if (binding.sharedAccess || !await binding.readChild(childId)) domainReject('not_found', 404);
@@ -248,6 +248,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
         if (run.state !== 'completed' || run.sourceMessageId !== question.id || run.ownerUserId !== userId
           || run.authorizationVersion !== b.authorizationVersion || run.childId !== childId) domainReject('not_found', 404);
         const next: ChatMessage = { id, childId, authorUserId: userId, role: 'user', text: '討論這個回答。',
+          ...(question.chatMode ? { chatMode: question.chatMode } : {}),
           inReplyTo: null, createdAt: new Date().toISOString(), discussion: true, discussionOf: answerId };
         const write = await prepare(b, next, id);
         write.commit();
@@ -322,9 +323,10 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
         return { ...page, dataVersion: binding.scope.storageEpoch + ':' + binding.changeSeq, sourceDeadlines };
       });
     },
-    async createUserMessageForUser(userId, childId, raw) {
+    async createUserMessageForUser(userId, childId, raw, chatMode) {
+      const mode = chatMode === undefined ? undefined : domainParse(chatModeSchema, chatMode);
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: userId, role: 'user',
-        text: domainParse(text, raw), inReplyTo: null, createdAt: new Date().toISOString() };
+        text: domainParse(text, raw), ...(mode ? { chatMode: mode } : {}), inReplyTo: null, createdAt: new Date().toISOString() };
       return authority.runTransaction(userId, childId, async binding => {
         const write = await prepare(binding, message, message.id); write.commit(); return message;
       });
@@ -340,7 +342,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
         if ((await binding.transaction.get(replyRef)).exists) return null;
         const claimKey = JSON.stringify([userId, childId, 'interactive', inReplyTo]);
         const claimRow = await binding.transaction.get(data.ref('agent_claims', 'agent-claim', claimKey));
-        let saved = message;
+        let saved: ChatMessage = { ...message, ...(original.chatMode ? { chatMode: original.chatMode } : {}) };
         let memorySources: ChatDeliverySourceVersion[] | undefined;
         let deliver = false;
         if (claimRow.exists) {
@@ -350,7 +352,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
           if (run.id !== runId || run.sourceMessageId !== inReplyTo || run.childId !== childId
             || run.ownerUserId !== userId || run.authorizationVersion !== binding.authorizationVersion
             || run.storageEpoch !== binding.scope.storageEpoch || run.state === 'running') domainReject('agent_reply_binding');
-          saved = { ...message, agentRunId: runId, officialHelp: officialHelpFromTools(run.result?.tools ?? []) };
+          saved = { ...saved, agentRunId: runId, officialHelp: officialHelpFromTools(run.result?.tools ?? []) };
           const result = run.result;
           deliver = run.state === 'completed' && result?.status === 'completed' && result.outcome !== 'no_action'
             && !!result.text.trim() && (saved.text === result.text || saved.text.startsWith(result.text + '\n\n')

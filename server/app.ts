@@ -24,6 +24,8 @@ import { handleGrowthRequest } from "./growth-api.ts";
 import { handleConcernRequest } from "./concern-api.ts";
 import { handleFamilyDocumentRequest } from "./family-document-api.ts";
 import { handleProductAgentRequest } from "./product-agent-api.ts";
+import { handleTemporaryChatRequest } from "./temporary-chat-api.ts";
+import type { TemporaryChatService } from "./temporary-chat-agent.ts";
 import { handleAgentActionsRequest } from "./agent-actions-api.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
@@ -105,6 +107,7 @@ export function createRequestHandler(options: {
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
+  temporaryChat?: TemporaryChatService;
   personalLibrary?: import("./personal-library-api.ts").PersonalLibrary;
   agentActions?: import("./agent-actions-store.ts").AgentActionsStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
@@ -229,12 +232,19 @@ export function createRequestHandler(options: {
           : apiError("unauthorized", "請先登入。", 401);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
+        || url.pathname === "/api/temporary-chat" || url.pathname.startsWith("/api/temporary-chat/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
         || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/") || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/library$/u.test(url.pathname) && options.personalLibrary
+        result = url.pathname === "/api/temporary-chat" || url.pathname.startsWith("/api/temporary-chat/")
+          ? options.temporaryChat
+            ? await handleTemporaryChatRequest(webRequest, userId, options.temporaryChat, {
+              isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected,
+            })
+            : apiError("temporary_chat_unavailable", "臨時聊天服務尚未就緒。", 503)
+          : /^\/api\/children\/[^/]+\/library$/u.test(url.pathname) && options.personalLibrary
           ? await handlePersonalLibraryRequest(webRequest, userId, { library: options.personalLibrary,
             isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected })
           : /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs

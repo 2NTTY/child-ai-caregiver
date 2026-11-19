@@ -24,11 +24,11 @@ function canonicalFilterKey(filter: KnowledgeFilter): string {
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates"> & { readonly enforcesPersonalLibrarySelection?: boolean }, embeddings: EmbeddingGateway) {
   return {
     /** One instance per authorized Agent run; never share queries or caches between families. */
-    createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway }) {
+    createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway; publicOnly?: boolean }) {
       if (options.actor.kind !== "query_embedding") throw new Error("Invalid knowledge query actor");
       const { actor, budget, authorize } = options;
       const readCandidates = (filter: KnowledgeFilter, vector: readonly number[] | null, selection: NonNullable<Parameters<KnowledgeStore['candidates']>[2]>) =>
-        store.candidates(filter, vector, { ...selection, libraryUserId: actor.actorId });
+        store.candidates(filter, vector, options.publicOnly ? selection : { ...selection, libraryUserId: actor.actorId });
       const loaded = new Map<string, KnowledgeEvidence>();
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();

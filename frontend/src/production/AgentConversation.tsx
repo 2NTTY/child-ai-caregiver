@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import type { AgentActionReceipt } from "../../../src/shared/agent-actions";
+import { describeOperationUndoCapability, OPERATION_UNDO_CAPABILITIES } from "../../../src/shared/operation-undo.ts";
 import { usePersonalHistoryWorkspace } from "./usePersonalHistory";
 import { PersistentWorkCards } from "../components/history/PersistentWorkCards";
 import { useProduction } from "./ProductionProvider";
@@ -32,10 +33,14 @@ function ActivityDetails({ label, scopeKey, children }: { label: string; scopeKe
 }
 
 function Receipt({ item }: { item: AgentActionReceipt }) {
+  const undo = Object.hasOwn(OPERATION_UNDO_CAPABILITIES, item.resource.kind)
+    ? describeOperationUndoCapability(item.resource.kind)
+    : null;
   return <View testID="agent-direct-receipt" style={styles.row}>
     <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.rowTitle}>{receiptKinds[item.kind]}</Text><AppStatusBadge label={receiptStates[item.state]} tone="neutral" /></View>
     {item.resource.kind === "private_note" && <Text style={styles.label}>只供本人查看</Text>}
     {item.notification === "authorized_for_due_event" && <Text style={styles.label}>到期提示已授權 · {item.channels.map(channel => channel === "telegram" ? "Telegram" : "瀏覽器推送").join("、")}</Text>}
+    {undo ? <Text testID={`agent-receipt-undo-${item.id}`} style={styles.label}>後續處理：{undo.label}（{undo.limitation}）</Text> : null}
   </View>;
 }
 
