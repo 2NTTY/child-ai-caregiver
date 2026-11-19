@@ -95,6 +95,8 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 相關已確認記憶與引用須在審核前選成同一穩定來源集合，用於 payload、hash、重驗及 binding；最多 12 項，超出拒絕而非在最後截斷或混入無關事實。當前權限、來源／版本／hash、撤回、到期及可見範圍在通過後仍重查；無來源、審核拒絕、預算不足與其他未完成分開回報。審核停止只保留再次重驗仍有效的來源及固定未完成提示，不展示未核正文或重做已成功／unknown 操作。候選實作、檢查及未驗狀態見 [修復包](../PLAN.md#agent-review-repair01)，不由本契約推定已部署或完整驗收。
 
+私人聊天的 `present_answer.showView`（位於單一 paragraph）只接受當前已保存訊息明確要求的介面。名單由用戶端按該則問題及同一 run 的成功工具收據展示。其他問題照常回答或追問缺項。新增可直接交付的介面時，須在同一段對話驗一次命中，再換題，並核對工具不能沿用上一輪的資格。
+
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 
 產品互動／家庭背景入口可由 Server 內部明確 opt-in `presentationRepair: "present_answer"`；不是客戶端欄位，照片／分享提取不自動啟用。僅在主流程以可確認的自然文字 final 結束、尚無已接受展示且沒有錯誤／unknown／取消／撤權／額度阻擋時，才可在同一 invocation 用一次剩餘模型呼叫補展示。主流程 MAX_TOKENS、SAFETY、partial、空回應或不能明確辨識者不因此重試。既有model/tool/input/deadline共用，不重設、不增總上限。

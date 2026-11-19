@@ -13,7 +13,7 @@ export function AgentInputToolbar({ disabled, compact, onFiles, onVoice, onPickP
     <PhotoFilePicker disabled={disabled} capturePreferred captureOriginal={captureOriginal} onPick={onPickPhoto} onError={onPhotoError}
       renderTrigger={trigger => <InputControl label={trigger.reading ? "正在讀取原照片" : "拍照"} icon="camera-outline" compact={compact}
         disabled={trigger.disabled} busy={trigger.reading} hint={trigger.unavailableReason} onPress={trigger.onPress} />} />
-    <InputControl label="加入文件" icon="plus" compact={compact} disabled={disabled || !!filesUnavailableReason} hint={filesUnavailableReason} onPress={onFiles} />
+    <InputControl label="加入附件" icon="plus" compact={compact} disabled={disabled || !!filesUnavailableReason} hint={filesUnavailableReason} onPress={onFiles} />
     {includeVoice ? <InputControl label="語音輸入" icon="microphone-outline" compact={compact} disabled={disabled || !!voiceUnavailableReason} hint={voiceUnavailableReason} onPress={onVoice} /> : null}
   </View>;
 }
