@@ -940,6 +940,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
 | 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
 | 本人授權 | 助手用 `sourceCardAuthorizationPath(cardId)` 打開指定卡。本人表單單獨提交至 `POST /api/account/source-cards/:cardId/credential`。`replace` 包含網站帳戶、密碼、選填同源登入頁；`clear` 撤銷授權。兩者都帶原操作 ID 及預期版本。卡片讀取只回傳 `credentialRef`。 |
+| 聊天引用 | `GET /api/account/source-cards/:cardId/reading` 以文件 ID、版本、頁及位置讀回當時引用的片段。圖像描述與逐字原文分開標示，已審核片段另核對摘錄雜湊及該次索引身份。打開時再次核對本人權限。 |
 
 新增卡時，公告預設每日巡查，目錄及單份文件預設每週；用戶可以分鐘指定其他頻率。單份文件只容許該網址。目錄、公告容許該入口及同源路徑下的項目，指定 `allowedPath` 可另選同站檔案目錄。若改動類型、入口或允許路徑，舊登入授權即時撤銷。登入頁預設為來源入口，只支援同源網站表單。內容下載須逐次核對目的地與重新導向。
 
