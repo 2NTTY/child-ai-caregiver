@@ -8,6 +8,8 @@ test('classifies hosted builds separately and verifies runtime for shared checko
   const hosted = classifyChanges(['Dockerfile', '.dockerignore', '.github/workflows/site-release.yml']);
   assert.deepEqual(hosted, { web:true, android:false, ios:false, server:true, nativeInputs:false, review:[] });
   assert.equal(decideRelease(classifyChanges(['.github/workflows/compaction-integration-offline.yml']), null, null), 'none');
+  assert.equal(decideRelease(classifyChanges(['.codex/config.toml', '.codex/agents/worker.toml']), null, null), 'none');
+  assert.deepEqual(classifyChanges(['.codex/deploy.sh']).review, ['.codex/deploy.sh']);
   const baseline = { runtime:'installed' };
   const shared = classifyChanges(['.gitattributes', 'frontend/src/App.tsx', 'Dockerfile']);
   assert.equal(decideRelease(shared, 'installed', baseline), 'update');
