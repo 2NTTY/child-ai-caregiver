@@ -45,12 +45,15 @@ import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 import { citedOriginalSpans } from '../src/shared/knowledge.ts';
+import { CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
 
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
+const workspaceView = z.enum(['child_profiles', 'conversation_memory']);
+const workspaceViewParagraph = z.strictObject({ showView: workspaceView.describe('Show the signed-in parent their profiles or the actual current chat window. Use alone, with kind=operation.') });
 const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
   originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
     .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'), paragraphs:
-  z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(6) });
+  z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph, workspaceViewParagraph])).min(1).max(6) });
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -165,6 +168,7 @@ export function createProductAgentTools(options: {
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
+  conversationWindow?: { messages: number; complete: boolean };
   currentMessageId?: string;
   recentQuoteSources?: ChatMessage[];
   /** Optional household/child display identifiers kept out of external search queries. */
@@ -225,6 +229,7 @@ export function createProductAgentTools(options: {
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
+  let selectedView: z.infer<typeof workspaceView> | null = null;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
   function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
@@ -781,6 +786,18 @@ export function createProductAgentTools(options: {
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
           const wire = chatPresentationInput.parse(args);
+          const view = wire.paragraphs.find(p => 'showView' in p);
+          if (view && 'showView' in view) {
+            if (!options.conversationWindow || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
+              throw new FamilyError(400, 'invalid_input');
+            if (!await permitted()) throw new AgentStopped('unauthorized');
+            selectedView = view.showView;
+            const window = options.conversationWindow;
+            const text = view.showView === 'child_profiles' ? CHILD_PROFILES_CHAT_TEXT
+              : `這次對話帶入了 ${window.messages} 則訊息（包括你的問題）。${window.complete ? '' : '較早的內容可按需要查回。'}你想核對助手忘了哪件事，還是想問孩子的記憶情況？`;
+            answer = { kind: 'operation', paragraphs: [{ text, citationIds: [] }] };
+            return { acceptedForValidation: true };
+          }
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
             if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId))
@@ -788,6 +805,7 @@ export function createProductAgentTools(options: {
             quotes.set(quote.chunkId, quote.text);
           }
           raw = { kind: wire.kind, paragraphs: wire.paragraphs.map(paragraph => {
+            if ('showView' in paragraph) throw new FamilyError(400, 'invalid_input');
             if (!('quoteHistory' in paragraph)) {
               if ((paragraph.kind ?? wire.kind) !== 'private_reference') return paragraph;
               return { ...paragraph, citationIds: paragraph.citationIds.map(resolveChatCitation) };
@@ -829,10 +847,11 @@ export function createProductAgentTools(options: {
           originalQuotes = quotes;
         }
         answer = parsed;
+        selectedView = null;
         serverReceiptText = null;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
-      }) },
+      }).then(response => response.status === 'succeeded' && selectedView ? { ...response, reference: selectedView } : response) },
   ];
 
   if (options.photos && run.images && !options.background && options.visibility !== 'family') tools.splice(tools.length - 1, 0,
@@ -1080,6 +1099,11 @@ export function createProductAgentTools(options: {
     async presentation(): Promise<AgentPresentation | null> {
       serverReceiptText = null;
       if (!answer) return null;
+      if (selectedView) {
+        if (!await permitted()) throw new AgentStopped('unauthorized');
+        serverReceiptText = answer.paragraphs[0]!.text;
+        return { text: serverReceiptText, citations: [], retrievalMode: 'not_used' };
+      }
       if (answer.kind === "no_action") {
         if (!options.background || contactReference || !await authorize()) throw new AgentStopped("unauthorized");
         return { outcome: "no_action", text: "", citations: [], retrievalMode: "not_used" };
@@ -1190,6 +1214,7 @@ export function createProductAgentTools(options: {
       const parsed = agentAnswerSchema.parse(next);
       acceptPresentedAnswer(parsed);
       answer = parsed;
+      selectedView = null;
       serverReceiptText = null;
     },
   };
