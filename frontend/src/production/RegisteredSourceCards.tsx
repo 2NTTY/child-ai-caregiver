@@ -190,7 +190,7 @@ function SourceCards({ active }: { active: boolean }) {
   const settingsFields = [{ field: 'name' as const, label: '名稱' }, { field: 'kind' as const, label: '類型' }, { field: 'url' as const, label: '網址' }, ...(settings.watch('kind') !== 'document' ? [{ field: 'allowedPath' as const, label: '允許擷取的路徑（選填）' }] : []), { field: 'frequencyMinutes' as const, label: '巡查頻率（分鐘）' }];
   const cardWidth = container.width >= 650 ? '32%' : container.width >= 340 ? '49%' : '100%';
   return <View ref={container.ref} onLayout={container.onLayout} style={[styles.root, !active && styles.hidden]} aria-hidden={!active} pointerEvents={active ? 'auto' : 'none'}>
-    <SectionCard><SectionHeader title="本人來源卡" density="compact" subtitle="按本人帳戶保存，不需選擇孩子。" action={<AppButton label="新增來源" density="compact" disabled={!listWritable} onPress={() => openSettings('new')} />} />
+    <SectionCard><SectionHeader title="本人來源卡" density="compact" subtitle="自備來源按本人帳戶保存，模型整理費用由本人負擔。" action={<AppButton label="新增來源" density="compact" disabled={!listWritable} onPress={() => openSettings('new')} />} />
       <View style={styles.actions}><AppButton label={requests.busy && !requests.writing ? '讀取中…' : '重新讀取來源卡'} variant="quiet" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} />
         {sourceCard && z.uuid().safeParse(sourceCard).success ? <AppButton label="重新開啟指定來源" variant="quiet" disabled={!env.online || requests.busy || !!pending} onPress={() => { void refresh(false, sourceCard, sourceAction === 'authorize'); }} /> : null}</View>
       {notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{notice}</Text> : null}
