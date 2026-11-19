@@ -60,6 +60,8 @@ const MAX_PAYLOAD_BYTES = 512 * 1024;
 /** A single explicit continuation inherits the original allowance and cannot itself spawn a repair. */
 export const knowledgeOrganizationRepairId = (prior: string) =>
   knowledgeReviewHash(["knowledge-organization-format-repair/1", hash.parse(prior)]);
+export const knowledgeTruncatedOutputRepairId = (prior: string) =>
+  knowledgeReviewHash(["knowledge-known-output-truncation/1", hash.parse(prior)]);
 
 /** A bounded operator ledger, separate from every family's authority and chat. */
 export function createFirestoreKnowledgeWork(options: Options) {
@@ -81,6 +83,27 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
+    /** Reuse a successful stage from a recorded MAX_TOKENS operation, including its complete organizer output. */
+    async readTruncatedStage(request: BackgroundKnowledgeRunRequest, observation: string, input: { system: string; user: string; attemptKey: string }) {
+      const workRef = ref("work", request.operationFingerprint), stageRef = ref("model", request.operationFingerprint, input.attemptKey);
+      return database.runTransaction(async tx => {
+        const [root, saved] = await tx.getAll(workRef, stageRef);
+        const prior = open(workRef, root!.data(), workSchema);
+        if (knowledgeReviewHash(prior.request) !== knowledgeReviewHash(request) || prior.receipt || prior.preparedHash
+          || prior.result?.status !== "candidate_held" || prior.result.code !== "model_output_limit" || prior.result.observationHash !== observation)
+          reject("knowledge_truncation_repair_binding");
+        if (!saved!.exists) {
+          // A non-windowed organizer always ran. A second paid stage means the reviewer also ran.
+          if (!prior.windowed && (input.attemptKey.startsWith('knowledge-organize:') || prior.budget.modelCalls === 2))
+            reject('knowledge_truncation_repair_stage');
+          return null;
+        }
+        const stage = open(stageRef, saved!.data(), stageSchema);
+        if (stage.requestHash !== knowledgeReviewHash(input) || !["ready","unknown"].includes(stage.state))
+          reject("knowledge_truncation_repair_stage");
+        return stage.text;
+      }, { readOnly: true });
+    },
     /** Preserve the first verified derivation: PDF writer metadata can vary across restarts. */
     async readPdfWindow(sourceId: string, parentHash: string, first: number, count: number,
       originals: ReturnType<typeof createFirestoreKnowledgeOriginals>, signal?: AbortSignal) {

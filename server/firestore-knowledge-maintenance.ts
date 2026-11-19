@@ -19,8 +19,9 @@ import { requireDurableUsage, type PlatformProviderFactory, type FirestoreModelR
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
-import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError } from "./firestore-knowledge-work.ts";
+import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError, knowledgeTruncatedOutputRepairId } from "./firestore-knowledge-work.ts";
 import { createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, KnowledgeModelQuotaPending, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
+import { observationHash } from "./knowledge-observation.ts";
 import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion, type KnowledgePdfAcceptance } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { embeddingDocument, sourceVersionHash } from "./knowledge-inputs.ts";
@@ -54,6 +55,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   isolatedComparison?: { destination: string; baseline: KnowledgeMaintenanceBaseline;
     previousVisual?: { priorWork: string; priorVersionHash: string } };
   useIsolatedPlatformDailyLimit?: boolean;
+  truncatedOutput?: { priorWork: string; observationHash: string };
   reviseHeldPdf?: { priorWork: string; priorVersionHash: string; feedback: string; amendments?: PdfAmendment[] };
   isolatedFixturePublish?: boolean;
 }) {
@@ -87,6 +89,17 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const credentialBinding = sponsor && personal
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
+      const recovery = options.truncatedOutput;
+      const originalRequest = recovery ? { ...request, operationFingerprint: recovery.priorWork } : undefined;
+      if (recovery && originalRequest) {
+        if (sponsor || !recordedCheckId || !expectedRevision || reusedOrganizationFrom || request.publishMode !== 'live'
+          || request.operationFingerprint !== knowledgeTruncatedOutputRepairId(recovery.priorWork)
+          || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', recovery.priorWork)) reject('knowledge_truncation_repair_binding');
+        const prior = await work.inspect(originalRequest), observed = await options.refresh.resumeCheck(registration.data, recordedCheckId);
+        if (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit' || prior.receipt || prior.prepared
+          || prior.result.observationHash !== recovery.observationHash || observed?.status !== 'ok' || observed.items.length !== 1
+          || observationHash(observed.items[0]!) !== recovery.observationHash) reject('knowledge_truncation_repair_binding');
+      }
       if (definition.leafletPage && !recordedCheckId && !previous?.result && !previous?.receipt) {
         const fetcher = base.backgroundKnowledgeLiveFetch ? options.fetch : options.fixtureFetch;
         if (fetcher) {
@@ -107,7 +120,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
         timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
       const corpusPolicy = options.useIsolatedPlatformDailyLimit ? { isolatedMaintenanceProject: options.projectId } : {};
-      const configBinding = { config, limits, ...corpusPolicy, ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
+      const configBinding = { config, limits, ...corpusPolicy, ...(recovery ? { truncatedOutput: recovery } : {}), ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
       const focus = options.focusedPage;
       const comparison = options.isolatedComparison;
@@ -186,8 +199,13 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
             const quotaReader = personal
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
-            const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) =>
-              session.completeText({ system: input.system, user: input.user, attemptKey: input.attemptKey }, async rootRunId => {
+            const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) => {
+              const stage = { system: input.system, user: input.user, attemptKey: input.attemptKey };
+              if (recovery && originalRequest) {
+                const saved = await work.readTruncatedStage(originalRequest, recovery.observationHash, stage);
+                if (saved !== null) return saved;
+              }
+              return session.completeText(stage, async rootRunId => {
                 budget?.close();
                 const context: RootBudgetContext = { generation: 1, binding: {
                   rootRunId, ownerId: payerId, workspaceId: NIL, childId: NIL,
@@ -207,6 +225,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                   durableDailyUsage: { adapter: daily, context } });
                 return model.completeText(input);
               }, tx => quotaReader.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts));
+            };
             const reviewer = createModelKnowledgeReviewPort({ completeText, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               comparison,
               ...(revision ? { async heldDraft() {

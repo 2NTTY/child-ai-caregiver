@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { campaignMaterialWatches, externalMaterialWatches, fhsMaterialWatches } from '../server/platform-materials.ts';
+import { campaign, campaignLimitMicros } from '../server/knowledge-campaign-budget.ts';
 
 // Each step reopens the same gross ledger and the durable work for the registered source.
 const inventory = JSON.parse(readFileSync(new URL('../knowledge/fhs-child-inventory.json', import.meta.url), 'utf8'));
@@ -13,6 +14,19 @@ const seen = new Set();
 const args = process.argv.slice(2);
 const onlyExternal = args[0] === '--only-external';
 if (onlyExternal) args.shift();
+const repairs = new Map();
+const repairOnly = args[0] === '--repair-truncated';
+if (repairOnly) {
+  args.shift();
+  const checkpoint = JSON.parse(readFileSync(args.shift(), 'utf8'));
+  if (checkpoint.campaign !== campaign || checkpoint.grossCapUsd * 1e6 !== campaignLimitMicros) throw Error('Unexpected campaign receipt');
+  for (const entry of checkpoint.entries) {
+    if (entry.outcome !== 'candidate_held' || entry.code !== 'model_output_limit') continue;
+    if (repairs.has(entry.sourceId) || !campaignMaterialWatches.some(w => w.id === entry.sourceId)
+      || !/^[a-f0-9]{64}$/u.test(entry.operationFingerprint)) throw Error('Unexpected truncated source receipt');
+    repairs.set(entry.sourceId, entry.operationFingerprint);
+  }
+}
 const [resumeFlag, resumeId, ...extra] = args;
 if (resumeFlag !== undefined && (resumeFlag !== '--after' || !campaignMaterialWatches.some(source => source.id === resumeId) || extra.length)) {
   throw Error('Use --after SOURCE_ID to resume after an inspected terminal receipt');
@@ -27,6 +41,7 @@ const familyHealth = [...fhsMaterialWatches].sort((a, b) => {
 const external = [...externalMaterialWatches].sort((a, b) => pdfs.get(a.url).pages - pdfs.get(b.url).pages);
 const sources = onlyExternal ? external : [...external, ...familyHealth];
 for (const source of sources) {
+  if (repairOnly && !repairs.has(source.id)) continue;
   const hash = items.get(source.id)?.textHash ?? pdfs.get(source.url)?.sha256 ?? source.url;
   if (seen.has(hash)) continue;
   seen.add(hash);
@@ -34,7 +49,8 @@ for (const source of sources) {
     if (source.id === resumeId) resumed = true;
     continue;
   }
-  const step = spawnSync(process.execPath, [fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url)), 'process', source.id],
+  const action = repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-sized', source.id];
+  const step = spawnSync(process.execPath, [fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url)), ...action],
     { stdio: 'inherit' });
   if (step.status === 3) continue;
   if (step.status !== 0) { process.exitCode = step.status ?? 1; break; }
