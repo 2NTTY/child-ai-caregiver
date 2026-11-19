@@ -27,19 +27,22 @@ const APPLICABILITY_NOTES: Record<NonNullable<AgentProgressSource['applicability
   conditional: '需視乎條件適用（尚待獨立核對回覆）',
   requires_clarification: '需補充孩子資料以確定適用性（尚待獨立核對回覆）',
 };
-const DEFAULT_UNREVIEWED_NOTE = '已找到官方來源片段（尚待獨立核對回覆）';
+const DEFAULT_UNREVIEWED_NOTE = '尚待獨立核對回覆';
 
-/** Progressive retrieved official source cards before final answer delivery; never contains draft answer text. */
+/** Stage records retrieval, not excerpt provenance. Show metadata only until a verified quote is available. */
 export function ProgressSourceCards({
   sources,
   reviewing = false,
+  retainedAfterFailure = false,
 }: {
   sources: readonly AgentProgressSource[];
   reviewing?: boolean;
+  retainedAfterFailure?: boolean;
 }) {
   if (!sources.length) return null;
   return <View testID="chat-progress-sources" accessibilityLiveRegion="polite">
     <Text variant="labelSmall">{AGENT_PROGRESS_SOURCE_DISCLAIMER}</Text>
+    {retainedAfterFailure ? <Text testID="chat-progress-sources-retained-notice" variant="labelSmall">已保留今次檢索的官方來源預覽。正式回覆未完成或尚未通過核對，未核草稿不會作正式建議顯示。請查看上方狀態或重試。</Text> : null}
     {reviewing ? <Text testID="chat-progress-sources-reviewing" variant="labelSmall">{AGENT_PROGRESS_LABELS.reviewing}</Text> : null}
     {sources.map(source => {
       const dateText = formatProgressSourceDateText(source);
@@ -48,7 +51,6 @@ export function ProgressSourceCards({
         <Text variant="titleSmall">{source.publisher} · {source.title}</Text>
         {source.section && source.section !== source.title ? <Text variant="bodySmall">{source.section}</Text> : null}
         {dateText ? <Text variant="bodySmall">更新／檢查：{dateText}</Text> : null}
-        <Text selectable>{source.excerpt}</Text>
         {source.url ? <AppButton variant="quiet" density="compact" label="開啟官方來源"
           onPress={() => { void Linking.openURL(source.url!).catch(() => {}); }} /> : null}
       </View>;

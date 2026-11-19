@@ -90,7 +90,9 @@ export async function handleProductAgentRequest(request: Request, userId: string
           ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
           : result.status === "unknown" ? "這次 Agent 運行中斷，結果未知；沒有自動重新執行。請查核原運行結果。"
           : "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。");
-        const reason = result.status === "stopped" || result.status === "unknown" ? agentStopMessage(result.stopReason) : null;
+        const reason = result.status === "stopped" || result.status === "unknown"
+          ? (agentStopMessage(result.stopReason) ?? (result.status === "unknown" ? "未能確認結果" : "未能完成回覆"))
+          : null;
         const text = reason ? `這次回覆未完成：${reason}。\n\n${content}` : content;
         const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
         const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
