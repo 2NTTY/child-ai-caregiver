@@ -6528,3 +6528,17 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+### 2026-11-19　無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`）
+
+- Recorded At：2026-11-19（Asia/Hong_Kong）
+- Work Date：2026-11-19
+- Step / Package：REQ-002 §§3.8、4.4、7.1（AC 514、524；基線 `origin/master` `5ddc68e4`）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理本地實作與離線驗證，未推送遠端）
+- Goal：為所有無工具結構化角色啟用原生 `responseJsonSchema` 及不支援供應商的顯式降級路徑，並建立覆蓋全部角色、階段、重試／失敗／取消、上下文組裝分類與 §7.1 四核心里程碑的嚴格白名單 metadata-only trace。
+- Actual Work：
+  - 抽取共用 `server/structured-output-schema.ts`（並保留 `server/knowledge-pdf-output.ts` re-export），統一為 `delivery_review`、`delivery_repair`、`data_compose`、`compose_review`、`knowledge_organize`、`knowledge_review`、`knowledge-pdf-focus` 與 `knowledge-pdf-windows` 傳入原生 JSON schema 與明確角色識別。
+  - 於 `server/agent-model-gateway.ts`、`server/gemini-key-provider.ts` 與 `server/openai-compatible-provider.ts` 加入供應商結構化輸出宣告及顯式降級，保持同根預算記帳與語義／雜湊／來源失敗關閉邊界。
+  - 建立 `server/agent-trace.ts` 並在 `server/agent-runtime.ts`、`server/product-agent.ts`、`server/product-agent-tools.ts` 及 `server/chat-delivery-review.ts` 接入全角色 metadata trace、白名單 OTel span 屬性投影、上下文組裝類別／省略理由及四個核心時間指標（並於 `onSummaryCoverage` 與 collector sink 列表修復短路徑覆蓋及重覆訂閱問題）。
+  - 新增 `tests/req002-schema-and-trace.test.ts`（11 cases）、`scripts/ci/verify-req002-schema-trace-offline.sh` 與 `.github/workflows/req002-schema-trace-offline.yml`。
+- Verification：待最終本地離線檢查與型別驗證後於下一筆或確認結果記錄；依指示保留於本地工作樹，未執行 `git push` 或建立 PR。
+

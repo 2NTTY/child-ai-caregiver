@@ -1579,3 +1579,12 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+### 無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`，基線 `origin/master` `5ddc68e4`）
+
+- **對應需求**：REQ-002 §§3.8、4.4、7.1；AC 514、524。
+- **核心實作**：
+  - 統一 `server/structured-output-schema.ts`（`nativeResponseSchema`），為所有無工具 `completeText` 角色（`delivery_review`、`delivery_repair`、`data_compose`、`compose_review`、`knowledge_organize`、`knowledge_review` 及 PDF windowed/focus 檢查）傳遞原生 `responseMimeType: "application/json"` 與 `responseJsonSchema`。
+  - Provider 明確聲明結構化能力（Vertex / Gemini 宣告 `native_json_schema`，OpenAI 相容供應商宣告 `prompt_strict_json`）；不支援原生 schema 時，gateway 於請求移除不支援欄位、加入嚴格 JSON 指令並於 trace 標記 `schemaMode: "degraded_prompt_strict_json"` 與 `schemaDegradationReason: "provider_native_schema_unsupported"`；任何結構化成功均不放行錯誤 hash 或缺失來源／語義檢查。
+  - 新增 `server/agent-trace.ts` 嚴格白名單 metadata collector 與 `formatOtelMetadataSpan`，統一覆蓋 `main_chat`、`background`、`work_followup`、`summary`、`compaction` 與各 `completeText` 專責角色之啟始、重試、錯誤、取消、上下文組裝分類與四項核心里程碑時間點（`firstMeaningfulProgressMs`、`firstUsableSourceMs`、`firstApprovedAnswerMs`、`terminalSettledMs`），並隔離任何輸入／輸出正文或 PII 字串。
+- **驗證門檻**：[離線驗證 workflow](.github/workflows/req002-schema-trace-offline.yml) · [驗證腳本](scripts/ci/verify-req002-schema-trace-offline.sh)。本輪為本地離線驗證與型別檢查，未連真 Vertex/OpenAI 模型或 Firestore，未推送遠端。

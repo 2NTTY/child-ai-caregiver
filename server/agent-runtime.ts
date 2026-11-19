@@ -8,7 +8,7 @@ import { z } from "zod";
 import { FunctionCallingConfigMode } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
-import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from "../src/shared/agent-run-limits.ts";
 import type { AgentStopReason, AgentDurableBudget, AgentRunLimits, AgentModelPurpose, AgentSoftBudgetProfileRole, AgentPolicyTransition } from "./agent-budget.ts";
 import type { HighWatermarkMonitor, HighWatermarkAlert } from "./agent-high-watermark.ts";
@@ -24,6 +24,17 @@ import { PresentationRepairAgent } from "./agent-presentation-repair.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { AgentCapabilitySelection, AgentCapabilityToolset, type AgentToolCatalog } from "./agent-tool-capabilities.ts";
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
+import {
+  createAgentRunTraceCollector,
+  hashSafeTraceId,
+  type AgentContextAssemblyMetadata,
+  type AgentContextCategoryMetadata,
+  type AgentRunTraceHandle,
+  type AgentTraceEvent,
+  type AgentTraceRole,
+  type AgentTraceSink,
+} from "./agent-trace.ts";
+export type { AgentContextAssemblyMetadata, AgentContextCategoryMetadata, AgentRunTraceHandle, AgentTraceEvent, AgentTraceRole, AgentTraceSink };
 import { WORK_RECOVERY_MAX_SEQUENCE } from "./firestore-work-continuation-recovery.ts";
 import { createRunContextCompactor, type InRunCompactionConfig } from "./context-compactor.ts";
 
@@ -119,8 +130,10 @@ export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; b
   model?: string;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
-  completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
-    purpose?: AgentModelPurpose; onProviderStart?: () => void }) => Promise<string>; }
+  completeText?: (input: { system: string; user: string; attemptKey: string; responseJsonSchema?: Record<string, unknown>; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
+    purpose?: AgentModelPurpose; role?: AgentTraceRole; onProviderStart?: () => void }) => Promise<string>;
+  /** Metadata-only per-run trace hook; never receives prompts or message bodies. */
+  trace?: AgentRunTraceHandle; }
 export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
 export interface AgentInitialTextInput { text: string; context?: Record<string, unknown> }
 /** Internal composition of an already claimed private-summary part, never a request-selected permit. */
@@ -173,6 +186,13 @@ export interface AgentRunInput {
   loadImage?: (signal: AbortSignal) => Promise<AuthorizedAgentImage>;
   /** Trusted observation only; no control authority and no raw model/tool payloads. */
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
+  /** Metadata-only all-role trace sink; strictly allowlisted without prompts or message bodies. */
+  onTrace?: AgentTraceSink;
+  /** Whitelisted metadata describing initial context assembly categories and omission reasons. */
+  contextAssembly?: {
+    categories: readonly AgentContextCategoryMetadata[];
+    loaderCalls?: Partial<AgentContextAssemblyMetadata["loaderCalls"]>;
+  };
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
   runId?: string;
   deadlineMs?: number;
@@ -278,6 +298,7 @@ export function createAgentRuntime(options: {
   embeddings?: import('./embedding-gateway.ts').EmbeddingGateway;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
+  onTrace?: AgentTraceSink;
   policyVersion?: number;
   repeatedSignatureStreak?: number;
   onPolicyObservation?: (event: BudgetPolicyObservation) => void;
@@ -336,6 +357,20 @@ export function createAgentRuntime(options: {
       const alertHandler = input.onHighWatermarkAlert ?? fixedOptions.onHighWatermarkAlert;
       let repeatedLoopSignature: string | undefined;
       let loopStopped = false;
+      const runtimeTraceRole: AgentTraceRole = input.recipeId === "product-work-followup"
+        ? "work_followup"
+        : input.recipeId === "memory-refresh"
+          ? "summary"
+          : input.trigger.kind === "worker"
+            ? "background"
+            : "main_chat";
+      const traceCollector = createAgentRunTraceCollector({
+        runId,
+        role: runtimeTraceRole,
+        recipeId: input.recipeId,
+        sinks: [fixedOptions.onTrace, input.onTrace],
+      });
+      traceCollector.emit({ role: runtimeTraceRole, phase: "run_start" });
       try {
         await budget.wait(async () => {
           if (!await input.authorize()) throw new AgentStopped("unauthorized");
@@ -458,7 +493,7 @@ export function createAgentRuntime(options: {
           const deliveryReview = createChatDeliveryReviewObligation(input.requireDeliveryReview === true);
           const reserveDeliveryReview = () => deliveryReview.required;
           const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
-            embeddings: "embeddings" in selected ? selected.embeddings : undefined };
+            embeddings: "embeddings" in selected ? selected.embeddings : undefined, trace: traceCollector.handle };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           if (privateSummaryEnabled && (input.toolCatalog || input.compactToolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
             || configuredTools[0].name !== 'stage_private_summary' || configuredTools[0].terminal !== true))
@@ -487,6 +522,19 @@ export function createAgentRuntime(options: {
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
           const prompt = await getPrompt();
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
+          traceCollector.emitContextAssembly({
+            packVersion: prompt.packVersion,
+            recipeId: prompt.recipeId,
+            categories: input.contextAssembly?.categories ?? [
+              { category: "recent_messages", included: input.messages.length > 0, count: input.messages.length, reasonCode: input.messages.length > 0 ? "included" : "empty" },
+            ],
+            capacity: {
+              inputLimitCharacters: budget.limits.inputCharacters,
+              assembledCharacters: JSON.stringify(originalParts).length,
+              toolResponseReserveCharacters: AGENT_TOOL_RESPONSE_RESERVE,
+            },
+            loaderCalls: input.contextAssembly?.loaderCalls,
+          });
           budget.check();
           if (fixedOptions.bindDurableRun) {
             durable = freezeDurable(fixedOptions.bindDurableRun(bindingInput, prompt.packVersion, budget.limits, budget.deadlineAtMs));
@@ -532,6 +580,17 @@ export function createAgentRuntime(options: {
               const embeddingKey = budget.durable && tool.name === "search_knowledge"
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
               const callId = context?.functionCallId ?? "";
+              const callIdHash = callId ? hashSafeTraceId(callId) : undefined;
+              const toolStartMs = Date.now();
+              if (tool.name === "load_capabilities") traceCollector.handle.noteLoaderCall("capabilityLoads");
+              else if (tool.name === "read_history" || tool.name === "search_history") traceCollector.handle.noteLoaderCall("historyReads");
+              else if (tool.name === "search_knowledge") traceCollector.handle.noteLoaderCall("knowledgeSearches");
+              traceCollector.emit({
+                role: runtimeTraceRole,
+                phase: "tool_start",
+                tool: tool.name,
+                ...(callIdHash ? { callIdHash } : {}),
+              });
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };
               result.tools.push(progress);
               try {
@@ -540,10 +599,35 @@ export function createAgentRuntime(options: {
                 progress.status = response.status;
                 if (response.reference) progress.reference = response.reference;
                 observer.recordToolRejection(tool.name, "execution", response);
+                const toolDurationMs = Math.max(0, Date.now() - toolStartMs);
+                const code = typeof response.data?.code === "string" ? response.data.code : undefined;
+                traceCollector.emit({
+                  role: runtimeTraceRole,
+                  phase: response.status === "succeeded" ? "tool_end" : "tool_rejection",
+                  tool: tool.name,
+                  ...(callIdHash ? { callIdHash } : {}),
+                  durationMs: toolDurationMs,
+                  outcome: response.status,
+                  ...(code ? { code } : {}),
+                  counts: budget.counts,
+                });
                 return response;
               } catch (error) {
                 budget.check();
-                if (error instanceof AgentStopped) { toolFailure = error; throw error; }
+                if (error instanceof AgentStopped) {
+                  traceCollector.emit({
+                    role: runtimeTraceRole,
+                    phase: "tool_error",
+                    tool: tool.name,
+                    ...(callIdHash ? { callIdHash } : {}),
+                    durationMs: Math.max(0, Date.now() - toolStartMs),
+                    outcome: error.reason === "unauthorized" ? "unauthorized" : "failed",
+                    stopReason: error.reason,
+                    counts: budget.counts,
+                  });
+                  toolFailure = error;
+                  throw error;
+                }
                 // Authorization failures must never look like missing data or invite a retry.
                 try { if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized"); }
                 catch (error) { toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable"); throw toolFailure; }
@@ -552,6 +636,16 @@ export function createAgentRuntime(options: {
                   ? { code: "read_unavailable", recovery: "bounded_read", nextAction: "This read failed, not an empty result. Use a relevant read within the remaining budget or state the limitation." }
                   : { code: "effect_unknown", recovery: "original_receipt_only" } };
                 observer.recordToolRejection(tool.name, "execution", response);
+                traceCollector.emit({
+                  role: runtimeTraceRole,
+                  phase: "tool_error",
+                  tool: tool.name,
+                  ...(callIdHash ? { callIdHash } : {}),
+                  durationMs: Math.max(0, Date.now() - toolStartMs),
+                  outcome: progress.status,
+                  code: tool.effect === "read" ? "read_unavailable" : "effect_unknown",
+                  counts: budget.counts,
+                });
                 return response;
               }
             } }));
@@ -603,6 +697,31 @@ export function createAgentRuntime(options: {
           const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+            runId, recipeId: input.recipeId, role: runtimeTraceRole,
+            onTrace: event => traceCollector.emitGatewayEvent(event),
+            nextAttemptIndex: () => traceCollector.nextAttemptIndex(),
+            onSummaryCoverage: (reason, version) => {
+              if (reason !== "empty") traceCollector.handle.noteLoaderCall("summaryReads");
+              traceCollector.handle.recordContextCategory({
+                category: "conversation_summary",
+                included: reason === "included",
+                reasonCode: reason,
+                ...(version ? { versionRefs: [{ kind: "summary", version }] } : {}),
+              });
+              traceCollector.emitContextAssembly({
+                packVersion: prompt.packVersion,
+                recipeId: prompt.recipeId,
+                categories: input.contextAssembly?.categories ?? [
+                  { category: "recent_messages", included: input.messages.length > 0, count: input.messages.length, reasonCode: input.messages.length > 0 ? "included" : "empty" },
+                ],
+                capacity: {
+                  inputLimitCharacters: budget.limits.inputCharacters,
+                  assembledCharacters: JSON.stringify(originalParts).length,
+                  toolResponseReserveCharacters: AGENT_TOOL_RESPONSE_RESERVE,
+                },
+                loaderCalls: input.contextAssembly?.loaderCalls,
+              });
+            },
             ...(input.recipeId === 'memory-refresh' ? { purpose: 'summary' as const } : {}),
             ...(syncPolicy ? { syncPolicy } : {}),
             refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
@@ -678,6 +797,11 @@ export function createAgentRuntime(options: {
             ? new AgentGatewayModel({
                 ...selected,
                 purpose: "compaction",
+                runId,
+                recipeId: input.recipeId,
+                role: "compaction",
+                onTrace: event => traceCollector.emitGatewayEvent(event),
+                nextAttemptIndex: () => traceCollector.nextAttemptIndex(),
                 budget,
                 userId: scope.userId,
                 childId: scope.childId,
@@ -1038,6 +1162,12 @@ export function createAgentRuntime(options: {
         if (acquired) activeUsers.delete(scope.userId);
         if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = frozenSummaryCounts ?? budget.counts;
+        traceCollector.finalize({
+          status: result.status,
+          stopReason: result.stopReason,
+          hasUsablePartial: traceCollector.snapshotMilestones().firstUsableSourceMs !== null,
+          counts: result.counts,
+        });
         if (monitor) {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {

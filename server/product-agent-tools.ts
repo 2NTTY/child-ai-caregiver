@@ -632,6 +632,27 @@ export function createProductAgentTools(options: {
           if (!fits(makeResult([...selected, message]))) break;
           selected.push(message);
         }
+        run.trace?.recordContextCategory({
+          category: "profile",
+          included: Boolean(metadata.profile),
+          reasonCode: metadata.profile ? "included" : context.profile.data ? "not_applicable" : "empty",
+          ...(context.profile.version ? { versionRefs: [{ kind: "profile", version: String(context.profile.version) }] } : {}),
+        });
+        run.trace?.recordContextCategory({
+          category: "confirmed_facts",
+          included: metadata.facts.length > 0,
+          count: metadata.facts.length,
+          reasonCode: metadata.factsPartial ? "truncated" : metadata.facts.length > 0 ? "included" : "empty",
+        });
+        run.trace?.recordContextCategory({
+          category: "tasks",
+          included: metadata.tasks.length > 0,
+          count: metadata.tasks.length,
+          reasonCode: metadata.tasksHaveMore ? "truncated" : metadata.tasks.length > 0 ? "included" : "empty",
+        });
+        if (metadata.summaryOmittedForCapacity) {
+          run.trace?.recordContextCategory({ category: "conversation_summary", included: false, reasonCode: "omitted_capacity" });
+        }
         // A refreshed read invalidates a staged draft; coverage always names this exact complete prefix.
         summaryInput = prepared && selected.length ? { ...prepared, messages: selected,
           moreUncovered: prepared.moreUncovered || selected.length < prepared.messages.length } : null;

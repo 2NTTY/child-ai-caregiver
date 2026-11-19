@@ -24,6 +24,16 @@ import type { DurableAiUsage, DurableAiUsageRequest } from "./durable-ai-usage.t
 import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 import { nativeContextPreflight, nativeTokenCounter, type ContextPreflight, type NativeContextPayload } from './model-context-preflight.ts';
+import {
+  hashSafeTraceId,
+  sanitizeAgentTraceEvent,
+  traceRoleFromPurpose,
+  type AgentTraceEvent,
+  type AgentTraceRole,
+  type AgentTraceSchemaDegradationReason,
+  type AgentTraceSchemaMode,
+  type AgentTraceSink,
+} from "./agent-trace.ts";
 
 export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string; highDetail: boolean }>;
 const verifiedKnowledgePdfs = new WeakSet<AgentKnowledgePdf>();
@@ -36,6 +46,7 @@ export function originalKnowledgePdf(bytes: Buffer, sha256: string, highDetail =
 }
 
 export interface AgentModelProvider {
+  readonly structuredOutput?: "native_json_schema" | "prompt_strict_json";
   preflight?(request: LlmRequest, audioDurationMs?: number, counted?: number): ContextPreflight;
   countInput?(request: LlmRequest): Promise<number | undefined>;
   generate(request: LlmRequest, signal: AbortSignal): Promise<LlmResponse>;
@@ -101,6 +112,7 @@ export function createVertexAgentProvider(config: AiConfig): AgentModelProvider 
   const client = new GoogleGenAI(vertexAgentClientOptions(config));
   const count = nativeTokenCounter(config.model, config.localContextTokenizer);
   return {
+    structuredOutput: "native_json_schema",
     preflight: (request, duration, counted) => nativeContextPreflight(buildPayload(request), duration, counted),
     ...(count ? { countInput: (request: LlmRequest) => count(buildPayload(request)) } : {}),
     async generate(request, signal) {
@@ -133,6 +145,14 @@ export class AgentGatewayModel extends BaseLlm {
     reserveDeliveryReview?: AgentReviewReserve;
     purpose?: AgentModelPurpose;
     onProviderStart?: () => void;
+    runId?: string;
+    role?: AgentTraceRole;
+    recipeId?: string;
+    onTrace?: AgentTraceSink;
+    nextAttemptIndex?: () => number;
+    schemaMode?: AgentTraceSchemaMode;
+    schemaDegradationReason?: AgentTraceSchemaDegradationReason;
+    onSummaryCoverage?: (reason: "included" | "omitted_capacity" | "omitted_expired" | "empty", versionRef?: string) => void;
     pdf?: AgentKnowledgePdf;
     audio?: AgentAudioInput;
     voice?: Readonly<VoiceMessageReference>;
@@ -171,7 +191,7 @@ export class AgentGatewayModel extends BaseLlm {
   }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
   async completeText(input: { system: string; user: string; attemptKey: string; pdf?: AgentKnowledgePdf; responseJsonSchema?: Record<string, unknown>; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
-    purpose?: AgentModelPurpose; onProviderStart?: () => void }): Promise<string> {
+    purpose?: AgentModelPurpose; role?: AgentTraceRole; onProviderStart?: () => void }): Promise<string> {
     await this.checkAuthorizeAndPolicy();
     let audio: AgentAudioInput | undefined;
     if (input.voice) {
@@ -185,7 +205,17 @@ export class AgentGatewayModel extends BaseLlm {
       input.purpose === "delivery_review" || input.purpose === "delivery_repair" || input.purpose === "compose_review"
         ? "reviewer"
         : undefined;
+    const nativeSchemaRequested = Boolean(input.responseJsonSchema);
+    const degradeSchema = nativeSchemaRequested && this.options.provider.structuredOutput === "prompt_strict_json";
+    const schemaMode: AgentTraceSchemaMode = nativeSchemaRequested
+      ? (degradeSchema ? "degraded_prompt_strict_json" : "native_json_schema")
+      : "unstructured";
+    const schemaDegradationReason: AgentTraceSchemaDegradationReason | undefined = degradeSchema
+      ? "provider_native_schema_unsupported" : undefined;
     const roleInstruction = (modelCallAlreadyReserved = false) => input.system
+      + (degradeSchema
+        ? "\n\nNative provider JSON schema constraint is unavailable on this provider; return strictly one valid JSON object matching every required field of the declared output schema, with no surrounding prose or code fences."
+        : "")
       + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
       + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
       + JSON.stringify({ limits: { ...this.options.budget.limits,
@@ -199,17 +229,26 @@ export class AgentGatewayModel extends BaseLlm {
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }, ...(input.pdf ? [createPartFromBase64(input.pdf.data, "application/pdf",
         input.pdf.highDetail ? PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH : undefined)] : []), ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
-      config: { systemInstruction: roleInstruction(), ...(input.responseJsonSchema ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema } : {}) },
+      config: {
+        systemInstruction: roleInstruction(),
+        ...(input.responseJsonSchema && !degradeSchema
+          ? { responseMimeType: "application/json", responseJsonSchema: input.responseJsonSchema }
+          : {}),
+      },
       toolsDict: {},
       liveConnectConfig: {},
     };
     // Share accounting and authority, never the generator's summary or tool context.
-    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage, syncPolicy, roleProfileOverrides } = this.options;
+    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage, syncPolicy, roleProfileOverrides, onTrace, runId, recipeId, nextAttemptIndex } = this.options;
+    const traceRole = input.role ?? traceRoleFromPurpose(input.purpose, this.options.role ?? "main_chat");
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
       syncPolicy, roleProfileOverrides,
       refreshPolicyConfig: async (request, reserved) => ({ ...request.config, systemInstruction: roleInstruction(reserved) }),
       durableDailyUsage, audio, pdf: input.pdf, modelAttemptKey: () => input.attemptKey,
       reserveDeliveryReview: this.options.reserveDeliveryReview, purpose: input.purpose, onProviderStart: input.onProviderStart,
+      ...(runId ? { runId } : {}), ...(recipeId ? { recipeId } : {}), role: traceRole,
+      ...(onTrace ? { onTrace } : {}), ...(nextAttemptIndex ? { nextAttemptIndex } : {}),
+      schemaMode, ...(schemaDegradationReason ? { schemaDegradationReason } : {}),
       ...(input.imageIds?.length ? { images: () => {
         if (!this.options.images) throw new AgentStopped('unauthorized');
         return this.options.images(input.imageIds);
@@ -276,6 +315,10 @@ export class AgentGatewayModel extends BaseLlm {
       requestCharacters = requestSize(base);
       if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
     }
+    const hasSummarySource = Boolean(
+      this.options.readConversationSummary
+      || (!this.providerCalled && this.options.initialConversationSummary),
+    );
     const initial = this.options.readConversationSummary
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
@@ -315,6 +358,19 @@ export class AgentGatewayModel extends BaseLlm {
     // Fresh provider-only data never enters ADK events; size the full request without cumulative copies.
     if (projection) outgoing = { ...base, contents: [...base.contents, projection.context] };
     const includesSummary = projection !== null;
+    if (this.options.onSummaryCoverage && hasSummarySource) {
+      try {
+        if (!initial) this.options.onSummaryCoverage("empty");
+        else if (includesSummary) this.options.onSummaryCoverage("included", String(initial.summary.version));
+        else {
+          const parsedValidUntil = initial.validUntil ? Date.parse(initial.validUntil) : NaN;
+          this.options.onSummaryCoverage(
+            Number.isFinite(parsedValidUntil) && Date.now() >= parsedValidUntil ? "omitted_expired" : "omitted_capacity",
+            String(initial.summary.version),
+          );
+        }
+      } catch { /* Observation only. */ }
+    }
     const omittedSummary = () => {
       const marker = { role: 'user', parts: [{ text: 'Server context coverage: historical summary omitted for capacity or expiry; read authorized history/current resources when needed. Do not claim complete historical coverage.' }] };
       return fits(marker, false) ? { ...base, contents: [...base.contents, marker] } : base;
@@ -325,6 +381,24 @@ export class AgentGatewayModel extends BaseLlm {
     const retries = config.agentMaxRetries ?? 0;
     if (!Number.isSafeInteger(retries) || retries < 0 || retries > AGENT_RUN_LIMITS.modelRetries.max) throw new AgentStopped("unavailable");
     let renderedPolicy = budget.policyFingerprint;
+    const traceRole = this.options.role ?? traceRoleFromPurpose(this.options.purpose, "main_chat");
+    const traceRunId = this.options.runId ?? daily?.context.binding.rootRunId ?? "gateway";
+    const emitTrace = (partial: Omit<AgentTraceEvent, "runId" | "role" | "recipeId" | "elapsedMs"> & { elapsedMs?: number }) => {
+      if (!this.options.onTrace) return;
+      try {
+        const sanitized = sanitizeAgentTraceEvent({
+          ...partial,
+          runId: traceRunId,
+          role: traceRole,
+          ...(this.options.recipeId ? { recipeId: this.options.recipeId } : {}),
+          elapsedMs: partial.elapsedMs ?? 0,
+          ...(this.options.schemaMode ? { schemaMode: this.options.schemaMode } : {}),
+          ...(this.options.schemaDegradationReason ? { schemaDegradationReason: this.options.schemaDegradationReason } : {}),
+        });
+        void Promise.resolve(this.options.onTrace(sanitized)).catch(() => {});
+      } catch { /* Observation only. */ }
+    };
+    const attemptIndex = this.options.nextAttemptIndex?.() ?? (budget.counts.modelCalls + 1);
     for (let retry = 0; ; retry++) {
       // Preserve identical retry payloads unless policy changed, including a transition consumed elsewhere.
       if (retry > 0) {
@@ -378,8 +452,18 @@ export class AgentGatewayModel extends BaseLlm {
       }
       const start = Date.now();
       let outcome: AttemptOutcome = "unavailable";
+      let stopReason: import("./agent-budget.ts").AgentStopReason | undefined;
       let tokens: TokenUsage = { inputTokens: null, outputTokens: null, cachedTokens: null };
       let response: LlmResponse | undefined;
+      const attemptKeyHash = hashSafeTraceId(modelKey ?? `${traceRunId}:${traceRole}:${attemptIndex}:${retry}`);
+      emitTrace({
+        phase: "model_attempt_start",
+        attemptIndex,
+        retryIndex: retry,
+        attemptKeyHash,
+        remainingModelCalls: budget.remainingModelCalls,
+        counts: budget.counts,
+      });
       try {
         if (includesSummary) {
           await this.checkAuthorizeAndPolicy(modelKey);
@@ -475,6 +559,7 @@ export class AgentGatewayModel extends BaseLlm {
         outcome = "succeeded";
       } catch (error) {
         if (error instanceof AgentStopped) {
+          stopReason = error.reason;
           outcome = error.reason === "unauthorized" ? "unauthorized"
             : error.reason === "deadline" || error.reason === "cancelled" ? "timeout"
             : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
@@ -484,6 +569,7 @@ export class AgentGatewayModel extends BaseLlm {
         outcome = status === 429 ? "rate_limited" : status === 408 || status === 504 ? "timeout" : "unavailable";
         const stopped = new AgentStopped(error instanceof PersonalProviderError ? error.diagnostic.reason
           : status === null ? "unavailable" : modelProviderStopReason(status));
+        stopReason = stopped.reason;
         const backoff = 1000 * 2 ** retry;
         // Only an explicit transient provider response is retryable. Transport unknown,
         // cancellation, validation, permission and tool results never enter this path.
@@ -491,9 +577,22 @@ export class AgentGatewayModel extends BaseLlm {
           || retry >= retries || budget.remainingModelCalls < 1 || budget.deadlineAtMs - Date.now() <= backoff + 1000) throw stopped;
         retryDelay = backoff;
       } finally {
-        const record = { outcome, ...tokens, durationMs: Math.max(0, Date.now() - start) };
+        const durationMs = Math.max(0, Date.now() - start);
+        const record = { outcome, ...tokens, durationMs };
         if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
         else await usage.record({ userId, childId, model: config.model, ...record });
+        emitTrace({
+          phase: outcome === "succeeded" ? "model_attempt_end" : retryDelay !== undefined ? "model_attempt_retry" : "model_attempt_error",
+          attemptIndex,
+          retryIndex: retry,
+          attemptKeyHash,
+          durationMs,
+          outcome,
+          ...(stopReason ? { stopReason } : {}),
+          tokens,
+          counts: budget.counts,
+          remainingModelCalls: budget.remainingModelCalls,
+        });
       }
       if (retryDelay !== undefined) {
         await budget.wait(() => delay(retryDelay, undefined, { signal: budget.signal }));

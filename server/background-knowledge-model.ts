@@ -252,7 +252,9 @@ export async function prepareKnowledgeMaintenance(input: {
     if (system.length + user.length > 64000) reject("knowledge_maintenance_input_limit");
     const attemptKey = `knowledge-${stage}:${knowledgeReviewHash({ system, user, ...(pdf ? { pdfHash: sha, responseJsonSchema } : {}) })}`;
     const raw = await input.completeText({ system, user, attemptKey, ...(pdf && !(held && stage === "organize") ? { pdf } : {}),
-      ...(responseJsonSchema ? { responseJsonSchema } : {}), ...(stage === "review" ? { purpose: "knowledge_review" as const } : {}) });
+      ...(responseJsonSchema ? { responseJsonSchema } : {}),
+      role: stage === "review" ? "knowledge_review" : "knowledge_organize",
+      ...(stage === "review" ? { purpose: "knowledge_review" as const } : {}) });
     checkSignal(signal);
     if (raw.length > 128000) reject("knowledge_maintenance_output_limit");
     // Accept a complete JSON code block, never extract a guessed object from
@@ -293,7 +295,7 @@ export async function prepareKnowledgeMaintenance(input: {
       : { originalUnits: pending.map(({ pageEnd: _, ...unit }) => unit) }),
     ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(organizedSchema, { io: "input" }) }),
-  }, pdfContract?.schema) : null;
+  }, pdfContract ? pdfContract.schema : nativeResponseSchema(organizedSchema)) : null;
   const parsedDraft = organized && pdfContract ? pdfContract.parse(organized.value) : null;
   const organizedCoverage = parsedDraft ? coverage(parsedDraft.nativeCoverage) : amendments ? coverage(priorReading!.organize) : null;
   if (sample && input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"organize",organizedCoverage!.layoutFacts!))
@@ -379,7 +381,7 @@ export async function prepareKnowledgeMaintenance(input: {
     candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) } : source,
     baseline: baseline?.source ?? null, ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
-  }, pdfReviewSchema ? nativeResponseSchema(pdfReviewSchema) : undefined);
+  }, nativeResponseSchema(pdfReviewSchema ?? modelAssessmentSchema));
   // Executable dependencies come from the catalog, not a model's interpretation
   // of whether a passage is about health. Semantic approval remains independent.
   if (reviewed.value && typeof reviewed.value === "object"
