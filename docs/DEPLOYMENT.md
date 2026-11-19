@@ -100,3 +100,13 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
 
 單個公共知識包上限是 512 MiB，實際容量取決於 Docker 主機剩餘磁碟。收到 `knowledge_archive_scratch_full` 時，可用 `docker compose exec api sh -c 'df -h /var/tmp/yuban-knowledge; id; test -w /var/tmp/yuban-knowledge'` 核對容量與寫入身份。按原指紋查回批次，再選同一 ZIP 接續。正式 Linux 映像的掛載可在部署時以同一命令核對。
+
+<a id="source-browser"></a>
+## 來源卡瀏覽器首次啟用、更新及回退
+
+來源卡 renderer 使用獨立 Compose project `yuban-source-browser`。它一次只處理一項工作，CPU 上限為 1 核、記憶體 384 MiB、swap 為零。worker 和 renderer 共用具名 Unix socket volume。首次把掛載套用到 worker 時，主線須把 [worker 覆蓋檔](../deploy/p1/compose.firestore.source-browser.yaml)納入正式 receiver 的已批准 layout，按部署流程核實 worker 可讀 socket。其後只更新[獨立瀏覽服務](../deploy/source-browser/compose.yaml)。
+
+1. 在建置機由已審閱提交執行 `docker buildx build --platform linux/amd64 -f deploy/source-browser/Dockerfile --build-arg SITE_REVISION="$REV" -t "$REPO:$REV" --push .`。`REPO` 為現有香港 registry 下的 `site-release/source-browser`。用發布回傳的 `$REPO@sha256:…` 重取同一映像，核對 revision label，跑 [SOURCE_CARD_BROWSER_ACCEPT=1 的既有合成流程](../tests/source-card-acquire.test.mjs)。保存完整 registry digest、冷佔用 bytes 及 seccomp 指紋。瀏覽器安全更新同步核對 lockfile 的 driver、官方映像 digest、shell revision／SHA-256；Node 或 OS 安全更新要核對基底 digest，以 `--pull --no-cache` 重建。
+2. 在主機重新量度 Docker data root 及 receiver 所在檔案系統的餘量。拉取前預留候選完整冷佔用，拉取後兩處仍須至少有 3 GiB。首次採用的[容量收據](../artifacts/verification/SOURCE_BROWSER_FOOTPRINT_20261119.json)以 4.6 GB 磁碟餘量計算，留兩個完全獨立版本後，超出門檻的餘量約 75 MiB。候選與 backend 分開 staging；容量不足時保留正服務及可回退版本，延後切換。
+3. 首次建立 `docker volume create yuban-p1_source-browser-ipc`。當次以具 registry 唯讀權限的既有營運身份 `docker pull "$SOURCE_BROWSER_IMAGE"`，此變數必須為完整已驗 registry digest。在來源卡工作批次之間執行 `docker compose -p yuban-source-browser -f deploy/source-browser/compose.yaml up -d --no-build --pull never --wait source-browser`。先驗 renderer 健康，再接 worker 掛載。維持兩端 UID 1000、renderer 無網絡及無秘密、worker 對 volume 唯讀。
+4. 往後將正服務 digest 和對應 Compose／seccomp 版本列入交接，保留上一個已驗映像在本機。換至新 digest 後核對容器實際映像、健康、cgroup 及 socket。若切換失敗，還原上一組設定及 `SOURCE_BROWSER_IMAGE`，重用上一步 `--pull never --wait` 命令。日常 web／api／worker 的 release ID 及回退不會自行切換獨立瀏覽器。
