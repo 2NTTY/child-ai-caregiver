@@ -6652,3 +6652,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
+
+### 2026-11-19　REQ-008 每輪最小個人背景裝配與日常需求盲區發現（`codex/req008-context-and-blindspot-discovery`）
+
+1）**分層最小個人背景裝配與模式隔離（`server/agent-context-assembly.ts`、`server/product-agent.ts`）**：實作 `assembleTurnBackground`、`formatTurnBackgroundForPrompt` 與 `revalidateTurnBackground`，落實六態區分、純寒暄／`ephemeral` 零私庫讀取（`ephemeral` 同時於工具層注入空白記憶替身並限制為 `search_knowledge`／`read_knowledge_context`／`show_official_help`／`present_answer`）、`chat_only` 唯讀工具白名單、範圍／授權／資料版本／模式漂移失效，以及純統計無個資 `onContextAssembly` 遙測。
+2）**一般聊天日常需求與盲區發現（`server/daily-needs-discovery.ts`）**：實作 `discoverDailyNeeds`，毋須展開可選多角色討論即可辨識 `known_constraint_reminder`、`missing_condition` 與 `relevant_blindspot`；停用主題、未到期延後與已結束關注自動靜音；急症 `emergency-hk-v1` 優先抑止一般提示；不自動改寫待辦或記憶，取捨話題僅提供可略過的可選討論提示。
+3）**離線測試與型別檢查（`tests/req008-context-and-blindspot-discovery.test.ts`、`scripts/ci/verify-req008-context-and-blindspot-discovery-offline.sh`）**：12 份受網絡守衛測試檔案共 167 項案例（包含新建 9 項情境與安全邊界測試）全數通過 `summary-progress-contract.mjs`，`tsconfig.server.json`、`tsconfig.json` 與 `frontend/tsconfig.json` 三項嚴格 `--noEmit` 通過；僅本地分支驗證與提交，未執行計費 `--live` 調用或遠端推送。

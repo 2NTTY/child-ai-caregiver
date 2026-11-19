@@ -1603,3 +1603,12 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+### REQ-008：每輪最小個人背景裝配、對話模式隔離與一般聊天日常需求盲區發現（`codex/req008-context-and-blindspot-discovery`）
+
+- **對應需求**：REQ-008 §1.1（單 Agent 回合最小背景裝配與健康狀態邊界）、§1.2（一般聊天日常需求、缺漏條件與相關盲區主動發現，不以多角色討論為前置）、§9（模式與授權邊界及遙測去敏）。
+- **核心設計與邊界**：
+  - 於 `server/agent-context-assembly.ts` 新增 `assembleTurnBackground`、`formatTurnBackgroundForPrompt`、`revalidateTurnBackground` 與六態分段狀態（`provided`、`not_loaded`、`empty_authorized`、`read_failed`、`invalidated`、`omitted_for_capacity`）：嚴格區分無資料、讀取失敗、容量截斷與授權失效；純寒暄短路徑（`needsPersonalizedTurnBackground`）及 `ephemeral` 臨時模式零讀取個人資料庫；維持 `allowTaskPreload: false` 延後至按需讀取；所有透過 `onContextAssembly` 輸出的 `assemblyMetadata` 僅保留筆數、游標與版本雜湊指紋，絕不記錄任何原文事實、出生日期或個資。
+  - 於 `server/daily-needs-discovery.ts` 新增 `discoverDailyNeeds`，在一般聊天直接偵測已知過敏／安全限制（`known_constraint_reminder`）、關鍵月齡缺漏（`missing_condition`）及與目前問題重疊的活躍成長關注／進行中關注（`relevant_blindspot`），均附 `knownBasis`、`unknownOrLimits` 與 `skippable: true`；自動排除已停用主題、未到期延後項與已結束關注；命中急症入口（`emergency-hk-v1`）時設定 `suppressedForUrgency: true` 並讓路；僅在涉及取捨比較話題時附帶非強制 `suggestOptionalDiscussion` 提示（`discussionAutoStarted: false`、`canMutateTasksOrMemory: false`）。
+  - 於 `server/product-agent.ts` 擴充 `reply()` 的可選 `replyOptions`（`conversationMode` 與 `onContextAssembly`）：`ephemeral` 模式完全隔離私人儲存、注入空白記憶替身至工具層並僅開放唯讀公共知識工具、`chat_only` 模式容許授權讀取並移除所有寫入／候選／摘要／聯絡工具；於 `finalize` 執行 `revalidateTurnBackground` 範圍防漂移重驗；並於 `ephemeral` 與 `chat_only` 略過動作收據與 `summaryDraft` 保存。
+- **離線驗證範圍與限制**：於獨立本地工作樹完成 `tests/req008-context-and-blindspot-discovery.test.ts`（9 項）連同 11 份核心基線測試共 12 份受網絡守衛隔離測試（167 項案例，0 失敗／0 跳過）及三份嚴格 `tsc --noEmit` 型別檢查，並備妥 `.github/workflows/req008-context-and-blindspot-discovery-offline.yml` 與 `scripts/ci/verify-req008-context-and-blindspot-discovery-offline.sh`；未執行真實 Gemini／Vertex 調用、未連接實體資料庫，本分支維持僅於本地提交而未推送遠端。
