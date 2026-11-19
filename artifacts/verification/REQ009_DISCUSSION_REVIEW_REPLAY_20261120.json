@@ -1,0 +1,313 @@
+{
+  "package": "REQ-009",
+  "base": "1362ec1404532824d0b09b99a08e430d3fcd3d01",
+  "fixture": "Isolated synthetic family, original saved task, local Firebase and production Web/API; no private production data.",
+  "originalFailure": {
+    "mainRun": "922e050f-b8c0-4cf2-8be9-a0fc28c1aeb4",
+    "discussionRun": "89c213d6-1b60-4b21-98ab-60df4aa7d22f",
+    "reason": "delivery_review_rejected",
+    "modelCalls": 8,
+    "tools": [
+      [
+        "share_knowledge_view",
+        "succeeded"
+      ],
+      [
+        "ask_parent_view",
+        "rejected"
+      ],
+      [
+        "ask_parent_view",
+        "succeeded"
+      ],
+      [
+        "compare_methods_view",
+        "succeeded"
+      ],
+      [
+        "present_answer",
+        "rejected"
+      ],
+      [
+        "present_answer",
+        "succeeded"
+      ]
+    ],
+    "finalReview": {
+      "decision": "pass",
+      "issues": []
+    },
+    "diagnosticLimit": "The stopped historical run retained the main proposal and final verdict but not the three role texts or post-review branch. Its precise triggering paragraph is unknown."
+  },
+  "liveWeb": {
+    "completedAt": "2026-11-19T21:16:53.206Z",
+    "question": "431201cf-5375-42bc-b633-3bf20e205c4a",
+    "mainAnswer": "e128e179-5137-44b7-aef4-9e31db99b284",
+    "mainRun": "e980f131-24e5-4efb-b180-bacfab831412",
+    "discussionRequest": "74d33b17-91ac-8a36-8edb-d16f20774a0f",
+    "discussionAnswer": "6584ea57-7d39-4b1c-8dc3-82fef6fc1fe0",
+    "discussionRun": "aa2e6f02-3cb7-460e-bc7b-6b0a52ce9278",
+    "browser": "Microsoft Edge via Playwright",
+    "viewport": [
+      1100,
+      850
+    ],
+    "savedTask": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+    "discussionStatus": "completed",
+    "proposalCount": 0,
+    "source": {
+      "id": "fhs-toddler-development",
+      "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+      "versionHash": "91365018235f8e28d39d5cce6f191cdd927b0da61a16e85be9b2f0b647974479",
+      "displayedOriginal": "你的孩子是獨一無二的，有自己的發展速度。"
+    },
+    "reopenedAt": "2026-11-19T21:19:04.534Z",
+    "replyPostsOnReopen": 0,
+    "tools": [
+      [
+        "share_knowledge_view",
+        "succeeded"
+      ],
+      [
+        "ask_parent_view",
+        "rejected"
+      ],
+      [
+        "ask_parent_view",
+        "succeeded"
+      ],
+      [
+        "compare_methods_view",
+        "succeeded"
+      ],
+      [
+        "present_answer",
+        "succeeded"
+      ]
+    ],
+    "mainDraftHash": "4ba0aee550622612ca8c56a367c2f59ab7d69990add2a94af605851584b10d40",
+    "mainReuse": "Replayed the prior approved search and main presentation; reused the original independent pass after comparing the exact draft hash.",
+    "mainCounts": {
+      "modelCalls": 3,
+      "toolCalls": 2,
+      "queryEmbeddings": 1
+    },
+    "discussionCounts": {
+      "modelCalls": 7,
+      "toolCalls": 5,
+      "queryEmbeddings": 0
+    },
+    "model": "gemini-3.1-flash-lite",
+    "billing": "platform",
+    "paidGenerationCalls": 7,
+    "paidQueryEmbeddings": 1,
+    "inputTokens": 85834,
+    "outputTokens": 1573,
+    "wrappedDiscussion": [
+      {
+        "viewport": {
+          "width": 1100,
+          "height": 850
+        },
+        "lines": [
+          8,
+          6,
+          7
+        ],
+        "replyPosts": 0
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "lines": [
+          13,
+          11,
+          15
+        ],
+        "replyPosts": 0
+      }
+    ]
+  },
+  "reviewInput": {
+    "discussionRoles": [
+      "knowledge",
+      "parent",
+      "methods"
+    ],
+    "discussionReviewPolicy": "The first paragraphs are visible AI viewpoints in this order. The rest is the assistant answer. Check every speaker independently against the bound evidence. Reject invented firsthand parenting experience and comparative efficacy claims unsupported by a direct comparison in the sources. Another speaker is never independent evidence.",
+    "userRequest": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+    "role": "chat-delivery-review",
+    "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+    "kind": "mixed",
+    "visibility": "private",
+    "paragraphs": [
+      {
+        "index": 0,
+        "kind": "caregiving",
+        "text": "對於歲半的孩子，十分鐘的短暫相處已很有意義。您準備的藍色圖畫書和沙槌非常適合這階段的孩子進行簡單互動。即使孩子想行開也是正常的，這顯示他正嘗試探索周圍的環境。您可以順應他的興趣，例如將圖畫書當作指物遊戲，或是隨着他移動的步伐，用沙槌輕輕打拍子，讓互動保持輕鬆愉快的氛圍，無須刻意強求完成既定的遊戲內容。請記住，每個孩子的發展速度與興趣點都獨一無二。",
+        "citationIds": [
+          "33019a89-46bb-5238-9a4b-f56c5e649571"
+        ]
+      },
+      {
+        "index": 1,
+        "kind": "caregiving",
+        "text": "作為照顧者，若這十分鐘是他當天與您唯一的相處時間，加上工作了一整天難免會感到疲倦，這種順應孩子興趣的互動方式確實能減輕不少壓力，因為不用強求孩子一定要坐定定配合。不過，若我有時候太累，想在孩子想行開時適度引導他回來玩多一兩分鐘，除了順應他的意願之外，會不會有甚麼簡單的方法能讓這個過程不那麼「推拉」？",
+        "citationIds": [
+          "33019a89-46bb-5238-9a4b-f56c5e649571"
+        ]
+      },
+      {
+        "index": 2,
+        "kind": "caregiving",
+        "text": "在短時間的親子互動中，確實在「完全順應」與「適度引導」之間存在平衡。若選擇「順應」，條件是當您感到疲倦或想減輕壓力時，這能建立愉快的連結而不產生強迫感。反之，若想增加互動時間，可改用「參與式過渡」方法：不強行留住孩子，而是帶著他正在玩的沙槌或圖畫書，跟著他走到他想去的地方，參與他的探索，這能延長共處時間而不構成對立。當您發現順應後，孩子反而能平靜地回到您身邊時，代表這方法對目前的孩子很有效。",
+        "citationIds": [
+          "33019a89-46bb-5238-9a4b-f56c5e649571"
+        ]
+      },
+      {
+        "index": 3,
+        "kind": "caregiving",
+        "text": "當您在疲倦時想與孩子進行這十分鐘的互動，既可以選擇完全「順應」孩子的探索意向，亦可嘗試「參與式過渡」來減低推拉感。兩者的選擇取決於當時的互動品質：若「順應」能讓您感受到與孩子有愉快的連結，即使活動時間短也足夠；若您覺得需要更多相處時間，採取「帶著玩具參與他的探索」這種方式，能減少要求他坐定定帶來的對立。",
+        "citationIds": [
+          "33019a89-46bb-5238-9a4b-f56c5e649571"
+        ]
+      },
+      {
+        "index": 4,
+        "kind": "caregiving",
+        "text": "這類互動並沒有所謂「標準」做法，最理想的狀態是讓親子雙方都感到放鬆。如果您發現「參與式過渡」後，孩子能自然地與您分享新的探索，這便是一個成功的互動訊號。重要的是，根據您個人的疲倦程度調整，無需執著於活動本身是否完成，這就是最適合您們的親子節奏。",
+        "citationIds": [
+          "33019a89-46bb-5238-9a4b-f56c5e649571"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+        "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+        "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313",
+        "classification": "official_guidance",
+        "excerptComplete": false,
+        "excerpt": "一至兩歲幼童需要安全環境、成人引導和穩定常規。家長可透過日常談話、一起看圖畫書、唱童謠及玩積木或扮演遊戲，支持探索和學習。各孩子的發展速度不同，表現清單只供參考，不能單憑一項差異判定疾病。若擔心孩子的發展，可向母嬰健康院或家庭／兒科醫生查詢。"
+      },
+      {
+        "citationId": "page-item",
+        "version": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+        "contentHash": "86af4b2532cdd1697e4446bc991b2ed717a8e6a89c289366781528a96d88a706",
+        "classification": "private",
+        "excerptComplete": true,
+        "excerpt": "{\"kind\":\"task\",\"title\":\"親子活動準備\",\"details\":\"檯面上有一本藍色圖畫書和一個沙槌。放工後只得十分鐘。\",\"occurrence\":{\"id\":\"5c7e033e-dbbf-4b55-bb63-fa0959fd84d0\",\"dueAt\":\"2026-11-20T20:53:55.164Z\",\"timeZone\":\"Asia/Hong_Kong\",\"state\":\"scheduled\",\"terminalBasisVersion\":null}}"
+      }
+    ],
+    "outputContract": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "draftHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "revise",
+            "insufficient_evidence"
+          ]
+        },
+        "issues": {
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "paragraph": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 5
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "support": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              }
+            },
+            "required": [
+              "paragraph",
+              "reason",
+              "support"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "claimedAppChanges": {
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "description": "Zero-based indices of every paragraph claiming the assistant or app actually performed a write, notification or other external action. Return [] if none."
+        }
+      },
+      "required": [
+        "draftHash",
+        "decision",
+        "issues",
+        "claimedAppChanges"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "reviewOutput": {
+    "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+    "decision": "pass",
+    "issues": [],
+    "claimedAppChanges": []
+  },
+  "deliveryChecks": [
+    {
+      "phase": "judged",
+      "blocked": false
+    },
+    {
+      "phase": "liveDraft",
+      "blocked": false
+    }
+  ],
+  "baselineDetector": {
+    "originalMain": [
+      false,
+      false
+    ],
+    "newReviewed": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "newJoined": false,
+    "hypothetical": true
+  },
+  "offlineReplay": {
+    "entry": "tests/chat-discussion.test.ts",
+    "sameEvidence": "enforceChatDeliveryReview receives the captured reviewInput and returns the captured pass bound to the same draft hash.",
+    "negativeControls": {
+      "reviewerIdentifiesUnreceiptedActionInRoleOrMainDespitePass": "delivery_review_rejected",
+      "explicitAssistantDeletionOrNotificationDespiteEmptyClassifier": "delivery_review_rejected",
+      "missingClassificationOrOutOfRangeParagraph": "delivery_review_incomplete",
+      "workspaceRelevanceCheckFalseDuringDiscussion": "delivery_review_rejected"
+    },
+    "regressionChecks": "Caregiver hypothesis and source restatement deliver. A mismatched real write receipt still fails the existing item-level correspondence checks."
+  }
+}
