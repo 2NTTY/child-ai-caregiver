@@ -115,7 +115,8 @@ export function createDueWorkContinuationTools(run: AgentRunContext, authorize: 
 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
 import { snapshotLiveRead, type LiveSourceReaderOption, type PublishedLiveSeries } from './live-source-citation.ts';
-import type { LiveSourceCitation } from '../src/shared/live-source-citation.ts';
+import type { LiveSearchLimitation, LiveSourceCitation } from '../src/shared/live-source-citation.ts';
+import { validateLiveSourceClaims } from './live-community-product-search.ts';
 
 const shortText = (length: number) => z.string().min(1).max(length).refine(value => value.trim().length > 0);
 /** Preserve whole, coverage-tracked source messages; never claim an omitted message was read. */
@@ -540,6 +541,7 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "memory_fact_source_mismatch") return { status: "rejected", data: { code: error.code, nextAction: "Do not include trailing questions or unrelated clauses inside propose_fact.content, and do not propose unrequested facts from past messages. Keep only the explicitly requested durable fact from the allowed user statement, or skip proposing and answer the user's question." } };
       if ((error instanceof FamilyError || error instanceof FirestoreDomainError) && error.code === "fact_key_conflict") return { status: "conflict", data: { code: error.code, nextAction: "已有相同 key 的有效確認事實或本輪重複候選，直接建立會在確認時衝突。請先用 read_memory_facts 查明現有事實 ID 與版本：若是更正同一事實請用 propose_fact_revision；若是另一獨立新事實請改用具體不重複的新 key（例如 allergy-egg、nap-schedule）再 propose_fact。" } };
       if (error instanceof FamilyError && error.code === "public_query_required") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", message: "外部搜尋 query 只可傳去識別的公共主題條件（保留年齡段、症狀、持續時間及粗粒度地區如香港／沙田區）；必須移除姓名、完整生日、具體街道／屋苑樓宇地址、聯絡方式及整段私人對話後重試，內部記憶與權限不受影響。" } };
+      if (error instanceof FamilyError && error.code === "unsupported_live_claim") return { status: "rejected", data: { code: error.code, nextAction: "present_answer", message: "即時搜尋的社群經驗與商品資料屬個別自述或有限公開資訊，請以中性定性方式整理型號、地區版本、日期與來源限制，不可宣稱整體家長使用率／滿意度、作商業推薦／稱某產品最好，或將論壇自述說成已驗證購買／臨床證明。" } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -577,6 +579,8 @@ export function createProductAgentTools(options: {
     // erase an established citation/care obligation after an earlier rejection.
     requiresChatDeliveryReview(candidateDraft, deliveryReview);
     validateAnswerText(parsed);
+    validateLiveSourceClaims(parsed.paragraphs, parsed.kind, liveEvidence, citationIds =>
+      citationIds.some(id => evidence.get(id)?.chunk.classification === 'official_guidance' || liveEvidence.get(id)?.classification === 'official_guidance'));
     for (const paragraph of parsed.paragraphs) {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
@@ -732,7 +736,7 @@ export function createProductAgentTools(options: {
         summaryText = null;
         return makeResult(selected);
       }) },
-    { name: "search_knowledge", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge + (liveReader ? ' 如需即時查原文，可用 acquisition=live，classification 限 ' + liveReader.classifications.join('、') + '。一般公共資訊用 kind=public_information，照護指引仍須適用的 official_guidance。只引用實際返回的 id，保留取得時間及條件。' : ''),
+    { name: "search_knowledge", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge + (liveReader ? ' 如需即時查原文，可用 acquisition=live，classification 限 ' + liveReader.classifications.join('、') + '。一般公共資訊、近期事件、社群經驗與商品比較用 kind=public_information，照護指引仍須適用的 official_guidance。必須區分官方依據與社群自述，明確說明不可讀／過舊／疑似廣告或無完整數據限制，不得宣稱整體家長統計或商業推薦；只引用實際返回的 id，保留取得時間及條件。' : ''),
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         ...(liveReader ? { acquisition: z.enum(['library', 'live']).optional() } : {}),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
@@ -741,12 +745,26 @@ export function createProductAgentTools(options: {
         if (args.acquisition === 'live') {
           const classification = args.classification as KnowledgeFilter['classification'];
           if (!liveReader || !liveReader.classifications.includes(classification)) throw new FamilyError(400, 'live_source_unavailable');
-          const found = await budget.wait(() => liveReader.search(query, budget.signal, classification));
+          const detailed = liveReader.searchDetailed
+            ? await budget.wait(() => liveReader.searchDetailed!(query, budget.signal, classification))
+            : { reads: await budget.wait(() => liveReader.search(query, budget.signal, classification)), limitations: [] as LiveSearchLimitation[] };
           const sources: LiveSourceCitation[] = [];
-          for (const read of found.slice(0, 6)) {
+          const limitations: LiveSearchLimitation[] = [...detailed.limitations];
+          for (const read of detailed.reads.slice(0, 6)) {
             if (read.classification !== classification) continue;
             const snapshot = snapshotLiveRead(read);
-            if (!await budget.wait(() => liveReader.mayUse(snapshot, budget.signal))) continue;
+            if (!await budget.wait(() => liveReader.mayUse(snapshot, budget.signal))) {
+              if (snapshot.rights === 'locator_only') {
+                limitations.push({
+                  url: snapshot.url,
+                  title: snapshot.title,
+                  publisher: snapshot.publisher,
+                  reason: 'original_unreadable',
+                  detail: '來源僅允許保留連結定位，未取得可核對原文摘錄，不可把標題或摘要當作全文證據。',
+                });
+              }
+              continue;
+            }
             if (options.publishedLiveSeries) {
               const series = await budget.wait(() => options.publishedLiveSeries!(read.documentId, read.url));
               if (series) snapshot.series = series; else delete snapshot.series;
@@ -757,13 +775,25 @@ export function createProductAgentTools(options: {
               liveEvidence.set(snapshot.id, snapshot);
               selectedEvidence.set(snapshot.id, { citationId: snapshot.id, version: snapshot.contentHash, contentHash: snapshot.contentHash,
                 classification: snapshot.classification, excerpt: snapshot.excerpt, excerptComplete: false });
+            } else {
+              limitations.push({
+                url: snapshot.url,
+                title: snapshot.title,
+                publisher: snapshot.publisher,
+                reason: 'original_unreadable',
+                detail: '來源僅允許保留連結定位，未取得可核對原文摘錄，不可把標題或摘要當作全文證據。',
+              });
             }
+          }
+          const allowance = Math.max(0, budget.toolResponseCharacters - 512);
+          while (limitations.length && JSON.stringify({ acquisition: 'live', classification, sources, limitations }).length > allowance) {
+            limitations.pop();
           }
           if (!await authorize()) throw new AgentStopped('unauthorized');
           if (sources.length) deliveryReview.require('review');
           const usable = sources.filter(source => !!source.excerpt).length;
           if (run.trace && usable && !budget.signal.aborted) run.trace.markUsableSource(usable);
-          return { acquisition: 'live', classification, sources };
+          return { acquisition: 'live', classification, sources, ...(limitations.length ? { limitations } : {}) };
         }
         const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
           { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
