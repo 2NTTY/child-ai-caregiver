@@ -11,7 +11,7 @@ import {
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { failedChatReply } from '../components/chat/failed-reply';
-import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView } from '../../../src/shared/chat-workspace-view';
+import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Platform, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollView as NativeScrollView } from "react-native";
@@ -261,7 +261,7 @@ function ChatContents({ compact, onPaneLayout }: {
           ? failedChatReply(message.text, run?.stopReasonLabel) : null;
         const original = message.inReplyTo ? scopedMessages.find(row => row.id === message.inReplyTo && row.role === "user") : undefined;
         const directoryMarker = message.role === "model" && message.text === CHILD_PROFILES_CHAT_TEXT;
-        const mismatchedDirectory = directoryMarker && !!original && requestedWorkspaceView(original.text) !== "child_profiles";
+        const mismatchedDirectory = directoryMarker && !!original && !matchesLegacyDirectoryQuestion(original.text);
         const childProfiles = message.role === "model" && !!message.agentRunId && !!child && child.id === chat.selectedChildId
           && directoryMarker && !!original && !mismatchedDirectory && !!run?.showChildProfiles && sourcesMatch;
         const inlineSteps = failure && run?.readOnlyStop ? run.tools.map(tool => ({

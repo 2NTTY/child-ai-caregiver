@@ -6,6 +6,7 @@ import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
 
 const toolNames: Record<string, string> = {
+  read_account_context: '查閱帳戶資料', read_conversation_window: '查閱對話範圍',
   read_source_cards: '查看來源卡', register_source_card: '新增來源卡', manage_source_card: '更新來源卡', open_source_card_login: '前往來源登入',
   read_platform_source_cards: '查看平台來源卡', join_platform_source_card: '免費加入平台卡',
   load_capabilities: "載入相關能力", read_work: "讀取未完成工作", save_work: "保存工作進度",
