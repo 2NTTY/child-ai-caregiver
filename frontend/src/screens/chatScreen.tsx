@@ -305,7 +305,7 @@ function ChatContents({ compact, onPaneLayout }: {
       {child ? <ChatAction label="平台來源卡" accessibilityLabel="查看可免費加入的平台來源卡"
         onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
-    <AgentConversation visible={detailsOpen} entry={activityEntry} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
+    <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
     <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
       <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。獲授權的文字或照片會交由 Google 或你選用的模型供應商處理；私人來源不加入公共知識庫，通知及分享仍需另外授權。</Text></AppDialog.Content>

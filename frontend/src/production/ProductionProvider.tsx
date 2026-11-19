@@ -243,7 +243,7 @@ function useProductionValue(owner: ProductionOwner) {
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
     chatWritesAllowed: owner.chatWritesAllowed(),
     readAgentActivity: (includePending = true) => { if (currentScope()) owner.agentOwner.readActivity(includePending); },
-    readAgentPending: (more = false) => { if (currentScope()) void owner.agentOwner.readPending(more); },
+    readAgentPending: (more = false, quiet = false) => { if (currentScope()) void owner.agentOwner.readPending(more, quiet); },
     authorization, authorizationActions: {
       readPolicy: () => { if (currentScope()) void owner.authorizationOwner.readPolicy(); },
       readContact: () => { if (currentScope()) void owner.authorizationOwner.readContact(); },

@@ -32,7 +32,7 @@ function setup(initial = run()) {
   const state = { scopeKey: 'scope-a', agentModel: { online: true, readState: 'ready', busy: null, run: initial, loadedAt: at,
     sharedConfirmed: {}, pendingDecision: null, notice: null, writesBlocked: false },
     agentActions: { refresh: action('refresh'), setSharedConfirmation(id, value) { state.agentModel.sharedConfirmed[id] = value; calls.push(['shared', id, value]); }, decide: action('decide'), retryOriginal: action('retry'), openSource: action('source') },
-    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: action('pending'), readAgentActivity: (includePending = true) => activityReads.push(includePending), selectAgentRun(id) {
+    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: (...args) => args[1] ? activityReads.push('pending') : calls.push(['pending', ...args]), readAgentActivity: (includePending = true) => activityReads.push(includePending), selectAgentRun(id) {
       calls.push(['select', id]); state.agentModel = { ...state.agentModel, readState: 'loading', busy: 'read', sharedConfirmed: {} };
     },
     agentInbox: { online: true, locked: false, state: 'idle', loadedAt: null, entries: [], selectedRunId: null },
@@ -44,6 +44,8 @@ function setup(initial = run()) {
       state.agentInbox.selectedRunId = null;
     } },
     authorization: { online: true, receipts: { [initial.id]: { state: 'ready', items: [] } } }, authorizationActions: { readReceipts: action('receipts') } };
+  state.history = { scopeKey: state.scopeKey, access: 'active', online: true, work: { state: 'ready', data: { items: [], complete: true, nextCursor: null } }, busy: { work: false }, actions: { loadWork: action('load-work'), moreWork: action('more-work') } };
+  mocks['./usePersonalHistory'] = { usePersonalHistoryWorkspace: () => state.history };
   const { AgentRunView } = h.load('src/components/agent/AgentRunView.tsx');
   const { AgentConversation } = h.load('src/production/AgentConversation.tsx');
   const render = (activity = false) => h.render(h.jsx(AgentRunView, { model: state.agentModel, actions: state.agentActions, activity }));
@@ -246,25 +248,28 @@ test('direct receipts retain destination and delivery limits, private-source sna
   s.state.agentModel.run.privateSourceCitations = [{ citationId: 'private', label: 'Synthetic private source', version: 7, excerpt: 'Exact authorized excerpt' }];
   s.conversation(); assert.match(s.text(), /只供本人查看/); assert.match(s.text(), /到期提示已授權 ·\s*Telegram/); assert.doesNotMatch(s.text(), /已送達|note-id|Exact authorized excerpt/);
   s.button('私人來源 1 · Synthetic private source').props.onPress(); s.conversation(); assert.match(s.text(), /Exact authorized excerpt/);
-  s.button('返回活動').props.onPress(); s.state.agentInbox.state = 'failed'; s.conversation(); assert.match(s.text(), /未能載入其他活動/);
-  s.button('重新載入活動記錄').props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox']);
+  s.button('返回活動').props.onPress(); s.state.history.work = { state: 'error', data: null }; s.conversation(); assert.match(s.text(), /無法讀取交辦事項/);
+  s.button('重新讀取交辦事項').props.onPress(); assert.deepEqual(s.calls.at(-1), ['load-work']);
   s.state.agentModel.readState = 'denied'; s.state.agentPending.state = 'denied'; s.conversation();
   assert.doesNotMatch(s.text(), /Exact authorized excerpt|note-id|Exact change/);
 });
 
 
-test('twenty identically titled background runs keep a human date-time and a distinguishable accessible selection', () => {
-  const s = setup();
-  s.state.agentModel.readState = 'idle';
-  s.state.agentInbox = { online: true, locked: false, state: 'ready', loadedAt: at, selectedRunId: 'background-3',
-    entries: Array.from({ length: 20 }, (_, i) => ({ runId: `background-${i}`, label: i % 2 ? '跟進交辦事項' : '整理記憶', status: 'completed', createdAt: `2026-10-22T00:${String(i).padStart(2, '0')}:00Z` })) };
+test('maintenance and no-action runs never become family activity, even when the log is full', () => {
+  const s = setup(); s.state.agentModel.readState = 'idle';
+  s.state.agentInbox.entries = Array.from({ length: 20 }, (_, i) => ({ runId: String(i), label: '整理記憶', status: 'completed', createdAt: at }));
   s.conversation();
-  const controls = s.h.hosts().filter(n => n.type === 'Pressable' && n.props.testID?.startsWith('activity-card-run-'));
-  assert.equal(controls.length, 20); assert.equal(new Set(controls.map(n => n.props.accessibilityLabel)).size, 20);
-  assert.ok(controls.every(n => /(?:整理記憶|跟進交辦事項)；.*08:\d{2}；已結束$/.test(n.props.accessibilityLabel)));
-  assert.match(s.text(), /08:00/); assert.match(s.text(), /08:19/); assert.doesNotMatch(s.text(), /運行建立|香港時間|GMT|UTC|08:00:00/);
-  assert.equal(s.h.hosts().filter(n => n.props['aria-current'] === 'true').length, 1);
-  controls[3].props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox-select', 'background-3']);
+  assert.match(s.text(), /目前沒有待確認或交辦事項/);
+  assert.doesNotMatch(s.text(), /整理記憶|助手背景活動|其他活動/);
+  s.state.agentPending.entries = [{ runId: 'maintenance', proposal: proposal('important') }];
+  s.state.history.work.data.items = [{ id: 'work-1', goal: '準備校外活動', focus: '等校方回覆', status: 'waiting', updatedAt: at, pending: [], resources: [], questions: [], sourceMessageIds: [] }];
+  s.conversation();
+  assert.ok(s.h.node('activity-card-proposal-maintenance-important'));
+  assert.ok(s.h.node('personal-work-work-1'));
+  assert.match(s.text(), /準備校外活動/);
+  s.named('準備校外活動 · 等待跟進').props.onPress(); s.conversation(); assert.match(s.text(), /等校方回覆/);
+  s.state.scopeKey = 'another-child'; s.conversation();
+  assert.doesNotMatch(s.text(), /準備校外活動|等校方回覆/);
 });
 
 test('stopped activity shows one reason, real steps and no placeholder answer', () => {
@@ -462,29 +467,27 @@ test('activity loaded count excludes expired and invalidated proposals without c
   s.state.agentPending.entries = [proposal('ready'), proposal('expired', { status: 'expired' }), proposal('elapsed', { expiresAt: at }), proposal('invalidated', { contentState: 'invalidated' })].map(proposal => ({ runId: 'synthetic-run', proposal }));
   s.state.agentPending.nextCursor = 'more'; s.conversation();
   assert.equal(s.h.node('agent-activity-count').props.accessibilityLabel, '已載入 1 項待確認，仍有更多待讀取');
+  assert.equal(s.h.node('activity-card-proposal-synthetic-run-expired'), undefined);
+  s.button('已結束事項 · 3').props.onPress(); s.conversation();
   assert.match(s.h.node('activity-card-proposal-synthetic-run-expired').props.accessibilityLabel, /已過期/);
 });
 
 
-test('visible activity opens quietly once, observes the shared invalidation, and unsubscribes on close', () => {
+test('opening and reconnecting quietly revalidate decisions without requesting the worker log', () => {
   const s = setup(); s.state.agentModel.readState = 'idle'; s.state.agentModel.run = null;
-  s.conversation(false); assert.deepEqual(s.activityReads, []); assert.equal(s.signals.size, 0);
-  s.conversation(); assert.deepEqual(s.activityReads, [true]); assert.equal(s.signals.size, 1);
-  s.conversation(); assert.deepEqual(s.activityReads, [true]);
-  for (const signal of s.signals) signal(); assert.deepEqual(s.activityReads, [true, false]);
-  s.conversation(false); assert.equal(s.signals.size, 0);
-  s.conversation(); assert.deepEqual(s.activityReads, [true, false, true]);
-  s.state.agentModel.online = false; s.conversation(); assert.equal(s.signals.size, 0);
-  s.state.agentModel.online = true; s.conversation(); assert.deepEqual(s.activityReads, [true, false, true, true]);
-  assert.equal(s.calls.some(call => ['refresh', 'decide', 'retry'].includes(call[0])), false);
+  s.conversation(false); assert.deepEqual(s.activityReads, []);
+  s.conversation(); s.conversation(); assert.deepEqual(s.activityReads, ['pending']);
+  s.conversation(false); s.conversation(); s.state.agentModel.online = false; s.conversation(); s.state.agentModel.online = true; s.conversation();
+  assert.deepEqual(s.activityReads, ['pending','pending','pending']);
 });
 
-test('failed inbox read keeps loaded cards and shows only contextual retry, never a false empty result', () => {
-  const s = setup(); s.state.agentModel.readState = 'idle'; s.state.agentModel.run = null;
-  s.state.agentInbox = { ...s.state.agentInbox, state: 'failed', loadedAt: at, entries: [{ runId: 'old-run', createdAt: at, label: 'Saved' }] };
-  s.conversation(); assert.ok(s.h.node('activity-card-run-old-run')); assert.ok(s.button('重新載入活動記錄'));
-  assert.match(s.text(), /顯示上次讀取/); assert.doesNotMatch(s.text(), /目前沒有其他活動/);
-  s.state.agentInbox.state = 'ready'; s.conversation(); assert.equal(s.button('更新活動記錄'), undefined); assert.equal(s.button('重新載入活動記錄'), undefined);
+test('a stale work list offers retry and pagination and never claims the list is empty', () => {
+  const s = setup(); s.state.agentModel.readState = 'idle';
+  s.state.history.work = { state: 'stale', data: { items: [], complete: false, nextCursor: 'next' } };
+  s.conversation(); assert.match(s.text(), /上次讀取/); assert.doesNotMatch(s.text(), /沒有待確認或交辦事項/);
+  s.button('重新讀取交辦事項').props.onPress(); assert.deepEqual(s.calls.at(-1), ['load-work']);
+  s.button('更多交辦事項').props.onPress(); assert.deepEqual(s.calls.at(-1), ['more-work']);
+  s.state.history.access = 'revoked'; s.conversation(); assert.equal(s.button('更多交辦事項'), undefined);
 });
 
 test('toolbar opens the pending list even with a cached reply, while message details open that reply', () => {
