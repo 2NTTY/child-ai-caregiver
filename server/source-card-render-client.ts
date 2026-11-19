@@ -2,10 +2,12 @@ import { request } from 'node:http';
 import { z } from 'zod';
 
 export interface RenderResource { url: string; mime: string; body: string }
-export interface RenderInput { url: string; resources: RenderResource[] }
+export interface RenderInput { url: string; resources: RenderResource[]; controlOffset?: number }
 const locators = z.array(z.string().max(3000)).max(64);
 const renderResult = z.object({ links: locators, assets: locators,
-  gate: z.enum(['login','captcha','mfa','purchase']).nullable(), limited: z.boolean(), unresolved: z.boolean() }).strict();
+  gate: z.enum(['login','captcha','mfa','purchase']).nullable(), limited: z.boolean(), unresolved: z.boolean(),
+  window: z.object({ valid: z.boolean(), startHash: z.string().regex(/^[a-f0-9]{64}$/), endHash: z.string().regex(/^[a-f0-9]{64}$/),
+    nextOffset: z.int().nonnegative().nullable() }).strict().optional() }).strict();
 export type RenderResult = z.infer<typeof renderResult>;
 
 /** The renderer has no network interface. Only the worker can obtain remote bytes. */

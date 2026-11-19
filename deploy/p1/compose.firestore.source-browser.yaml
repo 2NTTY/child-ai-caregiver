@@ -1,40 +1,10 @@
-# Layer on compose.firestore.yaml. The worker mounts only the Unix socket volume.
-# seccomp.json derives from Playwright v1.63.0 utils/docker/seccomp_profile.json.
-# Its chroot rule also permits Chromium to chroot in a nested user namespace with all outer capabilities dropped.
+# Add the permanent read-only socket mount to the production worker's Compose layout.
+# The renderer runs from deploy/source-browser/compose.yaml and can be updated independently.
 services:
   worker:
-    depends_on:
-      source-browser: {condition: service_healthy}
     volumes:
       - source-browser-ipc:/run/source-browser:ro
-  source-browser:
-    image: yuban-source-browser:${RELEASE_TAG:-local}
-    build:
-      context: ../..
-      dockerfile: deploy/source-browser/Dockerfile
-    user: '1000:1000'
-    init: true
-    network_mode: none
-    ipc: private
-    read_only: true
-    cpus: 1
-    mem_limit: 640m
-    memswap_limit: 640m
-    pids_limit: 160
-    shm_size: 64m
-    tmpfs: ['/tmp:size=96m,mode=1777,nosuid,nodev']
-    security_opt:
-      - no-new-privileges:true
-      - seccomp:../source-browser/seccomp.json
-    cap_drop: [ALL]
-    volumes:
-      - source-browser-ipc:/run/source-browser
-    logging: {driver: none}
-    healthcheck:
-      test: [CMD, node, -e, "if (!require('node:fs').statSync('/run/source-browser/render.sock').isSocket()) process.exit(1)"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    restart: unless-stopped
 volumes:
   source-browser-ipc:
+    external: true
+    name: ${SOURCE_BROWSER_IPC_VOLUME:-yuban-p1_source-browser-ipc}
