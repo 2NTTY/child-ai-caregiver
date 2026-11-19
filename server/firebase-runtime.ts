@@ -40,11 +40,15 @@ import { createCloudStorageErasureJournal, createFirebaseErasureJournal } from '
 import { createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
 import { createAdminKnowledgeTreatments } from './admin-knowledge-treatments.ts';
+import { platformCardProviders } from './platform-card-providers.ts';
+import { createPlatformMediaProcessor } from './platform-media-processing.ts';
+import { createAdminPlatformCards } from './admin-platform-cards.ts';
 import { createFirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { readPublisherPdf } from './knowledge-cited-pdf.ts';
 import { createOfficialLivePages } from './official-live-pages.ts';
 import { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts';
-import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { platformSourceWatches } from './knowledge-source-catalog.ts';
+import { platformMaterials } from './platform-materials.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
 import { createFirestoreSourceCardDocuments } from './firestore-source-card-documents.ts';
 import { createFirestoreRegisteredSourceCards } from './firestore-registered-source-cards.ts';
@@ -193,8 +197,9 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain,
       originalBucket: composition.local ? { bucketName: config.photoBucket, bucket: composition.local.bucket(config.photoBucket) }
-        : cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
-    const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: knowledgeRefresh.gate });
+        : cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: platformSourceWatches, readControl: tx => authority.readControl(tx) });
+    const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds,
+      platformMaterials, media: knowledgeRefresh.media, observations: knowledgeRefresh.gate });
     const proactiveEvents = createProactiveEventSources({...domain,care,knowledge,sourceIds:config.knowledgeSourceIds ?? [],
       managedSelections:parseProactivePublicSelections(env.PROACTIVE_PUBLIC_EVENTS_JSON)});
     const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
@@ -280,14 +285,17 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
+    const cardProviders = knowledge && platformCardProviders(domain, aiConfig, knowledge, tx => authority.readControl(tx));
+    const processMedia = cardProviders && createPlatformMediaProcessor(knowledgeRefresh.media, config.namespace, cardProviders.analyze);
     const knowledgeAgent = composition.worker && knowledge && aiConfig.backgroundKnowledgeMaintenanceEnabled && aiConfig.backgroundKnowledgeLiveFetch
       ? createScheduledKnowledgeAgent({ ...domain, config: aiConfig, knowledge, refresh: knowledgeRefresh, routing: product.routing,
-        sourceIds: config.knowledgeSourceIds ?? [], payer: env.AI_KNOWLEDGE_MAINTENANCE_PAYER, currentAuth, readControl: tx => authority.readControl(tx) }) : undefined;
+        sourceIds: [...(config.knowledgeSourceIds ?? []), ...platformMaterials.keys()], processMedia, payer: env.AI_KNOWLEDGE_MAINTENANCE_PAYER, currentAuth, readControl: tx => authority.readControl(tx) }) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence },
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined,
-      knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined);
+      knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined,
+      knowledge ? createAdminPlatformCards(knowledge, tx => authority.readControl(tx), knowledgeRefresh.media, processMedia, cardProviders?.indexReviewed) : undefined);
     const temporaryChatStore = createTemporaryChatStore();
     const temporaryChat = createTemporaryChatService({
       store: temporaryChatStore,

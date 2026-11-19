@@ -1,0 +1,93 @@
+{
+  "recordedAt": "2026-11-20T02:35:00+08:00",
+  "branch": "codex/zundamon-site-assistant",
+  "base": "d662a894f1cb1939800f7fcb15807f40aa4738db",
+  "environment": {
+    "system": "Windows",
+    "node": "24.22.1",
+    "edge": "157.0.4341.60",
+    "playwright": "1.63.0",
+    "expo": "57.0.24",
+    "webViewport": {
+      "width": 390,
+      "height": 844
+    },
+    "renderer": "Edge WebGL / SwiftShader",
+    "backend": "Worktree-local Firebase emulators and authenticated HTTP APIs. The reply endpoint used the production handler and Firestore runner with a controlled model provider. Only synthetic accounts and data were used.",
+    "paidModelCalls": 0
+  },
+  "checks": {
+    "renderer": {
+      "initialFrame": "Official Zundamon model rendered with alpha",
+      "interaction": "Wave and expression produced different pixels",
+      "packageBytes": 5869575,
+      "sha256": "2633fd88258949884bc6659d425682ad4dd80d381762e3bc1c626aef61aa7105"
+    },
+    "quickToMain": {
+      "source": "Saved task detail",
+      "messageSubmissions": 1,
+      "replyRequests": 1,
+      "savedUserMessages": 1,
+      "savedAnswers": 1,
+      "run": "b88f2dfa-8c80-4d90-926a-2179cfaa2185",
+      "canonicalTaskDetailsRead": true,
+      "answeredFromOriginalMessage": true,
+      "mainCharacterOpensSecondComposer": false,
+      "returnFromMainOpensOriginalTask": true
+    },
+    "continuation": {
+      "retainedHistory": true,
+      "stopRequests": 1,
+      "stoppedOriginalRun": "37ddde84-5561-430d-8f45-da88a764dc78",
+      "newChildHistoryAndDraftEmpty": true,
+      "minimizeAndExpand": true
+    },
+    "selectionValidation": {
+      "otherChild": 409,
+      "staleTaskVersion": 409,
+      "error": "selected_item_changed"
+    },
+    "voiceAndFallback": "Blocked the character asset. The same local chat entry opened. An emulated microphone recorded audio, enabled preview, and placed a removable voice attachment in the shared draft.",
+    "clientTests": {
+      "file": "tests/chat-client.test.ts",
+      "passed": 14,
+      "failed": 0
+    },
+    "typecheck": [
+      "frontend/tsconfig.json",
+      "tsconfig.server.json"
+    ],
+    "exports": {
+      "web": "Static Web pages and local companion payload",
+      "android": "Hermes plus Expo DOM HTML/JS and matching companion payload"
+    }
+  },
+  "limitations": [
+    "No paid model or production deployment was used.",
+    "Android and iPhone device rendering, real microphones and software keyboards were not exercised.",
+    "The end-to-end selection example used a task. Care records and family documents were checked through their source, schema and type bindings."
+  ],
+  "developmentFindings": [
+    "The initial Core load exposed its interface before Wasm was ready. Drawing now waits for the Core version API.",
+    "The SDK motion required empty effect ID vectors. A second rendered frame verified the corrected gesture.",
+    "The development bundler retained an earlier send signature across the monorepo boundary. The clean Web export sent the correct page reference and completed the continuation scenario."
+  ],
+  "followUp": {
+    "recordedAt": "2026-11-20T02:47:21+08:00",
+    "base": "d0c9cc5778d353f8aa00ee46117a90e81e252156",
+    "scenario": "A shared task is open at 390 x 844. Tap the character, choose a different authorized private child without leaving the current URL, and send a question.",
+    "environment": "Edge on local Expo Web, actual Firebase Auth and Firestore emulators, AI disabled.",
+    "checks": {
+      "privateInputHiddenBeforeChoice": true,
+      "routeUnchangedAfterOpeningAndSelecting": true,
+      "privateChoicesFromAccountChildList": true,
+      "receiptChild": "explicitly selected private child",
+      "receiptPageContext": {
+        "page": "/tasks"
+      },
+      "sharedResourceReferenceSent": false,
+      "httpSubmit": 200
+    },
+    "scope": "One focused browser scenario. The initial package checks above remain the evidence for other flows."
+  }
+}

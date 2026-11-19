@@ -23,6 +23,9 @@ import { createRecordStore } from "./records.ts";
 import { readAiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { createChatStore } from "./chat.ts";
+import { createKnowledgeStore } from "./knowledge-store.ts";
+import { createTemporaryChatStore } from "./temporary-chat-store.ts";
+import { createTemporaryChatService } from "./temporary-chat-agent.ts";
 import { createModelGateway } from "./model-gateway.ts";
 import { createModelRouting } from "./model-routing.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
@@ -49,6 +52,7 @@ import { createTelegramStore } from "./telegram-store.ts";
 import { createTelegramGateway } from "./telegram-gateway.ts";
 import { telegramQueue } from "./telegram-worker.ts";
 let photoCleanup: ReturnType<typeof createPhotoCleanup> | undefined;
+let temporaryChatStore: ReturnType<typeof createTemporaryChatStore> | undefined;
 let startupCleanup: (() => Promise<void>) | undefined;
 
 try {
@@ -59,7 +63,7 @@ try {
   const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   const pool = createPool(config);
-  startupCleanup = async () => { try { await photoCleanup?.stop(); } finally { await pool.end(); } };
+  startupCleanup = async () => { temporaryChatStore?.dispose(); try { await photoCleanup?.stop(); } finally { await pool.end(); } };
   await verifyEncryptedStorage(pool, cipher);
   if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
   const account = await openAccountRuntime(pool, cipher, process.env);
@@ -68,7 +72,7 @@ try {
   // migration has completed. Never make ordinary writes depend on missing tables.
   const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
   const queue = (await pool.query("SELECT 1 FROM app_migrations WHERE id='013-task-worker'")).rowCount ? createWorkerQueue(pool, "producer") : undefined;
-  startupCleanup = async () => { try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } };
+  startupCleanup = async () => { temporaryChatStore?.dispose(); try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } };
   await queue?.start();
   const taskScheduling = queue ? createTaskScheduling(cipher, queue.queue) : undefined;
   const pushConfig = await readWebPushConfig(process.env);
@@ -112,6 +116,22 @@ try {
   }
   if (account && !photoFiles) throw new Error("account_photo_storage_required");
   const exporter = account && photoFiles ? createAccountExportStore(pool, cipher, { photoFiles }) : undefined;
+  temporaryChatStore = createTemporaryChatStore();
+  const temporaryChat = createTemporaryChatService({
+    store: temporaryChatStore,
+    knowledge: agentEnabled ? createKnowledgeStore(pool) : undefined,
+    resolveExecution: async userId => {
+      const selected = await modelRouting.resolve(userId, "interactive");
+      return {
+        config: selected.config,
+        provider: selected.provider,
+        usage: selected.usage,
+        embeddings: selected.embeddings,
+        authorize: selected.authorize,
+        runLimits: selected.runLimits,
+      };
+    },
+  });
   const handler = createRequestHandler({
     config, auth: createBetterAuthPort(auth), workspaces: createWorkspaceStore(pool),
     account: account && exporter ? { admission: account.admission,
@@ -126,7 +146,7 @@ try {
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs),account?.data.recordChildIntent) : undefined,
-    tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, concerns, documents, telegram, contact, summary, photos, inputs,
+    tasks, chat, memory, productAgent, productAgentStore, temporaryChat, agentActions, growth, concerns, documents, telegram, contact, summary, photos, inputs,
     personalLibrary: agentEnabled ? createPersonalLibrary(pool, cipher) : undefined,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelRouting,
@@ -140,7 +160,7 @@ try {
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   let poolClosing: Promise<void> | undefined;
-  const closePool = () => { poolClosing ??= (async () => { try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
+  const closePool = () => { poolClosing ??= (async () => { temporaryChatStore?.dispose(); try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
   server.on("error", () => { console.error("server_start_failed"); void closePool(); process.exitCode = 1; });
   server.listen(config.port, config.host, () => { console.info("server_started"); });
   let stopping = false;

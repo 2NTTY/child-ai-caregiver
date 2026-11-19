@@ -14,6 +14,7 @@ export function createScheduledKnowledgeAgent(options: Omit<Parameters<typeof cr
   payer?: string;
   sourceIds: readonly string[];
   fetch?: SourceFetcher;
+  processMedia?(id: string, signal: AbortSignal): Promise<void>;
   routing: Pick<FirestoreModelRouting, 'resolve'>;
   currentAuth(uid: string): Promise<{ userId: string; disabled: boolean; emailVerified: boolean }>;
 }) {
@@ -45,6 +46,7 @@ export function createScheduledKnowledgeAgent(options: Omit<Parameters<typeof cr
       const pin = await options.refresh.resumeCheck(job, checkId, true);
       if (pin?.status !== 'ok' || pin.items.length !== 1 || !pin.firstObservedAt) return { state: 'stopped' as const };
       const hash = observationHash(pin.items[0]!);
+      await options.processMedia?.(watchId, signal);
       const edition = await options.knowledge.publishedEdition(watchId);
       if (edition && !edition.enabled) return { state: 'stopped' as const };
       if (edition?.observationHash === hash) return { state: edition.current ? 'completed' as const : 'stopped' as const };

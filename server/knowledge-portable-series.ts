@@ -2,9 +2,10 @@ import { createRequire } from 'node:module';
 import { z } from 'zod';
 import type { KnowledgeSourceInput } from '../src/shared/knowledge.ts';
 import { sourceSeries, sourceSeriesSchema } from '../src/shared/source-series.ts';
-import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { platformSourceWatches as SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { canonical } from './firestore-session-codec.ts';
 import { knowledgeHash } from './knowledge-inputs.ts';
+import { externalMaterialAllowed } from './platform-materials.ts';
 import type { ObservedContent } from './knowledge-refresh-types.ts';
 import type { FirestoreKnowledgeObservation } from './firestore-knowledge-refresh.ts';
 
@@ -63,11 +64,9 @@ export function portableSeries(source: KnowledgeSourceInput, context: FirestoreK
   return info;
 }
 
-// The FHS documents in the registered public corpus have a reviewed noncommercial redistribution grant.
-export function familySharingAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'classification'>) {
-  return SOURCE_WATCHES.some(watch => watch.id === source.sourceId && watch.url === source.url && watch.termsUrl === source.termsUrl
-    && watch.classification === source.classification && watch.audience === 'public_noncommercial'
-    && watch.termsUrl === 'https://www.fhs.gov.hk/english/notice/notice.html');
+export function familySharingAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'classification' | 'publisher' | 'extraction'>) {
+  return externalMaterialAllowed(source) && SOURCE_WATCHES.some(watch => watch.id === source.sourceId && watch.url === source.url && watch.termsUrl === source.termsUrl
+    && watch.classification === source.classification && watch.audience === 'public_noncommercial');
 }
 
 export function checkPortableSource(source: KnowledgeSourceInput) {

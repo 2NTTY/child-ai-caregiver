@@ -2,7 +2,6 @@ import type { ChatFileMessageReference } from './chat-files.ts';
 import type { PhotoMessageReference } from './photos.ts';
 import type { VoiceMessageReference } from './voice.ts';
 import type { OfficialHelpId } from './agent-feedback.ts';
-
 export const chatModes = ["assistant", "chat_only"] as const;
 export type ChatMode = (typeof chatModes)[number];
 
@@ -23,6 +22,12 @@ export const CHAT_MODE_COPY = {
   inflightChatOnlyToAssistantNotice: "已切換為「助手」（後續新訊息生效）。先前在「只是聊天」發出的回覆仍按原模式完成，不會自動補做操作。",
 } as const;
 
+export interface ChatSendOptions {
+  discussion?: true;
+  pageContext?: import('./chat-page-context.ts').ChatPageContext;
+  chatMode?: ChatMode;
+}
+
 export interface ChatMessage {
   id: string;
   childId: string;
@@ -32,11 +37,15 @@ export interface ChatMessage {
   inReplyTo: string | null;
   /** Origin mode recorded when the turn was created; absent defaults to "assistant". */
   chatMode?: ChatMode;
+  discussion?: true;
+  /** A discussion explicitly requested after this model message was delivered. */
+  discussionOf?: string;
   /** A server-initiated message in the existing private conversation. */
   proactive?: true;
   createdAt: string;
   agentRunId?: string;
   officialHelp?: OfficialHelpId[];
+  pageContext?: import('./chat-page-context.ts').ChatPageContext;
   voice?: VoiceMessageReference;
   file?: ChatFileMessageReference;
   photo?: PhotoMessageReference;

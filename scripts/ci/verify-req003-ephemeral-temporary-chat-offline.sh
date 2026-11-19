@@ -46,7 +46,7 @@ TEST_FILES=(
   tests/summary-progress.test.ts
   tests/summary-prompt-contract.test.ts
 )
-TEST_CASES=(12 6 10 5 10 10 44 9 7 2 12 11 3 9 18 1)
+TEST_CASES=(12 6 10 5 10 10 44 9 7 2 14 11 3 9 18 1)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -61,6 +61,7 @@ for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   server/app.ts \
   server/firebase-app.ts \
   server/firebase-runtime.ts \
+  server/index.ts \
   frontend/src/production/TemporaryChatOwner.ts \
   frontend/src/production/ProductionOwner.ts \
   frontend/src/production/ProductionProvider.tsx \

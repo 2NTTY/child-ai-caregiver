@@ -1,0 +1,26 @@
+{
+  "environment": "Local Firebase emulators, Edge, synthetic family, production client, real Vertex provider unless indicated",
+  "dateHongKong": "2026-11-20",
+  "integrationCommit": "60c41243355d675180d11208bc48e91430b45c53",
+  "companionToChat": {
+    "entry": "Parent downloaded the FHS child development series, opened a saved task in the browser and sent the task and question from Live2D, then switched to the main chat.",
+    "messageId": "eb07372e-6753-4230-9b15-1d227074767b",
+    "replyId": "d226a359-37ae-440e-a22e-9afdf6f213f4",
+    "runId": "231199e6-532f-48ac-85b8-319a9e1114c0",
+    "result": "The delivered main answer identified both objects from the selected task and used the downloaded series. The published excerpt opened from this same reply in Edge.",
+    "providerEvidence": "Replayed two unchanged model steps recorded during the preceding real Vertex run for the same saved task and question. The knowledge retrieval, final independent review, persistence and browser readback ran normally.",
+    "sourceId": "fhs-toddler-development",
+    "versionId": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+    "chunkId": "33019a89-46bb-5238-9a4b-f56c5e649571"
+  },
+  "afterAnswerDiscussion": {
+    "parentAnswerId": "d226a359-37ae-440e-a22e-9afdf6f213f4",
+    "messageId": "ff4b0c45-03ce-8e85-876d-2748efc23688",
+    "runId": "ada43174-1586-42dd-bc4d-6d78e80b6dbe",
+    "status": "stopped",
+    "reason": "model_limit",
+    "recordedCalls": 7,
+    "result": "Three role tools succeeded, present_answer was rejected and the run displayed no verified perspectives. A is following up from this receipt. The independently successful before-send discussion is recorded in REQ009_QUESTION_DISCUSSION_20261120.json."
+  },
+  "deviceEvidence": "See ZUNDAMON_SITE_ASSISTANT_20261120.json. Physical mobile interaction is pending."
+}

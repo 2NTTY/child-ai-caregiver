@@ -94,14 +94,20 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const workerInstance = randomUUID();
   const routing = options.routing ?? createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
-  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
-    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
-    await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
-  }, async continuationKnowledge(b, ids) {
-    if (!ids.length) return [];
-    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
-    return options.knowledge.continuationSources(b.transaction, ids);
-  } });
+  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds,
+    discussionCitationsReadable: async (b, citations, purpose) => {
+      if (!options.knowledge) return false;
+      return purpose === 'history' ? options.knowledge.historicalCitationsReadable(b.transaction, citations)
+        : options.knowledge.citationsCurrent(b.transaction, b.scope.ownerUserId, citations);
+    },
+    async validateKnowledge(binding, sourceId) {
+      if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+      await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
+    }, async continuationKnowledge(b, ids) {
+      if (!ids.length) return [];
+      if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+      return options.knowledge.continuationSources(b.transaction, ids);
+    } });
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget',
     recordToolAdmission: async (transaction, version, at, units) => {
@@ -171,6 +177,26 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     { async embed() { throw new AgentStopped('unavailable'); } });
   const mixedTaskBatches=createMixedTaskBatches({...options,runs:services.runs});
   const agent = bindPersistentAgent(createProductAgent({ runtime, accountChildren: options.online.children, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
+    readPageItem: async (userId, childId, item) => {
+      if (item.kind === 'task') {
+        const task = await options.online.tasks.get(userId, childId, item.id);
+        if (task?.version === item.version) return { kind: item.kind, title: task.title, details: task.details, occurrence: task.occurrence };
+      } else if (item.kind === 'record') {
+        const record = await options.care.get(userId, childId, item.id);
+        if (record?.version === item.version) return { kind: item.kind, text: record.text, details: record.details };
+      } else {
+        const doc = await options.documents?.get(userId, childId, item.id);
+        if (doc?.version === item.version && doc.readState !== 'invalidated') {
+          const snapshot = item.snapshotId ? [doc.current, ...doc.history].find(s => s?.id === item.snapshotId) : doc.current;
+          if (snapshot) {
+            const body = snapshot.sections.flatMap(section => section.items.map(row => row.text)).join('\n');
+            return { kind: item.kind, title: snapshot.title, summary: snapshot.summary.slice(0, 1000),
+              excerpt: body.slice(0, 1200), truncated: body.length > 1200, readState: doc.readState };
+          }
+        }
+      }
+      return { status: 'unavailable' };
+    },
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge,
     registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments, platformLibrary: options.platformLibrary }));
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;

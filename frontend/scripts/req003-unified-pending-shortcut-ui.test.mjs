@@ -138,6 +138,7 @@ function uiMocks({ pathname = '/', withCare = true } = {}) {
     './ui': { AppButton: 'Button', AppTextField: 'AppTextField' },
     './ToolbarIconButton': { ToolbarIconButton: 'ToolbarIconButton' },
     './NotificationBell': { NotificationBell: 'NotificationBell' },
+    './companion/SiteCompanion': { SiteCompanion: 'SiteCompanion' },
     './AgentEntryButton': { AgentEntryButton: 'AgentEntryButton' },
     './RightRailContent': { RightRailContent: 'RightRailContent' },
     './ChildKeyFacts': { ChildKeyFacts: 'ChildKeyFacts' },

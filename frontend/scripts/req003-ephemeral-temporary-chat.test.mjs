@@ -123,6 +123,7 @@ function uiMocks() {
     './NotificationBell': { NotificationBell: 'NotificationBell' },
     './ToolbarIconButton': { ToolbarIconButton: 'ToolbarIconButton' },
     './BrandLogo': { BrandLogo: 'BrandLogo' },
+    './companion/SiteCompanion': { SiteCompanion: 'SiteCompanion' },
     './chat/OfficialHelpCards': { OfficialHelpCards: ({ ids }) => ({ type: 'OfficialHelpCards', props: { ids } }) },
   };
   return { mocks, linkingCalls };

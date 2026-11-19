@@ -1,0 +1,129 @@
+{
+  "observedOn": "2026-11-20",
+  "currency": "USD",
+  "beforePromotionalCredits": {
+    "totalUsd": [11.94, 58.81],
+    "inputUsdPerMillion": 1.5,
+    "outputUsdPerMillion": 7.5,
+    "embeddingRateUnchanged": true,
+    "reservation": "Reserve against gross token prices for each batch. Count occupied and uncertain attempts before dispatch. Apply promotional credits only after the billing account records them. Await the approved cap and exact route."
+  },
+  "inventory": "knowledge/fhs-child-inventory.json",
+  "unitRates": {
+    "provider": "Vertex online, global",
+    "generationModel": "gemini-3.8-flash",
+    "usdPerMillionInput": 0.75,
+    "usdPerMillionOutputIncludingReasoning": 3.75,
+    "expires": "2026-12-31",
+    "nonGlobalMultiplier": 1.1,
+    "embeddingModel": "gemini-embedding-001",
+    "dimensions": 1024,
+    "onlineUsdPerMillionInput": 0.15,
+    "url": "https://cloud.google.com/model-garden/pricing"
+  },
+  "routeEvidence": {
+    "funding": "PUBLIC_MAINTENANCE_ENABLED_20261119.json",
+    "latestKnownNativePdfRoute": "REQ004_NATIVE_PDF_CHP_20261119.json: Vertex global, gemini-3.1-flash-lite. Requested 3.8 Flash substitution for this quote.",
+    "resolver": "server/firestore-knowledge-maintenance.ts reads base.location and current.model for a platform-funded request. Recheck the effective model and location before dispatch."
+  },
+  "coverage": {
+    "entries": 201,
+    "html": 153,
+    "directPdf": 21,
+    "translationOnly": 7,
+    "portalOnly": 15,
+    "unavailable": 5,
+    "uniquePdfOriginalsIncludingAttachments": 148,
+    "physicalPages": 1799,
+    "distinctChineseCategoryPages": 56,
+    "fhsLanguageTreesChecked": 2,
+    "scope": "Named resources in age and topic directories, five booklets and their explicit contents, directly attached educational originals. External subject websites are not recursively mirrored. A landing page and its PDF are associated, distinct text and PDF versions can differ."
+  },
+  "reuse": {
+    "unchangedChineseHtml": 4,
+    "existingDocumentVectors": 5,
+    "unchangedEnglishBookletPages": 20,
+    "existingEnglishBookletChunks": 13,
+    "policy": "Retain existing English edition as an alternate, never use its vectors for Chinese text. Price includes only new Chinese inputs. Additional exact corpus cache hits reduce the estimate."
+  },
+  "baseline": {
+    "htmlDocumentsToProcess": 149,
+    "htmlCharactersToProcess": 310957,
+    "pdfWindows": [
+      212,
+      224
+    ],
+    "rationale": "Use complete native reading for text PDFs up to 32 pages, use planKnowledgePdfWindows for longer, scan-heavy or oversized text layers. Count neighbouring pages in window inputs. Separate organizer and independent reviewer. Calibration from previously billed input/output tokens in REQ004_NATIVE_PDF_CHP_20261119.json. Actual tokenization and review outcomes may vary.",
+    "lowerAssumptions": {
+      "passes": 1,
+      "promptTokensPerCall": 4000,
+      "sourceTokensPerPage": 550,
+      "htmlTokensPerCharacter": 0.65,
+      "organizerOutputPerCall": 240,
+      "organizerOutputPerPage": 100,
+      "reviewerOutputPerCall": 180,
+      "reviewerOutputPerPage": 55
+    },
+    "upperAssumptions": {
+      "passes": 2,
+      "promptTokensPerCall": 8500,
+      "sourceTokensPerPage": 1200,
+      "htmlTokensPerCharacter": 1.6,
+      "organizerOutputPerCall": 900,
+      "organizerOutputPerPage": 240,
+      "reviewerOutputPerCall": 600,
+      "reviewerOutputPerPage": 140,
+      "reviewerDraftInputMultiplier": 1.25
+    },
+    "lower": {
+      "callsPerRole": 361,
+      "organizeInput": 2705972,
+      "organizeOutput": 279340,
+      "reviewInput": 2985312,
+      "reviewOutput": 170965,
+      "embeddingInput": 180000,
+      "organizeUsd": 3.077,
+      "reviewUsd": 2.88,
+      "embeddingUsd": 0.027,
+      "totalUsd": 5.98
+    },
+    "upper": {
+      "callsPerRole": 746,
+      "organizeInput": 12018462,
+      "organizeOutput": 1607880,
+      "reviewInput": 14028312,
+      "reviewOutput": 993880,
+      "embeddingInput": 1500000,
+      "organizeUsd": 15.043,
+      "reviewUsd": 14.248,
+      "embeddingUsd": 0.225,
+      "totalUsd": 29.52
+    }
+  },
+  "media": {
+    "disabledUsd": 0,
+    "uniqueVideos": 86,
+    "officialScripts": 61,
+    "scriptCharacters": 62622,
+    "verifiedDurations": 83,
+    "knownSeconds": 29440,
+    "withoutKnownScript": 25,
+    "knownSecondsWithoutScript": 15668,
+    "unknownDurationsWithoutScript": 3,
+    "scenario": "For the 61 official scripts: 2–4 passes, 4k–8.5k prompt tokens per video per pass, 0.65–1.6 tokens per script character and 250–1,000 output tokens per call. For remaining videos assume 2–20 minutes for each unknown duration, 1 frame/s, about 100–300 input tokens/s including audio, 2–4 passes, same prompt/output allowances. No user download repeats media processing. Untimed scripts require a separately verified time range or media pass.",
+    "textOnly61Usd": [
+      0.54,
+      2.77
+    ],
+    "remaining25MediaUsd": [
+      2.6,
+      18.35
+    ],
+    "combinedIncrementEstimateUsd": [
+      3.14,
+      21.12
+    ],
+    "videoSource": "https://ai.google.dev/gemini-api/docs/video-understanding"
+  },
+  "excludes": "No production writes or paid calls. Provider invoice, cloud storage, egress and future recurring edits are separate. Estimates assume successful acquisition and content rights review. Additional repair rounds require a new allowance."
+}
