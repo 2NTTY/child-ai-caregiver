@@ -180,10 +180,10 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
   const pendingCountKnown = agentModel.online && agentPending.state === "ready" && (agentModel.readState === "idle" || agentModel.readState === "ready");
   const activityHeading = <View style={styles.activityHeading}>
     <AppDialog.Title style={styles.activityTitle}>活動</AppDialog.Title>
-    <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
+    {(!showDetails || loadedPendingCount > 0 || !!agentPending.nextCursor) && <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
       ? `已載入 ${loadedPendingCount} 項待確認${agentPending.nextCursor ? "，仍有更多待讀取" : ""}` : "待確認數量尚未核對"}>
       {pendingCountKnown ? `${loadedPendingCount}${agentPending.nextCursor ? "+" : ""} 項待確認` : "待確認未核對"}
-    </Text>
+    </Text>}
   </View>;
   const pendingContent = showPending ? <View testID="agent-other-pending" style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>{run ? "其他待確認" : "待你確認"}</Text>

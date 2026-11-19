@@ -144,6 +144,9 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
       { label: "接受後可見範圍", value: value.intendedVisibility === "family" ? "家庭共享" : "只限你本人" },
       { label: "有效至", value: value.validUntil ?? "未設定" }] };
 }
+// Only these steps can be shown inline without the decision/receipt dialog.
+const chatReadSteps = new Set(['load_capabilities', 'read_context', 'read_memory_facts', 'search_history', 'read_history',
+  'search_knowledge', 'read_knowledge_context', 'present_answer']);
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
   const cardLinks = new Map<string, boolean>();
   const platformSeries = new Set<string>();
@@ -157,6 +160,11 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
   return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
     sourceCardLinks: Array.from(cardLinks, ([cardId, authorize]) => ({ cardId, authorize })),
     platformSeriesIds: [...platformSeries],
+    showChildProfiles: result.status === 'completed' && result.tools.some(tool =>
+      tool.name === 'present_answer' && tool.status === 'succeeded' && tool.reference === 'child_profiles'),
+    readOnlyStop: result.status === 'stopped' && result.countsKnown !== false && !result.proposals.length
+      && !result.citations.length && !result.liveCitations?.length && !result.privateSourceCitations?.length
+      && result.tools.length > 0 && result.tools.every(tool => chatReadSteps.has(tool.name) && !tool.reference && tool.status !== 'unknown'),
     sourceCardReadings: result.status === 'completed' ? result.sourceCardReadings : undefined,
     stopReasonLabel: agentStopMessage(result.stopReason),
     stopReasonDetail: agentStopDetailHint(result.stopReason),
