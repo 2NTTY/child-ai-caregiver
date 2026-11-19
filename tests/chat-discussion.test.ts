@@ -36,11 +36,15 @@ test('a question binds three successive native turns, the main reply and one ind
   const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '讓遊戲成為探索的過程而非一定要完成的任務。'];
   const taskDetails = '已經準備藍色圖畫書。';
   const taskRestatement = '按這項待辦，準備好了的是那本藍色的圖畫書。';
+  const paraphrase = '照顧者可以讀故事，也可以唱歌。';
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
   const unused = async () => { throw new Error('Unexpected provider or usage call'); };
   const usage = { reserve: async () => true, record: async () => {}, getForUser: unused };
   const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
+      if (inputs.some(p => p.text?.includes('Please summarize the interactions concisely'))) {
+        return { content: { role: 'model', parts: [{ text: 'The three speakers have contributed.' }] }, finishReason: FinishReason.STOP };
+      }
       if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
         assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
@@ -64,13 +68,16 @@ test('a question binds three successive native turns, the main reply and one ind
         const payload = JSON.parse(content.slice(content.indexOf('{')));
         assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...(followup ? [taskRestatement, ...main.slice(1)] : main)]);
         if (followup) assert.deepEqual(payload.paragraphs[3].citationIds, ['page-item']);
+        if (followup) assert.ok(content.includes(chunk.sourceExcerpt) && !content.includes(paraphrase));
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
         return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
       assert.ok(!('propose_fact' in request.toolsDict));
       if (i === 5) {
         const rejection = inputs.filter(p => p.functionResponse?.name === 'present_answer').at(-1)?.functionResponse?.response?.data;
-        assert.partialDeepStrictEqual(rejection, { code: 'discussion_main_too_long', maxParagraphs: 3 });
+        assert.partialDeepStrictEqual(rejection, followup
+          ? { code: 'original_quote_mismatch', chunkId, originalExcerpt: chunk.sourceExcerpt }
+          : { code: 'discussion_main_too_long', maxParagraphs: 3 });
       }
       const previous = inputs.map(p => p.functionResponse?.response?.data).filter(Boolean).at(-1) as { nextTurn?: string; contribution?: { text: string }; maxMainParagraphs?: number } | undefined;
       if (i === 2 || i === 3) assert.equal(previous?.contribution?.text, turns[i - 2]);
@@ -78,12 +85,17 @@ test('a question binds three successive native turns, the main reply and one ind
       const name = i === 0 ? 'search_knowledge' : i <= 3 ? discussionToolNames[i - 1] : 'present_answer';
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
         : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
-        : { kind: followup ? 'mixed' : 'caregiving', paragraphs: (i === 4 ? [...main, '可以遲些再揀。'] : main).map((text, n) =>
+        : { kind: followup ? 'mixed' : 'caregiving',
+            ...(followup && { originalQuotes: [{ chunkId, text: i === 4 ? paraphrase : chunk.sourceExcerpt }] }),
+            paragraphs: (i === 4 && !followup ? [...main, '可以遲些再揀。'] : main).map((text, n) =>
             followup && n === 0 ? { kind:'record_restatement', text:taskRestatement, citationIds:[] }
               : { kind:'caregiving', text, citationIds:[chunkId] }) };
       const parts = [{ functionCall: { id: 'step-' + i, name, args } }];
+      // ADK compacts only across distinct event timestamps. Match the real threshold on the rejected call.
+      if (followup) await new Promise(resolve => setTimeout(resolve, 5));
       return { content: { role: 'model', parts: followup && i === 0
-        ? [{ functionCall: { id: 'page-task', name: 'read_context', args: {} } }, ...parts] : parts }, finishReason: FinishReason.STOP };
+        ? [{ functionCall: { id: 'page-task', name: 'read_context', args: {} } }, ...parts] : parts }, finishReason: FinishReason.STOP,
+        ...(followup && i === 4 && { usageMetadata: { promptTokenCount: 16045, totalTokenCount: 16379 } }) };
     } };
   const runtime = createAgentRuntime({ config, usage, provider, resolve: async () => ({
     config, provider, usage, authorize: async () => true, model: { generate: unused }, embeddings: { embed: unused },
@@ -134,6 +146,10 @@ test('a question binds three successive native turns, the main reply and one ind
   const later = await reply();
   assert.equal(later?.status, 'completed', JSON.stringify({ later, calls, taskReads }));
   assert.deepEqual(later?.discussion, result.discussion);
+  assert.equal(later.citations[0]?.citedExcerpt, chunk.sourceExcerpt);
+  assert.equal(later.counts.modelCalls, 7);
+  assert.deepEqual(await reply(), later);
+  assert.equal(calls, 7, 'Reopening the completed follow-up reads its receipt');
   assert.ok(taskReads >= 2);
   changeTaskDuringReview = true; claimed = false; calls = 0;
   const changed = await reply();

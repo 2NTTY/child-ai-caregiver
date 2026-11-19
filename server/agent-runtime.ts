@@ -893,6 +893,12 @@ export function createAgentRuntime(options: {
                   model: compactionModel,
                   budget,
                   signal: budget.signal,
+                  canCompact: () => {
+                    if (!terminalToolNames.size) return true;
+                    const { reserveForFinish } = budget.planningSnapshot(true, { reserveDeliveryReview });
+                    // Even a retried compaction must leave room for presentation and its independent review.
+                    return budget.remainingModelCalls - reserveForFinish.modelCalls >= 1 + (selected.config.agentMaxRetries ?? 0);
+                  },
                   tokenThreshold: typeof input.contextCompaction === "object" ? input.contextCompaction.tokenThreshold : undefined,
                   eventRetentionSize: typeof input.contextCompaction === "object" ? input.contextCompaction.eventRetentionSize : undefined,
                   ...(durableTrigger
