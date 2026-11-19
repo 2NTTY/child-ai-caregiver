@@ -4,6 +4,7 @@ import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
 import { citedOriginalSpans, type KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
 import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
+import { buildProposalDiff, extractProposalEditableDraft } from "./proposal-draft-edit.ts";
 
 const toolNames: Record<string, string> = {
   read_account_context: '查閱帳戶資料', read_conversation_window: '查閱對話範圍',
@@ -106,6 +107,8 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
   const value = proposal.value;
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt, contentState: proposal.contentState,
+    editableDraft: proposal.contentState === "invalidated" ? undefined : extractProposalEditableDraft(value),
+    diff: buildProposalDiff(proposal),
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
       label: `${proposal.result.kind === "care_record" ? "照護記錄" : proposal.result.kind === "private_note" ? "私人備註" : proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
   if (value.kind === "care_record_create" || value.kind === "care_record_revise") {

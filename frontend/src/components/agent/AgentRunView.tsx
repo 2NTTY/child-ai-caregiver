@@ -3,11 +3,13 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import {
-  agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide,
+  agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide, mayEditProposal,
   mayRetryOriginal, proposalNeedsConfirmation, proposalDisplayStatus, type AgentProposalView,
   type AgentRunActions, type AgentRunModel,
   publicAnswerSources,
 } from "../../agent-view-model";
+import { DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY, describeOperationUndoCapability } from "../../../../src/shared/operation-undo.ts";
+import { ProposalDraftEditor } from "./ProposalDraftEditor.tsx";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
@@ -98,14 +100,19 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
 }) {
   const [expanded, setExpanded] = useState(false);
   const [sourceExpanded, setSourceExpanded] = useState(false);
+  const [editingVersion, setEditingVersion] = useState<number | null>(null);
   const confirmed = model.online && model.readState === "ready" && !model.busy && !model.pendingDecision && model.notice?.tone === "saved"
     && decisionIntent !== null && decisionIntent.proposalId === proposal.id && proposal.version > decisionIntent.version && proposal.status === decisionIntent.status;
   const pending = proposal.status === "pending" || proposal.status === "expired";
   const closed = pending && !proposalNeedsConfirmation(proposal);
+  const isEditing = editingVersion === proposal.version && !closed;
   const details = proposalDetailGroups(proposal);
   const changes = details.visible.filter(detail => proposalDetailIsChange(proposal.kind, detail.label));
   const metadata = details.visible.filter(detail => !proposalDetailIsChange(proposal.kind, detail.label));
   const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
+  const undoCapability = !pending && proposal.status === "accepted" && proposal.result && Object.hasOwn(receiptDescriptions, proposal.result.kind)
+    ? describeOperationUndoCapability(proposal.result.kind)
+    : null;
   const outcome = proposal.result ? Object.hasOwn(receiptDescriptions, proposal.result.kind)
     ? receiptDescriptions[proposal.result.kind] : "保存收據種類未能辨識，請重新讀取核對。"
     : proposal.status === "accepted" ? "尚未確認是否已儲存" : null;
@@ -113,12 +120,25 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
     <View style={styles.top}><Text accessibilityRole="header" style={pending && !closed ? styles.proposalContext : styles.title}>{pending && !closed ? proposalContextLabel(proposal) : proposal.title}</Text>
       <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><AppStatusBadge label={proposalDisplayStatus(proposal)} tone={proposal.status === "accepted" && proposal.result && Object.hasOwn(receiptDescriptions, proposal.result.kind) ? "success" : pending && !closed ? "warning" : "neutral"} /></MotionFeedback></View>
     {pending ? <>
+      {!closed && proposal.diff ? <View testID={`agent-proposal-diff-${proposal.id}`} style={styles.diffBox}>
+        <View style={styles.diffBefore}>
+          <Text style={styles.detailLabel}>{proposal.diff.beforeLabel}</Text>
+          {proposal.diff.beforeTitle ? <Text selectable style={styles.detailValue}>{proposal.diff.beforeTitle}</Text> : null}
+          <Text selectable style={styles.meta}>{proposal.diff.beforeText}</Text>
+        </View>
+        <View style={styles.diffAfter}>
+          <Text style={styles.detailLabel}>{proposal.diff.afterLabel}</Text>
+          {proposal.diff.afterTitle ? <Text selectable style={styles.detailValue}>{proposal.diff.afterTitle}</Text> : null}
+          <Text selectable style={styles.detailValue}>{proposal.diff.afterText}</Text>
+        </View>
+      </View> : null}
       <View testID={`agent-change-content-${proposal.id}`} style={styles.changeContent}>
         {changes.map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} prominent />)}
         <MotionReveal value={proposal.content} contentKey={proposal.content} scopeKey={`${scopeKey}:${proposal.id}`} regionKey={`agent-proposal-${proposal.id}`} triggerKey={readTrigger} eligible={readEligible}>{text => <Text selectable style={closed ? styles.body : changes.length ? styles.meta : styles.changeBody}>{text}</Text>}</MotionReveal>
       </View>
       <View style={styles.metadata}>
         {(closed ? metadata.filter(detail => ["負責人", "到期時間", "時區"].includes(detail.label)) : metadata).map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
+        {!closed ? <ChangeDetail label="草稿版本" value={`版本 ${proposal.version}`} /> : null}
         {!closed && proposal.scope === "private" ? <ChangeDetail label="接受後可見範圍" value="本人" /> : null}
         <ChangeDetail label="確認期限" value={timeLabel(proposal.expiresAt)} />
       </View>
@@ -128,17 +148,34 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
       <MotionDisclosure expanded={sourceExpanded} scopeKey={`${scopeKey}:${proposal.id}:${proposal.version}`}><View style={styles.proposalDetails}>
         {details.supporting.map((detail, index) => <DetailRow key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
       </View></MotionDisclosure></> : null}
+      {isEditing && proposal.editableDraft && actions.editProposal ? <ProposalDraftEditor
+        key={`${proposal.id}:${proposal.version}`}
+        proposalId={proposal.id}
+        draft={proposal.editableDraft}
+        disabled={!mayEditProposal(model, proposal)}
+        busy={model.busy === "write"}
+        onSave={async input => {
+          const ok = await actions.editProposal?.(proposal.id, input);
+          if (ok) setEditingVersion(null);
+          return Boolean(ok);
+        }}
+        onCancel={() => setEditingVersion(null)}
+      /> : null}
       {!closed && proposal.scope === "family" ? <AppCheckbox label={sharedConfirmationLabel}
         accessibilityLabel={`${sharedConfirmationLabel}: ${proposal.title}`} checked={!!model.sharedConfirmed[proposal.id]}
-        disabled={!mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}
+        disabled={isEditing || !mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}
       <View style={styles.actions}>
-        {!closed && <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
+        {!closed && <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={isEditing || !mayDecide(model, proposal, "accept")}
           preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "accept")}
           onPress={() => actions.decide(proposal.id, "accept")} style={styles.decisionButton} />}
-        <AppButton label="略過" accessibilityLabel={`略過此事項：${proposal.title}`} variant="quiet" disabled={!mayDecide(model, proposal, "dismiss")}
+        {!closed && !isEditing && proposal.editableDraft && actions.editProposal ? <AppButton label="修改草稿"
+          accessibilityLabel={`修改草稿：${proposal.title}`} variant="secondary" disabled={!mayEditProposal(model, proposal)}
+          onPress={() => setEditingVersion(proposal.version)} style={styles.decisionButton} /> : null}
+        <AppButton label="略過" accessibilityLabel={`略過此事項：${proposal.title}`} variant="quiet" disabled={isEditing || !mayDecide(model, proposal, "dismiss")}
           preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "dismiss")}
           onPress={() => actions.decide(proposal.id, "dismiss")} style={styles.decisionButton} />
       </View>
+      {!closed ? <Text testID={`agent-draft-cancel-note-${proposal.id}`} style={styles.meta}>{DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY}</Text> : null}
     </> : <>
       {outcome ? <Text style={styles.meta}>{outcome}</Text> : null}
       <AppButton expanded={expanded} label={expanded ? "收起詳情" : "查看詳情"} accessibilityLabel={`${expanded ? "收起" : "查看"}結果詳情：${proposal.title}`}
@@ -147,6 +184,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
         <Text selectable style={styles.body}>{proposal.content}</Text>
         <Text style={styles.meta}>{destinations[proposal.kind]} · {proposal.scope === "family" ? "家庭共享資料" : "只供本人查看"}</Text>
         {[...details.visible, ...details.supporting].map((detail, index) => <DetailRow key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
+        {undoCapability ? <DetailRow label="後續處理與撤銷範圍" value={`${undoCapability.label}；${undoCapability.limitation}`} /> : null}
       </View></MotionDisclosure>
     </>}
   </View>;
@@ -329,4 +367,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 }, decisionButton: { flexGrow: 1, flexBasis: 120, minWidth: 0, maxWidth: "100%" },
   fullButton: { alignSelf: "stretch", maxWidth: "100%", minWidth: 0 }, inlineButton: { alignSelf: "flex-start", maxWidth: "100%", minWidth: 0 },
   problems: { gap: spacing.sm, minWidth: 0 }, tool: { gap: spacing.sm, paddingBottom: spacing.sm },
+  diffBox: { gap: spacing.xs, minWidth: 0 },
+  diffBefore: { backgroundColor: colors.quietSurface, borderLeftWidth: 3, borderLeftColor: colors.line, borderRadius: radius.small, padding: spacing.sm, gap: spacing.xs, minWidth: 0 },
+  diffAfter: { backgroundColor: colors.paleTeal, borderLeftWidth: 3, borderLeftColor: colors.teal, borderRadius: radius.small, padding: spacing.sm, gap: spacing.xs, minWidth: 0 },
 });

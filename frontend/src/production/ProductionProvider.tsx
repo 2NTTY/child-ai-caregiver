@@ -20,6 +20,7 @@ import { DeleteChildDialog } from "../components/DeleteChildDialog";
 import { AppButton } from "../components/ui";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import type { PreviewScenario } from "../preview/fixture";
+import type { AgentProposalDraftEditInput } from "../agent-view-model";
 import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
@@ -260,6 +261,7 @@ function useProductionValue(owner: ProductionOwner) {
       setSharedConfirmation: (id: string, checked: boolean) => { if (currentScope()) owner.agentOwner.setSharedConfirmation(id, checked); },
       decide: (id: string, decision: "accept" | "dismiss") => { if (currentScope()) owner.agentOwner.decide(id, decision); },
       retryOriginal: () => { if (currentScope()) owner.agentOwner.retryOriginal(); },
+      editProposal: (id: string, input: AgentProposalDraftEditInput) => currentScope() ? owner.agentOwner.editProposal(id, input) : Promise.resolve(false),
       openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id) },
     selectAgentRun: (id: string) => { if (currentScope()) owner.agentOwner.selectRun(id); },
     openAgentSource: openOriginal,

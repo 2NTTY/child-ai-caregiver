@@ -6729,3 +6729,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 - 在分支 `codex/req003-auth-mode-and-draft-binding` 落地助手執行授權模式（預設 `confirm_first` 先草稿確認後寫入，或明確切換為 `auto_authorized` 自動寫入），並補齊普通照護紀錄與私人筆記的建立／修訂草稿提案型別（`care_record_create`、`care_record_revise`、`private_note_create`、`private_note_revise`）、確認綁定與預先編輯接口 `editProposal`，同時於 `src/shared/operation-undo.ts` 建立操作撤銷能力目錄與未落庫草稿取消提示語意。
 - 離線驗證通過 `tests/req003-auth-mode-and-draft-binding.test.ts`（10 項）在內的 11 份測試共 99 項案例、`scripts/ci/verify-req003-auth-mode-and-draft-binding-offline.sh` 離線檢查規範，以及 Server、Shared、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
+
+### 2026-11-19　REQ-003 右上角統一待確認快捷入口與草稿編輯／差異確認介面
+
+- 在 `codex/req003-unified-pending-shortcut-ui` 交付右上角統一待確認快捷入口 `PendingReviewShortcut`（同時接線 Web `AppShell` 與 Native `NativeAppShell`），與 `/care`「記錄與核對」共用同一個 `ProductAgentOwner` 待確認佇列、`pending-review-model.ts` 計數摘要與 `PendingReviewList` 清單元件，確保數量與確認／略過狀態兩處即時同步、不另建第二套收件匣。
+- 補齊確認前草稿行內編輯與前後差異呈現（`proposal-draft-edit.ts`、`ProposalDraftEditor.tsx`、`ProductAgentOwner.editProposal`、`AgentRunView.tsx`），編輯期間鎖定確認並於升級草稿版本後重設家庭同意勾選；同時於待確認卡片明示 `DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY`（放棄草稿不等於撤銷歷史操作），於已接受詳情及自動執行收據（`AgentConversation.tsx`）展示 `describeOperationUndoCapability` 實際可撤銷範圍，並於 `AgentAuthorization.tsx` 加入 `confirm_first`／`auto_authorized` 執行模式選擇。
+- 離線驗證通過 `frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs`（10 項）在內的 8 份測試共 107 項案例、`scripts/ci/verify-req003-unified-pending-shortcut-ui-offline.sh` 離線檢查規範，以及 Server、Root、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。

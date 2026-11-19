@@ -54,6 +54,8 @@ export function proposalDetailIsChange(kind: AgentProposalView["kind"], label: s
 }
 
 export function proposalContextLabel(proposal: AgentProposalView): string {
+  if (proposal.kind === "private_note_create") return `新增私人備註 · ${proposal.title}`;
+  if (proposal.kind === "private_note_revise") return `更正私人備註 · ${proposal.title}`;
   if (proposal.kind === "task_create") return `新增待辦 · ${proposal.title}`;
   if (proposal.kind === "family_document_change") return `修改文件 · ${proposal.title}`;
   if (["task_change", "memory_fact_revise", "memory_fact_deactivate", "private_source_create", "private_source_change"].includes(proposal.kind)) {
