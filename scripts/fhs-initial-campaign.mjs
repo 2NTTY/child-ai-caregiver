@@ -122,6 +122,11 @@ try {
         maxOutputTokens, status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {
         process.exitCode = 2;
+        if (result.status === 'budget_exhausted' && ['knowledge_model_daily_admission', 'knowledge_embedding_daily_admission'].includes(result.code)) {
+          const deferred = await work.inspect(request), balance = await gate.status();
+          if (deferred?.waitingForQuotaDay && !deferred.result && !deferred.receipt && !deferred.lease
+            && balance?.held === 0 && balance.attempts === balance.settled && !balance.reconciliationRequired) process.exitCode = 4;
+        }
         if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold'].includes(result.code)) {
           const saved = await work.inspect(request), balance = await gate.status();
           const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
