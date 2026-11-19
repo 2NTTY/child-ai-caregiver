@@ -6652,3 +6652,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
+
+### 2026-11-19　REQ-001 C 類按需即時社群／商品搜索、原文讀取與呈現區分（`codex/req001-live-community-product-search`）
+
+1）**C 類按需即時搜尋與原文讀取（`src/shared/live-source-citation.ts`、`server/live-source-citation.ts`、`server/live-community-product-search.ts`）**：實作 `createLiveCommunityProductSearch`、`composeLiveSourceReaders`、`validateApprovedLiveUrl`、`extractLiveProductSpec` 與 `validateLiveSourceClaims`，於外搜查詢前置 `assertPublicKnowledgeQuery` 最小化、封鎖登入／會員受限路徑、對 401/403/登入牆/非 HTML 頁面明確輸出 `limitations` 而絕不以搜尋摘要充當原文，不杜撰缺失日期，並對社群自述、疑似廣告／贊助、過舊來源、不同地區版本／經驗矛盾與片段節錄自動標記 `cautions`；同時於 `server/product-agent-tools.ts` 接入 `searchDetailed` 限制回傳與 `unsupported_live_claim` 程式檢查，防止在社群／商品即時引用中虛構整體家長統計、作商業購買推薦或偽稱已驗證購買／臨床證明。
+2）**前端非色彩＋適度色彩區分與離線驗收（`frontend/src/components/chat/AnswerSources.tsx`、`CitationMarker*.tsx`、`agent-projection.ts`）**：為即時來源加入 `【n·即時】` 與「即時搜尋 · 社群經驗／商品資料」文字徽章及適度暖琥珀樣式（不動既有庫來源外觀及 `pressed` 狀態），展開對話框呈現 `productSpecLabel` 與 `cautionLabels` 警示；新增 `tests/req001-live-community-product-search.test.ts`（8/8 通過），離線守衛清單 12 整檔共 155 案通過 `summary-progress-contract.mjs`，三組嚴格 `tsc --noEmit` 皆 exit 0，並確認對 `_knowledge_`／`_library_preferences` 零持久寫入。
+3）**限制邊界**：本分支僅於本地進行離線合成測試、靜態型別與衛生檢查並本地提交，尚未推送遠端或執行真實外網搜索、真實 Gemini／Vertex 調用與實機驗收。

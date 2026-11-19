@@ -9,6 +9,9 @@ export interface ChatCitationView {
   versionId: string; versionHash: string; checkedAt: string; fetchedAt: string;
   lastSuccessfulCheckAt: string | null; sourceDate: string | null; validUntil: string | null;
   applicabilityLabel: string; internalOnly: boolean; url: string | null;
+  liveSourceKind?: import("../../src/shared/live-source-citation.ts").LiveSourceKind;
+  productSpecLabel?: string | null;
+  cautionLabels?: readonly string[];
 }
 
 export type ChatReplyPhase = "thinking" | "streaming" | "complete" | "stopped" | "failed" | "unknown" | "awaiting_confirmation";

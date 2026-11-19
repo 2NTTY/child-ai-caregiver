@@ -11,7 +11,7 @@ import { PlatformCardJoin } from '../memory/PlatformCardJoin';
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 
-import { CHAT_CLASSIFICATION_LABELS, CHAT_SOURCE_COPY } from "./chat-copy";
+import { CHAT_CLASSIFICATION_LABELS, CHAT_LIVE_ACQUISITION_BADGE, CHAT_LIVE_SOURCE_KIND_LABELS, CHAT_SOURCE_COPY } from "./chat-copy";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -39,7 +39,10 @@ function Detail({ label, value, technical = false }: { label: string; value: str
 
 function CitationReference({ number, source, locate }: { number: number; source: ChatCitationView; locate(id: string, anchor: RefObject<View | null>): void }) {
   const anchor = useRef<View>(null);
-  return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.title}`} onPress={() => locate(source.id, anchor)} />;
+  const live = source.acquisition === 'live';
+  return <CitationMarker ref={anchor} number={number} live={live}
+    label={`查看引用【${number}】${live ? `（${CHAT_LIVE_ACQUISITION_BADGE}）` : ''}：${source.title}`}
+    onPress={() => locate(source.id, anchor)} />;
 }
 
 export function CitationText({ children, style, careCitationCount = 0, onOpenCareCitation, materialCount = 0, onOpenMaterial }: {
@@ -90,7 +93,7 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
   const original = source.readSegments?.filter(Boolean) ?? [];
   return <AppDialog visible accessibilityLabel={source.title} onDismiss={onClose}>
     <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
-      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? '即時搜尋' : classificationLabels[source.classification], page].filter(Boolean).join(' · ')}>
+      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? CHAT_LIVE_ACQUISITION_BADGE : classificationLabels[source.classification], source.liveSourceKind ? CHAT_LIVE_SOURCE_KIND_LABELS[source.liveSourceKind] : null, page].filter(Boolean).join(' · ')}>
         {source.section ? <Text style={styles.section}>{source.section}</Text> : null}
         {source.excerpt ? <View style={styles.quote}>
           {source.excerptKind === 'visual_page' ? <Text style={styles.meta}>圖像說明（助手整理）</Text>
@@ -98,6 +101,8 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
           <Text selectable style={styles.body}>{source.excerpt}</Text>
         </View> : <Text style={styles.meta}>此引用沒有可顯示的原文摘錄。</Text>}
         {source.validUntil && Date.parse(source.validUntil) <= Date.now() ? <Text style={styles.warning}>這份引用已過有效期。</Text> : null}
+        {source.cautionLabels?.length ? <View testID="live-source-cautions" style={styles.detail}>{source.cautionLabels.map((item, idx) => <Text key={idx} style={styles.warning}>{item}</Text>)}</View> : null}
+        {source.productSpecLabel ? <Detail label="商品規格／型號" value={source.productSpecLabel} /> : null}
         {source.applicabilityLabel ? <Detail label="適用範圍" value={source.applicabilityLabel} /> : null}
         {source.savedPdf && onOpenSource ? <AppButton label="查看當時 PDF" variant="secondary" onPress={() => onOpenSource(source.id)} /> : null}
         {external ? <AppButton label="開啟現行網站" variant="quiet" onPress={() => { void Linking.openURL(external).catch(() => setLinkError(true)); }} /> : null}
@@ -152,14 +157,17 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
         {sources.length ? <View testID="answer-source-panel" style={styles.cards}>
           {sources.map((source, i) => {
             const page = pageLabel(source);
+            const isLive = source.acquisition === 'live';
+            const liveLabel = isLive ? `${CHAT_LIVE_ACQUISITION_BADGE}${source.liveSourceKind ? ` · ${CHAT_LIVE_SOURCE_KIND_LABELS[source.liveSourceKind]}` : ''}` : null;
             const preview = source.excerptKind === 'visual_page' ? '' : source.excerpt.replace(/\s+/gu, ' ').trim();
             return <Pressable key={source.id} testID={`citation-card-${i + 1}`}
-              accessibilityRole="button" accessibilityLabel={`來源【${i + 1}】：${source.title}${page ? ' · ' + page : ''}`}
+              accessibilityRole="button" accessibilityLabel={`來源【${i + 1}】${liveLabel ? ' · ' + liveLabel : ''}：${source.title}${page ? ' · ' + page : ''}`}
               accessibilityHint={preview || undefined}
-              onPress={() => open(source.id)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+              onPress={() => open(source.id)} style={({ pressed }) => [styles.card, isLive && styles.liveCard, pressed && styles.pressed]}>
               <View style={styles.cardHead}><Text numberOfLines={2} style={styles.title}>{source.title}</Text>
                 {page ? <Text style={styles.page}>{page}</Text> : null}</View>
               {preview ? <Text numberOfLines={3} style={styles.excerpt}>{preview}</Text> : null}
+              {liveLabel ? <View style={styles.liveTag}><Text testID={`live-source-badge-${i + 1}`} style={styles.liveBadge}>{liveLabel}</Text></View> : null}
             </Pressable>;
           })}
         </View> : null}
@@ -175,6 +183,9 @@ const styles = StyleSheet.create({
   cards: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
   card: { flexBasis: 236, flexGrow: 1, flexShrink: 1, maxWidth: 356, minWidth: 0, minHeight: 46, gap: spacing.xs,
     borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  liveCard: { borderColor: colors.statusWarmLine, backgroundColor: colors.paleAmber },
+  liveTag: { alignSelf: 'flex-start', borderRadius: 4, borderWidth: 1, borderColor: colors.statusWarmLine, backgroundColor: colors.paper, paddingHorizontal: spacing.xs, paddingVertical: 1 },
+  liveBadge: { fontFamily: chatFont, color: colors.warningInk, ...chatType.meta, fontWeight: '700' },
   pressed: { backgroundColor: colors.quietSurface, borderColor: colors.controlOutline },
   cardHead: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: spacing.sm, minWidth: 0 },
   title: { flexGrow: 1, flexShrink: 1, minWidth: 0, fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: '700' },
