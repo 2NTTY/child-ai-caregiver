@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-19 13:04 香港，本機候選**　家長可以在「記憶」新增及管理本人來源卡，也可由指定卡的連結提供同站登入授權。Edge 與 Firebase emulator 已驗證首次新增、預設頻率及授權讀回。正式助手操作、定時外站取材及私人索引由整合包接續。[本機驗收及版本](artifacts/verification/REQ006_ACCOUNT_SOURCE_CARDS_20261119.json)
+
 **2026-11-19 08:59 香港**　REQ-004、006、007 的整合版 `31e3b61d` 已在正式站提供服務。Web、API、worker 的實際版本一致，Firestore 健康檢查通過。Android 第 8 版的 preview 更新清單已指向相同提交，手機實機點閱留待體驗驗收。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44431291572) · [Android OTA](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/83a54d54-d24b-4ac1-8ce4-a7836b679ac3) · [驗收與版本](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json)
 
 **2026-11-19 香港**　家庭健康服務 20 頁小冊子已在原站發布。08:06 從正式查詢命中第 3、6 頁。08:33 在隔離家庭的 Edge 重開真實回答，點讀第 6 頁原文，檔案指紋與正式原件一致。私人記憶的另一則真實回答引用最後更正的原句，刪除後舊回答停止交付。[公開來源及點閱](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json) · [私人更正與刪除](artifacts/verification/REQ007_PRIVATE_FACT_RECALL_20261119.json)
