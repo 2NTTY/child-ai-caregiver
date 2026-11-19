@@ -1603,3 +1603,11 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+### REQ-002 有界真實基準與 SSE 斷線恢復門檻（`codex/req002-live-benchmark-and-disconnect`，基線 `origin/master` `dc9b23d8`）
+
+- **對應需求**：REQ-002 §§6–7.2、AC 506／511／517–518。
+- **交付內容**：
+  - `server/req002-acceptance-harness.ts` 與 `scripts/lib/req002-acceptance-runner.ts`：建立 provider 邊界硬預算計數器與 pre-dispatch fail-stop（預設 `runs <= 3`、`modelCalls <= 10`、`queryEmbeddings <= 4`，覆蓋生成、獨立審核／修復、查詢嵌入與重試）、合成 PII 金絲雀（`陳大文`／`沙田第一城 1 座`／`2026年5月18日`）外送掃描、`POST .../reply` 與 `GET .../reply` 同 `runId` 零重跑復原、`hk-official-seed.json` 5 份官方來源匯入及同版 `versionId`/`contentHash` 核對、SSE 串流途中中止後之 `remoteReply=running` 與 `refreshOriginalReply`／亂序幀忽略／`403` 清卡驗證，以及序貫對有界批次與冷／暖向量快取配對基準。
+  - `scripts/verify-req002-live.mjs`：強制要求 `--live` 或 `--offline` 明確旗標（無旗標或衝突旗標即拒絕並零計費調用），支援本機 `LOCAL_AGENT_CONFIG`、`P4_VERTEX_PROJECT`/`GCP_PROJECT_ID` 與 `GEMINI_API_KEY`（`AI_AGENT_MAX_RETRIES=1`），輸出經 Zod 結構驗證與金絲雀掃描之無個資 JSON 收據。
+- **誠實驗證邊界**：本分支僅於本地執行離線合成測試、離線 CLI 模式與既有 `127.0.0.1` loopback SSE 回歸測試；尚未於真實 Gemini／Vertex 憑證與線上環境執行 `--live` 實測，亦未推送或開設遠端 PR。[離線驗證 workflow](.github/workflows/req002-live-benchmark-offline.yml) · [驗證腳本](scripts/ci/verify-req002-live-benchmark-offline.sh)
