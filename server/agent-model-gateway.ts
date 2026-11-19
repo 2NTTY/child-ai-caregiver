@@ -496,6 +496,30 @@ export class AgentGatewayModel extends BaseLlm {
         remainingModelCalls: budget.remainingModelCalls,
         counts: budget.counts,
       });
+      type StopReason = NonNullable<AgentTraceEvent["stopReason"]>;
+      const stoppedOutcome = (reason: StopReason): AttemptOutcome => reason === "unauthorized" ? "unauthorized"
+        : reason === "deadline" || reason === "cancelled" ? "timeout"
+        : reason === "invalid_response" ? "invalid_response" : "unavailable";
+      let traceEnded = false;
+      const endTrace = (terminalOutcome: AttemptOutcome, reason?: StopReason) => {
+        if (traceEnded) return;
+        traceEnded = true;
+        emitTrace({
+          phase: terminalOutcome === "succeeded" ? "model_attempt_end"
+            : retryDelay !== undefined && !budget.signal.aborted ? "model_attempt_retry" : "model_attempt_error",
+          attemptIndex, retryIndex: retry, attemptKeyHash, durationMs: Math.max(0, Date.now() - start),
+          outcome: terminalOutcome, ...(reason ? { stopReason: reason } : {}), tokens, counts: budget.counts,
+          remainingModelCalls: budget.remainingModelCalls,
+        });
+      };
+      // Abort settles the outer root before this async generator necessarily unwinds.
+      // Close only the trace synchronously; the original attempt still owns accounting.
+      const onAbort = () => {
+        const reason: StopReason = budget.signal.reason instanceof AgentStopped ? budget.signal.reason.reason : "unavailable";
+        endTrace(stoppedOutcome(reason), reason);
+      };
+      budget.signal.addEventListener("abort", onAbort, { once: true });
+      if (budget.signal.aborted) onAbort();
       try {
         if (includesSummary) {
           await this.checkAuthorizeAndPolicy(modelKey);
@@ -586,9 +610,7 @@ export class AgentGatewayModel extends BaseLlm {
       } catch (error) {
         if (error instanceof AgentStopped) {
           stopReason = error.reason;
-          outcome = error.reason === "unauthorized" ? "unauthorized"
-            : error.reason === "deadline" || error.reason === "cancelled" ? "timeout"
-            : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
+          outcome = stoppedOutcome(error.reason);
           throw error;
         }
         const status = error instanceof PersonalProviderError ? error.diagnostic.httpStatus : error instanceof ApiError ? error.status : null;
@@ -607,18 +629,8 @@ export class AgentGatewayModel extends BaseLlm {
         const record = { outcome, ...tokens, durationMs };
         // This span measures the model attempt, not persistence. Never release a
         // response or retry before the original accounting operation succeeds.
-        emitTrace({
-          phase: outcome === "succeeded" ? "model_attempt_end" : retryDelay !== undefined ? "model_attempt_retry" : "model_attempt_error",
-          attemptIndex,
-          retryIndex: retry,
-          attemptKeyHash,
-          durationMs,
-          outcome,
-          ...(stopReason ? { stopReason } : {}),
-          tokens,
-          counts: budget.counts,
-          remainingModelCalls: budget.remainingModelCalls,
-        });
+        budget.signal.removeEventListener("abort", onAbort);
+        endTrace(outcome, stopReason);
         if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
         else await usage.record({ userId, childId, model: config.model, ...record });
       }

@@ -71,3 +71,34 @@ test("private originals mark the source milestone only after the version, consen
     } finally { budget.close(); }
   }
 });
+
+test("an interrupted model attempt ends once before the outer root settles, even when the provider never returns", async () => {
+  for (const reason of ["cancelled", "deadline"] as const) {
+    const parent = new AbortController(), budget = new AgentBudget(parent.signal, reason === "deadline" ? 250 : 5000);
+    const trace = createAgentRunTraceCollector({ runId: "test", role: "main_chat" });
+    let records = 0, dispatches = 0, inner: Promise<string> | undefined;
+    const model = new AgentGatewayModel({ budget, config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      userId: "fixture", childId: "fixture", authorize: async () => true, onTrace: event => trace.emitGatewayEvent(event),
+      usage: { reserve: async () => true, record: async () => { records++; } },
+      provider: { generate: async () => {
+        dispatches++;
+        if (reason === "cancelled") parent.abort();
+        return new Promise<never>(() => {});
+      } },
+    });
+    try {
+      try { await budget.wait(() => inner = model.completeText({ system: "fixture", user: "fixture", attemptKey: "test" })); }
+      catch (error) { assert.equal((error as { reason: string }).reason, reason); }
+      budget.close();
+      trace.finalize({ status: "stopped", stopReason: reason, counts: budget.counts });
+      await assert.rejects(inner!, { reason });
+      const events = trace.events();
+      assert.deepEqual(events.map(e => e.phase), ["model_attempt_start", "model_attempt_error", "run_end"]);
+      assert.equal(events[1]!.stopReason, reason);
+      assert.equal(events[0]!.attemptKeyHash, events[1]!.attemptKeyHash);
+      assert.equal(events[2]!.terminalCategory, reason === "cancelled" ? "cancelled" : "failed");
+      assert.equal(records, 1);
+      assert.equal(dispatches, 1);
+    } finally { budget.close(); }
+  }
+});
