@@ -32,7 +32,7 @@ export const agentProgressSourceSchema = z.object({
 export type AgentProgressSource = z.infer<typeof agentProgressSourceSchema>;
 
 export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid(),
-  phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help']),
+  phase: z.enum(['started', 'model', 'reading', 'searching', 'working', 'tool_finished', 'reviewing', 'help', 'knowledge_view', 'parent_view', 'methods_view']),
   sequence: z.number().int().positive().optional(),
   card: officialHelpIdSchema.optional(),
   sources: z.array(agentProgressSourceSchema).max(AGENT_PROGRESS_MAX_SOURCES).optional(),
@@ -46,6 +46,7 @@ export const agentProgressSchema = z.object({ runId: z.uuid(), messageId: z.uuid
 export type AgentProgress = z.infer<typeof agentProgressSchema>;
 export const AGENT_PROGRESS_LABELS: Record<AgentProgress['phase'], string> = {
   started: '已開始處理', model: '正在整理下一步', reading: '正在讀取相關資料', searching: '正在查詢來源',
+  knowledge_view: '正在核對育兒知識觀點的發言', parent_view: '正在核對新手家長觀點的回應', methods_view: '正在核對不同方法的比較',
   working: '正在處理事項', tool_finished: '工具已返回結果，正在核對', reviewing: '正在獨立核對回覆', help: '請先查看官方提示；對話可繼續',
 };
 export const ALL_OFFICIAL_HELP_IDS: readonly OfficialHelpId[] = ['emergency-hk-v1', 'medical-consult-hk-v1'];
@@ -178,6 +179,7 @@ const AGENT_PROGRESS_PHASE_RANK: Record<AgentProgress['phase'], number> = {
   model: 1,
   help: 1,
   working: 2,
+  knowledge_view: 2, parent_view: 2, methods_view: 2,
   searching: 2,
   reading: 2,
   tool_finished: 3,

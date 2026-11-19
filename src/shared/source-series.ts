@@ -28,12 +28,13 @@ export type LibraryArchiveSelection = z.infer<typeof libraryArchiveSelectionSche
 
 export const librarySelectionMode = z.enum(['platform', 'fixed', 'follow']);
 export const libraryPreferenceChangeSchema = z.strictObject({
-  seriesId: id, imported: z.literal(true).optional(), adopt: z.boolean().optional(), expectedRevision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,
+  seriesId: id, imported: z.literal(true).optional(), adopt: z.boolean().optional(), wholeSeries: z.literal(true).optional(),
+  expectedRevision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,
   editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid().optional(), versionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).refine(row => !!row.versionId || !!row.versionHash)).min(1).max(100),
-}).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
+}).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length && (!value.wholeSeries || !value.imported && !value.adopt));
 export type LibraryPreferenceChange = z.infer<typeof libraryPreferenceChangeSchema>;
 const libraryJoinSchema = z.strictObject({
-  action: z.literal('join'), seriesId: id, expectedRevision: z.int().nonnegative(),
+  action: z.literal('join'), seriesId: id, expectedRevision: z.int().nonnegative(), wholeSeries: z.literal(true).optional(),
   editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid() })).min(1).max(100),
 }).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
 export type LibraryJoin = z.infer<typeof libraryJoinSchema>;

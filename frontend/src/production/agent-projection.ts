@@ -6,6 +6,7 @@ import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
 
 const toolNames: Record<string, string> = {
+  share_knowledge_view: '育兒知識觀點發言', ask_parent_view: '新手家長觀點回應', compare_methods_view: '比較育兒方法',
   read_account_context: '查閱帳戶資料', read_conversation_window: '查閱對話範圍',
   read_source_cards: '查看來源卡', register_source_card: '新增來源卡', manage_source_card: '更新來源卡', open_source_card_login: '前往來源登入',
   read_platform_source_cards: '查看平台來源卡', join_platform_source_card: '免費加入平台卡',
@@ -70,7 +71,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     : segments.some(part => part.includes(quote)) ? quote : '';
   return {
     sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
-    acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
+    acquisition: 'library', mediaClip: source.mediaClip, pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
     termsUrl: source.termsUrl, originalRange: source.readCoverage?.ranges?.map(range => String(range.start + 1) + '–' + range.end).join('、'),
     readSegments: segments.filter(Boolean), excerptPage: source.excerptPage, excerptKind: source.originalKind,
     id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt,
@@ -229,6 +230,7 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
     readOnlyStop: result.status === 'stopped' && result.countsKnown !== false && !result.proposals.length
       && !result.citations.length && !result.liveCitations?.length && !result.privateSourceCitations?.length
       && result.tools.length > 0 && result.tools.every(tool => chatReadSteps.has(tool.name) && !tool.reference && tool.status !== 'unknown'),
+    discussion: result.status === 'completed' && result.deliveryReview?.decision === 'pass' ? result.discussion : undefined,
     sourceCardReadings: result.status === 'completed' ? result.sourceCardReadings : undefined,
     stopReasonLabel: agentStopMessage(result.stopReason),
     stopReasonDetail: agentStopDetailHint(result.stopReason),

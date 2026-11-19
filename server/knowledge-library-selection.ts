@@ -10,7 +10,7 @@ const saved = z.strictObject({
   revision: z.int().positive(), seriesId: key, enabled: z.boolean(), mode: librarySelectionMode,
   editions: z.array(z.strictObject({ sourceId: key, versionId: z.uuid(), scopeHash: z.string().regex(/^[a-f0-9]{64}$/u) })).max(100),
 });
-const preferences = z.array(saved).max(100);
+const preferences = z.array(saved).max(512);
 export const librarySelectionRecord = z.strictObject({ series: preferences });
 const nil = '00000000-0000-0000-0000-000000000000';
 export const librarySelectionScope = (ownerUserId: string) => ({ ownerUserId, workspaceId: nil, childId: nil, storageEpoch: nil });
@@ -32,7 +32,7 @@ export function selectedEdition(rows: SavedSeries[], document: SelectionEdition)
   // A moved snapshot can still answer from its original reviewed edition. Adopting the new series is explicit.
   const previous = !pin ? rows.find(row => row.seriesId !== document.seriesId
     && row.editions.some(item => item.sourceId === document.sourceId)) : undefined;
-  const eligible = mode === 'platform' ? !previous : !!pin && (pin.scopeHash === document.scopeHash || pin.scopeHash === document.legacyScopeHash)
+  const eligible = mode !== 'platform' && !!pin && (pin.scopeHash === document.scopeHash || pin.scopeHash === document.legacyScopeHash)
     && (pin.versionId === document.versionId || mode === 'follow');
   const view = { revision: series?.revision ?? 0, enabled: series?.enabled ?? true, mode, selectedVersionId: pin?.versionId ?? null, eligible };
   const historical = previous?.enabled && previous.mode === 'fixed' ? previous.editions.find(item => item.sourceId === document.sourceId) : undefined;

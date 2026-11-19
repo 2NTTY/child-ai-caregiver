@@ -1,3 +1,4 @@
+import { useSavedPageItem } from '../companion/CompanionSelection';
 import { HistoryCardGrid } from "../history/HistoryCards";
 import { EmptyListCard } from "../EmptyListCard";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
@@ -71,6 +72,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
 }) {
   const [sourceOpen, setSourceOpen] = useState(false), [archiveAsked, setArchiveAsked] = useState(false);
   const [checkingItem, setCheckingItem] = useState<{ sectionId: string; itemId: string } | null>(null);
+  useSavedPageItem('document', document.childId, document.id, document.version, !!document.revision && document.readState === 'ready', document.revision?.id);
   const revision = document.revision, state = stateLabels[document.readState], archived = document.status === "archived";
   const reading = workspace.model.reading, index = reading?.indexes.find(value => value.documentId === document.id);
   const content = reading?.content?.documentId === document.id ? reading.content : null;

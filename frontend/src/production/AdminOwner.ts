@@ -1,4 +1,6 @@
 import { treatmentView, treatmentResult, type TreatmentCommand, treatmentSourceId } from '../../../src/shared/admin-knowledge-treatment.ts';
+import { platformCardMedia } from '../../../src/shared/platform-media.ts';
+import { platformCardPreview, platformVersionBinding, type PlatformCardCommand } from '../../../src/shared/admin-platform-cards.ts';
 import { monthlyFinanceSchema } from '../../../src/shared/monthly-finance.ts';
 import { adminDayBudgetSchema, adminKnowledgeStatusSchema, type AdminKnowledgeStatus, type AdminCommand, type AdminInvitation, type AdminOverview, type AdminPage, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin.ts';
 import { z } from 'zod';
@@ -86,6 +88,31 @@ export class AdminOwner {
     if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');
     const path='/admin/knowledge-treatments/'+treatmentSourceId.parse(sourceId);
     return treatmentView.parse(await this.request(path+(versionId?'?version='+z.uuid().parse(versionId):'')));
+  }
+  async platformMaterials() {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403, 'forbidden');
+    const result = await this.request('/admin/platform-cards');
+    return z.object({ items: z.array(z.object({ id: treatmentSourceId, title: z.string(), url: z.url() })) }).parse(result).items;
+  }
+  async platformMedia(sourceId: string, change?: { enabled: boolean; revision: number }) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403, 'forbidden');
+    const id = treatmentSourceId.parse(sourceId);
+    const result = change ? await this.request('/admin/platform-cards', { action: 'media', sourceId: id, ...change })
+      : await this.request('/admin/platform-cards?source=' + id + '&view=media');
+    return platformCardMedia.parse(result);
+  }
+  async platformPreview(sourceId: string, versionId: string) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403, 'forbidden');
+    return platformCardPreview.parse(await this.request('/admin/platform-cards?source=' + treatmentSourceId.parse(sourceId) + '&version=' + z.uuid().parse(versionId)));
+  }
+  async platformActive(sourceId: string) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403, 'forbidden');
+    return z.object({ versionId: z.uuid(), source: z.record(z.string(), z.unknown()) }).nullable()
+      .parse(await this.request('/admin/platform-cards?source=' + treatmentSourceId.parse(sourceId) + '&view=active'));
+  }
+  async platformCommand(input: PlatformCardCommand) {
+    if (this.state.access !== 'allowed') throw new AdminApiError(403, 'forbidden');
+    return platformVersionBinding.parse(await this.request('/admin/platform-cards', input));
   }
   async submitTreatment(sourceId:string, command:TreatmentCommand) {
     if (this.state.access !== 'allowed') throw new AdminApiError(403,'forbidden');

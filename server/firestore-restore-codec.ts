@@ -2,6 +2,9 @@ import { sourceCardDocumentRecord, sourceDocumentRecordId, sourceDocumentMetadat
 import { PRIVATE_INDEX_COLLECTION, privateIndexId, privateIndexRecord, privateIndexMetadata } from './private-source-index-record.ts';
 import { PRIVATE_QUERY_COLLECTION, privateQueryId, privateQueryRecord } from './private-source-search.ts';
 import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
+import { campaign, campaignRecoverySchemas } from './knowledge-campaign-budget.ts';
+import { platformCardMedia } from '../src/shared/platform-media.ts';
+import { mediaEditionRecord } from './platform-media-processing.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
 import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
@@ -100,10 +103,14 @@ const domainSchemas = {
   'agent-high-watermark': { suffix: 'agent_metrics', schema: agentHighWatermarkDocSchema },
   'agent-budget-alert': { suffix: 'agent_budget_alerts', schema: budgetAlertSchema },
 } as const;
-const knowledgeSchemas = { 'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
+const knowledgeSchemas = { 'campaign-balance': campaignRecoverySchemas.balance, 'campaign-attempt': campaignRecoverySchemas.attempt,
+  'card-media': platformCardMedia, 'media-edition': mediaEditionRecord,
+  'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
   'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
-const knowledgeSuffixes = { 'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
+const knowledgeSuffixes = { 'campaign-balance': 'knowledge_campaigns', 'campaign-attempt': 'knowledge_campaigns/' + campaign + '/attempts',
+  'card-media': 'platform_card_media', 'media-edition': 'platform_media_editions',
+  'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
   'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
   'knowledge-observation': 'knowledge_observations', 'knowledge-observation-part': 'knowledge_observation_parts', 'knowledge-check': 'knowledge_checks' } as const;
 export type FirestoreRestoreAuthorityKind = keyof typeof authoritySchemas;
@@ -366,7 +373,11 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function knowledgeBinding(kind: FirestoreRestoreKnowledgeKind, id: string, raw: FirestoreRestoreValue): void {
-    if (kind === 'knowledge-source') {
+    if (kind === 'campaign-attempt') requireBinding(z.uuid().safeParse(id).success);
+    else if (kind === 'campaign-balance') requireBinding(id === campaign);
+    else if (kind === 'card-media') requireBinding(/^[a-z0-9-]{1,80}$/u.test(id));
+    else if (kind === 'media-edition') requireBinding(/^[a-f0-9]{64}$/u.test(id));
+    else if (kind === 'knowledge-source') {
       const row = parse(knowledge.source, raw); requireBinding(row.projectId === projectId && row.namespace === namespace && row.sourceId === id);
     } else if (kind === 'knowledge-version') {
       const row = parse(knowledge.version, raw);
@@ -421,6 +432,12 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function decode(record: { path: string; data: unknown }): FirestoreRestoreDecoded {
+    const attemptPrefix = namespace + '_knowledge_campaigns/' + campaign + '/attempts/';
+    if (record.path.startsWith(attemptPrefix)) {
+      const id = record.path.slice(attemptPrefix.length), value = parse(campaignRecoverySchemas.attempt, record.data);
+      knowledgeBinding('campaign-attempt', id, value);
+      return { path: record.path, context: { family: 'knowledge', kind: 'campaign-attempt', id }, value };
+    }
     if (typeof record.path !== 'string' || record.path.length > 300 || !/^[A-Za-z][A-Za-z0-9_]*\/[A-Za-z0-9-]+$/u.test(record.path)) reject('restore_path_invalid');
     const raw = object(record.data); size(raw, 900 * 1024);
     const [collection, documentId] = record.path.split('/');
@@ -476,6 +493,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     if (context.family === 'knowledge') {
       const value = parse<FirestoreRestoreValue>(knowledgeSchemas[context.kind], decoded.value); knowledgeBinding(context.kind, context.id, value);
             // In-flight acquisition is not proof of completion and must not be replayed after restore.
+      if (context.kind === 'campaign-balance') return { oldPath: decoded.path, path: decoded.path, data: { ...object(value), reconciliationRequired: true } };
       if (context.kind === 'knowledge-watch') return { oldPath: decoded.path, path: decoded.path, data: { ...object(value), lease: null } };
       if (context.kind === 'knowledge-check') {
         const row = parse(knowledgeRefresh.check, value);

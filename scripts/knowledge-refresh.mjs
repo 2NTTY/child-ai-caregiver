@@ -54,10 +54,11 @@ try {
     throw new Error("Invalid observation hash, version or version hash");
   }
 
-  const { SOURCE_WATCHES } = await import("../server/knowledge-source-catalog.ts");
-  if (operation === "catalog") console.log(JSON.stringify(SOURCE_WATCHES));
+  const { SOURCE_WATCHES, platformSourceWatches } = await import("../server/knowledge-source-catalog.ts");
+  const { platformMaterials } = await import("../server/platform-materials.ts");
+  if (operation === "catalog") console.log(JSON.stringify(platformSourceWatches));
   else {
-    if ((operation === "register" || operation === "check") && !SOURCE_WATCHES.some(watch => watch.id === target)) {
+    if ((operation === "register" || operation === "check") && !platformSourceWatches.some(watch => watch.id === target)) {
       throw new Error("Watch not in catalog");
     }
     const { serverStorageBackend } = await import("../server/firebase-config.ts");
@@ -70,14 +71,14 @@ try {
       persistence = await openFirebasePersistence(process.env);
       const { database, cipher, config, authority } = persistence;
       const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
-      const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
+      const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket), definitions: platformSourceWatches, readControl: tx => authority.readControl(tx) });
       store = { ...refresh, async recheckPdfRange(request) {
         if (!config.knowledgeSourceIds) throw Error('knowledge_source_not_configured');
-        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate });
+        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, platformMaterials, media: refresh.media, observations: refresh.gate });
         return knowledge.recheckPdfRange(request, refresh.originals.readPdf);
       }, async approve(sourceId, contentHash, versionId, versionHash, by, assessment) {
         if (!config.knowledgeSourceIds) throw new Error("knowledge_source_not_configured");
-        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience: "internal" });
+        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, platformMaterials, media: refresh.media, observations: refresh.gate, audience: "internal" });
         return knowledge.review(versionId, versionHash, by, assessment, { sourceId, contentHash });
       } };
     } else {
@@ -110,7 +111,7 @@ try {
     }
     if (operation === "check") {
       if (persistence) {
-        const pending = (await store.jobs()).find(job => job.data.watchId === target);
+        const pending = (await store.jobs(target)).find(job => job.data.watchId === target);
         if (!pending) throw new Error("Watch paused, disabled or catalog changed");
         const { fetchKnowledgeSource } = await import("../server/knowledge-source-fetch.ts");
         const jobId = randomUUID(), result = await store.process(pending.data, jobId, fetchKnowledgeSource, AbortSignal.timeout(60000));

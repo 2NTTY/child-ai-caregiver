@@ -44,6 +44,12 @@ P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條�
 <a id="agent-runtime-contract"></a>
 ### P2 AgentRuntime／工具契約
 
+逐題討論沿用原聊天、回覆及取消接口。儲存使用者訊息時可選填 `discussion: true`，只對該題生效。普通回答完成後，對 `/api/children/:childId/messages/:answerId/reply/discussion` 送 `POST {}` 會建立或取回同一條討論題。相同路徑的 `GET` 只查原題，未開始則返回 `{ message: null }`。已預選討論的回答會指回原使用者訊息。各次讀寫均檢查登入者、孩子與原資料的授權範圍。
+
+前端用返回的訊息 ID 沿原回覆接口開始、停止及查回運行。主回答在 `text`，通過獨立核對的可見發言在可選的 `discussion` 陣列，三個 `role` 依次為 `knowledge`、`parent`、`methods`。同一運行共用來源、用量與期限。三位各發言一段後，主回答最多三段，全部發言與主回答一併送審。
+
+新討論檢索及交付均按當時的個人知識庫選取。重開已交付的討論會重新核對本人、孩子、原對話和已引用片段的公開權限，再按原版本及內容雜湊讀回同一運行。移除個人知識卡或平台發布新版後，仍可閱讀當時的發言及引用。若原版本撤回、來源停用、公開授權失效或相關私人資料已不能讀取，Server 會扣起發言正文。
+
 四角色擴充目標見[角色與審核接口](#p2-agent-roles)，下列為既有單 Agent 接點及證據。S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
@@ -351,6 +357,8 @@ Vertex generate 失敗可在既有 Server 日誌記錄一次受限診斷：固�
 ## P1 私人聊天保存 HTTP（S09-W01）
 
 `GET /api/children/:childId/messages?before=:messageId` 返回 `{messages, limit:100, nextCursor}`，每則有 `id/childId/authorUserId/role/text/inReplyTo/createdAt`。首次省略 before，後續使用 nextCursor（最舊訊息 ID）；按 Server `(created_at,id)` 穩定排序，游標查詢也限定本人／孩子。每頁按時間正序呈現，沒有更多時 nextCursor=null。只返回當前帳號在該孩子的私人聊天；無權或不存在都 404，未登入 401。
+
+全站助手沿用正式 Firestore 的私人訊息提交。使用者訊息可帶 `pageContext: {page, item?}`。頁面採固定路由，已保存項目採 `{kind: "task" | "record" | "document", id, version}`，文件可另帶已開啟的 `snapshotId`。儲存交易核對本人、孩子、儲存範圍和項目版本，拒絕不符的選取並回傳 `409 selected_item_changed`。聊天歷史及原操作收據保留同一引用。助手需要內容時，`read_context` 按原訊息再核權及讀取版本；期間有變更便回傳不可用。臨時對話不向模型提供頁面背景。未送出的表單文字留在原頁。[資料格式](../src/shared/chat-page-context.ts)
 
 INT-W03 的 `POST /api/children/:childId/messages/:messageId/reply/cancel` 接受 `{}` 及相同 `x-expected-user-id`，重新核對 session、孩子、原訊息、授權版本及儲存 epoch，將本人原互動 run 的取消狀態持久保存於 SQL 台帳。`accepted:true` 表示原 run 已保存為 stopped／cancelled，或冪等確認同一仍獲授權的 cancelled run；同程序 AbortController 只作及時中止的加速。其他程序在下一次 Server 授權檢查停止後續操作，不保證立即停止在途模型／工具，也沒有跨庫副作用的原子 fencing。仍須讀取原運行與業務收據；取消不撤銷已提交效果，不把 unknown 改成未執行。`false` 不聲稱運行已取消；重啟後查原台帳，不重建或重跑模型。取消不增加生成呼叫；背景 worker 不由這個入口控制。持久狀態、終態與結果查回邊界見[取消契約](CHAT_AGENT_INTEGRATION_CONTRACT.md#原運行的持久取消)。
 
@@ -804,7 +812,11 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 正式歷史沿A02工作／訊息原文cursor、各領域原清單與修訂API；通知沿A08本人notification_deliveries安全分頁，只代表本人渠道／聯絡／驗證信的投遞metadata，不冒稱全部屬當前孩子。搜尋及日期篩選須標示已掃範圍與續讀位置，不能以未載入當不存在。私人工作是Agent保存的目標／焦點／問題，不稱模型內部推理或完整run context。
 
-新增 GET /api/children/:childId/library?cursor=… 為唯讀公共來源目錄；核對session、expected user及孩子現行存取後，以sourceId keyset每頁最多10項。cursor綁本人／孩子及權限版本；只返回目前enabled、reviewed、published、未過期且符合既有watch／observation及公開使用範圍的版本metadata（sourceId、versionId、title、publisher、url、classification、checkedAt、sourceUpdatedAt、validUntil），附nextCursor／complete。目錄不判定每份內容適用該孩子，也不將來源存在當作支持某句回答；不返回私有来源、不呼叫模型或embedding。
+`GET /api/children/:childId/library?cursor=…` 核對 session、預期帳戶及孩子權限後，每頁回傳最多十份已審核、上架且仍可公開使用的文件。Firestore 先列本人已下載文件，同組按來源編號排序。回應附 `nextCursor` 及 `complete`，游標綁本人、孩子與權限版本。系列目錄 v3 提供每份教材的影音開關、版本及公開連結。舊版 client 沿其既有回應格式。
+
+`POST /api/children/:childId/library` 的 `action=join` 把已發布系列加入本人參考資料。選擇只屬該帳戶，下載復用平台向量。普通教材須已下載、已啟用並符合適用範圍才進入新問答。跟版採用同範圍的審核更新，固定版本沿已選快照。停用可再啟用，移除以 `mode=platform` 清除本人版本選擇。未載齊目錄時，`wholeSeries=true` 讓 Server 在同一交易核對畫面所示版本及系列成員。固定新快照或匯入指定版本須提交完整選擇。個人動作保留已交付主聊天訊息及其原引用。重開 PDF 再核本人 run、原版本、片段、授權和原件 SHA-256，平台撤回後回傳 404。
+
+管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音初始關閉，已確認的頁面查核可更新連結，網絡或解析失敗保留上次結果。啟用後優先讀官方時間字幕，其次以官方講稿對齊影音。已核對片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
 
 
 <a id="firestore-target"></a>

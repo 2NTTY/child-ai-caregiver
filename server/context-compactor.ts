@@ -37,6 +37,7 @@ export interface ContextCompactorOptions extends InRunCompactionConfig {
   model: BaseLlm;
   budget?: { admitModel: () => Promise<void>; counts?: { modelCalls: number } };
   signal?: AbortSignal;
+  canCompact?: () => boolean;
   onBeforeRequest?: (request: LlmRequest, compactionAttemptIndex: number) => void;
 }
 
@@ -106,7 +107,7 @@ export function createRunContextCompactor(options: ContextCompactorOptions): Bas
 
   return {
     shouldCompact(context: InvocationContext) {
-      return baseCompactor.shouldCompact(context);
+      return (options.canCompact?.() ?? true) && baseCompactor.shouldCompact(context);
     },
 
     async compact(context: InvocationContext): Promise<void> {

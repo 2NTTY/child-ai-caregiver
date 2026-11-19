@@ -258,7 +258,7 @@ export function createRequestHandler(options: {
           : options.agentActions && /^\/api\/children\/[^/]+\/agent\/(policy|notes|actions)(\/|$)/u.test(url.pathname)
           ? await handleAgentActionsRequest(webRequest, userId, options.agentActions, async expected => (await options.auth.getSession({ headers }))?.user.id === expected)
           : options.productAgent && options.productAgentStore && options.chat
-          && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply(?:\/cancel)?$/u.test(url.pathname))
+          && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply(?:\/cancel|\/discussion)?$/u.test(url.pathname))
           ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,
             isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected })
           : url.pathname.startsWith("/api/online/") && options.online

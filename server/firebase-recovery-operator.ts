@@ -103,7 +103,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
             const doc={path:row.ref.path,data:row.data()};docs.push(doc);bytes+=firebaseBackupDocumentDigest(doc).bytes;
             requireValue(docs.length<=2000&&bytes<=32*1024*1024,'recovery_limit');
             const child=depth===undefined?undefined:['users','sessions','events'][depth];
-            if(child)await collect(row.ref.collection(child),depth!+1);}
+            if(child)await collect(row.ref.collection(child),depth!+1);
+            if(collection.path===namespace+'_knowledge_campaigns')await collect(row.ref.collection('attempts'));}
           if(page.size<100)break;cursor=page.docs.at(-1)!.id;
         }
       }

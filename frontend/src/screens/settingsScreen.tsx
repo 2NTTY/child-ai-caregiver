@@ -99,6 +99,10 @@ export default function SettingsPage() {
       <ProductionChannelSettings />
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
+      <SectionCard><SectionHeader density="compact" title="小助手角色" />
+        <Text style={styles.body}>ずんだもん © 東北ずん子・ずんだもんプロジェクト（SSS合同会社）</Text>
+        <Text style={styles.muted}>插畫　坂本アヒル　｜　模型及 Cubism SDK　Live2D Inc.</Text>
+      </SectionCard>
       {scopeKey ? <AgentAuthorization key={scopeKey} active={pathname === "/settings" && tab === "assistant"} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={pathname === "/settings" && tab === "model"} /></AppTabPanel>
