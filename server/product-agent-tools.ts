@@ -62,6 +62,10 @@ class HistoryExcerptMismatch extends FamilyError {
     this.quotes = quotes;
   }
 }
+class AttachedClaimNeedsEvidence extends FamilyError {
+  readonly paragraphs: number[];
+  constructor(paragraphs: number[]) { super(400, 'attached_claim_needs_evidence'); this.paragraphs = paragraphs; }
+}
 function validateAnswerText(answer: { paragraphs: AgentAnswer["paragraphs"] }) {
   for (const paragraph of answer.paragraphs)
     if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
@@ -468,6 +472,10 @@ export function createProductAgentTools(options: {
       const source = selectedEvidence.get(id);
       if (source) sources.push(source);
     }
+    // The parent attached this exact item to the question. Review the same original
+    // even when the writer restates it without putting a citation in the answer.
+    const attached = options.pageEvidence?.source;
+    if (attached && !cited.includes(attached.citationId)) sources.push(attached);
     if (isMemoryRestatementAnswer(value) || memoryGrounding.size > 0) {
       for (const { fact, source } of memoryGrounding.values()) {
         if (usableMemoryFact(fact) && value.paragraphs.some(paragraph => memoryFactReferencedByParagraph(fact.content, paragraph.text))) {
@@ -534,6 +542,10 @@ export function createProductAgentTools(options: {
         .filter(item => item.chunk.classification === "official_guidance")
         .slice(0, 6)
         .map(item => ({ chunkId: item.chunk.chunkId, title: item.chunk.title, section: item.chunk.section }));
+      if (error instanceof AttachedClaimNeedsEvidence && options.pageEvidence) return { status: 'rejected', data: {
+        code: error.code, unsupportedParagraphNumbers: error.paragraphs, selectedItem: options.pageEvidence.source, availableOfficialCitationIds,
+        nextAction: '保留有根據的段落，修改列出的段落。所選項目用 private_reference、text 和 citationIds:["page-item"]。查已下載的官方教材用 search_knowledge，照護建議引用其 chunkId。若只欠資料，可直接問一個問題；省略未核實的檔案說明和無關提醒。',
+      } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
@@ -618,7 +630,8 @@ export function createProductAgentTools(options: {
           return message.role === 'user' ? [{ text: message.text, citationIds: [handle] }] : [];
         });
         if (quotes.length) throw new HistoryExcerptMismatch(quotes);
-        throw new FamilyError(400, "citation_required");
+        if (options.pageEvidence && !paragraph.citationIds.length) throw new AttachedClaimNeedsEvidence([parsed.paragraphs.indexOf(paragraph) + 1]);
+        throw new FamilyError(400, 'citation_required');
       }
       for (const id of paragraph.citationIds) {
         if (liveEvidence.has(id) && (!official || liveEvidence.get(id)!.classification === 'official_guidance')) continue;
@@ -631,6 +644,13 @@ export function createProductAgentTools(options: {
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
     // Give a text-only history answer a chance to repair its own citation before the terminal tool exits.
     const selected = sourcesForDelivery(parsed, quotes);
+    const boundDraft = { ...candidateDraft, sources: selected.sources };
+    if (options.pageEvidence && requiresChatDeliveryReview(boundDraft) && chatDeliveryPassNeedsSources(boundDraft, deliveryReview)) {
+      const missing = parsed.paragraphs.flatMap((paragraph, index) => chatDeliveryPassNeedsSources({
+        ...boundDraft, kind: paragraph.kind ?? parsed.kind, paragraphs: [paragraph],
+      }) ? [index + 1] : []);
+      throw new AttachedClaimNeedsEvidence(missing);
+    }
     const onlyReferences = parsed.paragraphs.every(paragraph => (paragraph.kind ?? parsed.kind) === 'private_reference');
     const mixedWithRestatement = parsed.kind === 'mixed' && parsed.paragraphs.every(paragraph =>
       paragraph.kind === 'private_reference' || paragraph.kind === 'record_restatement');
@@ -982,6 +1002,11 @@ export function createProductAgentTools(options: {
           raw = { kind: wire.kind, paragraphs: wire.paragraphs.map(paragraph => {
             if (!('quoteHistory' in paragraph)) {
               const kind = paragraph.kind ?? wire.kind;
+              const attachedId = options.pageEvidence?.source.citationId;
+              if (attachedId && !paragraph.citationIds.length && (kind === 'private_reference' || kind === 'record_restatement')
+                && selectedEvidence.size === 1 && !privateSources?.evidence.size && !memoryGrounding.size) {
+                return { ...paragraph, citationIds: [attachedId] };
+              }
               // The storage service owns the visibility of a cited source, regardless of the writer's label.
               const observedOnly = workspaceEvidence.size > 0 && selectedEvidence.size === workspaceEvidence.size
                 && !privateSources?.evidence.size && !evidence.size && !liveEvidence.size;

@@ -203,7 +203,7 @@ const VALID_TOOLS = new Set<string>([PRODUCT_AGENT_TOOL_CATALOG.loader.name,
 ]);
 const VALID_CODES = new Set(["read_timeout", "embedding_limit", "read_unavailable", "effect_unknown", "invalid_parameters", "not_authorized", "unknown",
   "invalid_input", "invalid_assignee", "agent_run_expired", "confirmation_requires_interactive_scope",
-  "invalid_citation", "citation_required", "citation_limit", "use_citation_ids", "not_found", "version_conflict",
+  "invalid_citation", "citation_required", "citation_limit", "use_citation_ids", "attached_claim_needs_evidence", "not_found", "version_conflict",
   "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch",
   "confirmation_expired", "confirmation_scope_changed", "work_cancelled", "source_changed", "document_changed"]);
 const SAFE_HEX_PREFIX_RE = /^[a-f0-9]{6,16}$/u;

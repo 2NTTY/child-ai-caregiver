@@ -1282,6 +1282,13 @@ function classifyParagraphPrivateSupport(
     return "exempt";
   }
   if (citedPrivateIds.length > 0) {
+    // The independent reviewer receives the exact attached page. Allow natural restatement
+    // of that page while keeping other claims, actions and care advice on their own paths.
+    const kind = paragraph.kind ?? draft.kind;
+    if (paragraph.citationIds.length === 1 && citedPrivateIds[0] === 'page-item'
+      && (kind === 'private_reference' || kind === 'record_restatement') && draft.visibility === 'private'
+      && !CARE_ADVISORY_PATTERN.test(text) && !MEDICAL_CLAIM_PATTERN.test(text)
+      && !detectHighRiskCareClaims(text).matched && !UNSAFE_OPERATION_CLAIM_PATTERN.test(text)) return 'backed';
     return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), text, true) ? "backed" : "missing";
   }
   if (paragraph.citationIds.length > 0) return "missing";

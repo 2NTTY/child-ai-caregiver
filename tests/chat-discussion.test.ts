@@ -35,6 +35,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '看書要預備甚麼？放工後家長可能只想輕鬆唱歌。', '回應預備時間的問題，可以先唱熟悉的童謠，周末再試圖畫書。'];
   const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '當晚按大家的精神揀一樣便可。'];
   const taskDetails = '已經準備藍色圖畫書。';
+  const taskRestatement = '按這項待辦，準備好了的是那本藍色的圖畫書。';
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
   const unused = async () => { throw new Error('Unexpected provider or usage call'); };
   const usage = { reserve: async () => true, record: async () => {}, getForUser: unused };
@@ -61,7 +62,8 @@ test('a question binds three successive native turns, the main reply and one ind
           if (changeTaskDuringReview) taskChanged = true;
         }
         const payload = JSON.parse(content.slice(content.indexOf('{')));
-        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...(followup ? [taskDetails, ...main.slice(1)] : main)]);
+        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...(followup ? [taskRestatement, ...main.slice(1)] : main)]);
+        if (followup) assert.deepEqual(payload.paragraphs[3].citationIds, ['page-item']);
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
         return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
@@ -77,7 +79,7 @@ test('a question binds three successive native turns, the main reply and one ind
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
         : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
         : { kind: followup ? 'mixed' : 'caregiving', paragraphs: (i === 4 ? [...main, '可以遲些再揀。'] : main).map((text, n) =>
-            followup && n === 0 ? { kind:'private_reference', text:taskDetails, citationIds:['page-item'] }
+            followup && n === 0 ? { kind:'record_restatement', text:taskRestatement, citationIds:[] }
               : { kind:'caregiving', text, citationIds:[chunkId] }) };
       const parts = [{ functionCall: { id: 'step-' + i, name, args } }];
       return { content: { role: 'model', parts: followup && i === 0
