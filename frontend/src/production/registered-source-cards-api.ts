@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sourceReadingViewSchema, type SourceReading } from '../../../src/shared/source-card-reading.ts';
 import { registeredSourceCardSchema, registeredSourceSettingsSchema, type RegisteredSourceCommand, type RegisteredSourceSettings } from '../../../src/shared/registered-source-card.ts';
 
 export const sourceCardSettingsSchema = registeredSourceSettingsSchema;
@@ -34,6 +35,16 @@ export function createRegisteredSourceCardsApi(baseUrl: string, fetcher: typeof 
   }
   const one = z.object({ card: registeredSourceCardSchema }), mutation = z.object({ card: registeredSourceCardSchema.nullable() });
   return {
+    reading(userId: string, signal: AbortSignal, target: SourceReading) {
+      const params = new URLSearchParams({ documentId: target.documentId, version: target.version, offset: String(target.offset) });
+      if (target.page !== undefined) params.set('page', String(target.page));
+      if (target.fact) {
+        params.set('kind', target.fact.type);
+        params.set('hash', target.fact.hash);
+        params.set('incarnation', target.fact.incarnation);
+      }
+      return request(userId, signal, '/' + encodeURIComponent(target.cardId) + '/reading?' + params.toString(), sourceReadingViewSchema);
+    },
     list: (userId: string, signal: AbortSignal, cursor?: string) => request(userId, signal, cursor ? '?cursor=' + encodeURIComponent(cursor) : '', z.object({ items: z.array(registeredSourceCardSchema), nextCursor: z.string().nullable() })),
     get: (userId: string, signal: AbortSignal, cardId: string) => request(userId, signal, '/' + encodeURIComponent(cardId), one),
     mutate: (userId: string, signal: AbortSignal, input: SourceCardMutation) => request(userId, signal, '', mutation, input),

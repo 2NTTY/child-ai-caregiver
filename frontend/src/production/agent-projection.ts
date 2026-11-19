@@ -152,6 +152,7 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
   }
   return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
     sourceCardLinks: Array.from(cardLinks, ([cardId, authorize]) => ({ cardId, authorize })),
+    sourceCardReadings: result.status === 'completed' ? result.sourceCardReadings : undefined,
     stopReasonLabel: agentStopMessage(result.stopReason),
     stopReasonDetail: agentStopDetailHint(result.stopReason),
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,

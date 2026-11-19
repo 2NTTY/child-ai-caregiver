@@ -1,5 +1,6 @@
 import { BackgroundSurface, useCustomBackground } from "../components/appearance/BackgroundSurface";
 import { ChatFileMessage } from '../production/ChatFileMessage';
+import { RegisteredReadingCard } from '../production/RegisteredReadingCard';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
@@ -189,6 +190,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
               ? <Text accessibilityRole="alert" style={styles.warning}>這次回覆未完成：{run.stopReasonLabel}。</Text> : null}
           </>}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
+            {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
+              <RegisteredReadingCard key={JSON.stringify(target)} target={target} active={displayedMessages.some(item => item.id === message.id)} />)}
             {message.role === 'model' && sourcesMatch && run?.sourceCardLinks?.map(link =>
               <ChatAction key={link.cardId} label={link.authorize ? '前往來源卡登入' : '查看來源卡'} compact={compact}
                 accessibilityLabel={link.authorize ? '前往這張來源卡填寫登入資料' : '查看這次操作的來源卡'}
