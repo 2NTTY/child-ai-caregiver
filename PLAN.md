@@ -1604,6 +1604,15 @@ Current implementation skips the initial conversation summary only for a pure gr
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
 
+## REQ-008 specialist artifact loop and isolated renderer verification
+
+目前僅有內部組件及離線驗收；家長聊天的 `document_compose` 保留原有資料編製，未提供專家 PDF／HTML 預覽。啟用前須能在既有授權範圍內交付可開啟、與已檢版號及雜湊一致的草稿，並驗證真實畫面與字形。
+
+- The internal specialist loop validates `sourceQuote`, expected document/authority versions, and `readState === "ready"` before building an A4 PDF 1.4 Unicode draft or CSP-isolated HTML draft (`formalSave: false`, `published: false`, `requiresFormalConfirmation: true`).
+- Post-build verification runs in isolation without network access: PDF inspection uses `pdfjs-dist` in a memory-bounded `node:worker_threads` worker (`128MB` old generation limit, `15s` timeout, muted stdio) checking bounding-box overflow, clipping, overlap, footer intrusion, empty pages, missing/control/replacement glyphs, unsafe link URIs, and required title/section presence; HTML inspection uses `cheerio` under `default-src 'none'` CSP rules; missing pixel screenshot verification is reported explicitly in `unverifiedChecks` (`["pixel_screenshot_render"]`) unless a `VisualArtifactRendererPort` supplies visual results. A clear structural check without completed visual checks remains partial, not verified; text extraction does not establish visible glyph quality.
+- Automated repair is bounded on the caller's single `AgentBudget` (`maxRepairIterations = 2`), rebinding each verification report to the repaired `(artifactVersion, artifactHash)` and enforcing an in-memory per-scope single-flight lock (`specialist_task_in_progress`).
+- Offline gate (`scripts/ci/verify-req008-specialist-artifact-renderer-offline.sh`, `.github/workflows/req008-specialist-artifact-renderer-offline.yml`): `tests/req008-specialist-artifact-renderer.test.ts` (10 cases) plus 11 baseline suites (`12` files / `145` cases total) and three strict `tsc --noEmit` checks (`tsconfig.server.json`, `tsconfig.json`, `frontend/tsconfig.json`).
+
 
 ### REQ-001 B 類時效資訊生命週期與主聊天檢索閉環 (`codex/req001-timely-news-and-expiry`)
 

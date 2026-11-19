@@ -50,7 +50,7 @@ export interface AgentRunActions {
 }
 export interface AgentInboxModel {
   online: boolean; locked: boolean; state: AgentReadState; loadedAt: string | null;
-  entries: { runId: string; createdAt: string; label: string }[];
+  entries: { runId: string; createdAt: string; label: string; status?: AgentRunStatus }[];
   selectedRunId: string | null;
 }
 export interface AgentInboxActions { refresh(): void; select(runId: string): void; collapse(): void }
@@ -58,12 +58,22 @@ export interface AgentInboxActions { refresh(): void; select(runId: string): voi
 export const agentRunLabels: Record<AgentRunStatus, string> = { running: "處理中", completed: "已結束", stopped: "已停止", unknown: "結果未知" };
 export const agentProposalLabels: Record<AgentProposalStatus, string> = { pending: "待你確認", accepted: "已接受", dismissed: "已略過", expired: "已過期" };
 export const agentToolLabels: Record<AgentRunView["tools"][number]["status"], string> = { succeeded: "成功", rejected: "已拒絕", conflict: "出現衝突", failed: "失敗", unknown: "結果未知" };
-export function agentTime(value: string): string {
-  return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+export function agentTime(value: string, timeZone = "Asia/Hong_Kong"): string {
+  return new Date(value).toLocaleString("zh-HK", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 export function proposalExpired(proposal: AgentProposalView, now = Date.now()): boolean {
   const expires = Date.parse(proposal.expiresAt);
   return !Number.isFinite(expires) || expires <= now;
+}
+export function proposalDisplayStatus(proposal: AgentProposalView): string {
+  if (proposal.status === "pending") {
+    if (proposalExpired(proposal)) return "已過期";
+    if (proposal.contentState === "invalidated") return "已失效";
+  }
+  return agentProposalLabels[proposal.status];
+}
+export function proposalNeedsConfirmation(proposal: AgentProposalView): boolean {
+  return proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal);
 }
 export function mayDecide(model: AgentRunModel, proposal: AgentProposalView, decision: AgentDecisionKind): boolean {
   return model.readState === "ready" && model.online && !model.busy && !model.pendingDecision

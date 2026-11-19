@@ -93,16 +93,15 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
   }
   if (!visible) return null;
   return <View testID="voice-capture" style={styles.stack}>
-    <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等待咪高峰權限…可隨時取消" : state === "recording" ? "正在本機錄音，尚未送出" : state === "stopping" ? "正在完成錄音…" : recording ? "先試聽，再決定是否加入草稿" : "按「開始錄音」才會要求咪高峰權限"}</Text>
+    {state === "permission" || state === "stopping" ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等候咪高峰權限…" : "正在準備錄音…"}</Text> : null}
     {state === "recording" ? <VoiceRecordingTimer /> : null}
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => { void finish(true, generation.current); }} /> :
-      recording ? <AppButton label="加入未送出草稿" disabled={state !== "ready"} onPress={() => { const item = current.current; if (item) pick(item); }} /> :
+      recording ? <AppButton label="使用錄音" disabled={state !== "ready"} onPress={() => { const item = current.current; if (item) pick(item); }} /> :
       <AppButton label="開始錄音" disabled={state !== "idle"} onPress={() => { void start(); }} />}
       <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
-    </View><AssistantAttachmentPicker kind="voice" disabled={state === "permission" || state === "recording" || state === "stopping"} onPick={pick} onError={setError} />
-    <Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。離開 App 會停止未送出的錄音。</Text>
+    </View>{!recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={false} onPick={pick} onError={setError} /> : null}
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

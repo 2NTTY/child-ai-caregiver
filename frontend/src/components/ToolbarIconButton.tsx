@@ -6,11 +6,12 @@ import { useInteractionDensity } from "./useInteractionDensity";
 import type { AppIcon } from "./AppIcon";
 import { colors, mobileIcons, mobileLayout, radius } from "../theme";
 
-export function ToolbarIconButton({ icon, label, onPress, expanded, ref }: {
+export function ToolbarIconButton({ icon, label, onPress, expanded, quiet = false, ref }: {
   icon: ComponentProps<typeof AppIcon>["name"];
   label: string;
   onPress: () => void;
   expanded?: boolean;
+  quiet?: boolean;
   ref?: Ref<View>;
 }) {
   const { width } = useWindowDimensions();
@@ -21,10 +22,10 @@ export function ToolbarIconButton({ icon, label, onPress, expanded, ref }: {
     const control = Platform.OS === "web" && instance
       ? ((instance as unknown as HTMLElement).querySelector('[role="button"]') ?? instance) as unknown as View : instance;
     if (typeof ref === "function") ref(control); else if (ref) ref.current = control;
-  }} icon={icon} size={mobileIcons.navigation} mode="outlined"
-    containerColor={colors.controlSurface} iconColor={colors.ink}
+  }} icon={icon} size={quiet ? 20 : mobileIcons.navigation} mode={quiet ? undefined : "outlined"}
+    containerColor={quiet ? "transparent" : colors.controlSurface} iconColor={quiet ? colors.muted : colors.ink}
     accessibilityLabel={label} accessibilityState={{ expanded }} aria-expanded={expanded}
-    onPress={onPress} contentStyle={styles.touchable} style={[styles.button, compact && styles.mobile]} />;
+    onPress={onPress} contentStyle={quiet ? undefined : styles.touchable} style={[styles.button, compact && styles.mobile]} />;
 }
 
 const styles = StyleSheet.create({

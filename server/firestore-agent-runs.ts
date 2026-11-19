@@ -8,6 +8,7 @@ import type { DocumentSnapshot } from '@google-cloud/firestore';
 import type { AgentScope } from './agent-runtime.ts';
 import type { AgentRunClaim } from './product-agent-store.ts';
 import type { ProductAgentResult } from '../src/shared/product-agent.ts';
+import { backgroundActivityEntry } from './background-activity-entry.ts';
 import { productAgentResultSchema } from '../src/shared/product-agent-result.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -615,7 +616,10 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
           .where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
           .where('childTag', '==', tags.childTag).where('userTag', '==', tags.userTag).where('triggerKind', '==', 'worker')
           .orderBy('createdAt', 'desc').orderBy('runId', 'desc').limit(20));
-        return rows.docs.map(row => { const run = decode(b, row.get('runId'), row); return { runId: run.id, createdAt: run.createdAt }; });
+        return rows.docs.map(row => {
+          const run = decode(b, row.get('runId'), row);
+          return backgroundActivityEntry(run.id, run.createdAt, run.recipeId, run.state);
+        });
       });
     },
   };

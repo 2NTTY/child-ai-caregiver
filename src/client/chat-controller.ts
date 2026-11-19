@@ -17,6 +17,7 @@ type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" |
 
 export interface ChatDraft {
   text: string;
+  nextText?: string;
   file?: Pick<ChatFileMessageReference,"id"|"version">;
   voice?: Pick<VoiceMessageReference,"id"|"version">;
   photo?: Pick<PhotoMessageReference,"id"|"version">;
@@ -39,6 +40,8 @@ export interface ChatState {
   nextCursor: string | null;
   loadingOlder: boolean;
   cancelling: boolean;
+  cancelAcceptedFor?: string;
+  queuedTextAfter?: string;
   cancelNotice: string | null;
   loadedAt: string | null;
   error: string | null;
@@ -162,7 +165,7 @@ export class ChatController {
     return () => this.listeners.delete(listener);
   };
 
-  hasUnsavedInput = (): boolean => Object.values(this.state.drafts).some(draft => draft.text.length > 0);
+  hasUnsavedInput = (): boolean => Object.values(this.state.drafts).some(draft => (draft.savedUserMessageId ? draft.nextText : draft.text)?.length);
 
   private update(patch: Partial<ChatState>): void {
     this.state = { ...this.state, ...patch };
@@ -170,10 +173,20 @@ export class ChatController {
   }
 
   private updateDraft(childId: string, patch: Partial<ChatDraft>): void {
-    this.update({ drafts: { ...this.state.drafts, [childId]: { ...(this.state.drafts[childId] ?? emptyDraft()), ...patch } } });
+    const previous = this.state.drafts[childId] ?? emptyDraft();
+    const draft = { ...previous, ...patch };
+    if (patch.phase === "draft" && previous.savedUserMessageId && previous.nextText !== undefined) {
+      draft.text = previous.nextText;
+      draft.nextText = undefined;
+      draft.voice = undefined;
+      draft.file = undefined;
+      draft.photo = undefined;
+    }
+    this.update({ drafts: { ...this.state.drafts, [childId]: draft } });
   }
 
   private abortRequests(): void {
+    if (this.state.queuedTextAfter || this.state.cancelAcceptedFor) this.update({ queuedTextAfter: undefined, cancelAcceptedFor: undefined });
     this.view += 1;
     for (const controller of this.requests) controller.abort();
     this.requests.clear();
@@ -303,10 +316,17 @@ export class ChatController {
 
   setText(text: string): void {
     const childId = this.state.selectedChildId;
-    if (!this.state.userId || !childId || this.state.busy) return;
+    if (!this.state.userId || !childId || this.state.busy === "save") return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
-    if (draft.phase !== "draft") return;
-    this.updateDraft(childId, { text, notice: null });
+    if (this.state.queuedTextAfter) this.update({ queuedTextAfter: undefined });
+    if (draft.phase === "reply_failed" && this.state.busy === null && this.state.remoteReply?.status !== "running") {
+      this.startNewMessage();
+      this.updateDraft(childId, { text, notice: null });
+    } else if (draft.savedUserMessageId && (draft.phase === "replying" || draft.phase === "reply_failed")) {
+      this.updateDraft(childId, { nextText: text });
+    } else if (draft.phase === "draft") {
+      this.updateDraft(childId, { text, notice: null });
+    }
   }
 
   /** A newer saved row can supersede an SSE stream for the same question. Publish both changes together. */
@@ -545,22 +565,45 @@ export class ChatController {
     } finally { if (this.current(scope)) this.update({ loadingOlder: false }); this.release(scope); }
   }
 
+  queueNextText(): void {
+    const { selectedChildId, replyingMessageId, busy, online } = this.state;
+    const draft = selectedChildId ? this.state.drafts[selectedChildId] : null;
+    if (!online || busy !== "reply" || !replyingMessageId || draft?.phase !== "replying"
+        || draft.savedUserMessageId !== replyingMessageId || !draft.nextText?.trim() || draft.nextText.length > 10_000) return;
+    this.update({ queuedTextAfter: replyingMessageId });
+  }
+
+  unqueueNextText(): void {
+    this.update({ queuedTextAfter: undefined });
+  }
+
+  private finishTextQueue(scope: RequestScope, messageId: string | null): void {
+    if (!messageId || !this.current(scope) || this.state.queuedTextAfter !== messageId) return;
+    this.unqueueNextText();
+    const draft = scope.childId ? this.state.drafts[scope.childId] : null;
+    if (this.state.online && !this.state.busy && draft?.phase === "draft" && draft.text.trim()
+        && !this.state.replyError && !this.state.remoteReply && this.state.cancelAcceptedFor !== messageId
+        && this.state.messages.some(row => row.role === "model" && row.inReplyTo === messageId && !isIncompleteModelReplyText(row.text))) {
+      void this.send();
+    }
+  }
+
   async cancelReply(): Promise<void> {
     const childId = this.state.selectedChildId;
     const replyingMessageId = this.state.replyingMessageId ?? (this.state.remoteReply?.status === "running" ? this.state.remoteReply.messageId : null);
-    if (!childId || !replyingMessageId || this.state.busy !== "reply" && this.state.remoteReply?.status !== "running" || this.state.cancelling || !this.state.online || !this.api.cancelReply) return;
+    if (!childId || !replyingMessageId || this.state.busy !== "reply" && this.state.remoteReply?.status !== "running" || this.state.cancelling || this.state.cancelAcceptedFor === replyingMessageId || !this.state.online || !this.api.cancelReply) return;
     const scope = this.scope();
-    this.update({ cancelling: true, cancelNotice: null });
+    this.update({ cancelling: true, cancelNotice: null, queuedTextAfter: undefined });
     try {
       if (!await this.verifyIdentity(scope)) return;
       const accepted = await this.api.cancelReply(childId, replyingMessageId, scope.controller.signal, scope.userId);
-      if (this.current(scope)) this.update({ cancelNotice: accepted
-        ? "Server 已接受停止要求；已保存的操作不會撤銷，請核對最後結果。"
-        : "目前沒有可停止的運行；請等候或重新讀取原結果。" });
+      if (this.current(scope) && (this.state.replyingMessageId === replyingMessageId || this.state.remoteReply?.messageId === replyingMessageId && this.state.remoteReply.status === "running")) this.update({ cancelAcceptedFor: accepted ? replyingMessageId : undefined, cancelNotice: accepted
+        ? null
+        : "未找到進行中的回覆，可重新讀取對話。" });
     } catch (error) {
       if (this.current(scope)) {
         if (sessionError(error)) this.invalidateIdentity();
-        else this.update({ cancelNotice: "未能確認停止要求；不能當作已停止，請查核原結果。" });
+        else this.update({ cancelNotice: "未能確認停止要求，請再試一次。" });
       }
     } finally { if (this.current(scope)) this.update({ cancelling: false }); this.release(scope); }
   }
@@ -775,7 +818,7 @@ export class ChatController {
 
   async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<void> {
     const childId = this.state.selectedChildId;
-    if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt) return;
+    if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt || this.state.remoteReply?.status === "running" && !this.state.messages.some(item => item.role === "model" && item.inReplyTo === this.state.remoteReply?.messageId)) return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
     if (draft.phase !== "draft") return;
     if (!this.state.online) {
@@ -789,6 +832,7 @@ export class ChatController {
       return;
     }
     const scope = this.scope();
+    let savedId: string | null = null;
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
@@ -800,7 +844,8 @@ export class ChatController {
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
       if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
-        feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
+        feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelAcceptedFor: undefined, cancelNotice: null });
+      savedId = saved.id;
       this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: "聊天已保存，正在等候 AI 回覆。" });
       await this.performReply(scope, saved.id);
     } catch (error) {
@@ -820,6 +865,7 @@ export class ChatController {
         }
         this.update({ busy: null });
       }
+      this.finishTextQueue(scope, savedId);
       this.release(scope);
     }
   }
@@ -865,6 +911,7 @@ export class ChatController {
       }
     } finally {
       if (this.current(scope)) this.update({ busy: null, replyingMessageId: null });
+      this.finishTextQueue(scope, messageId);
       this.release(scope);
     }
   }
@@ -923,7 +970,7 @@ export class ChatController {
     const remote = this.state.remoteReply;
     const noticeOwner = remote?.messageId ?? this.state.feedback?.messageId ?? id;
     this.update({
-      drafts: { ...this.state.drafts, [childId]: { ...emptyDraft(), dismissedHelpMessageId: id,
+      drafts: { ...this.state.drafts, [childId]: { ...emptyDraft(), text: draft.nextText ?? "", dismissedHelpMessageId: id,
         notice: "舊訊息已保存；可在聊天記錄中再次要求 AI 回覆。" } },
       ...(this.state.feedback?.messageId === id ? { feedback: null } : {}),
       ...(remote?.messageId === id && remote.status !== "running" ? { remoteReply: null } : {}),
