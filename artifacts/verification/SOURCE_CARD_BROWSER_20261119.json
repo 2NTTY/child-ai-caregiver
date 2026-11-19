@@ -1,0 +1,55 @@
+{
+  "observedAt": "2026-11-19T12:57:00+08:00",
+  "base": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+  "publicDirectory": {
+    "kind": "directory",
+    "entryUrl": "https://www.fhs.gov.hk/english/health_info/child/14727.html",
+    "allowedPath": "/english/health_info/child/",
+    "original": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "mimeType": "application/pdf",
+    "bytes": 7944671,
+    "pages": 20,
+    "sha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+    "comparedWith": "REQ004_NATIVE_PDF_CHP_20261119.json"
+  },
+  "syntheticBoundSite": {
+    "entry": "tests/source-card-acquire.test.mjs",
+    "mode": "SOURCE_CARD_BROWSER_ACCEPT=1",
+    "broker": "Production worker image, isolated loopback HTTP fixture in place of DNS/TLS socket, actual HTTP headers and form body",
+    "renderer": "Playwright 1.63.0, actual Chromium, fresh BrowserContext, Compose Unix socket",
+    "observed": [
+      "One POST to the registered form action with its hidden CSRF field and pre-login cookie",
+      "Authenticated GET of the directory, next page and in-scope script",
+      "Native download control and direct image link produced byte-identical DOCX and PNG originals",
+      "Mammoth returned the expected DOCX text",
+      "No credentials in renderer IPC, URLs or HTTP Basic headers",
+      "The out-of-scope link was never requested",
+      "Exact document entry includes query; directory and bulletin allow the registered entry plus the stated subtree"
+    ],
+    "manualStates": [
+      "login",
+      "mfa",
+      "captcha",
+      "purchase"
+    ]
+  },
+  "isolation": {
+    "networkMode": "none",
+    "linuxCapabilities": [],
+    "noNewPrivileges": true,
+    "chromiumSandbox": true,
+    "cpu": 1,
+    "memoryBytes": 671088640,
+    "pids": 160,
+    "rootFilesystem": "read-only",
+    "seccompSha256": "8e07394b901955c6d7a62cad70e9b402577223d058f5f5f445577bd6c7fbd128",
+    "overlay": "deploy/p1/compose.firestore.source-browser.yaml",
+    "health": "healthy"
+  },
+  "failuresAndCorrections": [
+    "Node stdin with --input-type=module prevented the PDF parser worker from starting. The regular file entry verified all 20 pages as the file's page count.",
+    "The upstream seccomp rule required an outer SYS_CHROOT capability. Chromium now chroots within its own user namespace while the outer capability set stays empty.",
+    "The existing DNS module-mock regression case failed during import on host Node 24.11.0 and passed on the production Node 24.19.0 image."
+  ],
+  "scope": "Adapter and isolation only. Live login used synthetic credentials on one fixture. No production worker deployment, real user account, model, OCR or purchase."
+}

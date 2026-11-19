@@ -5,6 +5,15 @@ import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts
 import { fetchPublicSourceResponse } from "./public-source-transport.ts";
 export { publicSourceAddress } from "./public-source-transport.ts";
 
+/** The official FHS catalogue emits its download control as one literal leafletBlock call. */
+export function fhsLeafletControl($: ReturnType<typeof load>, landing: string) {
+  if (new URL(landing).hostname !== 'www.fhs.gov.hk') return undefined;
+  const scripts = $('script:not([src])').map((_, el) => $(el).text().trim()).get().filter(script => /^leafletBlock\s*\(/u.test(script));
+  if (!scripts.length) return undefined;
+  const values = scripts.length === 1 && /^leafletBlock\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*,\s*"(\d+)"\s*\);?$/u.exec(scripts[0]!);
+  return values && values[2] !== '-1' ? { url: new URL(values[3] + '.pdf', landing).href, title: values[1]! } : null;
+}
+
 export function sourceFetchUrl(value: string, definition: SourceWatchDefinition): URL {
   const url = new URL(value), registered = new URL(definition.url);
   if (url.protocol !== "https:" || url.username || url.password || url.port || url.hash
@@ -67,13 +76,11 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (page.response.status !== 200 || !/^text\/html(?:;|$)/i.test(page.response.contentType)) return { status: "failed", reason: "response" };
       const $ = load(page.response.body.toString("utf8"));
       // Recover a conventional direct link only within the registered leaflet landing page.
-      const scripts = $("script:not([src])").map((_, el) => $(el).text().trim()).get()
-        .filter(script => /^leafletBlock\s*\(/u.test(script));
-      if (scripts.length) {
-        const legacy = scripts.length === 1 && /^leafletBlock\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*,\s*"(\d+)"\s*\);?$/u.exec(scripts[0]!);
-        if (!legacy || legacy[2] === "-1" || new URL(legacy[3] + ".pdf", definition.leafletPage).href !== definition.url)
+      const legacy = fhsLeafletControl($, definition.leafletPage);
+      if (legacy !== undefined) {
+        if (!legacy || legacy.url !== definition.url)
           return { status: "failed", reason: "parse" };
-        title = legacy[1];
+        title = legacy.title;
         readMethod = "fhs-leaflet-block/1";
       } else {
         const region = $("#content, main, article").first();
