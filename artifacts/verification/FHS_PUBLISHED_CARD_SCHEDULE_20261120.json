@@ -1,0 +1,50 @@
+{
+  "implementationCommit": "64950a1d",
+  "evidenceLevel": "Candidate code read the production catalogue and watch in isolation on the deployed worker. This read does not establish deployment or execution of the next scheduled check.",
+  "productionRead": {
+    "capturedAt": "2026-11-19T22:43:52.406Z",
+    "sourceId": "fhs-14799",
+    "title": "睡得安全 親子無憂",
+    "nextEligibleSlot": "2026-11-23T01:00:00.000Z",
+    "schedule": "weekly observation only",
+    "watchRevision": "6998ebbe-1228-41fc-99ed-15e52e701a07",
+    "generation": "fa8a5944-12cf-4059-a90f-c2281d04562a",
+    "registeredAt": "2026-11-19T18:32:08.839Z",
+    "originalManualRegistration": true,
+    "approvedVersion": "3e236f9b-94cf-505d-99c9-187a720c1ad6",
+    "approvedHash": "8cc9169ad571548167318e2641f6f9777c321271d0be95891acb5ac588946f8f",
+    "actualLastAttempt": "2026-11-19T18:32:09.123Z",
+    "actualLastScheduledSlot": null,
+    "scheduledPaidAdmission": false,
+    "existingPaidSourceAdmission": true,
+    "verifiedThrough": [
+      "publishedCardChecks",
+      "jobs(sourceId)",
+      "inspect",
+      "scheduledKnowledgeAgent.accepts"
+    ],
+    "dispatchedJobs": 0,
+    "modelCalls": 0,
+    "embeddingCalls": 0
+  },
+  "synthetic": {
+    "runtime": "Node 24.22.3",
+    "test": "published campaign cards get observation-only weekly checks and retain a changed original for review",
+    "result": "pass",
+    "scenarios": [
+      "Two initial manual registrations; one approved edition published, one unfinished.",
+      "At weekly slots a matching original, a changed original and a temporary network failure used the observation-only consumer. Re-delivery reused the recorded check.",
+      "The changed original and its content hash stayed available after failure. The approved version and its original text still appeared in the catalogue and the family download.",
+      "The published card retained its original registration revision. No background job was enqueued for the unfinished source and the paid handler was never invoked."
+    ],
+    "modelCalls": 0,
+    "embeddingCalls": 0
+  },
+  "policy": {
+    "cadence": "Published official guidance pages and PDFs enter the existing Monday 09:00 Asia/Hong_Kong source cycle. Only watches and editions already registered and published by the slot qualify. The dispatcher visits up to 16 source registrations per wake and retains the current weekly position.",
+    "change": "Observation storage retains the replacement body or permitted PDF original, the source revision and the prior approval hash. New retrieval and family download use the prior reviewed edition until authorized review and publication of a successor. A confirmed withdrawal still takes precedence. The two externally licensed PDFs remain pinned to their reviewed bytes and revised bytes require a fresh rights decision.",
+    "funding": "No standing paid semantic work was granted for the new sources. Scheduled observations reserve no model, embedding, personal or platform chat attempts. The five existing FHS semantic routes retain their standing policy. The one-time USD 30 campaign remains separate.",
+    "firstPass": "A pending, held or failed initial source has no published pointer and receives no automatic first-pass submission."
+  },
+  "originalRead": "FHS_LIVE_PLATFORM_CARD_20261120.json"
+}
