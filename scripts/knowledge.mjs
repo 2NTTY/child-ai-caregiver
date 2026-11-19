@@ -20,14 +20,15 @@ try {
   const audience = args.includes("--internal-source-review") ? "internal" : "public";
   let store;
   if (serverStorageBackend(process.env) === "firestore") {
-    const [{ openFirebasePersistence }, { createFirestoreKnowledgeStore }, { createFirestoreKnowledgeRefresh }, { SOURCE_WATCHES }] = await Promise.all([
+    const [{ openFirebasePersistence }, { createFirestoreKnowledgeStore }, { createFirestoreKnowledgeRefresh }, { platformSourceWatches }] = await Promise.all([
       import("../server/firebase-persistence.ts"), import("../server/firestore-knowledge.ts"), import("../server/firestore-knowledge-refresh.ts"), import("../server/knowledge-source-catalog.ts")]);
     persistence = await openFirebasePersistence(process.env);
     const { database, cipher, config, authority } = persistence;
     if (!config.knowledgeSourceIds) throw new Error("knowledge_source_not_configured");
     const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
-    const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
-    store = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience });
+    const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl: tx => authority.readControl(tx) });
+    const { platformMaterials } = await import('../server/platform-materials.ts');
+    store = createFirestoreKnowledgeStore({ ...domain, platformMaterials, media: refresh.media, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience });
   } else {
     throw new Error("knowledge_firestore_required");
   }

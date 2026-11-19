@@ -32,6 +32,7 @@ import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../server/knowledge-index-batch-records.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
+import { campaign, createKnowledgeCampaignBudget } from '../server/knowledge-campaign-budget.ts';
 import { transferBatchSchema, transferResultSchema, transferItemId } from '../server/knowledge-transfer-records.ts';
 import { mixedRoomRecordSchema, mixedMessageRecordSchema, mixedRecordId } from '../server/mixed-chat-records.ts';
 import { firestoreAgentRunSchema, firestoreAgentClaimSchema } from '../server/firestore-agent-runs.ts';
@@ -54,6 +55,23 @@ function record<T>(data: FirestoreDomainData, suffix: string, kind: string, id: 
   schema: z.ZodType<T>, value: T, version = 1) {
   return { path: namespace + '_' + suffix + '/' + firestoreDomainHash([kind, id]), data: data.seal(kind, id, current, schema, value, version) };
 }
+
+test('restore preserves the campaign balance and every attempt and fences new spending until reconciliation', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await (await ledger.reserve('generation', 'fhs-synthetic', 512))(500, 10);
+  const path = namespace + '_knowledge_campaigns/' + campaign;
+  const entries = [...f.fake.records].filter(([id]) => id === path || id.startsWith(path + '/attempts/'));
+  assert.equal(entries.length, 2);
+  for (const [id, data] of entries) {
+    const restored = f.codec.transform(f.codec.decode({ path: id, data }), input());
+    assert.equal(restored.path, id);
+    assert.deepEqual(f.codec.decode(restored).value, id === path ? { ...data, reconciliationRequired: true } : data);
+    f.fake.records.set(id, restored.data);
+  }
+  assert.equal((await ledger.status())?.spent, 825);
+  await assert.rejects(ledger.reserve('embedding', 'fhs-synthetic', 0), /reconcile_before_next_attempt/);
+});
 
 test('restore permits account scope only for mixed agent runs and claims while preserving stopped execution and deduplication', () => {
   const f = fixture(), runId = randomUUID(), sourceMessageId = randomUUID();

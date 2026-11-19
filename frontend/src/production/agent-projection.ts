@@ -71,7 +71,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     : segments.some(part => part.includes(quote)) ? quote : '';
   return {
     sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
-    acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
+    acquisition: 'library', mediaClip: source.mediaClip, pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
     termsUrl: source.termsUrl, originalRange: source.readCoverage?.ranges?.map(range => String(range.start + 1) + '–' + range.end).join('、'),
     readSegments: segments.filter(Boolean), excerptPage: source.excerptPage, excerptKind: source.originalKind,
     id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt,

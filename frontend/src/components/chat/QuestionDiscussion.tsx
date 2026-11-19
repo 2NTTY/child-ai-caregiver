@@ -5,6 +5,7 @@ import { discussionLabels } from '../../../../src/shared/chat-discussion';
 import type { AgentRunView } from '../../agent-view-model';
 import { AppIcon } from '../AppIcon';
 import { ChatAction } from './ChatAction';
+import { AnswerSources } from './AnswerSources';
 import { chatColors, chatType } from './chat-presentation';
 
 const icons = { knowledge: 'book-open-variant', parent: 'account-group-outline', methods: 'arrow-left-right' } as const;
@@ -12,7 +13,7 @@ const icons = { knowledge: 'book-open-variant', parent: 'account-group-outline',
 export function QuestionDiscussion({ runId, status, state, online, read, onOpenSource }: {
   runId?: string; status?: AgentRunView['status']; state: string; online: boolean;
   read(id: string, signal: AbortSignal): Promise<AgentRunView | undefined>;
-  onOpenSource?(id: string): void;
+  onOpenSource?(runId: string, id: string): void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [fresh, setFresh] = useState<AgentRunView | null>();
@@ -44,8 +45,8 @@ export function QuestionDiscussion({ runId, status, state, online, read, onOpenS
           <Text selectable style={styles.body}>{turn.text}</Text>
         </View>
       </View>)}
-      {turns.length > 0 && run?.citations.map((source, i) => <ChatAction key={source.id}
-        label={`[${i + 1}] ${source.title}`} subtle disabled={!onOpenSource} onPress={() => onOpenSource?.(source.id)} />)}
+      {turns.length > 0 && run && run.citations.length > 0 && <AnswerSources sources={run.citations}
+        onOpenSource={onOpenSource ? id => onOpenSource(run.id, id) : undefined}>{null}</AnswerSources>}
     </View>}
   </View>;
 }

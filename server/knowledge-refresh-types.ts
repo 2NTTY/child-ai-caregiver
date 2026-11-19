@@ -36,7 +36,7 @@ export interface ObservedContent {
   extraction?: import("../src/shared/knowledge.ts").KnowledgeExtraction;
   pages?: { page: number; text: string; status: "text" | "empty" | "unreadable" }[];
 }
-export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; readMethod?: string; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
+export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; mediaLinks?: string[]; readMethod?: string; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
   | { status: "unavailable"; httpStatus: 404 | 410 }
   | { status: "failed"; reason: "network" | "timeout" | "response" | "parse" };
 export type SourceFetcher = (definition: SourceWatchDefinition, signal: AbortSignal) => Promise<SourceFetchResult>;

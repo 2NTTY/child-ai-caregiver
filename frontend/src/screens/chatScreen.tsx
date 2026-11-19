@@ -306,9 +306,9 @@ function ChatContents({ compact, onPaneLayout }: {
             {discussionQuestion ? <QuestionDiscussion key={discussionQuestion.id} runId={discussionReply?.agentRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
               status={discussionRun?.status} state={discussionState} online={chat.online}
               read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
-              onOpenSource={id => { const runId = discussionReply?.agentRunId ?? message.agentRunId; if (runId) openAgentSource(runId, id); }} />
+              onOpenSource={openAgentSource} />
               : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId
-                ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || !chat.online || !chatWritesAllowed}
+                ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || chat.loading || !chat.online || !chatWritesAllowed}
                   onPress={() => { setFollowRequest(`discuss-${Date.now()}`); void chatController.discussAnswer(message.id); }} /> : null}
             {childProfiles ? <ChatAction label="查看子女檔案" compact={compact} onPress={() => actions.open("profile")} /> : null}
             {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
@@ -346,8 +346,8 @@ function ChatContents({ compact, onPaneLayout }: {
       onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle />
-      {child ? <ChatAction label="平台來源卡" accessibilityLabel="查看可免費加入的平台來源卡"
-        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
+      {child ? <ChatAction label="平台卡庫" accessibilityLabel="查看可下載的平台卡"
+        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references', catalog: 'platform' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
     <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />

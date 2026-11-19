@@ -36,6 +36,7 @@ export interface KnowledgeExtraction {
   totalPages?: number; pageStart?: number; pageEnd?: number; complete: boolean;
 }
 export interface KnowledgeChunkInput {
+  mediaClip?: import('./platform-media.ts').PlatformMediaClip;
   treatment?: import('./source-series.ts').ChunkTreatment;
   key: string;
   section: string;

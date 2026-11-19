@@ -27,12 +27,15 @@ test('a question binds three successive native turns, the main reply and one ind
   let followup = false, interrupt: AbortController | undefined;
   const task = { kind: 'task', id: '6dd5227c-0b41-46a3-98ff-12156dc387fe', version: 2 } as const;
   let taskReads = 0;
+  let changeTaskDuringReview = false, taskChanged = false;
   const previousAnswer = { ...base, id: '65078aba-e634-4afd-8d18-bafba4598389', role: 'model', authorUserId: null,
     inReplyTo: base.id, text: 'The earlier reply covered books and songs.' };
   const linkedQuestion = { ...base, id: 'b955733f-1f95-42fa-bfb4-da02c7ad90c0', discussion: true,
     discussionOf: previousAnswer.id, text: '討論這個回答。' };
   const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '看書要預備甚麼？放工後家長可能只想輕鬆唱歌。', '回應預備時間的問題，可以先唱熟悉的童謠，周末再試圖畫書。'];
-  const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '當晚按大家的精神揀一樣便可。'];
+  const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '讓遊戲成為探索的過程而非一定要完成的任務。'];
+  const taskDetails = '已經準備藍色圖畫書。';
+  const taskRestatement = '按這項待辦，準備好了的是那本藍色的圖畫書。';
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
   const unused = async () => { throw new Error('Unexpected provider or usage call'); };
   const usage = { reserve: async () => true, record: async () => {}, getForUser: unused };
@@ -41,6 +44,7 @@ test('a question binds three successive native turns, the main reply and one ind
       if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
         assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
+        assert.ok(context.includes('Prepare the picture book') && context.includes('page-item'), 'selected task and its reviewable citation must reach the first model request');
       }
       if (followup && i === 1) {
         assert.ok(inputs.some(p => JSON.stringify(p.functionResponse?.response ?? {}).includes('Prepare the picture book')));
@@ -53,8 +57,13 @@ test('a question binds three successive native turns, the main reply and one ind
       }
       if (i === 6) {
         const content = inputs.map(p => p.text ?? '').join('');
+        if (followup) {
+          assert.ok(content.includes('page-item') && content.includes('Prepare the picture book'), 'review must see the same private original');
+          if (changeTaskDuringReview) taskChanged = true;
+        }
         const payload = JSON.parse(content.slice(content.indexOf('{')));
-        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...main]);
+        assert.deepEqual(payload.paragraphs.map((p: { text: string }) => p.text), [...turns, ...(followup ? [taskRestatement, ...main.slice(1)] : main)]);
+        if (followup) assert.deepEqual(payload.paragraphs[3].citationIds, ['page-item']);
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
         return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
@@ -69,7 +78,9 @@ test('a question binds three successive native turns, the main reply and one ind
       const name = i === 0 ? 'search_knowledge' : i <= 3 ? discussionToolNames[i - 1] : 'present_answer';
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
         : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
-        : { kind: 'caregiving', paragraphs: (i === 4 ? [...main, '可以遲些再揀。'] : main).map(text => ({ text, citationIds: [chunkId] })) };
+        : { kind: followup ? 'mixed' : 'caregiving', paragraphs: (i === 4 ? [...main, '可以遲些再揀。'] : main).map((text, n) =>
+            followup && n === 0 ? { kind:'record_restatement', text:taskRestatement, citationIds:[] }
+              : { kind:'caregiving', text, citationIds:[chunkId] }) };
       const parts = [{ functionCall: { id: 'step-' + i, name, args } }];
       return { content: { role: 'model', parts: followup && i === 0
         ? [{ functionCall: { id: 'page-task', name: 'read_context', args: {} } }, ...parts] : parts }, finishReason: FinishReason.STOP };
@@ -84,7 +95,7 @@ test('a question binds three successive native turns, the main reply and one ind
       assert.equal(childId, scope.childId);
       assert.deepEqual(item, task);
       taskReads++;
-      return { title: 'Prepare the picture book' };
+      return taskChanged ? { status: 'unavailable' } : { title: 'Prepare the picture book', details:taskDetails };
     },
     store: { claim: async () => { const created = !claimed; claimed = true; return { runId, scope, created, state: 'running', expiresAt: new Date(Date.now()+90000).toISOString() }; },
       authorize: async () => allowed, get: async () => allowed ? saved : null, finish: async (_scope: unknown, result: ProductAgentResult) => { saved = result; return true; } },
@@ -123,7 +134,11 @@ test('a question binds three successive native turns, the main reply and one ind
   const later = await reply();
   assert.equal(later?.status, 'completed', JSON.stringify({ later, calls, taskReads }));
   assert.deepEqual(later?.discussion, result.discussion);
-  assert.equal(taskReads, 1);
+  assert.ok(taskReads >= 2);
+  changeTaskDuringReview = true; claimed = false; calls = 0;
+  const changed = await reply();
+  assert.equal(changed?.status, 'stopped');
+  assert.deepEqual(changed.discussion, []);
   followup = false; claimed = false; calls = 0; interrupt = new AbortController();
   const stopped = await reply();
   assert.equal(stopped?.status, 'stopped');
