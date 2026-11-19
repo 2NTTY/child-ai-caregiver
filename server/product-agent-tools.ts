@@ -29,7 +29,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
+import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -203,6 +203,19 @@ export function createProductAgentTools(options: {
   const noteRecallExpiry = (until: string) => { recalledFactsValidUntil = Math.min(recalledFactsValidUntil, Date.parse(until)); };
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
+  type ReadSelectedPage = () => Promise<ChatDeliverySource[]>;
+  type SelectedPageProof = { key: string; read: ReadSelectedPage };
+  const mixedRepairReaders = new Map<string, SelectedPageProof | null>();
+  function registerMixedPage(sources: ChatDeliverySource[], proof: SelectedPageProof) {
+    for (const source of sources) {
+      const id = source.citationId, prior = selectedEvidence.get(id);
+      // Record locators may recur with other filters or cursors. Identical
+      // evidence keeps its first scope; conflicting content cannot be replayed.
+      if (!mixedRepairReaders.has(id)) mixedRepairReaders.set(id, proof);
+      else if (!prior || !repairSourcesRemainBound([prior], [source])) mixedRepairReaders.set(id, null);
+      selectedEvidence.set(id, source);
+    }
+  }
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
   const accountReadings = new Map<string, SourceReading>();
   const precedingHistoryMatch = new Map<string, string>();
@@ -1008,6 +1021,12 @@ export function createProductAgentTools(options: {
       })});
   }
   if (options.mixedTasks) {
+    const read = options.mixedTasks;
+    function taskSource(child: AssistantTaskContextPage['children'][number], continued: boolean): ChatDeliverySource {
+      const text = JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued,hasMore:child.nextCursor!==null});
+      const hash = chatDeliveryContentHash(text);
+      return {citationId:'tasks:'+hash,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)};
+    }
     const cursorSchema=assistantTaskContextRequestSchema.shape.targets.element.shape.cursor;
     const parameters=z.strictObject({from:z.int().min(0).default(0),childId:z.uuid().optional(),cursor:cursorSchema});
     tools.push({name:'read_selected_tasks',effect:'read',
@@ -1015,22 +1034,29 @@ export function createProductAgentTools(options: {
       parameters,authorize:permitted,execute:args=>guard(async()=>{
         const query=parameters.parse(args);
         if (query.cursor && !query.childId) throw new FamilyError(400,'invalid_input');
-        const page=await options.mixedTasks!(query);
+        const page=await read(query);
         const children: (AssistantTaskContextPage['children'][number] & {citationId:string})[]=[];
         let nextFrom=page.nextFrom;
         const allowance=Math.max(0,budget.toolResponseCharacters-512);
         for (const child of page.children) {
-          const text=JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued:!!query.cursor,hasMore:child.nextCursor!==null});
-          const hash=chatDeliveryContentHash(text), citationId='tasks:'+hash;
-          const item={...child,citationId};
+          const source = taskSource(child, !!query.cursor);
+          const item={...child,citationId:source.citationId};
           if (JSON.stringify({children:[...children,item],nextFrom:query.from+children.length+1}).length>allowance) {
             if (!children.length) throw new FamilyError(400,'response_limit');
             nextFrom=query.from+children.length;
             break;
           }
+          const childId = child.childId, from = query.childId ? query.from : query.from + children.length;
+          const target = {...query, from, childId};
+          // With an explicit childId the task reader ignores the original roster offset.
+          registerMixedPage([source], { key: agentBudgetFingerprint(['tasks', childId, query.cursor ?? null]), read: async () => {
+            const live = await read(target);
+            budget.check();
+            const row = live.children[0];
+            return live.children.length === 1 && row?.childId === childId ? [taskSource(row, !!query.cursor)] : [];
+          } });
           children.push(item);
           noteKnownPrivateIdentifier(child.childName);
-          selectedEvidence.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
         }
         return {children,nextFrom};
       })});
@@ -1090,10 +1116,12 @@ export function createProductAgentTools(options: {
         let nextFrom=page.nextFrom;
         for (const child of page.children) {
           const from=input.from+children.length;
+          let pageLimit=limit;
           let {item,sources}=describe(child,from);
           const fits=(candidate:typeof item)=>JSON.stringify({children:[...children,candidate],nextFrom:from+1}).length<=allowance;
           if (!children.length && !fits(item) && child.records.length>1) {
-            const smaller=await read({...input,from,limit:1,singleChild:true});
+            pageLimit=1;
+            const smaller=await read({...input,from,limit:pageLimit,singleChild:true});
             if (!smaller.children[0]) throw new AgentStopped('unauthorized');
             ({item,sources}=describe(smaller.children[0],from));
           }
@@ -1104,7 +1132,14 @@ export function createProductAgentTools(options: {
           }
           children.push(item);
           noteKnownPrivateIdentifier(item.childName);
-          for (const source of sources) selectedEvidence.set(source.citationId,source);
+          const childId = item.childId;
+          const target = {...input, from, limit:pageLimit, singleChild:true};
+          registerMixedPage(sources, { key: agentBudgetFingerprint(['care', childId, target]), read: async () => {
+            const live = await read(target);
+            budget.check();
+            const row = live.children[0];
+            return live.children.length === 1 && row?.childId === childId ? describe(row, from).sources : [];
+          } });
         }
         return {children,nextFrom};
       })});
@@ -1226,7 +1261,21 @@ export function createProductAgentTools(options: {
     // Bind only the sources selected for the draft. Do not copy unrelated retrieved excerpts into a repair.
     bindRepairEvidence() {
       const previous = new Map(selectedSources.map(source => [source.citationId, source]));
-      activeRepairChecks = bindRepairSourceChecks([...previous.keys()], id => {
+      // A record and its coverage can share a page. Read that child once per check,
+      // never cache a successful check across repair, rereview or delivery.
+      const pages = new Map<string, { read: ReadSelectedPage; bound: ChatDeliverySource[] }>();
+      const otherIds: string[] = [];
+      for (const [id, source] of previous) {
+        const proof = mixedRepairReaders.get(id);
+        if (proof === null) {
+          activeRepairChecks = async () => false;
+          return activeRepairChecks;
+        }
+        if (!proof) { otherIds.push(id); continue; }
+        const group = pages.get(proof.key);
+        if (group) group.bound.push(source); else pages.set(proof.key, { read: proof.read, bound: [source] });
+      }
+      const otherSourcesCurrent = bindRepairSourceChecks(otherIds, id => {
         const bound = previous.get(id)!;
         const grounded = [...memoryGrounding.values()].find(value => value.source.citationId === id);
         const staged = grounded?.source ?? deliverySource(id, originalQuotes);
@@ -1248,6 +1297,25 @@ export function createProductAgentTools(options: {
         };
         return undefined;
       });
+      if (!pages.size) {
+        activeRepairChecks = otherSourcesCurrent;
+        return activeRepairChecks;
+      }
+      async function checked<T>(operation: () => Promise<T>): Promise<T> {
+        const value = await budget.wait(operation);
+        budget.check();
+        return value;
+      }
+      activeRepairChecks = async () => {
+        if (!await checked(otherSourcesCurrent)) return false;
+        for (const { read, bound } of pages.values()) {
+          if (!await checked(authorize)) return false;
+          const live = await checked(read);
+          // The current page may contain uncited rows; every bound row must still match exactly.
+          if (!await checked(authorize) || !repairSourcesRemainBound(live, bound)) return false;
+        }
+        return true;
+      };
       return activeRepairChecks;
     },
     deliveryDraft(): ChatDeliveryDraft | null {

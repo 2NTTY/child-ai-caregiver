@@ -31,6 +31,7 @@ CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/req002-batch-reuse-and-repair.test.ts
   tests/req002-reuse-policy.test.ts
+  tests/req002-mixed-repair.test.ts
   tests/agent-durable-budget.test.ts
   tests/p2-a06-background-scope.test.ts
   tests/p2-a06-continuation.test.ts
@@ -56,7 +57,7 @@ TEST_FILES=(
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(10 9 4 1 2 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
+TEST_CASES=(10 9 3 4 1 2 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
