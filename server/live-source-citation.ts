@@ -1,12 +1,18 @@
 import { randomUUID, createHash } from 'node:crypto';
 import type { KnowledgeClass } from '../src/shared/knowledge.ts';
-import { liveSourceCitationSchema, type LiveSourceCitation } from '../src/shared/live-source-citation.ts';
+import { liveSourceCitationSchema, type LiveSearchLimitation, type LiveSourceCitation } from '../src/shared/live-source-citation.ts';
+
+export interface LiveSearchDetailedResult {
+  readonly reads: readonly LiveSourceRead[];
+  readonly limitations: readonly LiveSearchLimitation[];
+}
 
 // Installed only for a provider with an approved read and retention scope. The query is already minimized.
 // Each read carries its actual original, not a search-result snippet or a model summary.
 export interface LiveSourceReader {
   readonly classifications: readonly KnowledgeClass[];
   search(query: string, signal: AbortSignal, classification: KnowledgeClass): Promise<readonly LiveSourceRead[]>;
+  searchDetailed?(query: string, signal: AbortSignal, classification: KnowledgeClass): Promise<LiveSearchDetailedResult>;
   mayUse(citation: LiveSourceCitation, signal: AbortSignal): Promise<boolean>;
 }
 export type PublishedLiveSeries = (sourceId: string, url: string) => Promise<import('../src/shared/source-series.ts').SourceSeries | null>;

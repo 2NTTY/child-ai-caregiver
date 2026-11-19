@@ -137,8 +137,11 @@ test('provider receives every omitted prompt and reads both through the authoriz
         // Leave the old implementation's missing-data result observable to the test assertion below.
         if (!coverage.omittedTurnPromptMessageIds) return { finishReason: FinishReason.STOP, content: { role: 'model', parts: [{ text: 'Missing topology.' }] } };
         assert.deepEqual(coverage.omittedTurnPromptMessageIds, [m.u0.id, m.u1.id]);
+        // Only prior visible user text gets a quote handle, never omitted prompts, model replies or the current request.
+        const recentHandles = new Map([[m.u2.id, 'R1'], [m.u3.id, 'R2']]);
         assert.deepEqual(coverage.messageTopology, [m.u2, m.m0, m.m1, m.u3, m.m3, m.u4]
-          .map(({ id, role, inReplyTo }) => ({ id, role, inReplyTo })));
+          .map(({ id, role, inReplyTo }) => ({ id, role, inReplyTo,
+            ...(recentHandles.has(id) ? { quoteHistory: recentHandles.get(id) } : {}) })));
         assert.equal(coverage.omittedTurnPromptMessageId, m.u0.id, 'The legacy field remains the first missing prompt');
         assert.equal(coverage.messageTopology.length, 6, 'Metadata follows the bounded selected window, not the whole page');
         assert.equal(JSON.stringify(request.contents).includes(m.u0.text), false, 'Do not preload omitted private text');

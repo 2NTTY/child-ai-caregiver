@@ -8,6 +8,7 @@ import { knowledgeTokens } from "./knowledge-ranking.ts";
 import { reviewKnowledgeVersion, publishKnowledgeVersion } from "./knowledge-version-review.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { sqlTimelyEligibilityClause } from "./knowledge-timely-policy.ts";
 
 interface VersionRow { id: string; source_id: string; version_hash: string; document: KnowledgeSourceInput; review_state: "draft" | "reviewed" | "withdrawn"; checked_at: Date | null }
 export function vectorLiteral(values: readonly number[]): string {
@@ -34,9 +35,7 @@ const restrictedSource = `(v.document->>'url' ~* '^https://(www[.]chp[.]gov[.]hk
 const knowledgeEligibility = (allowInternal: string) => `s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
   AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
   AND (${allowInternal} OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
-  AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
-  AND (v.document->>'classification' <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
-    AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))`;
+  AND ${sqlTimelyEligibilityClause()}`;
 
 /** Operator-only maintenance methods are not exposed as browser/Agent tools. */
 export function createKnowledgeStore(pool: Pool, options: { audience?: "public" | "internal" } = {}) {
@@ -208,6 +207,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         publisher: row.source_document.publisher, classification: row.source_document.classification,
         sourcePublishedAt: row.source_document.sourcePublishedAt, sourceUpdatedAt: row.source_document.sourceUpdatedAt,
         sourceDateText: row.source_document.sourceDateText ?? null, validUntil: row.source_document.validUntil ?? null,
+        ...(row.source_document.timelyEvent ? { timelyEvent: row.source_document.timelyEvent } : {}),
         fetchedAt: row.source_document.fetchedAt, checkedAt: row.checked_at.toISOString(),
         lastSuccessfulCheckAt: row.last_successful_check_at?.toISOString() ?? null, usageScope: row.usage_scope,
         reviewState: "reviewed", extraction: row.source_document.extraction,

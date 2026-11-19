@@ -1,3 +1,5 @@
+import { durableSessionEvents, uniqueEvent, queryEmbeddingAttemptKey } from "./agent-native-attempt.ts";
+import { needsQueryEmbeddingKey } from "./agent-evidence-reuse.ts";
 import { randomUUID } from "node:crypto";
 import { boundedTelemetryCallback, TELEMETRY_SAMPLE_TIMEOUT_MS } from "./agent-telemetry-wait.ts";
 import { nativeSettlementWindow, NativeSettlementTimeout, NATIVE_SESSION_CLEANUP_TIMEOUT_MS } from "./agent-native-settlement.ts";
@@ -8,7 +10,7 @@ import { z } from "zod";
 import { FunctionCallingConfigMode } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
-import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
 import { AGENT_HIGH_WATERMARK_DEFAULTS } from "../src/shared/agent-run-limits.ts";
 import type { AgentStopReason, AgentDurableBudget, AgentRunLimits, AgentModelPurpose, AgentSoftBudgetProfileRole, AgentPolicyTransition } from "./agent-budget.ts";
 import type { HighWatermarkMonitor, HighWatermarkAlert } from "./agent-high-watermark.ts";
@@ -24,8 +26,28 @@ import { PresentationRepairAgent } from "./agent-presentation-repair.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { AgentCapabilitySelection, AgentCapabilityToolset, type AgentToolCatalog } from "./agent-tool-capabilities.ts";
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
+import {
+  createAgentRunTraceCollector,
+  hashSafeTraceId,
+  type AgentContextAssemblyMetadata,
+  type AgentContextCategoryMetadata,
+  type AgentRunTraceHandle,
+  type AgentTraceEvent,
+  type AgentTraceRole,
+  type AgentTraceSink,
+} from "./agent-trace.ts";
+export type { AgentContextAssemblyMetadata, AgentContextCategoryMetadata, AgentRunTraceHandle, AgentTraceEvent, AgentTraceRole, AgentTraceSink };
 import { WORK_RECOVERY_MAX_SEQUENCE } from "./firestore-work-continuation-recovery.ts";
 import { createRunContextCompactor, type InRunCompactionConfig } from "./context-compactor.ts";
+import {
+  collectContiguousReadSlice,
+  isBatchableReadTool,
+  normalizeReadBatchPolicy,
+  runReadToolBatch,
+  type BatchCallOutcome,
+  type ReadToolBatchPolicy,
+} from "./agent-tool-batch.ts";
+export type { ReadToolBatchPolicy } from "./agent-tool-batch.ts";
 
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
 process.env.ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = "false";
@@ -54,17 +76,6 @@ function projectSystemInstruction(value: NonNullable<LlmRequest["config"]>["syst
   return projected as typeof value;
 }
 
-/** Only acknowledged native events in this exact invocation/branch can anchor a later attempt. */
-function durableSessionEvents(context: Context, scope: Readonly<AgentScope>, runId: string) {
-  const invocation = context.invocationContext, session = invocation.session;
-  if (session.id !== runId || session.userId !== scope.userId || session.appName !== "yuban_hk") throw new AgentStopped("unavailable");
-  return session.events.filter(event => !event.partial && event.invocationId === context.invocationId
-    && event.branch === invocation.branch);
-}
-function uniqueEvent(context: Context, event: Event) {
-  if (!event.id || context.invocationContext.session.events.filter(item => item.id === event.id).length !== 1) throw new AgentStopped("unavailable");
-  return event.id;
-}
 function modelAttemptKey(context: Context, scope: Readonly<AgentScope>, runId: string, trigger: { kind: string; reference: string }) {
   const events = durableSessionEvents(context, scope, runId);
   const original = events.filter(event => event.author === "user" && event.content?.role === "user");
@@ -80,15 +91,6 @@ function modelAttemptKey(context: Context, scope: Readonly<AgentScope>, runId: s
   return "model:" + agentBudgetFingerprint([runId, context.agentName, context.invocationContext.branch ?? null,
     uniqueEvent(context, predecessor), "next-model"]);
 }
-function queryEmbeddingAttemptKey(context: Context | undefined, scope: Readonly<AgentScope>, runId: string, name: string, args: unknown) {
-  if (!context?.functionCallId) throw new AgentStopped("unavailable");
-  const matches = durableSessionEvents(context, scope, runId).flatMap(event => (event.content?.parts ?? []).flatMap(part =>
-    part.functionCall && part.functionCall.id === context.functionCallId ? [{ event, call: part.functionCall }] : []));
-  if (matches.length !== 1 || matches[0].event.author !== context.agentName || matches[0].call.name !== name
-    || agentBudgetFingerprint(matches[0].call.args ?? {}) !== agentBudgetFingerprint(args)) throw new AgentStopped("unavailable");
-  return "embedding:" + agentBudgetFingerprint([runId, uniqueEvent(context, matches[0].event), context.functionCallId, "query-embedding"]);
-}
-
 export interface AgentScope {
   userId: string; workspaceId: string; childId: string; authorizationVersion: string; dataVersion: string;
 }
@@ -117,11 +119,15 @@ export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; b
   voice?: Readonly<VoiceMessageReference>;
   /** Server-selected model for this run, including personal routing. */
   model?: string;
+  /** Live checks for previously retrieved evidence carried in model input; never authorize tool operations. */
+  authorizeModelEvidence?: () => Promise<boolean>;
   billingSource?: import('../src/shared/model-settings.ts').ModelBillingSource;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
-  completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
-    purpose?: AgentModelPurpose; onProviderStart?: () => void }) => Promise<string>; }
+  completeText?: (input: { system: string; user: string; attemptKey: string; responseJsonSchema?: Record<string, unknown>; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
+    purpose?: AgentModelPurpose; role?: AgentTraceRole; onProviderStart?: () => void }) => Promise<string>;
+  /** Metadata-only per-run trace hook; never receives prompts or message bodies. */
+  trace?: AgentRunTraceHandle; }
 export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
 export interface AgentInitialTextInput { text: string; context?: Record<string, unknown> }
 /** Internal composition of an already claimed private-summary part, never a request-selected permit. */
@@ -174,6 +180,15 @@ export interface AgentRunInput {
   loadImage?: (signal: AbortSignal) => Promise<AuthorizedAgentImage>;
   /** Trusted observation only; no control authority and no raw model/tool payloads. */
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
+  /** Metadata-only all-role trace sink; strictly allowlisted without prompts or message bodies. */
+  onTrace?: AgentTraceSink;
+  /** Pure Server predicate shared with the output projection; never infer partial delivery from an earlier read. */
+  retainsPartialSources?: (reason: AgentStopReason) => boolean;
+  /** Whitelisted metadata describing initial context assembly categories and omission reasons. */
+  contextAssembly?: {
+    categories: readonly AgentContextCategoryMetadata[];
+    loaderCalls?: Partial<AgentContextAssemblyMetadata["loaderCalls"]>;
+  };
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
   runId?: string;
   deadlineMs?: number;
@@ -191,8 +206,8 @@ export interface AgentRunInput {
   privateSummaryFast?: PrivateSummaryFast;
   /** Trusted private summary for the first provider request only; never persisted in the session. */
   initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
-  /** Revalidate provider-only summary before every step; null explicitly removes it. */
-  readConversationSummary?: () => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
+  /** Revalidate before each step; call onRead at the authorized store access, even if it returns null or throws. */
+  readConversationSummary?: (onRead?: () => void) => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
   /** In-run ADK context compactors for long tool loops (§4.2). Does not replace Firestore cross-session memory. */
   contextCompactors?: import("@google/adk").BaseContextCompactor[];
   /** Declarative in-run context compaction configuration (§4.2). */
@@ -224,6 +239,8 @@ export interface AgentRunInput {
   /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
   toolCatalog?: AgentToolCatalog;
   compactToolCatalog?: AgentToolCatalog & { deferredRecipeModules: readonly string[] };
+  /** Bounded concurrent execution policy for contiguous read-only tool batches in one model turn. */
+  readBatchPolicy?: ReadToolBatchPolicy;
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -280,6 +297,7 @@ export function createAgentRuntime(options: {
   embeddings?: import('./embedding-gateway.ts').EmbeddingGateway;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
+  onTrace?: AgentTraceSink;
   policyVersion?: number;
   repeatedSignatureStreak?: number;
   onPolicyObservation?: (event: BudgetPolicyObservation) => void;
@@ -312,6 +330,7 @@ export function createAgentRuntime(options: {
   const activeUsers = new Set<string>();
   return {
     async run(input: AgentRunInput): Promise<AgentRunResult> {
+      const readBatchPolicy = normalizeReadBatchPolicy(input.readBatchPolicy);
       const runId = input.runId ?? randomUUID();
       const bindingInput: AgentDurableRunInput = Object.freeze({ runId: input.runId, scope: Object.freeze({ ...input.scope }),
         trigger: Object.freeze({ ...input.trigger }), recipeId: input.recipeId, deadlineAtMs: input.deadlineAtMs,
@@ -326,6 +345,7 @@ export function createAgentRuntime(options: {
       const scope = bindingInput.scope;
       let acquired = false;
       const lease: { current: Awaited<ReturnType<AgentRunAdmission["acquire"]>> } = { current: null };
+      let stoppedProjectionAuthorized = false;
       let toolFailure: AgentStopped | undefined;
       let requestFailure: AgentStopped | undefined;
       let cleanupOwnedSession: (() => Promise<void>) | undefined;
@@ -338,6 +358,20 @@ export function createAgentRuntime(options: {
       const alertHandler = input.onHighWatermarkAlert ?? fixedOptions.onHighWatermarkAlert;
       let repeatedLoopSignature: string | undefined;
       let loopStopped = false;
+      const runtimeTraceRole: AgentTraceRole = input.recipeId === "product-work-followup"
+        ? "work_followup"
+        : input.recipeId === "memory-refresh"
+          ? "summary"
+          : input.trigger.kind === "worker"
+            ? "background"
+            : "main_chat";
+      const traceCollector = createAgentRunTraceCollector({
+        runId,
+        role: runtimeTraceRole,
+        recipeId: input.recipeId,
+        sinks: [fixedOptions.onTrace, input.onTrace],
+      });
+      traceCollector.emit({ role: runtimeTraceRole, phase: "run_start" });
       try {
         await budget.wait(async () => {
           if (!await input.authorize()) throw new AgentStopped("unauthorized");
@@ -440,7 +474,7 @@ export function createAgentRuntime(options: {
           const pendingHistory = earlier.slice(historyEnd);
           const partsFor = (candidate: AgentInitialTextInput) => {
             const initial = initialTextParts(candidate);
-            if (input.trigger.kind !== 'interactive' || !earlier.length) return initial;
+            if (!pendingHistory.length && (input.trigger.kind !== 'interactive' || !earlier.length)) return initial;
             const previous = pendingHistory.length ? [{ text: '以下是較早的對話原文，只供理解本輪的指向和背景。' },
               ...pendingHistory.map(message => ({ text: message.text }))] : [];
             return [...previous, ...initial.slice(1),
@@ -462,7 +496,7 @@ export function createAgentRuntime(options: {
           const reserveDeliveryReview = () => deliveryReview.required;
           const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
             billingSource: "billingSource" in selected ? selected.billingSource : undefined,
-            embeddings: "embeddings" in selected ? selected.embeddings : undefined };
+            embeddings: "embeddings" in selected ? selected.embeddings : undefined, trace: traceCollector.handle };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           if (privateSummaryEnabled && (input.toolCatalog || input.compactToolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
             || configuredTools[0].name !== 'stage_private_summary' || configuredTools[0].terminal !== true))
@@ -491,6 +525,19 @@ export function createAgentRuntime(options: {
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
           const prompt = await getPrompt();
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
+          traceCollector.emitContextAssembly({
+            packVersion: prompt.packVersion,
+            recipeId: prompt.recipeId,
+            categories: input.contextAssembly?.categories ?? [
+              { category: "recent_messages", included: input.messages.length > 0, count: input.messages.length, reasonCode: input.messages.length > 0 ? "included" : "empty" },
+            ],
+            capacity: {
+              inputLimitCharacters: budget.limits.inputCharacters,
+              assembledCharacters: JSON.stringify(originalParts).length,
+              toolResponseReserveCharacters: AGENT_TOOL_RESPONSE_RESERVE,
+            },
+            loaderCalls: input.contextAssembly?.loaderCalls,
+          });
           budget.check();
           if (fixedOptions.bindDurableRun) {
             durable = freezeDurable(fixedOptions.bindDurableRun(bindingInput, prompt.packVersion, budget.limits, budget.deadlineAtMs));
@@ -510,32 +557,135 @@ export function createAgentRuntime(options: {
             if (budget.remainingModelCalls === 0) throw new AgentStopped("model_limit");
           }
           if (syncPolicy) await budget.wait(syncPolicy);
+          const preResolvedBatchCalls = new Map<string, BatchCallOutcome>();
+          const scheduledBatchSlices = new Set<string>();
+          const trackToolSignature = (toolName: string, rawArgs: unknown) => {
+            if (!monitor) return;
+            const callSignature = `${toolName}:${agentBudgetFingerprint(rawArgs ?? {})}`;
+            if (callSignature === lastToolSignature) {
+              consecutiveToolRepeats += 1;
+            } else {
+              lastToolSignature = callSignature;
+              consecutiveToolRepeats = 1;
+            }
+            if (consecutiveToolRepeats >= repeatedSignatureStreak) {
+              repeatedLoopSignature = callSignature;
+              loopStopped = true;
+              observer.recordToolRejection(toolName, "execution", { status: "rejected", data: { code: "unknown" } });
+              const loopError = new AgentStopped("tool_limit");
+              toolFailure = loopError;
+              throw loopError;
+            }
+          };
+          const scheduleContiguousReadBatchIfNeeded = async (context: Context | undefined) => {
+            const functionCallId = context?.functionCallId;
+            if (!context || !functionCallId || preResolvedBatchCalls.has(functionCallId)) return;
+            const events = context.invocationContext.session.events;
+            let hostEvent: Event | undefined;
+            for (let index = events.length - 1; index >= 0; index--) {
+              const candidate = events[index];
+              if (candidate.content?.parts?.some(part => part.functionCall?.id === functionCallId)) {
+                hostEvent = candidate;
+                break;
+              }
+            }
+            if (!hostEvent?.content?.parts?.length) return;
+            const calls = hostEvent.content.parts
+              .filter(part => Boolean(part.functionCall))
+              .map(part => ({
+                id: part.functionCall!.id ?? "",
+                name: part.functionCall!.name ?? "",
+                args: (part.functionCall!.args ?? {}) as Record<string, unknown>,
+              }));
+            const startIndex = calls.findIndex(call => call.id === functionCallId);
+            if (startIndex < 0) return;
+            const slice = collectContiguousReadSlice(calls, startIndex, definitions);
+            if (slice.length < 2) return;
+            const sliceKey = `${hostEvent.id}:${startIndex}`;
+            if (scheduledBatchSlices.has(sliceKey)) return;
+            scheduledBatchSlices.add(sliceKey);
+            for (const item of slice.slice(0, readBatchPolicy.maxBatchSize)) {
+              trackToolSignature(item.tool.name, item.args);
+            }
+            const { outcomes } = await runReadToolBatch({
+              slice,
+              policy: readBatchPolicy,
+              onDispatch: (name, id) => traceCollector.beginBatchRead(name, id, () => budget.counts),
+              scope,
+              budget,
+              authorize,
+              checkDurable: durable ? () => budget.checkDurable() : undefined,
+              executeItem: async (item, parsedArgs, itemSignal) => {
+                const embeddingKey = needsQueryEmbeddingKey(budget.durable, item.tool.name)
+                  ? queryEmbeddingAttemptKey(context, scope, runId, item.tool.name, item.args, item.callId)
+                  : undefined;
+                return await traceCollector.observeBatchSources(item.callId, () => budget.wait(() => item.tool.execute(parsedArgs, {
+                  scope,
+                  runId,
+                  callId: item.callId,
+                  signal: itemSignal,
+                  ...(embeddingKey ? { queryEmbeddingAttemptKey: embeddingKey } : {}),
+                })));
+              },
+            });
+            for (const [id, outcome] of outcomes) preResolvedBatchCalls.set(id, outcome);
+          };
           const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
             parameters: tool.parameters.strict(), execute: async (args, context) => {
               budget.check();
               if (syncPolicy) await budget.wait(syncPolicy);
-              // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
-              // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
-              if (monitor) {
-                const callSignature = `${tool.name}:${agentBudgetFingerprint(args ?? {})}`;
-                if (callSignature === lastToolSignature) {
-                  consecutiveToolRepeats += 1;
-                } else {
-                  lastToolSignature = callSignature;
-                  consecutiveToolRepeats = 1;
-                }
-                if (consecutiveToolRepeats >= repeatedSignatureStreak) {
-                  repeatedLoopSignature = callSignature;
-                  loopStopped = true;
-                  observer.recordToolRejection(tool.name, "execution", { status: "rejected", data: { code: "unknown" } });
-                  const loopError = new AgentStopped("tool_limit");
-                  toolFailure = loopError;
-                  throw loopError;
+              const callId = context?.functionCallId ?? "";
+              if (isBatchableReadTool(tool)) {
+                try {
+                  await scheduleContiguousReadBatchIfNeeded(context);
+                } catch (error) {
+                  toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable");
+                  throw toolFailure;
                 }
               }
-              const embeddingKey = budget.durable && (tool.name === "search_knowledge" || tool.name === "search_source_card_evidence")
+              const preResolved = callId ? preResolvedBatchCalls.get(callId) : undefined;
+              if (preResolved) {
+                const progress: AgentRunResult["tools"][number] = {
+                  name: tool.name,
+                  callId,
+                  status: preResolved.response.status,
+                  ...(preResolved.response.reference ? { reference: preResolved.response.reference } : {}),
+                };
+                result.tools.push(progress);
+                observer.recordToolRejection(tool.name, "execution", preResolved.response);
+                return preResolved.response;
+              }
+              // Enforce high-watermark repeated-signature early stop only when a highWatermarkMonitor is active
+              // so unmonitored base runtime runs still exercise full modelCalls/toolCalls hard bounds.
+              trackToolSignature(tool.name, args);
+              const embeddingKey = needsQueryEmbeddingKey(budget.durable, tool.name)
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
-              const callId = context?.functionCallId ?? "";
+              const callIdHash = hashSafeTraceId(callId || randomUUID());
+              const toolStartMs = Date.now();
+              if (tool.name === "load_capabilities") traceCollector.handle.noteLoaderCall("capabilityLoads");
+              else if (tool.name === "read_history" || tool.name === "search_history") traceCollector.handle.noteLoaderCall("historyReads");
+              else if (tool.name === "search_knowledge") traceCollector.handle.noteLoaderCall("knowledgeSearches");
+              traceCollector.emit({
+                role: runtimeTraceRole,
+                phase: "tool_start",
+                tool: tool.name,
+                callIdHash,
+              });
+              let settled = false;
+              const finish = (phase: "tool_end" | "tool_rejection" | "tool_error", outcome: AgentTraceEvent["outcome"],
+                extra: Pick<AgentTraceEvent, "code" | "stopReason"> = {}) => {
+                if (settled) return;
+                settled = true;
+                traceCollector.emit({ role: runtimeTraceRole, phase, tool: tool.name, callIdHash,
+                  durationMs: Math.max(0, Date.now() - toolStartMs), counts: budget.counts, outcome, ...extra });
+              };
+              const stopped = (reason: AgentStopReason) => finish("tool_error", reason === "unauthorized" ? "unauthorized"
+                : reason === "deadline" || reason === "cancelled" ? "timeout" : "failed", { stopReason: reason });
+              // The outer wait can finish before ADK unwinds. Close the span on the
+              // original signal; a late physical read must neither re-open it nor run again.
+              const onAbort = () => stopped(budget.signal.reason instanceof AgentStopped ? budget.signal.reason.reason : "cancelled");
+              budget.signal.addEventListener("abort", onAbort, { once: true });
+              if (budget.signal.aborted) onAbort();
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };
               result.tools.push(progress);
               try {
@@ -544,19 +694,28 @@ export function createAgentRuntime(options: {
                 progress.status = response.status;
                 if (response.reference) progress.reference = response.reference;
                 observer.recordToolRejection(tool.name, "execution", response);
+                finish(response.status === "succeeded" ? "tool_end" : "tool_rejection", response.status,
+                  typeof response.data?.code === "string" ? { code: response.data.code } : {});
                 return response;
               } catch (error) {
-                budget.check();
-                if (error instanceof AgentStopped) { toolFailure = error; throw error; }
-                // Authorization failures must never look like missing data or invite a retry.
-                try { if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized"); }
-                catch (error) { toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable"); throw toolFailure; }
+                try {
+                  budget.check();
+                  if (error instanceof AgentStopped) throw error;
+                  if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+                } catch (stop) {
+                  toolFailure = stop instanceof AgentStopped ? stop : new AgentStopped("unavailable");
+                  stopped(toolFailure.reason);
+                  throw toolFailure;
+                }
                 progress.status = tool.effect === "read" ? "failed" : "unknown";
                 const response: AgentToolResult = { status: progress.status, data: tool.effect === "read"
                   ? { code: "read_unavailable", recovery: "bounded_read", nextAction: "This read failed, not an empty result. Use a relevant read within the remaining budget or state the limitation." }
                   : { code: "effect_unknown", recovery: "original_receipt_only" } };
                 observer.recordToolRejection(tool.name, "execution", response);
+                finish("tool_error", progress.status, { code: tool.effect === "read" ? "read_unavailable" : "effect_unknown" });
                 return response;
+              } finally {
+                budget.signal.removeEventListener("abort", onAbort);
               }
             } }));
           let continuationInstructions: { phase: 'work' | 'finish'; text: string }[] = [];
@@ -606,7 +765,33 @@ export function createAgentRuntime(options: {
           // Provider-only policy renders must not change ADK's native instruction anchor.
           const providerInstructions = new WeakMap<NonNullable<LlmRequest["config"]>, string>();
           const modelAnchors = new WeakMap<LlmRequest, string>();
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
+          const authorizeModel = async () => await authorize() && (!runContext.authorizeModelEvidence || await runContext.authorizeModelEvidence());
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize: authorizeModel, terminalToolNames, audio, images: ids => images.inputs(ids),
+            runId, recipeId: input.recipeId, role: runtimeTraceRole,
+            onTrace: event => traceCollector.emitGatewayEvent(event),
+            nextAttemptIndex: () => traceCollector.nextAttemptIndex(),
+            onSummaryRead: () => traceCollector.handle.noteLoaderCall("summaryReads"),
+            onSummaryCoverage: (reason, version) => {
+              traceCollector.handle.recordContextCategory({
+                category: "conversation_summary",
+                included: reason === "included",
+                reasonCode: reason,
+                ...(version ? { versionRefs: [{ kind: "summary", version }] } : {}),
+              });
+              traceCollector.emitContextAssembly({
+                packVersion: prompt.packVersion,
+                recipeId: prompt.recipeId,
+                categories: input.contextAssembly?.categories ?? [
+                  { category: "recent_messages", included: input.messages.length > 0, count: input.messages.length, reasonCode: input.messages.length > 0 ? "included" : "empty" },
+                ],
+                capacity: {
+                  inputLimitCharacters: budget.limits.inputCharacters,
+                  assembledCharacters: JSON.stringify(originalParts).length,
+                  toolResponseReserveCharacters: AGENT_TOOL_RESPONSE_RESERVE,
+                },
+                loaderCalls: input.contextAssembly?.loaderCalls,
+              });
+            },
             ...(input.recipeId === 'memory-refresh' ? { purpose: 'summary' as const } : {}),
             ...(syncPolicy ? { syncPolicy } : {}),
             refreshPolicyConfig: async (request, modelCallAlreadyReserved = false) => {
@@ -682,10 +867,15 @@ export function createAgentRuntime(options: {
             ? new AgentGatewayModel({
                 ...selected,
                 purpose: "compaction",
+                runId,
+                recipeId: input.recipeId,
+                role: "compaction",
+                onTrace: event => traceCollector.emitGatewayEvent(event),
+                nextAttemptIndex: () => traceCollector.nextAttemptIndex(),
                 budget,
                 userId: scope.userId,
                 childId: scope.childId,
-                authorize,
+                authorize: authorizeModel,
                 ...(syncPolicy ? { syncPolicy } : {}),
                 reserveDeliveryReview,
                 ...(durable ? { modelAttemptKey: (request: LlmRequest) => compactionAnchors.get(request) } : {}),
@@ -806,6 +996,13 @@ export function createAgentRuntime(options: {
                 toolFailure = new AgentStopped("invalid_tool");
                 throw toolFailure;
               }
+              const preResolved = context.functionCallId ? preResolvedBatchCalls.get(context.functionCallId) : undefined;
+              if (preResolved?.rejectionStage) {
+                result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: preResolved.response.status });
+                observer.recordToolRejection(tool.name, preResolved.rejectionStage, preResolved.response);
+                return { ...preResolved.response };
+              }
+              if (preResolved) return undefined;
               const definition = definitions.get(tool.name);
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
@@ -827,6 +1024,7 @@ export function createAgentRuntime(options: {
               return response ? { ...response } : undefined;
             },
             afterToolCallback: ({ tool, response, context }) => {
+              if (toolFailure) throw toolFailure;
               budget.accountToolResponse(JSON.stringify({ role: "user", parts: [{ functionResponse: {
                 id: context.functionCallId, name: tool.name, response,
               } }] }).length);
@@ -983,7 +1181,8 @@ export function createAgentRuntime(options: {
         if (result.stopReason === "unauthorized" || budget.signal.aborted) result.tools = [];
         else {
           try {
-            if (!await budget.wait(authorize)) { result.stopReason = "unauthorized"; result.tools = []; }
+            stoppedProjectionAuthorized = await budget.wait(authorize);
+            if (!stoppedProjectionAuthorized) { result.stopReason = "unauthorized"; result.tools = []; }
           } catch { result.tools = []; }
         }
       } finally {
@@ -1042,6 +1241,16 @@ export function createAgentRuntime(options: {
         if (acquired) activeUsers.delete(scope.userId);
         if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = frozenSummaryCounts ?? budget.counts;
+        let hasUsablePartial = false;
+        if (stoppedProjectionAuthorized && result.status === "stopped" && result.stopReason) {
+          try { hasUsablePartial = input.retainsPartialSources?.(result.stopReason) === true; } catch { /* Observation only. */ }
+        }
+        traceCollector.finalize({
+          status: result.status,
+          stopReason: result.stopReason,
+          hasUsablePartial,
+          counts: result.counts,
+        });
         if (monitor) {
           const runCategory = input.trigger.kind === "worker" ? "background" : "interactive";
           try {

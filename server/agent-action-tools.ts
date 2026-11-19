@@ -19,7 +19,7 @@ export function createAgentActionReadTools(actions: AgentActionReaders, run: Age
   authorize: () => Promise<boolean>, register?: RegisterHouseholdRead): AgentTool[] {
   const { userId, childId } = run.scope;
   return [
-    { name: "read_care_records", description: "搜尋目前孩子的已保存照護記錄及原版本；query 可為空。更正前以結果核對 id、version、authorUserId及種類，不猜是哪一筆。moreAvailable=true 時請縮窄查詢，不宣稱已讀完。記錄是家庭共享資料，confirmationBasis 區分預授權陳述與逐項確認。",
+    { name: "read_care_records", effect: "read", description: "搜尋目前孩子的已保存照護記錄及原版本；query 可為空。更正前以結果核對 id、version、authorUserId及種類，不猜是哪一筆。moreAvailable=true 時請縮窄查詢，不宣稱已讀完。記錄是家庭共享資料，confirmationBasis 區分預授權陳述與逐項確認。",
       parameters: z.object({ query: z.string().max(200).optional(), id: z.uuid().optional().describe("已知的 care_record id，可直接讀取該筆。") }), authorize,
       execute: async args => {
         if (args.id) {
@@ -38,6 +38,7 @@ export function createAgentActionReadTools(actions: AgentActionReaders, run: Age
         return { status: "succeeded", data: { records, moreAvailable: records.length < page.records.length || page.nextCursor !== null } };
       } },
     { name: "read_private_instructions",
+      effect: "read",
       description: "已知 private_note 的 id 時直接讀該筆；已知主題鍵時用 memoryKeys 查原項。也可用 query 搜尋並按 nextAfterId 續讀。交代是使用者陳述，只供該家長的私人主聊天和已授權巡查使用。不可在共享家庭背景或向其他人披露。",
       parameters: z.object({ query: z.string().max(200).optional(), afterId: z.uuid().nullish(), id: z.uuid().optional(), memoryKeys: z.array(z.string().min(1).max(100)).min(1).max(4).optional() }), authorize,
       execute: async args => {

@@ -23,8 +23,33 @@ const toolNames: Record<string, string> = {
   create_ordinary_reminder: "安排本人普通提醒", change_ordinary_reminder: "更新本人普通提醒",
   read_contact_options: "讀取已授權聯絡選項", contact_caregiver: "記錄已授權聯絡請求", read_growth_concerns: "讀取成長關注",
 };
+import type { LiveProductSpec, LiveSourceCaution, LiveSourceCitation } from '../../../src/shared/live-source-citation.ts';
+
+const liveCautionText: Record<LiveSourceCaution, string> = {
+  self_reported_unverified: '論壇／社群發言屬使用者自述，未經獨立核實，不代表整體意見或已驗證購買經驗。',
+  suspected_promotional: '原文含疑似廣告、贊助或推廣線索，請審慎評估。',
+  stale_source: '來源日期較舊，請配合近期官方及商品資訊核對。',
+  conflicting_claims: '本次檢索到的不同來源在經驗、型號版本或價格上存在差異或矛盾。',
+  partial_read: '僅讀取到頁面部分相關段落；如需完整條件或最新資訊，請點擊開啟原網站核對。',
+};
+
+function formatProductSpecLabel(spec?: LiveProductSpec): string | null {
+  if (!spec) return null;
+  const parts = [
+    spec.brand ? `品牌：${spec.brand}` : null,
+    spec.model ? `型號：${spec.model}` : null,
+    spec.variantOrStage ? `規格／段數：${spec.variantOrStage}` : null,
+    spec.regionVersion ? `版本：${spec.regionVersion}` : null,
+    spec.batchCode ? `批次：${spec.batchCode}` : null,
+    spec.priceText ? `標示價格：${spec.priceText}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 const taskActions = { reschedule: "改期／轉派", complete: "記錄完成", cancel: "取消", resolve: "覆核終態" };
-export function projectLiveCitation(source: import('../../../src/shared/live-source-citation.ts').LiveSourceCitation): ChatCitationView {
+export function projectLiveCitation(source: LiveSourceCitation): ChatCitationView {
+  const productSpecLabel = formatProductSpecLabel(source.productSpec);
+  const cautionLabels = source.cautions?.map(key => liveCautionText[key]).filter(Boolean);
   return { id: source.id, sourceId: source.documentId, acquisition: 'live', seriesName: source.series?.name ?? source.publisher,
     seriesId: source.series?.id, title: source.title, publisher: source.publisher, section: source.section ?? '原文未有段落標示',
     pageStart: source.page ?? undefined, excerpt: source.excerpt ?? '',
@@ -32,7 +57,11 @@ export function projectLiveCitation(source: import('../../../src/shared/live-sou
     readSegments: source.excerpt ? [source.excerpt] : [], versionId: source.version ?? '', versionHash: source.contentHash,
     checkedAt: '', fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: null, sourceDate: source.sourceDate,
     classification: source.classification, applicabilityLabel: source.conditions.join(' · ') || '來源未有提供',
-    internalOnly: false, validUntil: null, url: source.url };
+    internalOnly: false, validUntil: null, url: source.url,
+    ...(source.sourceKind ? { liveSourceKind: source.sourceKind } : {}),
+    ...(productSpecLabel ? { productSpecLabel } : {}),
+    ...(cautionLabels?.length ? { cautionLabels } : {}),
+  };
 }
 export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationView {
   const age = source.applicability;
@@ -49,7 +78,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     checkedAt: source.checkedAt, fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: source.lastSuccessfulCheckAt ?? null,
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
-    validUntil: source.validUntil ?? null, internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
+    validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
     applicabilityLabel: [age.region, age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
       age.minAgeMonths === null ? "沒有最低月齡" : `最低 ${age.minAgeMonths} 個月`,
       age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`,

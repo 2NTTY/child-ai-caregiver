@@ -44,6 +44,7 @@ import { createFirestoreAgentAdmission } from './firestore-agent-admission.ts';
 import { createAgentRuntime, type AgentRunResult } from './agent-runtime.ts';
 import { claimedRunAssembly } from './agent-run-assembly.ts';
 import { createProductAgent } from './product-agent.ts';
+import { bindPersistentAgent } from './persistent-agent-reply.ts';
 import { createKnowledgeRetriever } from './knowledge-retriever.ts';
 import { AgentStopped, type AgentPolicyTransition, type AgentSoftBudgetProfileRole } from './agent-budget.ts';
 import { domainReject } from './firestore-domain-data.ts';
@@ -169,9 +170,9 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
   const mixedTaskBatches=createMixedTaskBatches({...options,runs:services.runs});
-  const agent = createProductAgent({ runtime, accountChildren: options.online.children, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
+  const agent = bindPersistentAgent(createProductAgent({ runtime, accountChildren: options.online.children, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge,
-    registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments, platformLibrary: options.platformLibrary });
+    registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments, platformLibrary: options.platformLibrary }));
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
   // Cold settlement reads the original billing source, not today's selected settings.
   const summaryDaily = routing.usage;
