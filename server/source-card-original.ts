@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { readChatFile } from './chat-file-reader.ts';
 import { extractKnowledgePdf } from './knowledge-pdf.ts';
+import { CHAT_FILE_LIMITS } from '../src/shared/chat-files.ts';
 
 export interface SourceCardOriginal {
   url: string; mimeType: string; bytes: Buffer; sha256: string;
@@ -18,6 +19,7 @@ export async function sourceFileOriginal(url: string, type: string, bytes: Buffe
     return { ...base, mimeType: 'application/pdf', totalPages: pdf.totalPages, preview: pdf.pages[0]?.text.slice(0, 12000) || null };
   }
   if (bytes.subarray(0, 4).equals(Buffer.from([80,75,3,4]))) {
+    if (bytes.length > CHAT_FILE_LIMITS.bytes) throw Error('source_file_too_large');
     const preview = await readChatFile({ buffer: bytes, fileName: 'original.docx', mimeType: docx, sha256 }, {}, signal);
     if (preview.state !== 'read' && preview.reason !== 'no_readable_text') throw Error('unreadable');
     return { ...base, mimeType: docx, preview: preview.state === 'read' ? preview.text : null };

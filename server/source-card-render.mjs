@@ -1,4 +1,5 @@
 import { chromium } from 'playwright-core';
+import { createHash } from 'node:crypto';
 import { classifyGate, downloadLabel, fileLink, mutation, nextLabel } from './source-card-controls.mjs';
 
 const controls = 'a,button,[role=button],input[type=button],input[type=submit]';
@@ -14,6 +15,10 @@ export async function renderCatalogue(input, signal) {
     signal.throwIfAborted();
     const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true, permissions: [] });
     const page = await context.newPage(), links = new Set(), assets = new Set();
+    const start = input.controlOffset;
+    if (start !== undefined && (!Number.isSafeInteger(start) || start < 0)) throw Error('invalid_offset');
+    const prefix = createHash('sha256');
+    let position = 0, startHash = prefix.copy().digest('hex'), nextOffset = null;
     let interactions = 0, requests = 0, limited = false, unresolved = false, gate = null, action = '', observed = 0;
     const allowed = raw => {
       try { const parsed = new URL(raw); return parsed.protocol === 'https:' && parsed.origin === new URL(input.url).origin &&
@@ -48,15 +53,18 @@ export async function renderCatalogue(input, signal) {
     context.on('page', popup => { popup.on('download', onDownload); });
     await page.goto(input.url, { waitUntil: 'networkidle', timeout: 7000 });
     const states = new Set();
-    while (!limited) {
+    while (!limited && nextOffset === null) {
       const text = (await page.locator('title,h1,h2,[role=alert],form').allTextContents()).join(' ').slice(0, 2400);
       gate = classifyGate(text, await page.locator('[autocomplete=one-time-code]').count(),
         await page.locator('[data-sitekey],iframe[src*="captcha" i],input[name*="captcha" i]').count(),
         await page.locator('input[type=password]').count());
       if (gate) break;
       const elements = page.locator(controls);
-      const items = await elements.evaluateAll(nodes => nodes.slice(0, 250).map(el => ({
+      // Bound a single live DOM before transferring controls from the isolated browser.
+      if (await elements.count() > 4096) { limited = true; break; }
+      const items = await elements.evaluateAll(nodes => nodes.map(el => ({
         label: (el.getAttribute('aria-label') || el.value || el.textContent || '').trim().slice(0, 180),
+        id: el.id.slice(0,180),
         href: el.tagName === 'A' && !el.getAttribute('href')?.startsWith('#') ? el.href : null,
         download: el.hasAttribute('download'), next: el.rel?.split(/\s+/).includes('next'),
         blocked: el.matches(':disabled,[aria-disabled=true]') || !!el.closest('form'),
@@ -68,9 +76,20 @@ export async function renderCatalogue(input, signal) {
       for (const [index, item] of items.entries()) {
         if (item.blocked || mutation.test(item.label)) continue;
         const href = item.href && allowed(item.href) && item.href !== input.url;
-        if (href && (item.download || item.next || fileLink.test(item.href) || downloadLabel.test(item.label) || nextLabel.test(item.label))) {
+        const direct = href && (item.download || item.next || fileLink.test(item.href) || downloadLabel.test(item.label) || nextLabel.test(item.label));
+        const nextButton = !direct && (item.next || nextLabel.test(item.label));
+        if (start !== undefined && !nextButton && (direct || downloadLabel.test(item.label))) {
+          if (position === start + 8) { nextOffset = position; break; }
+          prefix.update(JSON.stringify([states.size,index,item.id,item.label,item.href])).update('\n');
+          position++;
+          if (position <= start) {
+            if (position === start) startHash = prefix.copy().digest('hex');
+            continue;
+          }
+        }
+        if (direct) {
           collect(links, item.href);
-        } else if (item.next || nextLabel.test(item.label)) next ??= elements.nth(index);
+        } else if (nextButton) next ??= elements.nth(index);
         else if (downloadLabel.test(item.label)) {
           if (++interactions > 16) { limited = true; break; }
           const button = elements.nth(index);
@@ -91,12 +110,15 @@ export async function renderCatalogue(input, signal) {
           action = '';
         }
       }
-      if (limited || !next || !await next.isVisible()) break;
-      if (++interactions > 16 || states.size >= 6) { limited = true; break; }
+      if (limited || nextOffset !== null || !next || !await next.isVisible()) break;
+      // URL pagination is enqueued as a separate document. In-place navigation is replayed
+      // from the same authorized snapshot to reach the next bounded control window.
+      if (start === undefined ? ++interactions > 16 || states.size >= 6 : states.size >= 48) { limited = true; break; }
       await next.click({ timeout: 1800 });
       await page.waitForLoadState('networkidle', { timeout: 3000 });
     }
     await context.close();
-    return { links: [...links], assets: [...assets], gate, limited, unresolved };
+    return { links: [...links], assets: [...assets], gate, limited, unresolved,
+      ...(start === undefined ? {} : { window: { valid: position >= start, startHash, endHash: prefix.digest('hex'), nextOffset } }) };
   } finally { signal.removeEventListener('abort', abort); await browser.close(); }
 }
