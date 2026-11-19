@@ -69,6 +69,8 @@ function chatUiOverrides(): Record<string, any> {
     },
     "react-native-paper": { Text: "Text", ActivityIndicator: "ActivityIndicator" },
     "../../preview/PreviewNavigationGuard": { PreviewLink: 'PreviewLink' },
+    "../AppDialog": { AppDialog: "AppDialog" },
+    "../memory/SourceDocumentCard": { SourceDocumentCard: "SourceDocumentCard" },
     "../AppScrollView": { AppScrollView: "AppScrollView" },
     "../HorizontalOverflowRail": { HorizontalOverflowRail: "HorizontalOverflowRail" },
     "../ui": { AppButton: "AppButton" },
@@ -96,7 +98,7 @@ test("chat reply error copy covers every known AI failure code without inventing
   assert.ok(CHAT_CLIENT_COPY.unknownSave.includes("避免重複發送"));
 });
 
-test("AnswerSources shows the degraded warning and empty-source honesty copy", () => {
+test("Degraded retrieval keeps its warning without an empty citation card", () => {
   const { AnswerSources } = load("frontend/src/components/chat/AnswerSources.tsx", chatUiOverrides());
   const { CHAT_SOURCE_COPY } = load("frontend/src/components/chat/chat-copy.ts", chatUiOverrides());
   const degraded = AnswerSources({ sources: [], children: "正文", degraded: true });
@@ -104,8 +106,8 @@ test("AnswerSources shows the degraded warning and empty-source honesty copy", (
   const degradedIds = collectTestIds(degraded);
   assert.ok(degradedText.includes(CHAT_SOURCE_COPY.degradedWarning));
   assert.ok(degradedIds.includes("answer-sources-degraded"));
-  assert.ok(degradedText.includes(CHAT_SOURCE_COPY.emptySources));
-  assert.ok(degradedIds.includes("answer-sources-empty"));
+  assert.ok(!degradedIds.includes("answer-source-panel"));
+  assert.equal(collectText(AnswerSources({sources: [], children: "正文"})), "正文");
   assert.ok(!degradedText.includes("官方指引")); // no fabricated source panel when empty
 });
 
@@ -118,21 +120,24 @@ test("private-only replies omit the knowledge panel while searched replies retai
   assert.equal(publicAnswerSources({ retrievalMode: "not_used", citations }), citations);
 });
 
-test("AnswerSources panel uses product source labels when citations exist", () => {
+test("Each cited passage has its own card with its document, cited page and original excerpt", () => {
   const { AnswerSources } = load("frontend/src/components/chat/AnswerSources.tsx", chatUiOverrides());
-  const { CHAT_SOURCE_COPY, CHAT_CLASSIFICATION_LABELS } = load("frontend/src/components/chat/chat-copy.ts", chatUiOverrides());
+  const { CHAT_SOURCE_COPY } = load("frontend/src/components/chat/chat-copy.ts", chatUiOverrides());
   const source = {
     id: "src-1", title: "合成官方指引片段", publisher: "衞生署合成", classification: "official_guidance",
     section: "第一章", excerpt: "合成摘錄，不可作真實建議。", versionId: "v1", versionHash: "hash",
     checkedAt: "2026-10-18T03:00:00.000Z", fetchedAt: "2026-10-18T03:00:00.000Z", lastSuccessfulCheckAt: "2026-10-18T03:00:00.000Z",
     sourceDate: "2026-01-01", validUntil: null, applicabilityLabel: "香港；合成適用範圍", internalOnly: false, url: "https://example.test/source",
   };
-  const tree = AnswerSources({ sources: [source], children: "正文含【1】", degraded: false, onOpenSource() {} });
+  const tree = AnswerSources({ sources: [{ ...source, seriesName: "不顯示的系列名", pageStart: 2, pageEnd: 7, excerptPage: 6 },
+    { ...source, id: "src-2", excerptKind: "visual_page", excerpt: "助手整理的圖像描述" },
+    { ...source, id: "src-3", excerpt: "", acquisition: "live" }], children: "正文含【1】", degraded: false, onOpenSource() {} });
   const text = collectText(tree);
   const ids = collectTestIds(tree);
   assert.ok(ids.includes("answer-source-panel"));
-  assert.ok(text.includes(CHAT_SOURCE_COPY.footerTitle));
-  assert.ok(text.includes(CHAT_CLASSIFICATION_LABELS.official_guidance) || text.includes("【1】"));
+  assert.deepEqual(ids.filter(id => id.startsWith("citation-card-")), ["citation-card-1", "citation-card-2", "citation-card-3"]);
+  assert.ok(text.includes(source.title) && text.includes("第 6 頁") && text.includes(source.excerpt));
+  assert.doesNotMatch(text, /助手整理的圖像描述|不顯示的系列名|官方指引片段.*第 2–7 頁|來源日期|有效至/);
   assert.ok(!text.includes(CHAT_SOURCE_COPY.degradedWarning));
 });
 

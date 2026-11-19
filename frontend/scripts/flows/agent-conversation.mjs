@@ -40,9 +40,11 @@ export async function verifyAgentConversation(browser, failures, directory) {
     assert.equal(await accept(page).isDisabled(), true);
     assert.equal(await accept(page, factTitle).isDisabled(), false, "Private fact does not ask for family sharing");
     await runView(page).getByRole("button", { name: "來源【1】：來源片段與版本的版式示例", exact: true }).click();
-    await runView(page).getByTestId("source-details-panel").getByText("合成時間，非官方發布日期", { exact: true }).waitFor();
-    await runView(page).getByRole("button", { name: "來源【1】：來源片段與版本的版式示例", exact: true }).click();
-    assert.equal(await runView(page).getByTestId("source-details-panel").count(), 0, "The same source tab collapses its details");
+    const original = page.getByTestId("app-dialog");
+    await original.getByRole("button", { name: "版本與核對資料" }).click();
+    await original.getByText("合成時間，非官方發布日期", { exact: true }).waitFor();
+    await original.getByRole("button", { name: "關閉", exact: true }).click();
+    await original.waitFor({ state: "hidden" });
     await assertFits(page, `Agent source and candidate ${width}`);
     await shared(page).focus(); await page.keyboard.press("Space");
     await page.getByRole("checkbox", { name: `我已核對內容及對象，明確同意寫入家庭共享資料: ${taskTitle}`, exact: true, checked: true }).waitFor();
@@ -131,11 +133,12 @@ export async function verifyAgentConversation(browser, failures, directory) {
   await selectOption(boundary, "模擬原運行讀取", "權限或登入失效");
   assert.equal(await runView(boundary).getByTestId("agent-answer").count(), 1, "Changing controls must not duplicate the answer");
   await runView(boundary).getByRole("button", { name: "來源【1】：來源片段與版本的版式示例", exact: true }).click();
-  await runView(boundary).getByTestId("source-details-panel").waitFor();
-  await boundary.getByRole("button", { name: "重新讀取運行結果", exact: true }).click();
+  await boundary.getByTestId("app-dialog").waitFor();
+  // Simulate the pending refresh arriving while the original card is displayed.
+  await boundary.getByRole("button", { name: "重新讀取運行結果", exact: true, includeHidden: true }).evaluate(button => button.click());
   await contentText(boundary, "已失去讀取此運行的權限", { exact: false }).waitFor();
   assert.equal(await boundary.getByText("來源片段與版本的版式示例", { exact: true }).count(), 0);
-  assert.equal(await runView(boundary).getByTestId("source-details-panel").count(), 0, "Access loss also unmounts open source details");
+  assert.equal(await boundary.getByTestId("app-dialog").count(), 0, "Access loss also unmounts open source details");
   assert.equal(await boundary.getByRole("button", { name: /^明確(?:建立待辦|確認更改|確認資料)：/ }).count(), 0);
   await assertFits(boundary, "Private access loss 390"); await boundary.close();
 

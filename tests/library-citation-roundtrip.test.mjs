@@ -33,6 +33,8 @@ test('a scanned quotation and an image description retain their evidence type an
   const transcription = projectAgentCitation({ ...evidence, originalKind: 'page_transcription', sourceExcerpt: 'Label on scan' });
   assert.equal(transcription.excerptKind, 'page_transcription');
   assert.equal(transcription.excerpt, 'Label on scan');
+  assert.equal(projectAgentCitation({ ...evidence, originalKind: 'page_transcription',
+    sourceExcerpt: 'Label on scan', citedExcerpt: 'Absent from the page' }).excerpt, '');
 });
 
 test('source card actions preserve the displayed revision and only pinning adopts current editions', async () => {
