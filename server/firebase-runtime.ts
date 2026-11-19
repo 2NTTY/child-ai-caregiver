@@ -53,6 +53,8 @@ import { createFirestoreCareSummary } from './firestore-care-summary.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreProductAgent } from './firestore-product-agent.ts';
+import { createTemporaryChatStore } from './temporary-chat-store.ts';
+import { createTemporaryChatService, createDurableUsageAdapterForTemporaryChat } from './temporary-chat-agent.ts';
 import { createScheduledKnowledgeAgent } from './scheduled-knowledge-agent.ts';
 import { readAiConfig } from './ai-config.ts';
 import { createPhotoAgent } from './photo-agent.ts';
@@ -286,7 +288,43 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
       knowledge && knowledgeTransfers ? createKnowledgeArchiveReceiver(knowledgeTransfers,knowledge) : undefined,
       knowledge ? createAdminKnowledgeTreatments(knowledge, tx => authority.readControl(tx)) : undefined);
-    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
+    const temporaryChatStore = createTemporaryChatStore();
+    const temporaryChat = createTemporaryChatService({
+      store: temporaryChatStore,
+      knowledge,
+      liveSourceReader: knowledge ? createOfficialLivePages({
+        sourceIds: config.knowledgeSourceIds ?? [],
+        mayRead: sourceId => knowledge.mayReadPublicLivePage(sourceId),
+      }) : undefined,
+      publishedLiveSeries: knowledge?.publishedLiveSeries,
+      resolveExecution: async (userId, runId, deadlineAtMs) => {
+        const selected = await routing.resolve(userId, 'interactive');
+        const adapted = createDurableUsageAdapterForTemporaryChat({
+          dailyUsage: selected.dailyUsage,
+          userId,
+          runId,
+          model: selected.config.model,
+          deadlineAtMs,
+          billingSource: selected.billingSource,
+          baseEmbeddings: selected.embeddings,
+        });
+        return {
+          config: selected.config,
+          provider: selected.provider,
+          usage: adapted.usage,
+          embeddings: adapted.embeddings,
+          authorize: selected.authorize,
+          runLimits: selected.runLimits,
+          billingSource: selected.billingSource,
+          policyVersion: selected.policyVersion,
+          repeatedSignatureStreak: selected.repeatedSignatureStreak,
+          readPolicyTransition: selected.readPolicyTransition,
+          roleSoftBudgetRatios: selected.roleSoftBudgetRatios,
+          softBudgetSource: selected.softBudgetSource,
+        };
+      },
+    });
+    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: composition.worker && !composition.local ? null : configuredAdminUid, authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, temporaryChat, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter, packages: handover, packageUploads: handoverUploads, packageImports: handoverImports },
       registeredSourceCards, registeredSourceDocuments: sourceLibrary,
       knowledgeOriginal: knowledge && { resolve: knowledge.citedPdf, async read(target, signal) {
         signal.throwIfAborted();
@@ -299,9 +337,10 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { proactive,proactiveEvents,knowledgeAgent,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { proactive,proactiveEvents,knowledgeAgent,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, temporaryChatStore, handler,
       registeredSourceCards, registeredSourceDocuments: sourceLibrary, privateSourceWorker: privateSources.process,
       close() { return closing ??= (async () => {
+        temporaryChatStore.dispose();
         try { await nativeChatDelivery?.close(); }
         finally { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } }
       })(); } };

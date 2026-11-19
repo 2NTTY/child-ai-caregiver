@@ -97,6 +97,8 @@ export interface ChatDeliveryDraft {
   userRequest?: string;
   /** Server-trusted origin chat mode; never supplied by the model. */
   chatMode?: ChatMode;
+  /** Server-trusted ephemeral temporary-chat scope; never supplied by the model. */
+  temporaryChat?: true;
   voice?: Readonly<import('../src/shared/voice.ts').VoiceMessageReference>;
   /** Server-loaded originals, independently shown to the reviewer; never generator summaries. */
   images?: import('../src/shared/photos.ts').PhotoMessageReference[];
@@ -1408,6 +1410,11 @@ export function isPureChatOnlyModeBoundaryNotice(draft: ChatDeliveryDraft): bool
   ) {
     return false;
   }
+  if (draft.temporaryChat) {
+    return /(?:臨時聊天|臨時對話)/u.test(text)
+      && /(?:不會|無法|未能|不能|未有|不支援|不執行|不建立|不保存|不載入)/u.test(text)
+      && /(?:主聊天|助手模式|退出臨時)/u.test(text);
+  }
   return /只是聊天/u.test(text)
     && /(?:不會|無法|未能|不能|未有|不支援|不執行|不建立|不保存)/u.test(text)
     && /(?:助手模式|切換(?:回|至|到)助手|切回助手)/u.test(text);
@@ -1705,6 +1712,7 @@ export function chatDeliveryDraftHash(draft: ChatDeliveryDraft, repairContext?: 
   return sha256({
     ...(draft.userRequest !== undefined ? { userRequest: draft.userRequest } : {}),
     ...(draft.chatMode === "chat_only" ? { chatMode: draft.chatMode } : {}),
+    ...(draft.temporaryChat ? { temporaryChat: true } : {}),
     ...(repairContext ? repairContextPayload(repairContext) : {}),
     ...(draft.voice ? { voice: draft.voice } : {}),
     ...(draft.images?.length ? { images: [...draft.images].sort((a, b) => a.id.localeCompare(b.id)) } : {}),

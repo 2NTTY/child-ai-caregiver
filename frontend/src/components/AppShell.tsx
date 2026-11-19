@@ -21,6 +21,7 @@ import { ChildPicker } from "./ChildPicker";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { NotificationBell } from "./NotificationBell";
 import { PendingReviewShortcut } from "./PendingReviewShortcut";
+import { TemporaryChatEntry } from "./TemporaryChatEntry";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
@@ -128,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <View style={styles.stage}>
       <MotionScopeBoundary scopeKey={motionScope} resetKey={identityKey ?? "signed-out"} readiness={screenReadiness} readinessKey={screenReadinessKey} onRetry={switchReadiness.retry ? () => switchReadiness.retry?.(railRequirements) : undefined} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={model.selectedChildId} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
+        <TemporaryChatEntry compact={compact} />
         {compact ? <CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
           brand={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink>} /> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}

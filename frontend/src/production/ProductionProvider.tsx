@@ -38,6 +38,7 @@ function useProductionValue(owner: ProductionOwner) {
   const draft = useSyncExternalStore(owner.draftOwner.subscribe, owner.draftOwner.getSnapshot, owner.draftOwner.getSnapshot);
   const agent = useSyncExternalStore(owner.agentOwner.subscribe, owner.agentOwner.getSnapshot, owner.agentOwner.getSnapshot);
   const authorization = useSyncExternalStore(owner.authorizationOwner.subscribe, owner.authorizationOwner.getSnapshot, owner.authorizationOwner.getSnapshot);
+  const temporaryChat = useSyncExternalStore(owner.temporaryChatOwner.subscribe, owner.temporaryChatOwner.getSnapshot, owner.temporaryChatOwner.getSnapshot);
   const voiceUpload = useSyncExternalStore(owner.voiceOwner.subscribe,owner.voiceOwner.getSnapshot,owner.voiceOwner.getSnapshot);
   const fileUpload = useSyncExternalStore(owner.fileOwner.subscribe,owner.fileOwner.getSnapshot,owner.fileOwner.getSnapshot);
   const photoUpload = useSyncExternalStore(owner.photoOwner.subscribe,owner.photoOwner.getSnapshot,owner.photoOwner.getSnapshot);
@@ -297,6 +298,15 @@ function useProductionValue(owner: ProductionOwner) {
       } else {owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}
     } },
     agentDraftScope: snapshot.scopeKey, composerFocusRequest, openAgentDraft,
+    temporaryChat,
+    temporaryChatActions: {
+      open: owner.temporaryChatOwner.open,
+      setDraft: owner.temporaryChatOwner.setDraft,
+      send: owner.temporaryChatOwner.send,
+      exitAndClear: owner.temporaryChatOwner.exitAndClear,
+      retryPendingRemoteCloses: owner.temporaryChatOwner.retryPendingRemoteCloses,
+      dismissCloseNotice: owner.temporaryChatOwner.dismissCloseNotice,
+    },
     logoutConfirmation: logoutConfirmation || snapshot.records.logoutConfirmation,
     cancelLogout: () => { setLogoutConfirmation(false); owner.controller.cancelLogout(); },
     // Legacy preview consumers are kept type-compatible while their routes are gated.
@@ -337,9 +347,10 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
       recheck();
     };
     const focus = recheck;
+    const pageHide = () => { owner.temporaryChatOwner.handlePageHide(); };
     const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.hasDomainPending() || owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
-    window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
-    return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
+    window.addEventListener("beforeunload", beforeUnload); window.addEventListener("pagehide", pageHide); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
+    return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("pagehide", pageHide); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
   useEffect(() => {
     if (activity.active === undefined) return;

@@ -14,6 +14,7 @@ import { useProductionHome as useProduction } from "../production/useProductionH
 import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
 import { PendingReviewShortcut } from "./PendingReviewShortcut";
+import { TemporaryChatEntry } from "./TemporaryChatEntry";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { RightRail } from "./AppShell";
 
@@ -32,7 +33,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailOpen(false); }, [pathname, motionScope]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
-      <View style={styles.header}><CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+      <View style={styles.header}><TemporaryChatEntry compact /><CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
         brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"), "workspace")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
         <View testID="header-actions" style={styles.actions}><PendingReviewShortcut /><NotificationBell />
           <ToolbarIconButton quiet icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />

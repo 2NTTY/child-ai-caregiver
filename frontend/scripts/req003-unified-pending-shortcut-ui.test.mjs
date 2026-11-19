@@ -973,6 +973,7 @@ test('AgentAuthorizationOwner & AgentAuthorization manage executionMode selectio
 test('AppShell and NativeAppShell both place PendingReviewShortcut inside header-actions before NotificationBell', () => {
   const { mocks } = uiMocks({ pathname: '/' });
   mocks['./PendingReviewShortcut'] = { PendingReviewShortcut: 'PendingReviewShortcut' };
+  mocks['./TemporaryChatEntry'] = { TemporaryChatEntry: 'TemporaryChatEntry' };
   mocks['./AppScrollView'] = { AppScrollView: 'ScrollView' };
   mocks['./ChildPicker'] = { ChildPicker: () => null };
   mocks['../workspaces/TasksWorkspace'] = { useTasksWorkspace: () => null };
