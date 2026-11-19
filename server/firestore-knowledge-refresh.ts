@@ -28,7 +28,10 @@ const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), ti
     : doc.text.length > 0);
 /** Hash the same normalized representation that the durable observation stores. */
 export function parseKnowledgeObservation(input: unknown): ObservedContent { return bodySchema.parse(input); }
+// Bounded lookup hints, not evidence of freshness, approval, applicability or rights.
+const MAX_RETAINED_PER_FEED = 60;
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
+  retainedSourceIds: z.array(id).max(MAX_RETAINED_PER_FEED).optional(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
   priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
   lease: z.strictObject({ jobId: z.uuid(), token: z.uuid(), until: date }).nullable() });
@@ -50,6 +53,8 @@ type Observation = z.infer<typeof observationSchema>;
 export interface FirestoreKnowledgeObservation { watch: Watch; observation: Observation | null; catalogMatches: boolean }
 export interface FirestoreKnowledgeObservationPort {
   recentSourceIds(transaction: Transaction, watchIds: readonly string[], documentUrl?: string): Promise<string[]>;
+  retainedInternalSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
+  setRetainedInternalSource(transaction: Transaction, context: FirestoreKnowledgeObservation, retain: boolean): void;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
   recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
@@ -97,6 +102,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     const snapshot = await tx.get(watchRef(id)); if (!snapshot.exists) return null;
     const row = parse(watchSchema, snapshot.data());
     if (row.id !== id || row.definition.id !== id || row.definitionHash !== definitionHash(row.definition)) reject("knowledge_binding_invalid");
+    if (row.retainedSourceIds?.some(sourceId => !sourceId.startsWith(id + "-") || !/^[a-f0-9]{32}$/u.test(sourceId.slice(id.length + 1))))
+      reject("knowledge_binding_invalid");
     return row;
   }
   const matches = (row: Watch) => Boolean(catalog.has(row.id) && definitionHash(catalog.get(row.id)!) === row.definitionHash);
@@ -114,6 +121,20 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (snapshot.id !== row.sourceId || !feeds.includes(row.watchId)) reject("knowledge_binding_invalid");
         return !documentUrl || new URL(row.url).href.split('#')[0] === documentUrl ? [row.sourceId] : [];
       });
+    },
+    async retainedInternalSourceIds(tx, watchIds) {
+      const feeds = watchIds.filter(id => catalog.get(id)?.kind === "rss" && catalog.get(id)?.audience === "internal_noncommercial");
+      const watches = await Promise.all(feeds.map(id => watch(tx, id)));
+      return watches.flatMap(row => row?.enabled && matches(row) ? row.retainedSourceIds ?? [] : []);
+    },
+    setRetainedInternalSource(tx, { watch: row, observation, catalogMatches }, retain) {
+      if (!observation || row.definition.kind !== "rss" || row.definition.audience !== "internal_noncommercial") return;
+      const sourceId = observation.sourceId, ids = row.retainedSourceIds ?? [];
+      if (sourceId !== row.id + "-" + knowledgeHash(observation.url).slice(0, 32)) reject("knowledge_binding_invalid");
+      if (ids.includes(sourceId) === retain) return;
+      if (retain && (!catalogMatches || !row.enabled || observation.unavailable)) reject("knowledge_observation_review_mismatch");
+      if (retain && ids.length >= MAX_RETAINED_PER_FEED) reject("knowledge_retained_feed_full");
+      tx.set(watchRef(row.id), { ...row, retainedSourceIds: retain ? [...ids, sourceId].sort() : ids.filter(id => id !== sourceId) });
     },
     async read(tx, sourceId) {
       id.parse(sourceId);
@@ -261,6 +282,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           revision: unchanged ? old.revision : randomUUID(), registeredBy: by, registeredAt: new Date().toISOString(),
           lastAttemptAt: old?.lastAttemptAt ?? null, lastSuccessfulCheckAt: old?.lastSuccessfulCheckAt ?? null, lastStatus: old?.lastStatus ?? null,
           ...(old?.confirmedGone !== undefined ? { confirmedGone: old.confirmedGone } : {}),
+          ...(unchanged && old.retainedSourceIds ? { retainedSourceIds: old.retainedSourceIds } : {}),
           ...(unchanged && old.lastScheduledFor ? { lastScheduledFor: old.lastScheduledFor } : {}),
           lease: unchanged ? old.lease : null };
         bounded([row]); tx.set(watchRef(id), row);

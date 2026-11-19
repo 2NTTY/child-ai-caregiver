@@ -324,7 +324,7 @@ test("evaluateTimelyEligibility enforces persistent recalls, deadlines, 7-day ro
   assert.equal(evaluateTimelyEligibility({ classification: "recent_information", sourcePublishedAt: daysAgo(1), lastSuccessfulCheckAt: staleCheck, timelyEvent: { kind: "recall", status: "active" } }, now).reason, "check_stale");
 });
 
-test("Firestore store & refresh retain 14-day active recalls, keep unchanged polls at zero changes, and immediately exit lifted/superseded items while preserving provenance", async t => {
+test("Firestore store retains reviewed recalls across RSS churn and original age, without bypassing freshness, rights or resolution", async t => {
   const now = Date.parse("2026-11-19T09:00:00Z");
   t.mock.timers.enable({ apis: ["Date"], now });
 
@@ -360,6 +360,15 @@ test("Firestore store & refresh retain 14-day active recalls, keep unchanged pol
   await f.store.review(impV1.versionId, impV1.hash, "synthetic-operator", makeAssessment(docV1, observationHash(rssV1.observation)));
   await f.store.publish(impV1.versionId, impV1.hash, makeEmbeddings(docV1));
 
+  async function replay(doc: KnowledgeSourceInput, imported: { versionId: string; hash: string }) {
+    const paths = [`knowledge_sources/${doc.sourceId}`, `knowledge_versions/${imported.versionId}`,
+      `knowledge_observations/${doc.sourceId}`, "knowledge_watches/chp-recent"];
+    const state = () => paths.map(path => f.records.get("synthetic_timely_" + path));
+    const before = structuredClone(state());
+    await f.store.publish(imported.versionId, imported.hash, makeEmbeddings(doc));
+    assert.deepEqual(state(), before, "An exact replay cannot revise the head, lifecycle, approval or check time");
+  }
+
   // Verify 14-day-old active recall is found by daily search (would have failed under the old 7-day cutoff)
   assert.equal(TIMELY_KNOWLEDGE_POLICY_DEFAULTS.observationLookbackDays, 180);
   const hitsBeforeLift = await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" });
@@ -367,14 +376,41 @@ test("Firestore store & refresh retain 14-day active recalls, keep unchanged pol
   assert.equal(hitsBeforeLift[0]!.versionId, impV1.versionId);
   assert.deepEqual(hitsBeforeLift[0]!.timelyEvent, docV1.timelyEvent);
 
+  // Two normal feed rotations push the reviewed item past the newest 60; neither is a lift.
+  for (const page of [0, 1]) {
+    const items = Array.from({ length: 30 }, (_, i) => buildChpRssPayload(
+      `https://www.chp.gov.hk/tc/features/synthetic-newer-${page}-${i}.html`, "一般合成消息", "一般合成消息。", new Date(now).toISOString()).observation);
+    const bytes = Buffer.from(`<rss><channel>${items.map(item => item.rssItem!.xml).join("")}</channel></rss>`);
+    await f.refresh.process(watch.data, randomUUID(), async () => ({
+      status: "ok", items, original: { mimeType: "application/rss+xml", bytes },
+    }), new AbortController().signal);
+  }
+  const crowded = await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" });
+  // Once the item itself is stale, no current hit; its reviewed lifecycle is still active.
+  t.mock.timers.tick(181 * 86_400_000);
+  assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" }), []);
+  const stale = await f.store.publishedEdition(recallSourceId);
+  assert.equal(stale?.current, false);
+  assert.deepEqual(stale?.source.timelyEvent, docV1.timelyEvent);
+  await replay(docV1, impV1);
+  assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" }), []);
+
   // Unchanged daily check: zero changes, zero new versions, still searchable
   t.mock.timers.tick(3_600_000);
   const pollUnchanged = await f.refresh.process(watch.data, randomUUID(), async () => rssV1.fetchResult, new AbortController().signal);
   assert.equal(pollUnchanged.status, "unchanged");
   assert.equal(pollUnchanged.changed, 0);
   const hitsAfterUnchanged = await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" });
-  assert.equal(hitsAfterUnchanged.length, 1);
-  assert.equal(hitsAfterUnchanged[0]!.versionId, impV1.versionId);
+  // The authorized per-item observation was renewed, not its original publication date.
+  assert.deepEqual([crowded, hitsAfterUnchanged].map(hits => hits.map(hit => hit.versionId)), [[impV1.versionId], [impV1.versionId]]);
+  const hints = () => f.database.runTransaction(tx => f.refresh.gate.retainedInternalSourceIds(tx, ["chp-recent"]));
+  assert.deepEqual(await hints(), [recallSourceId]);
+  await f.refresh.register("chp-recent", "synthetic-operator"); // same catalog revision must not discard retained IDs
+  assert.deepEqual(await hints(), [recallSourceId]);
+
+  const publicStore = createFirestoreKnowledgeStore({ ...f.domain, sourceIds: ["chp-recent"], audience: "public", observations: f.refresh.gate });
+  assert.deepEqual(await publicStore.candidates(recentFilter, vector, { query: "奶粉 召回" }), []);
+  await assert.rejects(() => f.store.exportPublishedEdition(recallSourceId, impV1.hash), /internal_export_forbidden/);
 
   // Official lift update: publish v2 with status="lifted" -> immediately exits daily search, provenance preserved
   const liftedAt = new Date(Date.now()).toISOString();
@@ -382,6 +418,8 @@ test("Firestore store & refresh retain 14-day active recalls, keep unchanged pol
   const rssV2 = buildChpRssPayload(recallUrl, "合成奶粉召回解除公告", bodyV2, published14dAgo);
   const pollLift = await f.refresh.process(watch.data, randomUUID(), async () => rssV2.fetchResult, new AbortController().signal);
   assert.equal(pollLift.status, "changed");
+  // Retention is not authority: the changed item hash blocks the prior version even before review.
+  assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" }), []);
 
   const docV2 = parseKnowledgeSource({
     ...docV1,
@@ -396,6 +434,8 @@ test("Firestore store & refresh retain 14-day active recalls, keep unchanged pol
   await f.store.publish(impV2.versionId, impV2.hash, makeEmbeddings(docV2));
 
   assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "奶粉 召回" }), []);
+  assert.deepEqual(await hints(), []);
+  await replay(docV2, impV2);
   // Version provenance remains stored even after exiting active search
   const storedVersions = [...f.records.keys()].filter(k => k.includes("_knowledge_versions/"));
   assert.equal(storedVersions.length, 2);
@@ -443,12 +483,27 @@ test("Firestore store & refresh retain 14-day active recalls, keep unchanged pol
   for (const [doc, obs] of [[oldSupersededDoc, oldRss.observation], [newCorrectedDoc, newRss.observation]] as const) {
     const imp = await f.store.importSource(doc);
     await f.store.review(imp.versionId, imp.hash, "synthetic-operator", makeAssessment(doc, observationHash(obs)));
+    if (doc.sourceId === newSourceId) {
+      // A full retained directory must reject the new publication atomically, never evict an existing notice.
+      const path = "synthetic_timely_knowledge_watches/chp-recent", original = f.records.get(path)!;
+      const full = Array.from({ length: 60 }, (_, i) => `chp-recent-${i.toString(16).padStart(32, "0")}`);
+      f.records.set(path, { ...original, retainedSourceIds: full });
+      await assert.rejects(() => f.store.publish(imp.versionId, imp.hash, makeEmbeddings(doc)), /knowledge_retained_feed_full/);
+      assert.equal(await f.store.publishedEdition(newSourceId), null);
+      assert.deepEqual(await hints(), full);
+      f.records.set(path, original);
+    }
     await f.store.publish(imp.versionId, imp.hash, makeEmbeddings(doc));
+    await replay(doc, imp);
   }
   const replacementHits = await f.store.candidates(recentFilter, vector, { query: "安全警報" });
   assert.equal(replacementHits.length, 1);
   assert.equal(replacementHits[0]!.sourceId, newSourceId);
   assert.equal(replacementHits[0]!.timelyEvent?.status, "corrected");
+  assert.deepEqual(await hints(), [newSourceId]);
+  await f.store.disable(newSourceId, "synthetic operator withdrawal");
+  assert.deepEqual(await hints(), []);
+  assert.deepEqual(await f.store.candidates(recentFilter, vector, { query: "安全警報" }), []);
 });
 
 test("Postgres SQL eligibility clause and row mapping preserve timelyEvent parity", async () => {

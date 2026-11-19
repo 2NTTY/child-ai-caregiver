@@ -23,7 +23,7 @@ import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeri
 import { createLibrarySelections, explicitlyDisabled, selectedEdition, type ListedPlatformCard } from './knowledge-library-selection.ts';
 import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
 import { canonical } from './firestore-session-codec.ts';
-import { timelyEventLifecycleSchema } from "../src/shared/knowledge-timely.ts";
+import { isPersistentTimelyKind, isTimelyEventActive, timelyEventLifecycleSchema } from "../src/shared/knowledge-timely.ts";
 import { evaluateTimelyEligibility } from "./knowledge-timely-policy.ts";
 import type { StorageCipher } from './storage-crypto.ts';
 
@@ -288,7 +288,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   async function corpus(tx: Transaction): Promise<Corpus> {
     const sources: Corpus["sources"] = [], editions: Edition[] = [];
-    const selected = await catalogIds(tx);
+    const retained = options.audience === "internal" ? await options.observations?.retainedInternalSourceIds(tx, sourceIds) ?? [] : [];
+    const selected = [...new Set([...await catalogIds(tx), ...retained])].sort(compareId);
     for (const id of selected) {
       const source = await readSource(tx, id); sources.push({ id, source });
       if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition, 'read')) editions.push(edition); }
@@ -880,7 +881,16 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         });
         const commitWork = await fence?.prepare(tx, { sourceId: source.sourceId, versionId, versionHash: version.versionHash,
           observationHash: review.assessment.observationHash, previousVersionId: source.activeVersionId, sourceEnabled: source.enabled });
-        if (publication(edition) && updated.every((chunk, index) => chunk.vectorHash === edition.chunks[index]!.vectorHash)) {
+        // Only an explicitly reviewed, published internal feed edition can enter this bounded lookup.
+        // A same-edition operator replay can also restore a missing hint; no observation timestamp is updated.
+        if (edition.observed && options.audience === "internal") {
+          const event = edition.document.timelyEvent;
+          options.observations!.setRetainedInternalSource(tx, edition.observed, edition.document.classification === "recent_information"
+            && !!event && isPersistentTimelyKind(event.kind) && isTimelyEventActive(event));
+        }
+        // Already published is an identity check, not a claim that a stale or resolved edition is retrievable.
+        if (source.enabled && source.activeVersionId === versionId && version.publishedAt !== null && version.checkedAt !== null
+          && observationCurrent(edition) && updated.every((chunk, index) => chunk.vectorHash === edition.chunks[index]!.vectorHash)) {
           commitWork?.(); return { status: "published" as const };
         }
         if (treatmentTransfer) options.observations!.approve(tx,edition.observed!,versionId,review.reviewer,publishedAt);
@@ -901,6 +911,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const edition = source.activeVersionId ? await load(tx, source.activeVersionId, source) : null;
         const next = { ...bump(source), enabled: false, disabledReason: reason };
         const withdrawn = edition ? { ...edition.version, reviewState: "withdrawn" as const } : null; writeBudget([next, ...(withdrawn ? [withdrawn] : [])]);
+        if (options.audience === "internal" && edition?.observed) options.observations!.setRetainedInternalSource(tx, edition.observed, false);
         if (withdrawn) tx.set(versionRef(withdrawn.versionId), withdrawn); tx.set(sourceRef(id), next);
       });
     },
