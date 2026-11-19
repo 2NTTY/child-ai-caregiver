@@ -150,17 +150,27 @@ test("a provider without native schema degrades explicitly, keeps strict instruc
   const requests: LlmRequest[] = [];
   const { events, sink } = collector();
   const provider: AgentModelProvider = { structuredOutput: "prompt_strict_json",
-    generate: async request => { requests.push(request); return textReply('{"ok":true}'); } };
+    generate: async request => { requests.push(request); return textReply('{"verdict":"accept","rows":[{"privateSchemaProbe":true}]}'); } };
   const { model, budget } = gatewayFixture(provider, sink);
   try {
+    const responseJsonSchema = nativeResponseSchema(z.object({
+      verdict: z.enum(["accept", "repair"]), rows: z.array(z.object({ privateSchemaProbe: z.boolean() }).strict()),
+    }).strict());
     await model.completeText({ system: "role instruction", user: "payload", attemptKey: "model:degraded",
-      responseJsonSchema: nativeResponseSchema(z.object({ ok: z.boolean() })), purpose: "compose_review" });
+      responseJsonSchema, purpose: "compose_review" });
+    assert.ok(String(requests[0]!.config?.systemInstruction).includes(JSON.stringify(responseJsonSchema)));
+    assert.doesNotMatch(JSON.stringify(events), /privateSchemaProbe|role instruction/u);
     assert.equal(Object.hasOwn(requests[0]!.config ?? {}, "responseJsonSchema"), false);
     assert.equal(Object.hasOwn(requests[0]!.config ?? {}, "responseMimeType"), false);
     assert.match(String(requests[0]!.config?.systemInstruction), /Native provider JSON schema constraint is unavailable/u);
     assert.equal(budget.counts.modelCalls, 1);
     assert.ok(events.every(e => e.role === "compose_review" && e.schemaMode === "degraded_prompt_strict_json"
       && e.schemaDegradationReason === "provider_native_schema_unsupported"));
+    await assert.rejects(model.completeText({ system: "s", user: "u", attemptKey: "model:oversized",
+      responseJsonSchema: { ...responseJsonSchema, description: "x".repeat(budget.limits.inputCharacters) } }),
+      (error: unknown) => error instanceof AgentStopped && error.reason === "input_limit");
+    assert.equal(requests.length, 1, "oversized fallback must fail before dispatch");
+    assert.equal(budget.counts.modelCalls, 1);
     // Calls without a schema stay marked unstructured, never as a silent downgrade.
     const plain = gatewayFixture(provider, sink);
     try {
@@ -362,10 +372,10 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
     url: "https://www.fhs.gov.hk/solid", title: "Solid food", publisher: "FHS",
     sourcePublishedAt: null, sourceUpdatedAt: null, fetchedAt: new Date().toISOString(), checkedAt: new Date().toISOString(), reviewState: "reviewed",
   };
-  const runCase = async (userText: string, mode: "greeting" | "knowledge") => {
+  const runCase = async (userText: string, mode: "greeting" | "knowledge", summary?: "empty" | "unavailable") => {
     const { events, sink } = collector();
     const runId = randomUUID(), ref = randomUUID();
-    let saved: any = null, calls = 0;
+    let saved: any = null, calls = 0, reads = 0;
     const runtime = createAgentRuntime({
       config, usage, onTrace: sink,
       provider: { structuredOutput: "native_json_schema", generate: async request => {
@@ -388,24 +398,41 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
         finish: async (_s: unknown, result: unknown) => { saved = productAgentResultSchema.parse(JSON.parse(JSON.stringify(result))); return true; },
         get: async () => saved,
       } as never,
-      memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) } as never,
+      memory: { ...(summary ? { initialConversationSummary: async () => {
+        reads++;
+        if (summary === "unavailable") throw new Error(CANARY);
+        return null;
+      } } : {}), context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) } as never,
       chat: { listForUser: async () => ({ messages: [{ id: ref, role: "user", text: userText }] }) } as never,
       tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) } as never,
       knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }), revalidateCitations: async () => true }) } as never,
     });
     const out = await service.reply(userId, childId, ref, async () => true);
-    assert.equal(out?.status, "completed");
-    return { events, out };
+    assert.equal(out?.status, summary === "unavailable" ? "stopped" : "completed");
+    return { events, out, reads };
   };
 
-  const greeting = await runCase("hi", "greeting");
+  const greeting = await runCase("hi", "greeting", "empty");
+  assert.equal(greeting.reads, 0);
   const gEnd = greeting.events.at(-1)!;
   assert.equal(gEnd.contextAssembly?.categories.find(c => c.category === "conversation_summary")?.reasonCode, "skipped_short_path");
   assert.equal(gEnd.counts?.modelCalls, 1);
+  assert.equal(gEnd.contextAssembly?.loaderCalls.summaryReads, 0);
 
   const knowledge = await runCase(CANARY + "幾時可以食固體食物？", "knowledge");
   const kEnd = knowledge.events.at(-1)!;
   assert.equal(kEnd.contextAssembly?.loaderCalls.knowledgeSearches, 1);
+  assert.equal(kEnd.contextAssembly?.categories.find(c => c.category === "conversation_summary")?.reasonCode, "not_loaded");
+  assert.equal(kEnd.contextAssembly?.loaderCalls.summaryReads, 0);
+  for (const source of ["empty", "unavailable"] as const) {
+    const checked = await runCase("幾時可以食固體食物？", "knowledge", source);
+    const end = checked.events.at(-1)!;
+    assert.equal(checked.reads, source === "empty" ? 2 : 1);
+    assert.equal(end.contextAssembly?.loaderCalls.summaryReads, checked.reads);
+    assert.deepEqual(end.contextAssembly?.categories.find(c => c.category === "conversation_summary"),
+      { category: "conversation_summary", included: false, reasonCode: source === "empty" ? "empty" : "not_loaded" });
+    assert.doesNotMatch(JSON.stringify(checked.events), /CANARY|陳大文|沙田/u);
+  }
   assert.deepEqual(knowledge.events.filter(e => e.phase === "model_attempt_start").map(e => e.role), ["main_chat", "main_chat", "delivery_review"]);
   assert.ok(knowledge.events.some(e => e.phase === "source_usable" && e.sourceCount === 1));
   assert.ok(knowledge.events.some(e => e.phase === "answer_approved"));

@@ -399,14 +399,11 @@ export function createProductAgent(options: {
       const currentUserMessage = page.messages[index]!;
       const pureGreetingTurn = !currentUserMessage.voice && !currentUserMessage.photo && !currentUserMessage.file
         && !confirmationResult && isPureGreetingOrSmallTalk(currentUserMessage.text);
+      const readSummary = pureGreetingTurn ? undefined : options.memory.initialConversationSummary?.bind(options.memory);
       const contextCategories: AgentContextCategoryMetadata[] = [
         { category: "profile", included: false, reasonCode: "not_loaded" },
         { category: "confirmed_facts", included: false, reasonCode: "not_loaded" },
-        ...(pureGreetingTurn
-          ? [{ category: "conversation_summary" as const, included: false, reasonCode: "skipped_short_path" as const }]
-          : !options.memory.initialConversationSummary
-            ? [{ category: "conversation_summary" as const, included: false, reasonCode: "not_loaded" as const }]
-            : []),
+        { category: "conversation_summary", included: false, reasonCode: pureGreetingTurn ? "skipped_short_path" : "not_loaded" },
         {
           category: "recent_messages",
           included: recent.messages.length > 0,
@@ -439,10 +436,10 @@ export function createProductAgent(options: {
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
-        ...(!pureGreetingTurn ? { readConversationSummary: async () => {
-          if (!options.memory.initialConversationSummary) return null;
+        ...(readSummary ? { readConversationSummary: async (onRead?: () => void) => {
           if (!await authorize()) throw new AgentStopped("unauthorized");
-          const current = await options.memory.initialConversationSummary(userId, childId);
+          onRead?.();
+          const current = await readSummary(userId, childId);
           if (!await authorize()) throw new AgentStopped("unauthorized");
           return current;
         } } : {}),

@@ -211,8 +211,8 @@ export interface AgentRunInput {
   privateSummaryFast?: PrivateSummaryFast;
   /** Trusted private summary for the first provider request only; never persisted in the session. */
   initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
-  /** Revalidate provider-only summary before every step; null explicitly removes it. */
-  readConversationSummary?: () => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
+  /** Revalidate before each step; call onRead at the authorized store access, even if it returns null or throws. */
+  readConversationSummary?: (onRead?: () => void) => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
   /** In-run ADK context compactors for long tool loops (§4.2). Does not replace Firestore cross-session memory. */
   contextCompactors?: import("@google/adk").BaseContextCompactor[];
   /** Declarative in-run context compaction configuration (§4.2). */
@@ -703,8 +703,8 @@ export function createAgentRuntime(options: {
             runId, recipeId: input.recipeId, role: runtimeTraceRole,
             onTrace: event => traceCollector.emitGatewayEvent(event),
             nextAttemptIndex: () => traceCollector.nextAttemptIndex(),
+            onSummaryRead: () => traceCollector.handle.noteLoaderCall("summaryReads"),
             onSummaryCoverage: (reason, version) => {
-              if (reason !== "empty") traceCollector.handle.noteLoaderCall("summaryReads");
               traceCollector.handle.recordContextCategory({
                 category: "conversation_summary",
                 included: reason === "included",
