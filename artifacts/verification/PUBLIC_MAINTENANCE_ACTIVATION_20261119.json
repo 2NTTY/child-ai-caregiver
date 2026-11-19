@@ -1,0 +1,133 @@
+{
+  "dateHongKong": "2026-11-19",
+  "siteRelease": {
+    "revision": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+    "workerDigest": "sha256:cb6b89b47888d401b81741b1c93e349d9c2890f57d65875fbee7eaa875279323",
+    "releaseId": "r44465380361-1",
+    "workflow": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44465380361"
+  },
+  "operator": {
+    "revision": "e43d41e63c4f68898bb33de90e6cfcda5bd6da76",
+    "installedPath": "/usr/local/lib/yuyoufang-knowledge-worker/configure-e43d41e6.py",
+    "sha256": "ff3df0ccdfc19db690749586739f712454d9e6f84069d3e1fc8bd307888a2356",
+    "localRollbackTest": "Passed. Simulated worker recreation failure restored the prior file, and enable, repeated enable, disable and separate-setting refusal passed.",
+    "hostPreflight": {
+      "revision": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+      "operatorSha256": "ff3df0ccdfc19db690749586739f712454d9e6f84069d3e1fc8bd307888a2356",
+      "protectedOperator": true,
+      "releaseJournal": false,
+      "releaseBlocked": false,
+      "publicConfigJournal": false,
+      "layoutMatches": true,
+      "health": "ok",
+      "idle": "ok",
+      "configuration": "ready",
+      "checkedAt": "2026-11-19T05:57:36+00:00"
+    },
+    "temporaryFiles": "Removed after the check. The versioned root-owned configure tool remains installed for a later authorized change."
+  },
+  "observed": {
+    "at": "2026-11-19T05:55:07.992Z",
+    "controlEnabled": true,
+    "workerEnabled": true,
+    "platformPaymentBinding": null,
+    "switches": {
+      "maintenance": false,
+      "liveFetch": false,
+      "livePublish": false
+    },
+    "platformPolicy": {
+      "enabled": true,
+      "version": 3,
+      "dailyUserAttempts": 200,
+      "dailyGlobalAttempts": 400,
+      "maxModelCalls": 8,
+      "maxToolCalls": 16,
+      "maxRunSeconds": 300
+    },
+    "dailyMaintenanceBudget": {
+      "period": "2026-11-19",
+      "version": 0,
+      "approved": null
+    },
+    "monthlyMaintenanceBudget": {
+      "period": "2026-11",
+      "version": 0,
+      "approved": null
+    },
+    "eligibleSources": [
+      {
+        "watchId": "fhs-solid-food",
+        "eligibleForCurrentWeeklySlot": true
+      },
+      {
+        "watchId": "fhs-toddler-development",
+        "eligibleForCurrentWeeklySlot": true
+      },
+      {
+        "watchId": "fhs-preschool-development",
+        "eligibleForCurrentWeeklySlot": true
+      },
+      {
+        "watchId": "fhs-child-vision",
+        "eligibleForCurrentWeeklySlot": true
+      },
+      {
+        "watchId": "fhs-feeding-booklet-en",
+        "eligibleForCurrentWeeklySlot": false
+      }
+    ],
+    "observationOnly": [
+      "chp-recent"
+    ]
+  },
+  "baselineNaturalReceipt": {
+    "at": "2026-11-19T05:59:20.105Z",
+    "sourceId": "fhs-toddler-development",
+    "watchRevision": "99b6469c-9f76-4343-b830-d89b2d3b22ee",
+    "slot": "2026-11-16T01:00:00.000Z",
+    "lastSuccessfulCheckAt": "2026-11-19T04:33:47.856Z",
+    "sourceVersionId": "46c4d086-3f2d-5320-837f-548e7c271765",
+    "versionHash": "8dc6f69bf16dd759781f7488a0a1ae383a7f5d9dc68a55247f3fd992310b98d8",
+    "sourcePublishedAt": "2026-10-12T21:10:34.703Z",
+    "rows": [
+      {
+        "mode": "observation",
+        "queueId": "0f1261a7dc091a22645fa6954433cb0cae513bc66429edc760e71fdea92c4606",
+        "state": "completed",
+        "dispatch": "confirmed",
+        "dueAt": "2026-11-19T04:33:05.673Z",
+        "check": {
+          "id": "0f1261a7-dc09-4a22-845f-a6954433cb0c",
+          "state": "recorded",
+          "result": "unchanged",
+          "checkedAt": "2026-11-19T04:33:47.856Z",
+          "items": 1,
+          "changed": 0
+        }
+      },
+      {
+        "mode": "platform-maintenance",
+        "queueId": "67b72a772000bb5ae315d514d287f5f81f2d2c5eb9c6dbb170ab3e6dc7bce2a8",
+        "state": null,
+        "dispatch": null,
+        "dueAt": null,
+        "check": null
+      }
+    ]
+  },
+  "operatingScope": "Recurring source processing on the five registered Family Health Service publications can dispatch platform-funded generation and corpus embeddings, then publish a reviewed edition if content changes. The configured counters govern dispatch. Daily and monthly monetary budgets are reconciliation fields. The previous US$5 / 12-hour allowance covers a test window.",
+  "state": "Ordinary scheduled observation retained. Recurring paid maintenance deferred by the coordinating chat because there is no currency hard cap. No further approval is being awaited for this delivery.",
+  "modelCallsByOperator": 0,
+  "decision": {
+    "continueOrdinarySchedule": true,
+    "enablePlatformMaintenance": false,
+    "payerConfigured": null,
+    "newSponsorAuthorized": false,
+    "changedBudgetOrQuota": false,
+    "workerRecreated": false,
+    "changesToPublications": false,
+    "previousTestAllowanceApplied": false
+  },
+  "preparationLimit": "The first Windows IAP stdin attempt sent a client prompt response instead of the read-only script. No database query ran on that attempt. Subsequent checks used reviewed files on the operator account, then removed them."
+}

@@ -8,7 +8,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 import { streamTemporaryZip, type TemporaryZip } from './zip-download.ts';
 
-import { libraryArchiveSelectionSchema, libraryPreferenceChangeSchema, type LibraryArchiveSelection, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import { libraryArchiveSelectionSchema, librarySelectionCommandSchema, type LibraryArchiveSelection, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({
   v: z.literal(1), userId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), childId: z.uuid(),
@@ -46,7 +46,7 @@ export function createPersonalLibrary(pool: Pool, cipher: StorageCipher) {
 }
 export type PersonalLibrary = ReturnType<typeof createPersonalLibrary> & {
   exportArchive?(userId: string, childId: string, selection: LibraryArchiveSelection, signal: AbortSignal): Promise<TemporaryZip & { sha256: string }>;
-  save?(userId: string, childId: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
+  save?(userId: string, childId: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
 };
 export async function handlePersonalLibraryRequest(request: Request, userId: string | null, options: {
   library: PersonalLibrary; readJson?(request: Request, limit: number): Promise<unknown>; isCurrentUser(userId: string): Promise<boolean>;
@@ -68,7 +68,7 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     }
     if (request.method === 'POST' && options.library.save && options.readJson) {
       if (url.search) throw new FamilyError(400, 'invalid_input');
-      const change = libraryPreferenceChangeSchema.parse(await options.readJson(request, 24 * 1024));
+      const change = librarySelectionCommandSchema.parse(await options.readJson(request, 24 * 1024));
       const saved = await options.library.save(userId, match[1].toLowerCase(), change);
       if (!await options.isCurrentUser(userId)) return apiError('session_changed', '登入帳號已改變。', 409);
       return jsonResponse(saved);

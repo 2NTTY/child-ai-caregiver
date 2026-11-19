@@ -1,0 +1,43 @@
+{
+  "dateHongKong": "2026-11-19",
+  "base": "10c844500f098e228a9173f23431c47648417d40",
+  "case": "tests/source-card-batch.test.mjs",
+  "environment": "Local Linux/amd64 Docker worker and Chromium headless shell. Both use network none. The synthetic HTTPS broker fixture is loopback within the worker. The real renderer uses the shared Unix socket.",
+  "method": "One directory, one card/revision/check. Reopen the on-disk acknowledgement journal for every claim, with no adapter state carried over. Replay the first discovery before acknowledging it. Validate every expected URL and SHA-256, deduplicate a cycle and record the oversized file separately.",
+  "inputs": {
+    "rootEntries": 49,
+    "directImages": 37,
+    "nestedPages": 10,
+    "nestedImages": 10,
+    "renderedDownloadButtons": 20,
+    "buttonImages": 19,
+    "oversizedPdf": 1,
+    "details": "Two buttons request attachments using fetch, including the same oversized PDF linked from the root. File headers can be probed during discovery without consuming the body."
+  },
+  "result": {
+    "status": "passed",
+    "batches": 27,
+    "expectedOriginals": 66,
+    "verifiedOriginals": 66,
+    "oversizedFileReports": 1,
+    "rootReadsIncludingReplay": 5,
+    "dynamicPageReads": 3,
+    "largestSerializedJournalRecordBytes": 1162,
+    "selectedTypeScriptCheck": "passed"
+  },
+  "correction": "When adding the fetch buttons to this same fixture, the initial request-count assertion expected only two GETs for the oversized file. Three are required: the tail attempt which returns earlier successes, the leading item rejection on the next claim, and the header-only button discovery. The corrected exact count passed.",
+  "candidate": {
+    "imageId": "sha256:336c2bf3b819d494b0dbade725e35b6963e61b0f844bf9e18cf87b1eba206b5e",
+    "contentBytes": 187394319,
+    "unpackedBytes": 462491648,
+    "coldBytes": 649885967,
+    "rendererCgroupPeakBytes": 318398464,
+    "rendererLimitBytes": 402653184,
+    "swapLimitBytes": 0,
+    "oomKills": 0,
+    "memoryMethod": "Renderer cgroup lifetime high-water mark across the iterations of the single catalogue fixture. See SOURCE_BROWSER_FOOTPRINT_20261119.json for the same-flow comparison with the previous image."
+  },
+  "scope": "This adapter receipt covers bounded discovery and replay with a durable fixture journal. The production Firestore transaction, worker scheduling and user-visible failure reporting are owned by work package 004.",
+  "modelCalls": 0,
+  "productionVmUsed": false
+}

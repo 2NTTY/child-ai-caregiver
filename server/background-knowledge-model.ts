@@ -345,7 +345,10 @@ export async function prepareKnowledgeMaintenance(input: {
   const comparisonUnits = [...new Set([...before.keys(), ...after.keys()])].map(key => ({
     key, oldQuote: preview(before.get(key)), newQuote: preview(after.get(key)),
   }));
-  const growthRuleBindings = input.growthRules.filter(rule => rule.sourceId === candidate.watchId).map(rule => {
+  // The runtime selects a rule by source, key and exact chunk hash. An unrelated key
+  // cannot activate or displace that binding, including on the first publication.
+  const growthRuleBindings = input.growthRules.filter(rule => rule.sourceId === candidate.watchId
+    && (before.has(rule.key) || after.has(rule.key))).map(rule => {
     const previousHash = before.has(rule.key) ? knowledgeHash(before.get(rule.key)) : null;
     const nextHash = after.has(rule.key) ? knowledgeHash(after.get(rule.key)) : null;
     return { ...rule, previousHash, nextHash,
@@ -423,13 +426,14 @@ export async function prepareKnowledgeMaintenance(input: {
     chunk.text = knowledgeChunkInputSchema.shape.text.parse(chunk.text + "\n" + sample.question
       + "\n" + sample.factKeys!.map(key => facts[key]).join("、"));
   }
-  const changedRule = growthRuleBindings.some(rule => rule.state === "requires_review");
+  const changedRules = growthRuleBindings.filter(rule => rule.state === "requires_review");
+  const changedRule = changedRules.length > 0;
   const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
     growthRuleImpact: changedRule ? "requires_review" : "none",
     growthRuleReason: changedRule
-      ? "Server: existing growth rule source binding changed or is unavailable."
+      ? changedRules.map(rule => `Rule ${rule.id} (${rule.revision}), key ${rule.key}: expected ${rule.hash}, previous ${rule.previousHash ?? "missing"}, candidate ${rule.nextHash ?? "missing"}.`).join(" ")
       : growthRuleBindings.length ? "Server: existing executable source bindings are unchanged."
-        : "Server: no executable growth rule is bound to this source.",
+        : "Server: no executable growth rule is affected by these source keys.",
     changes: modelAssessment.changes.map(change => {
       const original = comparisonUnits.find(unit => unit.key === change.key);
       if (!original) reject("knowledge_maintenance_review_unit_mismatch");

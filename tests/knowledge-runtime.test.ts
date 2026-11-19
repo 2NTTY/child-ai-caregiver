@@ -192,7 +192,13 @@ test("gateway uses shared quotas, a bounded maintenance counter, one provider ca
     queryActor, signal, authorize), (error: unknown) =>
     error instanceof EmbeddingFailure && error.code === "unauthorized");
   assert.equal(calls, 4);
-  assert.deepEqual(usage.reservations.map(item => [item.userLimit, item.globalLimit]), [[3, 25], [16, 25], [3, 25], [3, 25]]);
+  // Both payers have a configured allowance of 3 here; maintenance must not use the former fixed ceiling.
+  assert.deepEqual(usage.reservations, [
+    { actor: queryActor, userLimit: 3, globalLimit: 25 },
+    { actor: maintenanceActor, userLimit: 3, globalLimit: 25 },
+    { actor: queryActor, userLimit: 3, globalLimit: 25 },
+    { actor: queryActor, userLimit: 3, globalLimit: 25 },
+  ]);
   assert.deepEqual(usage.records.map(item => item.outcome), ["succeeded", "succeeded", "unavailable", "unauthorized"]);
   assert.equal(usage.records[0]?.documentHash, null);
   assert.match(usage.records[1]?.documentHash ?? "", /^[0-9a-f]{64}$/u);

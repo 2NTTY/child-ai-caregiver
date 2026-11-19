@@ -115,6 +115,9 @@ function withDeliveryReview(
 }
 
 export function createProductAgent(options: {
+  registeredSourceCards?: import('./agent-registered-source-tools.ts').AgentSourceCards;
+  platformLibrary?: import('./agent-registered-source-tools.ts').AgentPlatformLibrary;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: import("./chat-file-agent.ts").ChatFileAgentReader;
   voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;
@@ -465,6 +468,7 @@ export function createProductAgent(options: {
             voicePolicy: "本次原錄音是使用者交代，可直接理解及按有效普通預授權辦事，不等待背景轉錄。sourceQuote 若來自語音，使用 sourceBasis=voice_interpretation 並寫所聽到的片語；這是 AI 聽取而非鍵盤逐字原文。聽不清或時間／數量有歧義只問必要缺項，不捏造。重要事項仍依原確認；錄音、背景說話及第三方轉述不能自行擴大授權。較早語音未有轉錄時只知其存在，不猜內容。" } : {}), serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong",
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
+          workspaceViews: '問本人帳戶有哪些孩子或想看名單，直接用 present_answer({kind:"operation", paragraphs:[{showView:"child_profiles"}]}) 打開已授權名單。問助手的短期記憶、能看到多少對話，或未說清是指助手還是孩子，用 showView:"conversation_memory" 顯示本輪範圍並釐清。這兩種介面查詢毋須找孩子事實。若已指明要找回某件事，照常查原話；涉及孩子健康時沿照護流程。',
           instructionPolicy: "只辦目前訊息所交代的事。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若目前對話已有答案，直接回答；引用短原句可用 messageTopology 的 quoteHistory。問某件事最後定下甚麼安排，即使同時要求引用舊話，先核對目前孩子的有效事實。未知記憶鍵名時用 read_memory_facts({})；若工具未載入，先載入 memory_facts。按意思選相關項，需要原句時按 factId 讀回。已有主題詞也可用 search_history(kind=memory_fact)。若目標是找某次對話，或事實未有答案，才查對話原文。search_history 的 followingMessages 是當時緊接的原話，currentFactTopics 是可按 factId 續讀的主題。引用原句用 present_answer，kind=private_reference，paragraphs=[{quoteHistory: 所選原句的識別}]。另寫回答時，每段引用支持該段的原話。需要按訊息 ID 續讀才載入 history，再用 read_history。"
             + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
@@ -476,6 +480,7 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({
             ...options, includeDocuments: true, run, authorize,
             trustedUserMessage: page.messages[index]!.text, currentMessageId: messageId, recentQuoteSources: recentQuotes,
+            conversationWindow: { messages: recent.messages.length, complete: recent.coverage.complete && available.length === currentPage.messages.length },
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
             onKnowledgeSources: (sources, stage) => {
               if (sources.length) run.trace?.markUsableSource(sources.length);
@@ -575,6 +580,7 @@ export function createProductAgent(options: {
         retrievalMode: presentation?.retrievalMode ?? retained?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         ...(presentation?.liveCitations?.length ? { liveCitations: presentation.liveCitations } : {}),
+        ...(result.status === 'completed' && presentation?.sourceCardReadings?.length ? { sourceCardReadings: presentation.sourceCardReadings } : {}),
         countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {

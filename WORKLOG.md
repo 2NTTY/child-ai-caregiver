@@ -6248,6 +6248,12 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+### 2026-11-19 13:04 香港　REQ-006 本人來源卡
+
+從 `f458dc14` 完成帳戶來源卡及 Web 管理介面。使用者可設定單份文件、目錄或公告的巡查頻率，按需要指定允許路徑及同站表單登入頁。助手可使用同一命令與卡片讀取介面。密碼只從本人授權表單交給 Server，來源卡及其巡查版本約束憑證用途。[共用契約](docs/API.md#account-source-cards)
+
+主模型負責服務、交易、文件與最終驗收，Sol 協助前端。候選 `bf999df0` 通過 22 項針對性測試及 Server／前端型別檢查。獨立 Firebase Auth／Firestore emulator 驗過 HTTP 註冊、同一操作重送、worker 領取、回報 MFA 後暫停及移除。Edge 首次未能以可存取名稱定位新表單欄位，補上標籤後，未選孩子的合成帳戶已由畫面建立卡片並經深連結保存同站登入授權。沒有真人登入或人工結論。正式發布、助手操作、下載及私人入庫由整合包接續。[驗收版本、方法及限制](artifacts/verification/REQ006_ACCOUNT_SOURCE_CARDS_20261119.json)
+
 ### 2026-11-19　REQ-004／006／007 家長查詢與已保存回答
 
 三個專案對話以同一批已審原件及隔離合成帳戶驗收。香港原站已發布全冊，Edge 重開家長回答後，兩次點按到達相同 PDF 的第 6 頁。首輪 Web 載入了另一工作樹的舊版，改用本分支後沿原回答核對。私人查詢沿更正原句通過獨立審核；同一份事實刪除後，舊回答回傳 `source_changed`。測試帳本保留原用量，臨時配額已復原。此項由 Codex 執行，沒有另作真人手機操作。[家長查詢收據](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json) · [更正與刪除收據](artifacts/verification/REQ007_PRIVATE_FACT_RECALL_20261119.json)
@@ -6528,6 +6534,124 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 將最新 `origin/master`（`a7c24296`，含已合併之 `#593`、`#595`、`#609`）正向無改歷史合併至本分支，依 append-only 順序保留主線與本分支紀錄並重跑離線與型別檢查以更新 PR。
 
+### 2026-11-19　REQ-006 本人來源多模態整理與私人查回
+
+接續 004 原件 worker `1af357ed`。候選 `125cf237` 在目前版本寫入時同步安排私人索引，按原工作續做整理、審核及向量。逐字引文與圖像描述可分辨，重開時核對當前授權及原件版本。[內部查詢契約](docs/API.md#private-source-rag)
+
+本機 Firestore emulator 配合 Vertex ADC，從兩頁合成 PDF 的純圖像第 2 頁查回上方紅色三角形和下方兩個藍色圓形。共 4 次生成、2 次文件向量及 1 次查詢向量；覆查、停卡後拒絕均無新增呼叫。第一次合成 provider 漏回結束狀態，gateway 停在 unknown；修正測試輸入後才執行一次真模型驗收。其後的跨批次排序、原圖處理及授權世代修正以本機測試驗證。聊天接線、個人金鑰真驗及正式部署另列。[驗收收據](artifacts/verification/REQ006_PRIVATE_SOURCE_RAG_20261119.json)
+
+
+## 2026-11-14　Slice B（B-P5）不依賴 AI 回合的固定官方求助入口候選 (`codex/search-help-entry`)
+
+- Recorded At：2026-11-14（Asia/Hong_Kong）
+- Work Date：2026-11-14
+- Step / Package：Slice B / B-P5（REQ-001 §4.3；本地 HOLD 待 Owner `2NTTY` 確認位置與觸發設計）
+- Executor：`CheungHiuTung-2526 <250016155@stu.vtc.edu.hk>`（AI 代理協助本地實作與離線驗證，未推送遠端）
+- Goal：實作不依賴 AI 模型或回合成功之對話頁固定官方求助入口候選，並明確記錄 `REQ-001 §4.3:184` 待 Owner (`2NTTY`) 拍板之治理狀態。
+- Actual Work：
+  - 於 `src/shared/agent-feedback.ts` 新增 `matchOfficialHelpForText`，以純共用確定性規則識別緊急症狀（呼吸困難、抽搐、昏迷、高燒不退、`(?<!\d)999(?!\d)` 等）及用藥劑量查詢，對應回傳已核准之 `emergency-hk-v1` 與 `medical-consult-hk-v1` 卡片 ID。
+  - 於 `frontend/src/screens/chatScreen.tsx` 新增非阻斷式「官方求助入口」固定收合按鈕與獨立 `officialHelpPanel`（抽離 `child` 條件並置於 `timelineFooter`），即使 `!child`、`chat.error` 發生或尚未送出訊息亦可隨時展開查閱 `OfficialHelpCards`。
+  - 新增 `tests/official-help-entry.test.ts`、`scripts/ci/verify-search-help-entry-offline.sh` 與 `.github/workflows/search-help-entry-offline.yml`。
+- Verification：
+  - `node --import ./frontend/scripts/family-cleanup-network-guard.mjs --test --test-concurrency=1 tests/official-help-entry.test.ts tests/chat-web-sources-copy.test.ts tests/chat-delivery-review.test.ts`（3 個完整測試檔共 **53/53** 通過：2 + 7 + 44，0 失敗，0 略過，`blockedAttempts: 0`）。
+  - 既有上游 `tests/agent-feedback.test.ts`（第 58 行開啟 `127.0.0.1` loopback HTTP server）另外於本機無 socket 阻擋執行 `node --experimental-test-module-mocks --test tests/agent-feedback.test.ts`：**4/4** 通過。
+  - `tsc -p tsconfig.server.json --noEmit`、`tsc -p tsconfig.json --noEmit` 與 `tsc -p frontend/tsconfig.json --noEmit` 三組型別檢查皆退出 0。
+- Limitations / Blockers：依 `REQ-001 §4.3:184`，入口位置與自動展開觸發條件屬待 Owner (`2NTTY`) 決定之設計事項，本分支嚴格保持 LOCAL HOLD；僅完成本地離線測試與靜態型別驗證（Node `v24.16.0` on Windows；CI 目標為 `ubuntu-24.04` / Node `24.22.1` + `unshare --net`），未執行真實模型、資料庫、雲端 CI 或 Android 實機驗收，未執行 `git push` 或建立 PR。
+
+### 2026-11-14　B-P5 R1 審核修復與設計定案補充
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R1.md` 進行 forward-only 修復並自主拍板定案 UI 位置與觸發條件：
+1）將 `URGENT_EMERGENCY_HELP_PATTERN` 的 `999` 改為 `(?<!\d)999(?!\d)`，並將 `抽筋` 收窄為 `(?<!好|笑到)抽筋(?!運動)`，鎖定 `"1999年出世"`、`"對你好抽筋運動"`、`"笑到抽筋"` 不誤觸發，同時確保 `"999"`、`"打999"`、`"BB發燒全身抽筋點算？"` 正常命中 `'emergency-hk-v1'`。
+2）自主拍板定案 `REQ-001 §4.3:184` 之位置與觸發設計：於 [chatScreen.tsx](frontend/src/screens/chatScreen.tsx) 採用頂欄常駐切換按鈕（`official-help-entry-button`）配搭 `timelineFooter` 獨立面板（`officialHelpPanel`，抽離 `{child ? ... : null}`），確保未選擇孩子（`!child`）時仍可隨時手動展開或由 `chatDraft`／最新未回覆訊息確定性主動浮現官方求助卡片。
+3）修正文件卡片 ID 筆誤（為 `'emergency-hk-v1'` 與 `'medical-consult-hk-v1'`，非 `emergency_care_999`／`medication_safety_fhs`），並將 CI workflow 與 `scripts/ci/verify-search-help-entry-offline.sh` 對齊 B-P2 離線隔離、`frontend/tsconfig.json` 及 `summary-progress-contract.mjs` 驗證契約。
+### 2026-11-15　B-P5 R2 審核修復（`matchOfficialHelpForText` 邊界與 LOCAL HOLD 治理回正）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R2.md`（F2–F3）進行 forward-only 修復：
+1）**F2 急症規則修復**：`matchOfficialHelpForText` 先行執行 `NFKC` 正規化，解決全形 `打９９９` 漏報；移除過度抑制真急症的 `(?<!好)` 前置排除（確保 `BB隻腳好抽筋`、`BB剛好抽筋`、`BB啱啱好抽筋` 穩定命中 `'emergency-hk-v1'`，同時維持 `笑到抽筋`／`搞笑到抽筋` 玩笑慣用語排除）；收緊 `999` 邊界護欄，防止 `+852 999 12345`／`電話 999 12345` 誤觸發緊急提示。
+2）**F3 治理回正**：明確撤回未獲 Owner (`2NTTY`) 批准收據之「自主拍板／定案」措辭，恢復標示 `REQ-001 §4.3:184` UI 位置與觸發規則僅屬 **LOCAL HOLD 候選設計**，待 Owner (`2NTTY`) 決定後方可進入定案及開 PR 流程。
+
+### 2026-11-16　B-P5 R3 審核修復（急症抽筋 fail-closed、UI 觸發實測與 WORKLOG 歷史還原）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R3.md`（F1、F4）於本地 forward-only 新提交修復並維持 **LOCAL HOLD**：
+1）**F1 急症抽筋修復**：於 `src/shared/agent-feedback.ts` 移除過度寬泛之情緒前綴排除（`開心到`／`激動到`），改為 `hasUrgentConvulsionCue`：凡「抽筋」伴隨任何身體症狀／求助線索（`發燒`、`雙眼`、`反白`、`僵硬`、`昏迷`、`點算` 等）一律 fail-closed 命中 `'emergency-hk-v1'`，僅於無任何危急語境時排除明確純玩笑慣用語（如 `笑到抽筋`）及運動字句（如 `對你好抽筋運動`）。
+2）**真 UI 觸發實測**：於 `tests/official-help-entry.test.ts`（2→3 cases）以 CommonJS TSX 真實展開並狀態重繪 `frontend/src/screens/chatScreen.tsx`（`ChatPage` + `OfficialHelpCards`），實測在無選擇孩子（`!child`）時按下頂欄「官方求助入口」可打開與收合 `chat-official-help-panel`，並驗證草稿輸入「BB激動到抽筋，雙眼反白」可自動浮現求助面板與緊急警告，而純玩笑「個故仔好好笑，笑到抽筋」則保持隱藏。
+3）**F4 append-only 治理更正**：本條向前還原 `242c4465` 原存之 2026-11-14 舊正文（不改寫歷史事實）並保留 2026-11-15 之撤回定案記錄；現行設計及 `PLAN.md` 繼續維持 `LOCAL HOLD` 候選狀態，等待 Owner (`2NTTY`) 對 `REQ-001 §4.3:184` 作最終決定。未推送遠端亦未開 PR。
+
+### 2026-11-16　B-P5 R4 審核整改（抽筋後無反應急症偵測，維持 LOCAL HOLD）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R4.md` F1 於本地 forward-only 新提交修復並維持 **LOCAL HOLD**（未 push／未開 PR）：
+1）**F1 [agent-feedback.ts](src/shared/agent-feedback.ts)**：擴充 `URGENT_EMERGENCY_HELP_PATTERN` 與 `COMPANION_DISTRESS_OR_SYMPTOM_PATTERN`，納入 `(?:無|冇|毫無|無晒|冇晒)反應|無神|不省人事|人事不省|面青|昏厥|軟弱無力` 與 `無力|發軟|唔郁|不動|軟晒|發抖`，使「BB笑到抽筋，之後冇晒反應」「BB笑到抽筋，之後無反應」穩定 fail-closed 命中 `'emergency-hk-v1'` 而不再被玩笑慣用語排除吞沒，同時維持純玩笑「個故仔好好笑，笑到抽筋」回傳 `[]`。
+2）於 [official-help-entry.test.ts](tests/official-help-entry.test.ts)（3/3）擴充 unit 斷言與 `ChatPage` TSX 重繪實測，驗證在 `!child` 時輸入「BB笑到抽筋，之後冇晒反應」自動打開 `chat-official-help-panel`。設計候選仍待 Owner（`2NTTY`）依 `REQ-001 §4.3:184` 最終拍板，維持 LOCAL HOLD。
+
+### 2026-11-16　B-P5 設計定案紀錄與技術修正（頂欄＋Composer 上方有界 dock、回合保留、跨孩子隔離與急症分級；維持技術 LOCAL HOLD）
+
+依團隊設計定案並對照最新審核意見完成本地 forward-only 修正（移除「等 Owner UI 批准」之前置阻塞，因行動端鍵盤／放大字體與實機 DOM 驗收仍待進行，**繼續維持技術 LOCAL HOLD，暫不 push／不開 PR**）：
+1）**版面與入口定案（`frontend/src/screens/chatScreen.tsx`、`docs/REQUIREMENTS_BACKLOG.md` §4.3、`PLAN.md`）**：保留 `chat-top-toolbar` 常駐切換按鈕；將 `officialHelpPanel` 自可捲動 `ChatTimeline`（`timelineFooter`）移至 `<AgentComposer>` 正上方之非捲動有界容器 `chat-official-help-dock`（附 `ScrollView` 及依視窗與 `fontScale` 計算之有界 `maxHeight`），避免長面板於小螢幕遮擋輸入框。
+2）**回合狀態、跨孩子隔離與急症分級（`chatScreen.tsx`、`src/shared/agent-feedback.ts`）**：最新用戶訊息於回覆未到達、執行中或 `stopped`／`failed`／`reply_failed`／`replyError`／「這次回覆未完成」後仍保留求助面板；以 `child && chat.selectedChildId === child.id` 及 `${scopeKey}:${child?.id}` 隔離並即時重設 `helpOpen` 與訊息／回饋；優先識別 `失去意識`／`失知覺`／`暈倒`／`無晒反應` 高於玩笑慣用語；一般用藥詢問僅顯示 `medical-consult-hk-v1` 及 `chat-official-help-consult-notice` 而不升級急症警告。
+3）於 `tests/official-help-entry.test.ts`（3→4 cases）新增定案位置、中止／失敗回合保留、跨孩子切換隔離、急症／用藥分流與 360x640／`fontScale=2` 有界 dock TSX 測試並更新 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES`。
+
+### 2026-11-17　B-P5 R6 審查 H1／H2 技術修復與行動端證據口徑校準（維持技術 LOCAL HOLD）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R6.md` 完成本地 forward-only 修復並**繼續維持技術 LOCAL HOLD**（未 push／未開 PR）：
+1）**H1 雙向意識／反應喪失詞組（`src/shared/agent-feedback.ts`）**：將 `(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)` 與 `(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)` 同列於 `URGENT_EMERGENCY_HELP_PATTERN` 及 `COMPANION_DISTRESS_OR_SYMPTOM_PATTERN`，確保「BB笑到抽筋，之後意識喪失」「笑到暈低，跟住知覺喪失」「笑到抽筋，反應全無」穩定回傳 `['emergency-hk-v1']` 而不受玩笑慣用語排除。
+2）**H2 Server SSE `help` 卡於失敗／中止回合保留與完成後清除（`src/client/chat-controller.ts`、`frontend/src/screens/chatScreen.tsx`）**：`ChatController.performReply` 在回覆未完成前失敗／中止時若當前 `feedback` 屬於該 `messageId` 且含 `cards`，於 `finally` 設 `busy: null` 時保留 `feedback` 而不清空，並於 `reloadMessages` 讀到已完成 `model` 回覆或切換至新訊息／孩子後清除；`chatScreen.tsx` 使 `autoHelpIds` 與 `hasEmergencyHelp` 同時匯入未完成回合之 `scopedFeedback.cards`，即使在無關鍵字的通用用戶提問（如「幫我睇下呢張相應該點處理？」）且 `busy === null` 後仍續顯緊急求助面板與警訊。
+3）**測試與文件校準**：於 `tests/official-help-entry.test.ts`（4 cases）新增 `ChatController` SSE `help` → 503／`stopped` 保留 → `reloadMessages` 完成回覆清除之實測，並將 `PLAN.md` 行動端測試描述精確校準為「結構有界（`maxHeight`）及 `AgentComposer` 仍 render」而非實機 DOM 幾何／鍵盤 E2E；真機鍵盤與放大字體實測前繼續維持技術 **LOCAL HOLD**。
+
+### 2026-11-17　B-P5 R8 H2-R 正常回傳未完成回合保留 SSE 求助卡（維持技術 LOCAL HOLD）
+
+依 `SLICE_B_BP3_TO_BP7_IMPLEMENTATION_AUDIT_R8.md`（H2-R）完成本地 forward-only 修復並**繼續維持技術 LOCAL HOLD**（未 push／未開 PR）：
+1）**共用未完成文案辨識與 API 標頭保護（`src/shared/agent-feedback.ts`、`server/product-agent-api.ts`）**：匯出 `INCOMPLETE_MODEL_REPLY_TEXT_PATTERN`／`isIncompleteModelReplyText` 涵蓋「這次回覆未完成」「這次 Agent 運行中斷」「Agent 暫未能完成回覆」「Agent 未完成文字回覆」；`server/product-agent-api.ts` 於 `status === "stopped" | "unknown"` 即使 `stopReason === null` 亦補齊安全原因前綴「這次回覆未完成：…」。
+2）**`ChatController` 與 `chatScreen.tsx` 以有效完成狀態決定清除（`src/client/chat-controller.ts`、`frontend/src/screens/chatScreen.tsx`）**：`performReply`（含正常 resolve 與 `catch` 查回已保存 `model` 訊息兩路徑）改由共用 helper `verifyResolvedReplyCompleted` 判斷，先檢查 `isIncompleteModelReplyText` 並於尚有待保留 `feedback.cards` 時向 `getOriginalReply`／`getReplyState` 核實 `status === "completed"`（fail-closed），避免 `stopped`／`unknown` 正常 HTTP/SSE resolve 或 `catch` 撈回未完成訊息時設 `replyCompleted = true` 而清除緊急卡；`reloadMessages` 亦同步核實未完成文案、`remoteReply` 與綁定 `agentRunId` 狀態，並於 `chatScreen.tsx` 將 `isIncompleteModelReplyText` 及 `chat.remoteReply`（`running | stopped | unknown`）納入 `latestTurnIncomplete`。
+3）於 `tests/official-help-entry.test.ts`（4→5 cases）新增真實 `handleProductAgentRequest` SSE → `createChatApi` → `ChatController` → default-closed `ChatPage` 成對實測（正常 resolve `stopped`／`unknown`、`catch` 查回未完成、真正 `completed` 清除、新回合與切換孩子隔離），並同步 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES`；行動裝置實機視覺／鍵盤 E2E 仍未驗，維持技術 **LOCAL HOLD**。
+
+### 2026-11-17　B-P5 新增邊界測試 R1 修復（BND-2 否定急迫詞分離＋維持技術 LOCAL HOLD）
+
+依 `SLICE_B_BP2_BP7_NEW_BOUNDARY_TESTS_20261117_R1.md`（BND-2）完成本地 forward-only 修復並**繼續維持技術 LOCAL HOLD**（未 push／未開 PR）：
+1）**BND-2 [agent-feedback.ts](src/shared/agent-feedback.ts)**：於 `matchOfficialHelpForText` 新增 `NON_URGENT_EMERGENCY_MODIFIER_PATTERN`（涵蓋 `non-emergency`、`not an emergency`、`no emergency`、`非急症`／`不是急症` 等限定詞組），僅自急症判斷文字切走該否定修飾詞組而不全域豁免整句，使 `"Can I book a non-emergency medicine review?"` 僅觸發 `['medical-consult-hk-v1']`（只顯溫和用藥諮詢提示、`urgent: false, consult: true`），同時維持 `"A non-emergency medicine question, but BB is unresponsive."` 及混合窒息／呼吸困難／抽搐之 `'emergency-hk-v1'` 優先警示。
+2）於 `tests/official-help-entry.test.ts`（5→6 cases）新增 `BND-2` `matchOfficialHelpForText` 與真 `ChatPage` render 成對正反實測，並更新 `scripts/ci/verify-search-help-entry-offline.sh` `TEST_CASES=(6 7 44)`；行動裝置實機鍵盤／視覺 E2E 仍未驗，維持技術 **LOCAL HOLD**。
+
+### 2026-11-18　正向合併最新 origin/master（`39f2f322`）及官方求助 dock 版面重疊修復與 Edge Playwright Web DOM E2E（Draft PR / HOLD MERGE）
+
+1）**正向無改歷史合併主線（`39f2f322`）**：將最新 `origin/master`（含已合併之 `#600`、`#601`、`#602`、`#606`、`#608`、`#630`）正向無改歷史合併至 `codex/search-help-entry`，依 append-only 順序整合 `src/shared/agent-feedback.ts`、`src/client/chat-controller.ts`、`frontend/src/screens/chatScreen.tsx`、`PLAN.md` 與 `WORKLOG.md`。
+2）**真實瀏覽器版面重疊修復（`frontend/src/screens/chatScreen.tsx`）**：撰寫 Edge Playwright Web DOM E2E 時實測發現，`<AgentComposer>` 帶有 `marginTop: -chatLayout.composerOverlap`（`-32`），會將輸入區與工具列往上拉進緊鄰其上方的 `chat-official-help-dock`（桌機縮放實測重疊約 `44.8px`），且矮視窗（`390x420`／`360x380`）下固定 `132px` 最小高度會將輸入框推至視口外。現於 `styles.helpDock` 補加 `marginBottom: chatLayout.composerOverlap`，並改以 `onPaneLayout` 實測之 `paneHeight` 與 `viewportHeight` 自適應收斂 `maxHelpDockHeight`（矮視窗下限收窄至 `56px`），實測所有測試視窗下 dock 與輸入欄零重疊且完整留在視窗內。
+3）**Edge Playwright Web DOM E2E（`frontend/scripts/official-help-entry.browser.test.mjs`，3/3 通過）**：以匯出之 Expo Web `frontend/dist` 搭配 `127.0.0.1` 合成 `/api/**` 與 SSE 測試後端實測 Edge 瀏覽器 DOM 行為，驗證未選孩子鍵盤 `Enter` 切換、ARIA 角色、桌機 `1440x900` 與手機 `390x844`／`360x640`／`320x720`／縮矮視窗 `390x420`、`360x380`／CSS 200% 放大文字版面幾何，以及 `503` SSE 求助卡保留、切換孩子隔離與完成回覆清除，全程零控制台錯誤與零 404。
+4）**維持 Draft PR（HOLD MERGE）口徑**：本次 Web Playwright DOM E2E 未涵蓋 Android／iOS 實機軟鍵盤彈出 insets、原生系統 `PixelRatio.getFontScale()`、TalkBack／VoiceOver 螢幕閱讀器、真機打包與真實 Gemini／生產資料庫調用；以 **Draft PR + HOLD MERGE** 提交，保留實機補助驗後再轉 Ready。
+
+### 2026-11-18　再次正向合併最新 origin/master（`b70ebfb8`）保持 #634 可合併（Draft PR / HOLD MERGE）
+
+將最新 `origin/master`（`b70ebfb8`，含 `#607`、`#631`–`#637`）正向無改歷史合併至 `codex/search-help-entry`，僅依 append-only 順序整合 `WORKLOG.md` 與更新 `PLAN.md` 基線標註，並於最新 `HEAD` 重跑全量離線測試、型別檢查與 Edge Playwright DOM E2E 後更新 Draft PR `#634`。
+
+### 2026-11-19　補強遲發失敗來源預覽保留、Web／離線 UX 不變量驗證並將 #634 轉正為 Ready for Review
+
+1）**正向合併最新 `origin/master`（`03a46ead`）**：將最新主線（含 `#638`–`#644`）正向無改歷史合併至 `codex/search-help-entry`。
+2）**遲發失敗保留合格官方來源預覽（`src/client/chat-controller.ts`、`frontend/src/components/chat/OfficialHelpCards.tsx`、`frontend/src/screens/chatScreen.tsx`）**：修正 `performReply` / `verifyResolvedReplyCompleted` / `ProgressSourceCards` 與 `chatScreen.tsx` 狀態收斂：當 SSE 已串流合格官方來源卡後於生成或獨立安全核對階段發生 `503`／`stopped`／`unknown`／未完成失敗時，保留 `feedback.sources` 並顯示明確未審核草稿不作正式建議提示（`chat-progress-sources-retained-notice`）與恢復按鈕（`重試原訊息回覆`／`開始新訊息`）；一經回覆完成、切換孩子、開啟新訊息、`!chatWritesAllowed` 或遭遇 HTTP `403` 失去存取權（`forgetChild`）時立即清除，絕不殘留或誤將未核草稿升格為正式答案。
+3）**離線合約與 Edge Playwright Web DOM E2E 補強（`tests/official-help-entry.test.ts`、`scripts/ci/verify-search-help-entry-offline.sh`、`frontend/scripts/official-help-entry.browser.test.mjs`）**：
+   - 於 `tests/official-help-entry.test.ts`（6→7 cases，CI 表現更新為 `TEST_CASES=(7 7 44)` 共 58 項）補齊 `503` 來源保留、`!chatWritesAllowed` 與 `403` 清除、回覆完成清除、即時完整顯示已緩衝回覆（無打字機延遲）、`StatusAnnouncement` 不搶焦點及 `AgentRunView` 僅顯示映射工具標籤之合約測試。
+   - 於 `frontend/scripts/official-help-entry.browser.test.mjs`（3→4 cases）擴充 `E2E 4`，實測瀏覽器中 SSE 進度與失敗保留期間鍵盤焦點維持不變（`HELP_TOGGLE_LABEL`）、真實 HTTP `403` 撤權即時清卡、回覆完成即時整段顯示且無殘餘預覽，以及開啟「查看這則回覆的來源與候選」對話框時 `agent-run-view` 絕不暴露內部思維或原始工具參數。
+4）**統一 Ready for Review 與最終發布門檻口徑（`PLAN.md`）**：釐清離線 CI + 型別檢查 + Edge Web DOM E2E（4/4）即構成合併本 PR 至 `master` 之充分條件，將 `#634` 由 Draft 轉為 **Ready for Review**；Android/iOS 實體手機軟鍵盤、`PixelRatio.getFontScale()`、TalkBack/VoiceOver、原生打包與真實 Gemini／生產資料庫測試明確保留於最終發布前真機驗證門檻追蹤。
+
+### 2026-11-18　補充無私人記憶與無歷史會話語境之外部檢索 Query 最小化測試（`codex/search-query-minimization-scratch-scope`）
+
+1）**模擬無私人上下文／零記憶寫入之臨時會話外搜測試（`tests/search-query-minimization.test.ts`，8→9 cases）**：於 `createAgentRuntime`＋`createProductAgentTools`＋`createKnowledgeRetriever` 驗證當 `profileApplicable: false`、`facts: []`、`recentMessages: []`、未載入任何家庭識別詞且零私人記憶讀取／寫入時，若單次輸入夾帶中英文姓名、確切出生日期、詳細地址或聯絡電話，`search_knowledge` 與直呼 `createKnowledgeRetriever` 仍於扣額與查庫前一律回傳 `public_query_required` 拒絕，並只放行去識別後之條件查詢且不加開額外分類或脫敏模型；同步更新 `scripts/ci/verify-search-query-minimization-offline.sh` `TEST_CASES=(9 4 6 8 3 4 6 20 17)` 與 `.github/workflows/search-query-minimization-offline.yml` 觸發條件。
+2）**誠實邊界聲明**：主線現況尚未實作 REQ-003 §5 之左上角「臨時聊天」UI 與退出即時清除前後端會話機制；本條僅補齊現有後端及工具層在「無私人上下文／不寫入記憶」條件下的外部檢索最小化契約實證，不視同 REQ-003 臨時聊天模式已交付。
+
+### 2026-11-19　更正 #640 空上下文測試的範圍及案例數
+
+- 更正上項（2026-11-18）：「零私人記憶讀取／寫入」並非對整個系統的驗證。此案例使用合成 `childId`，並非無孩子的會話。乾淨查詢會呼叫該孩子的 `memory.context` 替身，回傳不適用的空檔案、空 facts 及空 recentMessages。只檢查未另行呼叫 `memory.facts`、`store.readHistory` 或 `memory.proposeFact`；不驗證正式儲存層、聊天紀錄保存、退出清除或 REQ-003 介面。
+- 第九個案例新增斷言：工具拒絕合成識別文字時，不消耗記憶體內的查詢嵌入額度；乾淨重試只消耗一次。直呼 retriever 的拒絕路徑另用全新額度。同步觀察嵌入用量替身的預留／記錄、provider 呼叫與候選查詢；另計乾淨結果的引用覆核。不以此推斷正式賬單或持久化額度帳本。
+- 更正上項清單：腳本實際為 `TEST_CASES=(9 4 6 8 3 5 6 21 17)`，共 9 檔、79 例；今次修改現有案例，沒有增加案例數。本地只核對語法及清單；本次修改的完整結果以新 head 的隔離 CI 為準，舊 head 的通過紀錄不代表本次已通過。
+
+### 2026-11-19　來源卡瀏覽器在原 VM 首次啟用
+
+- 香港 14:46，正式 worker 以 UID 1000 從唯讀具名 volume 查 `/healthz`，收到 `200 ready`。renderer 的 registry digest、隔離設定及每日發布覆蓋檔相符。同一收據重入後，renderer 及 worker 的容器 ID 維持相同。
+- 首次拉取因空間門檻停止。清理已退役的建置及下載快取後，用 `87a6c57f` 原收據完成啟用。主站 release 維持 `r44465380361-1`，五個保留映像引用已核對。兩處檔案系統同餘 3,233,333,248 bytes，下次拉取前須重查容量。[原站健康、空間及掛載收據](artifacts/verification/SOURCE_BROWSER_LIVE_20261119.json)
+
+### 2026-11-19　REQ-006 免費加入平台來源卡
+
+- 在 master `ca3492d2` 上交付平台系列的本人加入交易、聊天收據及前端入口。候選 `48b856b9` 復用家長 ZIP 匯入使用的已發布版本和個人偏好，重複加入保留固定快照及停用選擇。
+- 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
+- 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
+- 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
 ### 2026-11-19　無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`）
 
 - Recorded At：2026-11-19（Asia/Hong_Kong）

@@ -136,7 +136,20 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const { maintenanceLimit, ...legacy } = request;
       original = { ...legacy, userLimit: Math.min(request.userLimit, maintenanceLimit) };
     }
-    if (canonical(comparable(state.request)) !== canonical(comparable(original)) || state.billingSource !== this.#source) reject('attempt_conflict');
+    const matches = (candidate: DurableAiUsageRequest) => canonical(comparable(state.request)) === canonical(comparable(candidate));
+    if (!matches(original) && request.kind === 'embedding') {
+      // Before configurable corpus admission, these two fields captured a fixed ceiling.
+      // Match the previous wire format only for an already charged maintenance attempt.
+      const formerLimit = Math.min(16, request.globalLimit);
+      if (this.#source === 'platform' && request.userId === KNOWLEDGE_MAINTENANCE_PAYER) {
+        original = { ...request, userLimit: formerLimit };
+      } else if (this.#source === 'personal' && request.budgetPurpose === 'knowledge_maintenance' && request.maintenanceLimit !== undefined) {
+        original = state.request.maintenanceLimit === undefined
+          ? { ...original, userLimit: Math.min(request.userLimit, formerLimit) }
+          : { ...request, maintenanceLimit: formerLimit };
+      }
+    }
+    if (!matches(original) || state.billingSource !== this.#source) reject('attempt_conflict');
     if (state.day !== this.#day(state.reservedAtMs) || state.reservedAtMs >= request.deadlineAtMs) reject('invalid_stored_usage');
     return state;
   }
@@ -169,16 +182,16 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return global.attempts < globalLimit && owner.attempts < userLimit;
   }
 
-  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
+  async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance' | 'private_document_embedding', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
     if (embeddingPurpose !== undefined && (request.kind !== 'embedding'
-      || !['query_embedding', 'corpus_maintenance'].includes(embeddingPurpose))) reject('invalid_request');
+      || !['query_embedding', 'corpus_maintenance', 'private_document_embedding'].includes(embeddingPurpose))) reject('invalid_request');
     if (activity && (request.kind === 'embedding' || !MODEL_USAGE_ACTIVITIES.includes(activity.activity)
       || typeof activity.retry !== 'boolean')) reject('invalid_request');
     if (request.maintenanceLimit !== undefined && (this.#source !== 'personal' || embeddingPurpose !== 'corpus_maintenance'
       || request.budgetPurpose !== 'knowledge_maintenance')) reject('invalid_request');
     const dimension = request.kind !== 'embedding' ? 'model' : embeddingPurpose === 'query_embedding' ? 'queryEmbedding'
-      : embeddingPurpose === 'corpus_maintenance' ? 'documentEmbedding' : 'otherEmbedding';
+      : embeddingPurpose === 'corpus_maintenance' || embeddingPurpose === 'private_document_embedding' ? 'documentEmbedding' : 'otherEmbedding';
     return this.#database.runTransaction(async transaction => {
       const saved = await transaction.get(attemptRef);
       // No day, deadline, counter or limit change can turn an existing attempt into execute.

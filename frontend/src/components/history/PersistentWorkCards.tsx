@@ -1,4 +1,6 @@
-import { StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { AppIcon } from "../AppIcon";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { AgentWork } from "../../../../src/shared/agent-work";
 import { followUpStatusLabels, personalWorkStatusLabels, workResourceDestination } from "../../history-view-model";
@@ -7,13 +9,24 @@ import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppButton } from "../ui";
 
-export function PersistentWorkCards({ items, online, busy, onMessage, onResource, onContinue }: {
+type WorkListProps = { compact?: boolean;
   items: readonly AgentWork[]; online: boolean; busy?: boolean;
   onMessage?: (id: string) => void; onResource?: (path: string) => void; onContinue?: (work: AgentWork) => void;
-}) {
-  return <View style={styles.list}>{items.map(work => <View key={work.id} style={styles.card} testID={`personal-work-${work.id}`}>
-    <View style={styles.row}><Text accessibilityRole="header" style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
-    <Text style={styles.meta}>Agent 整理 · 供接續工作核對</Text>
+};
+export function PersistentWorkCards({ items, ...options }: WorkListProps) {
+  return <View style={options.compact ? styles.agenda : styles.list}>{items.map(work =>
+    <WorkEntry key={work.id} work={work} {...options} />)}</View>;
+}
+
+function WorkEntry({ work, compact, online, busy, onMessage, onResource, onContinue }: Omit<WorkListProps, 'items'> & { work: AgentWork }) {
+  const [open, setOpen] = useState(false);
+  return <View style={compact ? styles.entry : styles.card} testID={`personal-work-${work.id}`}>
+    {compact ? <Pressable accessibilityRole="button" accessibilityLabel={work.goal + ' · ' + personalWorkStatusLabels[work.status]} accessibilityState={{ expanded: open }}
+      onPress={() => setOpen(!open)} style={styles.entryHead}>
+      <Text style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /><AppIcon name={open ? 'chevron-up' : 'chevron-down'} size={18} />
+    </Pressable> : <><View style={styles.row}><Text accessibilityRole="header" style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
+      <Text style={styles.meta}>Agent 整理 · 供接續工作核對</Text></>}
+    {(!compact || open) && <>
     {work.focus ? <Text selectable style={styles.body}>{work.focus}</Text> : null}
     {work.questions.length ? <View style={styles.list}><Text style={styles.label}>待答問題</Text>{work.questions.map((question, index) => <Text selectable key={index} style={styles.body}>{index + 1}. {question}</Text>)}</View> : null}
     {work.pending.length ? <Text style={styles.meta}>有 {work.pending.length} 項待確認，請回助手查看原候選。</Text> : null}
@@ -30,10 +43,14 @@ export function PersistentWorkCards({ items, online, busy, onMessage, onResource
     })}</View><Text style={styles.meta}>開啟對應頁查看目前可讀資料；工作保留當時的版本依據。</Text></View> : null}
     <View style={styles.row}>{onMessage ? work.sourceMessageIds.map((id, index) => <AppButton key={id} label={`相關訊息 ${index + 1}`} variant="quiet" density="compact" disabled={!online || busy} onPress={() => onMessage(id)} />) : null}
       {onContinue ? <AppButton label="回助手續談" variant="secondary" density="compact" onPress={() => onContinue(work)} /> : null}</View>
-    <Text style={styles.meta}>更新於 {memoryDateLabel(work.updatedAt)} · 工作整理及接續完結不代表照護事項已完成。</Text>
-  </View>)}</View>;
+    <Text style={styles.meta}>更新於 {memoryDateLabel(work.updatedAt)}{compact ? '' : ' · 工作整理及接續完結不代表照護事項已完成。'}</Text>
+    </>}
+  </View>;
 }
 const styles = StyleSheet.create({
+  agenda: { minWidth: 0, borderTopWidth: 2, borderTopColor: colors.ink },
+  entry: { paddingVertical: spacing.sm, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line },
+  entryHead: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   list: { gap: spacing.sm, minWidth: 0 },
   card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },

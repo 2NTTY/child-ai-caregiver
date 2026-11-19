@@ -19,8 +19,8 @@ import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
-import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
-import { createLibrarySelections, explicitlyDisabled, selectedEdition } from './knowledge-library-selection.ts';
+import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
+import { createLibrarySelections, explicitlyDisabled, selectedEdition, type ListedPlatformCard } from './knowledge-library-selection.ts';
 import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
 import { canonical } from './firestore-session-codec.ts';
 import type { StorageCipher } from './storage-crypto.ts';
@@ -57,9 +57,11 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
   catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
-  saveLibraryPreference(tx: Transaction, owner: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
+  saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
+  platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
+  joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
-    source: KnowledgeSourceInput; enabled: boolean } | null>;
+    source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
@@ -68,7 +70,8 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   prepareSearch(versionId: string, expectedHash: string, guard?: (tx: Transaction) => Promise<void>): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   rebuildSearchPageIn(transaction: Transaction, versionId: string, expectedHash: string, start: number): Promise<{
     complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
-  listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
+  growthReviewCandidate(versionId: string): Promise<{ versionId: string; hash: string; source: KnowledgeSourceInput; assessment: KnowledgeReviewAssessment }>;
+  listVersions(afterVersionId?: string, includeGrowthReview?: boolean): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean; growthRuleReason?: string; comparedVersionId?:string|null }[]; nextVersionId: string | null }>;
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
@@ -86,6 +89,7 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/), uuid = z.uuid(), sourceId = z.s
 const date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
 const sourceSchema = z.strictObject({ ...binding, sourceId, url: z.url(), activeVersionId: uuid.nullable(), enabled: z.boolean(),
+  heldGrowthUpdate: z.strictObject({ previousVersionId: uuid, previousHash: hash, candidateId: uuid, observationHash: hash, observedAt: date, watchRevision: uuid }).optional(),
   revision: z.string().regex(/^(0|[1-9][0-9]{0,18})$/), disabledReason: z.string().min(1).max(400).nullable() });
 const headerSchema = z.strictObject({ series: sourceSeriesSchema.optional(), sourceId, url: z.url(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   classification: z.enum(["official_guidance", "recent_information"]), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
@@ -252,20 +256,33 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       && document.classification === 'official_guidance' && proof.sourceId === document.sourceId && proof.versionId === version.versionId
       && proof.versionHash === version.versionHash && proof.pdfHash === document.extraction?.contentHash && proof.reviewHash === version.review?.assessmentHash);
   }
+  function previousPageUnderGrowthReview(edition: Edition) {
+    const { source, version, document, observed } = edition, hold = source.heldGrowthUpdate;
+    const watch = observed?.watch, row = observed?.observation, approved = row?.approved;
+    return !!(hold && watch && row && approved && observed.catalogMatches && watch.enabled && !(watch.confirmedGone ?? watch.lastStatus === "unavailable")
+      && !row.unavailable && watch.definition.kind === 'page' && watch.definition.audience === 'public_noncommercial'
+      && document.classification === 'official_guidance' && hold.previousVersionId === version.versionId
+      && hold.previousHash === version.versionHash && hold.observationHash === row.contentHash && hold.observedAt === row.fetchedAt && hold.watchRevision === watch.revision
+      && approved.versionId === version.versionId && approved.contentHash === version.review?.assessment.observationHash
+      && approved.watchRevision === watch.revision && version.review.watchRevision === watch.revision);
+  }
   function publication(edition: Edition, operation: 'read' | 'publish' = 'publish'): boolean {
     const now = Date.now();
     const { source, version, document } = edition, review = version.review;
     return source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
       && version.publishedAt !== null && review !== null && review.assessment.decision === "approve" && review.assessment.growthRuleImpact !== "requires_review"
-      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && verifiedPdfRange(edition))
+      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && (verifiedPdfRange(edition) || previousPageUnderGrowthReview(edition)))
       && (options.audience === "internal" || !internalKnowledgeSource(document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial")
       && (document.classification !== "recent_information" || document.sourcePublishedAt !== null
         && Date.parse(document.sourcePublishedAt) <= now && Date.parse(document.sourcePublishedAt) >= now - 7 * 86400_000
         && Date.parse(edition.observed!.observation!.lastSuccessfulCheckAt) >= now - 86400_000);
   }
+  async function catalogIds(tx: Transaction, url?: string) {
+    return [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds, url) ?? []])].sort(compareId);
+  }
   async function corpus(tx: Transaction): Promise<Corpus> {
     const sources: Corpus["sources"] = [], editions: Edition[] = [];
-    const selected = [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds) ?? []])].sort(compareId);
+    const selected = await catalogIds(tx);
     for (const id of selected) {
       const source = await readSource(tx, id); sources.push({ id, source });
       if (source?.enabled && source.activeVersionId) { const edition = await metadata(tx, source.activeVersionId, source); if (publication(edition, 'read')) editions.push(edition); }
@@ -274,6 +291,20 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   const isPublicEdition = (edition: Edition) => !internalKnowledgeSource(edition.document.url)
     && edition.observed?.watch.definition.audience !== 'internal_noncommercial';
+  async function activeHeads(tx: Transaction, ids: string[]) {
+    if (!ids.length) return [];
+    const snapshots = await tx.getAll(...ids.map(sourceRef));
+    return snapshots.flatMap(snap => {
+      if (!snap.exists) return [];
+      const source = scoped(parse(sourceSchema, snap.data()));
+      if (source.sourceId !== snap.id) reject('knowledge_binding_invalid', 503);
+      return source.enabled && source.activeVersionId && !internalKnowledgeSource(source.url) ? [source] : [];
+    });
+  }
+  async function publicEdition(tx: Transaction, source: Source) {
+    const edition = await metadata(tx, source.activeVersionId!, source);
+    return isPublicEdition(edition) && publication(edition, 'read') ? edition : null;
+  }
   function readSelections(tx: Transaction, owner?: string) {
     return owner && selections ? selections.read(tx, owner) : [];
   }
@@ -557,7 +588,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const edition = await load(tx, source.activeVersionId, source);
         return { versionId: edition.version.versionId, versionHash: edition.version.versionHash,
           observationHash: edition.version.review?.assessment.observationHash ?? null,
-          source: edition.document, enabled: source.enabled };
+          source: edition.document, enabled: source.enabled, current: publication(edition) };
       }, { readOnly: true });
     },
     prepareSearch,
@@ -574,7 +605,18 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       if (start > (version.search?.completed ?? 0)) reject("knowledge_search_prefix_incomplete");
       return writeSearchPageIn(tx, edition, start, true);
     },
-    async listVersions(afterVersionId) {
+    async growthReviewCandidate(versionId) {
+      return database.runTransaction(async tx => {
+        const { document, version, observed } = await load(tx, versionId);
+        const assessment = version.review?.assessment;
+        if (version.reviewState !== "draft" || assessment?.growthRuleImpact !== "requires_review"
+          || document.classification !== "official_guidance" || observed?.watch.definition.audience !== "public_noncommercial"
+          || observed.watch.definition.kind !== "page" || internalKnowledgeSource(document.url))
+          reject("knowledge_growth_review_candidate_unknown", 404);
+        return { versionId, hash: version.versionHash, source: document, assessment };
+      }, { readOnly: true });
+    },
+    async listVersions(afterVersionId, includeGrowthReview = false) {
       if (afterVersionId !== undefined && !uuid.safeParse(afterVersionId).success) reject("knowledge_version_invalid", 400);
       return database.runTransaction(async tx => {
         let query = database.collection(namespace + "_knowledge_versions").orderBy("versionId").limit(21);
@@ -585,6 +627,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           if (snapshot.id !== row.versionId || row.projectId !== projectId || row.namespace !== namespace) reject("knowledge_binding_invalid", 503);
           if (!allowedId(row.sourceId)) return [];
           return { id: row.versionId, sourceId: row.sourceId, hash: row.versionHash, state: row.reviewState, publishedAt: row.publishedAt,
+            ...(includeGrowthReview && row.review?.assessment.growthRuleImpact === 'requires_review' ? {
+              growthRuleReason: row.review.assessment.growthRuleReason, comparedVersionId: row.review.assessment.comparedVersionId } : {}),
             searchReady: row.search?.completed === KNOWLEDGE_LEXICAL_BUCKETS };
         });
         return { items, nextVersionId: page.size > 20 ? page.docs[19]!.id : null };
@@ -766,7 +810,15 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
           checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };
-        const nextSource = bump(source); writeBudget([next, nextSource]);
+        const nextSource = bump(source);
+        if (nextSource.heldGrowthUpdate?.candidateId === versionId) delete nextSource.heldGrowthUpdate;
+        if (reviewer === "agent-knowledge-maintenance" && treatmentGuard && expectedObservation && compared && compared.version.versionId !== versionId
+          && assessment.decision === "approve" && assessment.growthRuleImpact === "requires_review"
+          && observed?.observation && observed.watch.definition.kind === "page" && observed.watch.definition.audience === "public_noncommercial") {
+          nextSource.heldGrowthUpdate = { previousVersionId: compared.version.versionId, previousHash: compared.version.versionHash,
+            candidateId: versionId, observationHash: expectedObservation.contentHash, observedAt: observed.observation.fetchedAt, watchRevision: observed.watch.revision };
+        }
+        writeBudget([next, nextSource]);
         if (approved && observed && !treatmentGuard) options.observations!.approve(tx, observed, versionId, reviewer, reviewedAt);
         tx.set(versionRef(versionId), next); tx.set(sourceRef(source.sourceId), nextSource);
         return approved ? { status: "reviewed" as const } : { status: "held" as const, reason: assessment.decision === "hold" ? "operator_hold" : "growth_rules_require_review" };
@@ -828,6 +880,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (treatmentTransfer) options.observations!.approve(tx,edition.observed!,versionId,review.reviewer,publishedAt);
         const nextVersion = { ...version, publishedAt: version.publishedAt ?? publishedAt };
         const nextSource = { ...bump(source), activeVersionId: versionId, enabled: true, disabledReason: null };
+        delete nextSource.heldGrowthUpdate;
         writeBudget([nextVersion, nextSource, ...updated]);
         for (const chunk of updated) if (edition.chunks.find(old => old.chunkId === chunk.chunkId)!.embedding === null) tx.set(chunkRef(chunk.chunkId), chunk);
         tx.set(versionRef(versionId), nextVersion); tx.set(sourceRef(source.sourceId), nextSource);
@@ -846,12 +899,51 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       });
     },
     catalog: after => catalog(after), catalogForUser: (owner, after) => catalog(after, owner),
+    async platformCards(tx, owner, after, url) {
+      // Ordinary private sites cannot appear in the public catalogue.
+      if (url && !personalLibraryItemSchema.shape.url.safeParse(url).success) return { cards: [], next: null };
+      const exact = url ? new URL(url).href.split('#')[0] : undefined;
+      const ids = (await catalogIds(tx, exact)).filter(id => !after || id > after);
+      const limit = 5;
+      const heads = await activeHeads(tx, exact ? ids : ids.slice(0, limit));
+      const matches = exact ? heads.filter(source => new URL(source.url).href.split('#')[0] === exact) : heads;
+      const cards = new Map<string, ListedPlatformCard>();
+      const preferences = matches.length ? await readSelections(tx, owner) : [];
+      for (const source of matches) {
+        const edition = await publicEdition(tx, source);
+        if (!edition) continue;
+        const series = sourceSeries(edition.document), pref = preferences.find(row => row.seriesId === series.id);
+        if (!cards.has(series.id)) cards.set(series.id, { seriesId: series.id, name: series.name, publisher: edition.document.publisher,
+          mode: pref?.mode ?? 'platform', enabled: pref?.enabled ?? true, revision: pref?.revision ?? 0,
+          sourceId: source.sourceId, versionId: edition.version.versionId });
+        if (exact && cards.size === limit) return { cards: [...cards.values()], next: source.sourceId };
+      }
+      return { cards: [...cards.values()], next: !exact && ids.length > limit ? ids[limit - 1]! : null };
+    },
+    async joinListedPlatformCard(tx, owner, card) {
+      if (!selections) reject('knowledge_preferences_unavailable', 503);
+      const heads = await activeHeads(tx, await catalogIds(tx));
+      if (!heads.some(row => row.sourceId === card.sourceId && row.activeVersionId === card.versionId)) reject('library_selection_changed');
+      // Membership is versioned. Read only the three identity fields for legacy and renamed series.
+      const refs = heads.map(source => versionRef(source.activeVersionId!));
+      const headers = await tx.getAll(...refs, { fieldMask: ['header.series', 'header.sourceId', 'header.url'] });
+      const editions = [];
+      for (const [index, snapshot] of headers.entries()) {
+        const source = heads[index]!, header = snapshot.get('header');
+        if (!header || snapshot.id !== source.activeVersionId || header.sourceId !== source.sourceId || header.url !== source.url)
+          reject('knowledge_binding_invalid', 503);
+        if (sourceSeries({ sourceId: source.sourceId, url: source.url, series: header.series, title: '' }).id !== card.seriesId) continue;
+        const edition = await publicEdition(tx, source);
+        if (edition) editions.push(selectionEdition(edition));
+      }
+      if (!editions.some(row => row.sourceId === card.sourceId && row.versionId === card.versionId)) reject('library_selection_changed');
+      return selections.save(tx, owner, { action: 'join', seriesId: card.seriesId, expectedRevision: card.revision, editions }, editions);
+    },
     async saveLibraryPreference(tx, owner, change) {
       if (!selections) reject('knowledge_preferences_unavailable', 503);
       const current = await corpus(tx);
-      const publicEditions = current.editions.filter(edition => !internalKnowledgeSource(edition.document.url)
-        && edition.observed?.watch.definition.audience !== 'internal_noncommercial');
-      if (!change.imported) return selections.save(tx, owner, change, publicEditions.map(selectionEdition));
+      const publicEditions = current.editions.filter(isPublicEdition);
+      if ('action' in change || !change.imported) return selections.save(tx, owner, change, publicEditions.map(selectionEdition));
       const resolved = [];
       for (const ref of change.editions) {
         const active = publicEditions.find(item => item.source.sourceId === ref.sourceId);

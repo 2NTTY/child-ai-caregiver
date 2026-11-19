@@ -15,6 +15,7 @@ import { AppButton } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import type { LocateAnswerSource } from "../chat/AnswerSources";
 import { ChatMessage } from "../chat/ChatMessage";
+import { compactStopReason, failedReplyContent } from "../chat/failed-reply";
 import { MotionDisclosure, MotionFeedback, MotionReveal } from "../../motion";
 import { proposalContextLabel, proposalDetailGroups, proposalDetailIcon, proposalDetailIsChange } from "./proposal-presentation";
 
@@ -159,10 +160,6 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
     <MotionDisclosure expanded={expanded} scopeKey={run.id}><View style={styles.details}>
       {run.tools.map(tool => <View key={tool.id} style={styles.tool}>
         <View style={styles.top}><Text style={styles.body}>{tool.nameLabel}</Text><AppStatusBadge label={agentToolLabels[tool.status]} tone={tool.status === "succeeded" ? "neutral" : tool.status === "failed" ? "error" : "warning"} /></View>
-        {tool.status === "succeeded" ? <Text style={styles.meta}>{tool.savesCandidate
-          ? "已準備候選，仍需你核對及確認。"
-          : "工具已回報成功；不代表照護事項已完成。"}</Text> : null}
-        {tool.status === "unknown" ? <Text style={styles.warning}>工具結果未知，請查核原運行，不能以新操作代替核對。</Text> : null}
       </View>)}
     </View></MotionDisclosure>
   </View>;
@@ -172,9 +169,10 @@ function RunAnswer({ run, activity, actions, onLocateSource }: {
   run: NonNullable<AgentRunModel["run"]>; activity: boolean; actions: AgentRunActions; onLocateSource?: LocateAnswerSource;
 }) {
   const [expanded, setExpanded] = useState(false);
-  if (!run.text && !run.citations.length) return null;
+  const text = run.status === "stopped" || run.status === "unknown" ? failedReplyContent(run.text) : run.text;
+  if (!text && !run.citations.length) return null;
   const answer = <ChatMessage testID="agent-answer" embedded
-    message={{ id: run.id, role: "assistant", text: run.text, sources: publicAnswerSources(run),
+    message={{ id: run.id, role: "assistant", text, sources: publicAnswerSources(run),
       phase: run.status === "running" ? "thinking" : run.status === "unknown" ? "unknown" : run.status === "stopped" ? "stopped" : "complete" }}
     phaseLabel={agentRunLabels[run.status]} onOpenSource={actions.openSource} onLocateSource={onLocateSource}
     degraded={run.retrievalMode === "keyword_degraded"} />;
@@ -221,10 +219,10 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       sourceActions.retryOriginal();
     },
   };
-  const readMessage = model.readState === "idle" ? "尚未讀取運行結果。請手動讀取後再核對。"
-    : model.readState === "loading" ? "正在讀取原運行結果，請稍候；讀取中不能決定候選事項。"
-      : model.readState === "failed" ? "未能讀取運行結果。請重新讀取，暫時不能確認候選事項。"
-        : denied ? "已失去讀取此運行的權限，原結果及候選內容已隱藏。"
+  const readMessage = model.readState === "idle" ? "尚未讀取結果"
+    : model.readState === "loading" ? "正在讀取…"
+      : model.readState === "failed" ? "未能讀取結果"
+        : denied ? "你已沒有權限查看這次結果"
           : !run ? "目前沒有可展示的運行結果。" : null;
   const announcementKey = readMessage ? `read:${model.readState}`
     : !model.online ? "offline" : model.busy === "write" ? "decision:working"
@@ -250,12 +248,12 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
     {showRunToolbar ? <View testID={activityHeading ? "agent-activity-header" : undefined} style={[styles.toolbar, !!activityHeading && styles.activityToolbar]}>
       {activityHeading ?? (run && ready && (!proposalOnly || run.status !== "completed") ? <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /> : null)}
-      {recoveryNeeded || !ready || run?.status !== "completed" || model.notice?.tone === "error" || selectedProposals.some(proposal => proposal.contentState === "invalidated") ? <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
+      {recoveryNeeded || model.readState === "idle" || run?.status === "running" || model.notice?.tone === "error" || selectedProposals.some(proposal => proposal.contentState === "invalidated") ? <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
         disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
         onPress={actions.refresh} style={styles.inlineButton} /> : null}
     </View> : null}
     {activityNavigation}
-    {activityHeading && run && ready && run.status !== "completed" ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}
+    {activityHeading && run && ready && run.status !== "completed" && !run.stopReasonLabel ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}
     {readMessage && !model.pendingDecision ? <StateNote tone={model.readState === "failed" ? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
     {targetUnavailable ? <StateNote tone="warning">未能核對你點選的事項，請重新檢查；不會改為展示另一項供你確認。</StateNote> : null}
     {proposalTarget && ready && selectedProposals.some(proposal => proposal.version > proposalTarget.version) ? <Text style={styles.meta}>內容已更新，以下是剛讀取的版本，請重新核對。</Text> : null}
@@ -266,16 +264,14 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       {model.busy !== "write" ? <OriginalDecision model={model} actions={actions} /> : null}
     </> : null}
     {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
-      {run.stopReasonLabel && (!proposalOnly || run.status !== "completed") ? <StateNote tone="warning">{run.stopReasonLabel}{run.stopReasonDetail ? (" " + run.stopReasonDetail) : ""}</StateNote> : null}
+      {run.stopReasonLabel && (!proposalOnly || run.status !== "completed") ? <Text accessibilityRole="alert" style={styles.warning}>{compactStopReason(run.stopReasonLabel)}</Text> : null}
       {run.status === "running" ? <StateNote>仍在處理；可稍後更新查看結果。</StateNote> : null}
-      {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
+      {run.status === "unknown" && !run.stopReasonLabel ? <StateNote tone="warning">尚未確認結果，請重新檢查。</StateNote> : null}
       {!proposalOnly && problems.length ? <View testID="agent-run-problems" style={styles.problems}>
         {problems.map(tool => <StateNote key={tool.id} tone={tool.status === "failed" ? "error" : "warning"}>{tool.nameLabel}：{agentToolLabels[tool.status]}。請讀取原運行核對，不要以新操作代替。</StateNote>)}
       </View> : null}
       {!proposalOnly && run.retrievalMode === "keyword_degraded" && !run.citations.length ? <StateNote tone="warning">檢索已降級；請核對原來源及適用範圍。</StateNote> : null}
-      {!proposalOnly && !targetUnavailable && (!activityHeading || (!pending.length && !handled.length)) ? <Text testID="agent-run-summary" style={styles.meta}>{pending.length || handled.length
-        ? [pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已處理` : null].filter(Boolean).join(" · ")
-        : ready && model.online && run.status === "completed" && !problems.length ? "本次沒有待確認事項。" : "請核對以下結果；尚未確認的結果不代表已保存。"}</Text> : null}
+      {!proposalOnly && !targetUnavailable && !activityHeading && (pending.length > 0 || handled.length > 0) ? <Text testID="agent-run-summary" style={styles.meta}>{[pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已處理` : null].filter(Boolean).join(" · ")}</Text> : null}
       {pending.length ? <View testID="agent-pending-proposals" style={styles.proposalGroup}>
         {!activityHeading && !proposalOnly ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
         {pending.map(proposal => <ProposalCard preserveDecisionFocusOnRead={preserveDecisionFocusOnRead} key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}

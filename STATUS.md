@@ -1,5 +1,9 @@
 # STATUS
 
+**2026-11-19 15:12 香港，正式交付。** 來源庫及聊天均可免費加入已發布平台卡。平台管理五個家庭健康服務來源，私人來源的整理與新查詢向量沿本人密鑰。原站 Web、API、worker 同版，站外健康核對通過。Android preview 已向版本 8 提供同一套產品畫面。付費網站的真實帳戶和本次手機點按留待體驗驗收。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261) · [Android 更新](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/bc937464-28b8-40ea-ade7-a83d1c763966) · [平台卡驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
+
+**2026-11-19 14:00 香港，本機候選**　本人來源卡可管理已登記來源。私人索引已接上保存後的圖文原件，並提供有頁碼的語意檢索。真 Vertex 已從合成 PDF 的純圖像第 2 頁查回幾何圖案的排列，停卡後原引用不可重開。聊天與正式發布狀態由整合包核對。[來源卡驗收](artifacts/verification/REQ006_ACCOUNT_SOURCE_CARDS_20261119.json) · [私人 RAG 驗收及版本](artifacts/verification/REQ006_PRIVATE_SOURCE_RAG_20261119.json)
+
 **2026-11-19 08:59 香港**　REQ-004、006、007 的整合版 `31e3b61d` 已在正式站提供服務。Web、API、worker 的實際版本一致，Firestore 健康檢查通過。Android 第 8 版的 preview 更新清單已指向相同提交，手機實機點閱留待體驗驗收。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44431291572) · [Android OTA](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/83a54d54-d24b-4ac1-8ce4-a7836b679ac3) · [驗收與版本](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json)
 
 **2026-11-19 香港**　家庭健康服務 20 頁小冊子已在原站發布。08:06 從正式查詢命中第 3、6 頁。08:33 在隔離家庭的 Edge 重開真實回答，點讀第 6 頁原文，檔案指紋與正式原件一致。私人記憶的另一則真實回答引用最後更正的原句，刪除後舊回答停止交付。[公開來源及點閱](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json) · [私人更正與刪除](artifacts/verification/REQ007_PRIVATE_FACT_RECALL_20261119.json)

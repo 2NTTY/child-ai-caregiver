@@ -20,6 +20,12 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
     itemHosts: ["news.rthk.hk"], audience: "internal_noncommercial" },
 ]);
 
+/** Only reviewed public documents can enter semantic maintenance and publication. */
+export function publicMaintenanceWatch(id: string) {
+  return SOURCE_WATCHES.find(watch => watch.id === id && watch.audience === "public_noncommercial"
+    && watch.classification === "official_guidance" && (watch.kind === "page" || watch.kind === "pdf"));
+}
+
 /** P3-M03 first-round pair only. Other catalog entries stay for S10 refresh, not this runner. */
 export function m03InitialSourceWatches(
   catalog: readonly SourceWatchDefinition[] = SOURCE_WATCHES,

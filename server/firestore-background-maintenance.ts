@@ -52,6 +52,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   handover?: Pick<ReturnType<typeof createHandoverService>, 'cleanup'>;
   handoverUploads?: Pick<ReturnType<typeof createHandoverUploadService>, 'cleanup'>;
   proactiveEvents?: Pick<ReturnType<typeof createProactiveEventSources>, 'prepareGlobal'>;
+  sourceCards?: { schedule(): Promise<void> };
   knowledgeAgent?: { binding: string; accepts(watchId: string): boolean;
     run(watchId: string, revision: string, slot: string, generation: string, signal: AbortSignal): Promise<{state: 'completed' | 'unknown' | 'stopped' | 'deferred'; nextAt?: string}> };
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
@@ -268,6 +269,8 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if (current.token !== token) domainReject('maintenance_lease_changed');
       tx.set(ref, stateEnvelope(id, SYSTEM, { ...state, minute, token: null, until: 0 }));
     });
+    try { await options.sourceCards?.schedule(); }
+    catch { console.warn('source_card_schedule_failed'); }
     try { await options.proactiveEvents?.prepareGlobal(); }
     catch { console.warn('proactive_public_prepare_failed'); }
     return scanned;

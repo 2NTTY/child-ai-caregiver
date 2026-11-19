@@ -1,6 +1,29 @@
 {
   "observedDateHongKong": "2026-11-19",
   "requirements": ["REQ-004", "REQ-006", "REQ-007"],
+  "registeredSourceDelivery": {
+    "pullRequests": [666, 667, 668, 670, 671, 672],
+    "siteRelease": "r44475842261-1",
+    "workflowUrl": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261",
+    "result": "deployed",
+    "webApiWorkerSha": "36434a235458646f8398229628e67f8ca5316bac",
+    "webDigest": "sha256:8e5795584db5fc2d618c5936713ce9adf9dddab8b67170c7cf050324e30e6c7d",
+    "apiWorkerDigest": "sha256:c872bd82ab434cd60a3535b20f226253b5cafb252f3547f580335a352d10fdc3",
+    "externalProbes": {"siteRevisionMatched": true, "apiRevisionMatched": true, "health": "ok", "storage": "firestore"},
+    "platformMaintenance": {"payer": "platform", "liveFetch": true, "maintenance": true, "livePublish": true,
+      "receipt": "PUBLIC_MAINTENANCE_ENABLED_20261119.json"},
+    "privateSourceBilling": {"paidGenerationAndVectors": "personal", "platformFallback": false,
+      "verification": "21 targeted offline checks, including retained original operations, zero platform spending, and cached rereads"},
+    "platformFollow": "REQ006_FREE_PLATFORM_FOLLOW_20261119.json",
+    "renderer": {"receipt": "SOURCE_BROWSER_LIVE_20261119.json", "afterSiteRelease": "r44475842261-1",
+      "digest": "sha256:b428c17827c2337f871e722cd8c5598f4e2f5a26bf8f46f606d209b505809f14",
+      "freeDiskBytesAfterRelease": 3232792576},
+    "androidPreview": {"gitSha": "e9f9883feadd9b615311faec97efec239541c919", "productTreeMatchesSite": true,
+      "versionCode": 8, "runtime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+      "group": "bc937464-28b8-40ea-ade7-a83d1c763966", "updateId": "01a1f2a4-751b-737f-a94b-5d23ea5a2adc",
+      "manifestHttpStatus": 200, "manifestMatchedAt": "2026-11-19T07:12:13.8106018Z"},
+    "notExercised": ["physical phone interaction on this update", "login with an actual paying publisher account"]
+  },
   "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660, 661],
   "finalApplicationRelease": {
     "id": "r44431291572-1",
@@ -255,7 +278,7 @@
   },
   "operatingDecisions": [
     "公用來源首次抓取沿既有 worker 和原件儲存。衞生防護中心通告採組內非商業範圍。",
-    "正式站未設定三個付費背景整理開關，取材與獨立審核、公開發布各有自己的收據。",
+    "首次交付時三個背景維護開關尚未啟用。平台付款安排確認後已啟用，再次發布後從新 worker 核實三項均已開啟。取材、審核與發布各有自己的收據。",
     "個人來源偏好只在選擇或匯入時保存。一般查閱沿用平台已發布版，歷史引用固定在當時使用的版本。",
     "實測衞生署健康服務目錄的首次即時讀取沿其授權範圍。正式站維持目前五個家庭健康服務來源，衞生防護中心通告不對家長公開。",
     "三條線共用原有 12 小時 US$5 測試限額。測試次數可經原隔離環境的管理設定提高，保留出資方、原工作及當日已用量。"

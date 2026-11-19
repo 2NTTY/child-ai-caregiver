@@ -48,7 +48,7 @@ type Watch = z.infer<typeof watchSchema>;
 type Observation = z.infer<typeof observationSchema>;
 export interface FirestoreKnowledgeObservation { watch: Watch; observation: Observation | null; catalogMatches: boolean }
 export interface FirestoreKnowledgeObservationPort {
-  recentSourceIds(transaction: Transaction, watchIds: readonly string[]): Promise<string[]>;
+  recentSourceIds(transaction: Transaction, watchIds: readonly string[], documentUrl?: string): Promise<string[]>;
   read(transaction: Transaction, sourceId: string): Promise<FirestoreKnowledgeObservation | null>;
   content(transaction: Transaction, observed: Observation): Promise<ObservedContent>;
   recordPdfReadback?(tx: Transaction, context: FirestoreKnowledgeObservation, request: PdfRangeRequest, reviewHash: string, reviewedRevision: string): Promise<void>;
@@ -100,17 +100,18 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
   }
   const matches = (row: Watch) => Boolean(catalog.has(row.id) && definitionHash(catalog.get(row.id)!) === row.definitionHash);
   const gate: FirestoreKnowledgeObservationPort = {
-    async recentSourceIds(tx, watchIds) {
-      const feeds = watchIds.filter(id => catalog.get(id)?.kind === "rss");
+    async recentSourceIds(tx, watchIds, documentUrl) {
+      const feeds = watchIds.filter(id => catalog.get(id)?.kind === 'rss');
       if (!feeds.length) return [];
+      if (documentUrl && !feeds.some(id => catalog.get(id)?.audience === 'public_noncommercial')) return [];
       if (feeds.length > 10) reject("knowledge_watch_catalog_invalid");
       const page = await tx.get(database.collection(namespace + "_knowledge_observations").where("watchId", "in", feeds)
         .where("sourcePublishedAt", ">=", new Date(Date.now() - 7 * 86400_000).toISOString())
         .orderBy("sourcePublishedAt", "desc").orderBy("sourceId").limit(60));
-      return page.docs.map(snapshot => {
+      return page.docs.flatMap(snapshot => {
         const row = parse(observationSchema, snapshot.data());
         if (snapshot.id !== row.sourceId || !feeds.includes(row.watchId)) reject("knowledge_binding_invalid");
-        return row.sourceId;
+        return !documentUrl || new URL(row.url).href.split('#')[0] === documentUrl ? [row.sourceId] : [];
       });
     },
     async read(tx, sourceId) {
@@ -186,7 +187,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       if (!feed.includes(Buffer.from(selected.rssItem.xml))) reject("knowledge_feed_original_mismatch");
       return selected;
     },
-    async resumeCheck(job: RefreshJob, jobId: string) {
+    async resumeCheck(job: RefreshJob, jobId: string, includeObservationTime = false) {
       return database.runTransaction(async tx => {
         const snap = await tx.get(checkRef(jobId));
         if (!snap.exists) return null;
@@ -199,13 +200,15 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           return { status: "failed" as const, reason: receipt.failureCode };
         if (!receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
         const items: ObservedContent[] = [];
+        let firstObservedAt: string | undefined;
         for (const pin of receipt.itemHashes) {
           const current = await gate.read(tx, pin.sourceId);
           if (!current?.catalogMatches || !current.watch.enabled || current.watch.revision !== job.revision
             || current.observation?.contentHash !== pin.contentHash || current.observation.unavailable) return null;
+          if (includeObservationTime && receipt.itemHashes.length === 1) firstObservedAt = current.observation.fetchedAt;
           items.push(await gate.content(tx, current.observation));
         }
-        return { status: "ok" as const, items };
+        return { status: "ok" as const, items, ...(firstObservedAt ? {firstObservedAt} : {}) };
       }, { readOnly: true });
     },
     async adminStatus(cursor: string | null = null): Promise<AdminKnowledgeStatus> {

@@ -122,7 +122,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       return { ...pages[pages.length - 1], items };
     }, !before);
   };
-  const readReferences = (more = false, change?: import('../../../src/shared/source-series').LibraryPreferenceChange) => {
+  const readReferences = (more = false, change?: import('../../../src/shared/source-series').LibrarySelectionCommand) => {
     const before = latest.current.references.data, cursor = more ? referenceCursor.current : null;
     if (more && !cursor) return;
     const depth = more ? 1 : pageDepth.current.references;
@@ -227,7 +227,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
         if (!current() || !env.childId || !env.userId || !env.online || !env.allows('private')) throw Error('請重新確認登入及目前的孩子。');
         return shareLibraryArchive({ baseUrl: env.apiBaseUrl, fetcher: env.owner.fetcher, childId: env.childId, userId: env.userId, selection, signal, current }, exportLibraryPackage);
       }),
-      setLibraryPreference: (change: import('../../../src/shared/source-series').LibraryPreferenceChange) => readReferences(false, change),
+      setLibraryPreference: (change: import('../../../src/shared/source-series').LibrarySelectionCommand) => readReferences(false, change),
     },
   };
 }

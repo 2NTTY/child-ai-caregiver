@@ -89,8 +89,48 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 相較 VM 自行拉 GitHub 並建置，此流程把建置 CPU／磁碟用量留在 GitHub，VM 只取已驗映像。Cloud Scheduler 亦可按時喚醒服務，但仍須安排建置、版本及收據；現有分支保護和 Actions 已提供其入口。此部署流程保留原 Compose 與 Firebase 資料配置。
 
+### 公共來源的定期整理
+
+啟用前核對 Firebase worker 的實際 SHA、已註冊的公開來源及平台的獨立知識維護用量政策。操作員在原 VM 的受保護位置放置對應版本的 `deploy/knowledge-worker/configure.py`，執行 `sudo python3 configure.py enable-platform WORKER_SHA`。停用使用同一入口的 `disable WORKER_SHA`。程式核對正式映像、現有設定、活動工作及站點健康，持原發布鎖更新 worker；原帳本、付款額度及每日發布歷史繼續沿用。
+
+若主機已有具名贊助者或另一組知識維護設定，程式會指出衝突。若中途斷線，以同一版本和同一命令接續。設定已套用後，查實際排程的 `lastCheckedAt`、該時段的工作結果及知識版本。來源未變時沿用既有版本與處理結果。帳戶自行登記的來源由該帳戶的來源卡、授權及私有資料服務處理。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
 
 單個公共知識包上限是 512 MiB，實際容量取決於 Docker 主機剩餘磁碟。收到 `knowledge_archive_scratch_full` 時，可用 `docker compose exec api sh -c 'df -h /var/tmp/yuban-knowledge; id; test -w /var/tmp/yuban-knowledge'` 核對容量與寫入身份。按原指紋查回批次，再選同一 ZIP 接續。正式 Linux 映像的掛載可在部署時以同一命令核對。
+
+<a id="source-browser"></a>
+## 來源卡瀏覽器首次啟用、更新及回退
+
+2026-11-19 14:46 香港，原 VM 已啟用 `87a6c57f` 的 renderer。正式 worker 經唯讀 socket 取得 `200 ready`，同一收據重入後兩個容器 ID 相同。當時磁碟餘量只比 3 GiB 門檻多 11.55 MiB。下一次拉取前重新量度實際餘量。[正式健康及掛載收據](../artifacts/verification/SOURCE_BROWSER_LIVE_20261119.json)
+
+來源卡 renderer 在獨立 Compose 專案運行。worker 以 UID 1000 從唯讀 Unix socket 讀取服務狀態。接收器按已登記版本重新產生 worker 掛載，每次日常發布、修復及業務回退都會核對掛載。renderer 保留一核、384 MiB、零 swap 和無網絡設定。
+
+在**已合併並與遠端 master 相同的 checkout** 執行以下命令。建置機須能以現有營運身份推送香港 `site-release` 映像庫，並沿既有 IAP／OS Login 路徑連線原 VM。接收器安裝及業務發布由主線協調，renderer 與 backend 分開拉取。首次啟用次序如下。
+
+```bash
+receipt="$(pwd)/.cache/source-browser-$(git rev-parse HEAD).receipt"
+mkdir -p "$(dirname "$receipt")"
+bash scripts/site-release/source-browser.sh publish "$receipt"
+bash scripts/site-release/install-receiver.sh
+bash scripts/site-release/source-browser.sh status
+bash scripts/site-release/source-browser.sh apply "$receipt"
+bash scripts/site-release/source-browser.sh status
+```
+
+取得第二次 `status` 的現行 digest 及業務 release ID 後，主線按本手冊的 `SITE_REVIEWED_PREREQUISITES` 流程核對該 master 的其餘部署前置，再安排業務映像發布。
+
+- **建置與安全更新。** `publish` 從指定提交取出建置輸入，使用固定基底、Playwright driver 及 shell 指紋。它從實際推送結果取得 digest，再按 digest 拉回並核對平台、revision、冷佔用，寫入收據。保留收據及該版 checkout。若推送後中斷，同一提交會先查現有標籤。安全更新應提交新基底或瀏覽器指紋，以新提交無快取建置。
+- **容量與切換。** 首次拉取候選前，Docker data root 和接收器所在檔案系統均須有候選完整冷佔用加 3 GiB。切換前再次核對兩處仍有 3 GiB 及至少 384 MiB 可用記憶體。按原先 4.6 GB 餘量計，兩個完全獨立版本只比磁碟門檻多約 75 MiB。工具保留現版及上一版映像，成功提交後只按完整 digest 回收已退役的 renderer。現版和回退版的 root 擁有版本目錄均須保留。[容量實測](../artifacts/verification/SOURCE_BROWSER_FOOTPRINT_20261119.json)
+- **鎖及健康。** 操作工具取得原有安裝鎖和發布鎖，核對已登記的 Compose 配置、業務映像身份、容器健康及在途工作。首次接線只重建現有 worker；之後切換 renderer 沿用相同 volume。工具直接從 worker 查 `/healthz`，核對容器實際 digest、隔離設定及唯讀掛載後才提交本機收據。相同收據可重入。
+- **回退與中斷。** 使用實際收據的 digest 回退。首次啟用可還原至沒有 renderer 的原配置。其後回退使用本機保留的上一個 digest 及對應 Compose／seccomp，毋須重新拉取。切換失敗會嘗試還原；若主機中斷，每日接收器會保留日誌並暫停套用。用同一份已安裝 checkout 執行 `recover`，再查 `status`。這兩個命令核對現行狀態，業務版本及資料由原發布流程管理。
+
+```bash
+read -r revision digest cold_bytes < "$receipt"
+bash scripts/site-release/source-browser.sh rollback "$digest"
+bash scripts/site-release/source-browser.sh status
+# Interrupted switch
+bash scripts/site-release/source-browser.sh recover
+```

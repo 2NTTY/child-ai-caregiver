@@ -29,6 +29,8 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
       toolNames: ["compose_family_data"], promptModuleIds: [] },
     { id: "concerns", description: "查看持續關注及經過，提出建立、追加觀察、結束、恢復或站內跟進候選。",
       toolNames: ["read_concerns", "propose_concern", "propose_concern_change"], promptModuleIds: ["module.product-concerns"] },
+    { id: "source_cards", description: "從已發布的平台卡免費加入及跟隨，或替家長管理自備來源卡、排程及登入設定，查閱私人文件、圖像及公告。",
+      toolNames: ["read_platform_source_cards", "join_platform_source_card", "read_source_cards", "register_source_card", "manage_source_card", "open_source_card_login", "find_source_card_documents", "read_source_card_document", "search_source_card_evidence"], promptModuleIds: [] },
     { id: "private_sources", description: "查看本人授權的私人材料與引用，提出來源設定、內容／用途修改或停用候選；不擴大公共或共享範圍。",
       toolNames: ["list_private_sources", "read_private_source", "propose_private_source", "propose_private_source_change"], promptModuleIds: ["module.product-private-sources"] },
     { id: "contact", description: "核對已確認事項的聯絡資格，僅在既有有效授權內安排聯絡；入列與送達／完成分開。",

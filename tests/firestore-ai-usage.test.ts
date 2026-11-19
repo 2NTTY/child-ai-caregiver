@@ -56,6 +56,12 @@ test('sponsored corpus ceiling counts maintenance separately while the owner dai
   assert.equal((await usage.record(split, { kind: 'embedding', outcome: 'succeeded', inputTokens: 1,
     billableCharacters: 3, durationMs: 4 })).record?.outcome, 'succeeded');
   assert.equal((await usage.getForUser(old.userId)).attempts, 1);
+  const configured = { ...split, maintenanceLimit: 48 };
+  assert.equal((await usage.reserve(configured, 'corpus_maintenance')).decision, 'lookup');
+  await assert.rejects(usage.reserve({ ...configured, requestFingerprint: agentBudgetFingerprint('unrelated') }, 'corpus_maintenance'), code('attempt_conflict'));
+  const oldOperator = request({ ...old, userId: 'system:knowledge-maintenance', budgetPurpose: undefined });
+  await f.service.reserve(oldOperator, 'corpus_maintenance');
+  assert.equal((await f.service.reserve({ ...oldOperator, userLimit: 48 }, 'corpus_maintenance')).decision, 'lookup');
 });
 
 test('activity counters describe original admissions; a review retry counts once as a model attempt', async () => {
