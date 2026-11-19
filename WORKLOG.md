@@ -6652,3 +6652,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
+
+### 2026-11-19　完成 REQ-002 全量收束對照表、19 項場景映射與需求狀態校準（`codex/req002-acceptance-closeout`）
+
+1）**建立權威收束入口（`PLAN.md#req002-closeout01`、`PLAN.md#agent-search-first`）**：整理主線已合併核心 6 PR（`#600`、`#601`、`#602`、`#606`、`#607`、`#608`）及 `#640`／`#634` 與獨立本地候選分支（`codex/req002-batch-reuse-and-repair` `2ddc0bbf`、`codex/req002-schema-and-metadata-trace` `54029065`、`codex/req002-live-benchmark-and-disconnect` `8e3b72ca`），補全 REQ-002 24 組需求群組矩陣（ID 01–24）、§7.2 全部 19 項驗收場景映射（`S72-01`–`S72-19`）、§6 階段 0–4 校準及 §8 全部 8 項待決事項定案與保留邊界。
+2）**同步校準需求狀態（`docs/REQUIREMENTS_BACKLOG.md`）**：更新索引與 §1「目前狀態」說明，移除過時之「尚未實作」，明確導引至 `PLAN.md#req002-closeout01`，同時嚴格保留真實 `--live` 付費模型基準、原站同步部署與 Android／iOS 實體手機無障礙實機待驗收口徑，不越權宣稱全包完成。
+3）**離線結構測試與 CI 門檻**：新增 `tests/req002-acceptance-closeout.test.ts`（4/4）與離線 CI 腳本（`.github/workflows/req002-acceptance-closeout-offline.yml`、`scripts/ci/verify-req002-acceptance-closeout-offline.sh`，共 22 檔 / 218 cases 與三份嚴格 `tsc --noEmit`）；本階段未推送遠端亦未開設 PR。
