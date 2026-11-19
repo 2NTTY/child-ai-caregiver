@@ -155,8 +155,10 @@ test("presentation and document diagnostics reveal fixed rejection codes without
   const events: AgentDiagnostic[] = [];
   const observer = createAgentObserver({ runId: "synthetic", toolNames: ["present_answer", "read_family_documents"], sink: event => { events.push(event); } });
   observer.recordToolRejection("present_answer", "execution", { status: "rejected", data: { code: "citation_required" } });
+  const mismatch = { status: "rejected", data: { code: "original_quote_mismatch", originalExcerpt: "PRIVATE" } };
+  observer.recordToolRejection("present_answer", "execution", mismatch);
   observer.recordToolRejection("read_family_documents", "schema", { status: "rejected", data: { code: "PRIVATE", hints: [{ input: "PRIVATE" }] } });
   observer.recordToolRejection("read_family_documents", "execution", { status: "rejected", data: { code: "PRIVATE" } });
-  assert.deepEqual(events.map(event => event.code), ["citation_required", "invalid_parameters", "unknown"]);
+  assert.deepEqual(events.map(event => event.code), ["citation_required", "original_quote_mismatch", "invalid_parameters", "unknown"]);
   assert.doesNotMatch(JSON.stringify(events), /PRIVATE/);
 });

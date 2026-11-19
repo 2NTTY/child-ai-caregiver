@@ -53,13 +53,22 @@ import { ACCOUNT_DIRECTORY_ANSWER, CHILD_PROFILES_CHAT_TEXT } from '../src/share
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
 const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
     originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
-      .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'),
+      .describe('Optional. Omit for a paraphrase. To quote a library original, copy a contiguous span exactly as returned, including its conditions and units.'),
     paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(MAX_ANSWER_PARAGRAPHS) });
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
     super(400, 'history_excerpt_mismatch');
     this.quotes = quotes;
+  }
+}
+class OriginalQuoteMismatch extends FamilyError {
+  readonly chunkId: string;
+  readonly originalExcerpt?: string;
+  constructor(chunkId: string, originalExcerpt?: string) {
+    super(400, 'original_quote_mismatch');
+    this.chunkId = chunkId;
+    this.originalExcerpt = originalExcerpt;
   }
 }
 class AttachedClaimNeedsEvidence extends FamilyError {
@@ -533,6 +542,10 @@ export function createProductAgentTools(options: {
         nextAction: '先前的角色發言已保留。請把主回答整合至 ' + discussion.maxMainParagraphs() + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
       } };
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
+        code: error.code, chunkId: error.chunkId, ...(error.originalExcerpt && { originalExcerpt: error.originalExcerpt }),
+        nextAction: '這個片段 ID 有效，但所填引句與已讀原文不符。若主回答是改述，省略 originalQuotes，保留各段的 citationIds。若要逐字引用，只選已讀原句。請刪去原件未支持的推論，再單獨呼叫 present_answer。',
+      } };
       if (error instanceof HistoryExcerptMismatch) return { status: "rejected", data: {
         code: error.code, quoteOptions: error.quotes.map(item => ({ quoteHistory: item.citationIds[0], text: item.text })),
         nextAction: "從 quoteOptions 選能回答問題的原話。用 kind=private_reference 及 paragraphs=[{quoteHistory: 所選識別}]，Server 會代入原句再審核。"
@@ -995,8 +1008,11 @@ export function createProductAgentTools(options: {
           const wire = chatPresentationInput.parse(args);
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
-            if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId))
-              || !citedOriginalSpans(source).some(span => span.includes(quote.text))) throw new FamilyError(400, 'invalid_citation');
+            if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId)))
+              throw new FamilyError(400, 'invalid_citation');
+            const spans = citedOriginalSpans(source);
+            if (!spans.some(span => span.includes(quote.text)))
+              throw new OriginalQuoteMismatch(quote.chunkId, spans.find(span => span.length > 0 && span.length <= 300));
             quotes.set(quote.chunkId, quote.text);
           }
           raw = { kind: wire.kind, paragraphs: wire.paragraphs.map(paragraph => {
