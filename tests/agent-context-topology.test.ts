@@ -7,6 +7,7 @@ import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority, FirestoreAuthorityError } from '../server/firestore-authority.ts';
 import { FirestoreDomainError } from '../server/firestore-domain-data.ts';
+import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
@@ -15,7 +16,7 @@ import { createFirestoreProductAgentStore } from '../server/firestore-product-ag
 import { createProductAgent } from '../server/product-agent.ts';
 import { createAgentRuntime, type AgentRunInput, type AgentRuntimePort } from '../server/agent-runtime.ts';
 import { readAiConfig } from '../server/ai-config.ts';
-import { CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
+import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { selectRecentConversation } from '../server/agent-context-window.ts';
 import { createKnowledgeRetriever } from '../server/knowledge-retriever.ts';
@@ -45,7 +46,7 @@ async function fixture() {
   }
   const childId = await admit('owner');
   function product(runtime: AgentRuntimePort) {
-    return createProductAgent({ runtime, store: services.store, actions: services.actions, chat, memory, tasks: online.tasks,
+    return createProductAgent({ runtime, accountChildren: online.children, store: services.store, actions: services.actions, chat, memory, tasks: online.tasks,
       knowledge: createKnowledgeRetriever({ candidates: async () => { throw new Error('This test must not retrieve knowledge'); } },
         { embed: async () => { throw new Error('This test must not call embeddings'); } }) });
   }
@@ -60,46 +61,69 @@ async function fixture() {
     const u4 = (await chat.createUserMessageForUser('owner', childId, 'Read both omitted original conditions before answering.'))!;
     return { u0, u1, u2, m0, m1, u3, m3, u4 };
   }
-  return { authority, chat, services, childId, admit, product, interleaved };
+  return { options, authority, chat, services, childId, admit, product, interleaved };
 }
 function captureRuntime(consume: (input: AgentRunInput) => void): AgentRuntimePort {
   return { run: async input => { consume(input); return { runId: input.runId!, status: 'stopped', stopReason: 'unavailable', text: null,
     tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } }; } };
 }
 
-test('three successive questions in the same chat can only open the child directory on the listing turn', async () => {
+test('three successive personal questions use only the data needed for each answer', async () => {
   const f = await fixture();
   const turns = [
-    { question: '我有甚麼小孩', answer: null },
-    { question: '我是誰', answer: '你想問帳戶身份，還是我怎樣稱呼你？' },
-    { question: '幫我填寫孩子的資訊', answer: '你想填寫哪位孩子的哪些資料？' },
+    ['我有甚麼小孩', '你帳戶登記了 Synthetic child。'],
+    ['我是誰', '你希望我怎樣稱呼你？'],
+    ['幫我填寫孩子的資訊', '你想填寫哪位孩子的哪些資料？'],
   ];
   const runIds = new Set<string>();
-  for (const [index, turn] of turns.entries()) {
-    const user = await f.chat.createUserMessageForUser('owner', f.childId, turn.question);
+  for (const [index, [question, answer]] of turns.entries()) {
+    const user = await f.chat.createUserMessageForUser('owner', f.childId, question);
     assert.ok(user);
     const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-directory' }),
       usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
-        const decl = JSON.stringify(request.config?.tools ?? []);
-        assert.equal(decl.includes('child_profiles'), index === 0);
-        if (index > 0) assert.ok(!JSON.stringify(request.contents).includes(CHILD_PROFILES_CHAT_TEXT), 'A previous UI shortcut must not instruct the next turn');
-        const args = turn.answer ? { kind: 'clarification', paragraphs: [{ text: turn.answer, citationIds: [] }] }
-          : { kind: 'operation', paragraphs: [{ showView: 'child_profiles' }] };
-        return { finishReason: FinishReason.STOP, content: { role: 'model', parts: [{ functionCall: { id: 'answer', name: 'present_answer', args } }] } };
+        const parts = request.contents.flatMap(content => content.parts ?? []);
+        if (!Object.keys(request.toolsDict).length && parts[0]?.text?.startsWith('{"current":')) {
+          assert.equal(JSON.parse(parts[0]!.text!).current, question);
+          return {finishReason:FinishReason.STOP,content:{role:'model',parts:[{text:index === 0 ? 'READ_DIRECTORY' : 'KEEP_PRIVATE'}]}};
+        }
+        const review = parts.find(part => part.text?.startsWith('Server evidence payload for chat-delivery-review.'))?.text;
+        if (review) {
+          const payload = JSON.parse(review.slice(review.indexOf('\n') + 1));
+          if (index === 0) assert.ok(review.includes('Synthetic child'));
+          return { finishReason: FinishReason.STOP, content: {role:'model', parts:[{text:JSON.stringify({draftHash:payload.draftHash,decision:'pass',issues:[],...(index === 0 ? {observedReadOnly:true} : {})})}]} };
+        }
+        const userTurn = request.contents.findLast(content => content.role === 'user' && content.parts?.some(part => part.text === question));
+        assert.equal((index === 0 ? userTurn?.parts?.[0] : userTurn?.parts?.at(-1))?.text, question, 'the active question is the final text after context');
+        const tools = JSON.stringify(request.config?.tools ?? []);
+        assert.ok(tools.includes('read_account_context'));
+        assert.ok(!tools.includes('child_profiles'));
+        const lookup = parts.find(part => part.functionResponse?.name === 'read_account_context');
+        if (index !== 2 && !lookup) return {finishReason:FinishReason.STOP,content:{role:'model',parts:[{functionCall:{id:'lookup',name:'read_account_context',args:{subject:'children'}}}]}};
+        if (index === 0) assert.ok(JSON.stringify(lookup).includes('Synthetic child'));
+        else if (index === 1) {
+          assert.ok(JSON.stringify(lookup).includes('signed_in_account_holder'));
+          assert.ok(!JSON.stringify(lookup).includes('Synthetic child'));
+        } else assert.ok(!lookup);
+        const args = {kind:index === 0 ? 'private_reference' : 'clarification', paragraphs:[{text:answer,citationIds:index === 0 ? ['workspace:children:1'] : []}]};
+        return {finishReason:FinishReason.STOP,content:{role:'model',parts:[{functionCall:{id:'answer',name:'present_answer',args}}]}};
       } } });
     const result = await f.product(runtime).reply('owner', f.childId, user.id, async () => true);
     assert.equal(result?.status, 'completed', JSON.stringify(result));
     assert.deepEqual(result.proposals, []);
-    assert.deepEqual(result.tools.map(step => step.name), ['present_answer']);
-    assert.equal(result.tools[0].reference === 'child_profiles', index === 0);
-    if (turn.answer) assert.equal(result.text, turn.answer);
-    else assert.match(result.text, /子女檔案/u);
+    assert.deepEqual(result.tools.map(step => step.name), index !== 2 ? ['read_account_context','present_answer'] : ['present_answer']);
+    if (index === 1) assert.equal(result.tools[0]?.reference,'speaker');
+    assert.equal(result.text, answer);
     runIds.add(result.runId);
-    const history = await f.chat.listForUser('owner', f.childId);
-    if (!history?.messages.some(row => row.role === 'model' && row.inReplyTo === user.id))
-      await f.chat.createModelMessageForUser('owner', f.childId, user.id, result.text);
+    await f.chat.createModelMessageForUser('owner', f.childId, user.id, index === 0 ? ACCOUNT_DIRECTORY_ANSWER : answer);
   }
   assert.equal(runIds.size, 3);
+  const exporter = createFirestoreAccountExport({...f.options, photos:{async content(){throw Error('Unexpected photo read');}}});
+  const chatPage = await exporter.page('owner', {section:'chat',childId:f.childId});
+  assert.ok(JSON.stringify(chatPage.items).includes(ACCOUNT_DIRECTORY_ANSWER));
+  assert.ok(!JSON.stringify(chatPage.items).includes('Synthetic child'));
+  const runs = await exporter.page('owner', {section:'agent_runs',childId:f.childId});
+  assert.equal(runs.items.length, 2);
+  assert.ok(!JSON.stringify(runs.items).includes('Synthetic child'));
 });
 
 test('provider receives every omitted prompt and reads both through the authorized native history tools', async () => {

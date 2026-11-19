@@ -124,7 +124,7 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
 
   // Scenario A: save_ordinary_record followed by record_restatement passes review via verifiedOperations.
   {
-    let step = 0, saved: ProductAgentResult | null = null, reviewPayload: { draftHash: string; verifiedOperations?: Array<{ kind: string; tool: string; recordKind?: string; summary?: string }> } | null = null, firstUserText = "";
+    let step = 0, saved: ProductAgentResult | null = null, reviewPayload: { draftHash: string; verifiedOperations?: Array<{ kind: string; tool: string; recordKind?: string; summary?: string }> } | null = null;
     const receipt = {
       id: randomUUID(), runId, kind: "save_record" as const,
       resource: { kind: "care_record" as const, id: randomUUID(), version: 1 },
@@ -137,7 +137,8 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
         async generate(request) {
           step++;
           const userText = request.contents.flatMap(c => c.parts ?? []).map(p => p.text ?? "").join("\n");
-          if (step === 1) firstUserText = userText;
+          if (step === 1) assert.ok(request.config?.tools?.some(tool =>
+            'functionDeclarations' in tool && tool.functionDeclarations?.some(fn => fn.name === 'load_capabilities')));
           if (userText.includes("chat-delivery-review")) {
             reviewPayload = JSON.parse(userText.slice(userText.indexOf("{")));
             assert.equal(reviewPayload!.verifiedOperations?.length, 1);
@@ -187,7 +188,6 @@ test("ordinary action policy, verified operation receipts, mixed pending revisio
       knowledge: { createRun: () => ({ revalidateCitations: async () => true }) } as never,
     });
     const result = await service.reply(scope.userId, childId, messageId, async () => true);
-    assert.match(firstUserText, /load_capabilities/u);
     assert.equal(result?.status, "completed");
     assert.equal(result?.deliveryReview?.decision, "pass");
     assert.match(result!.text, /120ml 配方奶/);

@@ -1,3 +1,5 @@
+import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
+import { displayAccountMessage, usedAccountDirectory } from './agent-account-directory.ts';
 import { agentStopMessage } from "../src/shared/agent-stop-message.ts";
 import { agentFeedbackStream } from './agent-feedback-stream.ts';
 import type { AgentProgress } from '../src/shared/agent-feedback.ts';
@@ -72,7 +74,8 @@ export async function handleProductAgentRequest(request: Request, userId: string
           !await options.chat.getOriginalMessageForUser(userId, childId, message.id, 'memory'))
           return apiError("source_changed", "這則回覆的來源已變，請核對目前資料。", 409);
         await options.store.bindConfirmationQuestion?.(userId, childId, message.id);
-        return await options.isCurrentUser(userId) ? jsonResponse({ message }) : apiError("unauthorized", "存取權已改變。", 401);
+        const displayed = await displayAccountMessage(message, userId, (u, c, id) => options.store.get(u, c, id));
+        return await options.isCurrentUser(userId) ? jsonResponse({ message: displayed }) : apiError("unauthorized", "存取權已改變。", 401);
       };
       if (old) return await deliverSaved(old);
       const execute = async (publish?: (event: AgentProgress) => void): Promise<Response> => {
@@ -93,7 +96,7 @@ export async function handleProductAgentRequest(request: Request, userId: string
         const reason = result.status === "stopped" || result.status === "unknown"
           ? (agentStopMessage(result.stopReason) ?? (result.status === "unknown" ? "未能確認結果" : "未能完成回覆"))
           : null;
-        const text = reason ? `這次回覆未完成：${reason}。\n\n${content}` : content;
+        const text = result.status === 'completed' && usedAccountDirectory(result) ? ACCOUNT_DIRECTORY_ANSWER : reason ? `這次回覆未完成：${reason}。\n\n${content}` : content;
         const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
         const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
         if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);

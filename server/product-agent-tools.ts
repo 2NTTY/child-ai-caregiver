@@ -46,19 +46,14 @@ import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 import { citedOriginalSpans } from '../src/shared/knowledge.ts';
-import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView, type ChatWorkspaceView } from '../src/shared/chat-workspace-view.ts';
+import { currentTurnNeedsDirectory, readDirectoryPage, directoryPageReference, directoryPagesCurrent, type AccountDirectory } from './agent-account-directory.ts';
+import { ACCOUNT_DIRECTORY_ANSWER, CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
 
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
-function personalPresentationSchema(view: ChatWorkspaceView | null) {
-  const answerParagraph = agentAnswerSchema.shape.paragraphs.element;
-  const paragraph = view
-    ? z.union([answerParagraph, historyQuoteParagraph, z.strictObject({ showView: z.enum([view]).describe('Display this view alone with kind=operation.') })])
-    : z.union([answerParagraph, historyQuoteParagraph]);
-  return z.strictObject({ kind: agentAnswerSchema.shape.kind,
+const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
     originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
       .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'),
-    paragraphs: z.array(paragraph).min(1).max(6) });
-}
+    paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(6) });
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -139,6 +134,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  accountChildren?: AccountDirectory;
   registeredSourceCards?: AgentSourceCards;
   platformLibrary?: import('./agent-registered-source-tools.ts').AgentPlatformLibrary;
   registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
@@ -250,9 +246,10 @@ export function createProductAgentTools(options: {
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
-  const allowedView = options.currentMessageId && options.conversationWindow ? requestedWorkspaceView(options.trustedUserMessage) : null;
-  const chatPresentationInput = personalPresentationSchema(allowedView);
-  let selectedView: ChatWorkspaceView | null = null;
+  const workspaceEvidence = new Set<string>();
+  const directoryReads = new Set<string>();
+  const directoryCursors = new Map<number, string | null>([[1, null]]);
+  const privateConversation = !!options.currentMessageId && !options.background && options.visibility !== 'family' && !options.mixedTasks;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
   function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
@@ -457,6 +454,12 @@ export function createProductAgentTools(options: {
       const source = deliverySource(id, quotes);
       if (source) sources.push(source);
     }
+    // A reviewer may need an observed roster or window even when the writer omitted an inline citation.
+    if (!sources.length) for (const id of workspaceEvidence) {
+      if (id === 'workspace:speaker') continue;
+      const source = selectedEvidence.get(id);
+      if (source) sources.push(source);
+    }
     if (isMemoryRestatementAnswer(value) || memoryGrounding.size > 0) {
       for (const { fact, source } of memoryGrounding.values()) {
         if (usableMemoryFact(fact) && value.paragraphs.some(paragraph => memoryFactReferencedByParagraph(fact.content, paragraph.text))) {
@@ -527,6 +530,8 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
+      if (error instanceof FamilyError && error.code === 'citation_required' && workspaceEvidence.size && !hasOfficialEvidence && !selectedOfficialHelp.size)
+        return { status: 'rejected', data: {code:error.code, availablePrivateCitations:[...workspaceEvidence], nextAction:'本人名冊及對話範圍屬私人資料。按問題使用 kind=private_reference 和實際讀到的 citationId 回答；另有照護建議才需另查官方依據。'} };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.has("emergency-hk-v1")
@@ -548,7 +553,7 @@ export function createProductAgentTools(options: {
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
-    if (parsed.paragraphs.some(paragraph => paragraph.text.trim() === CHILD_PROFILES_CHAT_TEXT)) {
+    if (parsed.paragraphs.some(paragraph => [CHILD_PROFILES_CHAT_TEXT, ACCOUNT_DIRECTORY_ANSWER].includes(paragraph.text.trim()))) {
       throw new FamilyError(400, 'invalid_input');
     }
     const citedLocations = new Set(parsed.paragraphs.flatMap(p => p.citationIds).filter(id => accountReadings.has(id)));
@@ -651,7 +656,61 @@ export function createProductAgentTools(options: {
       classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
       excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
   }
-  const tools: AgentTool[] = [
+  function registerWorkspaceEvidence(id: string, data: Record<string, unknown>) {
+    const json = JSON.stringify(data);
+    workspaceEvidence.add(id);
+    selectedEvidence.set(id, { citationId: id, version: '1', contentHash: chatDeliveryContentHash(json),
+      classification: 'private', ...chatDeliveryReviewSourceExcerpt(json) });
+    return { ...data, citationId: id, evidenceType: 'private_reference',
+      presentation: { kind: 'private_reference', citationIds: [id] } };
+  }
+  const tools: AgentTool[] = [];
+  if (privateConversation && options.accountChildren) {
+    const directory = options.accountChildren;
+    let permittedForMessage: Promise<boolean> | undefined;
+    tools.push({ name: 'read_account_context', effect: 'read',
+      description: '查閱當前提問所需的帳戶資料：speaker 為正在說話的本人，children 為本人帳戶的孩子名冊。兩者不同。只有需要辨認孩子或了解名冊才選 children。可續頁。',
+      parameters: z.strictObject({subject:z.enum(['speaker','children']), page:z.number().int().min(1).optional()}), authorize: permitted,
+      async execute(args) {
+        if (!await permitted()) throw new AgentStopped('unauthorized');
+        const speaker = () => ({status:'succeeded' as const,reference:'speaker',data:{result:registerWorkspaceEvidence('workspace:speaker',
+          {subject:'speaker',role:'signed_in_account_holder',personalNameProvided:false})}});
+        if (args.subject === 'speaker') return speaker();
+        permittedForMessage ??= currentTurnNeedsDirectory(run, options.currentMessageId!, options.trustedUserMessage ?? '');
+        if (!await permittedForMessage) {
+          const result = speaker();
+          return {...result,data:{...result.data,scope:'speaker_only',nextAction:'回應當前訊息即可。若要填資料而欠對象及內容，直接問需要哪位和哪些內容，等家長回答。'}};
+        }
+        let reference: string | undefined;
+        const response = await guard(async () => {
+          if (!await permitted()) throw new AgentStopped('unauthorized');
+          const page = (args.page ?? 1) as number;
+          if (!directoryCursors.has(page)) throw new FamilyError(400, 'invalid_cursor');
+          const data = await readDirectoryPage(directory, scope.userId, directoryCursors.get(page));
+          if (!await permitted()) throw new AgentStopped('unauthorized');
+          reference = directoryPageReference(page, data);
+          directoryReads.add(reference);
+          if (data.nextCursor) directoryCursors.set(page + 1, data.nextCursor);
+          const children = data.children.map(({ id, displayName }) => {
+            noteKnownPrivateIdentifier(displayName);
+            return { displayName, selected: id === scope.childId };
+          });
+          return registerWorkspaceEvidence('workspace:children:' + page, { resource: 'signed_in_account_child_directory', children, page, countOnPage: children.length, nextPage: data.nextCursor ? page + 1 : null });
+        });
+        return response.status === 'succeeded' ? { ...response, reference } : response;
+      } });
+  }
+  if (privateConversation && options.conversationWindow) {
+    const window = options.conversationWindow;
+    tools.push({ name: 'read_conversation_window', effect: 'read',
+      description: '按需讀取本輪帶入多少則聊天訊息、是否涵蓋完整歷史。這是助手的輸入範圍；想找回一件事可再讀相關歷史。以 private_reference 引用 citationId。',
+      parameters: z.strictObject({}), authorize: permitted,
+      execute: () => guard(async () => {
+        if (!await permitted()) throw new AgentStopped('unauthorized');
+        return registerWorkspaceEvidence('workspace:conversation', window);
+      }) });
+  }
+  tools.push(
     { name: 'show_official_help', effect: 'read',
       description: '按本次語義顯示固定官方提示：即時危險用 emergency-hk-v1；診斷或用藥判斷用 medical-consult-hk-v1。一般飲食／睡眠／發展不顯示。不是分診或外發；也不用要求家長確認。返回的 fixedOfficialCard 只是畫面卡 ID，切勿填入 citationIds。重要：必須先單獨呼叫 show_official_help 等待結果（絕不可與 present_answer 同批呼叫，否則會觸發批次回合失敗！）；拿到結果後，若選取了 emergency-hk-v1 且沒有適用 search_knowledge 官方片段，下一輪只需單獨呼叫 present_answer({ kind: "operation", paragraphs: [{ text: "請先使用畫面上的緊急求助入口。", citationIds: [] }] })，一字不改，勿自撰發燒或用藥文字。',
       parameters: z.object({ card: officialHelpIdSchema }).strict(), authorize,
@@ -887,7 +946,7 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；帳戶名冊或對話範圍的讀取結果會帶 presentation.kind 和 citationIds，用它們配上你自己撰寫的正文。回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
@@ -898,18 +957,6 @@ export function createProductAgentTools(options: {
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
           const wire = chatPresentationInput.parse(args);
-          const view = wire.paragraphs.find(p => 'showView' in p);
-          if (view && 'showView' in view) {
-            if (!options.conversationWindow || view.showView !== allowedView || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
-              throw new FamilyError(400, 'invalid_input');
-            if (!await permitted()) throw new AgentStopped('unauthorized');
-            selectedView = view.showView;
-            const window = options.conversationWindow;
-            const text = view.showView === 'child_profiles' ? CHILD_PROFILES_CHAT_TEXT
-              : `這次對話帶入了 ${window.messages} 則訊息（包括你的問題）。${window.complete ? '' : '較早的內容可按需要查回。'}你想核對助手忘了哪件事，還是想問孩子的記憶情況？`;
-            answer = { kind: 'operation', paragraphs: [{ text, citationIds: [] }] };
-            return { acceptedForValidation: true };
-          }
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
             if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId))
@@ -917,10 +964,18 @@ export function createProductAgentTools(options: {
             quotes.set(quote.chunkId, quote.text);
           }
           raw = { kind: wire.kind, paragraphs: wire.paragraphs.map(paragraph => {
-            if ('showView' in paragraph) throw new FamilyError(400, 'invalid_input');
             if (!('quoteHistory' in paragraph)) {
-              if ((paragraph.kind ?? wire.kind) !== 'private_reference') return paragraph;
-              return { ...paragraph, citationIds: paragraph.citationIds.map(resolveChatCitation) };
+              const kind = paragraph.kind ?? wire.kind;
+              // The storage service owns the visibility of a cited source, regardless of the writer's label.
+              const observedOnly = workspaceEvidence.size > 0 && selectedEvidence.size === workspaceEvidence.size
+                && !privateSources?.evidence.size && !evidence.size && !liveEvidence.size;
+              const citesWorkspace = paragraph.citationIds.length > 0 && paragraph.citationIds.every(id => workspaceEvidence.has(id));
+              if (kind !== 'private_reference' && !(kind === 'public_information' && (citesWorkspace || observedOnly && !paragraph.citationIds.length))) return paragraph;
+              // A directory/window read is an observed input of this run. Bind it for independent review
+              // when a private answer omits citation IDs and no other private read competes with it.
+              const ids = paragraph.citationIds.length === 0 && observedOnly && workspaceEvidence.size <= 6
+                ? [...workspaceEvidence] : paragraph.citationIds.map(resolveChatCitation);
+              return { ...paragraph, kind: 'private_reference', citationIds: ids };
             }
             const source = selectedEvidence.get(resolveChatCitation(paragraph.quoteHistory));
             if (!['mixed', 'private_reference'].includes(wire.kind) || !source?.citationId.startsWith('chat:') ||
@@ -966,12 +1021,11 @@ export function createProductAgentTools(options: {
           originalQuotes = quotes;
         }
         answer = parsed;
-        selectedView = null;
         serverReceiptText = null;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
-      }).then(response => response.status === 'succeeded' && selectedView ? { ...response, reference: selectedView } : response) },
-  ];
+      }) },
+  );
 
   if (options.photos && run.images && !options.background && options.visibility !== 'family') tools.splice(tools.length - 1, 0,
     { name: 'list_chat_photos', effect: 'read', description: '分頁查看本人在目前孩子的附件庫照片 metadata；只列出不等於已讀原圖。需要內容時用 read_chat_photo，勿從檔名猜測。',
@@ -1241,11 +1295,8 @@ export function createProductAgentTools(options: {
     async presentation(): Promise<AgentPresentation | null> {
       serverReceiptText = null;
       if (!answer) return null;
-      if (selectedView) {
-        if (selectedView !== allowedView) throw new FamilyError(400, 'invalid_input');
-        if (!await permitted()) throw new AgentStopped('unauthorized');
-        serverReceiptText = answer.paragraphs[0]!.text;
-        return { text: serverReceiptText, citations: [], retrievalMode: 'not_used' };
+      if (directoryReads.size && (!options.accountChildren || !await directoryPagesCurrent(options.accountChildren, scope.userId, directoryReads))) {
+        throw new AgentStopped('delivery_review_incomplete');
       }
       if (answer.kind === "no_action") {
         if (!options.background || contactReference || !await authorize()) throw new AgentStopped("unauthorized");
@@ -1320,6 +1371,7 @@ export function createProductAgentTools(options: {
         if (household) return household.label;
         const index=careReferences.findIndex(reference=>reference.citationId===id);
         if (index!==-1) return `[照護記錄 ${index+1}]`;
+        if (workspaceEvidence.has(id)) return '';
         if (selectedEvidence.has(id)) return id.startsWith('care:') ? '[查詢範圍]' : '[待辦資料]';
         if (privateSources?.evidence.has(id)) return `[私人來源 ${privateSourceCitations.findIndex(item=>item.citationId===id)+1}]`;
         return `[${citations.findIndex(item=>item.chunk.chunkId===id)+1}]`;
@@ -1328,7 +1380,8 @@ export function createProductAgentTools(options: {
         // Only labels appended from reviewed IDs should become interactive care links.
         const text=paragraph.text.replace(/\[(照護記錄|孩子資料) (\d+)\]/gu,(mark,kind,ordinal)=>
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
-        return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
+        const labels = paragraph.citationIds.map(citationLabel).join('');
+        return labels ? text + ' ' + labels : text;
       }).join('\n\n');
       // Some private readers (chat history, selected records) expose a citation only
       // during presentation. Count revalidated selected originals, never inventory labels.
@@ -1423,7 +1476,6 @@ export function createProductAgentTools(options: {
       const parsed = agentAnswerSchema.parse(next);
       acceptPresentedAnswer(parsed);
       answer = parsed;
-      selectedView = null;
       serverReceiptText = null;
     },
   };
