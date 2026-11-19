@@ -53,6 +53,7 @@ export type GrowthArchiveSection = {
   title: string; entries: GrowthArchiveEntry[];
 };
 export type GrowthArchiveSnapshot = {
+  document?: { id: string; version: number };
   id: string; version: number; title?: string; ageLabel: string; periodLabel: string; generatedAt: string;
   sourceBasisVersion: string; coverageNote: string;
   revisionChanges: {id: string; text: string; sourceIds: string[]}[];

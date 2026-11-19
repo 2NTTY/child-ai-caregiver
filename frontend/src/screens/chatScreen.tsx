@@ -274,6 +274,14 @@ function ChatContents({ compact, onPaneLayout }: {
           phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
+            {message.role === 'user' && message.pageContext?.item && (message.pageContext.item.kind === 'document'
+              ? <Text style={styles.meta}>提問時所選的文件 · 版本 {message.pageContext.item.version}</Text>
+              : <ChatAction compact={compact} label={message.pageContext.item.kind === 'task' ? '查看提問時所選的待辦' : '查看提問時所選的記錄'}
+                  onPress={() => {
+                    const item = message.pageContext?.item;
+                    if (item?.kind === 'task') navigate(() => router.push({ pathname: '/tasks', params: { taskId: item.id } }), 'workspace');
+                    if (item?.kind === 'record') navigate(() => router.push({ pathname: '/care', params: { recordId: item.id } }), 'workspace');
+                  }} />)}
             {message.photo?<ChatPhotoMessage key={`${scopeKey}:${message.photo.id}`} photo={message.photo}/>:null}
             {message.file?<ChatFileMessage messageId={message.id} file={message.file}/>:null}
             {message.voice?<VoiceMessage messageId={message.id} voice={message.voice}/>:null}

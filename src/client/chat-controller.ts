@@ -1,3 +1,5 @@
+import type { ChatSendOptions } from '../shared/chat.ts';
+import { sameChatPageContext, type ChatPageContext } from '../shared/chat-page-context.ts';
 import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
@@ -18,6 +20,8 @@ type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" |
 export interface ChatDraft {
   text: string;
   nextText?: string;
+  pageContext?: ChatPageContext;
+  retryOriginalSelection?: boolean;
   file?: Pick<ChatFileMessageReference,"id"|"version">;
   voice?: Pick<VoiceMessageReference,"id"|"version">;
   photo?: Pick<PhotoMessageReference,"id"|"version">;
@@ -116,6 +120,7 @@ function childAccessDenied(error: unknown): boolean {
 }
 
 function saveErrorMessage(error: unknown): string {
+  if (error instanceof ChatApiError && error.onlineCode === 'selected_item_changed') return '所選項目已更新或無法讀取。請重開詳情再送出。';
   if (error instanceof ChatApiError && error.code === "invalid_input") return CHAT_CLIENT_COPY.saveInvalidInput;
   if (error instanceof ChatApiError && error.code === "not_found") return CHAT_CLIENT_COPY.saveNotFound;
   return CHAT_CLIENT_COPY.saveFailed;
@@ -469,7 +474,7 @@ export class ChatController {
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
         const matches = authoritativePage.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
-          && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
+          && sameChatPageContext(item.pageContext, draft.pageContext) && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
             notice: "找到一則相同原文的新訊息。請核對下方聊天記錄，確認是否屬於這次提交。" });
@@ -816,7 +821,7 @@ export class ChatController {
     this.updateDraft(childId,{photo:undefined});return true;
   }
 
-  async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<void> {
+  async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">, options: ChatSendOptions = {}): Promise<void> {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt || this.state.remoteReply?.status === "running" && !this.state.messages.some(item => item.role === "model" && item.inReplyTo === this.state.remoteReply?.messageId)) return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
@@ -826,6 +831,7 @@ export class ChatController {
       return;
     }
     const text = normalizeChatInput(draft.text);
+    const pageContext = draft.retryOriginalSelection ? draft.pageContext : options.pageContext;
     const attachments = [draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo].filter(Boolean);
     if (attachments.length > 1 || !text.trim() && attachments.length === 0 || draft.text.length > 10_000) {
       this.updateDraft(childId, { notice: "請輸入 1 至 10,000 個字元的訊息。" });
@@ -836,9 +842,9 @@ export class ChatController {
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
-      this.updateDraft(childId, { text, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
+      this.updateDraft(childId, { text, pageContext, retryOriginalSelection: false, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo);
+      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo, pageContext);
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
@@ -919,7 +925,7 @@ export class ChatController {
   unlockCheckedSave(): void {
     const childId = this.state.selectedChildId;
     if (!childId || this.state.busy || this.state.drafts[childId]?.phase !== "checked") return;
-    this.updateDraft(childId, { phase: "draft", savedUserMessageId: null, candidateMessageId: null, knownIds: [],
+    this.updateDraft(childId, { phase: "draft", retryOriginalSelection: true, savedUserMessageId: null, candidateMessageId: null, knownIds: [],
       notice: "可重試原訊息；請保留原文，系統會先核對原操作，毋須另建重複訊息。" });
   }
 
@@ -931,6 +937,7 @@ export class ChatController {
     if (draft?.phase !== "checked" || !messageId) return;
     const candidate = this.state.messages.find(item => item.id === messageId && item.role === "user"
       && item.authorUserId === this.state.userId && item.text === draft.text
+      && sameChatPageContext(item.pageContext, draft.pageContext)
       && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version);
     if (!candidate) return;
     const replied = this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId);

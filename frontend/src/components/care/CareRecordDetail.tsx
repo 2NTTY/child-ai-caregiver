@@ -1,3 +1,4 @@
+import { useSavedPageItem } from '../companion/CompanionSelection';
 import { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -41,6 +42,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, reading = f
   detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; reading?: boolean; active?: boolean; onReturnToList?(): void; revealIntent?: string | number | null; revealEligible?: boolean;
 }) {
   const { record } = detail;
+  useSavedPageItem('record', record.childId, record.id, record.current.version, active);
   const headingRef = useRef<View>(null);
   const [expanded, setExpanded] = useState({recordId: record.id, provenance: false, history: true});
   const provenanceOpen = expanded.recordId === record.id && expanded.provenance;

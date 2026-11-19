@@ -2,7 +2,8 @@ import type { DocumentPage, DocumentSnapshot, FamilyDocument } from "../../../sr
 import type { GrowthArchiveProjection, GrowthArchiveSnapshot } from "../growth-view-model";
 
 const snapshotKey = (snapshot: DocumentSnapshot) => snapshot.id + ":" + snapshot.version;
-const reportSnapshot = (snapshot: DocumentSnapshot): GrowthArchiveSnapshot => ({
+const reportSnapshot = (snapshot: DocumentSnapshot, doc: FamilyDocument): GrowthArchiveSnapshot => ({
+  document: { id: doc.id, version: doc.version },
   id: snapshot.id, version: snapshot.version, title: snapshot.title, ageLabel: snapshot.ageLabel,
   periodLabel: snapshot.period.from + " 至 " + snapshot.period.to, generatedAt: snapshot.generatedAt,
   sourceBasisVersion: snapshot.sourceBasis, coverageNote: snapshot.coverageNote,
@@ -25,8 +26,11 @@ export function projectFamilyDocumentArchive(input: {
   const standard = reports.find(item => item.purpose === "family" && item.status === "active" && item.report?.mode === "living")
     ?? reports.find(item => item.purpose === "family" && item.status === "active") ?? null;
   const readableReports = reports.filter(item => item.readState !== "invalidated");
-  const snapshots = Array.from(new Map(readableReports.flatMap(item => [...(item.current ? [item.current] : []), ...item.history]).map(snapshot => [snapshotKey(snapshot), snapshot])).values());
-  const projectedSnapshots = snapshots.map(reportSnapshot), currentSnapshot = standard?.readState !== "invalidated" && standard?.current ? reportSnapshot(standard.current) : null;
+  const owners = new Map(readableReports.flatMap(item => [...(item.current ? [item.current] : []), ...item.history]
+    .map(snapshot => [snapshotKey(snapshot), { item, snapshot }] as const)));
+  const snapshots = Array.from(owners.values(), entry => entry.snapshot);
+  const projectedSnapshots = Array.from(owners.values(), ({ item, snapshot }) => reportSnapshot(snapshot, item));
+  const currentSnapshot = standard?.readState !== "invalidated" && standard?.current ? reportSnapshot(standard.current, standard) : null;
   const archive: Omit<GrowthArchiveProjection, "reading"> = { scopeKey, childId, authorityVersion: visible?.authorityVersion ?? "",
     state: lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.report?.phase === "building" ? "generating" : standard?.readState === "invalidated" && !projectedSnapshots.length ? "invalidated"
       : standard?.readState === "stale" ? "needs_update" : currentSnapshot || projectedSnapshots.length ? "ready" : "not_generated",

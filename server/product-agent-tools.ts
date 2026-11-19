@@ -170,6 +170,7 @@ export function createProductAgentTools(options: {
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
   trustedUserMessage?: string;
+  readCurrentPageItem?: () => Promise<unknown>;
   conversationWindow?: { messages: number; complete: boolean };
   currentMessageId?: string;
   recentQuoteSources?: ChatMessage[];
@@ -733,7 +734,7 @@ export function createProductAgentTools(options: {
         const allowance = Math.max(0, budget.toolResponseCharacters - 512);
         const loaded = options.visibility === "family" ? null : uncoveredConversation(sourceContext, allowance);
         const growth = options.growth ? await options.growth.list(scope.userId,scope.childId) : null;
-        const metadata = { operationPolicy: options.visibility !== "family" && options.actions ? await options.actions.policy(scope.userId, scope.childId) : null,
+        const metadata = { ...(options.readCurrentPageItem ? { selectedItem: await options.readCurrentPageItem() } : {}), operationPolicy: options.visibility !== "family" && options.actions ? await options.actions.policy(scope.userId, scope.childId) : null,
           growth: growth ? {items:growth.items.map(item=>({id:item.id,topicId:item.topicId,state:item.state,sourceAvailable:item.sourceAvailable,taskId:item.taskId,taskState:item.taskState})),disabledTopics:growth.topics.filter(topic=>topic.disabled).map(topic=>topic.id)} : null,
           profile: context.profileApplicable ? context.profile : null,
           facts: [...context.facts], factsPartial: context.truncated.facts, nextFactsAfterId: context.nextFactsAfterId ?? null,

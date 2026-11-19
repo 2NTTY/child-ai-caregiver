@@ -1,3 +1,4 @@
+import { useSavedPageItem } from '../companion/CompanionSelection';
 import { DateTime } from "luxon";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
@@ -10,6 +11,7 @@ import { TaskSnapshot, TaskSnapshotMetadata, TaskWorkerMetadata, taskAssigneeLab
 
 export function TaskDetail({ model, actions, hideCloseAction = false }: { model: TasksViewModel; actions: TasksActions; hideCloseAction?: boolean }) {
   const task = model.selected!;
+  useSavedPageItem('task', task.childId, task.id, task.version, !model.draft);
   const compactHeader = useWindowDimensions().width < 650;
   const locked = model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state);
   const writable = model.access === "editable" && !locked;
