@@ -1603,3 +1603,11 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+### REQ-008：高風險照護審核觸發政策定案與審核分支收斂（`codex/req008-highrisk-policy-and-cleanup`）
+
+- **對應需求**：REQ-008 §3.3（高風險照護內容安全邊界與正式可測審核觸發政策）、§8 階段 4（清理過時／失效審核分支並保留真實短路徑）。
+- **核心設計與邊界**：
+  - 於 `server/chat-delivery-review-policy.ts` 新增並鎖定版本化政策（`HIGH_RISK_CARE_POLICY_VERSION = "req008-highrisk-care-policy/1"`），透過 `detectHighRiskCareClaims` 涵蓋四大高風險兒科類別（用藥及劑量 `medication_dosing`、急症分流及居家急救風險 `emergency_triage_safety`、嬰兒禁忌及飲食安全 `infant_safety_restriction`、免就醫保證／診斷定論／擅停處方或疫苗 `clinical_directive_diagnosis`），並提供 `evaluateHighRiskPolicyMatrix` 對漏判、誤判、類別歸因、官方來源要求及受控短路徑豁免進行量化矩陣校準（28 宗標註情境全過，0 漏判／0 誤判）。
+  - 於 `server/chat-delivery-review.ts` 新增無副作用之權威政策評估入口 `evaluateChatDeliveryReviewPolicy`，統一收斂引用義務、高風險類別、媒介原件、操作收據、單調黏性義務（`obligation.required`）與六類受控短路徑豁免（`server_substituted_source`、`server_substituted_receipt`、`server_allowlisted_emergency_entry`、`pure_greeting`、`pure_clarification`、`ordinary_uncited_non_care`）；並強化多段混合草稿隔離（第 0 段官方引用不得掩護未引用高風險段落）及整理過時草稿註解；同時完整避開並行待機合併之交付與追蹤改動區段。
+- **離線驗證範圍與限制**：於獨立本地工作樹完成 `tests/req008-highrisk-policy-and-cleanup.test.ts`（9 項）連同 12 份關聯回歸測試共 13 份受網絡守衛隔離測試（195 項案例，0 失敗／0 跳過）及三份嚴格 `tsc --noEmit` 型別檢查，並備妥 `.github/workflows/req008-highrisk-policy-and-cleanup-offline.yml` 與 `scripts/ci/verify-req008-highrisk-policy-and-cleanup-offline.sh`；未執行真實 Gemini／Vertex `--live` 調用、未連接實體資料庫，本分支維持僅於本地提交而未推送遠端。

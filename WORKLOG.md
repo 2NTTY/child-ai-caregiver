@@ -6652,3 +6652,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
+
+### 2026-11-19　REQ-008 §3.3 高風險照護審核觸發政策定案與分支清理（`codex/req008-highrisk-policy-and-cleanup`）
+
+1）**正式高風險照護政策模組與校準矩陣（`server/chat-delivery-review-policy.ts`）**：建立 `HIGH_RISK_CARE_POLICY_VERSION = "req008-highrisk-care-policy/1"`，實作 `detectHighRiskCareClaims`（覆蓋兒童用藥劑量含保嬰丹／七星茶／退熱栓劑／類固醇藥膏、急症窒息／抽搐／燙傷搽牙膏／吞電池催吐、蜂蜜／趴睡／火酒／禁食禁飲／新生兒加鹽、以及保證無大礙／不用睇醫生／停用抗生素／不用打疫苗）與 `evaluateHighRiskPolicyMatrix`，同時確保「照片顯示傷口已經癒合？」、「寶寶今日飲了 120 ml 奶。」及純問候／澄清／一般非照護回覆維持原有受控短路徑。
+2）**交付審核分支收斂與多段隔離（`server/chat-delivery-review.ts`）**：透過 `evaluateChatDeliveryReviewPolicy` 統一 `requiresChatDeliveryReview` 判定順序與明確理由碼，阻止問句／禮貌語／拒答／待確認／已確認操作收據夾帶高風險主張繞過，補上單段獨立官方來源核對（防已引用段落掩護未引用高風險段），清理過時工程註解並確認棄用標記 `serverVerifiedMemoryGrounding` 維持無效。
+3）**離線測試與型別檢查（`tests/req008-highrisk-policy-and-cleanup.test.ts`、`scripts/ci/verify-req008-highrisk-policy-and-cleanup-offline.sh`）**：13 份受網絡守衛測試檔案共 195 項案例（含新建 9 項規則、反繞過、28 宗校準矩陣、受損審核員 fail-closed 及端到端 Runner 測試）全數通過 `summary-progress-contract.mjs`，`tsconfig.server.json`、`tsconfig.json` 與 `frontend/tsconfig.json` 三項嚴格 `--noEmit` 通過；僅本地驗證與提交，未執行 `--live` 或推送遠端。
