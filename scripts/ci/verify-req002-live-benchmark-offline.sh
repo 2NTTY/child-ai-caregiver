@@ -52,8 +52,26 @@ TEST_FILES=(
   tests/chat-delivery-review.test.ts
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
+  tests/req002-schema-and-trace.test.ts
+  tests/req002-trace-settlement.test.ts
+  tests/initial-conversation-summary.test.ts
+  tests/agent-observer.test.ts
+  tests/agent-model-gateway.test.ts
+  tests/personal-compatible-provider.test.ts
+  tests/data-compose.test.ts
+  tests/background-knowledge-model.test.ts
+  tests/knowledge-pdf-windows.test.ts
+  tests/agent-durable-budget.test.ts
+  tests/p2-a06-background-scope.test.ts
+  tests/p2-a06-continuation.test.ts
+  tests/confirmed-fact-recall.test.ts
+  tests/req002-batch-reuse-and-repair.test.ts
+  tests/req002-reuse-policy.test.ts
+  tests/req002-mixed-repair.test.ts
+  tests/chat-workspace-view.test.ts
+  tests/agent-context-topology.test.ts
 )
-TEST_CASES=(6 9 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
+TEST_CASES=(6 9 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8 13 4 6 4 18 3 14 7 2 4 1 2 3 10 9 3 1 4)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

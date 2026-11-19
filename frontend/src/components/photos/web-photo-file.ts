@@ -1,3 +1,4 @@
+import type { PhotoOriginal } from "../../photo-view-model";
 import { PHOTO_LIMITS } from "../../../../src/shared/photos.ts";
 
 const maxBytes = PHOTO_LIMITS.bytes;
@@ -32,4 +33,22 @@ export async function prepareWebPhoto(file: File): Promise<File> {
   } catch {
     throw new Error("未能在此瀏覽器將 HEIC 轉為 4 MiB 內的 JPEG。請在相片 App 匯出 JPEG／PNG 後重選；原有草稿保留。");
   } finally { image.onload = null; image.onerror = null; image.src = ""; URL.revokeObjectURL(uri); }
+}
+
+export async function readWebPhotoOriginal(file: File): Promise<PhotoOriginal> {
+  file = await prepareWebPhoto(file);
+  if (!globalThis.crypto?.subtle) throw new Error("File integrity unavailable");
+  const buffer = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  const uri = URL.createObjectURL(file);
+  return { fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png", bytes: file.size,
+    sha256: [...new Uint8Array(hash)].map(value => value.toString(16).padStart(2, "0")).join(""), imageSource: { uri },
+    dispose: () => URL.revokeObjectURL(uri),
+    readBase64: () => new Promise((resolve, reject) => {
+      const reader = new FileReader(); reader.onerror = () => reject(new Error("File reading failed"));
+      reader.onload = () => { const value = reader.result; const comma = typeof value === "string" ? value.indexOf(",") : -1;
+        if (typeof value !== "string" || comma < 0) reject(new Error("File reading failed")); else resolve(value.slice(comma + 1)); };
+      reader.readAsDataURL(file);
+    }),
+  };
 }

@@ -190,13 +190,14 @@ function SourceCards({ active }: { active: boolean }) {
   const settingsFields = [{ field: 'name' as const, label: '名稱' }, { field: 'kind' as const, label: '類型' }, { field: 'url' as const, label: '網址' }, ...(settings.watch('kind') !== 'document' ? [{ field: 'allowedPath' as const, label: '允許擷取的路徑（選填）' }] : []), { field: 'frequencyMinutes' as const, label: '巡查頻率（分鐘）' }];
   const cardWidth = container.width >= 650 ? '32%' : container.width >= 340 ? '49%' : '100%';
   return <View ref={container.ref} onLayout={container.onLayout} style={[styles.root, !active && styles.hidden]} aria-hidden={!active} pointerEvents={active ? 'auto' : 'none'}>
-    <SectionCard><SectionHeader title="本人來源卡" density="compact" subtitle="自備來源按本人帳戶保存，模型整理費用由本人負擔。" action={<AppButton label="新增來源" density="compact" disabled={!listWritable} onPress={() => openSettings('new')} />} />
-      <View style={styles.actions}><AppButton label={requests.busy && !requests.writing ? '讀取中…' : '重新讀取來源卡'} variant="quiet" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} />
-        {sourceCard && z.uuid().safeParse(sourceCard).success ? <AppButton label="重新開啟指定來源" variant="quiet" disabled={!env.online || requests.busy || !!pending} onPress={() => { void refresh(false, sourceCard, sourceAction === 'authorize'); }} /> : null}</View>
+    <SectionCard><SectionHeader title="本人來源卡" density="compact" action={!editing ? <AppButton label="新增來源" density="compact" disabled={!listWritable} onPress={() => openSettings('new')} /> : undefined} />
+      {(failed || items.length > 0 || (!loaded && !env.online)) && !editing ? <AppButton label="重新讀取來源卡" variant="quiet" density="compact" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} /> : null}
+      {sourceCard && z.uuid().safeParse(sourceCard).success ? <AppButton label="重新開啟指定來源" variant="quiet" disabled={!env.online || requests.busy || !!pending} onPress={() => { void refresh(false, sourceCard, sourceAction === 'authorize'); }} /> : null}
       {notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{notice}</Text> : null}
-      {!loaded && !items.length && !requests.busy ? <Text style={styles.meta}>來源卡尚未讀取。</Text> : loaded && !items.length ? <Text style={styles.meta}>尚未登記個人來源。</Text> : null}
+      {!loaded && requests.busy && !requests.writing ? <Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取來源…</Text> : null}
       {editing ? <View style={styles.form}>
         <Text accessibilityRole="header" style={styles.title}>{editing === 'new' ? '新增來源' : `修改「${editing.name}」`}</Text>
+        {editing === 'new' ? <Text style={styles.meta}>這個來源的模型整理費用由你負擔。</Text> : null}
         <FormErrorSummary entries={settingsFields.flatMap(item => settings.formState.errors[item.field]?.message ? [{ ...item, message: String(settings.formState.errors[item.field]?.message) }] : [])} onFocus={field => settings.setFocus(field as keyof SettingsDraft)} />
         {settingsFields.map(item => <View key={item.field}><Controller control={settings.control} name={item.field} render={({ field, fieldState }) => item.field === 'kind'
           ? <AppSelect label={item.label} value={field.value as SourceCardSettings['kind']} options={kinds} disabled={locked} invalid={!!fieldState.error} describedBy={fieldState.error ? `source-card-${item.field}-help` : undefined} onChange={kind => { if (editing === 'new' && !frequencyEdited.current) settings.setValue('frequencyMinutes', String(sourceCardDefaultFrequencyMinutes(kind))); field.onChange(kind); }} ref={field.ref} />

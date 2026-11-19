@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { backgroundActivityEntry } from "./background-activity-entry.ts";
 import type { Pool, PoolClient } from "pg";
 import { agentDecisionSchema, agentProposalSchema } from "../src/shared/product-agent.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
@@ -347,9 +348,9 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       });
     },
     async backgroundRuns(userId: string, childId: string) {
-      return access(userId, childId, false, async client => (await client.query<{ runId: string; createdAt: Date }>(
-        `SELECT id AS "runId",created_at AS "createdAt" FROM agent_runs WHERE owner_user_id=$1 AND child_id=$2 AND trigger_kind='worker' ORDER BY created_at DESC,id DESC LIMIT 20`,
-        [userId, childId])).rows.map(row => ({ ...row, createdAt: row.createdAt.toISOString() })));
+      return access(userId, childId, false, async client => (await client.query<Pick<RunRow, "id" | "created_at" | "recipe_id" | "state">>(
+        `SELECT id,created_at,recipe_id,state FROM agent_runs WHERE owner_user_id=$1 AND child_id=$2 AND trigger_kind='worker' ORDER BY created_at DESC,id DESC LIMIT 20`,
+        [userId, childId])).rows.map(row => backgroundActivityEntry(row.id, row.created_at.toISOString(), row.recipe_id, row.state)));
     },
     async finish(scope: AgentScope, value: ProductAgentResult, summary?: z.infer<typeof summarySaveSchema>): Promise<boolean> {
       return Boolean(await access(scope.userId, scope.childId, true, async (client, workspaceId) => {

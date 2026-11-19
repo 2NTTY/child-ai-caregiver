@@ -1,4 +1,3 @@
-import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Platform, Pressable, StyleSheet, View, type GestureResponderEvent, type PressableStateCallbackType } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
@@ -24,11 +23,13 @@ type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focu
 type SendFocusTicket = { serial: number; document: Document; dispose(): void };
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", inputHint, filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabled = false, stopTarget, queueAction, compact, draft, attachments, onChangeDraft, onPreview, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+  queueAction?: { queued: boolean; press(): void };
+  allowTyping?: boolean; onStop?(): void; stopDisabled?: boolean; stopTarget?: string;
   enabled: boolean; compact: boolean; draft: string; attachments: readonly AssistantAttachment[]; onChangeDraft: (value: string) => void; onPreview: () => void | Promise<void>;
-  onSources: () => void; onAddAttachment(attachment: AssistantAttachment, replaceId?: string): boolean; onRemoveAttachment(id: string): void;
+  onAddAttachment(attachment: AssistantAttachment, replaceId?: string): boolean; onRemoveAttachment(id: string): void;
   captureOriginal?: PhotoFilePickerProps["captureOriginal"]; focusRequest?: number;
-  submitEnabled?: boolean; submitLabel?: string; inputHint?: string; filesUnavailableReason?: string; voiceUnavailableReason?: string; suggestionLabel?: string; suggestionsAvailable?: boolean;
+  submitEnabled?: boolean; submitLabel?: string; filesUnavailableReason?: string; voiceUnavailableReason?: string; suggestionLabel?: string; suggestionsAvailable?: boolean;
 }) {
   const input = useRef<ChatComposerInputHandle>(null);
   const composer = useRef<View>(null), sendControl = useRef<View>(null);
@@ -150,9 +151,9 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
     <AssistantAttachmentPreview attachments={attachments} enabled={enabled && !voiceOpen} onRemove={onRemoveAttachment} onReplace={replaceAttachment} />
     {enabled ? <VoiceCapture ref={voiceCapture} visible={voiceOpen} onDismiss={() => { setVoiceOpen(false); setReplacement(null); }} onPick={addAttachment} /> : null}
     {photoError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
-    <ChatComposerInput ref={input} onSubmit={() => preview(true)} canSubmit={canPreview}
+    <ChatComposerInput onAttachment={enabled && !voiceOpen && !filesUnavailableReason ? addAttachment : undefined} onAttachmentError={setPhotoError} onStop={stopDisabled ? undefined : onStop} stopTarget={stopTarget} ref={input} onSubmit={() => queueAction ? (!queueAction.queued && queueAction.press()) : preview(true)} canSubmit={canPreview || !!queueAction && !queueAction.queued}
       value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
-      disabled={!enabled} />
+      disabled={!enabled && !allowTyping} />
     <View style={styles.composerActions}><View testID="composer-attachment-actions" style={styles.leftActions}><AgentInputToolbar disabled={!enabled || voiceOpen} compact={touchControls} includeVoice={false} onFiles={() => { setReplacement(null); setInputDialog("file"); }} onVoice={() => beginVoice()}
       onPickPhoto={original => addAttachment(photoAttachment(original))} onPhotoError={setPhotoError} captureOriginal={captureOriginal} filesUnavailableReason={filesUnavailableReason} voiceUnavailableReason={voiceUnavailableReason} />
       {suggestionsAvailable && !hasDraft ? <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
@@ -161,13 +162,22 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
         style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable> : null}</View>
       <View testID="composer-send-actions" style={styles.rightActions}>
-      <AgentVoiceControl disabled={!enabled || voiceOpen} compact={touchControls} unavailableReason={voiceUnavailableReason}
-        onPress={() => beginVoice()} />
-      <Pressable ref={sendControl} accessibilityRole="button" accessibilityLabel={submitLabel} accessibilityState={{ disabled: !canPreview }}
+      {queueAction?.queued ? <Text accessibilityLiveRegion="polite" style={styles.queuedLabel}>待傳送</Text> : null}
+      {!onStop ? <AgentVoiceControl disabled={!enabled || voiceOpen} compact={touchControls} unavailableReason={voiceUnavailableReason}
+        onPress={() => beginVoice()} /> : null}
+      {onStop ? <Pressable accessibilityRole="button" accessibilityLabel={stopDisabled ? "停止回覆（暫不可用）" : "停止回覆"}
+        accessibilityState={{ disabled: stopDisabled }} disabled={stopDisabled} onPress={onStop}
+        style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && styles.controlFocused]}>
+        <View style={[styles.stopCircle, stopDisabled && styles.disabled]}><View style={styles.stopSquare} /></View>
+      </Pressable> : null}
+      {queueAction ? <Pressable accessibilityRole="button" accessibilityLabel={queueAction.queued ? "取消待傳送訊息" : "回覆完成後傳送"} onPress={queueAction.press}
+        style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && styles.controlFocused]}>
+        <View style={styles.sendCircle}><AppIcon name={queueAction.queued ? "close" : "arrow-up"} size={20} color={chatColors.onSend} /></View>
+      </Pressable> : !onStop ? <Pressable ref={sendControl} accessibilityRole="button" accessibilityLabel={submitLabel} accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={pressSend}
         style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && canPreview && styles.controlFocused]}>
         {({ pressed, hovered }: ControlInteraction) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, (pressed || hovered) && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
-      </Pressable></View></View>
+      </Pressable> : null}</View></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
       <Text style={styles.suggestionLabel}>{suggestionLabel}：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填${suggestionLabel}：${item}`}
@@ -176,11 +186,9 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView></MotionDisclosure>
     </View>
-    {inputHint || attachments.length ? <BackgroundSurface activeStyle={{ paddingHorizontal: spacing.sm }}><Text style={styles.composerHint}>{inputHint ?? "未送出 · 附件離頁清除；文字草稿保留"}</Text></BackgroundSurface> : null}
     </View>
     <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
-      onDismiss={() => { setInputDialog(null); setReplacement(null); }}
-      onSources={() => { setInputDialog(null); setReplacement(null); onSources(); }} />
+      onDismiss={() => { setInputDialog(null); setReplacement(null); }} />
     <Portal><AppDialog visible={replacement?.kind === "photo" && enabled} onDismiss={() => setReplacement(null)}>
       <AppDialog.Title>更換未送出照片</AppDialog.Title><AppDialog.Content>
         <PhotoFilePicker disabled={!enabled} onPick={original => addAttachment(photoAttachment(original))} onError={setPhotoError} />
@@ -197,13 +205,15 @@ const styles = StyleSheet.create({
   panel: { minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: chatLayout.composerRadius, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: chatColors.surface,
     shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: .04, shadowRadius: 10, elevation: 1 },
   panelFocused: { borderColor: chatColors.focus },
-  composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
   composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 0, flexDirection: "row", alignItems: "center", minWidth: 0 },
   rightActions: { flexDirection: "row", alignItems: "center", flexShrink: 0 },
   iconControl: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
   controlActive: { backgroundColor: chatColors.hover },
   controlFocused: { borderWidth: 1, borderColor: chatColors.focus },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+  queuedLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  stopCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: chatColors.ink, alignItems: "center", justifyContent: "center" },
+  stopSquare: { width: 13, height: 13, borderRadius: 2, backgroundColor: chatColors.surface },
   sendCircle: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
   photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },

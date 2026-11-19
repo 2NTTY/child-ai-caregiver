@@ -240,7 +240,7 @@ test('send, unknown recovery, stop, original reply retry, and attachment gates k
   production.chatState.drafts['synthetic-child'] = { phase: 'reply_failed', savedUserMessageId: 'u1' };
   view = chat(); label(node(view.tree, 'ChatTimeline').props.footer, '重試原訊息回覆').props.onPress();
   assert.deepEqual(calls.at(-1), ['reply', 'u1']);
-  production.chatState.busy = 'reply'; view = chat(); label(node(view.tree, 'ChatTimeline').props.footer, '停止回覆').props.onPress();
+  production.chatState.busy = 'reply'; view = chat(); node(view.tree, 'AgentComposer').props.onStop();
   assert.deepEqual(calls.at(-1), ['cancel']);
   production.chatState.busy = null; production.chatState.drafts = {}; production.agentAttachments = [{ id: 'synthetic-photo', photo: {} }];
   view = chat(); assert.equal(node(view.tree, 'AgentComposer').props.submitEnabled, false);

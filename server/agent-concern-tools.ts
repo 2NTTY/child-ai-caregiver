@@ -25,7 +25,7 @@ export function createAgentConcernTools(concerns:Pick<ConcernStore, "list" | "ge
       if(error instanceof FamilyError || error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError)return {status:error.status===409?"conflict":"rejected",data:{code:error.code}}; throw error; }
   };
   const tools:AgentTool[]=[{
-    name:"read_concerns",description:"讀取這名孩子的共享持續關注。concernId=null 按 searchText（或 null）列最多 20 項，hasMore 表示未讀齊；指定 ID 讀有界完整事件及 historyComplete。關注不是診斷，與成長候選、任務及私人記憶分開。",
+    name:"read_concerns",effect:"read",description:"讀取這名孩子的共享持續關注。concernId=null 按 searchText（或 null）列最多 20 項，hasMore 表示未讀齊；指定 ID 讀有界完整事件及 historyComplete。關注不是診斷，與成長候選、任務及私人記憶分開。",
     parameters:z.object({concernId:z.uuid().nullable().optional(),searchText:z.string().max(100).nullable().optional(),cursor:z.string().nullable().optional()}).strict(),authorize,
     execute:args=>guarded(async()=>{
       if(!args.concernId) {

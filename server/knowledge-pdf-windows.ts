@@ -104,6 +104,7 @@ export async function readKnowledgePdfWindow(input: {
     const attemptKey = "knowledge-window-" + role + ":" + knowledgeReviewHash([PDF_WINDOW_METHOD, prompt.text, user, responseJsonSchema, sliceHash, "HIGH"]);
     const raw = await input.completeText({
       system: prompt.text, user, attemptKey, pdf, responseJsonSchema,
+      role: role === "review" ? "knowledge_review" : "knowledge_organize",
       ...(role === "review" ? { purpose: "knowledge_review" as const } : {})
     });
     input.signal?.throwIfAborted();

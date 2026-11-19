@@ -434,7 +434,7 @@ function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean
       truncated: { facts: false, topics: false, messages: false } }) },
     chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: options.userText ?? "請說明合成照護情境。" }] }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
-    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+    knowledge: { createRun: () => ({ supportsScopedEvidenceReuse: true, search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
       revalidateCitations: async () => options.revalidateCitations ? options.revalidateCitations() : true }) },
   } as unknown as Parameters<typeof createProductAgent>[0]);
   return service.reply(userId, childId, messageId, async () => true, undefined, options.onProgress);
@@ -1162,6 +1162,7 @@ test("review start is forwarded only to admitted review and rereview providers, 
   let current = draft(), starts = 0, call = 0;
   const seen: string[] = [];
   const surface = {
+    bindRepairEvidence: () => async () => true,
     deliveryDraft: () => current,
     presentation: async () => ({ text: current.paragraphs[0]!.text, citations: [], retrievalMode: "not_used" as const }),
     replaceDeliveryAnswer: (answer: any) => { current = { ...current, ...answer }; },
