@@ -948,6 +948,21 @@ worker 以 `due → claim → finish` 接續每張卡的排程。下載前可用
 
 巡查完成時可隨 `lastResult` 填寫本次確實保存到本人資料庫的 `savedDocumentCount`、已可供檢索的 `indexedDocumentCount`。未取得相應收據便省略該數；零表示已核實為零。來源按內容自動保存及整理。
 
+<a id="private-source-rag"></a>
+#### 本人來源的視覺檢索
+
+原件巡查的文字初查與多模態整理各自有收據。寫入目前原件版本時，Server 在同一交易排入 `source-card-index`。已保存的原件在下一次來源巡查時補排。每次派送按原工作讀一段文字、一張圖或一個實際 PDF 頁面，將整理、獨立核對及文件向量的結果分階段加密保存。個人模式沿本人的背景開關、生成及向量付款設定，平台模式沿平台帳本。每日用量未能接納時，原工作保留游標等候；已出手而結果未明的操作保留 `unknown`。
+
+以下是 Server 內部的 `runtime.registeredSourceDocuments` 方法。聊天呼叫方從已驗證的 session 取 `owner`，並在交付與重開引用時核對當前授權。
+
+| 方法 | 回傳與用途 |
+|---|---|
+| `searchPrivate(owner, cardId, query, {operationId, cursor?, signal?})` | `operationId` 為同一查詢的 UUID，翻頁或重試時沿用。回傳 `{items,nextCursor}`，命中有 `source.{cardId,documentId,version,title,url}`、`incarnation,page,offset,facts,score`。收到 `nextCursor` 可在原查詢期限內接續。 |
+| `readPrivateEvidence(owner,cardId,documentId,version,page,offset,incarnation)` | 讀回該次來源授權下已核對的 `facts`，毋須再次呼叫模型。固定聊天引用須保存並傳回 `incarnation`。它可分辨曾撤權、回到相同內容的兩次巡查。 |
+| `privateIndexStatus(owner,cardId,documentId)` | 回傳目前版本、階段、頁／位移、已可檢索及保留未發布的片段數，以及待處理原因。既有 `read` 仍可按授權點讀已保存原件。 |
+
+PDF 的 `page` 從 1 起、`offset=0`。圖片使用 `page=null,offset=0`；文字用 `page=null` 與從 0 起的 UTF-16 位移。每項事實有 `type,text`。介面可逐字顯示 `quotation`，對 `visual_description` 則標示為已核對的圖像描述。任何一項未獲核對，整段會保留待處理。私人片段、向量、模型操作及查詢收據均按擁有人加密保存。卡片撤權、原件版本或帳戶授權世代改變後，舊引用不可查回。
+
 <a id="firestore-background"></a>
 ### 背景、關注與通知的 Firestore 接點
 

@@ -23,7 +23,8 @@ export const scanItemSchema = z.strictObject({
 }).refine(item => (item.offset === undefined) === (item.listingHash === undefined));
 export type SourceScanItem = z.infer<typeof scanItemSchema>;
 export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('head'), ...itemFields }),
+  z.strictObject({ kind: z.literal('head'), ...itemFields,
+    rag: z.strictObject({ accessRevision: z.int().positive().max(2147483647), incarnation: z.uuid(), authorityTag: digest.optional() }).optional() }),
   z.strictObject({ kind: z.literal('edition'), ...itemFields }),
   z.strictObject({
     kind: z.literal('staging'), ...item, cleanupAt: z.iso.datetime(), next: z.int().nonnegative(),
@@ -45,6 +46,7 @@ export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
 ]);
 export type SourceCardDocumentRecord = z.infer<typeof sourceCardDocumentRecord>;
 export type SourceCardEdition = Extract<SourceCardDocumentRecord, { kind: 'edition' }>;
+export type SourceCardHead = Extract<SourceCardDocumentRecord, { kind: 'head' }>;
 
 export function sourceDocumentUrl(card: Pick<RegisteredSourceSettings, 'url' | 'kind' | 'allowedPath'>, value: string) {
   const parsed = registeredSourceUrlSchema.safeParse(value);

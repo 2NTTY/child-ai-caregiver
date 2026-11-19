@@ -15,7 +15,7 @@ export const sourceOperationRecord = z.strictObject({ operationId: z.uuid(), car
 const lease = z.strictObject({ checkId: z.uuid(), token: z.uuid(), until: timestamp, generation: z.uuid(), authorizationVersion: z.string() });
 const finished = z.strictObject({ checkId: z.uuid(), token: z.uuid(), result: registeredSourceResultSchema });
 export const sourceCardRecord = z.discriminatedUnion('removed', [
-  z.strictObject({ removed: z.literal(false), card: registeredSourceCardSchema.omit({ checking: true }), lease: lease.nullable(), finished: finished.nullable() }),
+  z.strictObject({ removed: z.literal(false), accessRevision: z.int().positive().max(2147483647).optional(), card: registeredSourceCardSchema.omit({ checking: true }), lease: lease.nullable(), finished: finished.nullable() }),
   z.strictObject({ removed: z.literal(true), cardId: z.uuid(), revision: z.int().positive() }),
 ]);
 export type SourceRecord = z.infer<typeof sourceCardRecord>;

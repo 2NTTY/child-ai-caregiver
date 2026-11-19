@@ -27,6 +27,7 @@ export function createFirebaseWorkerServices(runtime: Awaited<ReturnType<typeof 
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {
         if (job.kind === 'source-card-check') return sourceCards.process(job, signal);
+        if (job.kind === 'source-card-index') return runtime.privateSourceWorker(job,signal);
         if (job.kind === 'knowledge-index-batch') {
           const uid = runtime.configuredAdminUid;
           if (!uid || !runtime.knowledgeIndexes || job.authorizationVersion !== firestoreDomainHash(uid)) return { state: 'stopped' };

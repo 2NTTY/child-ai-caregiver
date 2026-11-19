@@ -1,0 +1,41 @@
+{
+  "scope": "Owner-registered immutable originals, multimodal organization, independent review, private vector retrieval and evidence reopening",
+  "implementation": "125cf237d3ccdc2b219a35ef3de516bacb1f6e53",
+  "integrationBase": "b74a9e5e5fd484d915a353842d5bc8c474248430",
+  "upstreamOriginalWorker": "1af357edba0d976a3e02fbeecb8ff489822fd8f8",
+  "observedAt": "2026-11-19T05:50:26.185Z",
+  "environment": "Local Firestore Emulator 1.22.0, Node 24.22.1, synthetic test owner and loopback task delivery. Each delivery constructed fresh index services over the same Firestore work.",
+  "liveTrial": {
+    "fixture": "Synthetic two-page PDF. Page one has a school supplies notice. Page two contains a single raster illustration without a text layer.",
+    "sha256": "6af52d409efc3fcd415721f93b92cf6794753d96b16f41909f2ea3ef2a6596a7",
+    "physicalPages": 2,
+    "secondPageExtractedCharacters": 0,
+    "payer": "platform",
+    "provider": "Vertex AI through local ADC, global",
+    "generationModel": "gemini-3.1-flash-lite",
+    "embeddingModel": "gemini-embedding-001",
+    "dimensionsReadBackForEachPage": [1024, 1024],
+    "workId": "7499778b1f239e60c06d2258a0c891ae0955337e08194395988e397adff0ebb0",
+    "deliveryRevisions": [1, 2, 3, 4, 5, 6, 7],
+    "distinctOrganizationAndReviewRootsPerPage": true,
+    "publishedUnits": 2,
+    "heldUnits": 0,
+    "query": "哪一頁顯示幾何圖案的排列？各個物件放在哪裏？",
+    "highestRankedPhysicalPage": 2,
+    "reviewedVisualDescriptions": ["圖中上方有一個紅色的三角形。", "圖中下方並排有兩個藍色的圓形。"],
+    "sameVersionAndFactsOnReopen": true,
+    "sameOperationReplayMatched": true,
+    "pausedCardSearchAndEvidenceDenied": true,
+    "ledger": {"platformAttempts": 7, "generations": 4, "documentEmbeddings": 2, "queryEmbeddings": 1, "personalAttempts": 0, "extraAttemptsForReplayAndRevocationChecks": 0, "reportedInputTokens": 21318, "reportedOutputTokens": 143, "embeddingCharacters": 130, "unknownUsageAttempts": 4, "reservedTrialUsd": 1.5, "invoicedUsd": null},
+    "emulatorExportVerifiedAndClosed": true
+  },
+  "localRegressionEvidence": [
+    "Source head and work commit atomically. Legacy heads backfill on capture. Returning to the same bytes or replacing the source grant requires a new index incarnation.",
+    "The final code also fences the owner authority generation, retains full resolution for standalone images and requires complete independent review and embedding receipts on searchable rows.",
+    "Held image has zero document embeddings. A later independently approved image is searchable and can be reopened. Query admission and result acknowledgement loss do not repeat paid attempts.",
+    "Across 96 units, the highest scoring hit in the last batch ranks first with one query embedding. A 520-unit fixture verifies continuation beyond a single scan.",
+    "Targeted tests covered the source worker, private model session, index, search, prompt assembly and original card guards. Server TypeScript compilation passed."
+  ],
+  "priorFailure": "The first local provider fixture omitted finishReason. The gateway rejected it, persisted unknown and stopped. Correcting the fixture yielded a passing emulator run before the one real provider trial.",
+  "limits": "The live trial ran on the implementation working tree. Subsequent authority fencing, standalone-image handling, cross-batch ranking and review activity labeling were checked locally. No second paid trial, real personal API key, production deployment or finished chat UI was claimed."
+}

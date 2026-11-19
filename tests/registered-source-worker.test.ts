@@ -38,7 +38,7 @@ test('a scheduled personal card retains mixed editions, resumes its check, and f
     settings: { name: 'Synthetic library', kind: 'directory', url: origin + '/portal', allowedPath: '/library', frequencyMinutes: 30 }
   });
   await cards.credential('alice', cardId, { action: 'replace', operationId: randomUUID(), expectedRevision: 1, username: 'fixture-owner', password: 'fixture-password', loginUrl: origin + '/sign-in' });
-  const documents = createFirestoreSourceCardDocuments(domain, cards);
+  const documents = createFirestoreSourceCardDocuments(domain, cards), codec = createFirestoreRestoreCodec(domain);
   const pdf = await renderToBuffer(createElement(Document, {}, createElement(Page, {}, createElement(Text, {}, 'Private PDF notice for the synthetic classroom'))));
   const zip = new JSZip();
   zip.file('[Content_Types].xml', '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
@@ -136,7 +136,14 @@ test('a scheduled personal card retains mixed editions, resumes its check, and f
   t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
   const queue = createFirestoreBackgroundQueue({
     ...domain, enabled: true, readControl: tx => authority.readControl(tx),
-    transport: { async enqueue(request) { deliveries.push(request); return { state: 'confirmed' }; }, probe: () => assert.fail('Unexpected probe') }, execute: worker.process
+    transport: { async enqueue(request) {
+      const [path, data] = [...fake.records].find(([, value]) => value.id === request.id)!;
+      const job = codec.decode({ path, data }).value as { kind: string };
+      // Index deliveries belong to their own worker; this fixture executes only original acquisition.
+      if (job.kind === 'source-card-check') deliveries.push(request);
+      else assert.equal(job.kind, 'source-card-index');
+      return { state: 'confirmed' };
+    }, probe: () => assert.fail('Unexpected probe') }, execute: worker.process
   });
   const maintenance = createFirestoreBackgroundMaintenance({
     ...domain, enabled: true, sourceCards: worker,
@@ -186,7 +193,6 @@ test('a scheduled personal card retains mixed editions, resumes its check, and f
   await assert.rejects(documents.list('bob', cardId), { code: 'source_document_unavailable' });
   await assert.rejects(documents.read('bob', cardId, first.documentId, first.version), { code: 'source_document_unavailable' });
   const rows = () => [...fake.records.entries()].filter(([path]) => path.startsWith(domain.namespace + '_source_card_documents/'));
-  const codec = createFirestoreRestoreCodec(domain);
   const stored = rows().map(([path, data]) => codec.decode({ path, data }));
   const context = stored[0]!.context;
   if (context.family !== 'domain') throw Error('Expected private data');
