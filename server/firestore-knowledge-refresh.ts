@@ -10,6 +10,9 @@ import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus } from '../src/sh
 import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 import { createPlatformMediaStore } from './firestore-platform-media.ts';
+import { campaignMaterialWatches } from './platform-materials.ts';
+
+const campaignSources = new Set(campaignMaterialWatches.map(source => source.id));
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
@@ -93,10 +96,26 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
   const definitions = options.definitions.map(definition => definitionSchema.parse(definition));
   if (definitions.length > 512 || new Set(definitions.map(row => row.id)).size !== definitions.length) reject("knowledge_watch_catalog_invalid");
   const catalog = new Map(definitions.map(row => [row.id, row]));
+  const cardIds = definitions.filter(row => campaignSources.has(row.id) && row.classification === 'official_guidance'
+    && row.audience === 'public_noncommercial').map(row => row.id).sort();
   const watchRef = (id: string) => database.collection(namespace + "_knowledge_watches").doc(id);
   const observationRef = (id: string) => database.collection(namespace + "_knowledge_observations").doc(id);
   const partRef = (sourceId: string, hash: string, part: number) => database.collection(namespace + "_knowledge_observation_parts").doc(knowledgeHash([sourceId, hash, part]));
   const checkRef = (id: string) => database.collection(namespace + "_knowledge_checks").doc(id);
+  async function publishedCard(tx: Transaction, row: Watch, through?: string) {
+    const source = await tx.get(database.collection(namespace + '_knowledge_sources').doc(row.id));
+    if (!source.exists || source.get('enabled') !== true || !source.get('activeVersionId')) return false;
+    if (source.get('projectId') !== projectId || source.get('namespace') !== namespace || source.get('sourceId') !== row.id
+      || source.get('url') !== row.definition.url || !z.uuid().safeParse(source.get('activeVersionId')).success) reject('knowledge_binding_invalid');
+    if (source.get('disabledReason') !== null) return false;
+    const versionId = source.get('activeVersionId');
+    const [edition] = await tx.getAll(database.collection(namespace + '_knowledge_versions').doc(versionId),
+      { fieldMask: ['projectId', 'namespace', 'sourceId', 'versionId', 'reviewState', 'publishedAt'] });
+    const version = edition?.data();
+    if (version?.projectId !== projectId || version.namespace !== namespace || version.sourceId !== row.id || version.versionId !== versionId)
+      reject('knowledge_binding_invalid');
+    return version.reviewState === 'reviewed' && !!version.publishedAt && (!through || version.publishedAt <= through);
+  }
   function parse<T extends { projectId: string; namespace: string }>(schema: z.ZodType<T>, raw: unknown): T {
     const value = schema.parse(raw);
     if (value.projectId !== projectId || value.namespace !== namespace) reject("knowledge_binding_invalid");
@@ -334,6 +353,24 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         return { watches, observations: observations.docs.map(row => parse(observationSchema, row.data())), checks: checks.docs.map(row => parse(checkSchema, row.data())) };
       }, { readOnly: true });
     },
+    // Read existing publication pointers, including editions published by an older campaign worker.
+    // Leave the original watch revision, paid work fingerprint and receipts intact.
+    async publishedCardChecks(after: string | null, slot: string) {
+      date.parse(slot);
+      const remaining = after === null ? cardIds : cardIds.filter(id => id > after);
+      const page = remaining.slice(0, 16);
+      return database.runTransaction(async tx => {
+        const control = await options.readControl(tx);
+        const checked = control.enabled ? await Promise.all(page.map(async id => {
+          const row = await watch(tx, id);
+          if (!row?.manualOnly || !row.enabled || !matches(row) || row.registeredAt > slot || row.confirmedGone
+            || !await publishedCard(tx, row, slot)) return null;
+          return { definition: row.definition, registeredAt: row.registeredAt,
+            data: { watchId: id, revision: row.revision, workerGeneration: control.generation } };
+        })) : [];
+        return { entries: checked.filter(row => row !== null), next: remaining.length > page.length ? page.at(-1)! : null };
+      }, { readOnly: true });
+    },
     async jobs(manualId?: string): Promise<{ definition: SourceWatchDefinition; data: RefreshJob; registeredAt: string }[]> {
       return database.runTransaction(async tx => {
         const control = await options.readControl(tx); if (!control.enabled) return [];
@@ -354,6 +391,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (receipt && (receipt.watchId !== job.watchId || receipt.revision !== job.revision || receipt.workerGeneration !== job.workerGeneration)) reject("knowledge_job_conflict");
         if (receipt?.state === "recorded") return { status: "already_recorded" as const };
         if (!row?.enabled || !matches(row) || row.revision !== job.revision || !control.enabled || control.generation !== job.workerGeneration || signal.aborted) return { status: "inactive" as const };
+        if (scheduledFor && row.manualOnly && (!campaignSources.has(row.id) || row.confirmedGone || !await publishedCard(tx, row)))
+          return { status: 'inactive' as const };
         if (scheduledFor && row.lastScheduledFor && Date.parse(scheduledFor) < Date.parse(row.lastScheduledFor)) return { status: "superseded" as const };
         if (row.lease && Date.parse(row.lease.until) > Date.now()) reject("knowledge_check_in_progress");
         if (receipt && (receipt.state === "unknown" || receipt.attempts >= 2)) return { status: "unknown" as const };
@@ -389,7 +428,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (receipt.state === "recorded") return { status: "already_recorded" as const };
         if (receipt.token !== token) reject("knowledge_check_superseded");
         const eligible = row?.enabled && matches(row) && row.revision === job.revision && row.lease?.token === token
-          && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted;
+          && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted
+          && (!scheduledFor || !row.manualOnly || await publishedCard(tx, row));
         const previous = new Map<string, Observation | null>();
         if (eligible) for (const item of prepared) {
           const snapshot = await tx.get(observationRef(item.sourceId));

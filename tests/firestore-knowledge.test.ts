@@ -1117,6 +1117,77 @@ test('external material admission binds each reviewed PDF to its exact publisher
   assert.deepEqual(await fetch(selected, new AbortController().signal), { status: 'failed', reason: 'response' });
 });
 
+test('published campaign cards get observation-only weekly checks and retain a changed original for review', async t => {
+  const { campaignMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
+  const { createFirestoreBackgroundMaintenance } = await import('../server/firestore-background-maintenance.ts');
+  const { createFirestoreBackgroundQueue } = await import('../server/firestore-background-work.ts');
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-04-05T01:00:00Z') });
+  const definition = campaignMaterialWatches.find(row => row.id === 'fhs-14799')!;
+  const pending = campaignMaterialWatches.find(row => row.id === 'fhs-14840')!;
+  const f = fixture([definition.id, pending.id]), generation = crypto.randomUUID();
+  const domain = { ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 21)) };
+  const authority = createFirestoreAuthority(domain);
+  await authority.initializeControl({ enabled: true, generation });
+  const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: [definition, pending], readControl: tx => authority.readControl(tx) });
+  const store = createFirestoreKnowledgeStore({ ...domain, platformMaterials, observations: refresh.gate });
+  for (const id of [definition.id, pending.id]) await refresh.register(id, 'fixture-maintainer', true);
+  const [job] = await refresh.jobs(definition.id);
+  const original = { url: definition.url, title: 'Synthetic', text: 'Synthetic source excerpt and original body',
+    sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+  const signal = new AbortController().signal;
+  await refresh.process(job!.data, crypto.randomUUID(), async () => ({ status: 'ok', items: [original] }), signal);
+  const document = { ...source(definition.id), url: definition.url, publisher: definition.publisher, termsUrl: definition.termsUrl };
+  const first = await store.importSource(document);
+  await store.review(first.versionId, first.hash, 'fixture-maintainer', { ...assessment(document), observationHash: observationHash(original) });
+  while (!(await store.prepareSearch(first.versionId, first.hash)).complete) {}
+  await store.publish(first.versionId, first.hash, embeddings(document));
+  let fetches = 0, response: SourceFetchResult = { status: 'ok', items: [original] };
+  const maintenance = createFirestoreBackgroundMaintenance({ ...domain, enabled: true, photos: {} as never, erasures: {} as never, cleanup: {} as never,
+    knowledge: { ...refresh, process: (data, id, _fetch, sig, slot) => refresh.process(data, id, async () => { fetches++; return response; }, sig, slot) },
+    knowledgeAgent: { binding: 'standing-policy', accepts: () => true, run: async () => assert.fail('Observation dispatched a paid stage') } });
+  const queue = createFirestoreBackgroundQueue({ ...domain, enabled: true, readControl: tx => authority.readControl(tx),
+    transport: { enqueue: () => assert.fail(), probe: () => assert.fail() }, execute(work, signal) {
+      assert.equal(work.resourceId, definition.id);
+      assert.equal(work.authorizationVersion, '0');
+      return maintenance.process(work, signal);
+    } });
+  const jobs = () => [...f.records].filter(([path]) => path.startsWith(domain.namespace + '_background_work/')).map(([,row]) => row);
+  async function deliver() {
+    await maintenance.tick();
+    const work = jobs().at(-1)!;
+    assert.ok(work, 'The published card must have an observation job');
+    const delivery = { kind: 'product-work' as const, id: work.id, generation, dispatchRevision: 1, scheduledAt: new Date().toISOString() };
+    assert.equal((await queue.process(delivery)).state, 'completed');
+    await queue.process(delivery);
+  }
+  const day = 86_400_000;
+  t.mock.timers.tick(day);
+  await deliver();
+  assert.equal(fetches, 1);
+  assert.equal((await refresh.inspect(definition.id)).watch.lastStatus, 'unchanged');
+  const changed = { ...original, text: original.text + ' Revised synthetic text.' };
+  response = { status: 'ok', items: [changed] };
+  t.mock.timers.tick(7 * day);
+  await deliver();
+  const state = await refresh.inspect(definition.id);
+  assert.equal(fetches, 2);
+  assert.equal(state.observation!.contentHash, observationHash(changed));
+  assert.equal(state.observation!.approved?.contentHash, observationHash(original));
+  assert.equal(state.document.text, changed.text);
+  assert.equal((await store.catalog()).items[0]?.versionId, first.versionId);
+  const download = await store.exportPublishedEdition(definition.id, first.hash, definition.id);
+  assert.equal(download.versionHash, first.hash);
+  assert.equal(download.source.chunks[0]?.originalText, original.text);
+  response = { status: 'failed', reason: 'network' };
+  t.mock.timers.tick(7 * day);
+  await deliver();
+  assert.equal(fetches, 3);
+  assert.equal((await refresh.inspect(definition.id)).observation!.contentHash, observationHash(changed));
+  assert.equal((await store.catalog()).items[0]?.versionId, first.versionId);
+  assert.equal(jobs().length, 3);
+  assert.deepEqual((await refresh.jobs(definition.id))[0]?.data, job!.data);
+});
+
 test('a downloaded card cites reviewed official captions outside the page text and excludes a removed clip from new retrieval', async () => {
   const { fhsMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { createPlatformMediaProcessor } = await import('../server/platform-media-processing.ts');

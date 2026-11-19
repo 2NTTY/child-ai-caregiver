@@ -1,0 +1,265 @@
+{
+  "capturedAt": "2026-11-19T22:21:29.738Z",
+  "productionCommit": "07d6d5c2",
+  "release": "r44620294763-1",
+  "sourceId": "fhs-14799",
+  "catalog": {
+    "series": {
+      "id": "fhs-14799",
+      "institutionId": "www.fhs.gov.hk",
+      "name": "睡得安全 親子無憂"
+    },
+    "title": "睡得安全 親子無憂",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "coverage": "已收錄 1 個段落",
+    "methods": [
+      "精細保留 · 1 段",
+      "已登記網頁讀取"
+    ],
+    "preference": {
+      "revision": 0,
+      "enabled": true,
+      "mode": "platform",
+      "selectedVersionId": null,
+      "eligible": false
+    },
+    "mediaEnabled": false,
+    "publishedAt": "2026-11-19T18:34:34.468Z",
+    "lastSuccessfulCheckAt": "2026-11-19T18:32:09.123Z"
+  },
+  "listedCard": {
+    "seriesId": "fhs-14799",
+    "name": "睡得安全 親子無憂",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "mode": "platform",
+    "enabled": true,
+    "revision": 0,
+    "sourceId": "fhs-14799",
+    "versionId": "3e236f9b-94cf-505d-99c9-187a720c1ad6"
+  },
+  "edition": {
+    "versionId": "3e236f9b-94cf-505d-99c9-187a720c1ad6",
+    "versionHash": "ca557cc8a505126cdbab57ebf11f1d1bc02f6b322bd592be54e583b84caef4bc",
+    "approvedObservationHash": "8cc9169ad571548167318e2641f6f9777c321271d0be95891acb5ac588946f8f",
+    "approvedAt": "2026-11-19T18:32:27.193Z",
+    "enabled": true,
+    "current": true
+  },
+  "original": {
+    "kind": "page",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14799.html",
+    "title": "睡得安全 親子無憂",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "fetchedAt": "2026-11-19T18:32:09.123Z",
+    "contentHash": "8cc9169ad571548167318e2641f6f9777c321271d0be95891acb5ac588946f8f",
+    "originalTextBytes": 6878,
+    "originalTextSha256": "6e1fd8ef25b56292b18cb889143aa74e28148dcec9b6c918f0b28cf405256f23"
+  },
+  "export": {
+    "coverage": "listed_editions_only",
+    "chunks": 1,
+    "vectorCount": 1,
+    "audience": "public_noncommercial",
+    "method": {
+      "reader": {
+        "kind": "page",
+        "selector": "#content",
+        "parser": "cheerio",
+        "version": "1.2.0"
+      },
+      "checkedAt": "2026-11-19T18:32:09.123Z",
+      "observationHash": "8cc9169ad571548167318e2641f6f9777c321271d0be95891acb5ac588946f8f",
+      "sample": {
+        "key": "p0-3bae0d3528259462ead8",
+        "excerptHash": "071e81ed5640541cdabfbcb550349336ee78a9a81737e0c93bf0526684d74d7a",
+        "titleHash": "811242e8d871988490bd02d829db83ab2a1a58bb164a9c16004dd4b72e52d4a4"
+      },
+      "checks": [
+        "registered_url",
+        "title",
+        "original_excerpt"
+      ]
+    }
+  },
+  "watches": {
+    "sampledManualOnly": true,
+    "registeredAt": "2026-11-19T18:32:08.839Z",
+    "scheduled": [
+      {
+        "id": "chp-recent",
+        "kind": "rss",
+        "classification": "recent_information"
+      },
+      {
+        "id": "fhs-child-vision",
+        "kind": "page",
+        "classification": "official_guidance"
+      },
+      {
+        "id": "fhs-feeding-booklet-en",
+        "kind": "pdf",
+        "classification": "official_guidance"
+      },
+      {
+        "id": "fhs-preschool-development",
+        "kind": "page",
+        "classification": "official_guidance"
+      },
+      {
+        "id": "fhs-solid-food",
+        "kind": "page",
+        "classification": "official_guidance"
+      },
+      {
+        "id": "fhs-toddler-development",
+        "kind": "page",
+        "classification": "official_guidance"
+      }
+    ],
+    "campaignManualRegistered": [
+      "fhs-12146",
+      "fhs-12172",
+      "fhs-12185",
+      "fhs-12196",
+      "fhs-12549",
+      "fhs-13034",
+      "fhs-13036",
+      "fhs-13037",
+      "fhs-13038",
+      "fhs-13039",
+      "fhs-13040",
+      "fhs-13041",
+      "fhs-13043",
+      "fhs-13044",
+      "fhs-13046",
+      "fhs-13048",
+      "fhs-13049",
+      "fhs-14722",
+      "fhs-14727",
+      "fhs-14732",
+      "fhs-14743",
+      "fhs-14799",
+      "fhs-14836",
+      "fhs-14837",
+      "fhs-14838",
+      "fhs-14839",
+      "fhs-14840",
+      "fhs-14841",
+      "fhs-14842",
+      "fhs-14843",
+      "fhs-14846",
+      "fhs-14851",
+      "fhs-15648",
+      "fhs-15650",
+      "fhs-15663",
+      "fhs-15664",
+      "fhs-15666",
+      "fhs-15667",
+      "fhs-15669",
+      "fhs-15678",
+      "fhs-15686",
+      "fhs-15697",
+      "fhs-16301",
+      "fhs-20000",
+      "fhs-20033",
+      "fhs-20036",
+      "fhs-20038",
+      "fhs-30006",
+      "fhs-30008",
+      "fhs-30009",
+      "fhs-30010",
+      "fhs-30011",
+      "fhs-30012",
+      "fhs-30017",
+      "fhs-30018",
+      "fhs-30031",
+      "fhs-30032",
+      "fhs-30033",
+      "fhs-30034",
+      "fhs-30035",
+      "fhs-30036",
+      "fhs-30037",
+      "fhs-30047",
+      "fhs-30073",
+      "fhs-30074",
+      "fhs-30078",
+      "fhs-30109",
+      "fhs-30119",
+      "fhs-30130",
+      "fhs-30136",
+      "fhs-30143",
+      "fhs-30146",
+      "fhs-30151",
+      "fhs-30152",
+      "fhs-30155",
+      "fhs-30156",
+      "fhs-30157",
+      "fhs-30158",
+      "fhs-30159",
+      "fhs-30160",
+      "fhs-30163",
+      "fhs-30164",
+      "fhs-30168",
+      "fhs-30169",
+      "fhs-30190",
+      "resource-6c18c8d7a17495",
+      "resource-d8149af7847e38"
+    ],
+    "eligibleSequence": 251,
+    "campaignIdsInAutomaticSchedule": []
+  },
+  "reads": [
+    "catalogForUser",
+    "platformCards (exact original URL)",
+    "publishedEdition",
+    "refresh.inspect",
+    "exportPublishedEdition (family series)",
+    "refresh.jobs"
+  ],
+  "familyDeviceAcceptance": "pending; production catalogue read with an unused account identifier; no account, download, selection or model call was created",
+  "apiImageDigest": "sha256:203a634fc11ce3bfb594f61e7ecd4a9ead2019cbdeb860c9f3fd7bf34c71cb26",
+  "seriesMembership": {
+    "capturedAt": "2026-11-19T22:23:53.281Z",
+    "matchingSeriesSourceIds": [
+      "fhs-14799"
+    ],
+    "pageCount": 6,
+    "itemCount": 60,
+    "worker": {
+      "payer": "platform",
+      "enabled": true,
+      "liveFetch": true,
+      "semanticMaintenance": true,
+      "livePublish": true
+    }
+  },
+  "followPolicy": {
+    "startingMode": "The platform row is visible before download. A new account has no eligible selection for ordinary family retrieval.",
+    "onDownload": "Join records the series members listed at download, their source IDs, reviewed versions and scope hashes. At this observation the only member was fhs-14799.",
+    "compatibleSuccessor": "Follow can use a newly published, independently approved edition for that same joined source with matching scope. The scope binds institution, URL, terms, classification, registered source definition, extraction range and applicability conditions. Display title and publisher label edits alone do not change this scope.",
+    "requiresNewSelection": "Other series or sources added later are outside the recorded selection. Changed scope requires explicit adoption. Fixed and paused choices retain their own rules."
+  },
+  "scheduleEvidence": {
+    "firstCheckpointPublished": 55,
+    "firstCheckpointPublishedManualOnly": 55,
+    "manualRegistrations": 87,
+    "notYetRegistered": 164,
+    "asOf": "2026-11-19T22:21:29.738Z",
+    "weeklyHongKong": "The five registered FHS watches are eligible from Monday 09:00 HKT. The dispatcher considers the most recent eligible period and de-duplicates by revision and slot.",
+    "dailyHongKong": "The internal CHP news RSS is eligible from 09:00 HKT every day. It takes the observation-only path.",
+    "initialBatch": "The first pass explicitly registers a manual-only watch and observes it. Resuming a known operation or repairing documented output truncation pins its saved observation. These registrations have no recurring fetch. Future operator-initiated observation/review/publication is separate; the admin Sync action releases a reviewed edition.",
+    "quota": "Fetching alone uses no model or embedding attempt. With media disabled a matching approved observation ends at the recorded edition. Paid model or corpus embedding admissions use the platform-wide daily attempt counter shared with platform-funded chat. The operator has its own user counter; no family's personal daily allowance is charged. The daily counter rolls over at 00:00 UTC (08:00 HKT). Attempts are per provider admission, not a count of chat messages. The gross USD 30 ledger covers this initial campaign only.",
+    "sourcePaths": [
+      "server/firestore-background-maintenance.ts",
+      "server/firestore-knowledge-refresh.ts",
+      "server/scheduled-knowledge-agent.ts",
+      "server/firestore-knowledge-maintenance.ts",
+      "server/firestore-embedding-usage.ts",
+      "server/firestore-ai-usage.ts",
+      "server/admin-platform-cards.ts",
+      "server/firestore-knowledge.ts",
+      "server/knowledge-library-selection.ts"
+    ],
+    "checkpoint": "artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json"
+  }
+}
