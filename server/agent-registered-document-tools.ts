@@ -11,7 +11,7 @@ type Evidence = { source: Pick<SourceReading, 'cardId' | 'documentId' | 'version
   page: number | null; offset: number; facts: ReviewedFact[] };
 export type AgentSourceDocumentReader = RegisteredSourceDocumentReader & Partial<{
   searchPrivate(owner: string, cardId: string, query: string, options: {
-    operationId: string; cursor?: string; signal?: AbortSignal; embedInRun?: SourceQueryEmbed;
+    operationId: string; cursor?: string; signal?: AbortSignal; embedInRun?: SourceQueryEmbed | null;
   }): Promise<{ items: (Evidence & { incarnation: string })[]; nextCursor: string | null }>;
   readPrivateEvidence(owner: string, cardId: string, documentId: string, version: string, page: number | null,
     offset: number, incarnation: string): Promise<Evidence | null>;
@@ -39,7 +39,7 @@ export async function readSourceCardExcerpt(store: AgentSourceDocumentReader, ow
 
 export function createRegisteredDocumentTools(store: AgentSourceDocumentReader, owner: string, runId: string, authorize: () => Promise<boolean>,
   register: (id: string, target: SourceReading, source: ChatDeliverySource, valid: () => Promise<boolean>) => void,
-  embedForCall: (attemptKey?: string) => SourceQueryEmbed): AgentTool[] {
+  embedForCall: (attemptKey?: string) => SourceQueryEmbed | null): AgentTool[] {
   const allowed: AgentTool['authorize'] = (_, scope) => scope.userId === owner ? authorize() : Promise.resolve(false);
   function citation(target: SourceReading, text: string, current: boolean, signal: AbortSignal) {
     const citationId = 'source-card:' + firestoreDomainHash(target), contentHash = chatDeliveryContentHash(text);
@@ -81,8 +81,14 @@ export function createRegisteredDocumentTools(store: AgentSourceDocumentReader, 
     async execute(args, context) {
       const cardId = String(args.cardId), query = String(args.query).trim();
       const operationId = firestoreDomainUuid(['registered-source-query/v1', owner, runId, cardId, query]);
-      const result = await search(owner, cardId, query, { operationId, signal: context.signal, embedInRun: embedForCall(context.queryEmbeddingAttemptKey),
-        ...(typeof args.cursor === 'string' ? { cursor: args.cursor } : {}) });
+      let result: Awaited<ReturnType<NonNullable<AgentSourceDocumentReader['searchPrivate']>>>;
+      try {
+        result = await search(owner, cardId, query, { operationId, signal: context.signal, embedInRun: embedForCall(context.queryEmbeddingAttemptKey),
+          ...(typeof args.cursor === 'string' ? { cursor: args.cursor } : {}) });
+      } catch (error) {
+        if (!(error instanceof FirestoreDomainError) || error.code !== 'personal_source_key_required') throw error;
+        return {status:'rejected', data:{reason:error.code, message:'私人來源的語意搜尋需要本人模型密鑰。可直接查找及閱讀已保存文件。'}};
+      }
       if (!await authorize()) return { status: 'rejected', data: { reason: 'access_revoked' } };
       const items = result.items.map(({ source, page, offset, incarnation, facts }) => ({
         title: source.title, page, facts: facts.map(fact => {

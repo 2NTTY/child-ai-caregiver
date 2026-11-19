@@ -16,7 +16,7 @@ function fixture(count = 1) {
   const scope = { ownerUserId: 'alice', workspaceId: randomUUID(), childId: '00000000-0000-0000-0000-000000000000', storageEpoch: randomUUID() };
   const data = new FirestoreDomainData({ database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 45)), projectId: 'private-search-test', namespace: 'private_search_test' });
   const state = { generation: randomUUID(), authorizationVersion: '1', grant, accessRevision: 1, enabled: true, auth: true,
-    calls: 0, sessions: 0, closes: 0, failure: false, loseSave: false,
+    calls: 0, sessions: 0, closes: 0, failure: false, loseSave: false, personal: true,
     afterEmbed: undefined as (() => void) | undefined };
   const heads = new Map<string, { cardId: string; documentId: string; version: string; title: string; url: string; grant: string; rag: { incarnation: string; accessRevision: number } }>();
   const units = Array.from({ length: count }, (_, index) => {
@@ -58,6 +58,7 @@ function fixture(count = 1) {
   let activeOperation = randomUUID();
   const roots: string[] = [];
   const search = createPrivateSourceSearch({ domain: data, documents,
+    canChargeOwner: async () => state.personal,
     currentAuth: async owner => ({ userId: owner, disabled: !state.auth, emailVerified: state.auth }),
     async openSession(options) {
       state.sessions++; roots.push(options.rootRunId);
@@ -87,9 +88,15 @@ test('chat search charges its existing run once and creates no independent model
     calls++;
     return vector();
   } };
+  await assert.rejects(f.search('alice', f.cardId, query, { ...options, embedInRun: null }), { code: 'personal_source_key_required' });
+  f.state.personal = false;
+  await assert.rejects(f.search('alice', f.cardId, query, options), { code: 'personal_source_key_required' });
+  assert.equal(calls, 0);
+  f.state.personal = true;
   const first = await f.search('alice', f.cardId, query, options);
   assert.ok(first.items.length);
-  assert.deepEqual(await f.search('alice', f.cardId, query, options), first);
+  f.state.personal = false;
+  assert.deepEqual(await f.search('alice', f.cardId, query, { ...options, embedInRun: null }), first);
   assert.equal(calls, 1);
   assert.equal(f.state.sessions, 0);
 });

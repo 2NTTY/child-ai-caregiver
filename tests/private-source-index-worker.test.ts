@@ -30,7 +30,8 @@ test('an independently rejected image stays held; a later approved original is s
     settings:{url,kind:'document',name:'Class handout',frequencyMinutes:10080}});
   const documents = createFirestoreSourceCardDocuments(domain,cards);
   let approve = false, generations = 0, embeddings = 0;
-  const routing = createFirestoreModelRouting(domain,readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:'synthetic-project'}),()=>({
+  const routing = createFirestoreModelRouting(domain,readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:'synthetic-project'}),
+    () => assert.fail('private source used platform funding'), ()=>({
     model:{async generate(){throw Error('unexpected text route');}},
     agent:{async generate(request){
       const parts = request.contents[0]!.parts!, data = Buffer.from(parts[1]!.inlineData!.data!,'base64');
@@ -69,6 +70,12 @@ test('an independently rejected image stays held; a later approved original is s
     assert.fail('Index work did not settle');
   }
   const first = await ingest('#ddeeff');
+  assert.equal(await deliver(),'pending');
+  assert.equal((await make().privateIndexStatus(owner,cardId,first.documentId)).issue,'personal_source_key_required');
+  assert.deepEqual([generations,embeddings],[0,0]);
+  await routing.settings.save(owner,{opId:randomUUID(),expectedVersion:0,mode:'personal',provider:'gemini',
+    apiKey:'synthetic-personal-key-not-a-credential',model:'gemini-2.5-flash',dailyLimit:100,
+    maxModelCalls:4,maxQueryEmbeddings:2,consent:true,backgroundEnabled:true});
   await finish();
   const held = await make().privateIndexStatus(owner,cardId,first.documentId);
   assert.equal(held.held,1);assert.equal(held.ready,0);assert.equal(embeddings,0);

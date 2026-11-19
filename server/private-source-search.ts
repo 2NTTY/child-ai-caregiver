@@ -37,6 +37,7 @@ interface Documents {
 export interface PrivateSourceSearchOptions {
   domain: FirestoreDomainData;
   documents: Documents;
+  canChargeOwner(binding: FirestoreAuthorityTransaction): Promise<boolean>;
   openSession(options: Omit<PrivateSourceModelSessionOptions, 'routing' | 'rootBudget'>): Promise<Pick<PrivateSourceModelSession, 'embed' | 'settingsVersion' | 'billingSource' | 'close'>>;
   currentAuth(owner: string): Promise<{ userId: string; disabled: boolean; emailVerified: boolean }>;
 }
@@ -98,7 +99,7 @@ export function createPrivateSourceSearch(options: PrivateSourceSearchOptions) {
   }
   async function searchPage(owner: string, rawCardId: string, rawQuery: string,
     input: { operationId: string; cursor?: string | null; signal?: AbortSignal;
-      embedInRun?: import('./agent-registered-document-tools.ts').SourceQueryEmbed }) {
+      embedInRun?: import('./agent-registered-document-tools.ts').SourceQueryEmbed | null }) {
     const cardId = domainParse(z.uuid(), rawCardId), operationId = domainParse(z.uuid(), input.operationId);
     const query = domainParse(z.string().trim().min(1).max(2000).refine(value => value.isWellFormed() && !value.includes('\0')), rawQuery);
     const signal = input.signal ?? new AbortController().signal;
@@ -137,6 +138,8 @@ export function createPrivateSourceSearch(options: PrivateSourceSearchOptions) {
         rootRunId: firestoreDomainUuid(['private-source-query-root/v1', b.scope, operationId]), deadlineAtMs: Date.now() + 120_000,
         generation: b.generation, authorizationVersion: b.authorizationVersion, grant, accessRevision: revision, state: 'unstarted' };
       const pending = { ...fresh, state: page.candidates.length ? 'pending' as const : 'unstarted' as const };
+      if (page.candidates.length && (input.embedInRun === null || !await options.canChargeOwner(b)))
+        domainReject('personal_source_key_required', 409);
       signal.throwIfAborted();
       saveQuery(b, pending);
       return { page, receipt: pending, vector: null, scope: b.scope, fresh: page.candidates.length > 0 };
@@ -149,7 +152,8 @@ export function createPrivateSourceSearch(options: PrivateSourceSearchOptions) {
         if (Date.now() >= receipt.deadlineAtMs || !await authenticated(owner)) return false;
         return documents.withIndexCard(owner, cardId, async (b, grant, revision) => {
           assertBinding(b, owner);
-          return identity(b, cardId, grant, revision, query) === receipt.identity && same(b.scope, admitted.scope);
+          return identity(b, cardId, grant, revision, query) === receipt.identity && same(b.scope, admitted.scope)
+            && await options.canChargeOwner(b);
         });
       };
       const embed = async () => {

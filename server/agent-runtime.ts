@@ -117,6 +117,7 @@ export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; b
   voice?: Readonly<VoiceMessageReference>;
   /** Server-selected model for this run, including personal routing. */
   model?: string;
+  billingSource?: import('../src/shared/model-settings.ts').ModelBillingSource;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
   completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference>;
@@ -275,6 +276,7 @@ export function createAgentRuntime(options: {
   usage: Pick<AiUsageStore, "reserve" | "record">;
   provider: AgentModelProvider;
   /** Server-selected gateway for a fixed durable run; carries no client-selected authority. */
+  billingSource?: import('../src/shared/model-settings.ts').ModelBillingSource;
   embeddings?: import('./embedding-gateway.ts').EmbeddingGateway;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
@@ -458,6 +460,7 @@ export function createAgentRuntime(options: {
           const deliveryReview = createChatDeliveryReviewObligation(input.requireDeliveryReview === true);
           const reserveDeliveryReview = () => deliveryReview.required;
           const runContext: AgentRunContext = { scope, runId, budget, authorize, images, voice, deliveryReview, model: selected.config.model,
+            billingSource: "billingSource" in selected ? selected.billingSource : undefined,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           if (privateSummaryEnabled && (input.toolCatalog || input.compactToolCatalog || input.requireDeliveryReview || configuredTools.length !== 1
