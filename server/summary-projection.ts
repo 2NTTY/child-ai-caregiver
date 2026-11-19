@@ -20,7 +20,9 @@ export function summaryExpiry(values: readonly (string | null)[]): number {
 
 export function historicalSummaryText(projection: HistoricalSummaryProjection): string {
   return JSON.stringify({ mode: 'historical_batches_not_current_facts',
-    batches: projection.batches.map(({ id, sourceMessageIds, text }) => ({ id, sourceMessageIds, text })), complete: false,
+    batches: projection.batches.map(({ id, sourceMessageIds, sourceMessages, text }) => ({
+      id, sourceMessageIds, ...(sourceMessages?.length ? { sourceMessages } : {}), text })),
+    complete: false,
     omittedOrInvalidatedBatches: projection.omittedOrInvalidatedBatches, olderHistoryAvailable: true,
     ...(projection.batches.length === 0 ? { headBatchOmittedForCapacity: true } : {}) });
 }

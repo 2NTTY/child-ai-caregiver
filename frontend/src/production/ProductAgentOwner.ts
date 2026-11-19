@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { createProductAgentApi, ProductAgentApiError, requiresFreshAgentConfirmation, type ProductAgentApi } from "../../../src/client/product-agent-api.ts";
 import type { AgentDecision, ProductAgentResult } from "../../../src/shared/product-agent.ts";
-import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, type AgentInboxModel, type AgentRunModel, type AgentRunView, type AgentProposalView, type AgentReadState, type AgentPendingDecision } from "../agent-view-model.ts";
+import { mayCheckShared, mayDecide, mayEditProposal, mayRetryOriginal, type AgentDecisionKind, type AgentInboxModel, type AgentProposalDraftEditInput, type AgentRunModel, type AgentRunView, type AgentProposalView, type AgentReadState, type AgentPendingDecision } from "../agent-view-model.ts";
 import { projectAgentRun, projectAgentProposal } from "./agent-projection.ts";
+import { applyProposalDraftEdit } from "./proposal-draft-edit.ts";
 
 interface PrivateScope { key: string; userId: string; childId: string }
 export interface AgentRecoveryContext { identityKey: string | null; allowedScopeKeys?: readonly string[] }
@@ -239,6 +240,49 @@ export class ProductAgentOwner {
     const model = this.snapshot.model;
     if (!mayRetryOriginal(model) || !model.pendingDecision) return;
     void this.submit(model.pendingDecision.proposalId, model.pendingDecision.input);
+  };
+  editProposal = async (proposalId: string, input: AgentProposalDraftEditInput): Promise<boolean> => {
+    const model = this.snapshot.model, runId = model.run?.id, original = runId ? this.rawRuns.get(runId) : null;
+    const viewProposal = model.run?.proposals.find(item => item.id === proposalId);
+    const rawProposal = original?.proposals.find(item => item.id === proposalId);
+    const api = this.api;
+    const submitEdit = api.editProposal;
+    if (!runId || !original || !viewProposal || !rawProposal || !mayEditProposal(model, viewProposal) || typeof submitEdit !== "function") {
+      return false;
+    }
+    const nextValue = applyProposalDraftEdit(rawProposal.value, input);
+    if (!nextValue) return false;
+    const request = this.begin("write");
+    if (!request || !request.current()) return false;
+    this.model({ sharedConfirmed: {}, notice: null });
+    try {
+      const saved = await submitEdit.call(api, request.scope.childId, runId, proposalId, { expectedVersion: rawProposal.version, value: nextValue }, request.controller.signal, request.scope.userId);
+      if (!request.current()) return false;
+      const run = this.store({ ...original, proposals: original.proposals.map(item => item.id === saved.id ? saved : item) });
+      this.model({
+        run,
+        readState: "ready",
+        sharedConfirmed: {},
+        notice: { tone: "saved", text: `草稿已更新至版本 ${saved.version}；請核對最新差異後再確認。` },
+      });
+      this.onSaved();
+      return true;
+    } catch (error) {
+      if (!request.current()) return false;
+      if (accessLost(error)) this.deny(error as ProductAgentApiError);
+      else if (error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error)) {
+        this.model({
+          sharedConfirmed: {},
+          notice: { tone: "error", text: "草稿或原資料版本已變更，未能保存修改；請先重新讀取最新內容再核對。" },
+        });
+      } else {
+        this.model({
+          sharedConfirmed: {},
+          notice: { tone: "error", text: "未能更新草稿，原草稿與正式資料未改變；請重試或重新讀取核對。" },
+        });
+      }
+      return false;
+    } finally { request.finish(); }
   };
   private async submit(proposalId: string, input: AgentDecision) {
     const runId = this.snapshot.model.run?.id, original = runId ? this.rawRuns.get(runId) : null;

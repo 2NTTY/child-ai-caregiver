@@ -1,9 +1,12 @@
 import { z } from "zod";
 import type { CareRecord } from "../src/shared/care.ts";
 import type { AgentPrivateNote } from "../src/shared/agent-actions.ts";
-import { agentDirectActionSchema, agentActionToolNames } from "../src/shared/agent-actions.ts";
+import { agentDirectActionSchema, agentActionToolNames, allowsDirectActionByPolicy, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import type { AgentTool, AgentRunContext } from "./agent-runtime.ts";
 import type { AgentActionsStore } from "./agent-actions-store.ts";
+import type { ProductAgentStore } from "./product-agent-store.ts";
+import { prepareProposalConfirmation } from "./agent-work-tools.ts";
+import { agentProposalSchema, type AgentProposalValue } from "../src/shared/product-agent.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { AgentStopped } from "./agent-budget.ts";
@@ -74,8 +77,100 @@ export function createAgentActionReadTools(actions: AgentActionReaders, run: Age
   ];
 }
 
-export function createAgentActionTools(actions: AgentActionsStore, run: AgentRunContext,
-  authorize: () => Promise<boolean>): AgentTool[] {
+async function mapDirectActionToProposal(
+  action: AgentDirectAction,
+  actions: AgentActionsStore,
+  run: AgentRunContext,
+): Promise<AgentProposalValue> {
+  switch (action.kind) {
+    case "save_record":
+      return {
+        kind: "care_record_create",
+        text: action.text,
+        details: action.details,
+        sourceQuote: action.sourceQuote,
+        ...(action.sourceBasis ? { sourceBasis: action.sourceBasis } : {}),
+        ...(action.quantityEvidence !== undefined ? { quantityEvidence: action.quantityEvidence } : {}),
+      };
+    case "revise_record": {
+      const prior = await actions.recordById?.(run.scope.userId, run.scope.childId, action.recordId).catch(() => null);
+      return {
+        kind: "care_record_revise",
+        recordId: action.recordId,
+        expectedVersion: action.expectedVersion,
+        text: action.text,
+        details: action.details,
+        reason: action.reason,
+        sourceQuote: action.sourceQuote,
+        ...(action.sourceBasis ? { sourceBasis: action.sourceBasis } : {}),
+        ...(action.quantityEvidence !== undefined ? { quantityEvidence: action.quantityEvidence } : {}),
+        ...(prior?.text ? { previousText: prior.text } : {}),
+      };
+    }
+    case "save_private_note":
+      return {
+        kind: "private_note_create",
+        title: action.title,
+        text: action.text,
+        ...(action.memoryKey ? { memoryKey: action.memoryKey } : {}),
+        sourceQuote: action.sourceQuote,
+      };
+    case "revise_private_note": {
+      const prior = await actions.noteById?.(run.scope.userId, run.scope.childId, action.noteId).catch(() => null);
+      return {
+        kind: "private_note_revise",
+        noteId: action.noteId,
+        expectedVersion: action.expectedVersion,
+        title: action.title,
+        text: action.text,
+        ...(action.memoryKey ? { memoryKey: action.memoryKey } : {}),
+        sourceQuote: action.sourceQuote,
+        ...(prior?.title ? { previousTitle: prior.title } : {}),
+        ...(prior?.text ? { previousText: prior.text } : {}),
+      };
+    }
+    case "create_self_task":
+      return {
+        kind: "task_create",
+        values: {
+          title: action.title,
+          details: action.details,
+          kind: "ordinary",
+          assigneeUserId: run.scope.userId,
+          dueAt: action.dueAt,
+          timeZone: action.timeZone,
+        },
+      };
+    case "change_self_task":
+      return {
+        kind: "task_change",
+        taskId: action.taskId,
+        change: action.action === "reschedule"
+          ? {
+            action: "reschedule",
+            expectedVersion: action.expectedVersion,
+            confirm: true,
+            dueAt: action.dueAt!,
+            timeZone: action.timeZone!,
+            assigneeUserId: run.scope.userId,
+            note: action.note,
+          }
+          : {
+            action: action.action,
+            expectedVersion: action.expectedVersion,
+            confirm: true,
+            note: action.note,
+          },
+      };
+  }
+}
+
+export function createAgentActionTools(
+  actions: AgentActionsStore,
+  run: AgentRunContext,
+  authorize: () => Promise<boolean>,
+  proposals?: Pick<ProductAgentStore, "propose" | "requestConfirmation">,
+): AgentTool[] {
   return [
     ...createAgentActionReadTools(actions, run, authorize),
     ...agentDirectActionSchema.options.map(schema => {
@@ -88,20 +183,63 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
         revise_private_note: "更正指定本人私人備註，先查原 ID 與版本並保留未更改內容；舊無鍵交代可同次補 memoryKey，已有鍵保持不變，不另建相似副本。",
         create_self_task: "建立本人清楚指定、時間明確的普通提醒；醫療預約及其他人的任務用候選。",
         change_self_task: "完成、取消或改期指定本人普通提醒；先查原 ID 與版本，收到不等於完成。" }[actionKind])
-        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者文字訊息；本次附有原錄音時可填 sourceBasis=voice_interpretation，sourceQuote 寫清楚聽到的片語（AI 辨識，非文字原文），聽不清不能猜；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 回報，未授權外發不能稱已通知。",
+        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者文字訊息；本次附有原錄音時可填 sourceBasis=voice_interpretation，sourceQuote 寫清楚聽到的片語（AI 辨識，非文字原文），聽不清不能猜；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策；若目前政策為先確認或未涵蓋該動作，Server 會先建立待確認草稿，不會直接正式保存。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 或 proposal 回報，未授權外發不能稱已通知。",
       // Each native tool has one concrete shape; the shared business union retains all refinements.
       parameters: z.object(shape), authorize,
       execute: async (args, call) => {
         try {
           const action = agentDirectActionSchema.parse({ ...args, kind: actionKind });
+          if (typeof proposals?.propose === "function" && typeof actions.policy === "function") {
+            const currentPolicy = await actions.policy(run.scope.userId, run.scope.childId);
+            if (!currentPolicy) throw new AgentStopped("unauthorized");
+            if (action.expectedPolicyVersion !== currentPolicy.version) {
+              return {
+                status: "conflict",
+                data: {
+                  code: "agent_policy_changed",
+                  formalSave: false,
+                  nextAction: "重新讀取目前授權及版本；不要沿用舊版本寫入或繞過核對。",
+                },
+              };
+            }
+            const gate = allowsDirectActionByPolicy(currentPolicy, action);
+            if (!gate.allowed) {
+              if (gate.reason === "policy_inactive") {
+                return {
+                  status: "conflict",
+                  data: {
+                    code: "agent_policy_changed",
+                    formalSave: false,
+                    nextAction: "目前授權設定已因權限或環境改變而失效；停止自動保存並重新核對授權。",
+                  },
+                };
+              }
+              const proposalValue = agentProposalSchema.parse(await mapDirectActionToProposal(action, actions, run));
+              const proposal = await proposals.propose(run.scope, run.runId, call.callId, proposalValue);
+              if (!proposal) throw new AgentStopped("unauthorized");
+              const preparedProposal = await prepareProposalConfirmation(proposals as ProductAgentStore, run, proposal);
+              return {
+                status: "succeeded",
+                reference: preparedProposal.id,
+                data: {
+                  mode: "confirm_first_draft",
+                  formalSave: false,
+                  confirmationRequired: true,
+                  confirmationPrepared: preparedProposal.confirmationPrepared === true,
+                  reason: gate.reason,
+                  proposal: preparedProposal,
+                },
+              };
+            }
+          }
           const receipt = await actions.execute(run.scope, run.runId, call.callId, action);
           if (!receipt) throw new AgentStopped("unauthorized");
-          return { status: "succeeded", reference: receipt.id, data: { receipt,
+          return { status: "succeeded", reference: receipt.id, data: { mode: "auto_saved", formalSave: true, receipt,
             ...(action.kind === "save_record" ? { savedEventTime: groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime } : {}) } };
         } catch (error) {
           if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
           if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected",
-            data: { code: error.code, nextAction: "重新核對目前授權及原操作；不要換 ID 重複執行，不把拒絕寫成成功。" } };
+            data: { code: error.code, formalSave: false, nextAction: "重新核對目前授權及原操作；不要換 ID 重複執行，不把拒絕寫成成功。" } };
           throw error;
         }
       } } satisfies AgentTool;
