@@ -343,12 +343,15 @@ export interface CoreMilestones {
   readonly terminalSettledMs: number | null;
 }
 
-export function classifyTerminalCategory(result: Pick<ProductAgentResult, "status" | "stopReason" | "citations"> | null): TerminalCategory {
+export function classifyTerminalCategory(result: Pick<ProductAgentResult, "status" | "stopReason" | "citations" | "privateSourceCitations"> | null): TerminalCategory {
   if (!result || result.status === "running") return "unknown";
   if (result.status === "completed") return "completed";
   if (result.status === "unknown") return "unknown";
   if (result.stopReason === "cancelled") return "cancelled";
-  if (result.citations.length > 0) return "partial";
+  if (result.stopReason === "tool_unknown") return "unknown";
+  // Use only sources actually retained in the final product result, never an earlier search or draft.
+  if (result.stopReason?.startsWith("delivery_review_")
+    && (result.citations.length > 0 || (result.privateSourceCitations?.length ?? 0) > 0)) return "partial";
   return "failed";
 }
 

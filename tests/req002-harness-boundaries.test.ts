@@ -233,3 +233,16 @@ test("scripted content evidence requires delivered, uncontradicted text and the 
   for (const wrong of [null, "請參閱求助卡。", gap + " 建議自行用藥。"])
     assert.equal(harness.checkReq002ScriptedAnswer(c, wrong, null), "not_verified");
 });
+
+test("receipt terminal categories match unknown tool outcomes and actually retained source-only review stops", () => {
+  const stopped = { status: "stopped" as const, stopReason: "delivery_review_budget", citations: [] };
+  const privateSource = { citationId: "private-1", inputId: "00000000-0000-4000-8000-000000000001",
+    version: 1, label: "Fixture", excerpt: "Synthetic", sha256: "a".repeat(64), nature: "external_material" as const };
+  const retained = { ...stopped, privateSourceCitations: [privateSource] };
+  assert.equal(harness.classifyTerminalCategory(retained), "partial");
+  assert.equal(harness.classifyTerminalCategory(stopped), "failed");
+  assert.equal(harness.classifyTerminalCategory({ ...retained, stopReason: "tool_unknown" }), "unknown");
+  assert.equal(harness.classifyTerminalCategory({ ...retained, stopReason: "cancelled" }), "cancelled");
+  assert.equal(harness.classifyTerminalCategory({ ...retained, stopReason: "unauthorized" }), "failed");
+  assert.equal(harness.classifyTerminalCategory({ ...retained, status: "unknown" }), "unknown");
+});
