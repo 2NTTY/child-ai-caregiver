@@ -186,7 +186,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       if (!feed.includes(Buffer.from(selected.rssItem.xml))) reject("knowledge_feed_original_mismatch");
       return selected;
     },
-    async resumeCheck(job: RefreshJob, jobId: string) {
+    async resumeCheck(job: RefreshJob, jobId: string, includeObservationTime = false) {
       return database.runTransaction(async tx => {
         const snap = await tx.get(checkRef(jobId));
         if (!snap.exists) return null;
@@ -199,13 +199,15 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           return { status: "failed" as const, reason: receipt.failureCode };
         if (!receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
         const items: ObservedContent[] = [];
+        let firstObservedAt: string | undefined;
         for (const pin of receipt.itemHashes) {
           const current = await gate.read(tx, pin.sourceId);
           if (!current?.catalogMatches || !current.watch.enabled || current.watch.revision !== job.revision
             || current.observation?.contentHash !== pin.contentHash || current.observation.unavailable) return null;
+          if (includeObservationTime && receipt.itemHashes.length === 1) firstObservedAt = current.observation.fetchedAt;
           items.push(await gate.content(tx, current.observation));
         }
-        return { status: "ok" as const, items };
+        return { status: "ok" as const, items, ...(firstObservedAt ? {firstObservedAt} : {}) };
       }, { readOnly: true });
     },
     async adminStatus(cursor: string | null = null): Promise<AdminKnowledgeStatus> {

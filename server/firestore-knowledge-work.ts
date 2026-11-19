@@ -8,6 +8,7 @@ import {
   type BackgroundKnowledgeRunRequest, type BackgroundKnowledgeRunResult, type BackgroundKnowledgeWorkBudget,
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, BackgroundKnowledgeDurableOperation, BackgroundKnowledgePublishReceipt } from "./background-knowledge-maintenance.ts";
+import { KnowledgeDailyAdmissionRefused } from "./agent-model-gateway.ts";
 import { backgroundKnowledgeReviewMatchesCandidate, KnowledgeModelQuotaPending } from "./background-knowledge-maintenance.ts";
 import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
@@ -28,8 +29,9 @@ const workSchema = z.strictObject({
 });
 type Work = z.infer<typeof workSchema>;
 const stageSchema = z.strictObject({
-  rootRunId: hash.optional(), requestHash: hash, state: z.enum(["pending", "ready", "unknown"]), text: z.string().max(128000).nullable(),
-}).refine(row => (row.state === "ready") === (row.text !== null));
+  rootRunId: hash.optional(), requestHash: hash, state: z.enum(["pending", "ready", "unknown", "daily_refused"]), refusedDay: z.iso.date().optional(), text: z.string().max(128000).nullable(),
+}).refine(row => (row.state === "ready") === (row.text !== null)
+  && (row.state === "daily_refused") === (row.refusedDay !== undefined));
 const preparedSchema = z.strictObject({
   candidateHash: hash,
   prepared: z.strictObject({
@@ -106,7 +108,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
       const bytes = await originals.readPdf(sourceId, descriptor.contentHash);
       return { descriptor, bytes };
     },
-    /** Operator lookup only. Never acquire a lease or restart an external effect. */
+    /** Read the bound work and candidate without acquiring a lease or restarting an external effect. */
     async inspect(raw: BackgroundKnowledgeRunRequest) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
@@ -160,7 +162,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
         if (snapshot.exists) {
           const row = verify(open(workRef, snapshot.data(), workSchema));
           if (row.waitingForQuotaDay && row.waitingForQuotaDay < new Date().toISOString().slice(0, 10)
-            && (row.preparedHash || row.windowed && row.quotaPhase === 'model') && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {
+            && (row.preparedHash || row.quotaPhase === 'model') && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {
             const { waitingForQuotaDay: _, quotaPhase: _phase, ...rest } = row;
             const continued = { ...rest, deadlineAtMs: Date.now() + limits.deadlineMs, lease: null };
             tx.set(workRef, seal(workRef, continued));
@@ -309,6 +311,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
             write(tx, { ...row, preparedHash: knowledgeReviewHash(saved) });
           });
         },
+        async verifyLease(tx: Transaction) { await current(tx); },
         async readPrepared(candidate: BackgroundKnowledgeCandidate) {
           return database.runTransaction(async tx => {
             const row = await current(tx), saved = await tx.get(preparedRef);
@@ -320,41 +323,43 @@ export function createFirestoreKnowledgeWork(options: Options) {
           }, { readOnly: true });
         },
         /** Reserve before dispatch. An unanswered reservation is lookup-only forever. */
-        async completeText(input: { system: string; user: string; attemptKey: string }, generate: () => Promise<string>, canStart?: (tx:Transaction)=>Promise<boolean>) {
+        async completeText(input: { system: string; user: string; attemptKey: string }, generate: (rootRunId: string) => Promise<string>, canStart?: (tx:Transaction)=>Promise<boolean>) {
           const stageRef = ref("model", request.operationFingerprint, input.attemptKey);
           const requestHash = knowledgeReviewHash(input);
           const cached = await database.runTransaction(async tx => {
             const row = await current(tx), snapshot = await tx.get(stageRef);
-            if (snapshot.exists) {
-              const stage = open(stageRef, snapshot.data(), stageSchema);
-              if (stage.requestHash !== requestHash) reject("knowledge_work_model_binding_changed");
-              if (stage.state !== "ready") reject("knowledge_work_model_outcome_unknown");
-              return stage.text;
-            }
+            const stage = snapshot.exists ? open(stageRef, snapshot.data(), stageSchema) : null;
+            if (stage && stage.requestHash !== requestHash) reject("knowledge_work_model_binding_changed");
+            if (stage?.state === "ready") return { text: stage.text! };
+            if (stage && (stage.state !== "daily_refused" || !stage.refusedDay)) reject("knowledge_work_model_outcome_unknown");
             if (reusedOrganizationFrom && (input.attemptKey.startsWith("knowledge-organize:") || input.attemptKey.startsWith("knowledge-page-organize:"))) {
               const priorRef = ref("model", reusedOrganizationFrom, input.attemptKey);
               const prior = open(priorRef, (await tx.get(priorRef)).data(), stageSchema);
               if (prior.state !== "ready" || prior.requestHash !== requestHash || prior.text === null)
                 reject("knowledge_work_repair_stage_missing");
               tx.create(stageRef, seal(stageRef,prior));
-              return prior.text;
+              return { text: prior.text };
             }
-            if (row.windowed && canStart && !await canStart(tx)) {
+            if (canStart && !await canStart(tx)) {
               write(tx,{...row,lease:null,quotaPhase:"model",waitingForQuotaDay:new Date().toISOString().slice(0,10)});
               return false as const;
             }
             if (row.preparedHash) reject("knowledge_work_candidate_already_prepared");
-            if (row.budget.modelCalls >= row.budget.maxModelCalls) reject("knowledge_work_model_limit");
-            const rootRunId = row.windowed ? knowledgeReviewHash([request.operationFingerprint,input.attemptKey]) : request.operationFingerprint;
-            tx.create(stageRef, seal(stageRef, { requestHash, rootRunId, state: "pending", text: null }));
+            // A known pre-dispatch daily refusal retains this work's reserved stage. Its previous
+            // root never admitted an attempt. A new bounded deadline is linked to the recorded refusal.
+            if (!stage && row.budget.modelCalls >= row.budget.maxModelCalls) reject("knowledge_work_model_limit");
+            const key = [request.operationFingerprint, input.attemptKey];
+            if (stage?.refusedDay) key.push(stage.refusedDay);
+            const rootRunId = canStart || row.windowed ? knowledgeReviewHash(key) : request.operationFingerprint;
+            tx.set(stageRef, seal(stageRef, { requestHash, rootRunId, state: "pending", text: null }));
             write(tx, { ...row, lease: { token: leaseToken, untilMs: Math.min(Date.now() + 120_000, row.deadlineAtMs) },
-              budget: { ...row.budget, modelCalls: row.budget.modelCalls + 1 } });
-            return null;
+              budget: { ...row.budget, modelCalls: row.budget.modelCalls + (stage ? 0 : 1) } });
+            return { rootRunId };
           });
           if (cached === false) throw new KnowledgeModelQuotaPending();
-          if (cached !== null) return cached;
+          if ("text" in cached) return cached.text!;
           try {
-            const text = await generate();
+            const text = await generate(cached.rootRunId);
             await database.runTransaction(async tx => {
               await current(tx);
               const snapshot = await tx.get(stageRef), stage = open(stageRef, snapshot.data(), stageSchema);
@@ -363,6 +368,18 @@ export function createFirestoreKnowledgeWork(options: Options) {
             });
             return text;
           } catch (error) {
+            if (error instanceof KnowledgeDailyAdmissionRefused) {
+              await database.runTransaction(async tx => {
+                const row = await current(tx), snap = await tx.get(stageRef);
+                const stage = open(stageRef, snap.data(), stageSchema);
+                if (stage.state !== "pending" || stage.requestHash !== requestHash || stage.rootRunId !== cached.rootRunId)
+                  reject("knowledge_work_model_binding_changed");
+                const day = new Date().toISOString().slice(0, 10);
+                tx.set(stageRef, seal(stageRef, { ...stage, state: "daily_refused", refusedDay: day }));
+                write(tx, { ...row, lease: null, quotaPhase: "model", waitingForQuotaDay: day });
+              });
+              throw new KnowledgeModelQuotaPending();
+            }
             // Keep pending if even recording unknown fails. Neither state permits redispatch.
             await database.runTransaction(async tx => {
               await current(tx);

@@ -270,7 +270,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const knowledgeIndexes = knowledge ? createKnowledgeIndexBatches(domain, knowledge, tx => authority.readControl(tx), configuredAdminUid) : undefined;
     const knowledgeAgent = composition.worker && knowledge && aiConfig.backgroundKnowledgeMaintenanceEnabled && aiConfig.backgroundKnowledgeLiveFetch
       ? createScheduledKnowledgeAgent({ ...domain, config: aiConfig, knowledge, refresh: knowledgeRefresh, routing: product.routing,
-        payer: env.AI_KNOWLEDGE_MAINTENANCE_PAYER, currentAuth, readControl: tx => authority.readControl(tx) }) : undefined;
+        sourceIds: config.knowledgeSourceIds ?? [], payer: env.AI_KNOWLEDGE_MAINTENANCE_PAYER, currentAuth, readControl: tx => authority.readControl(tx) }) : undefined;
     const knowledgeTransfers = knowledge ? createKnowledgeTransfers(domain, tx => authority.readControl(tx)) : undefined;
     const admin = createFirestoreAdmin({ ...domain, usageFinancialEvidence },
       aiConfig, knowledgeRefresh, knowledgeIndexes, knowledgeTransfers,
