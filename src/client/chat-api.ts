@@ -4,7 +4,7 @@ import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shar
 import { photoMessageReferenceSchema, type PhotoMessageReference } from '../shared/photos.ts';
 import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
 import { readAgentFeedback } from './agent-feedback-reader.ts';
-import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
+import { isChatMode, resolveChatMode, type ChatMessage, type ChatMode, type ChatPage, type ChatReplyState } from "../shared/chat.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
@@ -50,7 +50,7 @@ export interface ChatApi {
   listImportedMessages?(childId: string, signal: AbortSignal, expectedUserId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedMessage?(childId: string, id: string, signal: AbortSignal, expectedUserId: string): Promise<ImportedChatMessage>;
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
-  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<ChatMessage>;
+  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">, chatMode?: ChatMode): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
   getOriginalReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatReplyState | null>;
   getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
@@ -73,6 +73,7 @@ function message(value: unknown): value is ChatMessage {
   return object(value) && id(value.id) && id(value.childId)
     && (value.authorUserId === null || id(value.authorUserId))
     && (value.role === "user" || value.role === "model")
+    && (value.chatMode === undefined || isChatMode(value.chatMode))
     && (value.agentRunId === undefined || id(value.agentRunId))
     && (value.officialHelp === undefined || Array.isArray(value.officialHelp) && value.officialHelp.length <= 2 && value.officialHelp.every(card => officialHelpIdSchema.safeParse(card).success))
     && (value.voice === undefined || value.role === "user" && voiceMessageReferenceSchema.safeParse(value.voice).success)
@@ -194,11 +195,13 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       if (!object(value) || typeof value.accepted !== "boolean") throw new ChatApiError();
       return value.accepted;
     },
-    async saveMessage(childId, text, signal, expectedUserId, voice, file, photo) {
+    async saveMessage(childId, text, signal, expectedUserId, voice, file, photo, chatMode) {
       if ([voice, file, photo].filter(Boolean).length > 1) throw new ChatApiError(400, "invalid_input");
-      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}), ...(file ? {file:{id:file.id,expectedVersion:file.version}} : {}), ...(photo ? {photo:{id:photo.id,expectedVersion:photo.version}} : {}) } }, outerSignal, expectedUserId));
+      if (chatMode !== undefined && !isChatMode(chatMode)) throw new ChatApiError(400, "invalid_input");
+      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(chatMode !== undefined ? { chatMode } : {}), ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}), ...(file ? {file:{id:file.id,expectedVersion:file.version}} : {}), ...(photo ? {photo:{id:photo.id,expectedVersion:photo.version}} : {}) } }, outerSignal, expectedUserId));
       if (!object(value) || !message(value.message) || value.message.childId !== childId
         || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text
+        || (chatMode !== undefined && resolveChatMode(value.message.chatMode) !== chatMode)
         || (voice ? value.message.voice?.id !== voice.id || value.message.voice.version !== voice.version + 1 : !!value.message.voice)
         || (file ? value.message.file?.id !== file.id || value.message.file.version !== file.version + 1 : !!value.message.file)
         || (photo ? value.message.photo?.id !== photo.id || value.message.photo.version !== photo.version : !!value.message.photo)) {

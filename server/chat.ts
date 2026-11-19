@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
-import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
+import type { ChatMessage, ChatMode, ChatPage } from "../src/shared/chat.ts";
 import type { ImportedChatMessage, ImportedChatPage } from "../src/shared/chat-imports.ts";
 import { READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
@@ -14,7 +14,7 @@ export interface ChatStore {
   listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent'): Promise<(ChatPage & {
     dataVersion?: string; sourceDeadlines?: Record<string, string>;
   }) | null>;
-  createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;
+  createUserMessageForUser(userId: string, childId: string, text: string, chatMode?: ChatMode): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
 }
 interface MessageRow {
@@ -64,7 +64,7 @@ export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges 
         nextCursor: result.rows.length > 100 ? rows.at(-1)!.id : null };
       });
     },
-    async createUserMessageForUser(userId, childId, text) {
+    async createUserMessageForUser(userId, childId, text, _chatMode) {
       return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
       const messageId = randomUUID();
       const result = await client.query<MessageRow>(

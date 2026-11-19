@@ -10,7 +10,9 @@ import {
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
+import { CHAT_MODE_COPY, resolveChatMode, type ChatMode } from '../../../src/shared/chat';
 import { failedChatReply } from '../components/chat/failed-reply';
+import { ChatModeSwitch } from '../components/chat/ChatModeSwitch';
 import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
@@ -56,11 +58,13 @@ function ChatContents({ compact, onPaneLayout }: {
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
-  const { model, actions, owner, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, owner, scopeKey, chatState: chat, chatController, chatMode: providedChatMode, setChatMode: providedSetChatMode, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const { height: viewportHeight, fontScale = 1 } = useWindowDimensions();
   const child = model.children.find(item => item.id === model.selectedChildId);
+  const chatMode: ChatMode = providedChatMode ?? resolveChatMode(child ? chat.chatModes?.[child.id] : undefined);
+  const setChatMode = providedSetChatMode ?? ((nextMode: ChatMode) => { chatController.setChatMode?.(nextMode); });
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
@@ -217,10 +221,15 @@ function ChatContents({ compact, onPaneLayout }: {
       && !(remote?.messageId === turnFeedback.messageId && remote.status === "running") && turnFeedback.messageId !== draft?.savedUserMessageId
       ? <AppButton label="收起這次查核提示" variant="quiet" density="compact"
         onPress={() => chatController.dismissRetainedFeedback(turnFeedback.messageId)} /> : null}
-    {authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
+    {chatMode === "assistant" && authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
   </BackgroundSurface> : null;
+  const inflightModeNotice = chat.modeSwitchedDuringReply && (busy || remote?.status === "running")
+    ? (chat.modeSwitchedDuringReply.from === "assistant" && chat.modeSwitchedDuringReply.to === "chat_only"
+      ? CHAT_MODE_COPY.inflightAssistantToChatOnlyNotice
+      : CHAT_MODE_COPY.inflightChatOnlyToAssistantNotice)
+    : null;
   const timelineFooter = feedback ? <View style={styles.feedback}>{feedback}</View> : null;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
@@ -274,6 +283,7 @@ function ChatContents({ compact, onPaneLayout }: {
           phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
+            {message.chatMode === "chat_only" ? <Text testID={`chat-message-mode-${message.id}`} style={styles.modeTag}>只是聊天</Text> : null}
             {message.photo?<ChatPhotoMessage key={`${scopeKey}:${message.photo.id}`} photo={message.photo}/>:null}
             {message.file?<ChatFileMessage messageId={message.id} file={message.file}/>:null}
             {message.voice?<VoiceMessage messageId={message.id} voice={message.voice}/>:null}
@@ -301,6 +311,8 @@ function ChatContents({ compact, onPaneLayout }: {
           </> : undefined} />;
       }} />
     {officialHelpPanel}
+    <ChatModeSwitch mode={chatMode} disabled={!child || !chat.online} compact={compact} inflightNotice={inflightModeNotice} onChangeMode={setChatMode} />
+    {chatMode === "chat_only" && agentAttachments.length ? <Text style={styles.meta}>目前為「只是聊天」：送出後只作理解與問答，不建立正式記錄或待確認卡片。</Text> : null}
     <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
       allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
       onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
@@ -336,6 +348,7 @@ const styles = StyleSheet.create({
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
+  modeTag: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, marginBottom: 4 },
   error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
   feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center",
     paddingHorizontal: chatLayout.wideInset, overflow: "hidden", marginBottom: chatLayout.composerOverlap },

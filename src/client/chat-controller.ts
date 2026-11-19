@@ -10,7 +10,7 @@ import {
   type OfficialHelpId,
 } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
-import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
+import { isChatMode, resolveChatMode, type ChatMode, type ChatReplyState, type ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
 
 type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" | "reply_failed";
@@ -48,6 +48,8 @@ export interface ChatState {
   available: boolean | null;
   usage: ChatUsage | null;
   drafts: Record<string, ChatDraft>;
+  chatModes?: Record<string, ChatMode>;
+  modeSwitchedDuringReply?: { messageId: string; from: ChatMode; to: ChatMode } | null;
   busy: "save" | "reply" | null;
   remoteReply?: ChatReplyState | null;
   replyingMessageId: string | null;
@@ -96,7 +98,7 @@ function initialState(online: boolean): ChatState {
   return {
     userId: null, online, selectedChildId: null, messages: [], limit: 100, loading: false,
     nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null,
-    loadedAt: null, error: null, available: null, usage: null, drafts: {},
+    loadedAt: null, error: null, available: null, usage: null, drafts: {}, chatModes: {}, modeSwitchedDuringReply: null,
     busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null,
   };
 }
@@ -207,7 +209,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null, error: null,
-        replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
+        replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
     }
     return true;
   }
@@ -222,11 +224,13 @@ export class ChatController {
     this.forgottenChildIds.add(childId);
     const drafts = { ...this.state.drafts };
     delete drafts[childId];
+    const chatModes = { ...(this.state.chatModes ?? {}) };
+    delete chatModes[childId];
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
-      this.update({ drafts, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
-    } else this.update({ drafts });
+      this.update({ drafts, chatModes, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
+    } else this.update({ drafts, chatModes });
   }
 
   reconcileChildren(childIds: string[], pendingDeletionId: string | null): void {
@@ -303,7 +307,7 @@ export class ChatController {
       }
       this.abortRequests();
       this.update({ selectedChildId: childId, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
       if (childId && online) {
         void this.reloadMessages();
         void this.refreshMetadata();
@@ -312,6 +316,28 @@ export class ChatController {
       void this.reloadMessages();
       void this.refreshMetadata();
     }
+  }
+
+  getChatMode(childId: string | null = this.state.selectedChildId): ChatMode {
+    return resolveChatMode(childId ? this.state.chatModes?.[childId] : undefined);
+  }
+
+  setChatMode(mode: ChatMode): void {
+    const childId = this.state.selectedChildId;
+    if (!this.state.userId || !childId || !isChatMode(mode)) return;
+    const previous = this.getChatMode(childId);
+    if (previous === mode) return;
+    const activeReplyMessageId = this.state.busy === "reply"
+      ? this.state.replyingMessageId
+      : this.state.remoteReply?.status === "running"
+        ? this.state.remoteReply.messageId
+        : null;
+    this.update({
+      chatModes: { ...(this.state.chatModes ?? {}), [childId]: mode },
+      modeSwitchedDuringReply: activeReplyMessageId
+        ? { messageId: activeReplyMessageId, from: previous, to: mode }
+        : null,
+    });
   }
 
   setText(text: string): void {
@@ -415,6 +441,7 @@ export class ChatController {
                 loadedAt: new Date().toISOString(),
                 remoteReply: null,
                 replyError: null,
+                modeSwitchedDuringReply: null,
               });
             }
           }
@@ -428,7 +455,7 @@ export class ChatController {
         if (!this.current(scope)) return;
       } else if (!this.state.remoteReply || !page.messages.some(row => row.role === "model"
         && row.inReplyTo === this.state.remoteReply!.messageId && row.agentRunId === this.state.remoteReply!.runId)) {
-        this.update({ remoteReply: null, replyError: null });
+        this.update({ remoteReply: null, replyError: null, modeSwitchedDuringReply: null });
       }
       const draft = this.state.drafts[childId];
       const latestTurn = [...authoritativePage.messages].reverse().find(item => item.role === "user");
@@ -511,6 +538,7 @@ export class ChatController {
       this.update({
         remoteReply: null,
         replyError: null,
+        ...(this.state.modeSwitchedDuringReply?.messageId === messageId ? { modeSwitchedDuringReply: null } : {}),
         messages: result ? this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) : this.state.messages,
       });
       return result;
@@ -792,7 +820,11 @@ export class ChatController {
           && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0)
           ? this.state.feedback
           : null;
-        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply });
+        const keepModeNotice = settledRemoteReply?.status === "running"
+          && this.state.modeSwitchedDuringReply?.messageId === messageId
+          ? this.state.modeSwitchedDuringReply
+          : null;
+        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply, modeSwitchedDuringReply: keepModeNotice });
         void this.refreshMetadata();
       }
     }
@@ -833,12 +865,15 @@ export class ChatController {
     }
     const scope = this.scope();
     let savedId: string | null = null;
+    const currentMode = this.getChatMode(childId);
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
       this.updateDraft(childId, { text, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo);
+      const saved = currentMode === "chat_only"
+        ? await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo, "chat_only")
+        : await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo);
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });

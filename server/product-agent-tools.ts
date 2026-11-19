@@ -14,7 +14,8 @@ import { careRecordCitationId, selectedCareRecordCitations } from '../src/shared
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema, type AgentHistoryMessage } from "../src/shared/agent-work.ts";
-import type { ChatMessage } from "../src/shared/chat.ts";
+import type { ChatMessage, ChatMode } from "../src/shared/chat.ts";
+import { CHAT_ONLY_ALLOWED_TOOL_NAMES } from "./product-agent-capabilities.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
@@ -166,6 +167,7 @@ export function createProductAgentTools(options: {
   liveSourceReader?: LiveSourceReaderOption;
   publishedLiveSeries?: PublishedLiveSeries;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
+  chatMode?: ChatMode;
   reviewedGrowthPresentation?: boolean;
   background?: boolean;
   /** Authenticated current user message; required for compose review binding. */
@@ -179,6 +181,7 @@ export function createProductAgentTools(options: {
   seededOfficialEvidence?: readonly { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[];
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
+  const isChatOnly = options.chatMode === "chat_only";
   const knownPrivateIdentifiers = new Set<string>();
   const noteKnownPrivateIdentifier = (value: string | null | undefined) => {
     const trimmed = typeof value === "string" ? value.trim() : "";
@@ -188,7 +191,7 @@ export function createProductAgentTools(options: {
   const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
   const registeredSources = options.registeredSourceCards && options.currentMessageId && options.trustedUserMessage
-    && !options.background && !options.mixedTasks && !options.reviewedGrowthPresentation && options.visibility !== 'family'
+    && !options.background && !options.mixedTasks && !options.reviewedGrowthPresentation && options.visibility !== 'family' && !isChatOnly
     ? createRegisteredSourceTools(options.registeredSourceCards, scope.userId, options.currentMessageId, options.trustedUserMessage, authorize,
       options.recentQuoteSources?.filter(message => message.authorUserId === scope.userId && message.role === 'user').map(message => message.text),
       options.platformLibrary && { library: options.platformLibrary, childId: scope.childId })
@@ -313,6 +316,9 @@ export function createProductAgentTools(options: {
   }
   const trackedStore: ProductAgentStore = new Proxy(store, {
     get(target, prop) {
+      if (isChatOnly && (prop === "propose" || prop === "saveWork" || prop === "requestConfirmation")) {
+        return async () => { throw new FamilyError(400, "chat_only_writes_disabled"); };
+      }
       if (prop === "propose" && typeof target.propose === "function") {
         return async (...args: Parameters<ProductAgentStore["propose"]>) => {
           const proposal = await target.propose(...args);
@@ -327,7 +333,7 @@ export function createProductAgentTools(options: {
       return typeof value === "function" ? value.bind(target) : value;
     },
   });
-  const trackedActions: typeof options.actions = options.actions ? {
+  const trackedActions: typeof options.actions = !isChatOnly && options.actions ? {
     ...options.actions,
     async execute(targetScope, targetRunId, callId, action) {
       const receipt = await options.actions!.execute(targetScope, targetRunId, callId, action);
@@ -335,7 +341,7 @@ export function createProductAgentTools(options: {
       return receipt;
     },
   } : undefined;
-  const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,trackedStore,run,authorize):null;
+  const privateSources=!isChatOnly&&options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,trackedStore,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
   let activeRepairChecks: (() => Promise<boolean>) | undefined;
@@ -564,6 +570,7 @@ export function createProductAgentTools(options: {
     if (citedLocations.size > 6) throw new FamilyError(400, 'invalid_citation');
     const candidateDraft: ChatDeliveryDraft = {
       ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
+      ...(isChatOnly ? { chatMode: "chat_only" as const } : {}),
       kind: parsed.kind,
       visibility: options.visibility === "family" ? "family" : "private",
       serverSubstitutedSourceText: false,
@@ -999,8 +1006,8 @@ export function createProductAgentTools(options: {
         };
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
-        // must not stand in for propose_fact. Questions / read-backs are unaffected.
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
+        // must not stand in for propose_fact. Questions / read-backs and manual chat_only turns are unaffected.
+        if (!isChatOnly && !options.background && !options.mixedTasks && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
           && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
@@ -1014,10 +1021,10 @@ export function createProductAgentTools(options: {
             const source = item.citationIds.length === 1 && selectedEvidence.get(item.citationIds[0]);
             return (item.kind ?? parsed.kind) === 'private_reference' && source && attributedChatQuote(source) === item.text;
           }));
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && !skipMemoryHydration) {
+        if (!isChatOnly && !options.background && !options.mixedTasks && parsed.kind !== "no_action" && !skipMemoryHydration) {
           await ensureConfirmedMemoryGrounding();
         }
-        if (!options.background && !options.mixedTasks && parsed.kind !== "no_action" && executedActions.size > 0) {
+        if (!isChatOnly && !options.background && !options.mixedTasks && parsed.kind !== "no_action" && executedActions.size > 0) {
           await refreshVerifiedOperations(false);
         }
         if (parsed.kind !== "no_action") {
@@ -1096,12 +1103,15 @@ export function createProductAgentTools(options: {
     return historyQuoteHandles.get(handle) ?? handle;
   }
   if (options.visibility !== "family") {
-    tools.splice(tools.length - 1, 0, ...createAgentWorkTools(trackedStore, memory, run, permitted, recordRecalledFacts,
-      () => { pendingMemoryProposalCount += 1; }, registerChatSource, options.currentMessageId, noteRecallExpiry, options.trustedUserMessage));
+    const workTools = createAgentWorkTools(trackedStore, memory, run, permitted, recordRecalledFacts,
+      () => { pendingMemoryProposalCount += 1; }, registerChatSource, options.currentMessageId, noteRecallExpiry, options.trustedUserMessage);
+    tools.splice(tools.length - 1, 0, ...(isChatOnly
+      ? workTools.filter(tool => tool.name === "search_history" || tool.name === "read_history")
+      : workTools));
   }
   if (trackedActions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(trackedActions, run, permitted, trackedStore)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
-  else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
+  else if (!isChatOnly && options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
     ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if (registeredSources) tools.splice(tools.length - 1, 0, ...registeredSources.tools);
@@ -1125,15 +1135,15 @@ export function createProductAgentTools(options: {
         return run.embeddings.embed(request, { kind: 'query_embedding', actorId: scope.userId, operationId: runId },
           budget.signal, permitted, attemptKey ? budget.queryEmbeddingDailyUsage(attemptKey) : undefined);
       }));
-  if(options.documents && options.includeDocuments && options.visibility!=="family") {
+  if(!isChatOnly && options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
       documents: options.documents, agent: trackedStore, run, authorize: permitted,
       trustedUserMessage: options.trustedUserMessage ?? "",
     }));
   }
-  if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,trackedStore,run,permitted,options.visibility==="family"));
-  if(options.summary)tools.splice(tools.length-1,0,{
+  if(!isChatOnly&&options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,trackedStore,run,permitted,options.visibility==="family"));
+  if(!isChatOnly&&options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",effect:"read",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
       const value=await options.summary!.get(scope.userId,scope.childId,summaryQuery.parse(args));if(!value)throw new AgentStopped("unauthorized");
@@ -1145,7 +1155,7 @@ export function createProductAgentTools(options: {
     }),
   });
   let contactReference:string|null=null;
-  if (options.prepareMixedTasks) {
+  if (!isChatOnly && options.prepareMixedTasks) {
     const prepare=options.prepareMixedTasks;
     tools.push({name:'prepare_selected_tasks',description:'家長或老師要求替所選孩子建立、改期、取消或完成多項待辦時，準備一份整批確認。建立時缺省涵蓋這段對話的所有孩子，也可指定子集；修改時使用 read_selected_tasks 讀到的原任務 ID 和版本。工具只列出待確認內容，使用者確認後才實行。',
       parameters:z.strictObject({action:z.union(mixedBatchActionSchema.options)}),authorize:permitted,execute:args=>guard(async()=>{
@@ -1153,7 +1163,7 @@ export function createProductAgentTools(options: {
         return {batchId:proposedBatch.id,targetCount:proposedBatch.items.length,state:proposedBatch.state,confirmationPrepared:true};
       })});
   }
-  if (options.mixedTasks) {
+  if (!isChatOnly && options.mixedTasks) {
     const read = options.mixedTasks;
     function taskSource(child: AssistantTaskContextPage['children'][number], continued: boolean): ChatDeliverySource {
       const text = JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued,hasMore:child.nextCursor!==null});
@@ -1194,7 +1204,7 @@ export function createProductAgentTools(options: {
         return {children,nextFrom};
       })});
   }
-  if (options.mixedMaterials) {
+  if (!isChatOnly && options.mixedMaterials) {
     const reader = options.mixedMaterials;
     tools.push({name:'search_selected_materials',effect:'read',authorize:permitted,parameters:materialQuery,
       description:'在這段對話已選的孩子中查有效記憶（memory）或文件（document）。from 從 0 開始，只讀該孩子的一頁。可按字詞 query 找片段；同一孩子續頁沿原 query 和 nextCursor，下一個孩子用 nextFrom。引用返回的 citationId，留意部分讀取。',
@@ -1218,7 +1228,7 @@ export function createProductAgentTools(options: {
         return page;
       })});
   }
-  if (options.mixedCare) {
+  if (!isChatOnly && options.mixedCare) {
     const read=options.mixedCare;
     const parameters=z.strictObject({from:z.int().min(0).default(0),
       filters:selectedCareFiltersSchema,cursor:selectedCareCursorSchema.optional()});
@@ -1277,7 +1287,7 @@ export function createProductAgentTools(options: {
         return {children,nextFrom};
       })});
   }
-  if(options.contact)tools.splice(tools.length-1,0,
+  if (!isChatOnly && options.contact)tools.splice(tools.length-1,0,
     {name:"read_contact_options",effect:"read",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
      parameters:z.object({taskId:z.uuid()}).strict(),authorize:permitted,
      execute:args=>guard(async()=>{const value=await options.contact!.options(scope.userId,scope.childId,args.taskId as string);if(!value)throw new AgentStopped("unauthorized");return value;})},
@@ -1290,11 +1300,12 @@ export function createProductAgentTools(options: {
   );
   return {
     recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+    tools: isChatOnly ? tools.filter(tool => (CHAT_ONLY_ALLOWED_TOOL_NAMES as readonly string[]).includes(tool.name))
+      : options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
-    summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
+    summaryDraft: () => !isChatOnly && summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {
       serverReceiptText = null;
@@ -1463,6 +1474,7 @@ export function createProductAgentTools(options: {
         : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] }));
       const draft: ChatDeliveryDraft = {
         ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
+        ...(isChatOnly ? { chatMode: "chat_only" as const } : {}),
         kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
         serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
         serverSubstitutedReceiptText: serverReceiptText !== null,

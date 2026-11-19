@@ -12,6 +12,7 @@ import { usePathname, useGlobalSearchParams, useRouter, type Href } from "expo-r
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import { resolveChatMode, type ChatMode } from "../../../src/shared/chat";
 import type { ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers";
 import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
@@ -210,6 +211,8 @@ function useProductionValue(owner: ProductionOwner) {
     dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
+    chatMode: resolveChatMode(snapshot.chat.selectedChildId ? snapshot.chat.chatModes?.[snapshot.chat.selectedChildId] : undefined),
+    setChatMode: (mode: ChatMode) => { if (currentScope()) owner.chatController.setChatMode(mode); },
     chatDraft: chatDraft?.text ?? "", setChatDraft: (value: string) => { if (currentScope()) owner.chatController.setText(value); },
     sendChat: async () => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
