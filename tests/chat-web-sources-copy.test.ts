@@ -125,7 +125,7 @@ test("Each cited passage has its own card with its document, cited page and orig
   const { CHAT_SOURCE_COPY } = load("frontend/src/components/chat/chat-copy.ts", chatUiOverrides());
   const source = {
     id: "src-1", title: "合成官方指引片段", publisher: "衞生署合成", classification: "official_guidance",
-    section: "第一章", excerpt: "合成摘錄，不可作真實建議。", versionId: "v1", versionHash: "hash",
+    section: "第一章", excerpt: "合成摘錄\n\n  不可作真實建議。", versionId: "v1", versionHash: "hash",
     checkedAt: "2026-10-18T03:00:00.000Z", fetchedAt: "2026-10-18T03:00:00.000Z", lastSuccessfulCheckAt: "2026-10-18T03:00:00.000Z",
     sourceDate: "2026-01-01", validUntil: null, applicabilityLabel: "香港；合成適用範圍", internalOnly: false, url: "https://example.test/source",
   };
@@ -136,7 +136,7 @@ test("Each cited passage has its own card with its document, cited page and orig
   const ids = collectTestIds(tree);
   assert.ok(ids.includes("answer-source-panel"));
   assert.deepEqual(ids.filter(id => id.startsWith("citation-card-")), ["citation-card-1", "citation-card-2", "citation-card-3"]);
-  assert.ok(text.includes(source.title) && text.includes("第 6 頁") && text.includes(source.excerpt));
+  assert.ok(text.includes(source.title) && text.includes("第 6 頁") && text.includes("合成摘錄 不可作真實建議。"));
   assert.doesNotMatch(text, /助手整理的圖像描述|不顯示的系列名|官方指引片段.*第 2–7 頁|來源日期|有效至/);
   assert.ok(!text.includes(CHAT_SOURCE_COPY.degradedWarning));
 });
