@@ -4,6 +4,13 @@ import { sourceCardDefaultFrequencyMinutes } from '../src/shared/registered-sour
 import type { AgentTool, AgentToolResult } from './agent-runtime.ts';
 import type { ChatDeliveryVerifiedOperation } from './chat-delivery-review.ts';
 import { FirestoreDomainError, firestoreDomainUuid } from './firestore-domain-data.ts';
+import { FamilyError } from './family-access.ts';
+import type { ListedPlatformCard } from './knowledge-library-selection.ts';
+import { personalLibraryItemSchema } from '../src/shared/personal-library.ts';
+import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
+import type { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
+
+export type AgentPlatformLibrary = Pick<ReturnType<typeof createFirestorePersonalLibrary>, 'platformCards' | 'joinListedCard'>;
 
 /** The account service passed to chat deliberately has no credential reader or writer. */
 export interface AgentSourceCards {
@@ -36,7 +43,8 @@ function interval(minutes: number) {
 }
 
 export function createRegisteredSourceTools(store: AgentSourceCards, owner: string, messageId: string,
-  userMessage: string, authorize: () => Promise<boolean>, previousOwnerMessages: readonly string[] = []) {
+  userMessage: string, authorize: () => Promise<boolean>, previousOwnerMessages: readonly string[] = [],
+  platform?: { childId: string; library: AgentPlatformLibrary }) {
   const operations = new Map<string, ChatDeliveryVerifiedOperation>();
   const identity = (...parts: unknown[]) => firestoreDomainUuid(['chat-source-card/v1', owner, messageId, ...parts]);
   const tools: AgentTool[] = [];
@@ -50,7 +58,7 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
           const result = await execute(args);
           return await authorize() ? result : rejected('access_revoked');
         } catch (error) {
-          if (!(error instanceof FirestoreDomainError) || error.status >= 500) throw error;
+          if (!(error instanceof FirestoreDomainError || error instanceof FamilyError || error instanceof FirestoreKnowledgeError) || error.status >= 500) throw error;
           return { status: error.status === 409 ? 'conflict' : 'rejected', data: { reason: error.code } };
         }
       } });
@@ -72,7 +80,41 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
     const page = await store.list(owner, typeof cursor === 'string' ? cursor : undefined);
     return { status: 'succeeded', data: { cards: page.items.map(view), nextCursor: page.nextCursor } };
   });
-  add('register_source_card', '家長交代定期追蹤一個網址時，將它存為本人來源卡。照網址類型選單一文件、目錄或動態公告。只讀一次的問題無須訂閱。頻率以分鐘表示。', registration, false, async args => {
+  if (platform) {
+    const listed = new Map<string, ListedPlatformCard>();
+    const cursors = new Map<string, { after: string; url?: string; seen: Set<string> }>();
+    add('read_platform_source_cards', '分頁查閱已發布的平台系列；有網址可直接查找。要繼續時只傳 nextCursor，即使本頁沒有結果亦可續查。', z.strictObject({
+      url: z.string().url().max(4096).optional(), cursor: z.string().max(80).optional(),
+    }), true, async args => {
+      const cursor = typeof args.cursor === 'string' ? cursors.get(args.cursor) : undefined;
+      if (args.cursor !== undefined && (!cursor || args.url !== undefined)) return rejected('invalid_catalog_cursor');
+      const url = cursor?.url ?? (typeof args.url === 'string' ? args.url : undefined);
+      const page = await platform.library.platformCards(owner, platform.childId, cursor?.after, url);
+      const seen = new Set(cursor?.seen);
+      const cards = page.cards.flatMap(card => {
+        if (seen.has(card.seriesId)) return [];
+        seen.add(card.seriesId);
+        listed.set(card.seriesId, card);
+        const { seriesId, name, publisher, mode, enabled } = card;
+        return [{ seriesId, name, publisher, mode, enabled }];
+      });
+      const nextCursor = page.next ? identity('platform-page', page.next, url ?? '') : null;
+      if (nextCursor && page.next) cursors.set(nextCursor, { after: page.next, url, seen });
+      return { status: 'succeeded', data: { cards, nextCursor } };
+    });
+    add('join_platform_source_card', '家長要求加入或跟隨已列出的平台卡時使用。選擇有歧義時先問清楚。首次跟隨同範圍更新，重複加入保留原有設定，平台負擔維護費。', z.strictObject({
+      seriesId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u),
+    }), false, async ({ seriesId }) => {
+      const card = listed.get(String(seriesId));
+      if (!card) return rejected('read_platform_card_first');
+      const { revision } = await platform.library.joinListedCard(owner, platform.childId, card);
+      const id = identity('join-platform', card.seriesId);
+      operations.set(id, { kind: 'action_receipt', id, state: 'committed', tool: 'join_platform_source_card',
+        summary: '「' + card.name + '」已加入你的平台來源卡。可在來源庫查看個人設定。' });
+      return { status: 'succeeded', reference: card.seriesId, data: { seriesId: card.seriesId, revision } };
+    });
+  }
+  add('register_source_card', '家長交代定期追蹤自備網址時，將它存為本人來源卡。平台已發布的卡用 read_platform_source_cards 及 join_platform_source_card 免費加入。只讀一次的問題無須訂閱。頻率以分鐘表示。', registration, false, async args => {
     const settings = registration.parse(args);
     const supplied = [userMessage, ...previousOwnerMessages].flatMap(message =>
       message.match(/https:\/\/[^\s<>"“”「」『』（）。，、！？]+/giu) ?? []);
@@ -81,6 +123,11 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
     if (!supplied.some(value => {
       try { return new URL(value).href === url || new URL(value.replace(/[.,;!?)]+$/u, '')).href === url; } catch { return false; }
     })) return rejected('source_url_required_from_user');
+    if (platform && personalLibraryItemSchema.shape.url.safeParse(url).success) {
+      const match = await platform.library.platformCards(owner, platform.childId, undefined, url);
+      if (match.cards.length) return rejected('use_published_platform_card');
+      if (match.next) return rejected('platform_url_lookup_incomplete');
+    }
     const cardId = identity('card', url);
     return commit({ action: 'create', cardId, expectedRevision: 0, operationId: identity('create', cardId),
       settings: { ...settings, url, frequencyMinutes: settings.frequencyMinutes ?? sourceCardDefaultFrequencyMinutes(settings.kind) } },

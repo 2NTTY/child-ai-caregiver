@@ -7,6 +7,7 @@ import { colors, spacing } from "../../theme";
 import { AppDialog } from "../AppDialog";
 import { AppButton } from "../ui";
 import { SourceDocumentCard } from "../memory/SourceDocumentCard";
+import { PlatformCardJoin } from '../memory/PlatformCardJoin';
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 
@@ -101,6 +102,8 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
         {source.savedPdf && onOpenSource ? <AppButton label="查看當時 PDF" variant="secondary" onPress={() => onOpenSource(source.id)} /> : null}
         {external ? <AppButton label="開啟現行網站" variant="quiet" onPress={() => { void Linking.openURL(external).catch(() => setLinkError(true)); }} /> : null}
         {linkError ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
+        {source.acquisition === 'library' && source.seriesId && source.sourceId && !source.internalOnly
+          ? <PlatformCardJoin seriesId={source.seriesId} citation={{ sourceId: source.sourceId, versionId: source.versionId }} /> : null}
         {source.seriesId ? <PreviewLink href={{ pathname: '/memory', params: { series: source.seriesId, sourceDocument: source.sourceId } }}>
           <Pressable accessibilityRole="link" onPress={onClose} style={styles.libraryLink}><Text style={styles.linkText}>查看來源庫</Text></Pressable>
         </PreviewLink> : null}

@@ -197,6 +197,7 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
       { library, isCurrentUser: async id => id === user, readJson: request => request.json() }));
     return { catalog: async () => (await client.getLibrary(child.scope.childId, signal, user)).items[0]!,
       change: (value: import('../src/shared/source-series.ts').LibraryPreferenceChange) => client.setLibraryPreference!(child.scope.childId, signal, user, value),
+      join: (value: import('../src/shared/source-series.ts').LibraryJoin) => client.setLibraryPreference!(child.scope.childId, signal, user, value),
       search: async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: user })).map(hit => hit.versionId) };
   }
   const a = await account('synthetic-alice'), b = await account('synthetic-bob');
@@ -204,8 +205,20 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
     editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
   assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: true });
+  const join = { action: 'join' as const, seriesId: change.seriesId, expectedRevision: 0, editions: change.editions };
+  await assert.rejects(b.join({ ...join, editions: [{ sourceId: old.sourceId, versionId: crypto.randomUUID() }] }), { status: 409 });
+  const priorKeys = new Set(f.records.keys());
+  await b.join(join);
+  assert.equal((await b.catalog()).preference!.selectedVersionId, one.versionId);
+  assert.equal((await b.catalog()).preference!.mode, 'follow');
+  assert.equal((await a.catalog()).preference!.revision, 0);
+  const addedKeys = [...f.records.keys()].filter(key => !priorKeys.has(key));
+  assert.equal(addedKeys.length, 1);
+  assert.match(addedKeys[0]!, /library_preferences/);
+  const afterJoin = structuredClone([...f.records.entries()]);
+  await b.join(join);
+  assert.deepEqual([...f.records.entries()], afterJoin);
   await a.change({ ...change, mode: 'fixed', imported: true, editions: [{ sourceId: old.sourceId, versionHash: one.hash }] });
-  await b.change({ ...change, expectedRevision: (await b.catalog()).preference!.revision, mode: 'follow' });
   const two = await f.publish({ ...one.document, title: 'Renamed selected guidance' }, one);
   assert.deepEqual(await a.search(), [one.versionId]); assert.deepEqual(await b.search(), [two.versionId]);
   const latest = await a.catalog();
@@ -213,6 +226,9 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   assert.equal(original.title, old.title); assert.equal(original.series!.name, old.series!.name);
   const next = { ...change, expectedRevision: latest.preference!.revision, editions: [{ sourceId: old.sourceId, versionId: two.versionId }] };
   await a.change({ ...next, enabled: false, mode: 'fixed' });
+  const afterPin = structuredClone([...f.records.entries()]);
+  await a.join(join);
+  assert.deepEqual([...f.records.entries()], afterPin);
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), [two.versionId]);
   await assert.rejects(a.change({ ...next, enabled: true, mode: 'fixed' }), { status: 409 });
   const disabled = await a.catalog();
@@ -242,7 +258,46 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
     editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
   assert.deepEqual(await a.search(), [wide.versionId], 'An explicit reset releases a stored fixed selection to the current platform publication');
   await store.disable(old.sourceId, 'Synthetic withdrawal');
+  await assert.rejects(b.join(join), { status: 409 });
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
+});
+
+test('chat pages bound publication reads, match a later URL directly and bind only the selected series across pages', async () => {
+  const ids = Array.from({ length: 8 }, (_, i) => 'guide-' + i), f = fixture(ids);
+  const series = { id: 'shared-guides', name: 'Shared guides', institutionId: 'www.fhs.gov.hk' };
+  const versions: Awaited<ReturnType<typeof f.publish>>[] = [];
+  for (const id of ids) versions.push(await f.publish({ ...source(id), ...(id === ids[0] || id === ids[7] ? { series } : {}) }));
+  const store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) });
+  type Tx = import('@google-cloud/firestore').Transaction;
+  const reads: string[] = [];
+  const run = <T>(fn: (tx: Tx) => Promise<T>) => f.database.runTransaction(tx => {
+    const measured = { ...tx, get: async (ref: any) => { reads.push(ref.path); return tx.get(ref); },
+      getAll: (...args: any[]) => {
+        const mask = args.at(-1)?.fieldMask;
+        const refs = mask ? args.slice(0, -1) : args;
+        reads.push(...refs.map(ref => (mask ? 'projected:' : '') + ref.path));
+        return tx.getAll(...refs);
+      } } as Tx;
+    return fn(measured);
+  });
+  const fullVersions = () => reads.filter(path => path.startsWith('synthetic_knowledge_knowledge_versions/')).map(path => path.split('/').at(-1));
+  const first = await run(tx => store.platformCards(tx, 'parent'));
+  assert.equal(first.next, ids[4]); assert.equal(first.cards.length, 5); assert.equal(fullVersions().length, 5);
+  reads.length = 0;
+  const next = await run(tx => store.platformCards(tx, 'parent', first.next!));
+  assert.equal(next.next, null); assert.equal(fullVersions().length, 3);
+  reads.length = 0;
+  assert.deepEqual(await run(tx => store.platformCards(tx, 'parent', undefined, 'https://school.example/private')), { cards: [], next: null });
+  assert.equal(reads.length, 0);
+  const match = await run(tx => store.platformCards(tx, 'parent', undefined, versions[6]!.document.url + '#example'));
+  assert.equal(match.cards[0]!.sourceId, ids[6]); assert.deepEqual(fullVersions(), [versions[6]!.versionId]);
+  reads.length = 0;
+  const selected = next.cards.find(card => card.seriesId === series.id)!;
+  assert.equal(selected.sourceId, ids[7]);
+  await run(tx => store.joinListedPlatformCard(tx, 'parent', selected));
+  assert.deepEqual(fullVersions().sort(), [versions[0]!.versionId, versions[7]!.versionId].sort());
+  const followed = (await store.catalogForUser('parent', null)).items.filter(item => item.preference?.mode === 'follow');
+  assert.deepEqual(followed.map(item => item.preference!.selectedVersionId), [versions[0]!.versionId, versions[7]!.versionId]);
 });
 
 test('ordinary catalogue and chat reads follow platform publications without writes or cross-series exclusions', async () => {

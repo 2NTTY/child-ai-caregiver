@@ -90,7 +90,7 @@ export interface MemoryReferenceWorkspaceValue {
     loadMoreFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreReferences?(): void;
     exportLibraryArchive?(selection: import('../../src/shared/source-series').LibraryArchiveSelection): Promise<{ message: string; sha256: string; share?: () => Promise<void> } | undefined>;
-    setLibraryPreference?(change: import('../../src/shared/source-series').LibraryPreferenceChange): void;
+    setLibraryPreference?(change: import('../../src/shared/source-series').LibrarySelectionCommand): void;
     loadMoreWork?(): void;
     readWorkMessage?(id: string): void;
     loadMoreWorkMessage?(): void;

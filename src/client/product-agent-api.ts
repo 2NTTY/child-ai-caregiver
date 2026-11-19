@@ -26,7 +26,7 @@ export class ProductAgentApiError extends Error {
 
 import { agentWorkPageSchema, agentHistoryPageSchema, agentHistoryMessageSchema, type AgentWorkPage, type AgentHistoryPage, type AgentHistoryMessage } from "../shared/agent-work.ts";
 export interface ProductAgentApi {
-  setLibraryPreference?(childId: string, signal: AbortSignal, userId: string, change: import('../shared/source-series.ts').LibraryPreferenceChange): Promise<void>;
+  setLibraryPreference?(childId: string, signal: AbortSignal, userId: string, change: import('../shared/source-series.ts').LibrarySelectionCommand): Promise<void>;
   getLibrary(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<PersonalLibraryPage>;
   getWork(childId: string, signal: AbortSignal, userId: string, workId?: string | null, cursor?: string | null): Promise<AgentWorkPage>;
   searchHistory(childId: string, kind: "message" | "private_instruction" | "memory_fact", query: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentHistoryPage>;
@@ -52,7 +52,7 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     if (!uuid.safeParse(childId).success || !uuid.safeParse(runId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, "invalid_input");
   }
   const path = (childId: string, runId: string) => `/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`;
-  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision | import('../shared/source-series.ts').LibraryPreferenceChange, accept = 'application/json'): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: AgentDecision | import('../shared/source-series.ts').LibrarySelectionCommand, accept = 'application/json'): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true });
@@ -85,7 +85,8 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     async setLibraryPreference(childId, signal, userId, change) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, 'invalid_input');
       const result = await request(`/children/${encodeURIComponent(childId)}/library`, signal, userId, change);
-      if (!object(result) || result.revision !== change.expectedRevision + 1) throw new ProductAgentApiError();
+      if (!object(result) || !z.int().positive().safeParse(result.revision).success
+        || !('action' in change) && result.revision !== change.expectedRevision + 1) throw new ProductAgentApiError();
     },
     async getLibrary(childId, signal, userId, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success

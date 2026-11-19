@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { libraryPreferenceViewSchema, sourceSeriesSchema } from './source-series.ts';
+import type { LibraryJoin } from './source-series.ts';
 
 const sourceId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 const time = z.iso.datetime({ offset: true });
@@ -33,6 +34,14 @@ export const personalLibraryPageSchema = z.object({
   && new Set(page.items.map(item => item.sourceId)).size === page.items.length);
 export type PersonalLibraryItem = z.infer<typeof personalLibraryItemSchema>;
 export type PersonalLibraryPage = z.infer<typeof personalLibraryPageSchema>;
+
+export function platformLibraryJoin(items: readonly PersonalLibraryItem[]): LibraryJoin | null {
+  const { series, preference } = items[0] ?? {};
+  if (!series || !preference || items.some(item => item.series?.id !== series.id
+    || item.preference?.revision !== preference.revision)) return null;
+  return { action: 'join', seriesId: series.id, expectedRevision: preference.revision,
+    editions: items.map(({ sourceId, versionId }) => ({ sourceId, versionId })) };
+}
 
 export function selectedLibraryEditions(items: readonly PersonalLibraryItem[]) {
   return items.flatMap(item => {
