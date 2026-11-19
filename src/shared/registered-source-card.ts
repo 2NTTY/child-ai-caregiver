@@ -41,6 +41,8 @@ export function sourceCardAllowsUrl(settings: SourceBoundary, candidate: string 
 export const registeredSourceResultSchema = z.strictObject({
   status: z.enum(['changed', 'unchanged', 'failed', 'needs_login', 'payment_required', 'mfa_required', 'captcha_required']),
   documentCount: z.int().nonnegative().optional(),
+  savedDocumentCount: z.int().nonnegative().optional(),
+  indexedDocumentCount: z.int().nonnegative().optional(),
 });
 export const registeredSourceCardSchema = registeredSourceSettingsSchema.extend({
   cardId: z.uuid(), revision, enabled: z.boolean(), credentialRef: z.uuid().nullable(), checking: z.boolean(),
