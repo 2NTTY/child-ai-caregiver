@@ -71,5 +71,23 @@
     "The initial Core load exposed its interface before Wasm was ready. Drawing now waits for the Core version API.",
     "The SDK motion required empty effect ID vectors. A second rendered frame verified the corrected gesture.",
     "The development bundler retained an earlier send signature across the monorepo boundary. The clean Web export sent the correct page reference and completed the continuation scenario."
-  ]
+  ],
+  "followUp": {
+    "recordedAt": "2026-11-20T02:47:21+08:00",
+    "base": "d0c9cc5778d353f8aa00ee46117a90e81e252156",
+    "scenario": "A shared task is open at 390 x 844. Tap the character, choose a different authorized private child without leaving the current URL, and send a question.",
+    "environment": "Edge on local Expo Web, actual Firebase Auth and Firestore emulators, AI disabled.",
+    "checks": {
+      "privateInputHiddenBeforeChoice": true,
+      "routeUnchangedAfterOpeningAndSelecting": true,
+      "privateChoicesFromAccountChildList": true,
+      "receiptChild": "explicitly selected private child",
+      "receiptPageContext": {
+        "page": "/tasks"
+      },
+      "sharedResourceReferenceSent": false,
+      "httpSubmit": 200
+    },
+    "scope": "One focused browser scenario. The initial package checks above remain the evidence for other flows."
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, useState, type ReactNode } from 'react';
+import { Component, useLayoutEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from 'react-native-paper';
@@ -20,18 +20,31 @@ class RenderBoundary extends Component<{children: ReactNode}, {failed: boolean}>
 }
 
 export function SiteCompanion() {
-  const { scopeKey, identityKey, sharedChild, selectedChildId, chatState } = useProduction();
-  if (!identityKey) return null;
-  return <Companion key={sharedChild.target ? 'shared' : scopeKey ?? identityKey} childId={!sharedChild.target && scopeKey && selectedChildId === chatState.selectedChildId ? selectedChildId : null} />;
+  const { identityKey } = useProduction();
+  return identityKey ? <Companion key={identityKey} /> : null;
 }
 
-function Companion({ childId }: { childId: string | null }) {
+type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean };
+
+function Companion() {
   const pathname = usePathname(), insets = useSafeAreaInsets(), { width, height } = useWindowDimensions();
-  const { apiBaseUrl, actions } = useProduction();
+  const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState } = useProduction();
+  const childId = !sharedChild.target && scopeKey && selectedChildId === chatState.selectedChildId ? selectedChildId : null;
+  const scope = scopeKey ?? (sharedChild.target ? JSON.stringify(sharedChild.target) : null);
   const [gesture, setGesture] = useState(0), [ready, setReady] = useState(false);
-  const [minimized, setMinimized] = useState(false), [openOn, setOpenOn] = useState<string | null>(null);
+  const [minimized, setMinimized] = useState(false), [panel, setPanel] = useState<Panel | null>(null);
   const quiet = pathname === '/chat';
-  const open = !!childId && !quiet && openOn === pathname;
+  const open = !quiet && panel?.page === pathname && panel.scope === scope;
+  useLayoutEffect(() => {
+    setPanel(current => {
+      if (!current || current.page !== pathname) return null;
+      if (current.scope === scope) return current;
+      // Only the explicitly chosen private conversation may follow a scope switch.
+      if (current.chosenChild && !sharedChild.target && current.chosenChild === selectedChildId)
+        return { page: pathname, scope, includeItem: false };
+      return null;
+    });
+  }, [pathname, scope, selectedChildId, sharedChild.target]);
   const small = width < mobileLayout.breakpoint;
   const size = quiet ? 48 : small ? 64 : 88;
   const src = Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
@@ -42,7 +55,7 @@ function Companion({ childId }: { childId: string | null }) {
         onPress={() => {
           if (collapsed) { setMinimized(false); return; }
           setGesture(n => n + 1);
-          if (!quiet) { if (childId) setOpenOn(pathname); else actions.open('chat'); }
+          if (!quiet) setPanel({ page: pathname, scope, includeItem: !!childId });
         }} style={[styles.character, { width: collapsed ? 44 : size, height: collapsed ? 44 : size }]}>
         {(!ready || collapsed) && <AppIcon name="message-text-outline" size={24} color={colors.teal} />}
         <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, (!ready || collapsed) && { opacity: 0 }]}>
@@ -53,15 +66,47 @@ function Companion({ childId }: { childId: string | null }) {
       {!collapsed && !quiet && <Pressable accessibilityRole="button" accessibilityLabel="收起小助手" hitSlop={5}
         style={styles.minimize} onPress={() => setMinimized(true)}><AppIcon name="close" size={13} /></Pressable>}
     </View>
-    {open && <QuickConversation key={pathname} page={pathname} childId={childId!} height={height} close={() => setOpenOn(null)} />}
+    {open && (childId
+      ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} height={height} close={() => setPanel(null)} />
+      : <ConversationChoices close={() => setPanel(null)} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} />)}
   </>;
 }
 
-function QuickConversation({ page, childId, height, close }: { page: string; childId: string; height: number; close(): void }) {
+function ConversationChoices({ close, onChoose }: { close(): void; onChoose(id: string): void }) {
+  const { recordsState, controller, actions, sharedChild, owner, online } = useProduction();
+  const { children, childrenLoading, childrenLoadedAt, childrenError, deletion } = recordsState;
+  const verified = online && !!childrenLoadedAt && !childrenLoading && !childrenError;
+  const selectable = verified && !deletion && !recordsState.busy && recordsState.childOutcome !== 'unknown'
+    && recordsState.childOutcome !== 'checked' && owner.canStartDomainWrite();
+  function choose(id: string) {
+    onChoose(id);
+    if (!sharedChild.target && id === recordsState.selectedChildId) actions.refresh();
+    else actions.selectChild(id);
+  }
+  return <AppDialog visible onDismiss={close} accessibilityLabel="選擇私人對話" style={styles.dialog}>
+    <Text variant="titleMedium">選擇私人對話</Text>
+    {verified && children.length > 0 ? <>
+      <Text>{sharedChild.target ? '選擇後，本頁會切換到該孩子的私人空間。共享項目會留在原空間。' : '選擇孩子後，可在本頁繼續對話。'}</Text>
+      <ScrollView style={{ maxHeight: 220 }}>{children.map(child =>
+        <AppButton key={child.id} variant="secondary" disabled={!selectable} label={child.displayName + '的私人對話'}
+          onPress={() => choose(child.id)} />)}</ScrollView>
+      {!selectable && <Text>請待目前操作完成後再選擇。</Text>}
+    </> : verified ? <>
+      <Text>目前沒有可用的私人對話。你可以先建立孩子檔案。</Text>
+      <AppButton variant="secondary" label="前往新增孩子" onPress={() => { close(); actions.open('guide'); }} />
+    </> : <>
+      <Text>{!online ? '恢復連線後可核對私人對話。' : childrenLoading ? '正在讀取可用的私人對話…' : '孩子名單尚待核對。'}</Text>
+      <AppButton variant="secondary" label="重新讀取孩子名單" disabled={!online || childrenLoading} onPress={() => void controller.reloadChildren()} />
+    </>}
+    <AppButton variant="quiet" label="收起" onPress={close} />
+  </AppDialog>;
+}
+
+function QuickConversation({ page, childId, includeItem, height, close }: { page: string; childId: string; includeItem: boolean; height: number; close(): void }) {
   const { chatState: chat, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, sendChat,
     chatController, chatWritesAllowed, voiceUpload, fileUpload, photoUpload, openAgentDraft, checkVoiceUpload } = useProduction();
   const selected = useCompanionSelection();
-  const item = selected?.page === page && selected.childId === childId ? selected.item : undefined;
+  const item = includeItem && selected?.page === page && selected.childId === childId ? selected.item : undefined;
   const [voiceOpen, setVoiceOpen] = useState(false);
   const draft = chat.drafts[childId];
   const activeReply = chat.replyingMessageId ?? (chat.remoteReply?.status === 'running'
