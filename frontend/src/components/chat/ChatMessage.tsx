@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   status: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   progressIndicator: { width: 16, height: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   progressStatic: { width: 8, height: 8, borderRadius: 4, backgroundColor: chatColors.secondary },
-  messageActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 4, minWidth: 0 }, userActions: { justifyContent: "flex-end" },
+  messageActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 16, rowGap: 4, minWidth: 0 }, userActions: { justifyContent: "flex-end" },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool, flexShrink: 1 },
   error: { color: colors.errorInk },
   process: { minWidth: 0 },
