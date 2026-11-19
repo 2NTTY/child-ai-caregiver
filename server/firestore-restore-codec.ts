@@ -1,3 +1,4 @@
+import { sourceCardDocumentRecord, sourceDocumentRecordId, sourceDocumentMetadata } from './source-card-document-record.ts';
 import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
@@ -57,6 +58,7 @@ const authoritySchemas = { control: authority.control, account: authority.accoun
   'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
   work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  'source-card-document': { suffix: 'source_card_documents', schema: sourceCardDocumentRecord },
   ...privateSummaryRestoreSchemas,
   ...avatarRestoreSchemas,
   'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
@@ -263,7 +265,11 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       || scope.ownerUserId === 'space:' + scope.workspaceId && !userId.startsWith('space:');
     const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(validTaskAttribution(row, scope)
       && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
-    if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
+    if (kind === 'source-card-document') {
+      requireBinding(scope.childId === NIL && id === sourceDocumentRecordId(scope,parse(sourceCardDocumentRecord, raw)));
+      versionMatches(1);
+    }
+    else if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
     else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(validTaskRevisionAttribution(row, scope)); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
     else if (kind === 'child-projection') { const row = parse(firestoreChildSchema, raw); requireBinding(row.id === id && id === scope.childId && row.workspaceId === scope.workspaceId); versionMatches(1); }
     else if (kind === 'change-projection') { const row = parse(firestoreChangeSchema, raw); requireBinding(row.childId === (scope.childId === NIL ? null : scope.childId)); idEquals(id, [scope.workspaceId, scope.storageEpoch, row.changeSeq]); versionMatches(1); }
@@ -584,6 +590,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     let id = context.id, value: FirestoreRestoreValue = decoded.value, recordVersion = parse(positive, context.recordVersion);
     const metadata: Record<string, unknown> = { ...data.tags(scope) };
     switch (context.kind) {
+      case 'source-card-document': Object.assign(metadata,sourceDocumentMetadata(scope,parse(sourceCardDocumentRecord,value))); break;
       case 'child-projection': { const row = parse(firestoreChildSchema, value); Object.assign(metadata, { childId: row.id, createdAt: row.createdAt }); break; }
       case 'change-projection': { const row = parse(firestoreChangeSchema, value); id = JSON.stringify([scope.workspaceId, scope.storageEpoch, row.changeSeq]); Object.assign(metadata, { sortKey: data.sortKey(row.changeSeq), childId: row.childId }); break; }
       case 'task': Object.assign(metadata, { taskId: parse(firestoreTaskSchema, value).id }); break;

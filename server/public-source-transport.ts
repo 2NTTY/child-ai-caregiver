@@ -11,6 +11,9 @@ export function publicSourceAddress(address: string): boolean { return isIP(addr
 type SourceResponse = {status:number;location?:string;url?:string;contentType:string;body:Buffer};
 interface SourceTransportOptions {
   maxBytes?: number;
+  onBodyLimit?: (status: number) => void;
+  /** Discovery can defer attachment bytes for a separately authorized GET. */
+  omitBody?: (contentType: string) => boolean;
   /** Called after DNS pinning, immediately before each GET, including redirect hops. */
   sessionForGet?: (url: URL) => Promise<{cookie?: string; authorization?: string}>;
   receiveCookies?: (url: URL, headers: string[]) => void;
@@ -64,17 +67,25 @@ async function transfer(initialUrl:string,validate:(value:string)=>URL,outerSign
           if (status !== 200 && !isGate) {
             response.destroy(); resolve({ status, location: response.headers.location, contentType: "", body: Buffer.alloc(0) }); return;
           }
+          const contentType = String(response.headers["content-type"] ?? "");
+          if (status === 200 && options.omitBody?.(contentType)) {
+            response.destroy(); resolve({ status, contentType, body: Buffer.alloc(0) }); return;
+          }
           if (response.headers["content-encoding"] && response.headers["content-encoding"] !== "identity") {
             response.destroy(); reject(new Error("source_encoding_rejected")); return;
           }
           const chunks: Buffer[] = []; let bytes = 0;
+          const responseLimit = isGate ? Math.min(maxBytes, 512 * 1024) : maxBytes;
+          if (Number(response.headers['content-length']) > responseLimit) {
+            options.onBodyLimit?.(status); response.destroy(); reject(Error('source_body_too_large')); return;
+          }
           response.on("data", (chunk: Buffer) => {
             bytes += chunk.length;
-            if (bytes > (isGate ? Math.min(maxBytes, 512 * 1024) : maxBytes)) response.destroy(new Error("source_body_too_large"));
+            if (bytes > responseLimit) { options.onBodyLimit?.(status); response.destroy(new Error("source_body_too_large")); }
             else chunks.push(chunk);
           });
           response.on("error", reject);
-          response.on("end", () => resolve({ status, contentType: String(response.headers["content-type"] ?? ""), body: Buffer.concat(chunks) }));
+          response.on("end", () => resolve({ status, contentType, body: Buffer.concat(chunks) }));
         });
         req.on("error", reject); req.end(loginBody);
       });
