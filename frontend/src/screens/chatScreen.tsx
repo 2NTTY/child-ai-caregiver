@@ -138,9 +138,10 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const supersededRun = (id: string) => !!currentReply && currentReply.agentRunId !== id
     && turnReplies.some(item => item !== currentReply && item.agentRunId === id);
   const remote = chat.remoteReply;
-  const status = currentReply?.agentRunId ? agentRuns[currentReply.agentRunId]?.status : undefined;
-  const currentStatus = status ?? (remote && remote.messageId === helpMessage?.id && !supersededRun(remote.runId)
-    && (!currentReply?.agentRunId || remote.runId === currentReply.agentRunId) ? remote.status : undefined);
+  const cachedStatus = currentReply?.agentRunId ? agentRuns[currentReply.agentRunId]?.status : undefined;
+  const matchingRemote = remote && remote.messageId === helpMessage?.id && !supersededRun(remote.runId)
+    && (!currentReply?.agentRunId || remote.runId === currentReply.agentRunId) ? remote : null;
+  const currentStatus = matchingRemote?.status ?? cachedStatus;
   const unfinishedReply = !!currentReply && (currentStatus === "running" || currentStatus === "stopped" || currentStatus === "unknown"
     || isIncompleteModelReplyText(currentReply.text));
   const turnFeedback = helpMessage && scopedFeedback?.messageId === helpMessage.id

@@ -201,6 +201,7 @@ test('ChatPage real render surfaces official help on toolbar toggle and urgent d
 
   let runnerRef: ReturnType<typeof renderWithHooks>;
   const productionState = () => ({
+    owner: { agentOwner: { readChatEvidence: async () => {} } },
     model: { children, selectedChildId },
     actions: { refresh() {}, open() {} },
     scopeKey: selectedChildId ? 'scope-1' : null,
@@ -637,9 +638,12 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   currentDrafts = {};
   currentRemoteReply = { messageId: 'cold-user', runId: 'cold-own-run', status: 'stopped', stopReason: null };
   assert.ok(collectNodes(rerender()).some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'cold saved help needs the exact stopped run even with normal-looking text');
+  currentRuns = { 'cold-own-run': { status: 'completed' } };
+  assert.ok(collectNodes(rerender()).some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'new exact history status takes precedence over cached completed status');
   currentRemoteReply = { messageId: 'cold-user', runId: 'cold-other-run', status: 'stopped', stopReason: null };
   assert.equal(collectNodes(rerender()).some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'different run status must not awaken saved help');
   currentRemoteReply = null;
+  currentRuns = {};
 
   currentMessages = [{ id: 'u4', role: 'user', text: 'BB呼吸困難' }];
   currentDrafts = { 'child-1': { phase: 'draft', savedUserMessageId: null, dismissedHelpMessageId: 'u4' } };
@@ -722,6 +726,7 @@ test('H2-R: resolved stopped/unknown replies and catch-recovered unfinished save
 
   const placeholder: Record<string, unknown> = {};
   const productionState = () => ({
+    owner: { agentOwner: { readChatEvidence: async () => {} } },
     model: { children, selectedChildId },
     actions: { refresh() {}, open() {} },
     scopeKey,
@@ -966,6 +971,7 @@ test('BND-2: non-emergency medicine queries show consult notice only while mixed
   let runnerRef: ReturnType<typeof renderWithHooks>;
   const placeholder: Record<string, unknown> = {};
   const productionState = () => ({
+    owner: { agentOwner: { readChatEvidence: async () => {} } },
     model: { children: [{ id: 'child-1', name: 'A' }], selectedChildId: 'child-1' },
     actions: { refresh() {}, open() {} },
     scopeKey: 'scope-child-1',
