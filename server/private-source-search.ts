@@ -97,7 +97,8 @@ export function createPrivateSourceSearch(options: PrivateSourceSearchOptions) {
     return { candidates, after: rows.size > 32 ? rows.docs[31]!.id : null };
   }
   async function searchPage(owner: string, rawCardId: string, rawQuery: string,
-    input: { operationId: string; cursor?: string | null; signal?: AbortSignal }) {
+    input: { operationId: string; cursor?: string | null; signal?: AbortSignal;
+      embedInRun?: import('./agent-registered-document-tools.ts').SourceQueryEmbed }) {
     const cardId = domainParse(z.uuid(), rawCardId), operationId = domainParse(z.uuid(), input.operationId);
     const query = domainParse(z.string().trim().min(1).max(2000).refine(value => value.isWellFormed() && !value.includes('\0')), rawQuery);
     const signal = input.signal ?? new AbortController().signal;
@@ -151,22 +152,25 @@ export function createPrivateSourceSearch(options: PrivateSourceSearchOptions) {
           return identity(b, cardId, grant, revision, query) === receipt.identity && same(b.scope, admitted.scope);
         });
       };
-      const session = await options.openSession({ owner, scope: admitted.scope, authorizationVersion: receipt.authorizationVersion,
-        rootRunId: receipt.rootRunId, reference: operationId, signal, authorize, interactive: true, deadlineAtMs: receipt.deadlineAtMs });
-      try {
-        vector = domainParse(vectorSchema, await session.embed({ task: 'RETRIEVAL_QUERY', text: query }, 'embedding:private-source-query'), 'private_query_vector_invalid', 503);
-        if (!await authorize()) return changed();
-        await documents.withIndexCard(owner, cardId, async (b, grant, revision) => {
-          assertBinding(b, owner);
-          if (identity(b, cardId, grant, revision, query) !== receipt.identity || !same(b.scope, admitted.scope)) return changed();
-          const key = privateQueryId(b.scope, receipt), current = openQuery(b, key, await b.transaction.get(queryRef(key)));
-          if (current?.kind !== 'receipt' || current.state !== 'pending' || !same(current, receipt)) return changed();
-          signal.throwIfAborted();
-          saveQuery(b, { ...receipt, state: 'ready' });
-          const { state: _state, ...base } = receipt;
-          saveQuery(b, { ...base, kind: 'vector', slot, vector: vector! });
-        });
-      } finally { session.close(); }
+      const embed = async () => {
+        if (input.embedInRun) return input.embedInRun(query, authorize);
+        const session = await options.openSession({ owner, scope: admitted.scope, authorizationVersion: receipt.authorizationVersion,
+          rootRunId: receipt.rootRunId, reference: operationId, signal, authorize, interactive: true, deadlineAtMs: receipt.deadlineAtMs });
+        try { return await session.embed({ task: 'RETRIEVAL_QUERY', text: query }, 'embedding:private-source-query'); }
+        finally { session.close(); }
+      };
+      vector = domainParse(vectorSchema, await embed(), 'private_query_vector_invalid', 503);
+      if (!await authorize()) return changed();
+      await documents.withIndexCard(owner, cardId, async (b, grant, revision) => {
+        assertBinding(b, owner);
+        if (identity(b, cardId, grant, revision, query) !== receipt.identity || !same(b.scope, admitted.scope)) return changed();
+        const key = privateQueryId(b.scope, receipt), current = openQuery(b, key, await b.transaction.get(queryRef(key)));
+        if (current?.kind !== 'receipt' || current.state !== 'pending' || !same(current, receipt)) return changed();
+        signal.throwIfAborted();
+        saveQuery(b, { ...receipt, state: 'ready' });
+        const { state: _state, ...base } = receipt;
+        saveQuery(b, { ...base, kind: 'vector', slot, vector: vector! });
+      });
     }
     const matches = admitted.page.candidates.map(unit => ({unit,score:vector ? cosine(vector,unit.vector) : 0})).filter(hit => hit.score > 0);
     return { matches, receipt, nextCursor: admitted.page.after

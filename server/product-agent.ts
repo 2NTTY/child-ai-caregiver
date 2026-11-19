@@ -116,7 +116,7 @@ function withDeliveryReview(
 
 export function createProductAgent(options: {
   registeredSourceCards?: import('./agent-registered-source-tools.ts').AgentSourceCards;
-  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: import("./chat-file-agent.ts").ChatFileAgentReader;
   voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;

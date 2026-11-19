@@ -131,7 +131,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   registeredSourceCards?: AgentSourceCards;
-  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedMaterials?: {
     search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;

@@ -58,8 +58,9 @@ import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
 import type { FirestoreContact } from './firestore-contact.ts';
 
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
+  routing?: ReturnType<typeof createFirestoreModelRouting>;
   registeredSourceCards?: AgentSourceCards;
-  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   liveSourceReader?: import('./live-source-citation.ts').LiveSourceReaderOption;
   usageFinancialEvidence?: () => import('./ai-financial-evidence.ts').DayFinancialEvidence[] | undefined;
   photos?: import('./firestore-photos.ts').FirestorePhotoStore;
@@ -88,7 +89,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
   const promptPackVersion = manifest.version;
   const workerInstance = randomUUID();
-  const routing = createFirestoreModelRouting(options, options.config, options.platformProviders);
+  const routing = options.routing ?? createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
   const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
     if (!options.knowledge) domainReject('knowledge_not_ready', 503);

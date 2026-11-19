@@ -89,7 +89,7 @@ export interface FirebaseRequestHandlerOptions {
   accountData?: FirebaseAccountDataPort;
   library?: PersonalLibrary;
   registeredSourceCards?: Pick<import('./firestore-registered-source-cards.ts').FirestoreRegisteredSourceCards, 'get' | 'list' | 'command' | 'credential'>;
-  registeredSourceDocuments?: import('./firestore-source-card-documents.ts').RegisteredSourceDocumentReader;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   knowledgeOriginal?: KnowledgeOriginalPort;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;

@@ -78,6 +78,22 @@ function fixture(count = 1) {
     operation: () => activeOperation, newOperation() { activeOperation = randomUUID(); return activeOperation; } };
 }
 
+test('chat search charges its existing run once and creates no independent model session', async () => {
+  const f = fixture(), query = '這份校刊有甚麼圖案？';
+  let calls = 0;
+  const options = { operationId: f.operation(), async embedInRun(text: string, authorize: () => Promise<boolean>) {
+    assert.equal(text, query);
+    assert.equal(await authorize(), true);
+    calls++;
+    return vector();
+  } };
+  const first = await f.search('alice', f.cardId, query, options);
+  assert.ok(first.items.length);
+  assert.deepEqual(await f.search('alice', f.cardId, query, options), first);
+  assert.equal(calls, 1);
+  assert.equal(f.state.sessions, 0);
+});
+
 test('private search embeds one query across retries and bounded pages and preserves physical evidence types', async () => {
   const f = fixture(520), operationId = f.operation(), query = 'Synthetic private question';
   const first = await f.search('alice', f.cardId, query, { operationId });
