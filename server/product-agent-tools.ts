@@ -1,6 +1,7 @@
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
+import { createRegisteredSourceTools, type AgentSourceCards } from './agent-registered-source-tools.ts';
 import { photoLinkInputSchema, photoMessageReferenceSchema } from '../src/shared/photos.ts';
 import { officialHelpIdSchema, toAgentProgressSource, type AgentProgressSource, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
@@ -127,6 +128,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  registeredSourceCards?: AgentSourceCards;
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedMaterials?: {
     search(query:MaterialQuery,limit:number):ReturnType<import('./firestore-selected-materials.ts').SelectedMaterials['search']>;
@@ -173,6 +175,11 @@ export function createProductAgentTools(options: {
   for (const identifier of options.knownPrivateIdentifiers ?? []) noteKnownPrivateIdentifier(identifier);
   const deliveryReview = run.deliveryReview ??= createChatDeliveryReviewObligation();
   const authorize = run.authorize ?? options.authorize;
+  const registeredSources = options.registeredSourceCards && options.currentMessageId && options.trustedUserMessage
+    && !options.background && !options.mixedTasks && !options.reviewedGrowthPresentation && options.visibility !== 'family'
+    ? createRegisteredSourceTools(options.registeredSourceCards, scope.userId, options.currentMessageId, options.trustedUserMessage, authorize,
+      options.recentQuoteSources?.filter(message => message.authorUserId === scope.userId && message.role === 'user').map(message => message.text))
+    : undefined;
   const liveEvidence = new Map<string, LiveSourceCitation>();
   let originalQuotes = new Map<string, string>();
   const liveReader = options.background || options.mixedTasks || options.reviewedGrowthPresentation || options.visibility === 'family' ? undefined
@@ -298,7 +305,7 @@ export function createProductAgentTools(options: {
     budget, authorize, embeddings: run.embeddings });
   async function refreshVerifiedOperations(includePending = true): Promise<ChatDeliveryVerifiedOperation[]> {
     if (options.background) { selectedVerifiedOperations = []; return []; }
-    const verified: ChatDeliveryVerifiedOperation[] = [];
+    const verified: ChatDeliveryVerifiedOperation[] = registeredSources?.operations() ?? [];
     if (options.actions && typeof options.actions.receipts === "function") {
       const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
       if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
@@ -893,6 +900,7 @@ export function createProductAgentTools(options: {
   else if (options.actionReaders && options.visibility !== "family") tools.splice(tools.length - 1, 0,
     ...createAgentActionReadTools(options.actionReaders, run, permitted, registerHouseholdRead));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
+  if (registeredSources) tools.splice(tools.length - 1, 0, ...registeredSources.tools);
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
@@ -1076,9 +1084,11 @@ export function createProductAgentTools(options: {
       if (answer.kind === "operation" && ids.length === 0 && options.actions) {
         const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
         if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
-        if (receipts.length) {
+        const sourceReceipts = registeredSources?.operations() ?? [];
+        if (receipts.length || sourceReceipts.length) {
           selectedVerifiedOperations = [];
-          serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          const saved = receipts.length ? [`已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`] : [];
+          serverReceiptText = [...saved, ...sourceReceipts.map(receipt => receipt.summary!)].join('\n');
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }

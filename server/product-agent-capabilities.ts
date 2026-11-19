@@ -29,6 +29,8 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
       toolNames: ["compose_family_data"], promptModuleIds: [] },
     { id: "concerns", description: "查看持續關注及經過，提出建立、追加觀察、結束、恢復或站內跟進候選。",
       toolNames: ["read_concerns", "propose_concern", "propose_concern_change"], promptModuleIds: ["module.product-concerns"] },
+    { id: "source_cards", description: "按家長交代操作「記憶與參考」的來源卡：訂閱網站、排程、查進度、修改或暫停，以及開啟該卡的登入設定。",
+      toolNames: ["read_source_cards", "register_source_card", "manage_source_card", "open_source_card_login"], promptModuleIds: [] },
     { id: "private_sources", description: "查看本人授權的私人材料與引用，提出來源設定、內容／用途修改或停用候選；不擴大公共或共享範圍。",
       toolNames: ["list_private_sources", "read_private_source", "propose_private_source", "propose_private_source_change"], promptModuleIds: ["module.product-private-sources"] },
     { id: "contact", description: "核對已確認事項的聯絡資格，僅在既有有效授權內安排聯絡；入列與送達／完成分開。",

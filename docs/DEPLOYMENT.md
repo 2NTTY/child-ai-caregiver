@@ -89,6 +89,12 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 相較 VM 自行拉 GitHub 並建置，此流程把建置 CPU／磁碟用量留在 GitHub，VM 只取已驗映像。Cloud Scheduler 亦可按時喚醒服務，但仍須安排建置、版本及收據；現有分支保護和 Actions 已提供其入口。此部署流程保留原 Compose 與 Firebase 資料配置。
 
+### 公共來源的定期整理
+
+啟用前核對 Firebase worker 的實際 SHA、已註冊的公開來源及平台的獨立知識維護用量政策。操作員在原 VM 的受保護位置放置對應版本的 `deploy/knowledge-worker/configure.py`，執行 `sudo python3 configure.py enable-platform WORKER_SHA`。停用使用同一入口的 `disable WORKER_SHA`。程式核對正式映像、現有設定、活動工作及站點健康，持原發布鎖更新 worker；原帳本、付款額度及每日發布歷史繼續沿用。
+
+若主機已有具名贊助者或另一組知識維護設定，程式會指出衝突。若中途斷線，以同一版本和同一命令接續。設定已套用後，查實際排程的 `lastCheckedAt`、該時段的工作結果及知識版本。來源未變時沿用既有版本與處理結果。帳戶自行登記的來源由該帳戶的來源卡、授權及私有資料服務處理。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。

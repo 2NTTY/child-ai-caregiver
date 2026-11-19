@@ -356,12 +356,14 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
     {model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.loadMoreReferences} /> : null}
   </View>;
 }
-type MemoryReferenceViewProps = { maintenanceEntry?: MaintenanceEntry; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
-function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
+type MemoryReferenceViewProps = { maintenanceEntry?: MaintenanceEntry; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void; activeTab?: Tab; onTabChange?: (tab: Tab) => void };
+function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
   const { series } = useLocalSearchParams<{ series?: string }>();
-  const [tab, setTab] = useState<Tab>(series ? 'references' : 'long'), [otherOpen, setOtherOpen] = useState(false);
+  const [localTab, setLocalTab] = useState<Tab>(series ? 'references' : 'long'), [otherOpen, setOtherOpen] = useState(false);
+  const tab = activeTab ?? localTab;
+  const setTab = (value: Tab) => { setLocalTab(value); onTabChange?.(value); };
   const tabsId = useId(), container = useContainerWidth();
   useEffect(() => { if (series) setTab('references'); }, [series]);
   const current = useRef<MemoryReferenceWorkspaceValue | null>(workspace);
@@ -426,10 +428,10 @@ function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDispl
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} width={container.width} maintenanceEntry={maintenanceEntry} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps) {
+export function MemoryReferenceView({ maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
   const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} maintenanceEntry={maintenanceEntry} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
+  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} maintenanceEntry={maintenanceEntry} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} activeTab={activeTab} onTabChange={onTabChange} />
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
