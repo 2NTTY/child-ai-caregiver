@@ -68,7 +68,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 | GET `/api/children/:childId/agent/runs/:runId` | `{result}`：本人運行、工具狀態、當時引用、候選及停止原因；中斷且未保存統計以 `countsKnown=false` 表示未知 |
 | POST `/api/children/:childId/agent/runs/:runId/proposals/:proposalId/decide` | `{expectedVersion,decision:accept\|dismiss,confirmShared}` → `{proposal}`；精確重試返回原結果，過期候選不可接受但可明確略過；接受仍核對權限及版本 |
 | GET `/api/children/:childId/agent/pending?cursor=…` | `{proposals,nextCursor}`：本人及該孩子的 pending／expired，每頁最多 20 項，獨立於近期聊天及 20 次背景清單；過期項只能重新核對或略過 |
-| GET `/api/children/:childId/agent/runs` | `{runs:[{runId,createdAt}]}`：本人最近最多 20 次背景運行，供手動重讀；不是啟動 Agent 的入口 |
+| GET `/api/children/:childId/agent/runs` | 本人最近最多 20 次背景運行。每項回傳 `runId`、`createdAt`、活動類別 `activityKind`（`memory_refresh`／`work_followup`／`background`）及原運行 `status`。舊版只有編號及時間；正文按原運行權限另讀。 |
 
 `propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。受限聯絡工具按 [W07 授權](#proactive-contact-http) 執行，入列、聯絡結果與照護完成分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
 
