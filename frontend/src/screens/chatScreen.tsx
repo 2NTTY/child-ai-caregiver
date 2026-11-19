@@ -31,7 +31,7 @@ import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { NotificationChatTarget } from "../production/NotificationChatTarget";
 import { useChatExposure, useChatForeground } from "../production/useChatExposure";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { proposalExpired, publicAnswerSources } from "../agent-view-model";
+import { proposalNeedsConfirmation, publicAnswerSources } from "../agent-view-model";
 import { colors, mobileLayout } from "../theme";
 import type { ChatReplyPhase } from "../chat-view-model";
 
@@ -89,8 +89,8 @@ function ChatContents({ compact, onPaneLayout }: {
   useLayoutEffect(() => { previous.current = { ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy }; }, [chat.messages, chat.busy]);
   useEffect(() => { if (agentModel.pendingDecision) setDetailsOpen(true); }, [agentModel.pendingDecision?.runId, agentModel.pendingDecision?.proposalId]);
   useEffect(() => { if (scopeKey && chat.online) readAgentPending(); }, [scopeKey, chat.online]);
-  const needsDecision = agentModel.readState === "ready" && agentModel.run?.proposals.some(item => item.status === "pending" && !proposalExpired(item))
-    || agentPending.state === "ready" && agentPending.entries.some(item => item.proposal.status === "pending" && !proposalExpired(item.proposal));
+  const needsDecision = agentModel.readState === "ready" && agentModel.run?.proposals.some(proposalNeedsConfirmation)
+    || agentPending.state === "ready" && agentPending.entries.some(item => proposalNeedsConfirmation(item.proposal));
   const pendingReadLabel = agentPending.state === "idle" ? "尚未讀取" : agentPending.state === "loading" ? "讀取中"
     : agentPending.state === "failed" ? "讀取失敗" : agentPending.state === "denied" ? "無法讀取" : null;
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {

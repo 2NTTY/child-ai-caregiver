@@ -3,8 +3,8 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import {
-  agentProposalLabels, agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide,
-  mayRetryOriginal, proposalExpired, type AgentProposalView,
+  agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide,
+  mayRetryOriginal, proposalNeedsConfirmation, proposalDisplayStatus, type AgentProposalView,
   type AgentRunActions, type AgentRunModel,
   publicAnswerSources,
 } from "../../agent-view-model";
@@ -25,7 +25,7 @@ export interface ActivityProposalTarget { runId: string; id: string; version: nu
 type DecisionMotionIntent = { serial: number; proposalId: string; version: number; status: "accepted" | "dismissed" };
 
 type Tone = "neutral" | "saved" | "warning" | "error";
-const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
+const sharedConfirmationLabel = "同意將這項資料分享給家庭";
 const destinations: Record<AgentProposalView["kind"], string> = {
   task_create: "新增待辦", task_change: "更新原待辦", family_document_change: "更新原家庭文件",
   memory_fact: "保存確認事實", memory_fact_revise: "更正原事實", memory_fact_deactivate: "停用原事實",
@@ -33,11 +33,11 @@ const destinations: Record<AgentProposalView["kind"], string> = {
   concern_create: "加入持續關注", concern_change: "更新原關注",
 };
 const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind"], string> = {
-  family_document: "指定修改已保存到同一份家庭文件；請按目前來源及版本核對正文。",
-  task: "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。",
-  memory_fact: "此收據代表確認事實已保存；不代表照護事項已完成。",
-  concern: "關注鏈已保存。",
-  private_source: "私人來源設定已保存；連結保存不等於取得正文，亦沒有建立家庭事實、提醒或公共知識。",
+  family_document: "已更新家庭文件",
+  task: "已儲存待辦",
+  memory_fact: "已儲存記憶",
+  concern: "已儲存關注",
+  private_source: "已儲存私人來源設定",
 };
 
 function timeLabel(value: string | null): string {
@@ -62,7 +62,7 @@ function ChangeDetail({ label, value, prominent = false }: { label: string; valu
     <Text selectable style={styles.changeBody}>{value}</Text>
   </View>;
   const icon = proposalDetailIcon(label, value);
-  const concise = label === "來源" || label === "負責人" || label === "接受後可見範圍";
+  const concise = label === "來源" || label === "接受後可見範圍";
   return <View style={styles.changeDetail}>
     {icon ? <AppIcon name={icon} size={15} /> : null}
     <Text selectable accessibilityLabel={`${label}：${value}`} style={styles.detailCopy}>{concise ? value : `${label}：${value}`}</Text>
@@ -96,57 +96,53 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
   const [sourceExpanded, setSourceExpanded] = useState(false);
   const confirmed = model.online && model.readState === "ready" && !model.busy && !model.pendingDecision && model.notice?.tone === "saved"
     && decisionIntent !== null && decisionIntent.proposalId === proposal.id && proposal.version > decisionIntent.version && proposal.status === decisionIntent.status;
-  const expired = proposal.status === "expired" || proposalExpired(proposal);
   const pending = proposal.status === "pending" || proposal.status === "expired";
+  const closed = pending && !proposalNeedsConfirmation(proposal);
   const details = proposalDetailGroups(proposal);
   const changes = details.visible.filter(detail => proposalDetailIsChange(proposal.kind, detail.label));
   const metadata = details.visible.filter(detail => !proposalDetailIsChange(proposal.kind, detail.label));
   const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
   const outcome = proposal.result ? Object.hasOwn(receiptDescriptions, proposal.result.kind)
     ? receiptDescriptions[proposal.result.kind] : "保存收據種類未能辨識，請重新讀取核對。"
-    : proposal.status === "accepted" ? "已接受；本次快照未提供保存收據，不能據此確認已保存。"
-      : "已略過，沒有以此決定執行候選事項。";
+    : proposal.status === "accepted" ? "尚未確認是否已儲存" : null;
   return <View testID={`agent-proposal-${proposal.id}`} style={pending ? styles.entry : styles.resultEntry}>
-    <View style={styles.top}><Text accessibilityRole="header" style={pending ? styles.proposalContext : styles.title}>{pending ? proposalContextLabel(proposal) : proposal.title}</Text>
-      <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><AppStatusBadge label={expired && pending ? "已過期" : agentProposalLabels[proposal.status]} tone={proposal.status === "accepted" && proposal.result && Object.hasOwn(receiptDescriptions, proposal.result.kind) ? "success" : pending ? "warning" : "neutral"} /></MotionFeedback></View>
+    <View style={styles.top}><Text accessibilityRole="header" style={pending && !closed ? styles.proposalContext : styles.title}>{pending && !closed ? proposalContextLabel(proposal) : proposal.title}</Text>
+      <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><AppStatusBadge label={proposalDisplayStatus(proposal)} tone={proposal.status === "accepted" && proposal.result && Object.hasOwn(receiptDescriptions, proposal.result.kind) ? "success" : pending && !closed ? "warning" : "neutral"} /></MotionFeedback></View>
     {pending ? <>
       <View testID={`agent-change-content-${proposal.id}`} style={styles.changeContent}>
         {changes.map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} prominent />)}
-        <MotionReveal value={proposal.content} contentKey={proposal.content} scopeKey={`${scopeKey}:${proposal.id}`} regionKey={`agent-proposal-${proposal.id}`} triggerKey={readTrigger} eligible={readEligible}>{text => <Text selectable style={changes.length ? styles.meta : styles.changeBody}>{text}</Text>}</MotionReveal>
+        <MotionReveal value={proposal.content} contentKey={proposal.content} scopeKey={`${scopeKey}:${proposal.id}`} regionKey={`agent-proposal-${proposal.id}`} triggerKey={readTrigger} eligible={readEligible}>{text => <Text selectable style={closed ? styles.body : changes.length ? styles.meta : styles.changeBody}>{text}</Text>}</MotionReveal>
       </View>
       <View style={styles.metadata}>
-        {metadata.map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
-        <ChangeDetail label="接受後可見範圍" value={proposal.scope === "family" ? "家庭共享；目前只限你查看，確認後按家庭權限共享。" : "本人"} />
+        {(closed ? metadata.filter(detail => ["負責人", "到期時間", "時區"].includes(detail.label)) : metadata).map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
+        {!closed && proposal.scope === "private" ? <ChangeDetail label="接受後可見範圍" value="本人" /> : null}
         <ChangeDetail label="確認期限" value={timeLabel(proposal.expiresAt)} />
       </View>
-      <AppButton label={sourceExpanded ? "收起其他詳情" : "其他詳情"} expanded={sourceExpanded}
+      {!closed && details.supporting.length > 0 ? <><AppButton label={sourceExpanded ? "收起其他詳情" : "其他詳情"} expanded={sourceExpanded}
         accessibilityLabel={`${sourceExpanded ? "收起" : "查看"}其他詳情：${proposal.title}`} variant="quiet" density="compact"
         onPress={() => setSourceExpanded(value => !value)} style={styles.inlineButton} />
       <MotionDisclosure expanded={sourceExpanded} scopeKey={`${scopeKey}:${proposal.id}:${proposal.version}`}><View style={styles.proposalDetails}>
         {details.supporting.map((detail, index) => <DetailRow key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
-        <DetailRow label="候選版本" value={String(proposal.version)} />
-      </View></MotionDisclosure>
-      {expired ? <StateNote tone="warning">候選已過期，不能接受；可核對後明確略過。</StateNote> : null}
-      {proposal.scope === "family" ? <AppCheckbox label={sharedConfirmationLabel}
+      </View></MotionDisclosure></> : null}
+      {!closed && proposal.scope === "family" ? <AppCheckbox label={sharedConfirmationLabel}
         accessibilityLabel={`${sharedConfirmationLabel}: ${proposal.title}`} checked={!!model.sharedConfirmed[proposal.id]}
         disabled={!mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}
       <View style={styles.actions}>
-        <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
+        {!closed && <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
           preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "accept")}
-          onPress={() => actions.decide(proposal.id, "accept")} style={styles.decisionButton} />
+          onPress={() => actions.decide(proposal.id, "accept")} style={styles.decisionButton} />}
         <AppButton label="略過" accessibilityLabel={`略過此事項：${proposal.title}`} variant="quiet" disabled={!mayDecide(model, proposal, "dismiss")}
           preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "dismiss")}
           onPress={() => actions.decide(proposal.id, "dismiss")} style={styles.decisionButton} />
       </View>
     </> : <>
-      <Text style={styles.meta}>{outcome}</Text>
+      {outcome ? <Text style={styles.meta}>{outcome}</Text> : null}
       <AppButton expanded={expanded} label={expanded ? "收起詳情" : "查看詳情"} accessibilityLabel={`${expanded ? "收起" : "查看"}結果詳情：${proposal.title}`}
         variant="quiet" density="compact" onPress={() => setExpanded(value => !value)} style={styles.inlineButton} />
       <MotionDisclosure expanded={expanded} scopeKey={`${scopeKey}:${proposal.id}`}><View style={styles.proposalDetails}>
         <Text selectable style={styles.body}>{proposal.content}</Text>
         <Text style={styles.meta}>{destinations[proposal.kind]} · {proposal.scope === "family" ? "家庭共享資料" : "只供本人查看"}</Text>
-        {proposal.details.map((detail, index) => <DetailRow key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
-        {proposal.result ? <DetailRow label="保存收據" value={`${proposal.result.label} · 版本 ${proposal.result.version}`} /> : null}
+        {[...details.visible, ...details.supporting].map((detail, index) => <DetailRow key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
       </View></MotionDisclosure>
     </>}
   </View>;
@@ -239,8 +235,8 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
         : model.notice?.text ?? (run ? proposalOnly && run.status === "completed" ? "請核對所選事項。" : `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
   const selectedProposals = run?.proposals.filter(proposal => !proposalTarget ? !proposalOnly : (proposal.id === proposalTarget.id
     && proposal.kind === proposalTarget.kind && proposal.scope === proposalTarget.scope && proposal.version >= proposalTarget.version)) ?? [];
-  const pending = selectedProposals.filter(proposal => proposal.status === "pending" || proposal.status === "expired");
-  const handled = selectedProposals.filter(proposal => proposal.status === "accepted" || proposal.status === "dismissed");
+  const pending = selectedProposals.filter(proposalNeedsConfirmation);
+  const handled = selectedProposals.filter(proposal => !proposalNeedsConfirmation(proposal));
   const targetUnavailable = (proposalOnly || !!proposalTarget) && ready && (!run || selectedProposals.length === 0);
   const problems = run?.tools.filter(tool => tool.status !== "succeeded") ?? [];
   const recoveryNeeded = targetUnavailable || !!model.pendingDecision || model.readState === "failed" || run?.status === "unknown" || !proposalOnly && problems.length > 0;
@@ -277,14 +273,14 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
         {problems.map(tool => <StateNote key={tool.id} tone={tool.status === "failed" ? "error" : "warning"}>{tool.nameLabel}：{agentToolLabels[tool.status]}。請讀取原運行核對，不要以新操作代替。</StateNote>)}
       </View> : null}
       {!proposalOnly && run.retrievalMode === "keyword_degraded" && !run.citations.length ? <StateNote tone="warning">檢索已降級；請核對原來源及適用範圍。</StateNote> : null}
-      {!proposalOnly && !targetUnavailable && !activityHeaderVisible && (pending.length > 0 || handled.length > 0) ? <Text testID="agent-run-summary" style={styles.meta}>{[pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已處理` : null].filter(Boolean).join(" · ")}</Text> : null}
+      {!proposalOnly && !targetUnavailable && !activityHeaderVisible && (pending.length > 0 || handled.length > 0) ? <Text testID="agent-run-summary" style={styles.meta}>{[pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已結束` : null].filter(Boolean).join(" · ")}</Text> : null}
       {pending.length ? <View testID="agent-pending-proposals" style={styles.proposalGroup}>
         {!activityHeaderVisible && !proposalOnly ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
         {pending.map(proposal => <ProposalCard preserveDecisionFocusOnRead={preserveDecisionFocusOnRead} key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {pendingContent}
       {handled.length ? <View testID="agent-handled-proposals" style={styles.section}>
-        <Text accessibilityRole="header" style={styles.title}>已處理</Text>
+        {!proposalOnly && <Text accessibilityRole="header" style={styles.title}>已結束事項</Text>}
         {handled.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {!proposalOnly && !targetUnavailable ? <RunAnswer key={`answer-${run.id}`} run={run}

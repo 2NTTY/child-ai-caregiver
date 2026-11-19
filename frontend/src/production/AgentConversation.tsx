@@ -15,13 +15,12 @@ import { proposalContextLabel, proposalPrimaryText } from "../components/agent/p
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
 import { AppButton } from "../components/ui";
-import { agentProposalLabels, agentTime, proposalExpired, type AgentInboxActions, type AgentInboxModel, type AgentProposalView } from "../agent-view-model";
+import { agentRunLabels, agentTime, proposalDisplayStatus, proposalNeedsConfirmation, type AgentInboxActions, type AgentInboxModel, type AgentProposalView } from "../agent-view-model";
 import { MotionDisclosure } from "../motion";
 import { colors, radius, spacing } from "../theme";
 
 const receiptKinds = { save_record: "保存照護記錄", revise_record: "更正照護記錄", save_private_note: "保存私人備註", revise_private_note: "修改私人備註", create_self_task: "建立本人待辦", change_self_task: "更改本人待辦" };
 const receiptStates = { saved: "已保存", updated: "已更新", scheduled: "已安排", completed: "已記錄完成", cancelled: "已取消" };
-const resourceKinds = { care_record: "照護記錄", private_note: "私人備註", task: "待辦" };
 
 function ActivityDetails({ label, scopeKey, children }: { label: string; scopeKey: string; children: ReactNode }) {
   const [expanded, setExpanded] = useState(false);
@@ -34,11 +33,8 @@ function ActivityDetails({ label, scopeKey, children }: { label: string; scopeKe
 function Receipt({ item }: { item: AgentActionReceipt }) {
   return <View testID="agent-direct-receipt" style={styles.row}>
     <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.rowTitle}>{receiptKinds[item.kind]}</Text><AppStatusBadge label={receiptStates[item.state]} tone="neutral" /></View>
-    <Text style={styles.label}>{resourceKinds[item.resource.kind]} · {item.resource.kind === "private_note" ? "只供本人查看" : "按原資料權限查看"}</Text>
-    <Text style={styles.label}>{item.notification === "authorized_for_due_event" ? `已授權到期提示（${item.channels.map(channel => channel === "telegram" ? "Telegram" : "瀏覽器推送").join("、")}）；不表示已發送或送達。` : "沒有授權外部到期提示。"}</Text>
-    <ActivityDetails label="查看保存詳情" scopeKey={item.id}>
-      <Text selectable style={styles.label}>{resourceKinds[item.resource.kind]}：{item.resource.id} · 版本 {item.resource.version}</Text>
-    </ActivityDetails>
+    {item.resource.kind === "private_note" && <Text style={styles.label}>只供本人查看</Text>}
+    {item.notification === "authorized_for_due_event" && <Text style={styles.label}>到期提示已授權 · {item.channels.map(channel => channel === "telegram" ? "Telegram" : "瀏覽器推送").join("、")}</Text>}
   </View>;
 }
 
@@ -71,6 +67,7 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
   onSelect(runId: string, label: string): void; cardRef(key: string, node: View | null): void }) {
   const loading = model.state === "loading", denied = model.state === "denied", ready = model.state === "ready";
   const hasSnapshot = !denied && !!model.loadedAt;
+  if (ready && model.online && !model.locked && !model.entries.length) return null;
   return <View testID="agent-activity-background" style={styles.section}>
       <Text accessibilityRole="header" style={styles.heading}>其他活動</Text>
       {model.state === "idle" ? <Text style={styles.label}>尚未載入其他活動。</Text> : null}
@@ -82,8 +79,8 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
       {model.state === "failed" ? <AppButton label="重新載入活動記錄" variant="quiet" density="compact"
         disabled={!model.online || model.locked} onPress={actions.refresh} style={styles.inlineButton} /> : null}
       {ready || hasSnapshot ? model.entries.length ? model.entries.slice(0, 20).map(entry => <ActivityCard key={entry.runId} cardKey={`run-${entry.runId}`}
-        content="活動結果" context={backgroundTime(entry.createdAt)} selected={entry.runId === model.selectedRunId}
-        disabled={model.locked || !model.online || loading} onPress={() => onSelect(entry.runId, backgroundTime(entry.createdAt))}
+        content={entry.label} context={backgroundTime(entry.createdAt)} status={entry.status ? agentRunLabels[entry.status] : undefined} selected={entry.runId === model.selectedRunId}
+        disabled={model.locked || !model.online || loading} onPress={() => onSelect(entry.runId, entry.label)}
         cardRef={node => cardRef(`run-${entry.runId}`, node)} />)
         : ready && model.online ? <Text style={styles.label}>目前沒有其他活動。</Text> : null : null}
   </View>;
@@ -120,11 +117,11 @@ export function AgentConversation({ visible, entry, onDismiss, onClosed }: { vis
       target: { runId: entry.runId, id: entry.proposal.id, version: entry.proposal.version, kind: entry.proposal.kind, scope: entry.proposal.scope } });
     setListRequested(false); selectAgentRun(entry.runId);
   }
-  function openBackground(runId: string, time: string) {
+  function openBackground(runId: string, label: string) {
     if (!scopeKey || cannotNavigate || agentInbox.locked || !agentInbox.online) return;
     const cardKey = `run-${runId}`;
     returnAnchor.current = { scopeKey, cardKey, y: scrollPosition.current };
-    setSelection({ scopeKey, runId, cardKey, label: `活動結果 · ${time}`, serial: ++selectionSerial.current });
+    setSelection({ scopeKey, runId, cardKey, label, serial: ++selectionSerial.current });
     setListRequested(false); agentInboxActions.select(runId);
   }
   function returnToCards() {
@@ -174,34 +171,36 @@ export function AgentConversation({ visible, entry, onDismiss, onClosed }: { vis
   useEffect(() => { if (visible && run && !receipt) authorizationActions.readReceipts(run.id); }, [visible, run?.id, receipt?.state]);
   const pendingEntries = agentPending.entries.filter(entry => !run || entry.runId !== run.id
     || !run.proposals.some(proposal => proposal.id === entry.proposal.id && proposal.version >= entry.proposal.version));
-  const showPending = !run || pendingEntries.length > 0 || agentPending.state !== "ready" || !!agentPending.nextCursor;
+  const showPending = pendingEntries.length > 0 || agentPending.state !== "ready" || !!agentPending.nextCursor;
   const showReceipts = !!run && (receipt?.state !== "ready" || receipt.items.length > 0 || !authorization.online);
   const emptyList = agentModel.online && agentInbox.online && !agentModel.pendingDecision && !agentInbox.locked
     && agentPending.state === "ready" && !agentPending.entries.length && !agentPending.nextCursor
     && agentInbox.state === "ready" && !agentInbox.entries.length;
-  const loadedPendingCount = (run?.proposals.filter(proposal => proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal)).length ?? 0)
-    + (agentPending.state === "ready" ? pendingEntries.filter(entry => entry.proposal.status === "pending" && entry.proposal.contentState !== "invalidated" && !proposalExpired(entry.proposal)).length : 0);
+  const actionable = pendingEntries.filter(entry => proposalNeedsConfirmation(entry.proposal));
+  const inactive = pendingEntries.filter(entry => !proposalNeedsConfirmation(entry.proposal));
+  const loadedPendingCount = (run?.proposals.filter(proposalNeedsConfirmation).length ?? 0)
+    + (agentPending.state === "ready" ? actionable.length : 0);
   const pendingCountKnown = agentModel.online && agentPending.state === "ready" && (agentModel.readState === "idle" || agentModel.readState === "ready");
   const activityHeading = <View style={styles.activityHeading}>
-    <AppDialog.Title style={styles.activityTitle}>{showDetails ? selected?.target ? "確認事項" : "回覆詳情" : "對話活動"}</AppDialog.Title>
+    <AppDialog.Title style={styles.activityTitle}>{showDetails ? selected?.target ? "事項詳情" : "回覆詳情" : "對話活動"}</AppDialog.Title>
     {(loadedPendingCount > 0 || !!agentPending.nextCursor) && <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
       ? `已載入 ${loadedPendingCount} 項待確認${agentPending.nextCursor ? "，仍有更多待讀取" : ""}` : "待確認數量尚未核對"}>
       {pendingCountKnown ? `${loadedPendingCount}${agentPending.nextCursor ? "+" : ""} 項待確認` : "待確認未核對"}
     </Text>}
   </View>;
   const pendingContent = showPending ? <View testID="agent-other-pending" style={styles.section}>
-        <Text accessibilityRole="header" style={styles.heading}>{run ? "其他待確認" : "待你確認"}</Text>
         {agentPending.state === "failed" ? <AppButton label="重新讀取待確認候選" variant="quiet" density="compact" disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} style={styles.inlineButton} /> : null}
         {agentPending.state === "idle" ? <Text style={styles.label}>{agentModel.online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text> : null}
         {agentPending.state === "loading" ? <ReadStateNotice state="loading" refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認事項…" /> : null}
         {agentPending.state === "denied" ? <Text style={styles.warning}>目前沒有權限查看這個孩子的待確認事項。</Text> : null}
         {agentPending.state === "failed" ? <Text style={styles.error}>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的事項。" : "未能讀取待確認事項，請重試。"}</Text> : null}
-        {agentPending.state !== "denied" && (agentPending.state === "ready" || agentPending.hasSnapshot) ? pendingEntries.length ? pendingEntries.map(entry => <ActivityCard key={`${entry.runId}-${entry.proposal.id}`}
+        {agentPending.state !== "denied" && (agentPending.state === "ready" || agentPending.hasSnapshot) ? [{ title: "待你確認", entries: actionable }, { title: "已結束事項", entries: inactive }].map(group => group.entries.length > 0 && <View key={group.title} style={styles.details}>
+          <Text accessibilityRole="header" style={styles.heading}>{group.title}</Text>
+          {group.entries.map(entry => <ActivityCard key={`${entry.runId}-${entry.proposal.id}`}
           cardKey={`proposal-${entry.runId}-${entry.proposal.id}`} content={proposalPrimaryText(entry.proposal)} context={proposalContextLabel(entry.proposal)}
-          status={entry.proposal.status === "expired" || proposalExpired(entry.proposal) ? "已過期" : agentProposalLabels[entry.proposal.status]} warning
+          status={group.entries === actionable ? undefined : proposalDisplayStatus(entry.proposal)}
           disabled={cannotNavigate || !agentModel.online} onPress={() => openProposal(entry)}
-          cardRef={node => cardRef(`proposal-${entry.runId}-${entry.proposal.id}`, node)} />)
-          : agentPending.state === "ready" && agentModel.online ? <Text style={styles.label}>{agentPending.nextCursor ? "已載入頁面暫無其他待確認事項；仍可繼續讀取。" : "目前沒有待確認或過期事項。"}</Text> : null : null}
+          cardRef={node => cardRef(`proposal-${entry.runId}-${entry.proposal.id}`, node)} />)}</View>) : null}
         {agentPending.nextCursor ? <AppButton label="讀取下一頁候選" variant="quiet" density="compact" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => readAgentPending(true)} style={styles.inlineButton} /> : null}
       </View> : null;
   return <AppDialog visible={visible} onDismiss={onDismiss} onClosed={onClosed} accessibilityLabel={showDetails ? "活動詳情" : "對話活動"} style={styles.dialog}>
@@ -235,7 +234,6 @@ export function AgentConversation({ visible, entry, onDismiss, onClosed }: { vis
       </View> : null}
       {showDetails && !selected?.target && (!selected || selected.runId === run?.id) && run?.privateSourceCitations?.length ? <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>私人參考</Text>
-        <Text style={styles.label}>回答當時獲授權的原文快照；不是已核對的官方育兒來源，停用或更正後不供新回答使用。</Text>
         {run.privateSourceCitations.map((source, index) => <ActivityDetails key={`${run.id}:${source.citationId}`} label={`私人來源 ${index + 1} · ${source.label}`} scopeKey={`${run.id}:${source.citationId}`}>
           <Text style={styles.label}>版本 {source.version}</Text><Text selectable style={styles.label}>{source.excerpt}</Text>
         </ActivityDetails>)}
@@ -254,9 +252,9 @@ const styles = StyleSheet.create({
   row: { gap: spacing.sm, minWidth: 0, paddingVertical: spacing.sm },
   rowHeading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   details: { gap: spacing.sm, minWidth: 0 }, inlineButton: { alignSelf: "flex-start", maxWidth: "100%", minWidth: 0 },
-  activityCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, minWidth: 0, minHeight: 96, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white },
-  cardCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
-  cardContent: { fontFamily: chatFont, color: chatColors.ink, fontSize: 20, lineHeight: 29, fontWeight: "600", minWidth: 0 },
+  activityCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.softLine },
+  cardCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  cardContent: { fontFamily: chatFont, color: chatColors.ink, fontSize: 16, lineHeight: 23, fontWeight: "600", minWidth: 0 },
   cardHighlighted: { backgroundColor: colors.quietSurface }, cardFocused: { borderWidth: 2, borderColor: colors.teal },
   cardPressed: { backgroundColor: colors.paleTeal }, cardDisabled: { opacity: 0.6 },
   heading: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section, flexShrink: 1, minWidth: 0 },

@@ -298,7 +298,7 @@ test('ChatPage surfaces contextual official help for an urgent draft before a ch
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
 
@@ -468,7 +468,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
   const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
@@ -765,7 +765,7 @@ test('H2-R: resolved stopped/unknown replies and catch-recovered unfinished save
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   };
   const ChatPage = loadModule('frontend/src/screens/chatScreen.tsx', overrides).default;
@@ -1020,7 +1020,7 @@ test('BND-2: non-emergency medicine queries show consult notice only while mixed
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   }).default;
 
@@ -1233,7 +1233,7 @@ test('Late failure retains qualified progress sources without unreviewed drafts,
     '../production/NotificationChatTarget': { NotificationChatTarget: 'NotificationChatTarget' },
     '../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../preview/PreviewNavigationGuard': { usePreviewLeaveGuard() {}, usePreviewNavigation: () => (fn: () => void) => fn() },
-    '../agent-view-model': { proposalExpired: () => false, publicAnswerSources: () => undefined },
+    '../agent-view-model': { proposalNeedsConfirmation: () => false, publicAnswerSources: () => undefined },
     '../theme': { colors: placeholder, mobileLayout: { breakpoint: 640 }, spacing: placeholder, chineseFont: 'synthetic' },
   }).default;
 

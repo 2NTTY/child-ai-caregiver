@@ -14,5 +14,6 @@
 - 正式入口為 `app/_layout.tsx` → `src/production/ProductionProvider.tsx`；正式資料 owner 位於 `src/production/`。合成 fixture／預覽 owner 不作正式資料來源；`src/preview/` 尚有正式畫面使用的共用 guard／provider，不按目錄名刪除。
 - 在倉庫根執行 `npm run web` 啟動本域；需 API／登入時沿根本地入口。僅需前端型別檢查時使用 `npm run typecheck --workspace frontend`。
 - 佈局／響應式改動按影響選取 1440／1024／390／320 CSS px、鍵盤及必要狀態，附實際畫面；純文案或不影響佈局的接線不例行重跑四尺寸。真 API 接線及正式瀏覽器 E2E 由主聊天按交接文件處理，不把前端預覽算作正式驗收。
+- 交付前實際打開改動的清單和詳情，按家長要做的事逐句檢查。相同結果只說一次，內部識別碼和版本留給診斷；費用或共享提示放在作決定之處。用空清單及已失效事項核對，讓畫面只提供當下可用的操作。
 - Android 共用 UI 的提前實作與正式 P3／真機門檻，只依 [根聊天分工](../AGENTS.md#frontend-backend)；本域不再維護另一份次序。
 - 開包、整合前及交付前 fetch GitHub，核對 master 與 active worktree 的 frontend 路徑。其他聊天的新內容只讀參照；不能在主聊天 checkout 執行 pull／reset／stash。
