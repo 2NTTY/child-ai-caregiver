@@ -28,13 +28,13 @@ const hooks = {
     if (!(index in instance.slots)) instance.slots[index] = typeof initial === 'function' ? initial() : initial;
     return [instance.slots[index], value => { instance.slots[index] = typeof value === 'function' ? value(instance.slots[index]) : value; }];
   },
-  useRef: initial => ({ current: initial }), useEffect: noop, useLayoutEffect: noop, useId: () => 'synthetic-tabs',
+  useRef: initial => ({ current: initial }), useEffect: noop, useLayoutEffect: noop, useId: () => 'synthetic-tabs', useCallback: fn => fn,
 };
 function load(relative) {
   const source = readFileSync(path.join(root, relative), 'utf8');
   const module = { exports: {} };
   const imports = {
-    'expo-router': { useRouter: () => ({ push: noop }) },
+    'expo-router': { useRouter: () => ({ push: noop }), useLocalSearchParams: () => ({}), useFocusEffect: noop },
     react: hooks, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, zod: { z },
     'react-hook-form': { Controller: 'Controller', useForm({ defaultValues }) {
       factForm ??= { ...defaultValues };
