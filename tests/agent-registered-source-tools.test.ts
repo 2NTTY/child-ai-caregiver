@@ -26,7 +26,10 @@ test('chat updates the same account card, joins a repeated command and returns o
       }
       return { card };
     },
-  }, scope.userId, 'message-1', '訂閱學校通告 ' + url, async () => true);
+  }, scope.userId, 'message-1', '訂閱學校通告 ' + url, async () => true, [], {
+    childId: scope.childId, library: { platformCards: async () => assert.fail('private host triggered catalogue reads'),
+      joinListedCard: async () => assert.fail('private host triggered a platform join') },
+  });
   const invoke = (name: string, args: Record<string, unknown>, callId = 'call') => {
     const tool = tools.tools.find(candidate => candidate.name === name)!;
     return tool.execute(tool.parameters.parse(args), { scope, runId: 'run', callId, signal: new AbortController().signal });
@@ -45,16 +48,58 @@ test('chat updates the same account card, joins a repeated command and returns o
   assert.equal(tools.operations().at(-1)?.state, 'committed');
 });
 
+test('chat joins only a previously listed platform card through the owner library and never registers its URL privately', async () => {
+  const url = 'https://www.fhs.gov.hk/guide', versionId = crypto.randomUUID();
+  const scope = { userId: 'parent', workspaceId: 'workspace', childId: 'child', authorizationVersion: '1', dataVersion: '1' };
+  const saved: unknown[] = [], lookups: unknown[] = [];
+  let incomplete = false;
+  const card = { sourceId: 'guide', versionId, seriesId: 'guides', name: '育兒指南', publisher: '家庭健康服務',
+    mode: 'platform' as const, revision: 0, enabled: true };
+  const earlier = { ...card, sourceId: 'earlier', seriesId: 'earlier-guides' };
+  const tools = createRegisteredSourceTools({ get: async () => null, list: async () => ({ items: [], nextCursor: null }),
+    command: async () => assert.fail('unexpected private registration') }, scope.userId, 'message', '請加入平台來源卡 ' + url, async () => true,
+    [], { childId: scope.childId, library: {
+      async platformCards(owner, child, after, lookupUrl) {
+        assert.equal(owner, scope.userId); assert.equal(child, scope.childId);
+        lookups.push([after, lookupUrl]);
+        if (lookupUrl && incomplete) return { cards: [], next: 'unresolved' };
+        if (lookupUrl === url) return { cards: [card], next: null };
+        return after === 'end-first' ? { cards: [earlier, card], next: null } : { cards: [earlier], next: 'end-first' };
+      },
+      async joinListedCard(owner, child, selected) { assert.equal(owner, scope.userId); assert.equal(child, scope.childId); saved.push(selected); return { revision: 1 }; },
+    } });
+  const invoke = (name: string, args: Record<string, unknown>) => {
+    const tool = tools.tools.find(item => item.name === name)!;
+    return tool.execute(tool.parameters.parse(args), { scope, runId: 'run', callId: 'call', signal: new AbortController().signal });
+  };
+  assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).status, 'rejected');
+  assert.equal((await invoke('register_source_card', { url, name: '育兒指南', kind: 'document' })).status, 'rejected');
+  const page = await invoke('read_platform_source_cards', {});
+  const cursor = (page.data as { nextCursor: string }).nextCursor;
+  assert.ok(cursor); assert.deepEqual(lookups, [[undefined, url], [undefined, undefined]]);
+  assert.equal((await invoke('read_platform_source_cards', { cursor: 'invented' })).status, 'rejected');
+  const next = await invoke('read_platform_source_cards', { cursor });
+  assert.deepEqual(next.data, { cards: [{ seriesId: 'guides', name: card.name, publisher: card.publisher, mode: 'platform', enabled: true }], nextCursor: null });
+  assert.deepEqual(lookups.at(-1), ['end-first', undefined]);
+  assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).reference, 'guides');
+  assert.deepEqual(saved, [card]);
+  assert.equal(tools.operations()[0]?.tool, 'join_platform_source_card');
+  incomplete = true;
+  const blocked = await invoke('register_source_card', { url, name: '育兒指南', kind: 'document' });
+  assert.deepEqual(blocked.data, { reason: 'platform_url_lookup_incomplete' });
+});
+
 test('formal chat advertises source settings only in the account owner conversation', () => {
   const budget = new AgentBudget();
   try {
-    const options = { run: { scope: { userId: 'parent' }, runId: 'run', budget }, store: {}, registeredSourceCards: {},
+    const options = { run: { scope: { userId: 'parent' }, runId: 'run', budget }, store: {}, registeredSourceCards: {}, platformLibrary: {},
       knowledge: { createRun: () => ({}) }, authorize: async () => true, trustedUserMessage: '把通告改成每天查一次', currentMessageId: 'message' };
     const assemble = (extra: object) => createProductAgentTools({ ...options, ...extra } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
     const tool = assemble({}).find(item => item.name === 'manage_source_card')!;
     const schema = new FunctionTool({ name: tool.name, description: tool.description, parameters: tool.parameters.strict(), execute: async () => ({}) })._getDeclaration();
     assert.equal(schema?.parameters?.properties?.frequencyMinutes?.minimum, 1);
+    assert.ok(assemble({}).some(item => item.name === 'join_platform_source_card'));
     for (const mode of [{ background: true }, { visibility: 'family' }, { reviewedGrowthPresentation: true }, { currentMessageId: undefined }])
-      assert.equal(assemble(mode).some(item => item.name === tool.name), false);
+      assert.equal(assemble(mode).some(item => [tool.name, 'join_platform_source_card'].includes(item.name)), false);
   } finally { budget.close(); }
 });

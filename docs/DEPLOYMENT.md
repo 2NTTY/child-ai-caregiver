@@ -104,6 +104,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 <a id="source-browser"></a>
 ## 來源卡瀏覽器首次啟用、更新及回退
 
+2026-11-19 14:46 香港，原 VM 已啟用 `87a6c57f` 的 renderer。正式 worker 經唯讀 socket 取得 `200 ready`，同一收據重入後兩個容器 ID 相同。當時磁碟餘量只比 3 GiB 門檻多 11.55 MiB。下一次拉取前重新量度實際餘量。[正式健康及掛載收據](../artifacts/verification/SOURCE_BROWSER_LIVE_20261119.json)
+
 來源卡 renderer 在獨立 Compose 專案運行。worker 以 UID 1000 從唯讀 Unix socket 讀取服務狀態。接收器按已登記版本重新產生 worker 掛載，每次日常發布、修復及業務回退都會核對掛載。renderer 保留一核、384 MiB、零 swap 和無網絡設定。
 
 在**已合併並與遠端 master 相同的 checkout** 執行以下命令。建置機須能以現有營運身份推送香港 `site-release` 映像庫，並沿既有 IAP／OS Login 路徑連線原 VM。接收器安裝及業務發布由主線協調，renderer 與 backend 分開拉取。首次啟用次序如下。

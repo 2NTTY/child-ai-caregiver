@@ -49,6 +49,7 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}), useFocusEffect() {} };
     if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
+    if (name === './PlatformCardJoin') return { PlatformCardJoin: () => null };
     if (name === '../AppDialog') return { AppDialog: nativeElement('dialog') };
     if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package',
       '../../../../src/shared/source-series', '../../../../src/shared/personal-library'].includes(name)) return {};

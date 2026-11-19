@@ -60,6 +60,7 @@ import type { FirestoreContact } from './firestore-contact.ts';
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
   routing?: ReturnType<typeof createFirestoreModelRouting>;
   registeredSourceCards?: AgentSourceCards;
+  platformLibrary?: import('./agent-registered-source-tools.ts').AgentPlatformLibrary;
   registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   liveSourceReader?: import('./live-source-citation.ts').LiveSourceReaderOption;
   usageFinancialEvidence?: () => import('./ai-financial-evidence.ts').DayFinancialEvidence[] | undefined;
@@ -169,7 +170,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const mixedTaskBatches=createMixedTaskBatches({...options,runs:services.runs});
   const agent = createProductAgent({ runtime, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge,
-    registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments });
+    registeredSourceCards: options.registeredSourceCards, registeredSourceDocuments: options.registeredSourceDocuments, platformLibrary: options.platformLibrary });
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
   // Cold settlement reads the original billing source, not today's selected settings.
   const summaryDaily = routing.usage;

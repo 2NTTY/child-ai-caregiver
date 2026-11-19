@@ -283,6 +283,9 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
                 onPress={() => navigate(() => router.push({ pathname: '/memory', params: {
                   sourceCard: link.cardId, ...(link.authorize ? { sourceAction: 'authorize' } : {}),
                 } }), 'workspace')} />)}
+            {message.role === 'model' && sourcesMatch && run?.platformSeriesIds?.map(series =>
+              <ChatAction key={series} label="查看已加入的平台卡" compact={compact}
+                onPress={() => navigate(() => router.push({ pathname: '/memory', params: { series } }), 'workspace')} />)}
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
               onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
@@ -297,7 +300,9 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat} inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "按送出會保存照片，並交給目前選用的模型按你的要求處理。" : undefined}
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
-      onPress={() => setPrivacyOpen(true)} subtle /></BackgroundSurface>
+      onPress={() => setPrivacyOpen(true)} subtle />
+      {child ? <ChatAction label="平台來源卡" accessibilityLabel="查看可免費加入的平台來源卡"
+        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
     <AgentConversation visible={detailsOpen} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
@@ -345,6 +350,6 @@ const styles = StyleSheet.create({
   compactAction: { minHeight: 48 }, subtleAction: { minHeight: 32, alignSelf: "center" },
   actionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
-  disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
+  disabled: { opacity: .45 }, privacyFooter: { flexDirection: 'row', flexWrap: 'wrap', flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
 

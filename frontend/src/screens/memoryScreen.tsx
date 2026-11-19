@@ -14,9 +14,10 @@ import { useProductionTaskKnowledgeMemory } from "../production/TaskKnowledgeDom
 import { RegisteredSourceCards } from "../production/RegisteredSourceCards";
 
 export default function MemoryPage() {
-  const { series, sourceCard } = useLocalSearchParams<{ series?: string; sourceCard?: string }>();
-  const [tab, setTab] = useState<'short' | 'long' | 'references'>(series || sourceCard ? 'references' : 'long');
-  useEffect(() => { if (series || sourceCard) setTab('references'); }, [series, sourceCard]);
+  const { series, sourceCard, section } = useLocalSearchParams<{ series?: string; sourceCard?: string; section?: string }>();
+  const showReferences = !!series || !!sourceCard || section === 'references';
+  const [tab, setTab] = useState<'short' | 'long' | 'references'>(showReferences ? 'references' : 'long');
+  useEffect(() => { if (showReferences) setTab('references'); }, [showReferences, series, sourceCard, section]);
   const { model, actions, online, recordsState, auth, userId, scopeKey } = useProduction(), memory = useProductionTaskKnowledgeMemory();
   const { family } = useProductionSettingsDomains();
   const child = model.children.find(item => item.id === model.selectedChildId);

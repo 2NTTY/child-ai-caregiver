@@ -6,6 +6,7 @@ import { EmptyListCard } from "../EmptyListCard";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SourceDocumentCard } from "./SourceDocumentCard";
+import { PlatformCardJoin } from './PlatformCardJoin';
 import { AppDialog } from "../AppDialog";
 import { sourceSeries } from "../../../../src/shared/source-series";
 import { useFocusEffect, useRouter, useLocalSearchParams, type Href } from "expo-router";
@@ -211,7 +212,8 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
   const documents = firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items;
   const requiresSelection = items.some(item => item.preference?.eligible === false);
   const enabled = preference?.enabled !== false;
-  const state = !enabled ? '已停用' : requiresSelection ? '待選版本' : '使用中';
+  const state = !enabled ? '已停用' : requiresSelection ? '待選版本' : preference?.mode === 'fixed' ? '已固定'
+    : preference?.mode === 'follow' ? '已跟隨' : '使用中';
   const fileCount = `${workspace.model.references.data?.hasMore ? '已載入 ' : ''}${items.length} 份文件`;
   const art = items.flatMap(item => item.topics ?? []).map(topic => topicArt[topic]).find(Boolean);
   return <View style={{ width }} testID={`memory-catalog-series-${series.id}`}>
@@ -231,6 +233,7 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
       {requiresSelection && enabled ? <Text style={styles.warning}>收錄範圍已更改。請在「設定與匯出」選用新版本。</Text> : null}
       <AppTabPanel tabsId={tabsId} tabKey="files" active={section === 'files'}><View style={styles.section}>
+        <PlatformCardJoin seriesId={series.id} />
         {documents.map(item => <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
@@ -327,6 +330,8 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
     .filter(institution => institution.series.length);
   return <View style={styles.section}>
     {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{(currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
+    {catalog?.length ? <View><Text accessibilityRole="header" style={styles.sectionTitle}>平台來源卡</Text>
+      <Text style={styles.meta}>平台負擔整理及更新費用。免費加入後會跟隨同範圍的已審核更新。</Text></View> : null}
     <View style={styles.tools}>
       {tags.length > 1 ? <View style={styles.filter}><AppSelect label="篩選來源庫" showLabel={false} value={filter} onChange={setFilter} options={[{ value: 'all', label: '全部來源' },
         ...tags.map(value => ({ value, label: referenceFilters[value] ?? value }))]} /></View> : null}

@@ -228,7 +228,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const sourceLibrary = { ...registeredSourceDocuments, searchPrivate: privateSources.searchPrivate,
       readPrivateEvidence: privateSources.readPrivateEvidence, privateIndexStatus: privateSources.privateIndexStatus
     };
-    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, routing, usageFinancialEvidence, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, registeredSourceCards, registeredSourceDocuments: sourceLibrary, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, routing, usageFinancialEvidence, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, registeredSourceCards, registeredSourceDocuments: sourceLibrary, platformLibrary: library, concerns, growth, contact,
       liveSourceReader: knowledge && (userId => createOfficialLivePages({ sourceIds: config.knowledgeSourceIds ?? [],
         mayRead: sourceId => knowledge.mayReadLivePage(userId, sourceId) })),
       summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),

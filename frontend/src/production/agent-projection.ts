@@ -7,6 +7,7 @@ import type { ChatCitationView } from "../chat-view-model.ts";
 
 const toolNames: Record<string, string> = {
   read_source_cards: '查看來源卡', register_source_card: '新增來源卡', manage_source_card: '更新來源卡', open_source_card_login: '前往來源登入',
+  read_platform_source_cards: '查看平台來源卡', join_platform_source_card: '免費加入平台卡',
   load_capabilities: "載入相關能力", read_work: "讀取未完成工作", save_work: "保存工作進度",
   search_history: "搜尋已授權歷史", read_history: "閱讀歷史原文", read_memory_facts: "讀取記憶事實及版本",
   propose_fact_revision: "提出事實更正", propose_fact_deactivation: "提出事實停用", request_confirmation: "準備具體確認", confirmed_proposal: "已按本人確認保存",
@@ -145,13 +146,17 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
 }
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
   const cardLinks = new Map<string, boolean>();
+  const platformSeries = new Set<string>();
   for (const { name, status, reference } of result.tools) {
+    if (name === 'join_platform_source_card' && status === 'succeeded' && reference && /^[a-z0-9][a-z0-9-]{0,79}$/u.test(reference))
+      platformSeries.add(reference);
     if (status !== 'succeeded' || !reference || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu.test(reference)) continue;
     if (['register_source_card', 'manage_source_card', 'open_source_card_login'].includes(name))
       cardLinks.set(reference, name === 'open_source_card_login' || cardLinks.get(reference) === true);
   }
   return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
     sourceCardLinks: Array.from(cardLinks, ([cardId, authorize]) => ({ cardId, authorize })),
+    platformSeriesIds: [...platformSeries],
     sourceCardReadings: result.status === 'completed' ? result.sourceCardReadings : undefined,
     stopReasonLabel: agentStopMessage(result.stopReason),
     stopReasonDetail: agentStopDetailHint(result.stopReason),

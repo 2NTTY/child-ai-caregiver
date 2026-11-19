@@ -131,6 +131,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 
 export function createProductAgentTools(options: {
   registeredSourceCards?: AgentSourceCards;
+  platformLibrary?: import('./agent-registered-source-tools.ts').AgentPlatformLibrary;
   registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
   prepareMixedTasks?:(action:MixedBatchAction)=>Promise<MixedTaskBatch>;
   mixedMaterials?: {
@@ -181,7 +182,8 @@ export function createProductAgentTools(options: {
   const registeredSources = options.registeredSourceCards && options.currentMessageId && options.trustedUserMessage
     && !options.background && !options.mixedTasks && !options.reviewedGrowthPresentation && options.visibility !== 'family'
     ? createRegisteredSourceTools(options.registeredSourceCards, scope.userId, options.currentMessageId, options.trustedUserMessage, authorize,
-      options.recentQuoteSources?.filter(message => message.authorUserId === scope.userId && message.role === 'user').map(message => message.text))
+      options.recentQuoteSources?.filter(message => message.authorUserId === scope.userId && message.role === 'user').map(message => message.text),
+      options.platformLibrary && { library: options.platformLibrary, childId: scope.childId })
     : undefined;
   const liveEvidence = new Map<string, LiveSourceCitation>();
   let originalQuotes = new Map<string, string>();
