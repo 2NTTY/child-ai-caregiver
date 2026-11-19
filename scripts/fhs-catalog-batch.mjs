@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import { campaignMaterialWatches, externalMaterialWatches, fhsMaterialWatches } from '../server/platform-materials.ts';
 import { campaign, campaignLimitMicros } from '../server/knowledge-campaign-budget.ts';
 
@@ -12,6 +13,8 @@ const items = new Map(inventory.items.map(item => [item.id, item]));
 const pdfs = new Map(inventory.pdfOriginals.map(item => [item.url, item]));
 const seen = new Set();
 const args = process.argv.slice(2);
+const waitForDaily = args[0] === '--wait-for-daily';
+if (waitForDaily) args.shift();
 const onlyExternal = args[0] === '--only-external';
 if (onlyExternal) args.shift();
 const repairs = new Map();
@@ -50,9 +53,17 @@ for (const source of sources) {
     continue;
   }
   const action = repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-sized', source.id];
-  const step = spawnSync(process.execPath, [fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url)), ...action],
-    { stdio: 'inherit' });
-  if (step.status === 3) continue;
-  if (step.status !== 0) { process.exitCode = step.status ?? 1; break; }
+  let status;
+  do {
+    const nextDay = new Date();
+    nextDay.setUTCHours(24, 0, 2, 0);
+    const step = spawnSync(process.execPath, [fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url)), ...action], { stdio: 'inherit' });
+    status = step.status ?? 1;
+    if (status === 4 && waitForDaily) {
+      console.log(JSON.stringify({ deferredSource: source.id, resumeAt: nextDay.toISOString() }));
+      await delay(Math.max(2000, nextDay.getTime() - Date.now()));
+    }
+  } while (status === 4 && waitForDaily);
+  if (status !== 0 && status !== 3) { process.exitCode = status; break; }
 }
 if (!resumed) throw Error('Resume source was not a distinct material in the approved sequence');
