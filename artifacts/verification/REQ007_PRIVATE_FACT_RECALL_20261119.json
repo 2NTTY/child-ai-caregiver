@@ -1,8 +1,19 @@
 {
   "requirement": "REQ-007",
   "observedAt": "2026-11-19T04:18:27+08:00",
+  "latestVerificationAt": "2026-11-19T08:27:36+08:00",
   "baseCommit": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
   "branch": "codex/req007-private-fact-recall-aa12",
+  "handoffIntegration": {
+    "branch": "codex/req007-quote-delivery-aa12",
+    "base": "bbb430e47d463aa21a780560941382385f788859",
+    "fieldTestSourceCommit": "0758f4002cefaa6802cf8f699127277ac8091dd4",
+    "resolution": "Use the current proposed official quote map when constructing delivery evidence. Commit the selected map and private fact bindings only after presentation validation succeeds.",
+    "checks": "Server TypeScript passed. The bounded mixed-private and long-document official-evidence tests passed, including the new assertion that the reviewer's source starts with the selected official excerpt.",
+    "scriptedRecentRun": "3af65910-50d7-4d4e-a5cb-4fd2863792fb",
+    "scriptedColdRun": "d15d2979-fc05-4fce-8893-3045fc186c60",
+    "result": "Recent chat returned the exact quote with no context read. The cold mixed draft was rejected, then repaired, reviewed and bound to the original and v3. Deletion suppressed stale replay, rebuild, repair and late delivery."
+  },
   "integrationProbe": {
     "observedAt": "2026-11-19T04:41:22+08:00",
     "remoteMaster": "3b51b971960668bb1b8b3a9d4d7f05fc91f37c55",
@@ -109,7 +120,7 @@
       "diagnosis": "The original shell specified a missing ADC file. The same SDK and environment reproduced ENOENT with fetch disabled and zero outgoing fetches. An auth-only check using the existing project ADC succeeded. The ledger carries the original reservation and supplies no provider billing receipt.",
       "originalMessageReplay": {"sameRunId": true, "status": "stopped", "newProviderCalls": 0}
     },
-    "localDailyPolicy": {"appliedAt": "2026-11-18T23:39:39.505Z", "before": {"version": 22, "user": 20, "global": 100}, "temporary": {"version": 23, "user": 200, "global": 200}, "originalAttemptReceiptsVerified": 88, "sharedWith": "REQ-006"},
+    "localDailyPolicy": {"appliedAt": "2026-11-18T23:39:39.505Z", "before": {"version": 22, "user": 20, "global": 100}, "temporary": {"version": 23, "user": 200, "global": 200}, "originalAttemptReceiptsVerified": 88, "sharedWith": "REQ-006", "restoredAt": "2026-11-19T00:27:04.146Z", "restored": {"version": 24, "user": 20, "global": 100}, "restoredAllOriginalPolicyValues": true, "previousUtcDayAttempts": 103, "currentUtcDayAttempts": 26},
     "beforeTopicNavigation": {
       "completedAt": "2026-11-18T23:49:04.069Z",
       "runId": "7860215b-b37b-4877-9f73-c7d0bd7f3b13",
@@ -172,6 +183,37 @@
       "liveOutcome": "One metered generation loaded history. Two further Vertex generations returned HTTP 429. The budget guard stopped the next native retry before transport. No search or quoted answer was produced by this run.",
       "usage": {"utcDay": "2026-11-19", "accountAttempts": [5, 9], "nativeAdmissions": 4, "outboundProviderCalls": 3, "inputTokens": 13914, "outputTokens": 16, "estimatedMeteredUsd": 0.0035025, "unmetered429UpperUsd": 0.071055}
     },
+    "mixedQuoteRepair": {
+      "observedRun": "275dbb23-95cc-46c7-a4c6-93c3cf8c9c59",
+      "search": {"kind": "message", "query": "帶咩畀阿B攬住定驚"},
+      "readFactVersion": 3,
+      "observedPresentation": "The model selected the correct immutable parent quote but added an uncited record_restatement introduction. The independent gate withheld the mixed draft with delivery_review_no_sources. Its evidence payload contained the exact v1 chat source and the v3 fact.",
+      "accountAttempts": [19, 23],
+      "estimatedMeteredUsd": 0.01257725,
+      "change": "When a mixed private quotation and restatement lacks paragraph support, present_answer returns the existing history_excerpt_mismatch repair response before terminating the turn. The normal citation checks and independent final review still apply.",
+      "scriptedReplay": {"runId": "79b8c418-f0ec-449e-80b9-976dcebf4f85", "replayedObservedDraft": true, "sourceBoundRepair": true, "exactQuote": true, "review": "pass", "modelCallsIncludingReview": 5, "replayedHttpAfterDeletion": 409},
+      "scriptedRecent": {"runId": "3dcfcc8e-d074-4420-b37a-0961589029e0", "tools": ["present_answer"], "modelCallsIncludingReview": 2, "memoryContextReads": 0}
+    },
+    "finalAcceptance": {
+      "completedAt": "2026-11-19T08:26:42.364+08:00",
+      "environment": "Product reply HTTP handler in-process with the original local Firebase Auth and Firestore services, native Vertex generator and independent Vertex reviewer. Six unrelated intervening messages separated the question from prior answers.",
+      "messageId": "68df8396-6b44-4373-bdef-39cc24999040",
+      "runId": "830efe79-4f62-4699-badc-be39fafb9c8b",
+      "sameAccountChildFactAndParentSource": true,
+      "initialInputExcludedCorrectedFormerAndSiblingValues": true,
+      "tools": [{"name": "read_memory_facts", "keys": []}, {"name": "search_history", "kind": "message", "query": "預防針 攬住 定驚"}, {"name": "present_answer", "arguments": {"kind": "private_reference", "paragraphs": [{"quoteHistory": "H1"}]}}],
+      "publishedHttpStatus": 200,
+      "deliveredText": "你當時說：「疫苗接種時改帶藍色布兔。」 [聊天原文]",
+      "review": "pass",
+      "draftHash": "2e92f4f5db4992e4e5525adce501fe1378b51f9a6701e01bd04cf22cf214bbdd",
+      "sources": [
+        {"citationId": "chat:93cb8aa9-4893-4533-82dd-ea10f9b00e7b:0:12", "version": "1", "contentHash": "6bb5e8e574d9b12cf5f8704751817ecdd887e4f774045a17e3a97a3ce2b1b1f9"},
+        {"citationId": "memory-fact:450b7261-3bcb-46ad-b293-9a54f9916bd1", "version": "3", "contentHash": "d930a9d786ecc0a8a542ee517ce5dd134c33409e73b19f407459cba4a9e838b2"}
+      ],
+      "usage": {"utcDay": "2026-11-19", "accountAttempts": [23, 26], "modelCallsIncludingReview": 3, "memoryContextReads": 0, "queryEmbeddings": 0, "inputTokens": 34109, "outputTokens": 144, "estimatedUsd": 0.00874325},
+      "deletedSameVersionAfterDelivery": {"reopenedFact": null, "reopenedSummary": null, "originalQuestionReplayHttp": 409, "code": "source_changed", "additionalProviderCalls": 0, "historicalParentStatementReadableByOwner": true},
+      "lineTotalsIncludingEarlierRuns": {"nativeAdmissions": 31, "meteredResponses": 24, "inputTokens": 318818, "outputTokens": 1008, "estimatedMeteredUsd": 0.0812165, "reservationsWithoutProviderTokenReceipt": {"initialAuthentication": 1, "explicitHttp429": 3, "upperUsd": 0.465705}, "additionalAdmissionsStoppedBeforeProviderByLocalGuard": 3, "conservativeLineUpperUsd": 0.5469215, "initialAllocationUsd": 0.45, "coordinatorAuthorizedSupplement": true, "sharedTwelveHourUpperWithAllReservationsAtFinalPreflightUsd": 4.0324735, "sharedCeilingUsd": 5}
+    },
     "sameRunToolRegression": {"queryOutsideTopicVocabulary": "預防針", "initialMatches": 0, "discovery": "Replayed both real chat search terms against an earlier identical question and a corrected fact. The scoped topic list carried only IDs and keys. An ID read returned v3, a quote handle and the exact parent message. After deletion the topic disappeared, while the independent second topic remained.", "selectedBy": "Deterministic tool-level test", "file": "tests/confirmed-fact-recall.test.ts", "filePassed": 3, "handoverHistoryPassed": 1},
     "scriptedRunnerAfterFix": {
       "recent": {"runId": "ebe68fa4-2089-489e-8689-5c488bbb8939", "tools": ["present_answer"], "modelCallsIncludingReview": 2, "memoryContextReads": 0},
@@ -187,7 +229,7 @@
     "summaries": {"file": "artifacts/verification/REQ005_SUMMARY_FIELD_20261118.json", "gitBlob": "efc78c27bfc0d13ac655b9b2221a4d9192158a75", "readScope": "Lines 1-53, original two-job sponsor scope, per-job use and cold projection with original message IDs"}
   },
   "limitations": [
-    "The original natural-question run stopped at provider authentication before selecting a search or returning an answer. It supplies no live evidence of model routing or delivery review.",
+    "Full natural-language acceptance covers the one recorded synthetic parent question in a fresh Runner and bounded conversation window. Earlier failed runs are retained. Provider charges for the unmetered reservations remain unknown.",
     "The supplementary read_work capacity case stops with input_limit at the initial scripted gateway request. Reproduced on unmodified commit 726e3427 and again with the recall fix. This independent test remains failing.",
     "The base checkout has no REQ-003 temporary chat lifecycle to exercise. Rejecting a non-persisted message without model calls only covers the product recall entry.",
     "Untraceable pre-deletion originals in a scoped restore and missing originals restored from a public personal backup remain available to their owner as history, with automatic reuse withheld.",

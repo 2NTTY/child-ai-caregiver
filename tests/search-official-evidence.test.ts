@@ -911,6 +911,7 @@ test("long documents, tables and exception conditions maintain end-to-end tracea
   const actual = '請盡快到家庭或眼科醫生求診';
   assert.equal((await cited(actual)).status, 'succeeded');
   assert.equal((await realLongTools.presentation())?.citations[0]?.citedExcerpt, actual);
+  assert.ok(realLongTools.deliveryDraft()?.sources.find(source => source.citationId === realSeedLongChunk.chunkId)?.excerpt.startsWith(actual));
 });
 
 test("insufficient evidence cleanly stops with delivery_review_no_sources while retaining sources without hallucinated text (REQ-001 §7 Line 6)", async (t) => {

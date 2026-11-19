@@ -59,7 +59,7 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
     if (scenario === 'cold') for (let i = 0; i < 6; i++) await chat.createUserMessageForUser(user, child.id, '另一段獨立話題 ' + i);
     const reference = correction;
     const message = await chat.createUserMessageForUser(user, child.id, scenario === 'cold' ? coldQuestion : '請引返我上一句講嘅安排。');
-    let contextReads = 0, modelCalls = 0, reviewerCalls = 0, hasSearched = false, hasReadFact = false;
+    let contextReads = 0, modelCalls = 0, reviewerCalls = 0, hasSearched = false, hasReadFact = false, triedMixedQuote = false;
     const scripted = { async generate(request) {
       modelCalls++;
       assert.ok(!JSON.stringify(request.contents).includes(siblingText));
@@ -93,6 +93,14 @@ export async function verifyPrivateFactRecall({ options, user, config, liveProvi
           args = factRead?.functionResponse?.response?.data?.result?.quoteAnswer;
           assert.equal(args?.kind, 'private_reference');
           name = 'present_answer';
+          if (!triedMixedQuote) {
+            // Reproduce the real draft whose added uncited introduction failed the delivery check.
+            args = { kind: 'mixed', paragraphs: [{ kind: 'record_restatement', text: '你上次提到會帶藍色布兔給阿B：', citationIds: [] }, ...args.paragraphs] };
+            triedMixedQuote = true;
+          } else {
+            const rejected = parts.find(part => part.functionResponse?.name === 'present_answer');
+            assert.equal(rejected?.functionResponse?.response?.data?.code, 'history_excerpt_mismatch');
+          }
         } else {
           name = 'present_answer';
           // A scripted speaker selects the evidence returned by the Server. It may not invent an H handle or inject answer text.

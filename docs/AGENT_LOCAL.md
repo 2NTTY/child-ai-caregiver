@@ -144,6 +144,8 @@ node --experimental-strip-types scripts/verify-agent-local.mjs --real-booklet-qu
 
 命令先確認該版在帳戶的來源庫可見，再發一則關於圖解的自然問話。它讀回保存的回答、來源頁碼及原件，核對 PDF 位元組。已停止的 run 保留原收據；這個命令每次明確執行才會發送一則新問題。
 
+畫面點閱可直接重開上一步保存的回答。若 API 已有來源系列，畫面仍顯示舊目錄，先看瀏覽器對來源庫發出的 `Accept` 是否包含 `application/vnd.yuyoufang.library-series.v2+json`。若只送出舊格式，核對 Metro 載入的專案路徑，從目前分支的前端目錄重啟 Web，沿用同一個 API、孩子及回答。
+
 ## 保存、停止與重設
 
 輸入 `stop` 或按 Ctrl+C：停止本機 API／worker，完成 emulator 配對匯出後退出。每分鐘另做一次 checkpoint。正常重開會匯入最後完整快照；突然斷電／強殺可能丟失最近一個 checkpoint 之後的本地修改，不宣稱 emulator 等同正式資料庫的崩潰持久性。

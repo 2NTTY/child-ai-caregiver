@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-11-19 香港**　家庭健康服務 20 頁小冊子已取代原站只涵蓋第 3 頁的版本。08:06 從正式查詢命中第 3、6 頁，並從第 6 頁引用讀回同一份原 PDF。三個工作包的家長問答與介面驗收見[原計劃](PLAN.md#agent-evidence)及[三端版本與來源收據](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json)。
+**2026-11-19 香港**　家庭健康服務 20 頁小冊子已在原站發布。08:06 從正式查詢命中第 3、6 頁。08:33 在隔離家庭的 Edge 重開真實回答，點讀第 6 頁原文，檔案指紋與正式原件一致。私人記憶的另一則真實回答引用最後更正的原句，刪除後舊回答停止交付。[公開來源及點閱](artifacts/verification/AGENT_SOURCE_DELIVERY_20261119.json) · [私人更正與刪除](artifacts/verification/REQ007_PRIVATE_FACT_RECALL_20261119.json)
 
 **2026-11-18 07:49 香港**　P4 多孩查詢修正已發布。Web、API、worker 均為 `b17fa999`，站外版本與收據一致，網站健康。原版 APK 透過同一 API 使用這項修正。兩名所選孩子的記憶、真 Gemini 審核及引用原件已用隔離資料驗證，真機點讀仍待核。[原站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44201248461) · [接手清單](docs/P4_RESUME.md#下次從哪開始)
 
