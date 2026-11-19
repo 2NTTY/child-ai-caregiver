@@ -71,7 +71,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 共同驗收只串一條流程：家長下載一張已審核卡，在待辦頁點角色提問，開助手頁讀到同一原問題及回答，發起討論，再由引用打開當時的官方原件。每線實作、定向驗收、正式交付、仍待本人操作分開記錄。
 
-聯驗已在 Edge 從待辦角色送出，於主聊天讀回同一次回答及其對應版本的官方原文。A 續查「討論這個回答」在三位發言後未能交付的原運行。C 依首批帳本接續攝取。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
+聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
