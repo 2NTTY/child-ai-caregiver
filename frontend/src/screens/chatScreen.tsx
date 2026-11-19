@@ -210,7 +210,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
         onPress={() => { void requestChatReply(draft.savedUserMessageId!); }} />
       <AppButton label="開始新訊息" variant="quiet" disabled={busy} onPress={() => chatController.startNewMessage()} /></View> : null}
     {!busy && turnFeedback && (turnFeedback.cards?.length || turnFeedback.sources?.length)
-      && !remoteReplyStillRunning && turnFeedback.messageId !== draft?.savedUserMessageId
+      && !(remote?.messageId === turnFeedback.messageId && remote.status === "running") && turnFeedback.messageId !== draft?.savedUserMessageId
       ? <AppButton label="收起這次查核提示" variant="quiet" density="compact"
         onPress={() => chatController.dismissRetainedFeedback(turnFeedback.messageId)} /> : null}
     {authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>

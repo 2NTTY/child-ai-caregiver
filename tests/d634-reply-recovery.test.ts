@@ -178,9 +178,9 @@ test('a persisted incomplete answer stays dismissible on delivery, read-only ret
       let markStarted!: () => void;
       let finishRead!: (reply: ChatReplyState) => void;
       const checking = new Promise<void>(resolve => { markStarted = resolve; });
-      api.getOriginalReply = async () => {
+      api.getReplyState = async () => {
         markStarted();
-        return new Promise<ChatReplyState>(resolve => { finishRead = resolve; });
+        return (await new Promise<ChatReplyState>(resolve => { finishRead = resolve; })).status;
       };
       const pendingReload = ctrl.reloadMessages();
       await checking;
@@ -272,5 +272,119 @@ test('a disconnected run checks the replacement row against its own run status',
     assert.equal(state.remoteReply?.status, 'unknown');
     assert.equal(state.feedback, null, 'the older run cannot donate its feedback to the replacement');
     assert.equal(state.drafts[childId].phase, 'reply_failed');
+  } finally { ctrl.dispose(); }
+});
+
+test('delivery and history resolve a saved row by its own run, not another run for that message', async () => {
+  const replacement = 'replacement-run';
+  for (const path of ['delivery', 'history'] as const) {
+    for (const [oldStatus, replacementStatus] of [['completed', 'unknown'], ['stopped', 'completed']] as const) {
+      const exactChecks: string[] = [];
+      let calls = 0;
+      const row = { ...answer, agentRunId: replacement, officialHelp: ['medical-consult-hk-v1' as const] };
+      const { ctrl, history } = await failedTurn((api, history) => {
+        api.getOriginalReply = async () => original(oldStatus);
+        api.getReplyState = async (_c, run) => { exactChecks.push(run); return run === replacement ? replacementStatus : oldStatus; };
+        api.requestReply = async (_c, messageId, _sig, _owner, progress) => {
+          calls++;
+          progress?.({ messageId, runId, phase: 'help', card: 'emergency-hk-v1' });
+          if (path === 'history') throw new Error('Synthetic interruption');
+          history.push(row);
+          return row;
+        };
+      });
+      try {
+        if (path === 'history') { history.push(row); await ctrl.reloadMessages(); }
+        const state = ctrl.getSnapshot();
+        assert.ok(exactChecks.includes(replacement), path + ': must consult the saved row’s explicit run');
+        assert.equal(state.messages.find(item => item.id === question.id)?.agentRunId, replacement);
+        assert.equal(state.feedback, null, 'the older emergency card cannot be attached to another run');
+        assert.equal(state.remoteReply?.status ?? 'completed', replacementStatus);
+        assert.equal(state.remoteReply?.runId ?? replacement, replacement);
+        assert.equal(state.drafts[childId].phase, replacementStatus === 'completed' ? 'draft' : 'reply_failed');
+        assert.equal(calls, 1);
+      } finally { ctrl.dispose(); }
+    }
+  }
+});
+
+test('cold or reopened saved help checks only the selected row and publishes its status without creating a draft or executing', async () => {
+  const { api, ctrl: old } = await failedTurn();
+  old.dispose();
+  const row = { ...answer, agentRunId: 'cold-selected-run', officialHelp: ['emergency-hk-v1' as const] };
+  for (const report of ['unknown', 'completed', 'running'] as const) {
+    let posts = 0;
+    const reads: string[] = [];
+    const ctrl = new ChatController({
+      ...api, listMessages: async () => ({ messages: [question, { ...row, id: 'earlier', agentRunId: 'earlier' }, row], limit: 20 }),
+      getOriginalReply: async () => original(report === 'running' ? 'running' : report === 'unknown' ? 'completed' : 'stopped'),
+      getReplyState: async (_c, id) => { reads.push(id); return report; },
+      requestReply: async () => { posts++; throw new Error('unexpected re-execution'); },
+    });
+    try {
+      const loaded = new Promise<void>(resolve => {
+        const off = ctrl.subscribe(() => {
+          if (ctrl.getSnapshot().loadedAt && !ctrl.getSnapshot().loading) { off(); resolve(); }
+        });
+      });
+      ctrl.syncContext(owner, true, childId);
+      await loaded;
+      assert.deepEqual(reads, [row.agentRunId]);
+      const snapshot = ctrl.getSnapshot();
+      assert.equal(snapshot.remoteReply?.status ?? 'completed', report);
+      assert.equal(snapshot.remoteReply?.runId ?? row.agentRunId, row.agentRunId);
+      assert.equal(snapshot.feedback, null);
+      assert.equal(snapshot.drafts[childId], undefined);
+      if (report === 'running') {
+        await ctrl.refreshOriginalReply();
+        assert.deepEqual(reads, [row.agentRunId, row.agentRunId]);
+        assert.equal(ctrl.getSnapshot().remoteReply?.runId, row.agentRunId, 'a stale original cannot replace the saved run on foreground refresh');
+      }
+      assert.equal(posts, 0);
+    } finally { ctrl.dispose(); }
+  }
+});
+
+test('a newer saved help turn replaces a retained terminal status without taking a running turn away for an earlier check', async () => {
+  const { api, ctrl: old } = await failedTurn();
+  old.dispose();
+  const savedHelp = { ...answer, officialHelp: ['emergency-hk-v1' as const] };
+  const next = { ...question, id: 'next-question' };
+  const nextRow = { ...savedHelp, id: 'next-answer', inReplyTo: next.id, agentRunId: 'next-run' };
+  const history: ChatMessage[] = [question, savedHelp];
+  let nextStatus: ChatReplyState['status'] = 'stopped';
+  let posts = 0;
+  const reads: string[] = [];
+  const ctrl = new ChatController({
+    ...api, listMessages: async () => ({ messages: [...history], limit: 20 }),
+    getOriginalReply: async (_c, id) => ({ messageId: id, runId, status: 'stopped', stopReason: null }),
+    getReplyState: async (_c, id) => { reads.push(id); return id === nextRow.agentRunId ? nextStatus : 'stopped'; },
+    requestReply: async () => { posts++; throw new Error('unexpected re-execution'); },
+  });
+  try {
+    const loaded = new Promise<void>(resolve => {
+      const off = ctrl.subscribe(() => {
+        if (ctrl.getSnapshot().loadedAt && !ctrl.getSnapshot().loading) { off(); resolve(); }
+      });
+    });
+    ctrl.syncContext(owner, true, childId);
+    await loaded;
+    assert.equal(ctrl.getSnapshot().remoteReply?.messageId, question.id);
+    history.push(next, nextRow);
+    await ctrl.reloadMessages();
+    assert.deepEqual(ctrl.getSnapshot().remoteReply, { messageId: next.id, runId: nextRow.agentRunId, status: 'stopped', stopReason: null });
+    assert.deepEqual(reads, [runId, nextRow.agentRunId]);
+    // Reopen B as running, then inspect A once its model row is no longer on the page.
+    nextStatus = 'running';
+    history.splice(1, 1);
+    await ctrl.reloadMessages();
+    assert.equal(ctrl.getSnapshot().remoteReply?.status, 'running');
+    const during: Array<ChatReplyState | null | undefined> = [];
+    const off = ctrl.subscribe(() => during.push(ctrl.getSnapshot().remoteReply));
+    await ctrl.requestReply(question.id);
+    off();
+    assert.ok(during.length > 0);
+    assert.ok(during.every(remote => remote?.messageId === next.id && remote.status === 'running'), 'read-only checks of A must preserve the currently running B');
+    assert.equal(posts, 0);
   } finally { ctrl.dispose(); }
 });

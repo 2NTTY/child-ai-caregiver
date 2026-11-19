@@ -385,6 +385,8 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   let currentReplyingMessageId: string | null = null;
   let currentBusy: 'reply' | null = null;
   let currentRuns: Record<string, any> = {};
+  let currentRemoteReply: { messageId: string; runId: string; status: 'running' | 'stopped' | 'unknown'; stopReason: null } | null = null;
+  const dismissedTargets: string[] = [];
   let viewport = { width: 1024, height: 800, fontScale: 1 };
   let runnerRef: any = null;
   const effectDeps: Array<{ deps?: unknown[]; clean?: boolean }> = [];
@@ -404,7 +406,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
       selectedChildId: chatSelectedChildId,
       messages: currentMessages,
       drafts: currentDrafts,
-      remoteReply: null,
+      remoteReply: currentRemoteReply,
       feedback: currentFeedback,
       error: null,
       replyError: currentReplyError,
@@ -415,7 +417,7 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
       limit: 20,
       userId: 'parent-1',
     },
-    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {} },
+    chatController: { loadOlderMessages: async () => {}, cancelReply: async () => {}, reloadMessages: async () => {}, dismissRetainedFeedback: (id: string) => { dismissedTargets.push(id); } },
     chatDraft: currentDraft,
     setChatDraft(next: string) { currentDraft = next; },
     agentAttachments: [],
@@ -617,6 +619,26 @@ test('B-P5 decided dock placement, turn-state retention, cross-child isolation, 
   chatSelectedChildId = 'child-1';
   currentBusy = null;
   currentReplyingMessageId = null;
+
+  currentRemoteReply = { messageId: 'u-newer', runId: 'new-remote', status: 'running', stopReason: null };
+  const dismissNode = collectNodes(rerender()).find(n => n.props?.label === '收起這次查核提示');
+  assert.ok(dismissNode, 'a different running turn must not hide dismiss on retained history');
+  dismissNode.props.onPress();
+  assert.deepEqual(dismissedTargets, ['u4']);
+  currentRemoteReply = { messageId: 'u4', runId: 'run-sse-1', status: 'running', stopReason: null };
+  assert.equal(collectNodes(rerender()).some(n => n.props?.label === '收起這次查核提示'), false, 'the same running turn still blocks dismissal');
+
+  currentMessages = [
+    { id: 'cold-user', role: 'user', text: 'Synthetic neutral question' },
+    { id: 'cold-row', role: 'model', inReplyTo: 'cold-user', text: 'A normal-looking reply', agentRunId: 'cold-own-run', officialHelp: ['emergency-hk-v1'] },
+  ];
+  currentFeedback = null;
+  currentDrafts = {};
+  currentRemoteReply = { messageId: 'cold-user', runId: 'cold-own-run', status: 'stopped', stopReason: null };
+  assert.ok(collectNodes(rerender()).some(n => n.props?.testID === 'chat-official-help-urgent-notice'), 'cold saved help needs the exact stopped run even with normal-looking text');
+  currentRemoteReply = { messageId: 'cold-user', runId: 'cold-other-run', status: 'stopped', stopReason: null };
+  assert.equal(collectNodes(rerender()).some(n => n.props?.testID === 'chat-official-help-urgent-notice'), false, 'different run status must not awaken saved help');
+  currentRemoteReply = null;
 
   currentMessages = [{ id: 'u4', role: 'user', text: 'BB呼吸困難' }];
   currentDrafts = { 'child-1': { phase: 'draft', savedUserMessageId: null, dismissedHelpMessageId: 'u4' } };

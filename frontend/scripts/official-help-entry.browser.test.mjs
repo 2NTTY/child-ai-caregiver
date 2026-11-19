@@ -371,15 +371,30 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
     enableCompleteOnReload() { completeOnReload = true; },
     triggerAccessRevocation() { revokeAccessOnNextRead = true; },
     failNextAuthorizedHistoryRead() { failNextMessageRead = true; },
-    seedTurn(text, reply) {
+    seedTurn(text, reply, pendingStatus) {
       const stamp = () => new Date(Date.UTC(2026, 10, 1, 0, nextSeq)).toISOString();
       const nextId = () => `55555555-5555-4555-8555-${String(nextSeq++).padStart(12, '0')}`;
       const user = { id: nextId(), childId: CHILD_1_ID, role: 'user', authorUserId: USER_ID, text, inReplyTo: null, createdAt: stamp() };
       messagesByChild[CHILD_1_ID].push(user);
-      const appendReply = reply => messagesByChild[CHILD_1_ID].push({
-        id: nextId(), childId: CHILD_1_ID, role: 'model', authorUserId: null, inReplyTo: user.id,
-        text: reply.text, officialHelp: reply.officialHelp, createdAt: stamp(),
-      });
+      const seedRun = (status, resultText) => {
+        const runId = `66666666-6666-4666-8666-${String(nextSeq++).padStart(12, '0')}`;
+        const stopReason = status === 'stopped' ? 'error' : null;
+        replyStateByMsg.set(user.id, { messageId: user.id, runId, status, stopReason });
+        runDetailsById.set(runId, {
+          provenance: { packVersion: '0.1.60', recipeId: 'product-interactive', model: 'gemini-2.5-flash' },
+          runId, status, stopReason, text: resultText, citations: [], retrievalMode: 'not_used', tools: [],
+          counts: { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 }, proposals: [],
+        });
+        return runId;
+      };
+      if (pendingStatus) seedRun(pendingStatus, '');
+      const appendReply = reply => {
+        const agentRunId = reply.runStatus ? seedRun(reply.runStatus, reply.text) : undefined;
+        messagesByChild[CHILD_1_ID].push({
+          id: nextId(), childId: CHILD_1_ID, role: 'model', authorUserId: null, inReplyTo: user.id,
+          text: reply.text, officialHelp: reply.officialHelp, agentRunId, createdAt: stamp(),
+        });
+      };
       if (reply) appendReply(reply);
       return appendReply;
     },
@@ -746,4 +761,45 @@ test('E2E 6: reload restores the active unfinished turn’s saved official help 
     assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'completed or superseded history must not re-open the dock');
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
+});
+
+test('E2E 7: an unrelated running turn does not lock dismissal of an older retry’s retained feedback', async () => {
+  const backend = createSyntheticBackend({ failReplyWithSourcesOnly: true });
+  const olderText = '較早的合成提問';
+  backend.seedTurn(olderText);
+  backend.seedTurn('仍在處理的另一則提問', null, 'running');
+  const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend);
+  try {
+    const ongoing = page.getByText('原回覆仍在處理，毋須重新發送。', { exact: true });
+    const olderRetry = page.getByTestId('chat-message').filter({ hasText: olderText })
+      .getByRole('button', { name: '要求這則已保存訊息的回覆', exact: true });
+    const retained = page.getByTestId('chat-progress-sources-retained-notice');
+    await ongoing.waitFor();
+    await olderRetry.click();
+    await retained.waitFor();
+    // A second read-only check of the saved older run reloads history and rediscovers the newer pending one.
+    await olderRetry.click();
+    await ongoing.waitFor();
+    await page.getByRole('button', { name: '收起這次查核提示', exact: true }).click();
+    await retained.waitFor({ state: 'hidden' });
+    assert.equal(await ongoing.isVisible(), true, 'dismissing the older feedback does not stop the newer run');
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
+
+test('E2E 8: a cold chat restores saved official help from the matching run status without failure wording', async () => {
+  for (const status of ['stopped', 'unknown']) {
+    const backend = createSyntheticBackend();
+    backend.seedTurn('請看看合成情況。', {
+      text: '已保存合成觀察。', officialHelp: ['emergency-hk-v1'], runStatus: status,
+    });
+    const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend);
+    try {
+      const dock = page.getByTestId('chat-official-help-dock');
+      await dock.getByTestId('chat-official-help-urgent-notice').waitFor();
+      assert.equal(await dock.getByTestId('official-help-card').count(), 1);
+      assert.equal(await page.getByTestId('chat-progress-sources').count(), 0);
+      assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+  }
 });
