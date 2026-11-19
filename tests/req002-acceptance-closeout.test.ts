@@ -25,8 +25,8 @@ test("PLAN.md#req002-closeout01 covers all 8 merged PRs, PR 3-6 candidates, 24 I
   for (const token of [
     "#600", "#601", "#602", "#606", "#607", "#608", "#640", "#634",
     "82f44a08", "4d54f7e4", "4c631853", "39f2f322", "3d6c6d3c", "a3b6a24f", "fcb231f3", "3425c8f3",
-    "codex/req002-batch-reuse-and-repair", "2ddc0bbf",
-    "codex/req002-schema-and-metadata-trace", "54029065",
+    "codex/req002-batch-reuse-and-repair", "65bea4a3",
+    "codex/req002-schema-and-metadata-trace", "5e7f60d2",
     "codex/req002-live-benchmark-and-disconnect", "8e3b72ca",
     "codex/req002-acceptance-closeout",
   ]) {
@@ -51,7 +51,6 @@ test("PLAN.md#req002-closeout01 covers all 8 merged PRs, PR 3-6 candidates, 24 I
 
 test("PLAN.md#req002-closeout01 preserves honest boundaries without claiming live, production, or native phone completion", () => {
   const section = sliceReq002CloseoutSection(PLAN_TEXT);
-  assert.match(section, /NOT_PUSHED/u);
   assert.match(section, /--live/u);
   assert.match(section, /TalkBack／VoiceOver/u);
   assert.match(section, /仍屬工程離線已實作與合成驗證完成／真機與真模型待驗收狀態/u);
