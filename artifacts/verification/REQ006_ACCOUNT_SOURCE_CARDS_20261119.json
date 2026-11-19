@@ -1,0 +1,43 @@
+{
+  "package": "REQ-006 account-owned source registration",
+  "observedAt": "2026-11-19T13:04:00+08:00",
+  "base": "f458dc14",
+  "candidate": "bf999df0",
+  "server": "4f1e08e1",
+  "indexManifest": "71052cd0",
+  "documentCounts": "510464e9",
+  "environment": {
+    "node": "24.22.1",
+    "browser": "Microsoft Edge 157.0.4341.60",
+    "data": "Isolated local Firebase Auth and Firestore emulators with a synthetic account and no selected child",
+    "modelCalls": 0,
+    "externalSourceFetches": 0
+  },
+  "checks": [
+    { "entry": "node --test tests/registered-source-cards.test.ts", "passed": 5 },
+    { "entry": "node --experimental-test-module-mocks --test --test-name-pattern=\"account source card routes\" tests/firebase-app.test.ts", "passed": 1 },
+    { "entry": "node --test frontend/src/production/registered-source-cards-api.test.mts frontend/scripts/registered-source-cards-ui.test.cjs", "passed": 16 },
+    { "entry": "tsc --project tsconfig.server.json && tsc --project frontend/tsconfig.json --noEmit", "exitCode": 0 },
+    { "entry": "node scripts/firestore-indexes.mjs --check-manifest", "exitCode": 0 }
+  ],
+  "emulatorHttpAndWorker": [
+    "Exchanged an emulator-issued identity token for a production-route session and acknowledged the account terms.",
+    "Created a directory source, replayed the same operation, listed the card and saved a same-origin form login through its independent credential endpoint.",
+    "Claimed the due card using the Firestore worker service, retrieved the original form credential for its current lease and completed the check with a controlled MFA-required result.",
+    "The HTTP card read showed mfa_required and no next check. After removal, direct read returned 404 and the card disappeared from the account list."
+  ],
+  "edge": [
+    "An authenticated account with no children opened the memory page and added a single document via the visible controls. The frequency defaulted to 10080 minutes.",
+    "Opened the new card, navigated to its direct authorization link and filled the website account, masked password and same-origin login page. The authenticated API returned an opaque credential reference.",
+    "Removed the isolated synthetic card and closed the browser context and emulator."
+  ],
+  "initialFailuresAndCorrections": [
+    "The Windows sandbox could not reach its local Firebase emulator hub. The same isolated no-model check passed using approved local loopback execution.",
+    "The first Edge pass could not locate the name field by its accessible name. Explicit accessible labels on the new form fields fixed this, and the complete browser workflow passed.",
+    "After adding refresh-on-return, one hook test invoked submit while the control was still disabled. It now waits for the return read and verifies the control becomes enabled before exercising the unknown result."
+  ],
+  "boundaries": [
+    "The scheduled external acquisition adapter, private ingestion and formal assistant tools are integrated by the coordinating work packages.",
+    "MFA, payment and CAPTCHA results were tested as worker outcomes. No third-party paid login, real account secrets, live model, cloud index change, Android device or production deployment was exercised."
+  ]
+}
