@@ -66,15 +66,21 @@ test('existing strict Android catalogue and new series-aware client read the sam
     classification: 'official_guidance' as const, checkedAt: '2026-11-01T12:00:00Z', sourceUpdatedAt: null, validUntil: null,
     series: { id: 'fhs-infant-feeding', institutionId: 'www.fhs.gov.hk', name: 'Feeding' }, versionHash: 'a'.repeat(64),
     preference: { revision: 1, enabled: true, mode: 'fixed' as const, selectedVersionId: scope.storageEpoch, eligible: true } };
-  const library = { async page() { return { items: [item], registered: [], complete: true, nextCursor: null }; } };
+  const external = { ...item, sourceId: 'external', publisher: 'CHP', url: 'https://www.chp.gov.hk/example',
+    series: { id: 'external', name: 'Another material', institutionId: 'www.chp.gov.hk' },
+    media: { enabled: false, revision: 0, links: [] } };
+  const library = { async page() { return { items: [item, external], registered: [], complete: true, nextCursor: null }; } };
   const route = (req: Request) => handlePersonalLibraryRequest(req, scope.ownerUserId, { library, isCurrentUser: async () => true });
   const baseUrl = 'https://example.test', path = '/api/children/' + scope.childId + '/library';
   const old = await route(new Request(baseUrl + path, { headers: { accept: 'application/json', 'x-expected-user-id': scope.ownerUserId } }));
-  assert.equal(old.status, 200); assert.equal(released.parse(await old.json()).items[0]?.versionId, item.versionId);
+  assert.equal(old.status, 200); assert.deepEqual(released.parse(await old.json()).items.map(i => i.sourceId), [item.sourceId]);
+  const v2 = await route(new Request(baseUrl + path, { headers: { accept: 'application/vnd.yuyoufang.library-series.v2+json', 'x-expected-user-id': scope.ownerUserId } }));
+  assert.deepEqual((await v2.json()).items.map((i: { sourceId: string }) => i.sourceId), [item.sourceId]);
   const client = createProductAgentApi(baseUrl, (url, init) => route(new Request(url, init)));
   const current = await client.getLibrary(scope.childId, new AbortController().signal, scope.ownerUserId);
   assert.equal(current.items[0]?.series?.id, item.series.id); assert.deepEqual(current.items[0]?.preference, item.preference);
   assert.deepEqual(current.registered, []);
+  assert.deepEqual(current.items[1]?.media, external.media);
   const platform = { ...item.preference, mode: 'platform' as const, selectedVersionId: null, revision: 0 };
   const defaultRoute = (req: Request) => handlePersonalLibraryRequest(req, scope.ownerUserId, { isCurrentUser: async () => true,
     library: { async page() { return { items: [{ ...item, preference: platform }], complete: true, nextCursor: null }; } } });

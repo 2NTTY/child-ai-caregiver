@@ -60,11 +60,13 @@ export function librarySeriesV1Page(page: PersonalLibraryPage) {
   return { ...page, items: librarySeriesV2Page(page).items.map(item => item.preference?.mode === 'platform'
     ? { ...item, preference: { ...item.preference, mode: 'follow' as const } } : item) };
 }
+const releasedCatalogueHosts = new Set(['www.fhs.gov.hk', 'www.studenthealth.gov.hk', 'www.dh.gov.hk']);
+const releasedCatalogueItem = (item: { url: string }) => releasedCatalogueHosts.has(new URL(item.url).hostname);
 export function librarySeriesV2Page(page: PersonalLibraryPage) {
-  return { ...page, items: page.items.map(({ media: _, ...item }) => item) };
+  return { ...page, items: page.items.filter(releasedCatalogueItem).map(({ media: _, ...item }) => item) };
 }
 
 // Existing app versions use strict item and page schemas. Only send fields they understand.
 export function legacyLibraryPage({ items, nextCursor, complete }: PersonalLibraryPage) {
-  return { items: items.map(item => legacyLibraryItem.parse(item)), nextCursor, complete };
+  return { items: items.filter(releasedCatalogueItem).map(item => legacyLibraryItem.parse(item)), nextCursor, complete };
 }
