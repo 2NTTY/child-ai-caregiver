@@ -7,6 +7,7 @@ import ts from 'typescript';
 import { z } from 'zod';
 import * as references from '../src/memory-reference-view-model.ts';
 import * as memory from '../src/memory-view-model.ts';
+import { platformLibraryJoin } from '../../src/shared/personal-library.ts';
 
 // Shallow production presentation with synthetic identities; no browser, API or model calls.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,13 +29,13 @@ const hooks = {
     if (!(index in instance.slots)) instance.slots[index] = typeof initial === 'function' ? initial() : initial;
     return [instance.slots[index], value => { instance.slots[index] = typeof value === 'function' ? value(instance.slots[index]) : value; }];
   },
-  useRef: initial => ({ current: initial }), useEffect: noop, useLayoutEffect: noop, useId: () => 'synthetic-tabs',
+  useRef: initial => ({ current: initial }), useEffect: noop, useLayoutEffect: noop, useId: () => 'synthetic-tabs', useCallback: fn => fn,
 };
 function load(relative) {
   const source = readFileSync(path.join(root, relative), 'utf8');
   const module = { exports: {} };
   const imports = {
-    'expo-router': { useRouter: () => ({ push: noop }) },
+    'expo-router': { useRouter: () => ({ push: noop }), useLocalSearchParams: () => ({}), useFocusEffect: noop },
     react: hooks, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, zod: { z },
     'react-hook-form': { Controller: 'Controller', useForm({ defaultValues }) {
       factForm ??= { ...defaultValues };
@@ -43,6 +44,7 @@ function load(relative) {
     'react-native': { StyleSheet: { create: value => value }, View: 'View', Pressable: 'Pressable', Linking: { openURL: url => { openedURLs.push(url); return linkReject ? Promise.reject(new Error('Synthetic unavailable source')) : Promise.resolve(); } } }, 'react-native-paper': { Text: 'Text' },
   };
   const require = name => imports[name]
+    ?? (name.endsWith('/personal-library') ? { platformLibraryJoin } : undefined)
     ?? (name.endsWith('/memory-reference-view-model') ? references : undefined)
     ?? (name.endsWith('/memory-view-model') ? memory : undefined)
     ?? (name.endsWith('/PreviewNavigationGuard') ? { usePreviewNavigation: () => action => action() } : undefined)
@@ -290,6 +292,25 @@ function referenceCard(source) {
   const card = nodes(section).find(node => node.type?.name === 'ReferenceCard'); assert.ok(card);
   return render(card.type, card.props);
 }
+
+test('joining a cited platform card uses its displayed series editions and masks old or moved citations', () => {
+  const { PlatformCardJoin } = load('src/components/memory/PlatformCardJoin.tsx');
+  const seriesId = 'guide', item = { series: { id: seriesId, name: '發展指南' }, sourceId: 'guide-page', versionId: 'current',
+    preference: { revision: 0, enabled: true, mode: 'platform' } };
+  const sent = [], catalog = [item, { ...item, sourceId: 'other-page', versionId: 'second' }];
+  workspace = { model: { online: true, references: { state: 'ready', data: { catalog, hasMore: false } } },
+    reads: { setLibraryPreference: change => sent.push(change) } };
+  const show = citation => render(PlatformCardJoin, { seriesId, citation }).tree;
+  const citation = { sourceId: item.sourceId, versionId: item.versionId };
+  button(show(citation), '免費加入平台卡').props.onPress();
+  assert.deepEqual(sent, [{ action: 'join', seriesId, expectedRevision: 0, editions: [citation, { sourceId: 'other-page', versionId: 'second' }] }]);
+  assert.equal(show({ ...citation, versionId: 'historical' }), null);
+  assert.equal(show({ ...citation, sourceId: 'moved' }), null);
+  Object.assign(item.preference, { revision: 1, mode: 'fixed', enabled: false });
+  assert.match(content(show(citation)), /已加入.*固定快照.*已停用/);
+  workspace.model.references.data.hasMore = true;
+  assert.equal(show(citation), null);
+});
 
 test('reference links use the exact existing URL and reveal the real URL after open failure', async () => {
   const source = { sourceId: 'source-a', versionId: 'version-a', chunkId: 'chunk-a', versionHash: 'version-hash', contentHash: 'content-hash',

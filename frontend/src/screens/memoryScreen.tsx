@@ -1,5 +1,8 @@
 import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
+import { useEffect, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { Text } from "react-native-paper";
+import { AdminEntry } from '../production/AdminEntry';
 import { MemoryReferenceView } from "../components/memory/MemoryReferenceView";
 import { PageFrame } from "../components/PageFrame";
 import { ReadStateNotice } from "../components/ReadStateNotice";
@@ -8,8 +11,13 @@ import { useProduction } from "../production/ProductionProvider";
 import { useProductionSettingsDomains } from "../production/SettingsDomains";
 import { TaskKnowledgeMemoryManagement } from "../production/TaskKnowledgeMemoryManagement";
 import { useProductionTaskKnowledgeMemory } from "../production/TaskKnowledgeDomains";
+import { RegisteredSourceCards } from "../production/RegisteredSourceCards";
 
 export default function MemoryPage() {
+  const { series, sourceCard, section } = useLocalSearchParams<{ series?: string; sourceCard?: string; section?: string }>();
+  const showReferences = !!series || !!sourceCard || section === 'references';
+  const [tab, setTab] = useState<'short' | 'long' | 'references'>(showReferences ? 'references' : 'long');
+  useEffect(() => { if (showReferences) setTab('references'); }, [showReferences, series, sourceCard, section]);
   const { model, actions, online, recordsState, auth, userId, scopeKey } = useProduction(), memory = useProductionTaskKnowledgeMemory();
   const { family } = useProductionSettingsDomains();
   const child = model.children.find(item => item.id === model.selectedChildId);
@@ -22,8 +30,9 @@ export default function MemoryPage() {
   const tabActions = child ? <><TaskKnowledgeMemoryManagement key={memory?.value.scopeKey ?? "no-memory-scope"} />
     {memory?.failed ? <AppButton label={memory.busy ? "讀取中…" : "重試讀取"} accessibilityLabel={memory.busy ? "正在讀取記憶" : "重新讀取記憶"} variant="secondary" density="compact" disabled={!online || memory.busy || memory.lost} onPress={memory.refresh} /> : null}</> : undefined;
   return <PageFrame density="compact" title="記憶">
-    {child ? <><MemoryReferenceView tabActions={tabActions} confirmerDisplay={confirmerDisplay} onPrepareQuestion={actions.prepareQuestion} />
+    {child ? <><MemoryReferenceView maintenanceEntry={sourceId => <AdminEntry sourceId={sourceId} />} tabActions={tabActions} confirmerDisplay={confirmerDisplay} onPrepareQuestion={actions.prepareQuestion} activeTab={tab} onTabChange={setTab} />
       {memory?.lost ? <BackgroundSurface padded><Text>孩子存取已失效，舊記憶及私人摘要已清除。</Text></BackgroundSurface> : memory?.failed ? <BackgroundSurface padded><Text>最新記憶未能核對；已載入內容可能過時。</Text></BackgroundSurface> : null}
-    </> : <ReadStateNotice state="empty" title="先選擇孩子" message="選擇孩子後才可查看對應記憶與參考。"><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></ReadStateNotice>}
+    </> : <ReadStateNotice state="empty" title="孩子記憶" message="選擇孩子後可查看對應記憶與參考。本人來源卡可直接在下方管理。"><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></ReadStateNotice>}
+    <RegisteredSourceCards active={!child || tab === 'references'} />
   </PageFrame>;
 }

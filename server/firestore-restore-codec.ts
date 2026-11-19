@@ -1,3 +1,7 @@
+import { sourceCardDocumentRecord, sourceDocumentRecordId, sourceDocumentMetadata } from './source-card-document-record.ts';
+import { PRIVATE_INDEX_COLLECTION, privateIndexId, privateIndexRecord, privateIndexMetadata } from './private-source-index-record.ts';
+import { PRIVATE_QUERY_COLLECTION, privateQueryId, privateQueryRecord } from './private-source-search.ts';
+import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
 import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
@@ -56,6 +60,9 @@ const authoritySchemas = { control: authority.control, account: authority.accoun
   'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
   work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  'source-card-document': { suffix: 'source_card_documents', schema: sourceCardDocumentRecord },
+  'private-source-index': { suffix: PRIVATE_INDEX_COLLECTION, schema: privateIndexRecord },
+  'private-source-query': { suffix: PRIVATE_QUERY_COLLECTION, schema: privateQueryRecord },
   ...privateSummaryRestoreSchemas,
   ...avatarRestoreSchemas,
   'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
@@ -93,10 +100,10 @@ const domainSchemas = {
   'agent-high-watermark': { suffix: 'agent_metrics', schema: agentHighWatermarkDocSchema },
   'agent-budget-alert': { suffix: 'agent_budget_alerts', schema: budgetAlertSchema },
 } as const;
-const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
+const knowledgeSchemas = { 'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
   'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
-const knowledgeSuffixes = { 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
+const knowledgeSuffixes = { 'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
   'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
   'knowledge-observation': 'knowledge_observations', 'knowledge-observation-part': 'knowledge_observation_parts', 'knowledge-check': 'knowledge_checks' } as const;
 export type FirestoreRestoreAuthorityKind = keyof typeof authoritySchemas;
@@ -262,7 +269,16 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       || scope.ownerUserId === 'space:' + scope.workspaceId && !userId.startsWith('space:');
     const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(validTaskAttribution(row, scope)
       && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
-    if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
+    if (kind === 'private-source-index' || kind === 'private-source-query') {
+      const expected = kind === 'private-source-index' ? privateIndexId(scope,parse(privateIndexRecord,raw)) : privateQueryId(scope,parse(privateQueryRecord,raw));
+      requireBinding(scope.childId === NIL && id === expected);
+      versionMatches(1);
+    }
+    else if (kind === 'source-card-document') {
+      requireBinding(scope.childId === NIL && id === sourceDocumentRecordId(scope,parse(sourceCardDocumentRecord, raw)));
+      versionMatches(1);
+    }
+    else if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
     else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(validTaskRevisionAttribution(row, scope)); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
     else if (kind === 'child-projection') { const row = parse(firestoreChildSchema, raw); requireBinding(row.id === id && id === scope.childId && row.workspaceId === scope.workspaceId); versionMatches(1); }
     else if (kind === 'change-projection') { const row = parse(firestoreChangeSchema, raw); requireBinding(row.childId === (scope.childId === NIL ? null : scope.childId)); idEquals(id, [scope.workspaceId, scope.storageEpoch, row.changeSeq]); versionMatches(1); }
@@ -367,7 +383,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       parse(knowledgeChunkInputSchema, row.document);
       requireBinding((row.document.pageStart === undefined) === (row.document.pageEnd === undefined));
       if (row.document.pageStart !== undefined && row.document.pageEnd !== undefined)
-        requireBinding(row.document.pageStart <= row.document.pageEnd && typeof row.document.originalText === 'string');
+        requireBinding(row.document.pageStart <= row.document.pageEnd && (typeof row.document.originalText === "string"
+          || row.document.originalKind === "visual_page" && row.document.sourceExcerpt === ""));
       if (row.embedding === null) requireBinding([row.vectorHash, row.model, row.dimensions, row.pipeline].every(value => value === null));
       else {
         requireBinding(row.embedding instanceof VectorValue);
@@ -392,6 +409,9 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           requireBinding(values.length === KNOWLEDGE_EMBEDDING.dimensions && values.every(n => Number.isFinite(n) && Math.abs(n) <= 1e10)
             && values.some(n => n !== 0) && value.vectorHash === knowledgeHash(values));
         } else requireBinding(value.embedding === null && value.vectorHash === null);
+      } else if (kind === 'knowledge-original') {
+        const value = knowledgeOriginalManifest.parse(row);
+        requireBinding(id === value.sourceId + '-' + value.contentHash);
       } else if (kind === 'knowledge-watch') {
         const value = parse(knowledgeRefresh.watch, row); requireBinding(value.id === id && value.definition.id === id && value.definitionHash === definitionHash(value.definition));
       } else if (kind === 'knowledge-observation') requireBinding(parse(knowledgeRefresh.observation, row).sourceId === id);
@@ -579,6 +599,14 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     let id = context.id, value: FirestoreRestoreValue = decoded.value, recordVersion = parse(positive, context.recordVersion);
     const metadata: Record<string, unknown> = { ...data.tags(scope) };
     switch (context.kind) {
+      case 'source-card-document': Object.assign(metadata,sourceDocumentMetadata(scope,parse(sourceCardDocumentRecord,value))); break;
+      case 'private-source-index': {
+        const row = parse(privateIndexRecord,value);
+        id = privateIndexId(scope,row);
+        // The old authority generation stays bound. A later source check must verify the restored head.
+        Object.assign(metadata,privateIndexMetadata(scope,row)); break;
+      }
+      case 'private-source-query': break;
       case 'child-projection': { const row = parse(firestoreChildSchema, value); Object.assign(metadata, { childId: row.id, createdAt: row.createdAt }); break; }
       case 'change-projection': { const row = parse(firestoreChangeSchema, value); id = JSON.stringify([scope.workspaceId, scope.storageEpoch, row.changeSeq]); Object.assign(metadata, { sortKey: data.sortKey(row.changeSeq), childId: row.childId }); break; }
       case 'task': Object.assign(metadata, { taskId: parse(firestoreTaskSchema, value).id }); break;

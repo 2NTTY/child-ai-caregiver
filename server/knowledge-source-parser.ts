@@ -115,20 +115,23 @@ function itemUrl(link: string, definition: SourceWatchDefinition): string | null
 
 function parseRss(definition: SourceWatchDefinition, body: string): ObservedContent[] {
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(body)) invalidContent();
-  const $ = load(body, { xml: true });
+  const $ = load(body, { xml: { withStartIndices: true, withEndIndices: true } });
   const root = $.root().children();
   if (root.length !== 1 || root.get(0)?.name !== "rss") invalidContent();
   const channel = root.children("channel");
   if (channel.length !== 1) invalidContent();
-  const sourceItems = channel.children("item").slice(0, MAX_FEED_ITEMS);
+  const allItems = channel.children("item");
+  const exact = definition.id === "chp-recent";
+  if (exact && (!allItems.length || allItems.length > MAX_FEED_ITEMS)) invalidContent();
+  const sourceItems = allItems.slice(0, MAX_FEED_ITEMS);
   const items = new Map<string, ObservedContent>();
   sourceItems.each((_, node) => {
     const source = $(node);
     const title = normalizeWhitespace(source.children("title").first().text());
     const link = source.children("link").first().text().trim();
-    if (!title || !link) return;
+    if (!title || !link) { if (exact) invalidContent(); return; }
     const url = itemUrl(link, definition);
-    if (!url) return;
+    if (!url) { if (exact) invalidContent(); return; }
     const description = source.children("description").first().text();
     const html = load(description);
     const text = readHtmlText(html, "body") || title;
@@ -138,6 +141,10 @@ function parseRss(definition: SourceWatchDefinition, body: string): ObservedCont
     checkLength(dateText, MAX_DATE_LENGTH);
     const item: ObservedContent = { url, title, text, sourcePublishedAt: publishedTimestamp(dateText),
       sourceUpdatedAt: null, sourceDateText: dateText || null };
+    if (exact) {
+      if (node.startIndex == null || node.endIndex == null || !item.sourcePublishedAt) invalidContent();
+      item.rssItem = { xml: body.slice(node.startIndex, node.endIndex + 1), copyright: "香港特別行政區政府衞生署衞生防護中心" };
+    }
     const previous = items.get(url);
     if (previous && JSON.stringify(previous) !== JSON.stringify(item)) invalidContent();
     items.set(url, item);

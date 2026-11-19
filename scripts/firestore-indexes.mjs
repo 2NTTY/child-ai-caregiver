@@ -21,11 +21,12 @@ const sessionIndexes = ['ASCENDING', 'DESCENDING'].map(order => canonical({
   collectionGroup: 'events', queryScope: 'COLLECTION', fields: [{ fieldPath: 'timestamp', order }, { fieldPath: 'id', order }],
 }));
 const metadataFields = new Set([
-  'photos:scopeTag', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
+  'photos:scopeTag', 'photos:importPending', 'knowledge_versions:versionId', 'knowledge_observations:lastSuccessfulCheckAt', 'knowledge_checks:checkedAt',
   'work_watches:enabled', 'erasures:state', 'content_erasures:stage', 'context_versions:summaryPending', 'voice_assets:cleanupState',
   'chat_file_assets:cleanupState', 'avatar_cleanup:complete', 'handover_exports:cleaned', 'handover_uploads:cleaned',
   'handover_import_batches:growthImportScopes', 'knowledge_index_batches:sort', 'knowledge_transfers:transferDigest',
   'mixed_rooms:userTag',
+  'source_cards:targetTag', 'source_cards:dueAt', 'source_card_documents:targetTag', 'source_card_documents:cleanupAt', 'source_card_documents:sortKey',
 ].map(field => 'yuban_authority_' + field));
 try {
   if (!['--check-manifest', '--release-check', '--inspect', '--inspect-fields', '--approved-apply', '--approved-fields'].includes(mode)) throw Error('explicit_mode_and_credentials_required');

@@ -9,7 +9,7 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
   kind: "page", classification: "official_guidance", publisher: "香港特別行政區政府衞生署家庭健康服務",
   termsUrl: "https://www.fhs.gov.hk/english/notice/notice.html", selector: "#content", audience: "public_noncommercial" })) as SourceWatchDefinition[]).concat([
   { id: "fhs-feeding-booklet-en", url: "https://www.fhs.gov.hk/english/health_info/child/14727.pdf", kind: "pdf",
-    pdfPages: { startPage: 3, endPage: 3 }, classification: "official_guidance",
+    leafletPage: "https://www.fhs.gov.hk/english/health_info/child/14727.html", classification: "official_guidance",
     publisher: "香港特別行政區政府衞生署家庭健康服務", termsUrl: "https://www.fhs.gov.hk/english/notice/notice.html",
     audience: "public_noncommercial" },
   { id: "chp-recent", url: "https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml", kind: "rss",
@@ -19,6 +19,12 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
     classification: "recent_information", publisher: "香港電台", termsUrl: "https://www.rthk.hk/copyright/preview/index.html",
     itemHosts: ["news.rthk.hk"], audience: "internal_noncommercial" },
 ]);
+
+/** Only reviewed public documents can enter semantic maintenance and publication. */
+export function publicMaintenanceWatch(id: string) {
+  return SOURCE_WATCHES.find(watch => watch.id === id && watch.audience === "public_noncommercial"
+    && watch.classification === "official_guidance" && (watch.kind === "page" || watch.kind === "pdf"));
+}
 
 /** P3-M03 first-round pair only. Other catalog entries stay for S10 refresh, not this runner. */
 export function m03InitialSourceWatches(

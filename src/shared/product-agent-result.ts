@@ -1,6 +1,9 @@
 import { z } from 'zod';
+import { sourceReadingSchema } from './source-card-reading.ts';
 import { agentProposalSchema, privateSourceCitationSchema, proactiveNextCheckSchema } from './product-agent.ts';
 import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
+import { liveSourceCitationSchema } from './live-source-citation.ts';
+import { chunkTreatmentSchema, sourceSeriesSchema } from './source-series.ts';
 
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u);
 const timestamp = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -14,10 +17,12 @@ export const agentSavedProposalSchema = z.object({
   ? value.result !== null && value.result.kind === (value.value.kind === 'family_document_change' ? 'family_document'
     : value.value.kind.startsWith('concern_') ? 'concern' : value.value.kind.startsWith('private_source_') ? 'private_source'
       : value.value.kind.startsWith('memory_fact') ? 'memory_fact' : 'task') : value.result === null);
+
 const range = z.object({ start: count, end: count });
 export const agentCitationSchema = z.object({
+  termsUrl: z.url().optional(), citedExcerpt: z.string().min(1).max(300).optional(), series: sourceSeriesSchema.optional(), treatment: chunkTreatmentSchema.optional(),
   key: z.string(), section: z.string(), sourceExcerpt: z.string(), text: z.string(), keywords: z.array(z.string()),
-  originalText: z.string().optional(), pageStart: count.optional(), pageEnd: count.optional(),
+  originalText: z.string().optional(), originalKind: z.enum(['page_excerpt','page_transcription','visual_page']).optional(), excerptPage: version.optional(), pageStart: count.optional(), pageEnd: count.optional(),
   applicability: z.object({ region: z.string(), ageBasis: z.enum(['actual', 'corrected', 'any']),
     minAgeMonths: z.number().nullable(), maxAgeMonths: z.number().nullable(), maxAgeMonthsExclusive: z.boolean().optional(),
     topics: z.array(z.string()), conditions: z.array(z.string()) }),
@@ -42,10 +47,12 @@ export const productAgentResultSchema = z.object({
   outcome: z.literal('no_action').optional(),
   nextCheck: proactiveNextCheckSchema.optional(),
   text: z.string(), citations: z.array(agentCitationSchema), retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
+  liveCitations: z.array(liveSourceCitationSchema).max(6).optional(),
+  sourceCardReadings: z.array(sourceReadingSchema).max(6).optional(),
   privateSourceCitations: z.array(privateSourceCitationSchema).max(6).optional(),
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: count, toolCalls: count, queryEmbeddings: count }),
   proposals: z.array(agentSavedProposalSchema),
   deliveryReview: chatDeliveryReviewBindingSchema.optional(),
 }).refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
-  && value.citations.length === 0 && !value.privateSourceCitations?.length && value.proposals.length === 0, 'No-action cannot carry user content');
+  && value.citations.length === 0 && !value.liveCitations?.length && !value.privateSourceCitations?.length && !value.sourceCardReadings?.length && value.proposals.length === 0, 'No-action cannot carry user content');

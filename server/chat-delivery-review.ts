@@ -273,6 +273,8 @@ const NOTE_DOMAIN_CLAIM = /私人筆記|私人交代|交代事項|備忘|\b(?:pr
 function receiptActionFamily(op: ChatDeliveryVerifiedOperation): "save" | "update" | "delete" | "other" {
   const tool = op.tool.toLowerCase();
   const summary = (op.summary ?? "").toLowerCase();
+  if (tool === 'register_source_card' || tool === 'join_platform_source_card') return 'save';
+  if (tool === 'manage_source_card') return 'update';
   if (/^(?:delete|remove|clear|cancel)_/.test(tool) || tool.includes("deactivation")) return "delete";
   if (tool.includes("change_ordinary_reminder") || tool.includes("change_self_task") || tool.includes("task_change")) {
     if (/^\s*cancel\s*:/i.test(summary)) return "delete";

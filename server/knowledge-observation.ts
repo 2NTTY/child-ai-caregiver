@@ -8,17 +8,20 @@ export function observationId(definition: SourceWatchDefinition, item: ObservedC
 }
 export function observationHash(item: ObservedContent): string {
   return knowledgeHash([item.url, item.title, item.text, item.sourcePublishedAt, item.sourceUpdatedAt, item.sourceDateText,
-    ...(item.extraction || item.pages ? [item.extraction ?? null, item.pages ?? null] : [])]);
+    ...(item.nativeWindowMethod ? [item.nativeWindowMethod] : []), ...(item.rssItem ? [item.rssItem] : []), ...(item.extraction || item.pages ? [item.extraction ?? null, item.pages ?? null] : [])]);
 }
 export function definitionHash(definition: SourceWatchDefinition): string {
   return knowledgeHash([definition.id, definition.url, definition.kind, definition.classification, definition.publisher,
-    definition.termsUrl, definition.audience, definition.selector ?? null, definition.itemHosts ?? [], definition.pdfPages ?? null, definition.title ?? null]);
+    definition.termsUrl, definition.audience, definition.selector ?? null, definition.itemHosts ?? [], definition.pdfPages ?? null, definition.title ?? null, ...(definition.leafletPage ? [definition.leafletPage] : [])]);
 }
 
 /** Shared semantic-review boundary; storage adapters supply their transaction-bound observation. */
 export function checkKnowledgeObservation(document: KnowledgeSourceInput,
   watch: { enabled: boolean; definition: SourceWatchDefinition } | undefined,
-  observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null) {
+  observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null, windowedReview = false) {
+  if (document.chunks.some(chunk => chunk.originalKind && !(chunk.originalKind === "page_excerpt"
+    && watch?.definition.kind === "pdf" && observed?.document.pages?.length))
+    && !windowedReview) throw Error("knowledge_window_review_required");
   if (!watch) {
     if (expectedHash !== null || document.classification === "recent_information") throw new Error("knowledge_observation_review_required");
     return;
@@ -30,6 +33,12 @@ export function checkKnowledgeObservation(document: KnowledgeSourceInput,
     || (document.sourceDateText ?? null) !== observed.document.sourceDateText) throw new Error("knowledge_observation_review_mismatch");
   if (watch.definition.kind === "pdf") {
     const expected = document.extraction, actual = observed.document.extraction;
+    if (observed.document.nativeWindowMethod) {
+      if (!windowedReview || !actual || actual.complete || !expected?.complete || expected.pageStart !== 1
+        || expected.pageEnd !== actual.totalPages || expected.totalPages !== actual.totalPages
+        || expected.contentHash !== actual.contentHash) throw Error("knowledge_window_review_required");
+      return;
+    }
     if (!expected || !actual || knowledgeReviewHash({ extractionQuality: "requires_review", ...expected })
       !== knowledgeReviewHash({ extractionQuality: "requires_review", ...actual })) throw new Error("knowledge_pdf_coverage_mismatch");
     for (const chunk of document.chunks) {

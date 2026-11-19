@@ -1,3 +1,5 @@
+import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
+import type { createKnowledgeOriginalRecovery } from './firebase-knowledge-original-recovery.ts';
 import { createFirebaseAvatarRestoreCopies, type AvatarCopyPayload } from './firebase-avatar-restore-copies.ts';
 import { isSharingAuthorityPath } from './firestore-sharing-records.ts';
 import { avatarObjectAddress } from './firebase-avatar-objects.ts';
@@ -60,6 +62,7 @@ export class FirebaseRecoveryOperatorError extends Error {
 function reject(code:string):never{throw new FirebaseRecoveryOperatorError(code);}
 function requireValue(condition:boolean,code:string):asserts condition{if(!condition)reject(code);}
 export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
+  knowledgeOriginals?:ReturnType<typeof createKnowledgeOriginalRecovery>;
   targetDatabase:Firestore;backupBucketName:string;journalBucket:Bucket;keyVersionRef:string;
   journal:Pick<FirebaseErasureJournal,'readObject'>;photos:FirebasePhotoRecovery;artifacts:FirebaseBackupArtifacts;
   sourceObjects?:Pick<FirebasePhotoObjects,'inspect'> & Partial<Pick<FirebasePhotoObjects,'read'|'write'|'recover'>>;
@@ -206,6 +209,12 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       const native=assertFirebaseNativeExport(snapshot.inventory,await options.native.getExport(input.operationName),prefix(input.backupId));
       const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);assertRestoredAvatarRelations(records);
       const objects=await options.artifacts.holdNativeExport({backupId:input.backupId,outputUriPrefix:native.outputUriPrefix});
+      const knowledgeOriginals = [];
+      for (const record of records.filter(r => r.context.kind === 'knowledge-original')) {
+        requireValue(Boolean(options.knowledgeOriginals),'recovery_knowledge_original_port_missing');
+        knowledgeOriginals.push(await options.knowledgeOriginals!.capture(input.backupId,input.retainedUntil,record.path,
+          knowledgeOriginalManifest.parse(record.value)));
+      }
       const photos:FirebaseBackupPhotoManifestEntry[]=[];
       for(const record of records.filter(row=>row.context.kind==='photo')){
         const photo=photoSchemas.photo.parse(record.value);
@@ -245,7 +254,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       await assertPaused(input.generation);await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects});
       const payload:FirebaseBackupManifestPayload={format:'yuban-firebase-backup-manifest/v1',backupId:input.backupId,databaseId:source.databaseId,
         snapshotTime:input.snapshotTime,controlGeneration:input.generation,sourceCommit:input.sourceCommit,keyVersionRef:options.keyVersionRef,
-        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos,voices,chatFiles,avatars};
+        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos,voices,chatFiles,avatars,...(knowledgeOriginals.length ? {knowledgeOriginals} : {})};
       const descriptor=await options.artifacts.writeManifest(payload);
       return {descriptor,documentCount:snapshot.inventory.documentCount,photoCount:photos.length,voiceCount:voices.length,fileCount:chatFiles.length,avatarCount:avatars.length,inventorySha256:snapshot.inventory.sha256};
     },
@@ -343,11 +352,23 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       const records=decode(documents);assertFirebaseRestoreAuthority(records);
       // A hot native snapshot can contain enabled control. Quarantine only this verified snapshot's
       // planner input; original ciphertext still anchors staged write preconditions. Live control must be paused.
-      const plannerDocuments=proof?documents.map(row=>{
+      const originalRecords = records.filter(r => r.context.kind === 'knowledge-original');
+      const savedOriginals = new Map(manifest?.knowledgeOriginals?.map(entry => [entry.path,entry]));
+      requireValue(!manifest || originalRecords.length === savedOriginals.size, 'recovery_knowledge_original_inventory');
+      const restoredOriginals = new Map();
+      for (const row of originalRecords) {
+        const entry = savedOriginals.get(row.path);
+        requireValue(Boolean(options.knowledgeOriginals) && (!manifest || !!entry), 'recovery_knowledge_original_missing');
+        const descriptor = await options.knowledgeOriginals!.recover(knowledgeOriginalManifest.parse(row.value),
+          manifest && entry ? { id: manifest.backupId, until: manifest.retainedUntil, entry } : undefined);
+        restoredOriginals.set(row.path,descriptor);
+      }
+      const reboundDocuments = documents.map(row => restoredOriginals.has(row.path) ? { ...row, data: restoredOriginals.get(row.path) } : row);
+      const plannerDocuments=proof?reboundDocuments.map(row=>{
         const record=records.find(item=>item.path===row.path);if(record?.context.kind!=='control')return row;
         return codec.transform(record,{generation:authority.control.parse(record.value).generation,
           newEpochByWorkspace:new Map(),photoDescriptors:new Map()});
-      }):documents;
+      }):reboundDocuments;
       // The restore planner applies independently verified erasures before checking
       // surviving cross-document references. Never resurrect a deleted parent just
       // to satisfy an obsolete operation receipt in the imported snapshot.

@@ -159,6 +159,19 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 <a id="knowledge-a04-contract"></a>
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
+<a id="platform-source-follow"></a>
+**免費加入平台來源卡。** 家長在來源庫或聊天點按加入時，客戶端直接向 `POST /api/children/{childId}/library` 提交 `{action:"join", seriesId, expectedRevision, editions:[{sourceId,versionId}]}`，沿用登入帳戶前置條件及孩子讀權。首次加入在同一交易核對整個系列目前可讀的已發布版本，將同範圍跟隨寫入本人原有偏好。已停用的系列保留停用。已跟隨或已固定（包括匯入 ZIP）的系列重複加入會回傳現有 `revision`。未發布、已撤回、首次加入時版本不符，或需要轉移其他系列的個人選擇，均回傳 `409 library_selection_changed`。
+
+本人聊天可用 `read_platform_source_cards` 列出系列，再用 `join_platform_source_card` 按本輪讀到的版本加入；完成收據可重開同一系列。加入只引用平台現有的原件、已審內容及向量，沒有私人巡查或額外模型工作。平台負擔公共維護費。聊天內直接點按免費加入毋須產生 AI 回覆；主動送出自然語言要求助手代辦，對話推理沿用當前聊天的用量安排。
+
+聊天每次列卡最多檢查五個目錄位置，回傳系列名稱、識別碼、發布者及本人的模式和啟停狀態。若有 `nextCursor`，同一輪可繼續，包括當頁沒有已發布系列的情況。傳入 `url` 可在整個可讀目錄精確查找該文件；一般私人網域毋須查平台目錄。選定系列後才載入該系列各已發布版本的完整綁定，同時核對先前列出的文件仍在原版及原系列。
+
+已保存回答的 PDF 點讀使用 `GET /api/children/{childId}/agent/runs/{runId}/citations/{chunkId}/original` 及現有裝置會話。服務以原 run 找回當時的版本、片段和原始 PDF 雜湊，在讀取前後核權；成功回傳 `application/pdf`、實際位元組長度及 `private, no-store`。舊版沒有保存原件時，服務可向登記的發布機構讀取同址檔案並核對雜湊。缺少可讀版本回 404，位元組與原版不符回 409，暫時取源故障回 503。
+
+即時查詢標示 `acquisition=live`。服務可即場讀取已啟用的家庭健康服務網頁；配置 `dh-services` 後，亦可從衞生署公開目錄揀出相關服務、讀取原頁，即使該機構尚未入庫也能引用。查詢字句留在 Server，由 Server 核對來源授權及選取原文。聊天保留當次取得時間、原文位置、可識別的日期及獲准留存的節錄。單次查閱不產生訂閱或已發布版本。
+
+REQ-004／006 共用的原件定位以 `sourceId`、`versionId`、`chunkId`、版本及片段 hash 為準，沿用既有 `fetchedAt`、`usageScope`、頁段與 `readCoverage`。原件檔案的 hash、整理版本的 hash 和片段 hash 各自綁定實際內容。網頁及其連結的 PDF 分別保存取得時間與版本。引用第一步呈現該次已讀原文及適用條件，第二步按當前可見權限開啟當時的原件或明示該版本不可開啟。普通來源網址可能指向新版，無法證明舊版時只可標為發布機構的現行頁。已入庫與即時搜尋的來源類型應可區分；較早紀錄缺少的取得時間或版本保留未知。此為整合目標，當前交付狀態見[根計劃](../PLAN.md#agent-evidence)。
+
 - Agent 自行按多輪情境提出公共主題查詢，不解析思考文字或按最後一句關鍵詞開能力。`search_knowledge` 可帶查詢年齡假設及原話依據；Server 核對本人／孩子的使用者訊息或目前檔案版本。這只供找資料，不能寫成生日、確認事實或精確時程資格。原話／數值詮釋／未知精度分開；條件性命中須補問或明說適用條件。
 - 精確已確認年齡沿既有包含範圍；數字約數按原 asOf 與經過時間作仍屬約數的檢索提示，回傳日期基準；無效／未來基準保持未知。約數／查詢假設可按相交年齡範圍找候選，未知年齡可找相關內容但回傳需要核對適用性。不因缺生日封死知識，也不把模型的數值解讀當 Server 已驗事實。地區、分類、公開範圍、來源有效性仍由 Server 控制。
 - SQL 先套用有效版本／權限／地域，再分別取有界向量及關鍵詞排名並 RRF；不先拉全庫，也不因總量超過 1,000 便失敗。最多六個結果；引用重驗按實際 ID 查，不能在排名前綴中找不到便判引用失效。embedding 及總 run 限額不變。
@@ -922,6 +935,42 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 - `/api/children/:childId/inputs` 的 list／get／fetch／extract／confirm／manage／management-history／delete 沿既有 wire；原 source owner／`createSharedInputApi`、Agent 候選及私人來源工具共用 `SharedInputStore`。變更仍經 online context／原 opId／expectedVersion，原 changes／owner 刷新維持，各頁不另存副本。
 - 私人來源正文分段加密；來源取得及模型提取仍須本人授權、受限 URL 取得與既有 lease。管理時更改正文、停用或撤回選段會使舊選段／提取失效；提取不自動建立已確認事實。
 - online 收據內部只保存私人來源的 ID／版本；查回原結果前核本人範圍及目前版本。來源已更改或刪除時，原操作仍 confirmed，但 `result:null`，不得重做或回傳舊正文；client 沿原 unknown 查回及共同 owner 重新讀取。匯出與孩子／帳戶清理同時涵蓋私人來源及管理修訂。
+
+<a id="account-source-cards"></a>
+### 本人登記的來源卡
+
+「記憶 → 參考資料」及助手共用同一帳戶的卡片服務。每張卡有穩定的 `cardId`。Server 按當前登入者決定擁有人，每次讀寫均核對帳戶資格。Web／App 傳 `x-expected-user-id`，未有孩子也可使用。[共用設定、檢查結果及網址範圍](../src/shared/registered-source-card.ts)
+
+| 操作 | 入口及結果 |
+|---|---|
+| 列出、查看 | `GET /api/account/source-cards?cursor=…` 回傳 `{items,nextCursor}`。用 `GET /api/account/source-cards/:cardId` 讀取一張卡的 `{card}`。 |
+| 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
+| 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
+| 本人授權 | 助手用 `sourceCardAuthorizationPath(cardId)` 打開指定卡。本人表單單獨提交至 `POST /api/account/source-cards/:cardId/credential`。`replace` 包含網站帳戶、密碼、選填同源登入頁；`clear` 撤銷授權。兩者都帶原操作 ID 及預期版本。卡片讀取只回傳 `credentialRef`。 |
+| 聊天引用 | `GET /api/account/source-cards/:cardId/reading` 以文件 ID、版本、頁及位置讀回當時引用的片段。圖像描述與逐字原文分開標示，已審核片段另核對摘錄雜湊及該次索引身份。打開時再次核對本人權限。 |
+
+新增卡時，公告預設每日巡查，目錄及單份文件預設每週；用戶可以分鐘指定其他頻率。單份文件只容許該網址。目錄、公告容許該入口及同源路徑下的項目，指定 `allowedPath` 可另選同站檔案目錄。若改動類型、入口或允許路徑，舊登入授權即時撤銷。登入頁預設為來源入口，只支援同源網站表單。內容下載須逐次核對目的地與重新導向。
+
+worker 以 `due → claim → finish` 接續每張卡的排程。下載前可用 `credentialFor` 核對當前租約及取出該站表單憑證，憑證只供登入適配器使用。長操作用 `renew` 延長租約，私人資料寫入用 `withCurrentCheck` 在同一交易核對卡版本、擁有人及執行者。逾時接手沿用原 `checkId`，停用、修改及刪除會截停舊執行者回寫。卡片記錄上次檢查、結果及下次時間；重新登入、付款、多重驗證或 CAPTCHA 會暫停巡查，待本人處理後再試。帳戶刪除涵蓋卡片、操作收據及加密憑證。災難還原後卡片保持停用，本人重新提供登入授權。[交易與 worker 契約](../server/firestore-registered-source-cards.ts)
+
+巡查完成時可隨 `lastResult` 填寫本次確實保存到本人資料庫的 `savedDocumentCount`、已可供檢索的 `indexedDocumentCount`。未取得相應收據便省略該數；零表示已核實為零。來源按內容自動保存及整理。
+
+<a id="private-source-rag"></a>
+#### 本人來源的視覺檢索
+
+費用按來源歸屬。平台卡的更新沿公共維護預算處理一次，家庭從來源庫加入已發布卡片時免費復用。本人登記的來源使用本人的模型與向量密鑰。只有本人已開啟背景處理，worker 才整理、審核及索引原件；未啟用時保留進度。需要新查詢向量但缺少本人付款路由時回傳 `personal_source_key_required`。列文件、文字查找、重開原文和沿原操作讀取已算好的向量均可繼續使用。
+
+原件巡查的文字初查與多模態整理各自有收據。寫入目前原件版本時，Server 在同一交易排入 `source-card-index`。已保存的原件在下一次來源巡查時補排。每次派送按原工作讀一段文字、一張圖或一個實際 PDF 頁面，將整理、獨立核對及文件向量的結果分階段加密保存。本人每日用量未能接納時，原工作保留游標等候；已出手而結果未明的操作保留 `unknown`。
+
+以下是 Server 內部的 `runtime.registeredSourceDocuments` 方法。聊天呼叫方從已驗證的 session 取 `owner`，並在交付與重開引用時核對當前授權。
+
+| 方法 | 回傳與用途 |
+|---|---|
+| `searchPrivate(owner, cardId, query, {operationId, cursor?, signal?})` | `operationId` 為同一查詢的 UUID，翻頁或重試時沿用。回傳 `{items,nextCursor}`，命中有 `source.{cardId,documentId,version,title,url}`、`incarnation,page,offset,facts,score`。收到 `nextCursor` 可在原查詢期限內接續。 |
+| `readPrivateEvidence(owner,cardId,documentId,version,page,offset,incarnation)` | 讀回該次來源授權下已核對的 `facts`，毋須再次呼叫模型。固定聊天引用須保存並傳回 `incarnation`。它可分辨曾撤權、回到相同內容的兩次巡查。 |
+| `privateIndexStatus(owner,cardId,documentId)` | 回傳目前版本、階段、頁／位移、已可檢索及保留未發布的片段數，以及待處理原因。既有 `read` 仍可按授權點讀已保存原件。 |
+
+PDF 的 `page` 從 1 起、`offset=0`。圖片使用 `page=null,offset=0`；文字用 `page=null` 與從 0 起的 UTF-16 位移。每項事實有 `type,text`。介面可逐字顯示 `quotation`，對 `visual_description` 則標示為已核對的圖像描述。任何一項未獲核對，整段會保留待處理。私人片段、向量、模型操作及查詢收據均按擁有人加密保存。卡片撤權、原件版本或帳戶授權世代改變後，舊引用不可查回。
 
 <a id="firestore-background"></a>
 ### 背景、關注與通知的 Firestore 接點

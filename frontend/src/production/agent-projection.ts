@@ -1,11 +1,13 @@
 import { agentStopDetailHint, agentStopMessage } from "../../../src/shared/agent-stop-message.ts";
 import type { AgentProposal, ProductAgentResult } from "../../../src/shared/product-agent.ts";
 import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
-import type { KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
+import { citedOriginalSpans, type KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
 import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
 
 const toolNames: Record<string, string> = {
+  read_source_cards: '查看來源卡', register_source_card: '新增來源卡', manage_source_card: '更新來源卡', open_source_card_login: '前往來源登入',
+  read_platform_source_cards: '查看平台來源卡', join_platform_source_card: '免費加入平台卡',
   load_capabilities: "載入相關能力", read_work: "讀取未完成工作", save_work: "保存工作進度",
   search_history: "搜尋已授權歷史", read_history: "閱讀歷史原文", read_memory_facts: "讀取記憶事實及版本",
   propose_fact_revision: "提出事實更正", propose_fact_deactivation: "提出事實停用", request_confirmation: "準備具體確認", confirmed_proposal: "已按本人確認保存",
@@ -21,10 +23,27 @@ const toolNames: Record<string, string> = {
   read_contact_options: "讀取已授權聯絡選項", contact_caregiver: "記錄已授權聯絡請求", read_growth_concerns: "讀取成長關注",
 };
 const taskActions = { reschedule: "改期／轉派", complete: "記錄完成", cancel: "取消", resolve: "覆核終態" };
+export function projectLiveCitation(source: import('../../../src/shared/live-source-citation.ts').LiveSourceCitation): ChatCitationView {
+  return { id: source.id, sourceId: source.documentId, acquisition: 'live', seriesName: source.series?.name ?? source.publisher,
+    seriesId: source.series?.id, title: source.title, publisher: source.publisher, section: source.section ?? '原文未有段落標示',
+    pageStart: source.page ?? undefined, excerpt: source.excerpt ?? '',
+    termsUrl: source.termsUrl, originalRange: String(source.range.start + 1) + '–' + source.range.end,
+    readSegments: source.excerpt ? [source.excerpt] : [], versionId: source.version ?? '', versionHash: source.contentHash,
+    checkedAt: '', fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: null, sourceDate: source.sourceDate,
+    classification: source.classification, applicabilityLabel: source.conditions.join(' · ') || '來源未有提供',
+    internalOnly: false, validUntil: null, url: source.url };
+}
 export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationView {
   const age = source.applicability;
+  const segments = citedOriginalSpans(source), quote = source.citedExcerpt ?? source.sourceExcerpt;
+  const excerpt = source.originalKind === 'visual_page' ? [...source.text].slice(0, 300).join('')
+    : segments.some(part => part.includes(quote)) ? quote : '';
   return {
-    id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt: source.sourceExcerpt,
+    sourceId: source.sourceId, seriesId: source.series?.id, seriesName: source.series?.name,
+    acquisition: 'library', pageStart: source.pageStart, pageEnd: source.pageEnd, savedPdf: source.extraction?.format === 'text_pdf',
+    termsUrl: source.termsUrl, originalRange: source.readCoverage?.ranges?.map(range => String(range.start + 1) + '–' + range.end).join('、'),
+    readSegments: segments.filter(Boolean), excerptPage: source.excerptPage, excerptKind: source.originalKind,
+    id: source.chunkId, title: source.title, section: source.section, publisher: source.publisher, excerpt,
     classification: source.classification, versionId: source.versionId, versionHash: source.versionHash,
     checkedAt: source.checkedAt, fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: source.lastSuccessfulCheckAt ?? null,
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
@@ -125,12 +144,32 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
       { label: "接受後可見範圍", value: value.intendedVisibility === "family" ? "家庭共享" : "只限你本人" },
       { label: "有效至", value: value.validUntil ?? "未設定" }] };
 }
+// Only these steps can be shown inline without the decision/receipt dialog.
+const chatReadSteps = new Set(['load_capabilities', 'read_context', 'read_memory_facts', 'search_history', 'read_history',
+  'search_knowledge', 'read_knowledge_context', 'present_answer']);
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
+  const cardLinks = new Map<string, boolean>();
+  const platformSeries = new Set<string>();
+  for (const { name, status, reference } of result.tools) {
+    if (name === 'join_platform_source_card' && status === 'succeeded' && reference && /^[a-z0-9][a-z0-9-]{0,79}$/u.test(reference))
+      platformSeries.add(reference);
+    if (status !== 'succeeded' || !reference || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu.test(reference)) continue;
+    if (['register_source_card', 'manage_source_card', 'open_source_card_login'].includes(name))
+      cardLinks.set(reference, name === 'open_source_card_login' || cardLinks.get(reference) === true);
+  }
   return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
+    sourceCardLinks: Array.from(cardLinks, ([cardId, authorize]) => ({ cardId, authorize })),
+    platformSeriesIds: [...platformSeries],
+    showChildProfiles: result.status === 'completed' && result.tools.some(tool =>
+      tool.name === 'present_answer' && tool.status === 'succeeded' && tool.reference === 'child_profiles'),
+    readOnlyStop: result.status === 'stopped' && result.countsKnown !== false && !result.proposals.length
+      && !result.citations.length && !result.liveCitations?.length && !result.privateSourceCitations?.length
+      && result.tools.length > 0 && result.tools.every(tool => chatReadSteps.has(tool.name) && !tool.reference && tool.status !== 'unknown'),
+    sourceCardReadings: result.status === 'completed' ? result.sourceCardReadings : undefined,
     stopReasonLabel: agentStopMessage(result.stopReason),
     stopReasonDetail: agentStopDetailHint(result.stopReason),
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
       status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change","propose_concern","propose_concern_change"].includes(tool.name) })),
-    proposals: result.proposals.map(projectAgentProposal), citations: result.citations.map(projectAgentCitation),privateSourceCitations:result.privateSourceCitations };
+    proposals: result.proposals.map(projectAgentProposal), citations: [...result.citations.map(projectAgentCitation), ...(result.liveCitations ?? []).map(projectLiveCitation)],privateSourceCitations:result.privateSourceCitations };
 }

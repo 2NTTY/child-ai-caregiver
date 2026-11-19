@@ -20,6 +20,7 @@ import { useProduction } from './ProductionProvider';
 import { mixedCareRecordCitations, mixedMaterialReferences, type MixedChatController, type MixedChatState } from './MixedChatController';
 import type { SharingController, SharingState } from './SharingController';
 import { MixedConversationExport } from './MixedConversationExport';
+import { failedChatReply } from '../components/chat/failed-reply';
 
 function ArchivedMixedReply({ reply, messageId }: { reply: MixedTranscriptRow['reply']; messageId: string }) {
   const labels = { completed: '已完成', not_started: '尚未開始', running: '進行中', unknown: '結果未確認', stopped: '已停止' };
@@ -43,16 +44,16 @@ function MixedReply({ result, at, controller, messageId, careCitation }: {
   const help = officialHelpFromTools(result.tools);
   const careCitationCount = mixedCareRecordCitations(result).length;
   const materialCount = mixedMaterialReferences(result).length;
+  const failure = run.status === 'stopped' || run.status === 'unknown' ? failedChatReply(run.text, run.stopReasonLabel) : null;
   const material = careCitation?.citation && 'kind' in careCitation.citation ? careCitation.citation : null;
   const label = careCitation?.group === 'material' ? '孩子資料' : '照護記錄';
   return <View style={styles.group}>
     {help.length ? <OfficialHelpCards ids={help} /> : null}
-    <ChatMessage message={{ id: run.id, role: 'assistant', text: run.text, sources: publicAnswerSources(run),
+    <ChatMessage message={{ id: run.id, role: 'assistant', text: failure?.body ?? run.text, sources: publicAnswerSources(run),
       phase: run.status === 'running' ? 'thinking' : run.status === 'unknown' ? 'unknown' : run.status === 'stopped' ? 'stopped' : 'complete',
-      note: [run.stopReasonLabel, run.stopReasonDetail].filter(Boolean).join(' '),
       activities: run.tools.map(tool => ({ id: tool.id, label: tool.nameLabel,
         state: tool.status === 'succeeded' ? 'succeeded' : tool.status === 'unknown' ? 'unknown' : 'failed' })) }}
-      degraded={run.retrievalMode === 'keyword_degraded'} careCitationCount={careCitationCount}
+      phaseLabel={failure?.reason} degraded={run.retrievalMode === 'keyword_degraded'} careCitationCount={careCitationCount}
       materialCount={materialCount} onOpenMaterial={materialCount ? ordinal=>{void controller.readMaterialCitation(messageId,ordinal);} : undefined}
       onOpenCareCitation={careCitationCount ? ordinal => { void controller.readCareCitation(messageId, ordinal); } : undefined} />
     {careCitation?.messageId === messageId ? <View testID="mixed-care-citation-original" style={styles.group}>

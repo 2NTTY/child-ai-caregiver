@@ -1,17 +1,16 @@
-import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
+import { createContext, useContext, useRef, useState, type ReactNode, type RefObject } from "react";
+import { PreviewLink } from "../../preview/PreviewNavigationGuard";
+import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
-import { AppScrollView } from "../AppScrollView";
-import { HorizontalOverflowRail } from "../HorizontalOverflowRail";
+import { AppDialog } from "../AppDialog";
 import { AppButton } from "../ui";
-import { AppIcon } from "../AppIcon";
+import { SourceDocumentCard } from "../memory/SourceDocumentCard";
+import { PlatformCardJoin } from '../memory/PlatformCardJoin';
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
-import { locateCitationSource } from "./locateCitationSource";
-import { MotionDisclosure, MotionEntrance } from "../../motion";
-import { MotionSelectionMarker } from "../../motion/MotionSelectionMarker";
+
 import { CHAT_CLASSIFICATION_LABELS, CHAT_SOURCE_COPY } from "./chat-copy";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
@@ -19,9 +18,20 @@ const CitationContext = createContext<{ sources: readonly ChatCitationView[]; lo
 export type LocateAnswerSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => void;
 const classificationLabels = CHAT_CLASSIFICATION_LABELS;
 function sourceTime(value: string | null): string {
-  return value === null ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
+  return !value ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
     ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`
     : CHAT_SOURCE_COPY.invalidTime;
+}
+function websiteUrl(source: ChatCitationView): string | null {
+  try {
+    const url = new URL(source.url ?? '');
+    if (url.protocol !== 'https:' || url.username || url.password) return null;
+    const page = source.excerptPage ?? source.pageStart;
+    if (!url.hash && page) url.hash = 'page=' + page;
+    else if (!url.hash && source.readSegments?.some(part => part.includes(source.excerpt)) && source.excerpt.trim())
+      url.hash = ':~:text=' + encodeURIComponent(source.excerpt.trim());
+    return url.href;
+  } catch { return null; }
 }
 function Detail({ label, value, technical = false }: { label: string; value: string; technical?: boolean }) {
   return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={technical ? styles.meta : styles.body}>{value}</Text></View>;
@@ -65,196 +75,119 @@ export function CitationText({ children, style, careCitationCount = 0, onOpenCar
   return <Text selectable style={style}>{parts}</Text>;
 }
 
+function pageLabel(source: ChatCitationView) {
+  if (source.excerptPage) return `第 ${source.excerptPage} 頁`;
+  if (!source.pageStart) return null;
+  return source.pageEnd && source.pageEnd !== source.pageStart
+    ? `第 ${source.pageStart}–${source.pageEnd} 頁` : `第 ${source.pageStart} 頁`;
+}
+
+function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationView; onClose(): void; onOpenSource?: (id: string) => void }) {
+  const [showMetadata, setShowMetadata] = useState(false);
+  const [linkError, setLinkError] = useState(false);
+  const external = websiteUrl(source);
+  const page = pageLabel(source);
+  const original = source.readSegments?.filter(Boolean) ?? [];
+  return <AppDialog visible accessibilityLabel={source.title} onDismiss={onClose}>
+    <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? '即時搜尋' : classificationLabels[source.classification], page].filter(Boolean).join(' · ')}>
+        {source.section ? <Text style={styles.section}>{source.section}</Text> : null}
+        {source.excerpt ? <View style={styles.quote}>
+          {source.excerptKind === 'visual_page' ? <Text style={styles.meta}>圖像說明（助手整理）</Text>
+            : source.excerptKind === 'page_transcription' ? <Text style={styles.meta}>掃描頁辨讀</Text> : null}
+          <Text selectable style={styles.body}>{source.excerpt}</Text>
+        </View> : <Text style={styles.meta}>此引用沒有可顯示的原文摘錄。</Text>}
+        {source.validUntil && Date.parse(source.validUntil) <= Date.now() ? <Text style={styles.warning}>這份引用已過有效期。</Text> : null}
+        {source.applicabilityLabel ? <Detail label="適用範圍" value={source.applicabilityLabel} /> : null}
+        {source.savedPdf && onOpenSource ? <AppButton label="查看當時 PDF" variant="secondary" onPress={() => onOpenSource(source.id)} /> : null}
+        {external ? <AppButton label="開啟現行網站" variant="quiet" onPress={() => { void Linking.openURL(external).catch(() => setLinkError(true)); }} /> : null}
+        {linkError ? <Text style={styles.warning}>暫未能開啟原網站。</Text> : null}
+        {source.acquisition === 'library' && source.seriesId && source.sourceId && !source.internalOnly
+          ? <PlatformCardJoin seriesId={source.seriesId} citation={{ sourceId: source.sourceId, versionId: source.versionId }} /> : null}
+        {source.seriesId ? <PreviewLink href={{ pathname: '/memory', params: { series: source.seriesId, sourceDocument: source.sourceId } }}>
+          <Pressable accessibilityRole="link" onPress={onClose} style={styles.libraryLink}><Text style={styles.linkText}>查看來源庫</Text></Pressable>
+        </PreviewLink> : null}
+        <AppButton label="版本與核對資料" variant="quiet" density="compact" expanded={showMetadata} onPress={() => setShowMetadata(value => !value)} />
+        {showMetadata ? <View style={styles.sheetDetails}>
+          {original.some(part => part !== source.excerpt) ? <View style={styles.detail}><Text style={styles.meta}>當時已讀段落</Text>{original.map((part, index) => <Text key={index} selectable style={styles.body}>{part}</Text>)}</View> : null}
+          {source.versionId ? <Detail technical label="引用版本" value={source.versionId} /> : null}
+          {source.versionHash ? <Detail technical label="版本校驗" value={source.versionHash} /> : null}
+          {source.sourceDate ? <Detail label="來源日期" value={source.sourceDate} /> : null}
+          {source.validUntil ? <Detail label="有效至" value={sourceTime(source.validUntil)} /> : null}
+          {source.checkedAt ? <Detail label="核對時間" value={sourceTime(source.checkedAt)} /> : null}
+          {source.fetchedAt ? <Detail label="取得時間" value={sourceTime(source.fetchedAt)} /> : null}
+          {source.lastSuccessfulCheckAt ? <Detail label="最近成功核對" value={sourceTime(source.lastSuccessfulCheckAt)} /> : null}
+          {source.originalRange ? <Detail label="已讀字元" value={source.originalRange} /> : null}
+          {source.termsUrl ? <Detail technical label="來源使用條款" value={source.termsUrl} /> : null}
+          {source.internalOnly ? <Text style={styles.meta}>限內部使用</Text> : null}
+        </View> : null}
+      </SourceDocumentCard>
+    </ScrollView></AppDialog.ScrollArea>
+    <AppDialog.Actions><AppButton label="關閉" onPress={onClose} variant="secondary" density="compact" /></AppDialog.Actions>
+  </AppDialog>;
+}
+
 export function AnswerSources({ sources, children, testID, onOpenSource, onLocateSource, degraded = false }: {
   sources: readonly ChatCitationView[]; children: ReactNode; testID?: string;
   onOpenSource?: (id: string) => void; onLocateSource?: LocateAnswerSource; degraded?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [presentedId, setPresentedId] = useState<string | null>(null);
-  const [panelTrigger, setPanelTrigger] = useState<number | null>(null);
-  const [animateSelection, setAnimateSelection] = useState(false);
-  const selectionSerial = useRef(0);
-  const [locatedId, setLocatedId] = useState<string | null>(null);
-  const [origin, setOrigin] = useState<CitationOrigin | null>(null);
-  const [technicalOpen, setTechnicalOpen] = useState(false);
-  const groupId = useId();
-  const sourceRefs = useRef(new Map<string, View>());
-  const panelRef = useRef<View | null>(null);
-  const tabScrollRef = useRef<NativeScrollView | null>(null);
-  const detailScrollRef = useRef<NativeScrollView | null>(null);
-  const pendingNavigation = useRef<{ id: string; closing: boolean } | null>(null);
-  const [tabWidth, setTabWidth] = useState(0);
-  const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({});
-  const windowWidth = useWindowDimensions().width;
-  const sourceLayoutKey = JSON.stringify(sources.map(source => [source.id, source.title]));
-  useLayoutEffect(() => {
-    if (Platform.OS !== "web") return;
-    const viewport = tabScrollRef.current?.getScrollableNode() as HTMLElement | null;
-    if (!viewport || viewport.clientWidth <= 0) return;
-    const width = viewport.clientWidth;
-    // One follow-up read settles any width reserved by the trailing hint.
-    setTabWidth(current => current === width ? current : width);
-  }, [windowWidth, sourceLayoutKey, tabWidth]);
-  // Retain only an ID during collapse; the live collection controls data access.
-  const selected = sources.find(source => source.id === (selectedId ?? presentedId));
-  const expanded = selectedId !== null && selected !== undefined;
-  const markerId = sources.find(source => source.id === (selectedId ?? locatedId))?.id ?? null;
-  const selection = markerId ? tabLayouts[markerId] : undefined;
-  function revealSource(id: string) {
-    const target = sourceRefs.current.get(id) ?? null;
-    if (onLocateSource) onLocateSource(target, tabScrollRef.current);
-    else locateCitationSource(target, null, tabScrollRef.current);
+  const origin = useRef<CitationOrigin | null>(null);
+  const selected = sources.find(source => source.id === selectedId);
+  function open(id: string, anchor?: RefObject<View | null>) {
+    origin.current = anchor ? { sourceId: id, anchor } : null;
+    setSelectedId(id);
   }
-  useLayoutEffect(() => {
-    // Reset explicitly while preserving the viewport and its control identity.
-    if (selectedId === null) return;
-    const scroll = detailScrollRef.current;
-    const viewport = Platform.OS === "web" ? scroll?.getScrollableNode() : null;
-    if (viewport) {
-      viewport.style.setProperty("overflow-anchor", "none");
-      // RN Web replaces viewport.scrollTo and maps animated:false to "auto".
-      const nativeScroll = viewport.ownerDocument?.defaultView?.Element.prototype.scroll;
-      if (typeof nativeScroll === "function") {
-        nativeScroll.call(viewport, { left: 0, top: 0, behavior: "instant" });
-        // Chromium cancels its user animator before the smooth no-op check;
-        // this same-target request has no displacement after the instant reset.
-        // InitiateScrollAnimation, inspected 2026-10-04 (main, not a pinned release):
-        // https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/core/scroll/scrollable_area.cc
-        nativeScroll.call(viewport, { left: 0, top: 0, behavior: "smooth" });
-        return;
-      }
-    }
-    // Native platforms and non-DOM adapters keep the RN method signature.
-    scroll?.scrollTo({ x: 0, y: 0, animated: false });
-  }, [selectedId]);
-  useLayoutEffect(() => {
-    const pending = pendingNavigation.current;
-    pendingNavigation.current = null;
-    if (pending) onLocateSource?.(pending.closing ? sourceRefs.current.get(pending.id) ?? null : panelRef.current,
-      pending.closing ? tabScrollRef.current : undefined);
-  }, [selectedId, onLocateSource]);
-  function locate(id: string, anchor?: RefObject<View | null>) {
-    setPanelTrigger(null); setAnimateSelection(false);
-    setLocatedId(id);
-    if (anchor?.current) setOrigin({ sourceId: id, anchor });
-    if (selectedId && selectedId !== id) { setSelectedId(id); setPresentedId(id); setTechnicalOpen(false); }
-    onLocateSource?.(sourceRefs.current.get(id) ?? null, tabScrollRef.current, panelRef.current);
+  function close() {
+    setSelectedId(null);
+    const target = origin.current?.anchor.current;
+    if (target) onLocateSource?.(target, undefined, target);
+    origin.current = null;
   }
-  function toggle(id: string) {
-    const closing = selectedId === id;
-    setAnimateSelection(true);
-    setPanelTrigger(selectedId !== null && !closing ? ++selectionSerial.current : null);
-    if (!closing) setPresentedId(id);
-    pendingNavigation.current = { id, closing };
-    setSelectedId(closing ? null : id); setLocatedId(id);
-    if (!closing && selectedId !== id) setTechnicalOpen(false);
-  }
-  function returnToCitation() {
-    setPanelTrigger(null); setAnimateSelection(false);
-    if (origin?.anchor.current && sources.some(source => source.id === origin.sourceId)) {
-      onLocateSource?.(origin.anchor.current, undefined, origin.anchor.current);
-    }
-    else setOrigin(null);
-  }
-  return <CitationContext.Provider value={{ sources, locate }}>
+  return <CitationContext.Provider value={{ sources, locate: open }}>
     <View testID={testID} style={styles.answer}>
       {children}
-      <View testID="answer-sources" style={styles.footer}>
+      {degraded || sources.length > 0 ? <View testID="answer-sources" style={styles.footer}>
         {degraded ? <Text testID="answer-sources-degraded" style={styles.warning}>{CHAT_SOURCE_COPY.degradedWarning}</Text> : null}
-        {sources.length ? <View ref={panelRef} testID="answer-source-panel" style={styles.panel}>
-          <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>{CHAT_SOURCE_COPY.footerTitle}</Text>
-            {origin && onLocateSource ? <AppButton label={CHAT_SOURCE_COPY.returnToCitation} variant="quiet" density="compact" onPress={returnToCitation} /> : null}
-          </View>
-          <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel={CHAT_SOURCE_COPY.tabAccessibilityLabel}
-            layoutRevision={`${sourceLayoutKey}:${tabWidth}`}
-            hintLabel={CHAT_SOURCE_COPY.hintMoreSources} hintTestID="answer-source-scroll-hint" hintSlotTestID="answer-source-hint-slot" hintColor={chatColors.secondary}
-            items={sources.flatMap(source => tabLayouts[source.id] ? [{ key: source.id, ...tabLayouts[source.id] }] : [])}
-            onRevealItem={revealSource} animatedScroll={false}
-            onLayout={event => setTabWidth(event.nativeEvent.layout.width)} style={styles.tabRow} contentContainerStyle={styles.tabs}>
-            {sources.map((source, index) => <Fragment key={source.id}>
-              {index > 0 ? <View testID="answer-source-separator" accessible={false} style={styles.separator} /> : null}
-              <Pressable accessibilityRole="button"
-              ref={node => { if (node) sourceRefs.current.set(source.id, node); else sourceRefs.current.delete(source.id); }}
-              onLayout={event => { const { x, width } = event.nativeEvent.layout; setTabLayouts(current => current[source.id]?.x === x && current[source.id]?.width === width ? current : { ...current, [source.id]: { x, width } }); }}
-              accessibilityLabel={`來源【${index + 1}】：${source.title}`} accessibilityState={{ expanded: selectedId === source.id }}
-              aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail`} onPress={() => toggle(source.id)}
-              style={({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },
-                pressed && styles.pressed, !selection && markerId === source.id && styles.located, !selection && selectedId === source.id && styles.selectedTab]}>
-              <Text numberOfLines={1} style={styles.tabText}>【{index + 1}】{source.title}</Text>
-              </Pressable>
-            </Fragment>)}
-            <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${groupId}:${markerId ?? "none"}`} enabled={animateSelection} color={selectedId ? chatColors.ink : chatColors.focus} />
-          </HorizontalOverflowRail>
-          <MotionDisclosure expanded={expanded} scopeKey={groupId} testID="answer-source-disclosure">
-          <AppScrollView ref={detailScrollRef} nativeID={`${groupId}-detail`} testID="source-details-panel" style={styles.detailScroll}>
-          <MotionEntrance preset="panel" triggerKey={expanded ? panelTrigger : null} scopeKey={groupId} enabled={expanded} testID="answer-source-content-motion" style={styles.details}>
-            {selected ? <>
-            <View testID="source-detail-group" style={styles.detailGroup}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
-              <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
-                <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
-              <Detail label={CHAT_SOURCE_COPY.section} value={selected.section} />
-              <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
-              {selected.classification === "synthetic" ? <Text style={styles.meta}>{CHAT_SOURCE_COPY.syntheticNotice}</Text> : null}
-            </View>
-            <View testID="source-detail-group" style={[styles.detailGroup, styles.dividedGroup]}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.datesGroupTitle}</Text>
-              <Detail label={CHAT_SOURCE_COPY.sourceDate} value={selected.sourceDate ?? CHAT_SOURCE_COPY.missingTime} />
-              <Detail label={CHAT_SOURCE_COPY.validUntil} value={sourceTime(selected.validUntil)} />
-              <Detail label={CHAT_SOURCE_COPY.applicability} value={selected.applicabilityLabel} />
-              <Detail label={CHAT_SOURCE_COPY.internalOnly} value={selected.internalOnly ? CHAT_SOURCE_COPY.internalYes : CHAT_SOURCE_COPY.internalNo} />
-              <Text style={styles.meta}>{CHAT_SOURCE_COPY.snapshotDisclaimer}</Text>
-              {selected.url ? onOpenSource ? <AppButton label={CHAT_SOURCE_COPY.openSource} accessibilityLabel={`${CHAT_SOURCE_COPY.openSource}：${selected.title}`} variant="secondary"
-                onPress={() => onOpenSource(selected.id)} /> : <Text selectable style={styles.body}>{selected.url}</Text>
-                : <Text style={styles.meta}>{CHAT_SOURCE_COPY.noOpenableUrl}</Text>}
-            </View>
-            <View style={[styles.technicalGroup, styles.dividedGroup]}>
-              <Pressable accessibilityRole="button" accessibilityLabel={CHAT_SOURCE_COPY.technicalToggle} accessibilityState={{ expanded: technicalOpen }}
-                aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
-                <Text style={styles.technicalTitle}>{(technicalOpen ? CHAT_SOURCE_COPY.technicalClosePrefix : CHAT_SOURCE_COPY.technicalOpenPrefix) + CHAT_SOURCE_COPY.technicalToggle}</Text><AppIcon name={technicalOpen ? "chevron-up" : "chevron-down"} size={16} />
-              </Pressable>
-              <MotionDisclosure expanded={technicalOpen} scopeKey={`${groupId}:${selected.id}`}><View nativeID={`${groupId}-technical`} testID="source-detail-group" style={[styles.detailGroup, styles.technicalContents]}>
-                <Detail technical label={CHAT_SOURCE_COPY.versionId} value={selected.versionId} />
-                <Detail technical label={CHAT_SOURCE_COPY.versionHash} value={selected.versionHash} />
-                <Detail technical label={CHAT_SOURCE_COPY.checkedAt} value={sourceTime(selected.checkedAt)} />
-                <Detail technical label={CHAT_SOURCE_COPY.fetchedAt} value={sourceTime(selected.fetchedAt)} />
-                <Detail technical label={CHAT_SOURCE_COPY.lastSuccessfulCheckAt} value={sourceTime(selected.lastSuccessfulCheckAt)} />
-              </View></MotionDisclosure>
-            </View>
-            </> : null}
-          </MotionEntrance>
-          </AppScrollView>
-          </MotionDisclosure>
-        </View> : <Text testID="answer-sources-empty" style={styles.meta}>{CHAT_SOURCE_COPY.emptySources}</Text>}
-      </View>
+        {sources.length ? <View testID="answer-source-panel" style={styles.cards}>
+          {sources.map((source, i) => {
+            const page = pageLabel(source);
+            const preview = source.excerptKind === 'visual_page' ? '' : source.excerpt.replace(/\s+/gu, ' ').trim();
+            return <Pressable key={source.id} testID={`citation-card-${i + 1}`}
+              accessibilityRole="button" accessibilityLabel={`來源【${i + 1}】：${source.title}${page ? ' · ' + page : ''}`}
+              accessibilityHint={preview || undefined}
+              onPress={() => open(source.id)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+              <View style={styles.cardHead}><Text numberOfLines={2} style={styles.title}>{source.title}</Text>
+                {page ? <Text style={styles.page}>{page}</Text> : null}</View>
+              {preview ? <Text numberOfLines={3} style={styles.excerpt}>{preview}</Text> : null}
+            </Pressable>;
+          })}
+        </View> : null}
+      </View> : null}
+      {selected ? <OriginalCard key={selected.id} source={selected} onClose={close} onOpenSource={onOpenSource} /> : null}
     </View>
   </CitationContext.Provider>;
 }
 
 const styles = StyleSheet.create({
   answer: { gap: chatLayout.paragraphGap, minWidth: 0 },
-  footer: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: chatLayout.paragraphGap, gap: spacing.xs, minWidth: 0 },
-  footerTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
-  footerHeading: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
-  pressed: { backgroundColor: colors.pressedOverlay },
-  located: { borderBottomColor: chatColors.focus },
-  sourceTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
+  footer: { gap: spacing.sm, minWidth: 0 },
+  cards: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
+  card: { flexBasis: 236, flexGrow: 1, flexShrink: 1, maxWidth: 356, minWidth: 0, minHeight: 46, gap: spacing.xs,
+    borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  pressed: { backgroundColor: colors.quietSurface, borderColor: colors.controlOutline },
+  cardHead: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: spacing.sm, minWidth: 0 },
+  title: { flexGrow: 1, flexShrink: 1, minWidth: 0, fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: '700' },
+  page: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  excerpt: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
+  scrollArea: { flexShrink: 1, paddingHorizontal: 0 },
+  sheet: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
+  sheetDetails: { gap: spacing.sm, borderTopColor: colors.line, borderTopWidth: 1, paddingTop: spacing.md },
+  section: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
-  body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool },
-  quoteBody: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
-  panel: { gap: spacing.xs, minWidth: 0 },
-  tabRow: { height: 48, flexDirection: "row", minWidth: 0 },
-  tabs: { flexDirection: "row", alignItems: "center" },
-  separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
-  tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
-  selectedTab: { borderBottomColor: chatColors.ink },
-  tabText: { textDecorationLine: "underline", fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600" },
-  detailScroll: { height: 280, flexGrow: 0 }, details: { paddingVertical: spacing.sm, gap: spacing.md }, detail: { gap: spacing.xs, minWidth: 0 },
-  detailGroup: { gap: spacing.sm, minWidth: 0 }, dividedGroup: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: spacing.md },
-  groupTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
-  quote: { borderLeftWidth: 2, borderLeftColor: chatColors.line, paddingLeft: spacing.md, minWidth: 0 },
+  body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
+  detail: { gap: 2, minWidth: 0 }, quote: { gap: spacing.xs, borderLeftWidth: 3, borderLeftColor: colors.sage, paddingLeft: spacing.md },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.meta },
-  technicalTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
-  technicalToggle: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, justifyContent: "center" },
-  technicalGroup: { minWidth: 0 }, technicalContents: { paddingTop: spacing.sm },
+  libraryLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'center' },
+  linkText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, textDecorationLine: 'underline' },
 });

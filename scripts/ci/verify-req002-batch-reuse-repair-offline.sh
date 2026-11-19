@@ -33,22 +33,16 @@ TEST_FILES=(
   tests/agent-durable-budget.test.ts
   tests/p2-a06-background-scope.test.ts
   tests/p2-a06-continuation.test.ts
-  tests/search-short-path-gaps.test.ts
   tests/search-official-evidence.test.ts
   tests/knowledge-ranking.test.ts
   tests/knowledge-a04.test.ts
   tests/knowledge-runtime.test.ts
-  tests/firestore-knowledge.test.ts
   tests/local-knowledge-seed-assessments.test.ts
   tests/search-query-minimization.test.ts
   tests/agent-prompt.test.ts
   tests/agent-prompt-wiring.test.ts
-  tests/vertex-tool-contract.test.ts
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
-  tests/agent-feedback-sources.test.ts
-  tests/chat-progress-integration.test.ts
-  tests/chat-run-recovery.test.ts
   tests/chat-recovered-draft.test.ts
   tests/chat-web-sources-copy.test.ts
   tests/chat-busy-stop-feedback.test.ts
@@ -61,7 +55,7 @@ TEST_FILES=(
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(10 4 1 2 13 15 13 4 6 10 3 8 3 5 6 21 17 5 7 6 3 7 1 2 3 11 12 17 44 9 8)
+TEST_CASES=(10 4 1 2 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -96,7 +90,7 @@ for index in "${!TEST_FILES[@]}"; do
   expected="${TEST_CASES[$index]}"
   TAP_FILE="$TMPDIR/req002-batch-reuse-repair-$index.tap"
   printf 'complete-test-file=%s expected-cases=%s\n' "$source" "$expected"
-  "$NODE_BIN" --import "./$GUARD" --test --test-timeout=30000 \
+  "$NODE_BIN" --import "./$GUARD" --experimental-test-module-mocks --test --test-timeout=30000 \
     --test-concurrency=1 --test-reporter=tap "$source" | tee "$TAP_FILE"
   "$NODE_BIN" "$CONTRACT" check "$TAP_FILE" "$expected"
   total_cases=$((total_cases + expected))

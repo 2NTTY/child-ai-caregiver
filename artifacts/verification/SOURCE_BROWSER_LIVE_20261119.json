@@ -1,0 +1,111 @@
+{
+  "operation": "First production activation of the isolated source browser",
+  "candidateColdBytes": 649885378,
+  "initialState": {
+    "siteRelease": "r44465380361-1",
+    "renderer": null,
+    "receiverFreeBytes": 3388268544,
+    "dockerFreeBytes": 3388268544,
+    "requiredBeforePullBytes": 3871110850,
+    "firstApply": "Stopped before pulling, as reported by the release operator. A fresh on-host status confirmed the prior site release and no active renderer."
+  },
+  "spaceRecovery": {
+    "buildCache": {
+      "selection": "34 exact BuildKit record IDs older than seven days, reclaimable and not shared with images at selection; the engine removed only eligible content.",
+      "actualFreeIncreaseBytes": 17575936
+    },
+    "apt": {
+      "downloadedPackagesOlderThan21Days": 19,
+      "noPartialDownload": true,
+      "operation": "apt-get clean",
+      "actualFreeIncreaseBytes": 200327168
+    },
+    "oldBuildStaging": {
+      "verifiedExtractedCopies": 896,
+      "recoverableFrom": "Matching SHA-256 and tar member in a retained release archive on the same host",
+      "retiredPublicWebArchives": 7,
+      "webArchiveRecovery": "Byte-identical public Web archives remain on the build workstation; the VM's two hard links per retired archive were accounted for once.",
+      "actualFreeIncreaseBytes": 285843456,
+      "hostRecoveryMap": "/var/lib/yuyoufang-site-release/source-browser-space-87a6c57f.json"
+    },
+    "freeAfterCleanupBytes": 3883491328,
+    "protectedImageReferencesVerified": 5,
+    "cloudResourcesAdded": 0,
+    "productReleaseSwitch": false
+  },
+  "live": {
+    "observedAt": "2026-11-19T14:46:09+08:00",
+    "vm": "yuban-p1",
+    "siteRelease": "r44465380361-1",
+    "businessServices": {
+      "api": {
+        "sha": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+        "digest": "sha256:cb6b89b47888d401b81741b1c93e349d9c2890f57d65875fbee7eaa875279323"
+      },
+      "web": {
+        "sha": "e8198480c270d16a60b7726fc75ee2afcdb6662c",
+        "digest": "sha256:95e7c726293e27ead09df6600bb742b8ba1b971acdcb0a065c310793b2d46ef7"
+      },
+      "worker": {
+        "sha": "9eae8c8d994aa1f09d95ccf4ca4f174da0074e82",
+        "digest": "sha256:cb6b89b47888d401b81741b1c93e349d9c2890f57d65875fbee7eaa875279323"
+      }
+    },
+    "siteHealth": "same-origin API health, web hash and release identity passed",
+    "retainedBusinessImageReferences": 5,
+    "renderer": {
+      "revision": "87a6c57f4d2aa3c9c62be80663ba0baa82ed2511",
+      "registryRef": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/site-release/source-browser@sha256:b428c17827c2337f871e722cd8c5598f4e2f5a26bf8f46f606d209b505809f14",
+      "localId": "sha256:b428c17827c2337f871e722cd8c5598f4e2f5a26bf8f46f606d209b505809f14",
+      "containerId": "044e1a7ac0d4773ba1a130ab8f30b2f1ddfc7142fc8220c64046c2d21873ab79",
+      "health": "healthy",
+      "networkMode": "none",
+      "readOnlyRootfs": true,
+      "limitBytes": 402653184,
+      "memorySwapLimitBytes": 402653184,
+      "oomKilled": false,
+      "restartCount": 0,
+      "bundle": {
+        "coldBytes": 649885378,
+        "composeHash": "f788fb5fc8c71aa4dc1249d8bac94b614319a6cfe8367117d2cec74eda08fa03",
+        "digest": "sha256:b428c17827c2337f871e722cd8c5598f4e2f5a26bf8f46f606d209b505809f14",
+        "mountHash": "cb71065f1bfaaff4e636f91716681bb314674f2b5aae064cc98501f8414a873a",
+        "revision": "87a6c57f4d2aa3c9c62be80663ba0baa82ed2511",
+        "seccompHash": "1415975aab28cf04e08d615d7aa3bbc0a5947664398d7b7fa758c11901170d88"
+      },
+      "prior": null
+    },
+    "worker": {
+      "containerId": "1d5ce62313a6f424511b29543b0a6a9305a43a35e5b7350deaa59000ede23f38",
+      "imageId": "sha256:cb6b89b47888d401b81741b1c93e349d9c2890f57d65875fbee7eaa875279323",
+      "health": "healthy",
+      "mount": {
+        "Type": "volume",
+        "Name": "yuban-p1_source-browser-ipc",
+        "Destination": "/run/source-browser",
+        "RW": false
+      },
+      "socketUID": 1000,
+      "socketGET": "/healthz",
+      "socketHttpStatus": 200,
+      "socketBody": "ready",
+      "socketMountPresentInDailyOverride": true
+    },
+    "apiOrWebHasSocketMount": false,
+    "replayKeptContainerIdsAndReceipt": true,
+    "pendingJournal": false,
+    "capacity": {
+      "receiverFreeBytes": 3233333248,
+      "dockerFreeBytes": 3233333248,
+      "availableMemoryBytes": 723230720
+    },
+    "bytesAbove3GiBFloor": 12107776
+  },
+  "rollback": {
+    "baseline": "Renderer absent, original worker without the Unix mount",
+    "previousRenderer": null,
+    "productionRollbackExecuted": false,
+    "localRollbackEvidence": "SOURCE_BROWSER_SITE_RELEASE_20261119.json"
+  },
+  "scope": "Production acceptance covers renderer/worker transport, site health, digest and receipt replay. No catalogue, chat, model or Firestore acceptance was repeated."
+}

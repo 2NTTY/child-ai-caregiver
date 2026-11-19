@@ -4,6 +4,7 @@ export function classifyChanges(paths) {
   for (const path of paths) {
     if (/^(docs\/|artifacts\/|tests\/|licenses\/|\.agents\/)|\.(md|test\.[cm]?[jt]sx?)$/.test(path)) continue;
     if (/^\.github\/workflows\/[^/]+-offline\.ya?ml$/.test(path)) continue;
+    if (path === '.codex/config.toml' || /^\.codex\/agents\/[^/]+\.toml$/.test(path)) continue;
     if (['Dockerfile', '.dockerignore', '.github/workflows/site-release.yml'].includes(path)) {
       result.web = result.server = true;
       continue;

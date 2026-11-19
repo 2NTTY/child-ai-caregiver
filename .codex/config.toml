@@ -3,13 +3,13 @@
 [agents]
 enabled = true
 max_concurrent_threads_per_session = 8
-default_subagent_model = "gpt-6.1-sol"
-default_subagent_reasoning_effort = "xhigh"
+default_subagent_model = "gpt-6.2-sol"
+default_subagent_reasoning_effort = "max"
 
 [agents.explorer]
 description = "Luna Max for location-only file discovery, reading-heavy investigation, evidence analysis and existing low-cost, non-critical read-only batch tests."
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "GPT-6.1 Sol for bounded simple and medium-complexity work with proportionate guidance. Difficult tasks stay with the Astra primary agent; routine high, medium xhigh as needed, max only when justified; project fallback xhigh."
+description = "GPT-6.2 Sol for bounded simple and medium-complexity work with proportionate guidance. Difficult tasks stay with the Astra primary agent. Default reasoning effort is max."
 config_file = "agents/worker.toml"

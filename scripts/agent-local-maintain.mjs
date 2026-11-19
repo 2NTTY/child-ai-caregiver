@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createLocalAgentBuckets } from '../server/local-agent-storage.ts';
 import { assertLocalAgentEnvironment } from '../server/local-agent-config.ts';
 import { openFirebasePersistence } from '../server/firebase-persistence.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
@@ -41,7 +42,7 @@ try {
   const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
   try { await authority.readControl(); }
   catch (error) { if (error.code !== 'not_found') throw error; await authority.initializeControl({ generation: state.generation, enabled: true }); }
-  const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
+  const refresh = createFirestoreKnowledgeRefresh({ ...domain, originalBucket: { bucketName: config.photoBucket, bucket: createLocalAgentBuckets(process.env)(config.photoBucket) }, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
   let stored;
   try { stored = JSON.parse(await readFile(workPath, 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }

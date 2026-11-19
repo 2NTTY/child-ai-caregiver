@@ -36,6 +36,12 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 這組操作者指令只處理選定的公開版本。選擇檔是 `[{"sourceId":"…","versionHash":"…"}]`。先從 `list` 取得目標，並按實際散布用途核對來源條款。包內每個版本包含原文位置、片段及當時使用的向量。它只涵蓋所選版本，沒有轉移帳戶、私人來源或發布權限。
 
+家長首次開啟目錄或在普通聊天查詢時，會讀取各系列當時有效的發布版。匯入參照包會固定包內版本；亦可在卡片明確固定目前版本。選擇「跟隨同範圍更新」會保留當時選用的文件及適用範圍，切換啟停會保留該系列的版本設定。「恢復使用平台發布版」可解除該系列的個人版本選擇。
+
+家長在「記憶與參考 → 參考資料」展開一個系列，按「匯出及分享來源庫 ZIP」。目前已核對的家庭健康服務登記文件可供註明出處的非商業分享。下載後可複製畫面上的 SHA-256 給接收者，支援檔案分享的裝置可開啟系統分享選單。另一環境即使沒有該文件的版本，也可由已授權管理員把完整 ZIP 匯入為草稿，再用本機原文核對、審核及發布。「匯出版本參照 ZIP」只包含來源 ID 與版本 hash，適合雙方已有已審核內容時選用固定版本。
+
+網站管理員可在 Web 的「記憶與參考」展開公共來源系列，從文件的「維護文件整理方式」選擇片段、儲存草稿，並沿原有 `import`、`review` 及 `publish` 流程提交分類變更。核對紀錄須綁定目前發布版本、候選版本及原文觀察，發布沿用相容向量。文件可帶 `series: { id, institutionId, name }`，其中 `institutionId` 對應原網站 hostname。改機構或系列顯示名稱可保留原 ID，拆合則改動所屬文件的系列 ID。歷史引用保留當時名稱和版本，「查看來源庫」按穩定文件 ID 定位現行系列。片段可帶 `treatment`，例如 `{"kind":"overview","policyVersion":1}`。精細保留（`detailed`，亦為預設）及概括整理（`overview`）可作文字及向量檢索。結構化片段（`structured`）須附源自原文的 `fields`，以欄位及文字檢索。「不進問答索引」（`excluded`）須附 `reason`，仍保留已登記原文。來源卡在已有記錄時顯示各策略的段數。
+
 Web 管理員可在「公共知識 ZIP 匯入台帳」貼上交付者提供的 SHA-256，再選取 ZIP。服務逐版保存草稿及收據。關頁或逾時後，按同一指紋查已保存項目；如有剩餘，選回同一 ZIP 即可接續。大量匯入沿用同一台帳與主機命令。
 
 沿用上述 `node scripts/knowledge.mjs` 前綴及 `--operator team-alias --operator-confirmed`。從受信任的交付渠道取得整個包的 SHA-256。
@@ -74,6 +80,22 @@ Firestore `embed` 只處理本次獲准上限內的缺失片段，回報剩餘�
 - PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。P2-A04 在 SQL 內分別排名及限量取回，不因全庫候選超过 1,000 便失敗；引用重驗按確切 ID，與排名前綴分開。
 - 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。不提高現行平台／本人用量配置；本文件的舊驗收數字不作運行上限。
 - 公共片段／向量與私人加密資料分開；不向量化家庭聊天。用量只存 operation／actor、模型、維度、成功／失敗、已知 token／billable characters；只有公共文件記 hash，查詢正文不入日誌。實際帳單仍由 GCP 提供。
+
+<a id="published-pdf-range-recheck"></a>
+### 家庭健康服務小冊子由第 3 頁擴至全冊
+
+適用於 Firestore 的 `fhs-feeding-booklet-en`。API、worker 及維護 CLI 更新至支援此重驗的版本後，操作員可在全冊準備期間恢復已審第 3 頁供目錄和新查詢使用。先從發布紀錄取目前舊版 ID／hash，用 `node scripts/knowledge-refresh.mjs inspect fhs-feeding-booklet-en` 核對登記網址、條款及全冊觀察 hash，再從 `node scripts/knowledge-refresh.mjs list` 找同一 watch、修訂及最近成功時間的已完成收據，核對其 `jobId`、`originalHash` 及讀取方法。操作員核實來源和現行條款後，在維護環境執行下列指令，變數代入該次核得的值。
+
+```sh
+node scripts/knowledge-refresh.mjs recheck-pdf-range fhs-feeding-booklet-en \
+  --version "$OLD_VERSION_ID" --version-hash "$OLD_VERSION_HASH" \
+  --observation-hash "$FULL_OBSERVATION_HASH" --pdf-sha256 "$PDF_SHA256" \
+  --check-id "$CHECK_JOB_ID" --operator "$OPERATOR" --operator-confirmed --source-and-terms-checked
+```
+
+舊程式已完成的登記可能欠缺上一修訂。只有從操作紀錄核實期間持續啟用、權利及原件一致、唯一改動是由指定頁擴至全冊，才加 `--confirm-uninterrupted-registration`。無法核實便維持原有阻擋。程式已記錄的停用、重新啟用或撤回不能用此參數解除。
+
+成功收據 `knowledge_published_pdf_range_rechecked` 會列出舊版 ID、hash 及實際物理頁。用目錄和已獲准的查詢確認仍是該舊版；全冊沿原有獨立審核及發布流程切換。操作會從原件庫驗證 PDF 並重讀舊頁，只寫入該來源觀察的核查紀錄。舊版程式會拒讀含新欄位的紀錄，回退映像時須保留相容的 Firestore 讀取器。
 
 <a id="必要驗收與映像切換"></a>
 ## 原 S10-W01 驗收與映像切換（歷史方法）

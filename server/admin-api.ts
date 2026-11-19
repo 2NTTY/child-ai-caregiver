@@ -4,6 +4,8 @@ import { domainParse, domainReject, firestoreDomainHash } from './firestore-doma
 import { adminTransferControlSchema, adminTransferDigestSchema } from '../src/shared/admin-knowledge-transfer.ts';
 import { archiveContentPath } from './admin-knowledge-archive.ts';
 import { adminTransferView } from './knowledge-transfer-records.ts';
+import { z } from 'zod';
+import { adminTreatmentPath, treatmentReviewMaxBytes } from '../src/shared/admin-knowledge-treatment.ts';
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 
 async function transferRequest<T>(read: () => Promise<T>) {
@@ -36,16 +38,26 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
   const batchPath = /^\/api\/admin\/knowledge-index-batches\/([a-f0-9-]+)(?:\/(stop|resume))?$/.exec(url.pathname);
   const transfersBase = '/api/admin/knowledge-transfers';
   const transferPath = /^\/api\/admin\/knowledge-transfers\/([a-f0-9]{64})(?:\/(stop|resume))?$/u.exec(url.pathname);
+  const treatmentPath = adminTreatmentPath.exec(url.pathname);
   const archivePath = archiveContentPath.exec(url.pathname);
   const demoPath = '/api/admin/proactive-demo';
   const alertsPath = '/api/admin/budget-alerts';
-  if (request.method === 'POST' && (url.pathname === alertsPath + '/ack' || url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath)) {
+  if (request.method === 'POST' && (url.pathname === alertsPath + '/ack' || url.pathname === demoPath || url.pathname === '/api/admin/operations' || url.pathname === batchBase || batchPath?.[2] || url.pathname === groupBase || groupPath?.[2] || transferPath?.[2] || archivePath || treatmentPath)) {
     if (request.headers.get('origin') !== options.publicOrigin) domainReject('origin_rejected', 403);
     if ((await auth.assertRecentReauthentication(request.headers)).user.id !== userId) domainReject('identity_changed', 409);
-    const input = archivePath ? undefined : await options.readJson(request,url.pathname===groupBase ? 64*1024 : undefined);
+    const input = archivePath ? undefined : await options.readJson(request,treatmentPath ? treatmentReviewMaxBytes : url.pathname===groupBase ? 64*1024 : undefined);
     if (url.pathname === '/api/admin/operations') result = await admin.submit(userId, input);
     else if ([...url.searchParams].length) domainReject('invalid_input', 400);
-    else if (url.pathname === alertsPath + '/ack') result = await admin.budgetAlerts.ack(input);
+    else if (treatmentPath) {
+      if (!admin.treatments) domainReject('knowledge_treatments_unavailable',503);
+      try { result = await admin.treatments.submit(treatmentPath[1]!,input,'web-' + firestoreDomainHash(['knowledge-treatment-reviewer',userId])); }
+      catch (error) {
+        if (error instanceof FirestoreKnowledgeError) domainReject(error.code,error.status);
+        if (error instanceof z.ZodError) domainReject('knowledge_treatment_invalid',400);
+        if (error instanceof Error && /^knowledge_review_[a-z_]+$/u.test(error.message)) domainReject(error.message,409);
+        throw error;
+      }
+    } else if (url.pathname === alertsPath + '/ack') result = await admin.budgetAlerts.ack(input);
     else if (url.pathname === demoPath) {
       if (!options.proactiveDemo) domainReject('demo_not_configured',409);
       result = await options.proactiveDemo.publish(input);
@@ -69,7 +81,14 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else result = await admin.knowledgeIndexes().control(userId, batchPath![1], batchPath![2] as 'stop'|'resume', input);
   } else if (request.method === 'GET') {
     const cursor = url.searchParams.get('cursor');
-    if (url.pathname === demoPath) result = {enabled: options.proactiveDemo?.enabled === true};
+    if (treatmentPath) {
+      if (!admin.treatments) domainReject('knowledge_treatments_unavailable',503);
+      const query = [...url.searchParams];
+      if(query.length>1 || query.some(([key])=>key!=='version')) domainReject('invalid_input',400);
+      const version = url.searchParams.get('version');
+      try { result=await admin.treatments.view(treatmentPath[1]!,version===null ? undefined : domainParse(z.uuid(),version)); }
+      catch(error) { if(error instanceof FirestoreKnowledgeError) domainReject(error.code,error.status); throw error; }
+    } else if (url.pathname === demoPath) result = {enabled: options.proactiveDemo?.enabled === true};
     else if (url.pathname.startsWith(demoPath + '/') && options.proactiveDemo) result = await options.proactiveDemo.get(url.pathname.slice(demoPath.length + 1));
     else if (url.pathname === '/api/admin/policy') result = await admin.overview();
     else if (url.pathname === alertsPath) {

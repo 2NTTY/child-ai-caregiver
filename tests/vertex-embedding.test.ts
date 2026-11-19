@@ -2,7 +2,28 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { EmbedContentResponse } from "@google/genai";
 import { readAiConfig } from "../server/ai-config.ts";
-import { EmbeddingFailure } from "../server/embedding-gateway.ts";
+import { createEmbeddingGateway, EmbeddingFailure } from "../server/embedding-gateway.ts";
+
+test("corpus maintenance uses the resolved payer allowance, including when it is below the former ceiling", async () => {
+  const limits: number[] = [], config = readAiConfig({AI_ENABLED:"true", GCP_PROJECT_ID:"demo-test", AI_DAILY_USER_ATTEMPTS:"40"});
+  const base = {config, billingSource:"platform" as const, provider:{async embed() { throw Error("Unexpected dispatch"); }},
+    usage:{async reserve(_:unknown,limit:number) { limits.push(limit); return false; }, async record() {}}};
+  const attempt = (gateway: ReturnType<typeof createEmbeddingGateway>) => gateway.embed({task:"RETRIEVAL_DOCUMENT",title:"Test",text:"Text"},
+    {kind:"corpus_maintenance",actorId:"operator:test",operationId:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"},new AbortController().signal,async()=>true);
+  await assert.rejects(attempt(createEmbeddingGateway(base)),{code:"quota_exceeded"});
+  assert.throws(()=>createEmbeddingGateway({...base,isolatedMaintenanceProject:"real-project"}),{code:"unauthorized"});
+  const previous = {local:process.env.YUYF_LOCAL_DEVELOPMENT,host:process.env.FIRESTORE_EMULATOR_HOST};
+  try {
+    process.env.YUYF_LOCAL_DEVELOPMENT="1";process.env.FIRESTORE_EMULATOR_HOST="127.0.0.1:18647";
+    await assert.rejects(attempt(createEmbeddingGateway({...base,isolatedMaintenanceProject:"demo-test"})),{code:"quota_exceeded"});
+    await assert.rejects(attempt(createEmbeddingGateway({...base,config:{...config,dailyUserAttempts:3}})),{code:"quota_exceeded"});
+    await assert.rejects(attempt(createEmbeddingGateway({...base,config:{...config,dailyGlobalAttempts:12}})),{code:"quota_exceeded"});
+    assert.deepEqual(limits,[40,40,3,12]);
+  } finally {
+    if(previous.local===undefined)delete process.env.YUYF_LOCAL_DEVELOPMENT;else process.env.YUYF_LOCAL_DEVELOPMENT=previous.local;
+    if(previous.host===undefined)delete process.env.FIRESTORE_EMULATOR_HOST;else process.env.FIRESTORE_EMULATOR_HOST=previous.host;
+  }
+});
 
 function validResponse(): EmbedContentResponse {
   return {

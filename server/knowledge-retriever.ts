@@ -34,6 +34,8 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
     createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway }) {
       if (options.actor.kind !== "query_embedding") throw new Error("Invalid knowledge query actor");
       const { actor, budget, authorize } = options;
+      const readCandidates = (filter: KnowledgeFilter, vector: readonly number[] | null, selection: NonNullable<Parameters<KnowledgeStore['candidates']>[2]>) =>
+        store.candidates(filter, vector, { ...selection, libraryUserId: actor.actorId });
       const loaded = new Map<string, KnowledgeEvidence>();
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();
@@ -43,8 +45,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
         if (!citations.length || citations.length > 6 || new Set(citations.map(item => item.chunkId)).size !== citations.length) return null;
         budget.check();
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-        const filter = parseKnowledgeFilter(applicability);
-        const current = await budget.wait(() => store.candidates(filter, null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
+        const current = await budget.wait(() => readCandidates(parseKnowledgeFilter(applicability), null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
         const now = Date.now();
         const matched = citations.map(citation => current.find(chunk => chunk.chunkId === citation.chunkId
           && chunk.versionId === citation.versionId
@@ -84,7 +85,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           }
           const vector = await budget.wait(() => pending!);
           // Only the vector is cached. Publication, withdrawal, freshness and applicability are always read anew.
-          const rawCandidates = await budget.wait(() => store.candidates(filter, vector, { query }));
+          const rawCandidates = await budget.wait(() => readCandidates(filter, vector, { query }));
           const now = Date.now();
           const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now));
           const chunks = rankKnowledge(query, candidates).map(({ originalText: _originalText, ...chunk }) => ({
@@ -103,7 +104,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           budget.check();
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           const filter = parseKnowledgeFilter(applicability);
-          const live = await budget.wait(() => store.candidates(filter, null, { chunkIds: [anchor.chunkId], versionId: anchor.versionId, limit: 1 }));
+          const live = await budget.wait(() => readCandidates(filter, null, { chunkIds: [anchor.chunkId], versionId: anchor.versionId, limit: 1 }));
           const now = Date.now();
           if (!live.some(item => item.contentHash === anchor.contentHash && isKnowledgeEvidenceFresh(item, now))) {
             loaded.delete(anchor.chunkId);
@@ -120,10 +121,10 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             return structuredClone(cachedRead.result);
           }
           const chunkId = cursor?.chunkId ?? (cursor ? null : anchor.chunkId);
-          const first = chunkId ? await budget.wait(() => store.candidates(filter, null, { chunkIds: [chunkId], versionId: anchor.versionId, limit: 1 })) : [];
+          const first = chunkId ? await budget.wait(() => readCandidates(filter, null, { chunkIds: [chunkId], versionId: anchor.versionId, limit: 1 })) : [];
           if (chunkId && !first.length) throw new FamilyError(409, "knowledge_context_source_changed");
           const afterKey = first[0]?.key ?? cursor?.afterKey ?? anchor.key;
-          const following = await budget.wait(() => store.candidates(filter, null, { versionId: anchor.versionId, afterKey, limit: 4 }));
+          const following = await budget.wait(() => readCandidates(filter, null, { versionId: anchor.versionId, afterKey, limit: 4 }));
           const queue = [...first, ...following], output: KnowledgeContextChunk[] = [];
           let nextCursor: KnowledgeContextCursor | null = null, characters = 0, processed = 0;
           const result = (): KnowledgeContextResult => ({ versionId: anchor.versionId, anchorChunkId: anchor.chunkId, chunks: output,
@@ -140,13 +141,15 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             if (offset > original.length) throw new FamilyError(400, "knowledge_context_offset_invalid");
             const maxLength = Math.min(original.length - offset, 6000 - characters);
             const entry: KnowledgeContextChunk = { ...metadata, original: { text: "", offset, nextOffset: offset, totalCharacters: original.length,
-              coverage: originalText ? "chunk_original" : "excerpt_only" } };
+              coverage: originalText && !candidate.originalKind ? "chunk_original" : "excerpt_only" } };
             output.push(entry);
             const select = (length: number) => {
               entry.original.text = original.slice(offset, offset + length);
               entry.original.nextOffset = offset + length < original.length ? offset + length : null;
-              entry.readCoverage = { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
-                offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
+              entry.readCoverage = candidate.originalKind
+                ? { kind: "reviewed_text_and_excerpt", complete: false }
+                : { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
+                  offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
               nextCursor = entry.original.nextOffset === null
                 ? (queue[processed + 1] ? { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: candidate.key, chunkId: queue[processed + 1].chunkId, offset: 0 } : null)
                 : { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: candidate.key, chunkId: candidate.chunkId, offset: offset + length };
@@ -159,9 +162,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
               if (!output.length) throw new FamilyError(400, "knowledge_context_response_capacity");
               break;
             }
-            entry.readCoverage = { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
-              offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
-            loaded.set(candidate.chunkId, { ...metadata, text: entry.original.text, readCoverage: entry.readCoverage });
+            loaded.set(candidate.chunkId, { ...metadata, text: candidate.originalKind === "visual_page" ? candidate.text : entry.original.text, readCoverage: entry.readCoverage });
             characters += low; processed++;
             if (entry.original.nextOffset !== null) break;
           }

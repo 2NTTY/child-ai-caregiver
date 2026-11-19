@@ -1,0 +1,58 @@
+{
+  "dateHongKong": "2026-11-19",
+  "base": "20ee9f0993f0c1bb077c65033eed85b2880c31e3",
+  "dependencies": {
+    "sourceCards": "510464e99308596d554b44b28ee9efe6760ebd51",
+    "acquisition": "ab3ede5689331f043639bdb85d8680afbb341ab4"
+  },
+  "environment": "Local Windows, Node 24.22.1, serial in-memory Firestore transaction fixture, synthetic HTTPS sign-in and source transport. The real maintenance, durable dispatcher/consumer, source acquisition, parsers, private encrypted storage and restore codec ran in process.",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/registered-source-worker.test.ts tests/registered-source-cards.test.ts",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "command": "tsc --noEmit -p tsconfig.server.json",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/firestore-indexes.mjs --check-manifest",
+      "indexes": 181,
+      "fieldOverrides": 195
+    }
+  ],
+  "cases": {
+    "mixed": {
+      "saved": 4,
+      "indexed": 3,
+      "formats": [
+        "PDF",
+        "DOCX",
+        "PNG",
+        "HTML"
+      ],
+      "reads": "Read native PDF page and original byte range, Word text, bounded image and saved HTML text. Only indexed text participates in search. Reclaim after lost finish acknowledgement reused the original receipt without a second sign-in or acquisition."
+    },
+    "resumption": {
+      "htmlDocuments": 36,
+      "maxInputItemsPerDelivery": 8,
+      "ackLostAfterSaving": 3,
+      "completedSaved": 36,
+      "completedIndexed": 36,
+      "distinctOriginalFetches": 36,
+      "scope": "One check ID across lease replacement, a transient retry and an unconsumed input tail. An additional directory repeated an already discovered URL. The next scheduled cycle started from the entry."
+    },
+    "oversized": {
+      "discovered": 37,
+      "saved": 36,
+      "indexed": 36,
+      "status": "failed",
+      "issue": "file_too_large identified the affected source URL in the owner's list. Existing content, editions and index heads retained their ciphertext."
+    },
+    "ownership": "A different owner and a paused card could not read the archive. A signed original URL was rejected. A synthetic MFA gate suspended polling. No rows entered the public knowledge collection.",
+    "recovery": "The restore codec rebound the encrypted mixed-document fixture. A staged and cancelled 900000-byte transfer stayed invisible and its orphan parts were removed after 25 simulated hours."
+  },
+  "correction": "An early oversized-file fixture omitted the HTTP status in its body-limit callback and produced an unreadable response. The fixture now passes the real transport status 200. The expected 37 found, 36 saved and 36 indexed were retained and passed.",
+  "scope": "Local synthetic verification. Live Firestore indexes, concurrent cloud transactions, real third-party credentials, paid sources, model calls and deployment were outside this run."
+}

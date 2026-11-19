@@ -71,6 +71,9 @@ test("knowledge refresh CLI operator boundaries and producer output", async cont
   };
   // Node 24.19 supports exports; the pinned Node types predate this option.
   const moduleOptions = (exports: Record<string, unknown>) => ({ cache: false, exports });
+  // The producer cases exercise the legacy adapter explicitly. Production selects Firestore.
+  let backend = 'postgres';
+  context.mock.module('../server/firebase-config.ts', moduleOptions({ serverStorageBackend: () => backend }));
   context.mock.module("../server/knowledge-source-catalog.ts", moduleOptions({ SOURCE_WATCHES: [definition] }));
   context.mock.module("../server/config.ts", moduleOptions({ readServerConfig: () => { events.push("config"); return {}; } }));
   context.mock.module("../server/database.ts", moduleOptions({ createPool: () => { events.push("pool.create"); return pool; } }));
@@ -132,6 +135,39 @@ test("knowledge refresh CLI operator boundaries and producer output", async cont
       assert.equal(await run(args), 1, JSON.stringify(args));
       assert.deepEqual(events, []); assert.deepEqual(calls, []); assert.deepEqual(output, []);
       assert.deepEqual(errors, [failureMessage]);
+    }
+  });
+
+  await context.test("PDF range rechecks require the original and latest receipt, then use the Firestore readback entry", async child => {
+    const sourceId = 'fhs-feeding-booklet-en', checkId = data.workerGeneration, pdfHash = 'c'.repeat(64);
+    const options = ['recheck-pdf-range', sourceId, ...operator, '--source-and-terms-checked', '--version', version,
+      '--version-hash', versionHash, '--observation-hash', hash, '--pdf-sha256', pdfHash, '--check-id', checkId];
+    const readPdf = () => { throw Error('Unexpected object read in CLI transport test'); };
+    backend = 'firestore';
+    child.after(() => { backend = 'postgres'; });
+    child.mock.module('../server/firebase-persistence.ts', moduleOptions({ openFirebasePersistence: async () => {
+      events.push('store.open');
+      return { config: { projectId: 'demo-test', namespace: 'test', knowledgeSourceIds: [sourceId] }, close: () => events.push('store.close') };
+    } }));
+    child.mock.module('../server/firestore-knowledge-originals.ts', moduleOptions({ cloudKnowledgeOriginalBucket: () => ({}) }));
+    child.mock.module('../server/firestore-knowledge-refresh.ts', moduleOptions({ createFirestoreKnowledgeRefresh: () => ({ originals: { readPdf } }) }));
+    child.mock.module('../server/firestore-knowledge.ts', moduleOptions({ createFirestoreKnowledgeStore: () => ({
+      recheckPdfRange(request: unknown, reader: unknown) {
+        assert.equal(reader, readPdf);
+        calls.push([request]);
+        return { versionId: version, versionHash, pageStart: 3, pageEnd: 3 };
+      },
+    }) }));
+    for (const flag of ['--source-and-terms-checked', '--operator-confirmed', '--check-id', '--pdf-sha256']) {
+      assert.equal(await run(options.filter(item => item !== flag)), 1);
+      assert.deepEqual(events, []);
+    }
+    for (const legacy of [false, true]) {
+      assert.equal(await run(legacy ? [...options, '--confirm-uninterrupted-registration'] : options), undefined);
+      assert.deepEqual(calls, [[{ sourceId, versionId: version, versionHash, observationHash: hash, pdfHash, checkId,
+        operator: 'synthetic-operator', confirmedLegacyExpansion: legacy }]]);
+      assert.deepEqual(events, ['store.open', 'store.close']);
+      assert.deepEqual(JSON.parse(output[0]), { event: 'knowledge_published_pdf_range_rechecked', sourceId, versionId: version, versionHash, pageStart: 3, pageEnd: 3 });
     }
   });
 

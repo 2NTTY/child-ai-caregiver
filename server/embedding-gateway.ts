@@ -13,12 +13,10 @@ import type { RootBudgetContext } from "./durable-root-budget.ts";
 export interface EmbeddingInput { text: string; task: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"; title?: string }
 export interface EmbeddingReply { values: number[]; inputTokens: number | null; billableCharacters: number | null }
 export interface EmbeddingProvider { embed(input: EmbeddingInput, signal: AbortSignal): Promise<EmbeddingReply> }
-export class EmbeddingFailure extends Error {
-  readonly code: "unavailable" | "invalid_response" | "invalid_input" | "cancelled" | "quota_exceeded" | "unauthorized" | "disabled";
-  constructor(code: EmbeddingFailure["code"]) { super(`Embedding ${code}`); this.code = code; }
-}
+export { EmbeddingFailure } from "./embedding-failure.ts";
+import { EmbeddingFailure, EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 export interface EmbeddingActor {
-  kind: "query_embedding" | "corpus_maintenance";
+  kind: "query_embedding" | "corpus_maintenance" | "private_document_embedding";
   actorId: string;
   operationId: string;
 }
@@ -31,7 +29,7 @@ export interface EmbeddingUsage {
   reserve(actor: EmbeddingActor, userLimit: number, globalLimit: number): Promise<boolean>;
   record(attempt: EmbeddingAttempt): Promise<void>;
 }
-/** Internal only: supplied from the initialized root budget, never from tool/HTTP arguments. */
+/** Internal only: query or private-document metadata from the initialized root budget, never tool/HTTP arguments. */
 export interface DurableQueryEmbeddingUsage {
   adapter: DurableAiUsage;
   context: RootBudgetContext;
@@ -41,6 +39,7 @@ export interface DurableQueryEmbeddingUsage {
 export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "platform"): EmbeddingUsage {
   const counters = createAiUsageStore(pool, source);
   function requireActor(actor: EmbeddingActor) {
+    if (actor.kind === "private_document_embedding") throw new EmbeddingFailure("unauthorized");
     if (source === "personal" && actor.kind === "corpus_maintenance") throw new EmbeddingFailure("unauthorized");
   }
   return {
@@ -59,7 +58,11 @@ export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "p
     },
   };
 }
-export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource }) {
+export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource;
+  isolatedMaintenanceProject?: string }) {
+  if (options.isolatedMaintenanceProject !== undefined && (!options.isolatedMaintenanceProject.startsWith("demo-")
+    || process.env.YUYF_LOCAL_DEVELOPMENT !== "1" || !/^127\.0\.0\.1:[0-9]+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? "")
+    || options.billingSource !== "platform")) throw new EmbeddingFailure("unauthorized");
   return {
     async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>, durable?: DurableQueryEmbeddingUsage): Promise<number[]> {
       const { provider, usage } = options;
@@ -75,10 +78,14 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
       };
       if (daily) {
         input = Object.freeze({ ...input }); actor = Object.freeze({ ...actor });
-        if (daily.adapter.billingSource !== (options.billingSource ?? 'platform') || actor.kind !== 'query_embedding' || input.task !== 'RETRIEVAL_QUERY'
+        const privateDocument = actor.kind === 'private_document_embedding' && input.task === 'RETRIEVAL_DOCUMENT'
+          && daily.context.binding.trigger.kind === 'private-source-index';
+        const query = actor.kind === 'query_embedding' && input.task === 'RETRIEVAL_QUERY';
+        if (daily.adapter.billingSource !== (options.billingSource ?? 'platform') || !(query || privateDocument)
           || actor.actorId !== daily.context.binding.ownerId || actor.operationId !== daily.context.binding.rootRunId
           || !daily.attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
       }
+      if (actor.kind === 'private_document_embedding' && !daily) throw new AgentStopped('unavailable');
       if (signal.aborted) throw new EmbeddingFailure("cancelled");
       if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
       if (!config.enabled || !provider) throw new EmbeddingFailure("disabled");
@@ -88,10 +95,10 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || (input.task === "RETRIEVAL_QUERY" && input.title !== undefined)
         || (input.task === "RETRIEVAL_DOCUMENT" && !input.title?.trim())
         || !actor.actorId || actor.actorId.length > 160 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actor.operationId)
-        || !["query_embedding", "corpus_maintenance"].includes(actor.kind)
+        || !["query_embedding", "corpus_maintenance", "private_document_embedding"].includes(actor.kind)
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
-      // Maintenance has its own finite per-day counter but cannot increase the shared global limit.
-      const limit = actor.kind === "corpus_maintenance" ? Math.min(16, config.dailyGlobalAttempts) : config.dailyUserAttempts;
+      // The maintenance payer and chat have separate accounting; the provider-wide ceiling still applies.
+      const limit = actor.kind === "corpus_maintenance" ? Math.min(config.dailyUserAttempts, config.dailyGlobalAttempts) : config.dailyUserAttempts;
       let dailyRequest: DurableAiUsageRequest | undefined;
       if (daily) {
         dailyRequest = { kind: 'embedding', rootRunId: daily.context.binding.rootRunId, attemptKey: daily.attemptKey,
@@ -107,7 +114,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
           // Missing or uncertain durable permission is never a SQL or keyword fallback.
           throw error instanceof AgentStopped ? error : new AgentStopped('unavailable');
         }
-      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingFailure("quota_exceeded");
+      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingAdmissionDeferred();
       const started = Date.now();
       const controller = new AbortController();
       const onAbort = () => controller.abort(new EmbeddingFailure("cancelled"));
@@ -134,6 +141,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         inputTokens = reply.inputTokens; billableCharacters = reply.billableCharacters;
         if (![inputTokens, billableCharacters].every(value => value === null || (Number.isSafeInteger(value) && value >= 0))) throw new EmbeddingFailure("invalid_response");
         try { vectorLiteral(reply.values); } catch { throw new EmbeddingFailure("invalid_response"); }
+        if (daily) await authority(daily.revalidate);
         if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
         if (controller.signal.aborted) throw controller.signal.reason;
         outcome = "succeeded";

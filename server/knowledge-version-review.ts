@@ -102,7 +102,7 @@ export async function publishKnowledgeVersion(client: PoolClient, versionId: str
     return pendingPublication("knowledge_observation_review_required", pendingAllowed);
   if (!internal && (watch?.definition.audience === "internal_noncommercial" || internalKnowledgeSource(row.document.url)))
     throw new Error("knowledge_source_internal_review_required");
-  const readiness = await client.query<{ missing: string }>(`SELECT count(*)::text AS missing FROM knowledge_chunks c WHERE c.version_id=$4 AND NOT EXISTS
+  const readiness = await client.query<{ missing: string }>(`SELECT count(*)::text AS missing FROM knowledge_chunks c WHERE c.version_id=$4 AND COALESCE(c.document->'treatment'->>'kind','detailed') NOT IN ('structured','excluded') AND NOT EXISTS
     (SELECT 1 FROM knowledge_vectors e WHERE e.input_hash=c.embedding_hash AND e.model=$1 AND e.dimensions=$2 AND e.pipeline=$3)`,
     [KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, KNOWLEDGE_EMBEDDING.pipeline, versionId]);
   if (Number(readiness.rows[0]?.missing) !== 0) {

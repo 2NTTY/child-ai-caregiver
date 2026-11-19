@@ -14,7 +14,7 @@ import { resolvePersonalModelLimits } from './personal-model-policy.ts';
 import { createFirestoreModelSettings } from './firestore-model-settings.ts';
 import { FirestoreAiUsage } from './firestore-ai-usage.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { domainReject, FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { createVertexAgentProvider } from './agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from './vertex-embedding.ts';
 import { createVertexProvider } from './vertex-provider.ts';
@@ -34,7 +34,8 @@ export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<type
 
 export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
   usageFinancialEvidence?: () => DayFinancialEvidence[] | undefined;
-}, config: AiConfig, platformProviders?: PlatformProviderFactory) {
+}, config: AiConfig, platformProviders?: PlatformProviderFactory,
+personalProviders: (...args: Parameters<typeof createPersonalModelProviders>) => ReturnType<PlatformProviderFactory> = createPersonalModelProviders) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const usage = { platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
@@ -126,17 +127,19 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return result;
     },
-    async resolve(userId: string, trigger: 'interactive' | 'worker' | 'knowledge-maintenance') {
+    async resolve(userId: string, trigger: 'interactive' | 'worker' | 'knowledge-maintenance' | 'private-source-worker' | 'private-source-query') {
       const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal', current = await policy.readPolicy();
+      if ((trigger === 'private-source-worker' || trigger === 'private-source-query') && (!personal || !snapshot.apiKey))
+        domainReject('personal_source_key_required', 409);
       if (trigger === 'knowledge-maintenance' && (!personal || !state.publicMaintenanceEnabled || !state.backgroundEnabled || !snapshot.apiKey))
         throw new AgentStopped('unauthorized');
       const { enabled, limits, selectedConfig, billingSource: source, runLimits, settingsVersion } =
-        profileFor(state, current, trigger === 'knowledge-maintenance' ? 'worker' : trigger);
+        profileFor(state, current, trigger === 'interactive' || trigger === 'private-source-query' ? 'interactive' : 'worker');
       if (enabled && personal && !snapshot.apiKey) throw new AgentStopped('unavailable');
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
       const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } }
-        : personal && snapshot.apiKey ? createPersonalModelProviders(selectedConfig, snapshot.apiKey, state.provider,
-          { documentEmbeddings: trigger === 'knowledge-maintenance', baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
+        : personal && snapshot.apiKey ? personalProviders(selectedConfig, snapshot.apiKey, state.provider,
+          { documentEmbeddings: trigger === 'knowledge-maintenance' || trigger === 'private-source-worker', baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey,
             embeddingProvider: state.embeddingProvider, embeddingProject: state.embeddingProject, embeddingLocation: state.embeddingLocation })
         : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
@@ -175,7 +178,8 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions & {
           if (!durable) throw new AgentStopped('unavailable');
           if (personal && (state.provider !== 'gemini' || state.embeddingProvider === 'vertex') && !snapshot.embeddingApiKey)
             throw new AgentStopped('embedding_not_configured');
-          return gateway.embed(input, actor, signal, async () => actor.actorId === userId && actor.kind === 'query_embedding'
+          return gateway.embed(input, actor, signal, async () => actor.actorId === userId && (actor.kind === 'query_embedding'
+            || trigger === 'private-source-worker' && actor.kind === 'private_document_embedding' && input.task === 'RETRIEVAL_DOCUMENT')
             && await authorize() && await resourceAccess(), durable);
         } },
       };

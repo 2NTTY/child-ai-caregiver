@@ -1,0 +1,42 @@
+{
+  "dateHongKong": "2026-11-19",
+  "base": "838fed30dfc45da96c1a587872eef1ae6b8e8a06",
+  "environment": "Local Docker Desktop Engine 29.4.0, linux/amd64, containerd image store, cgroup v2",
+  "method": {
+    "disk": "Image content bytes (docker image inspect .Size) plus sum of docker history --human=false layer bytes. Cold, before filesystem bookkeeping, without layer sharing. Local image index IDs are not published registry digests.",
+    "memory": "Fresh isolated renderer cgroup per image. Same tests/source-card-acquire.test.mjs 'one bound site' case, one run per image. Kernel memory.peak includes charged page cache. The candidate broker cgroup also includes the synthetic site and node:test."
+  },
+  "previous": {
+    "imageId": "sha256:1299eeaa3a5de5d503231d0a170ed514d1a08b39eb86031fd8791d8bcbdcad71",
+    "contentBytes": 959153761,
+    "unpackedBytes": 2604113920,
+    "coldBytes": 3563267681,
+    "rendererPeakBytes": 289849344
+  },
+  "candidate": {
+    "imageId": "sha256:02f4a69e22d20e46661c350730202f95411bca9bc1af99c1f43a041ed4b5e75b",
+    "contentBytes": 187393836,
+    "unpackedBytes": 462491648,
+    "coldBytes": 649885484,
+    "rendererPeakBytes": 314843136,
+    "brokerFixturePeakBytes": 190951424,
+    "cgroupLimitBytes": 402653184,
+    "swapLimitBytes": 0,
+    "oomKills": 0,
+    "shellRevision": "1243",
+    "shellSha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e",
+    "result": "Same-origin synthetic login, pagination and exact DOCX/PNG downloads passed in the independent network-none Compose renderer."
+  },
+  "capacity": {
+    "userReportedAvailableMemoryMiB": 763,
+    "userReportedFreeDisk": "4.6 GB",
+    "assumedDiskBytes": 4600000000,
+    "afterOneColdImageBytes": 3950114516,
+    "afterTwoDisjointColdImagesBytes": 3300229032,
+    "receiverFloorBytes": 3221225472,
+    "twoVersionHeadroomAboveFloorBytes": 79003560,
+    "notes": "Check free space on both actual filesystems before staging and after pull. Future images, unrelated releases and extraction scratch vary. The previous large development image was never deployed to the VM."
+  },
+  "deployment": "docs/DEPLOYMENT.md#source-browser",
+  "liveVmAccess": false
+}

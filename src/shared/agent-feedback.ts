@@ -21,6 +21,7 @@ export const agentProgressSourceSchema = z.object({
   section: z.string().min(1).max(200),
   publisher: z.string().min(1).max(120),
   url: z.string().url().max(500).refine(value => /^https:\/\//iu.test(value), { message: 'Only https:// URLs are permitted' }).nullable(),
+  // Legacy wire field: retrieval may supply a summary or a title, not a verified quotation.
   excerpt: z.string().min(1).max(400),
   fetchedAt: z.string().min(1).max(64).nullable(),
   sourceUpdatedAt: z.string().min(1).max(64).nullable(),
@@ -47,11 +48,51 @@ export const AGENT_PROGRESS_LABELS: Record<AgentProgress['phase'], string> = {
   started: '已開始處理', model: '正在整理下一步', reading: '正在讀取相關資料', searching: '正在查詢來源',
   working: '正在處理事項', tool_finished: '工具已返回結果，正在核對', reviewing: '正在獨立核對回覆', help: '請先查看官方提示；對話可繼續',
 };
+export const ALL_OFFICIAL_HELP_IDS: readonly OfficialHelpId[] = ['emergency-hk-v1', 'medical-consult-hk-v1'];
+export const OFFICIAL_HELP_ENTRY_COPY = {
+  buttonLabel: '官方求助入口',
+  highlightedButtonLabel: '緊急／醫療官方求助入口',
+  accessibilityLabel: '查看香港緊急求助、急症室、母嬰健康院及安全用藥官方入口（毋須等待 AI 回覆）',
+  urgentNotice: '偵測到可能涉及緊急症狀；毋須等待 AI 搜尋或審核，請優先參考以下香港官方緊急求助入口。',
+  medicalConsultNotice: '偵測到可能涉及用藥或醫療諮詢；可先參考以下安全用藥及醫療諮詢官方入口，對話仍可繼續。',
+} as const;
+
+const URGENT_EMERGENCY_HELP_PATTERN = /(?:(?<!\d)(?<!\+\d{1,4}[\s-]+)(?<!\d{3,4}[\s-]+)999(?!\d|[\s-]+\d{4,}|-\d{3,})|急症|急救|抽搐|痙攣|呼吸困難|抖唔到氣|透唔到氣|氣促|嘴唇發紫|面色發紫|面青|(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)|(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)|失意識|失知覺|昏迷|昏厥|昏倒|暈倒|暈過去|叫唔醒|嗜睡|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|軟弱無力|嚴重脫水|高燒不退|大出血|誤服|中毒|窒息|哽塞|休克|convulsions?|seizures?|difficulty\s+breathing|unconscious(?:ness)?|unresponsive|choking|emergency)/iu;
+const NON_URGENT_EMERGENCY_MODIFIER_PATTERN = /(?:\bnon[\s\-–—]*emergenc(?:y|ies)\b|\b(?:not|isn['’]?t|wasn['’]?t|aren['’]?t|no|without)\s+(?:an?\s+|any\s+)?(?:medical\s+|urgent\s+|true\s+|real\s+)?emergenc(?:y|ies)\b|(?:非|並非|不是|唔係|無需|毋須)急症)/giu;
+const NON_URGENT_CRAMP_EXERCISE_PATTERN = /(?:預防|舒緩|放鬆|伸展|改善|減少|防止|肌肉)抽筋(?:嘅|的)?運動|對你好抽筋運動/iu;
+const LAUGHING_IDIOM_CRAMP_PATTERN = /(?:好好?笑|搞笑|笑死|笑)到(?:我|個人|肚|腹)?(?:抽筋|暈(?:低|倒)?)/iu;
+const COMPANION_DISTRESS_OR_SYMPTOM_PATTERN = /發燒|發熱|高燒|體溫|雙眼|反白|翻白|僵硬|硬直|抽搐|痙攣|(?:失去|喪失|全無|毫無|無晒|冇晒)(?:意識|知覺|反應|神志)|(?:意識|知覺|反應|神志)(?:喪失|全無|毫無|不清|模糊|改變|消失)|失意識|知覺|暈倒|昏倒|叫唔醒|昏迷|昏厥|(?:無|冇|毫無|無晒|冇晒)反應|不省人事|人事不省|無神|唔郁|不動|軟晒|無力|發軟|呼吸|面青|發紫|發白|血色|嘴唇|咬舌|口吐|白沫|嘔|發抖|全身|手腳|點算|點好|點處理|睇醫生|急症|好痛|劇痛|唔停|不停|一直|突然|急救|怎麼辦|如何處理/iu;
+
+function hasUrgentConvulsionCue(normalized: string): boolean {
+  if (!/抽筋|暈低/u.test(normalized)) return false;
+  // Never suppress convulsion or collapse wording when physical distress, unconsciousness, child symptoms, or help-seeking context is present.
+  if (COMPANION_DISTRESS_OR_SYMPTOM_PATTERN.test(normalized)) return true;
+  const remaining = normalized
+    .replace(LAUGHING_IDIOM_CRAMP_PATTERN, '')
+    .replace(NON_URGENT_CRAMP_EXERCISE_PATTERN, '');
+  return /抽筋|暈低/u.test(remaining);
+}
+// Millilitres measure feeds as well as medicine; match the medication or dosing cue, not the volume.
+const MEDICAL_CONSULT_HELP_PATTERN = /(?:退燒藥|藥水|藥物|食藥|餵藥|服藥|用藥|藥量|劑量|毫克|抗生素|撲熱息痛|布洛芬|阿士匹靈|處方|開藥|改動醫囑|母嬰健康院|睇醫生|求醫|診斷|\b(?:doses?|dosing|dosage|medications?|medicines?|paracetamol|ibuprofen|aspirin|antibiotics?|administer|drops?|tablets?|pills?|capsules?|teaspoons?|tablespoons?|syrup|mg|mcg)\b)/iu;
+
+/**
+ * Deterministic client/server matcher for surfacing candidate official help cards
+ * without waiting on the main Agent (REQ-001 §4.3).
+ */
+export function matchOfficialHelpForText(text: string | null | undefined): OfficialHelpId[] {
+  const normalized = (text ?? '').normalize('NFKC').trim();
+  if (!normalized) return [];
+  const matched: OfficialHelpId[] = [];
+  const urgentScopeText = normalized.replace(NON_URGENT_EMERGENCY_MODIFIER_PATTERN, ' ');
+  if (URGENT_EMERGENCY_HELP_PATTERN.test(urgentScopeText) || hasUrgentConvulsionCue(normalized)) matched.push('emergency-hk-v1');
+  if (MEDICAL_CONSULT_HELP_PATTERN.test(normalized)) matched.push('medical-consult-hk-v1');
+  return matched;
+}
 export const AGENT_PROGRESS_SOURCE_STAGE_LABELS: Record<AgentProgressSource['stage'], string> = {
   found: '已找到官方來源',
   read: '已讀取官方來源上下文',
 };
-export const AGENT_PROGRESS_SOURCE_DISCLAIMER = '以下僅為已找到／已讀取的官方來源片段，尚未完成適用性與獨立安全核對。';
+export const AGENT_PROGRESS_SOURCE_DISCLAIMER = '以下只列出官方來源資料，尚未完成適用性與獨立安全核對。';
 
 export function toAgentProgressSource(
   chunk: Partial<KnowledgeEvidence> & { chunkId: string; original?: { text: string } },
@@ -235,3 +276,7 @@ export function officialHelpFromTools(tools: readonly { name: string; status: st
     .flatMap(tool => { const id = officialHelpIdSchema.safeParse(tool.reference); return id.success ? [id.data] : []; }))];
 }
 
+export const INCOMPLETE_MODEL_REPLY_TEXT_PATTERN = /^(?:這次回覆未完成(?:：|$)|這次 Agent 運行中斷|Agent 暫未能完成回覆|Agent 未完成文字回覆)/u;
+export function isIncompleteModelReplyText(text: string | null | undefined): boolean {
+  return Boolean(text && INCOMPLETE_MODEL_REPLY_TEXT_PATTERN.test(text));
+}

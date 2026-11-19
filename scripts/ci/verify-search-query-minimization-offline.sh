@@ -39,7 +39,7 @@ TEST_FILES=(
   tests/agent-runtime.test.ts
   tests/agent-runtime-contract.test.ts
 )
-TEST_CASES=(8 4 6 8 3 4 6 20 17)
+TEST_CASES=(9 4 6 8 3 5 6 21 17)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" tsconfig.json tsconfig.server.json \
   server/knowledge-query-minimization.ts server/product-agent-tools.ts \

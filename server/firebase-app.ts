@@ -1,4 +1,7 @@
+import { sourceReadingSchema } from '../src/shared/source-card-reading.ts';
+import { readSourceCardExcerpt } from './agent-registered-document-tools.ts';
 import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
+import { citedPdfRoute, openCitedPdf, type KnowledgeOriginalPort } from './knowledge-cited-pdf.ts';
 import { handleSharingControlRequest, type SharingControl } from './sharing-control-api.ts';
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
@@ -84,7 +87,10 @@ export interface FirebaseRequestHandlerOptions {
   files?: FirebaseChatFileApiPort;
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
-  library?: Pick<PersonalLibrary, "page">;
+  library?: PersonalLibrary;
+  registeredSourceCards?: Pick<import('./firestore-registered-source-cards.ts').FirestoreRegisteredSourceCards, 'get' | 'list' | 'command' | 'credential'>;
+  registeredSourceDocuments?: import('./agent-registered-document-tools.ts').AgentSourceDocumentReader;
+  knowledgeOriginal?: KnowledgeOriginalPort;
   chat?: ChatStore & Partial<Pick<import('./firestore-chat.ts').FirestoreChatStore,'mixed'|'getOriginalMessageForUser'|'markSeenForUser'>>;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
@@ -309,6 +315,44 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         }
         return json(result,request.method === 'POST' && !match[3] ? 201 : 200);
       }
+      if (path === '/api/account/source-cards' || path.startsWith('/api/account/source-cards/')) {
+        const store = options.registeredSourceCards;
+        if (!store) throw new RequestError('source_cards_unavailable', 503);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        if (request.headers.get('x-expected-user-id') !== userId) throw new RequestError('identity_changed', 409);
+        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential|\/reading)?)?$/iu.exec(path);
+        if (!match) throw new RequestError('not_found', 404);
+        const [, cardId, route] = match;
+        let result: unknown;
+        if (request.method === 'GET' && route === '/reading') {
+          const documents = options.registeredSourceDocuments;
+          if (!documents) throw new RequestError('not_found', 404);
+          const params = new URL(request.url).searchParams;
+          const target = sourceReadingSchema.safeParse({ cardId, documentId: params.get('documentId'), version: params.get('version'),
+            ...(params.has('page') ? { page: Number(params.get('page')) } : {}), offset: Number(params.get('offset') ?? '0'),
+            ...(params.has('kind') || params.has('hash') || params.has('incarnation')
+              ? { fact: { type: params.get('kind'), hash: params.get('hash'), incarnation: params.get('incarnation') } } : {}) });
+          if (!target.success) throw new RequestError('invalid_input', 400);
+          result = await readSourceCardExcerpt(documents, userId, target.data, request.signal);
+          if (!result) throw new RequestError('source_document_unavailable', 404);
+        } else if (request.method === 'GET' && !cardId) result = await store.list(userId, new URL(request.url).searchParams.get('cursor'));
+        else if (request.method === 'GET' && !route) {
+          const card = await store.get(userId, cardId);
+          if (!card) throw new RequestError('source_card_not_found', 404);
+          result = { card };
+        } else if (request.method === 'POST' && !cardId) result = await store.command(userId, await readJson(request));
+        else if (request.method === 'POST' && route === '/credential') result = await store.credential(userId, cardId, await readJson(request, 32 * 1024));
+        else throw new RequestError('method_not_allowed', 405);
+        try {
+          if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        } catch (error) {
+          if (request.method === 'POST') throw new RequestError('operation_result_unknown', 503);
+          throw error;
+        }
+        return json(result);
+      }
       if (path === '/api/account/messages' && !options.accountData) return errorResponse('message_history_unavailable', 503);
       if (options.accountData && (path === '/api/account/messages' || path === '/api/account/export' || path === '/api/account/packages' || path.startsWith('/api/account/packages/') || path === '/api/account/package-imports' || path.startsWith('/api/account/package-imports/') || path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/') || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
@@ -443,7 +487,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
-        const response = await handlePersonalLibraryRequest(request, userId, { library, isCurrentUser });
+        const response = await handlePersonalLibraryRequest(request, userId, { library, isCurrentUser, readJson });
         if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
@@ -496,7 +540,14 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method === 'POST') checkedRequest = new Request(request.url, { method: 'POST', headers: request.headers,
           body: JSON.stringify(await readJson(request)), signal: request.signal });
         let response: Response;
-        if (path === '/api/ai/status' && request.method === 'GET') response = json({ available: await options.product.routing.available(userId) });
+        const original = citedPdfRoute.exec(path);
+        if (original) {
+          if (!options.knowledgeOriginal) throw new RequestError('firebase_domain_not_ready', 503);
+          const [, childId, runId, chunkId] = original;
+          const store = options.product.store;
+          response = await openCitedPdf(checkedRequest, chunkId!.toLowerCase(),
+            () => store.get(userId, childId!.toLowerCase(), runId!.toLowerCase()), options.knowledgeOriginal);
+        } else if (path === '/api/ai/status' && request.method === 'GET') response = json({ available: await options.product.routing.available(userId) });
         else if (path === '/api/ai/usage' && request.method === 'GET') response = json(await options.product.routing.currentUsage(userId));
         else if (path.startsWith('/api/ai/settings')) response = await handleModelSettingsRequest(checkedRequest, userId, options.product.routing);
         else if (/\/agent\/(?:policy|notes|actions)(?:\/|$)/u.test(path))

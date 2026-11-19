@@ -33,10 +33,15 @@ export interface KnowledgeExtraction {
   totalPages?: number; pageStart?: number; pageEnd?: number; complete: boolean;
 }
 export interface KnowledgeChunkInput {
+  treatment?: import('./source-series.ts').ChunkTreatment;
   key: string;
   section: string;
   sourceExcerpt: string;
   originalText?: string;
+  /** Source position is the original for textless material. Transcriptions are independently checked against the page image. */
+  originalKind?: "page_excerpt" | "page_transcription" | "visual_page";
+  /** Physical page of the evidence within a section that may span multiple pages. */
+  excerptPage?: number;
   pageStart?: number;
   pageEnd?: number;
   text: string;
@@ -44,6 +49,7 @@ export interface KnowledgeChunkInput {
   applicability: KnowledgeApplicability;
 }
 export interface KnowledgeSourceInput {
+  series?: import('./source-series.ts').SourceSeries;
   sourceId: string;
   url: string;
   title: string;
@@ -60,6 +66,9 @@ export interface KnowledgeSourceInput {
   extraction?: KnowledgeExtraction;
 }
 export interface KnowledgeEvidence extends KnowledgeChunkInput {
+  series?: import('./source-series.ts').SourceSeries;
+  citedExcerpt?: string;
+  termsUrl?: string;
   chunkId: string;
   sourceId: string;
   versionId: string;
@@ -85,6 +94,19 @@ export interface KnowledgeEvidence extends KnowledgeChunkInput {
   readCoverage?: { kind: "reviewed_text_and_excerpt" | "original_segment"; complete: boolean;
     offset?: number; nextOffset?: number | null; totalCharacters?: number; ranges?: { start: number; end: number }[] };
 }
+/** Restore the original spans returned to the model without inventing text across unread gaps. */
+export function citedOriginalSpans(source: KnowledgeEvidence): string[] {
+  if (source.readCoverage?.kind !== 'original_segment') return [source.sourceExcerpt];
+  const ranges = source.readCoverage.ranges;
+  if (!ranges?.length) return [source.text];
+  let offset = 0;
+  return ranges.map(range => {
+    const start = offset;
+    offset += range.end - range.start;
+    return source.text.slice(start, offset);
+  });
+}
+
 export interface KnowledgeCandidate extends KnowledgeEvidence {
   /** Null only in an explicitly degraded keyword query. Cosine distance is not evidence of support. */
   distance: number | null;
