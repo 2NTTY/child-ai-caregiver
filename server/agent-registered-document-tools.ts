@@ -6,11 +6,12 @@ import { chatDeliveryContentHash, chatDeliveryReviewSourceExcerpt, type ChatDeli
 import { FirestoreDomainError, firestoreDomainHash, firestoreDomainUuid } from './firestore-domain-data.ts';
 
 type ReviewedFact = { type: 'quotation' | 'visual_description'; text: string };
+export type SourceQueryEmbed = (text: string, authorizeSource: () => Promise<boolean>) => Promise<number[]>;
 type Evidence = { source: Pick<SourceReading, 'cardId' | 'documentId' | 'version'> & { title: string };
   page: number | null; offset: number; facts: ReviewedFact[] };
 export type AgentSourceDocumentReader = RegisteredSourceDocumentReader & Partial<{
   searchPrivate(owner: string, cardId: string, query: string, options: {
-    operationId: string; cursor?: string; signal?: AbortSignal;
+    operationId: string; cursor?: string; signal?: AbortSignal; embedInRun?: SourceQueryEmbed;
   }): Promise<{ items: (Evidence & { incarnation: string })[]; nextCursor: string | null }>;
   readPrivateEvidence(owner: string, cardId: string, documentId: string, version: string, page: number | null,
     offset: number, incarnation: string): Promise<Evidence | null>;
@@ -37,7 +38,8 @@ export async function readSourceCardExcerpt(store: AgentSourceDocumentReader, ow
 }
 
 export function createRegisteredDocumentTools(store: AgentSourceDocumentReader, owner: string, runId: string, authorize: () => Promise<boolean>,
-  register: (id: string, target: SourceReading, source: ChatDeliverySource, valid: () => Promise<boolean>) => void): AgentTool[] {
+  register: (id: string, target: SourceReading, source: ChatDeliverySource, valid: () => Promise<boolean>) => void,
+  embedForCall: (attemptKey?: string) => SourceQueryEmbed): AgentTool[] {
   const allowed: AgentTool['authorize'] = (_, scope) => scope.userId === owner ? authorize() : Promise.resolve(false);
   function citation(target: SourceReading, text: string, current: boolean, signal: AbortSignal) {
     const citationId = 'source-card:' + firestoreDomainHash(target), contentHash = chatDeliveryContentHash(text);
@@ -79,7 +81,7 @@ export function createRegisteredDocumentTools(store: AgentSourceDocumentReader, 
     async execute(args, context) {
       const cardId = String(args.cardId), query = String(args.query).trim();
       const operationId = firestoreDomainUuid(['registered-source-query/v1', owner, runId, cardId, query]);
-      const result = await search(owner, cardId, query, { operationId, signal: context.signal,
+      const result = await search(owner, cardId, query, { operationId, signal: context.signal, embedInRun: embedForCall(context.queryEmbeddingAttemptKey),
         ...(typeof args.cursor === 'string' ? { cursor: args.cursor } : {}) });
       if (!await authorize()) return { status: 'rejected', data: { reason: 'access_revoked' } };
       const items = result.items.map(({ source, page, offset, incarnation, facts }) => ({

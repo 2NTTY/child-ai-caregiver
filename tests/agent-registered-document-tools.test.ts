@@ -11,10 +11,12 @@ test('private visual evidence opens the same fact and retires when its authoriza
   const source = { cardId, documentId: 'b'.repeat(64), version: 'c'.repeat(64), title: '校刊' };
   const facts = [{ type: 'visual_description' as const, text: '兩個藍色圓形' }];
   let readable = true;
+  let embeddings = 0;
   const operations = new Set<string>();
   const store = {
-    async searchPrivate(user, card, _query, options) {
+    async searchPrivate(user, card, query, options) {
       assert.equal(user, owner); assert.equal(card, cardId);
+      if (!operations.has(options.operationId)) await options.embedInRun!(query, async () => readable);
       operations.add(options.operationId);
       return { items: [{ source, page: 2, offset: 0, incarnation, facts }], nextCursor: null };
     },
@@ -30,13 +32,18 @@ test('private visual evidence opens the same fact and retires when its authoriza
     (id, target, evidence, valid) => {
       assert.equal(evidence.classification, 'private');
       readings.set(id, { target, valid });
+    }, key => async (_text, authorizeSource) => {
+      assert.equal(key, 'embedding:chat');
+      assert.equal(await authorizeSource(), true);
+      embeddings++;
+      return [1];
     });
   const search = tools.find(tool => tool.name === 'search_source_card_evidence')!;
   const scope = { userId: owner, childId: 'child', workspaceId: 'workspace', authorizationVersion: '1', dataVersion: '1' };
   const signal = new AbortController().signal;
   assert.equal(await search.authorize({}, { ...scope, userId: 'other' }), false);
   for (const callId of ['a', 'retry']) {
-    const result = await search.execute({ cardId, query: '頁面上畫了些甚麼？' }, { scope, callId, signal, runId: 'run' });
+    const result = await search.execute({ cardId, query: '頁面上畫了些甚麼？' }, { scope, callId, signal, runId: 'run', queryEmbeddingAttemptKey: 'embedding:chat' });
     assert.equal(result.status, 'succeeded');
   }
   assert.equal(operations.size, 1);
@@ -59,4 +66,5 @@ test('private visual evidence opens the same fact and retires when its authoriza
   readable = false;
   assert.equal(await valid(), false);
   assert.equal(await readSourceCardExcerpt(reader, owner, target, signal), null);
+  assert.equal(embeddings, 1);
 });

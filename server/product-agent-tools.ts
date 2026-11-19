@@ -26,7 +26,7 @@ import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowle
 import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descriptions.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
-import { AgentStopped } from "./agent-budget.ts";
+import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
@@ -913,6 +913,18 @@ export function createProductAgentTools(options: {
         selectedEvidence.set(id, source);
         accountReadings.set(id, target);
         householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
+      }, attemptKey => async (query, authorizeSource) => {
+        if (!run.embeddings) throw new AgentStopped('unavailable');
+        const request = { task: 'RETRIEVAL_QUERY' as const, text: query };
+        const permitted = async () => await authorize() && await authorizeSource();
+        if (!await budget.wait(permitted)) throw new AgentStopped('unauthorized');
+        if (budget.durable) {
+          if (!attemptKey) throw new AgentStopped('unavailable');
+          await budget.admit({ kind: 'embedding', key: attemptKey, fingerprint: agentBudgetFingerprint(request), units: 1 });
+          await budget.checkDurable();
+        } else budget.take('queryEmbeddings');
+        return run.embeddings.embed(request, { kind: 'query_embedding', actorId: scope.userId, operationId: runId },
+          budget.signal, permitted, attemptKey ? budget.queryEmbeddingDailyUsage(attemptKey) : undefined);
       }));
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
