@@ -260,7 +260,7 @@ test("a reviewed daily repair withdraws the original observation and replays onl
 });
 
 test("read-only failure permits bounded recovery; each step uses a fresh non-cumulative summary", async () => {
-  let calls = 0, reads = 0, summaries = 0;
+  let calls = 0, taskPageReads = 0, summaries = 0;
   const f = fixture(async request => {
     const step = calls++;
     const parts = request.contents.flatMap((content: any) => content.parts ?? []);
@@ -272,12 +272,19 @@ test("read-only failure permits bounded recovery; each step uses a fresh non-cum
     return step < 2 ? call("read_context", {}, "read-" + step)
       : call("present_answer", { kind: "record_restatement", paragraphs: [{ text: "已核對目前資料。", citationIds: [] }] }, "answer");
   });
-  const original = f.options.memory.context;
-  f.options.memory.context = async (...args) => { reads++; if (reads === 2) throw new Error("Transient synthetic read failure"); return original(...args); };
+  // Inject the failure in read_context itself, not by counting unrelated startup/grounding reads.
+  const originalList = f.options.tasks.list;
+  f.options.tasks.list = async (...args) => {
+    if (++taskPageReads === 1) throw new Error("Transient synthetic task-page read failure");
+    return originalList(...args);
+  };
   f.options.memory.initialConversationSummary = async () => { summaries++; return summaries === 3 ? null : {
     summary: { id: reference, version: summaries, text: "current-summary-" + summaries, createdAt: new Date().toISOString(), lastCoveredMessageId: reference }, basis: "a".repeat(64), validUntil: null }; };
   const result = await f.service().reply(userId, childId, reference, async () => true);
   assert.equal(result?.status, "completed", JSON.stringify(result)); assert.equal(calls, 3); assert.equal(summaries, 3);
-  assert.deepEqual(result.tools.map(t => t.status), ["failed", "succeeded", "succeeded"]);
+  assert.equal(taskPageReads, 2, "only the failed read_context and its successful retry should list tasks");
+  assert.deepEqual(result.tools.map(({ name, status }) => [name, status]), [
+    ["read_context", "failed"], ["read_context", "succeeded"], ["present_answer", "succeeded"],
+  ]);
   assert.deepEqual(await f.service().reply(userId, childId, reference, async () => true), result); assert.equal(calls, 3);
 });

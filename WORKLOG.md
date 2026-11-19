@@ -6616,3 +6616,14 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
    - 於 `tests/official-help-entry.test.ts`（6→7 cases，CI 表現更新為 `TEST_CASES=(7 7 44)` 共 58 項）補齊 `503` 來源保留、`!chatWritesAllowed` 與 `403` 清除、回覆完成清除、即時完整顯示已緩衝回覆（無打字機延遲）、`StatusAnnouncement` 不搶焦點及 `AgentRunView` 僅顯示映射工具標籤之合約測試。
    - 於 `frontend/scripts/official-help-entry.browser.test.mjs`（3→4 cases）擴充 `E2E 4`，實測瀏覽器中 SSE 進度與失敗保留期間鍵盤焦點維持不變（`HELP_TOGGLE_LABEL`）、真實 HTTP `403` 撤權即時清卡、回覆完成即時整段顯示且無殘餘預覽，以及開啟「查看這則回覆的來源與候選」對話框時 `agent-run-view` 絕不暴露內部思維或原始工具參數。
 4）**統一 Ready for Review 與最終發布門檻口徑（`PLAN.md`）**：釐清離線 CI + 型別檢查 + Edge Web DOM E2E（4/4）即構成合併本 PR 至 `master` 之充分條件，將 `#634` 由 Draft 轉為 **Ready for Review**；Android/iOS 實體手機軟鍵盤、`PixelRatio.getFontScale()`、TalkBack/VoiceOver、原生打包與真實 Gemini／生產資料庫測試明確保留於最終發布前真機驗證門檻追蹤。
+
+### 2026-11-18　補充無私人記憶與無歷史會話語境之外部檢索 Query 最小化測試（`codex/search-query-minimization-scratch-scope`）
+
+1）**模擬無私人上下文／零記憶寫入之臨時會話外搜測試（`tests/search-query-minimization.test.ts`，8→9 cases）**：於 `createAgentRuntime`＋`createProductAgentTools`＋`createKnowledgeRetriever` 驗證當 `profileApplicable: false`、`facts: []`、`recentMessages: []`、未載入任何家庭識別詞且零私人記憶讀取／寫入時，若單次輸入夾帶中英文姓名、確切出生日期、詳細地址或聯絡電話，`search_knowledge` 與直呼 `createKnowledgeRetriever` 仍於扣額與查庫前一律回傳 `public_query_required` 拒絕，並只放行去識別後之條件查詢且不加開額外分類或脫敏模型；同步更新 `scripts/ci/verify-search-query-minimization-offline.sh` `TEST_CASES=(9 4 6 8 3 4 6 20 17)` 與 `.github/workflows/search-query-minimization-offline.yml` 觸發條件。
+2）**誠實邊界聲明**：主線現況尚未實作 REQ-003 §5 之左上角「臨時聊天」UI 與退出即時清除前後端會話機制；本條僅補齊現有後端及工具層在「無私人上下文／不寫入記憶」條件下的外部檢索最小化契約實證，不視同 REQ-003 臨時聊天模式已交付。
+
+### 2026-11-19　更正 #640 空上下文測試的範圍及案例數
+
+- 更正上項（2026-11-18）：「零私人記憶讀取／寫入」並非對整個系統的驗證。此案例使用合成 `childId`，並非無孩子的會話。乾淨查詢會呼叫該孩子的 `memory.context` 替身，回傳不適用的空檔案、空 facts 及空 recentMessages。只檢查未另行呼叫 `memory.facts`、`store.readHistory` 或 `memory.proposeFact`；不驗證正式儲存層、聊天紀錄保存、退出清除或 REQ-003 介面。
+- 第九個案例新增斷言：工具拒絕合成識別文字時，不消耗記憶體內的查詢嵌入額度；乾淨重試只消耗一次。直呼 retriever 的拒絕路徑另用全新額度。同步觀察嵌入用量替身的預留／記錄、provider 呼叫與候選查詢；另計乾淨結果的引用覆核。不以此推斷正式賬單或持久化額度帳本。
+- 更正上項清單：腳本實際為 `TEST_CASES=(9 4 6 8 3 5 6 21 17)`，共 9 檔、79 例；今次修改現有案例，沒有增加案例數。本地只核對語法及清單；本次修改的完整結果以新 head 的隔離 CI 為準，舊 head 的通過紀錄不代表本次已通過。
