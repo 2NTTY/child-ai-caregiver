@@ -26,6 +26,7 @@ services:
       timeout: 3s
       retries: 3
     restart: unless-stopped
+    stop_grace_period: 30s
 volumes:
   source-browser-ipc:
     external: true
