@@ -22,6 +22,8 @@ export function isExplicitAgentConsent(text: string): boolean {
 }
 
 const operationNames: Record<string, string> = {
+  care_record_create: "保存照護記錄", care_record_revise: "更正原有照護記錄",
+  private_note_create: "保存私人備註", private_note_revise: "更正原有私人備註",
   task_create: "建立待辦", task_change: "更改待辦", memory_fact: "保存已確認事實",
   memory_fact_revise: "更正已有事實", memory_fact_deactivate: "停用已有事實",
   concern_create: "建立持續關注", concern_change: "更改持續關注",

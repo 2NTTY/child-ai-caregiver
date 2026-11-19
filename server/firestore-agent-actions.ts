@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { DocumentSnapshot } from '@google-cloud/firestore';
-import { agentPolicyUpdateSchema, agentDirectActionSchema, type AgentOperationPolicy, type AgentPrivateNote,
+import { agentExecutionModes, agentPolicyUpdateSchema, agentDirectActionSchema, allowsDirectActionByPolicy, resolveAgentExecutionMode, type AgentOperationPolicy, type AgentPrivateNote,
   type AgentActionReceipt, type AgentPolicyUpdate, type AgentDirectAction } from '../src/shared/agent-actions.ts';
 import type { AgentScope } from './agent-runtime.ts';
 import type { AgentActionsStore } from './agent-actions-store.ts';
@@ -23,7 +23,7 @@ export { firestoreAgentActionSavedSchema, firestoreAgentActionReceiptSchema } fr
 export { firestorePrivateInstructionSchema } from './firestore-private-instructions.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646);
-const permissions = z.object({ version, recordKinds: agentPolicyUpdateSchema.shape.recordKinds,
+const permissions = z.object({ version, executionMode: z.enum(agentExecutionModes).optional(), recordKinds: agentPolicyUpdateSchema.shape.recordKinds,
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(), allowRecordCorrections: z.boolean(),
   reminderConsentVersion: agentPolicyUpdateSchema.shape.reminderConsentVersion, reminderBindings: agentPolicyUpdateSchema.shape.reminderBindings }).strict();
 export const firestoreAgentPolicySchema = z.object({ value: permissions, authorizationVersion: z.string() }).strict();
@@ -43,7 +43,7 @@ export function createFirestoreAgentActions(options: {
 }): FirestoreAgentActions {
   const { runs, proposals, care, online } = options, { authority, data } = runs;
   const instructions = createFirestorePrivateInstructions(data);
-  const empty = (): AgentOperationPolicy => ({ version: 0, effective: false, recordKinds: [], allowPrivateNotes: false,
+  const empty = (): AgentOperationPolicy => ({ version: 0, effective: false, executionMode: 'confirm_first', recordKinds: [], allowPrivateNotes: false,
     allowRecordCorrections: false, allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [] });
   const scopedId = (b: Binding) => JSON.stringify([b.scope.ownerUserId, b.scope.childId]);
   function scoped(b: Binding, suffix: string) {
@@ -60,7 +60,7 @@ export function createFirestoreAgentActions(options: {
     if (!row.exists) return empty();
     const saved = open(b, 'agent-policy', id, firestoreAgentPolicySchema, row);
     if (saved.value.version !== row.get('recordVersion')) domainReject('policy_binding', 500);
-    return { ...saved.value, effective: saved.authorizationVersion === b.authorizationVersion };
+    return { ...saved.value, executionMode: resolveAgentExecutionMode(saved.value), effective: saved.authorizationVersion === b.authorizationVersion };
   }
   const readNote = instructions.read, instructionKey = instructions.keyId, noteByKey = instructions.byKey;
   async function readReceipts(b: Binding, runId: string) {
@@ -99,13 +99,14 @@ export function createFirestoreAgentActions(options: {
         const receipt = await manual(b, input.operationId, 'policy', input), current = await readPolicy(b);
         if (receipt.prior) {
           const previous = domainParse(permissions.extend({ effective: z.boolean() }), receipt.prior.result, 'receipt_binding', 500);
-          return { ...previous, effective: previous.effective && current.effective && previous.version === current.version };
+          return { ...previous, executionMode: resolveAgentExecutionMode(previous), effective: previous.effective && current.effective && previous.version === current.version };
         }
         if (current.version !== input.expectedVersion) domainReject('version_conflict');
         // Notification grants are wired in F06; never pretend an unconnected grant is effective.
         if (input.reminderBindings.length || current.reminderBindings.length) domainReject('contact_services_required_for_revocation');
-        const { operationId: _op, expectedVersion: _version, confirm: _confirm, confirmShared: _shared, ...values } = input;
-        const value: AgentOperationPolicy = { ...values, version: current.version + 1, effective: true };
+        const { operationId: _op, expectedVersion: _version, confirm: _confirm, confirmShared: _shared, executionMode: requestedMode, ...values } = input;
+        const executionMode = resolveAgentExecutionMode({ ...values, executionMode: requestedMode });
+        const value: AgentOperationPolicy = { ...values, executionMode, version: current.version + 1, effective: true };
         const id = scopedId(b), { effective: _effective, ...savedValues } = value;
         const saved = { value: savedValues, authorizationVersion: b.authorizationVersion };
         const envelope = { ...data.tags(b.scope), ...data.seal('agent-policy', id, b.scope, firestoreAgentPolicySchema, saved, value.version) };
@@ -204,6 +205,12 @@ export function createFirestoreAgentActions(options: {
         }
         const policy = await readPolicy(b);
         if (!policy.effective || policy.version !== input.expectedPolicyVersion) domainReject('agent_policy_changed');
+        const directGate = allowsDirectActionByPolicy(policy, input);
+        if (!directGate.allowed) {
+          if (directGate.reason === 'confirm_first_mode') domainReject('agent_confirm_first_required');
+          if (directGate.reason === 'policy_inactive') domainReject('agent_policy_changed');
+          domainReject('agent_policy_denied');
+        }
         const receiptId = randomUUID(), at = new Date().toISOString();
         let prepared: { changeSeq: string; commit(): void }, resource: AgentActionReceipt['resource'], state: AgentActionReceipt['state'];
         let quantity: QuantityGrounding | undefined, memoryOutcome: AgentActionReceipt['memoryOutcome'];

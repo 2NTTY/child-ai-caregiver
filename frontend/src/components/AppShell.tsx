@@ -21,6 +21,7 @@ import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { NotificationBell } from "./NotificationBell";
+import { PendingReviewShortcut } from "./PendingReviewShortcut";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
@@ -133,6 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts hints={operationHints} child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
+          <PendingReviewShortcut />
           <NotificationBell />
           <ToolbarIconButton quiet ref={railAnchor} icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             expanded={railExpanded} onPress={() => {

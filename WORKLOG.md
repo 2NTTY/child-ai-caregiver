@@ -6781,3 +6781,14 @@ Node 24.22.3 通過站外教材授權及已下載卡引用兩項針對性測試�
 從 `1362ec14` 重現獨立審核通過後，家長的假設「如果家長只顧完成待辦」仍觸發操作收據檢查。唯讀討論現由同一次審核逐段指出聲稱助手已執行操作的發言；若有這類聲稱、判詞漏填或段號失效，整份討論會被扣起。真正的操作仍逐項核對 Server 收據。Web 展開長發言時按訊息闊度換行，並沿用對話的閱讀位置控制。
 
 香港時間 05:16，Edge 在隔離 Firebase 副本由已儲存待辦送出原題，復用相同雜湊的主答。真模型的三方討論 `aa2e6f02-3cb7-460e-bc7b-6b0a52ce9278` 在七次生成內完成。家長從該討論的卡打開原版教材。桌面及窄屏重開同一份討論均沒有重送。新增一次查詢向量，隔離副本的管理設定已還原。舊失敗題欠缺角色原文，無法確定當時觸發的原句。新題中「延長共處時間」一句較教材的直接支持為強。[新舊收據、三段發言、審核輸入輸出及畫面](artifacts/verification/REQ009_QUESTION_DISCUSSION_20261120.json)
+
+### 2026-11-19　REQ-003 助手預設確認模式與草稿編輯綁定
+
+- 在分支 `codex/req003-auth-mode-and-draft-binding` 落地助手執行授權模式（預設 `confirm_first` 先草稿確認後寫入，或明確切換為 `auto_authorized` 自動寫入），並補齊普通照護紀錄與私人筆記的建立／修訂草稿提案型別（`care_record_create`、`care_record_revise`、`private_note_create`、`private_note_revise`）、確認綁定與預先編輯接口 `editProposal`，同時於 `src/shared/operation-undo.ts` 建立操作撤銷能力目錄與未落庫草稿取消提示語意。
+- 離線驗證通過 `tests/req003-auth-mode-and-draft-binding.test.ts`（10 項）在內的 11 份測試共 99 項案例、`scripts/ci/verify-req003-auth-mode-and-draft-binding-offline.sh` 離線檢查規範，以及 Server、Shared、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
+
+### 2026-11-19　REQ-003 右上角統一待確認快捷入口與草稿編輯／差異確認介面
+
+- 在 `codex/req003-unified-pending-shortcut-ui` 交付右上角統一待確認快捷入口 `PendingReviewShortcut`（同時接線 Web `AppShell` 與 Native `NativeAppShell`），與 `/care`「記錄與核對」共用同一個 `ProductAgentOwner` 待確認佇列、`pending-review-model.ts` 計數摘要與 `PendingReviewList` 清單元件，確保數量與確認／略過狀態兩處即時同步、不另建第二套收件匣。
+- 補齊確認前草稿行內編輯與前後差異呈現（`proposal-draft-edit.ts`、`ProposalDraftEditor.tsx`、`ProductAgentOwner.editProposal`、`AgentRunView.tsx`），編輯期間鎖定確認並於升級草稿版本後重設家庭同意勾選；同時於待確認卡片明示 `DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY`（放棄草稿不等於撤銷歷史操作），於已接受詳情及自動執行收據（`AgentConversation.tsx`）展示 `describeOperationUndoCapability` 實際可撤銷範圍，並於 `AgentAuthorization.tsx` 加入 `confirm_first`／`auto_authorized` 執行模式選擇。
+- 離線驗證通過 `frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs`（10 項）在內的 8 份測試共 107 項案例、`scripts/ci/verify-req003-unified-pending-shortcut-ui-offline.sh` 離線檢查規範，以及 Server、Root、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
