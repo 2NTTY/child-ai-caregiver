@@ -1,0 +1,10 @@
+# Add the permanent read-only socket mount to the production worker's Compose layout.
+# The renderer runs from deploy/source-browser/compose.yaml and can be updated independently.
+services:
+  worker:
+    volumes:
+      - source-browser-ipc:/run/source-browser:ro
+volumes:
+  source-browser-ipc:
+    external: true
+    name: ${SOURCE_BROWSER_IPC_VOLUME:-yuban-p1_source-browser-ipc}
