@@ -31,7 +31,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_knowledge_index_batches', '_knowledge_index_receipts', '_knowledge_transfers',
   '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage',
   '_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics', '_agent_budget_alerts', '_ai_usage_detail', '_knowledge_original_manifests', '_library_preferences', '_knowledge_work', '_knowledge_budget',
-  '_source_cards', '_source_card_ops', '_source_credentials', '_source_card_documents']);
+  '_source_cards', '_source_card_ops', '_source_credentials', '_source_card_documents', '_knowledge_campaigns', '_platform_card_media', '_platform_media_editions']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {
@@ -118,6 +118,7 @@ export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptio
           // Native ADK protocol state has a fixed hierarchy. Count every encrypted event, not just the app header.
           const childCollection = nativeDepth === undefined ? undefined : ['users', 'sessions', 'events'][nativeDepth];
           if (childCollection) await collect(row.ref.collection(childCollection), nativeDepth! + 1);
+          if (collection.path === options.namespace + '_knowledge_campaigns') await collect(row.ref.collection('attempts'));
         }
         if (page.size < 100) break; cursor = page.docs.at(-1)!.id;
       }

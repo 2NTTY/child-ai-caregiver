@@ -25,7 +25,7 @@ import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type 
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { embeddingDocument, sourceVersionHash } from "./knowledge-inputs.ts";
 import { knowledgeReviewHash } from "./knowledge-review-assessment.ts";
-import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
+import { publicMaintenanceWatch } from "./knowledge-source-catalog.ts";
 import { GROWTH_RULES } from "./growth-rules.ts";
 import type { SourceFetcher } from "./knowledge-refresh-types.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
@@ -71,8 +71,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const current = await policy.readPolicy(), base = options.config;
       if (!base.enabled || (!options.sponsor && !current.enabled) || !base.backgroundKnowledgeMaintenanceEnabled)
         return { status: "not_enabled" as const, code: "background_knowledge_disabled", published: false };
-      const definition = SOURCE_WATCHES.find(item => item.id === request.watchId);
-      const registration = (await options.refresh.jobs()).find(job => job.definition.id === request.watchId);
+      const definition = publicMaintenanceWatch(request.watchId);
+      const registration = (await options.refresh.jobs(request.watchId)).find(job => job.definition.id === request.watchId);
       if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration
         || (expectedRevision !== undefined && expectedRevision !== registration.data.revision))
         reject("knowledge_watch_not_registered");

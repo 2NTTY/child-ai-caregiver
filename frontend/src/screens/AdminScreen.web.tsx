@@ -23,6 +23,7 @@ import { indexGroupTargetLimit } from '../production/admin-knowledge-index';
 import { AdminKnowledgeTreatments } from '../components/admin/AdminKnowledgeTreatments';
 import { treatmentSourceId } from '../../../src/shared/admin-knowledge-treatment';
 import { AdminKnowledgeTransfers } from '../components/admin/AdminKnowledgeTransfers';
+import { AdminPlatformCards } from '../components/admin/AdminPlatformCards';
 import { AdminProactiveDemo } from '../components/admin/AdminProactiveDemo';
 import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
 
@@ -338,6 +339,7 @@ export default function AdminScreen() {
           </> : null}
         </> : null}
       </View>
+      <AdminPlatformCards key={`platform-cards:${userId}`} admin={admin} locked={!online || reauthBusy} />
       <AdminKnowledgeTransfers key={`knowledge-transfers:${userId}`} admin={admin} state={state.transfers} online={online}
         writeLocked={!online || reauthBusy || state.transfers.busy || !!state.transfers.pending} />
       <View style={styles.card}><SectionHeader title="知識關鍵詞索引" subtitle="手動選擇已審核版本，分批建立索引及查看逐項結果。" />

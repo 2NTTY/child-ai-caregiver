@@ -346,8 +346,8 @@ function ChatContents({ compact, onPaneLayout }: {
       onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle />
-      {child ? <ChatAction label="平台來源卡" accessibilityLabel="查看可免費加入的平台來源卡"
-        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
+      {child ? <ChatAction label="平台卡庫" accessibilityLabel="查看可下載的平台卡"
+        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references', catalog: 'platform' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
     <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />

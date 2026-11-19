@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { z } from "zod";
-import { legacyLibraryPage, librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV1Page, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
+import { legacyLibraryPage, librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV1Page, librarySeriesV2MediaType, librarySeriesV2Page, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 import { createKnowledgeStore } from "./knowledge-store.ts";
@@ -80,8 +80,9 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     if (!await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
     if (!page) return apiError("not_found", "沒有可讀取的參考目錄。", 404);
     const format = request.headers.get('accept');
-    const response = jsonResponse(format === librarySeriesMediaType ? page : format === librarySeriesV1MediaType ? librarySeriesV1Page(page) : legacyLibraryPage(page));
-    if (format === librarySeriesMediaType || format === librarySeriesV1MediaType) response.headers.set('content-type', format);
+    const response = jsonResponse(format === librarySeriesMediaType ? page : format === librarySeriesV2MediaType ? librarySeriesV2Page(page)
+      : format === librarySeriesV1MediaType ? librarySeriesV1Page(page) : legacyLibraryPage(page));
+    if (format && [librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV2MediaType].includes(format)) response.headers.set('content-type', format);
     response.headers.append('vary', 'Accept');
     return response;
   } catch (error) {

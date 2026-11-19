@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { KnowledgeEvidence } from "../src/shared/knowledge.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
 import { KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
-import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
+import { publicMaintenanceWatch } from "./knowledge-source-catalog.ts";
 import { sourceFetchUrl } from "./knowledge-source-fetch.ts";
 import { fetchPublicSourceResponse } from "./public-source-transport.ts";
 import { apiError } from "./workspace-api.ts";
@@ -16,8 +16,8 @@ export interface KnowledgeOriginalPort {
 
 // Legacy editions may have a verified file hash but no stored original. Only the catalogue can supply its address.
 export async function readPublisherPdf(target: CitedPdf, signal: AbortSignal): Promise<Buffer | null> {
-  const watch = SOURCE_WATCHES.find(item => item.id === target.sourceId && item.url === target.url && item.kind === "pdf");
-  if (watch?.audience !== "public_noncommercial") return null;
+  const watch = publicMaintenanceWatch(target.sourceId);
+  if (watch?.kind !== 'pdf' || watch.url !== target.url) return null;
   const result = await fetchPublicSourceResponse(watch.url, value => sourceFetchUrl(value, watch), signal,
     "application/pdf", { maxBytes: KNOWLEDGE_PDF_MAX_BYTES });
   if (result.status !== "response") throw new Error("citation_publisher_unavailable");

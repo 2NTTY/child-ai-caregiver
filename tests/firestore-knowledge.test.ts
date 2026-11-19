@@ -91,6 +91,7 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
     runTransaction: (operation: (tx: any) => Promise<any>) => fake.database.runTransaction(tx => operation({
       get: async (target: any) => snapshot(await tx.get(target)), getAll: async (...targets: any[]) => (await tx.getAll(...targets)).map(snapshot),
       create: (ref: any, value: unknown) => tx.create(ref, encode(value)), set: (ref: any, value: unknown) => tx.set(ref, encode(value)),
+      update: (ref: any, value: unknown) => tx.update(ref, encode(value)),
       delete: (ref: any) => tx.delete(ref),
     })) } as unknown as Firestore;
   const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds, ...(audience ? { audience } : {}) }, nativeStore = createFirestoreKnowledgeStore(options);
@@ -180,6 +181,50 @@ test('the source maintainer can revise treatment without changing the published 
   await assert.rejects(call('maintainer', undefined, id + '?version=' + contentChange.versionId), { code: 'knowledge_treatment_content_changed' });
 });
 
+test('platform card admin sync, download, citation, update, removal and redownload use the same reviewed store', async () => {
+  const { createAdminPlatformCards } = await import('../server/admin-platform-cards.ts');
+  const { handleAdminRequest } = await import('../server/admin-api.ts');
+  const f = fixture(), store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 17)) });
+  const admin = { platformCards: createAdminPlatformCards(store, async () => ({ enabled: true })) };
+  async function command(uid: string, body: unknown) {
+    const headers = { origin: 'https://local.test', 'x-expected-user-id': uid };
+    const session = async () => ({ user: { id: uid } });
+    const res = await handleAdminRequest(new Request('https://local.test/api/admin/platform-cards', { headers, method: 'POST', body: JSON.stringify(body) }),
+      { publicOrigin: headers.origin, adminUid: 'maintainer', admin: admin as never,
+        auth: { getSession: session, assertRecentReauthentication: session } as never, readJson: req => req.json() });
+    return res.json();
+  }
+  const hits = () => store.candidates(filter, null, { libraryUserId: 'parent', query: 'needle' });
+  const doc = source();
+  await assert.rejects(command('parent', { action: 'draft', source: doc }), { code: 'forbidden' });
+  const first = await command('maintainer', { action: 'draft', source: doc });
+  assert.equal((await admin.platformCards.preview(doc.sourceId, first.versionId)).changes.length, doc.chunks.length);
+  await assert.rejects(command('maintainer', { ...first, baseId: null, action: 'sync' }), { code: 'knowledge_version_unreviewed' });
+  await command('maintainer', { ...first, baseId: null, action: 'review', termsChecked: true, assessment: assessment(doc) });
+  for (const input of await store.missingDocuments(first.versionId)) await store.embedDocument(input, async () => vector);
+  await command('maintainer', { ...first, baseId: null, action: 'sync' });
+  assert.deepEqual(await hits(), []);
+  const change = (mode: 'follow' | 'platform', revision: number, versionId: string) => f.database.runTransaction(tx =>
+    store.saveLibraryPreference(tx, 'parent', { seriesId: doc.sourceId, enabled: true, mode, expectedRevision: revision, editions: [{sourceId: doc.sourceId, versionId}] }));
+  await change('follow', 0, first.versionId);
+  const cited = (await hits())[0]!;
+  assert.equal(cited.versionId, first.versionId);
+  const edited = { ...doc, title: 'Next reviewed edition' };
+  const next = await command('maintainer', { action: 'draft', source: edited });
+  await command('maintainer', { ...next, baseId: first.versionId, action: 'review', termsChecked: true,
+    assessment: assessment(edited, { document: doc, versionId: first.versionId, hash: first.versionHash }) });
+  await assert.rejects(command('maintainer', { ...next, baseId: first.versionId, action: 'sync' }), { code: 'knowledge_vectors_incomplete' });
+  assert.equal((await hits())[0]?.versionId, first.versionId);
+  for (const input of await store.missingDocuments(next.versionId)) await store.embedDocument(input, async () => vector);
+  await command('maintainer', { ...next, baseId: first.versionId, action: 'sync' });
+  assert.equal((await hits())[0]?.versionId, next.versionId);
+  await change('platform', 1, next.versionId);
+  assert.deepEqual(await hits(), []);
+  assert.equal(cited.versionId, first.versionId);
+  await change('follow', 2, next.versionId);
+  assert.equal((await hits())[0]?.versionId, next.versionId);
+});
+
 test('REQ-006 two authenticated library owners independently pin, follow, adopt and withdraw the same public edition', async () => {
   const f = fixture(), cipher = createStorageCipher(Buffer.alloc(32, 19));
   const store = createFirestoreKnowledgeStore({ ...f.options, cipher });
@@ -206,7 +251,8 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   const canDeliver = (user: string) => f.database.runTransaction(tx => store.citationsCurrent(tx, user, [original]));
   const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
     editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
-  assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: true });
+  assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: false });
+  assert.deepEqual(await a.search(), []);
   const join = { action: 'join' as const, seriesId: change.seriesId, expectedRevision: 0, editions: change.editions };
   await assert.rejects(b.join({ ...join, editions: [{ sourceId: old.sourceId, versionId: crypto.randomUUID() }] }), { status: 409 });
   const priorKeys = new Set(f.records.keys());
@@ -268,7 +314,10 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   const afterWithdrawal = await a.catalog();
   await a.change({ ...next, mode: 'platform', expectedRevision: afterWithdrawal.preference!.revision,
     editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
-  assert.deepEqual(await a.search(), [wide.versionId], 'An explicit reset releases a stored fixed selection to the current platform publication');
+  assert.deepEqual(await a.search(), [], 'Removing a downloaded card immediately excludes it from new searches');
+  await a.join({ ...join, expectedRevision: (await a.catalog()).preference!.revision,
+    editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
+  assert.deepEqual(await a.search(), [wide.versionId]);
   const currentCitation = (await store.candidates(filter, null))[0]!;
   assert.equal(await canReopen(currentCitation), true);
   await store.disable(old.sourceId, 'Synthetic withdrawal');
@@ -315,7 +364,7 @@ test('chat pages bound publication reads, match a later URL directly and bind on
   assert.deepEqual(followed.map(item => item.preference!.selectedVersionId), [versions[0]!.versionId, versions[7]!.versionId]);
 });
 
-test('ordinary catalogue and chat reads follow platform publications without writes or cross-series exclusions', async () => {
+test('browsing does not download platform editions and only explicitly followed series enter new answers', async () => {
   const f = fixture(['one', 'two', 'new-source']), store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) });
   const read = async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: 'parent' })).map(hit => hit.versionId).sort();
   const catalog = async () => (await store.catalogForUser('parent', null)).items;
@@ -323,28 +372,28 @@ test('ordinary catalogue and chat reads follow platform publications without wri
     f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'parent', change));
   const one = await f.publish(source('one')), two = await f.publish(source('two'));
   const before = [...f.records.entries()];
-  assert.deepEqual(await read(), [one.versionId, two.versionId].sort());
+  assert.deepEqual(await read(), []);
   const first = (await catalog())[0]!;
   assert.deepEqual([...f.records.entries()], before, 'Reading the catalogue or an ordinary chat must not create a personal record');
   const change = { seriesId: first.series!.id, expectedRevision: 0, mode: first.preference!.mode,
     editions: [{ sourceId: first.sourceId, versionId: one.versionId }] };
   await save({ ...change, enabled: false });
-  const newer = await f.publish({ ...two.document, title: 'Revised guidance' }, two);
-  const added = await f.publish(source('new-source'));
-  assert.deepEqual(await read(), [newer.versionId, added.versionId].sort());
+  await f.publish({ ...two.document, title: 'Revised guidance' }, two);
+  await f.publish(source('new-source'));
+  assert.deepEqual(await read(), []);
   const off = (await catalog()).find(item => item.sourceId === first.sourceId)!.preference!;
   assert.equal(off.revision, 1); assert.equal(off.enabled, false);
   await assert.rejects(save({ ...change, enabled: true }), { code: 'library_selection_changed' });
-  await save({ ...change, expectedRevision: off.revision, enabled: true, mode: off.mode });
-  const changed = await f.publish({ ...one.document, chunks: [chunk('first', { applicability: { ...chunk('first').applicability, topics: ['additional'] } })] }, one);
-  assert.deepEqual(await read(), [changed.versionId, newer.versionId, added.versionId].sort());
+  await save({ ...change, expectedRevision: off.revision, enabled: true, mode: 'follow' });
+  const changed = await f.publish({ ...one.document, title: 'Updated reviewed edition' }, one);
+  assert.deepEqual(await read(), [changed.versionId]);
 });
 
 test('reviewed source versions rename an institution and split and merge a series without rebinding historical citations', async () => {
   const series = { id: 'shared-series', name: 'Original series', institutionId: 'www.fhs.gov.hk' };
   const f = fixture(['one', 'two', 'other-institution']), clientStore = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 17)) });
   const first = await f.publish({ ...source('one'), series }), second = await f.publish({ ...source('two'), series });
-  const original = (await clientStore.candidates(filter, null, { libraryUserId: 'reader' })).find(row => row.sourceId === 'two')!;
+  const original = (await clientStore.candidates(filter, null)).find(row => row.sourceId === 'two')!;
   assert.equal(original.series?.name, series.name);
   const initial = (await clientStore.catalogForUser('reader', null)).items;
   await f.database.runTransaction(tx => clientStore.saveLibraryPreference(tx, 'reader', {
@@ -363,7 +412,7 @@ test('reviewed source versions rename an institution and split and merge a serie
   assert.equal(catalog[1]!.preference?.eligible, false);
   assert.equal(catalog[1]!.preference?.revision, 0, 'Controls use the destination series revision');
   const ordinary = await clientStore.candidates(filter, null, { libraryUserId: 'ordinary' });
-  assert.ok(ordinary.some(item => item.versionId === split.versionId && item.series?.id === 'split-series'));
+  assert.deepEqual(ordinary, []);
   const followed = await clientStore.candidates(filter, null, { libraryUserId: 'follower' });
   assert.deepEqual(followed.map(item => item.versionId), [one.versionId], 'Same-series rename follows but a move requires acceptance');
   const splitCard = (await clientStore.catalogForUser('follower', null)).items[1]!;
@@ -416,7 +465,7 @@ test('a registered series follows a reviewed publisher rename but requires accep
   assert.deepEqual(await widened.store.candidates(filter, null, { libraryUserId: 'parent' }), []);
 });
 
-test('REQ-006 registered live pages check per-user opt-out and watch withdrawal without creating a subscription or requiring an index', async () => {
+test('a live platform page requires a downloaded reviewed edition and cannot bypass a saved snapshot', async () => {
   const html = SOURCE_WATCHES.find(item => item.id === 'fhs-solid-food')!;
   const pdf = parseKnowledgeSource(JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'))
     .find((item: KnowledgeSourceInput) => item.sourceId === 'fhs-feeding-booklet-en'));
@@ -424,7 +473,7 @@ test('REQ-006 registered live pages check per-user opt-out and watch withdrawal 
   const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [html],
     async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
   const store = createFirestoreKnowledgeStore({ ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 13)), observations: refresh.gate });
-  assert.equal(await store.mayReadLivePage('alice', html.id), true);
+  assert.equal(await store.mayReadLivePage('alice', html.id), false);
   assert.equal(await store.mayReadLivePage('alice', 'chp-recent'), false);
   assert.equal(await store.mayReadLivePage('alice', 'other-page'), false);
   assert.equal(await store.publishedLiveSeries(html.id, html.url), null); assert.equal(f.records.size, 0);
@@ -434,7 +483,7 @@ test('REQ-006 registered live pages check per-user opt-out and watch withdrawal 
   await f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'alice', { mode: 'fixed', enabled: false, expectedRevision: first.preference!.revision,
     seriesId: first.series!.id, editions: [{ sourceId: pdf.sourceId, versionId: first.versionId }] }));
   assert.equal(await store.mayReadLivePage('alice', html.id), false);
-  assert.equal(await store.mayReadLivePage('bob', html.id), true);
+  assert.equal(await store.mayReadLivePage('bob', html.id), false);
   await refresh.register(html.id, 'synthetic-operator'); await refresh.disable(html.id);
   assert.equal(await store.mayReadLivePage('bob', html.id), false);
 });
@@ -769,21 +818,71 @@ test('REQ-006 structural identifiers match exactly, excluded rows stay archived 
 
 const rejects = (code: string) => (error: any) => error?.code === code || error?.message === code;
 
-test("a saved citation opens its published PDF edition across a source upgrade and respects withdrawal", async () => {
+test("main chat keeps the delivered answer and original PDF after pausing or removing a card, and denies the PDF after platform withdrawal", async () => {
+  const { createHash, randomUUID } = await import('node:crypto');
+  const { createFirestoreChatStore } = await import('../server/firestore-chat.ts');
+  const { createFirestoreCareStore } = await import('../server/firestore-care.ts');
+  const { createFirestoreMemoryStore } = await import('../server/firestore-memory.ts');
+  const { createFirestoreOnlineStore } = await import('../server/firestore-online.ts');
+  const { createFirestoreProductAgentStore } = await import('../server/firestore-product-agent-store.ts');
+  const { openCitedPdf } = await import('../server/knowledge-cited-pdf.ts');
   const id = "fhs-feeding-booklet-en", f = fixture([id]);
+  const domain = { ...f.options, cipher: createStorageCipher(Buffer.alloc(32, 19)) };
+  const authority = createFirestoreAuthority(domain), knowledge = createFirestoreKnowledgeStore(domain);
+  await authority.initializeControl({ enabled: true, generation: randomUUID() });
+  const email = 'parent@example.test', userId = 'parent';
+  await authority.issueInvitation({ email, expiresAt: new Date(Date.now() + 60000).toISOString(), operationId: randomUUID() });
+  await authority.admitIdentity({ userId, email, emailVerified: true });
+  await authority.acknowledge({ userId, policyVersion: SERVICE_POLICY_VERSION, operationId: randomUUID() });
+  const { scope: { childId } } = await authority.createChild({ userId, displayName: 'Synthetic', operationId: randomUUID() });
+  const chat = createFirestoreChatStore(domain), care = createFirestoreCareStore(domain);
+  const memory = createFirestoreMemoryStore({ ...domain, chat, care }), online = createFirestoreOnlineStore(domain);
+  const {store: agents, runs} = createFirestoreProductAgentStore({ ...domain, chat, care, memory, online,
+    validateKnowledge: async () => {}, continuationKnowledge: async () => [] });
+  const library = createFirestorePersonalLibrary({ ...domain, knowledge, authority });
+  const client = createProductAgentApi('https://local.test', (target, init) => handlePersonalLibraryRequest(new Request(target, init), userId,
+    { library, isCurrentUser: async actual => actual === userId, readJson: req => req.json() }));
+  const signal = new AbortController().signal, bytes = Buffer.from('%PDF-1.7\nSynthetic edition');
+  const originalHash = createHash('sha256').update(bytes).digest('hex');
   const url = "https://www.fhs.gov.hk/english/health_info/child/14727.pdf";
   const document: KnowledgeSourceInput = { ...source(id, [chunk("first", { pageStart: 1, pageEnd: 1 })]), url,
-    extraction: { format: "text_pdf", contentHash: "a".repeat(64), pageStart: 1, pageEnd: 1, totalPages: 1, complete: true } };
+    extraction: { format: "text_pdf", contentHash: originalHash, pageStart: 1, pageEnd: 1, totalPages: 1, complete: true } };
   const first = await f.publish(document);
-  const [cited] = await f.store.candidates(filter, null, { query: "needle" });
+  const card = (await client.getLibrary(childId, signal, userId)).items[0]!;
+  await client.setLibraryPreference!(childId, signal, userId, { action: 'join', seriesId: card.series!.id, expectedRevision: 0,
+    editions: [{ sourceId: id, versionId: first.versionId }] });
+  const hits = () => knowledge.candidates(filter, null, { query: 'needle', libraryUserId: userId });
+  const [cited] = await hits();
   assert.ok(cited);
-  await f.publish({ ...document, extraction: { ...document.extraction!, contentHash: "b".repeat(64) },
+  const message = await chat.createUserMessageForUser(userId, childId, 'Synthetic source question');
+  const claim = await runs.claim(userId, childId, { kind: 'interactive', reference: message!.id }, 'product-interactive');
+  const answer = 'Synthetic answer with a saved public source';
+  assert.equal(await runs.finish(claim.scope, { runId: claim.runId, status:'completed', provenance: null, stopReason:null,
+    text: answer, citations: [cited], retrievalMode:'keyword_degraded', tools:[], proposals:[], counts:{ modelCalls:0, toolCalls:1, queryEmbeddings:0 },
+    deliveryReview: { draftHash: knowledgeHash(answer), sourceVersions: [{ citationId: cited.chunkId, version: cited.versionId, contentHash: cited.contentHash }],
+      scope: {userId,childId,workspaceId:claim.scope.workspaceId,dataVersion:claim.scope.dataVersion,authorizationVersion:claim.scope.authorizationVersion},
+      decision:'pass',visibility:'private',model:'synthetic',promptVersion:'1',policyVersion:'synthetic/1' } }), true);
+  const delivered = await chat.createModelMessageForUser(userId, childId, message!.id, answer);
+  const newer = await f.publish({ ...document, extraction: { ...document.extraction!, contentHash: "b".repeat(64) },
     chunks: [{ ...document.chunks[0]!, sourceExcerpt: "Revised excerpt", originalText: "Revised excerpt and body" }] }, first);
-  assert.deepEqual(await f.store.citedPdf(cited), { sourceId: id, url, sha256: "a".repeat(64) });
+  const readRun = () => agents.get(userId, childId, claim.runId);
+  const reopen = () => openCitedPdf(new Request('https://local.test/original'), cited.chunkId, readRun, { resolve: knowledge.citedPdf, read: async () => bytes });
+  for (const [revision, mode] of (['follow', 'platform'] as const).entries()) {
+    await client.setLibraryPreference!(childId, signal, userId, { seriesId: card.series!.id, mode, expectedRevision: revision + 1,
+      wholeSeries: true, enabled: false, editions: [{ sourceId: id, versionId: newer.versionId }] });
+    assert.deepEqual(await hits(), []);
+    assert.ok((await chat.listForUser(userId, childId))?.messages.some(item => item.id === delivered?.id && item.text === answer));
+    const archived = await readRun();
+    assert.equal(archived?.text, answer); assert.equal(archived?.citations[0]?.versionHash, first.hash);
+    const reopened = await reopen();
+    assert.equal(reopened.status, 200); assert.deepEqual(Buffer.from(await reopened.arrayBuffer()), bytes);
+  }
+  assert.deepEqual(await f.store.citedPdf(cited), { sourceId: id, url, sha256: originalHash });
   assert.equal(await f.store.citedPdf({ ...cited, contentHash: "f".repeat(64) }), null);
   assert.equal(await f.store.citedPdf({ ...cited, versionId: "88888888-8888-4888-8888-888888888888" }), null);
   await f.store.disable(id, "Synthetic withdrawal");
   assert.equal(await f.store.citedPdf(cited), null);
+  assert.equal((await reopen()).status,404);
 });
 
 test("operator edition export returns portable source and compatible vectors in one read-only transaction and fences stale or unavailable editions", async t => {
@@ -978,6 +1077,41 @@ test("Firestore knowledge atomic publication and bounded reread return the curre
   assert.equal(result.length, 2); assert.ok(result.every(item => item.versionId === next.versionId));
   assert.equal(f.nearestCalls.length, 2); assert.equal(f.nearestCalls[0]!.filters[0]![2], first.versionId); assert.equal(f.nearestCalls[1]!.filters[0]![2], next.versionId);
   assert.deepEqual(await f.store.candidates(filter, null, { chunkIds: [oldCitation.chunkId], versionId: first.versionId }), []);
+});
+
+test('a downloaded card cites reviewed official captions outside the page text and excludes a removed clip from new retrieval', async () => {
+  const { fhsMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
+  const { createPlatformMediaProcessor } = await import('../server/platform-media-processing.ts');
+  const definition = fhsMaterialWatches.find(w => w.id === 'fhs-14799')!, f = fixture([definition.id]);
+  const generation = crypto.randomUUID(), signal = new AbortController().signal;
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition], readControl: async () => ({ enabled: true, generation }) });
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate, media: refresh.media, platformMaterials,
+    cipher: createStorageCipher(Buffer.alloc(32, 21)) });
+  await refresh.register(definition.id, 'synthetic-operator');
+  const job = (await refresh.jobs())[0]!.data, url = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
+  const observed = { url: definition.url, title: 'Synthetic', text: 'The printed source only.', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+  const check = (links: string[]) => refresh.process(job, crypto.randomUUID(), async () => ({ status: 'ok', items: [observed], mediaLinks: links }), signal);
+  await check([url]);
+  await f.database.runTransaction(async tx => { const state = await refresh.media.read(tx, definition.id); await refresh.media.toggle(tx, definition.id, true, state.revision); });
+  const cue = { start: 2.5, end: 5.25, text: 'needle in the official captions' };
+  await createPlatformMediaProcessor(refresh.media, f.options.namespace, async () => assert.fail('Timed captions are sufficient'),
+    async () => [{ url, hash: knowledgeHash([url, cue]), transcript: '', captions: [cue] }])(definition.id, signal);
+  const clip = (await f.database.runTransaction(tx => refresh.media.read(tx, definition.id))).clips![0]!;
+  const document = { ...source(definition.id, [chunk('caption', { mediaClip: clip, sourceExcerpt: cue.text, originalText: cue.text })]),
+    url: definition.url, termsUrl: definition.termsUrl, publisher: definition.publisher };
+  const imported = await store.importSource(document);
+  await store.review(imported.versionId, imported.hash, 'synthetic-operator', { ...assessment(document), observationHash: observationHash(observed) });
+  while (!(await store.prepareSearch(imported.versionId, imported.hash)).complete) {}
+  await store.publish(imported.versionId, imported.hash, embeddings(document));
+  const hits = () => store.candidates(filter, null, { query: 'needle', libraryUserId: 'parent' });
+  assert.deepEqual(await hits(), []);
+  await f.database.runTransaction(tx => store.saveLibraryPreference(tx, 'parent', { action: 'join', seriesId: definition.id,
+    expectedRevision: 0, editions: [{ sourceId: definition.id, versionId: imported.versionId }] }));
+  const delivered = (await hits())[0]!;
+  assert.deepEqual(delivered.mediaClip, clip);
+  await check([]);
+  assert.deepEqual(await hits(), []);
+  assert.equal(delivered.mediaClip?.start, 2.5); assert.equal(delivered.mediaClip?.end, 5.25);
 });
 
 test("F05 source observation fences changed or unavailable evidence and reuses unchanged vectors", async () => {

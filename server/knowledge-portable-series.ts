@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { z } from 'zod';
 import type { KnowledgeSourceInput } from '../src/shared/knowledge.ts';
 import { sourceSeries, sourceSeriesSchema } from '../src/shared/source-series.ts';
-import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { platformSourceWatches as SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { canonical } from './firestore-session-codec.ts';
 import { knowledgeHash } from './knowledge-inputs.ts';
 import type { ObservedContent } from './knowledge-refresh-types.ts';
