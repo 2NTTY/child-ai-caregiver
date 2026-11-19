@@ -1,0 +1,222 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "checkpoint": "FHS_INITIAL_CAMPAIGN_20261120.json",
+  "inspection": "Replayed the original organizer request to look up its completed stored output. Verified its original request hash and pinned official observation for each item. Compared the invalid applicability fields with the original text for those same unit IDs. No new fetch, generation, embedding, publication or family data access.",
+  "sources": 10,
+  "invalidUnits": 11,
+  "combinations": {
+    "anyWithAtLeastOneNumericBound": {
+      "sources": 9,
+      "units": 10
+    },
+    "actualWithMissingUpperBound": {
+      "sources": 1,
+      "units": 1
+    }
+  },
+  "interpretation": "Several originals contain genuine one-sided conditions for a particular subsection. None of the listed numeric outputs establishes a faithful whole-unit interval. A life stage, a fictional character or a linked title cannot supply a missing endpoint. All ten remain held.",
+  "modelCalls": 0,
+  "embeddingCalls": 0,
+  "originalReceiptsUpdated": 0,
+  "change": "New campaign work exposes mutually exclusive unrestricted, two-bound and explicit hold alternatives to the organizer. The service validates bound order and asks the independent reviewer to check both endpoints and scope against the source. The original work, frozen truncation repairs, underlying storage rules and standing chat quotas are preserved.",
+  "providerSchemaReference": "https://docs.cloud.google.com/java/docs/reference/google-cloud-aiplatform/latest/com.google.cloud.aiplatform.v1.GenerationConfig.Builder",
+  "entries": [
+    {
+      "sourceId": "fhs-30034",
+      "title": "共享育兒樂 (三) 嬰幼兒篇",
+      "operationFingerprint": "b91110b6ffe375163c91bfe23239dffa1801ab5e8b3b2991b3e249a95f5fce49",
+      "observationHash": "89a6a9a443348b09942efa3d8a7d5e51ee7dd5c3a7b26836a28a4cccf658a9ba",
+      "organizerRequestHash": "f62618e2a94914ec33da87a2eda7a7f9a8f0088856315353a9b6efd058ba9c14",
+      "invalidUnits": [
+        {
+          "unitId": "p0-e96dcee4e73c2716c4b1",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24
+        }
+      ],
+      "sourceInterpretation": "目錄內有多個適用年齡",
+      "reason": "目錄按一至十二個月、一至兩歲分組，但個別連結另有適用範圍。沒有為整個目錄訂明 0–24 個月。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30073",
+      "title": "全方位認識「泵奶器」",
+      "operationFingerprint": "4ab214d1f138b73fd6a87c27ea5a13cca899ff402d95e8c444394e7bea8b6306",
+      "observationHash": "a2fa92f77fe297fda96c10911db6723c2d9dda99ee1c622a668b094398267c98",
+      "organizerRequestHash": "5d1ea3dad067ca7ba30de7e3c1eb87afe4edeba896af761c66b42b1188374e9a",
+      "invalidUnits": [
+        {
+          "unitId": "p0-0efec4cf19360fb8aa96",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12
+        },
+        {
+          "unitId": "p0-84a311f21ea2233dce28",
+          "unitIndex": 1,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12
+        }
+      ],
+      "sourceInterpretation": "家長用品沒有全段兒童月齡",
+      "reason": "兩段的對象都是使用泵奶器的授乳母親。原文提及早產、泵奶次數及用具，兩段都沒有訂明兒童 0–12 個月。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30008",
+      "title": "替孩子轉換奶粉",
+      "operationFingerprint": "3817d8cd192534e6a6f30f09ff8a347c012c80f882cd13850fc102a16ecd0d08",
+      "observationHash": "c5186658896dfd7ca92e7607c5e7108d775434f7ef6b14f61b9ec3ebb6a2cbef",
+      "organizerRequestHash": "f33cde42bcd8bb8bdd00e9462ed0bca6e19cc737bf2024064889f62665e1a964",
+      "invalidUnits": [
+        {
+          "unitId": "p0-3945e4269848abb3a9f3",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24
+        }
+      ],
+      "sourceInterpretation": "子群規則包括單側界限",
+      "reason": "初生至六個月、六至十二個月及一歲或以上各有自己的條件。末段的單側界限受原文支持，整個單元的 24 個月上限沒有根據。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-20033",
+      "title": "孩子「偏食」怎麼辦?",
+      "operationFingerprint": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+      "observationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+      "organizerRequestHash": "bf2659a11526c43755b9a2cda53f984adde8447f4663fb08aa19c7a01b697bc1",
+      "invalidUnits": [
+        {
+          "unitId": "p0-3ad26ff5bfdc5145807a",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 12,
+          "maxAgeMonths": 72
+        }
+      ],
+      "sourceInterpretation": "全段受眾只有成長階段",
+      "reason": "原文指定幼兒和學前階段，沒有把這兩個詞定義成 12–72 個月。整段受眾若無法忠實表達，須保留待審。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30012",
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "operationFingerprint": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+      "observationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+      "organizerRequestHash": "e42ea4ec4da28b29c891583912a734689314deeb1395b2da0fe59f287b43075d",
+      "invalidUnits": [
+        {
+          "unitId": "p0-44468e527107f966122c",
+          "unitIndex": 0,
+          "ageBasis": "actual",
+          "minAgeMonths": 7,
+          "maxAgeMonths": null
+        }
+      ],
+      "sourceInterpretation": "把學習時段當全段下限",
+      "reason": "7 至 9 個月指開始學用有杯嘴的訓練杯。吸管在習慣後才引入，其他杯子注意事項亦沒有給整段統一的上下限。原輸出只填 7，沒有理由補上限。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-13034",
+      "title": "育兒預備篇",
+      "operationFingerprint": "1ce643542c6fadbdbac0ff761f74ac94045ed0f327f8daeb154bbe395c4690f4",
+      "observationHash": "ce2ba41bde2dcde610ad47f1e9a96873d7cc11dd87f1481a8b46a65503ea6781",
+      "organizerRequestHash": "ed6299440fb027f8e2a36dedcfaaa6e468055013e7253fc396da81691f8dc522",
+      "invalidUnits": [
+        {
+          "unitId": "p0-a2d8b570336b61cd2925",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 12
+        }
+      ],
+      "sourceInterpretation": "受眾為準父母及初為父母者",
+      "reason": "原文涵蓋出生前後的心理預備及家庭適應，沒有全段至 12 個月的限制。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30130",
+      "title": "陪我玩、同我講",
+      "operationFingerprint": "5a7fd20d95ba08febf59edb9d5e1585621e837f5468b41551cf947b5ac6fc978",
+      "observationHash": "4edde67e4bfca633d70ece50494bb8452a97e929c9e6665953751f766181e479",
+      "organizerRequestHash": "784e1592a97ba40e667b5b369965a20b4804f166b01004c78a6bb2d8207c66dd",
+      "invalidUnits": [
+        {
+          "unitId": "p0-ca16c5a1b0fca34306bd",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24
+        }
+      ],
+      "sourceInterpretation": "參考書目年齡不是正文範圍",
+      "reason": "講述日常溝通及遊戲。書名和發展里程描述各有年齡或階段，沒有訂明整段 0–24 個月。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30006",
+      "title": "培育還是催谷子女",
+      "operationFingerprint": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+      "observationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+      "organizerRequestHash": "eb719ab24f16fa2f97a36d7166c7dd6c060c0706514d3ac0fc3d81a4935128d3",
+      "invalidUnits": [
+        {
+          "unitId": "p0-de7bca339ef4d7e75d00",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 72
+        }
+      ],
+      "sourceInterpretation": "解釋發展的例子不是適用界限",
+      "reason": "原文 0 至 3 歲用來解釋發展速度。學前評估也有特定情境，兩者均不能推出整段 0–72 個月。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-30143",
+      "title": "足不出戶的「親子遊樂團」",
+      "operationFingerprint": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+      "observationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+      "organizerRequestHash": "45c94a575626353fbc28c74a1921d445236b585a3725d54bcaa12431a6458300",
+      "invalidUnits": [
+        {
+          "unitId": "p0-93241693e83a2da6288d",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 72
+        }
+      ],
+      "sourceInterpretation": "活動有單側限制，整段按階段描述",
+      "reason": "原文以幼兒和學前孩子為對象，較難的活動另指三歲以上。沒有為整段訂明至 72 個月，亦不能把局部下限套在其他活動。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    },
+    {
+      "sourceId": "fhs-14838",
+      "title": "品德培育之一",
+      "operationFingerprint": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+      "observationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+      "organizerRequestHash": "a25fb80ef6be5c66775272473f0cea5a7fc8b71e748d7c6f1c45227a1fce5d83",
+      "invalidUnits": [
+        {
+          "unitId": "p0-f8e6d83b3dc259535e0a",
+          "unitIndex": 0,
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 120
+        }
+      ],
+      "sourceInterpretation": "故事人物年齡不是適用界限",
+      "reason": "七歲、十歲和三歲分別出現在故事或示例中。十歲不是整段親職指引的上限。",
+      "disposition": "保留原操作待審，沒有重送或改填上下限。"
+    }
+  ]
+}

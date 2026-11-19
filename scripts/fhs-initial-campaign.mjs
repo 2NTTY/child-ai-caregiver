@@ -13,16 +13,18 @@ import { createVertexAgentProvider } from '../server/agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from '../server/vertex-embedding.ts';
 import { createFirestoreKnowledgeWork, knowledgeTruncatedOutputRepairId } from '../server/firestore-knowledge-work.ts';
 import { AGENT_OUTPUT_LIMITS } from '../src/shared/agent-run-limits.ts';
+import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 
 const [command, id, expected, ...extra] = process.argv.slice(2);
 const resuming = command === 'resume';
 const repairing = command === 'repair-truncated';
-const firstPass = command === 'process' || command === 'process-sized';
+const explicitAgeScope = command === 'process-age-checked';
+const firstPass = command === 'process' || command === 'process-sized' || explicitAgeScope;
 const handlesSource = resuming || repairing || firstPass || command === 'inspect';
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
   || (resuming || repairing ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
-  throw Error('Use status, initialize, inspect|process|process-sized SOURCE_ID, or resume|repair-truncated SOURCE_ID ORIGINAL_FINGERPRINT');
+  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|repair-truncated SOURCE_ID ORIGINAL_FINGERPRINT');
 const persistence = await openFirebasePersistence(process.env);
 try {
   const { database, cipher, config, authority } = persistence;
@@ -58,7 +60,7 @@ try {
     const operationFingerprint = repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const checkId = knowledgeOperationId('knowledge-observation/1', original);
-    const sized = repairing || command === 'process-sized';
+    const sized = repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
@@ -70,6 +72,7 @@ try {
       }
     };
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
+      explicitAgeScope,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchKnowledgeSource, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
@@ -119,7 +122,8 @@ try {
         } while (true);
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...(repairing ? { priorOperationFingerprint: original } : {}),
-        maxOutputTokens, status: result.status, code: result.code, published: result.published }));
+        ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), maxOutputTokens,
+        status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {
         process.exitCode = 2;
         if (result.status === 'budget_exhausted' && ['knowledge_model_daily_admission', 'knowledge_embedding_daily_admission'].includes(result.code)) {
@@ -127,7 +131,8 @@ try {
           if (deferred?.waitingForQuotaDay && !deferred.result && !deferred.receipt && !deferred.lease
             && balance?.held === 0 && balance.attempts === balance.settled && !balance.reconciliationRequired) process.exitCode = 4;
         }
-        if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold'].includes(result.code)) {
+        if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold',
+          'knowledge_age_one_sided', 'knowledge_age_uncertain'].includes(result.code)) {
           const saved = await work.inspect(request), balance = await gate.status();
           const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
           const retained = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;

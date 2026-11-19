@@ -52,7 +52,7 @@ for (const source of sources) {
     if (source.id === resumeId) resumed = true;
     continue;
   }
-  const action = repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-sized', source.id];
+  const action = repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-age-checked', source.id];
   let status;
   do {
     const nextDay = new Date();

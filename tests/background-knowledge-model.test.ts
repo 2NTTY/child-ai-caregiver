@@ -78,6 +78,41 @@ test("knowledge preparation preserves original evidence and stores a separate mo
   assert.match(held.review.notes[0]!, /does not resolve/u);
 });
 
+test("the initial corpus age grammar couples bounds and holds one-sided evidence before independent review", async () => {
+  const calls: Parameters<Completion>[0][] = [];
+  const make = (age: object) => prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt, growthRules: [],
+    explicitAgeScope: true, completeText: async input => {
+      calls.push(input);
+      const wire = JSON.stringify(input.responseJsonSchema);
+      assert.ok(wire.includes('requiresAgeReview') && wire.includes('one_sided'), 'The native contract must offer an explicit age hold');
+      const payload = JSON.parse(input.user);
+      const shape = payload.outputSchema.properties.units.items.properties.applicability;
+      const alternatives = shape.anyOf;
+      const unrestricted = alternatives.find((branch: any) => branch.properties.ageBasis?.enum?.includes('any'));
+      const bounded = alternatives.find((branch: any) => branch.properties.ageBasis?.enum?.includes('actual'));
+      assert.equal(unrestricted.properties.minAgeMonths.type, 'null');
+      assert.equal(unrestricted.properties.maxAgeMonths.type, 'null');
+      assert.equal(bounded.properties.minAgeMonths.type, 'number');
+      assert.equal(bounded.properties.maxAgeMonths.type, 'number');
+      return JSON.stringify({ units: payload.originalUnits.map((unit: { id: string }) => ({
+        unitId: unit.id, section: '原文', text: '原文', keywords: ['資料'], applicability: age })) });
+    } });
+  await assert.rejects(make({ requiresAgeReview: 'one_sided' }), { code: 'knowledge_age_one_sided' });
+  await assert.rejects(make({ region: 'HK', ageBasis: 'any', minAgeMonths: 0, maxAgeMonths: 24, topics: ['care'], conditions: [] }), /invalid/i);
+  await assert.rejects(make({ region: 'HK', ageBasis: 'actual', minAgeMonths: 12, maxAgeMonths: 7, topics: ['care'], conditions: [] }), /Invalid age applicability/);
+  assert.equal(calls.length, 3);
+  const accepted: Parameters<Completion>[0][] = [];
+  const prepared = await prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt, growthRules: [],
+    explicitAgeScope: true, completeText: provider(accepted) });
+  assert.equal(prepared.review.decision, 'approve_candidate');
+  assert.ok(JSON.parse(accepted[1]!.user).ageScopeCheck.includes('checks.age'));
+  const pdf = pdfOrganizationContract([{ id: 'page', page: 1, pageEnd: 1 }], [], [], undefined, true);
+  const page = pdf.ranges[0]!;
+  assert.throws(() => pdf.parse({ ranges: { [page.key]: { section: 'Section', keywords: ['care'], region: 'HK', topics: ['care'],
+    conditions: [], pageText: {physicalPage1: 'Text'}, ageRange: {requiresAgeReview: 'uncertain'} } },
+    nativeCoverage: {pages: [{page: 1, finding: 'Text'}], unreadablePages: [], layoutAnswer: null} }), {code:'knowledge_age_uncertain'});
+});
+
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
   const calls: Parameters<Completion>[0][] = [];
   await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt, growthRules: [],
