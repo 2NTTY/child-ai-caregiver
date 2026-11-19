@@ -62,8 +62,13 @@ test("both query tools use the same durable embedding policy; ordinary reads do 
 
 test("a sibling stopping the batch while another read awaits its permit prevents that read from starting", async () => {
   const budget = new AgentBudget();
-  const pendingPermit = Promise.withResolvers<boolean>();
-  const waiting = Promise.withResolvers<void>();
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>(settle => { resolve = settle; });
+    return { promise, resolve };
+  }
+  const pendingPermit = deferred<boolean>();
+  const waiting = deferred<void>();
   const started: string[] = [];
   const tool: AgentTool = {
     name: "read_fixture", effect: "read", description: "Read a synthetic fixture.",
