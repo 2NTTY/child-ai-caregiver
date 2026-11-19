@@ -89,7 +89,7 @@ const knowledgeCheckedAt = z.iso.datetime({ offset: true });
 export const adminKnowledgeStatusSchema = z.object({
   watches: z.array(z.object({ id: knowledgeWatchId, publisher: z.string().min(1).max(160), url: z.url(), kind: z.enum(['page', 'rss', 'pdf']),
     registration: z.enum(['not_registered', 'enabled', 'disabled', 'definition_changed']), lastAttemptAt: knowledgeCheckedAt.nullable(),
-    lastSuccessfulCheckAt: knowledgeCheckedAt.nullable(), lastStatus: knowledgeCheckStatus.nullable() }).strict()).max(32),
+    lastSuccessfulCheckAt: knowledgeCheckedAt.nullable(), lastStatus: knowledgeCheckStatus.nullable() }).strict()).max(512),
   checks: z.array(z.object({ jobId: z.uuid(), watchId: knowledgeWatchId, checkedAt: knowledgeCheckedAt,
     state: z.enum(['running', 'recorded', 'unknown']), status: knowledgeCheckStatus.nullable(), attempts: z.number().int().min(1).max(2),
     itemCount: z.number().int().min(0).max(50), changedCount: z.number().int().min(0).max(50),

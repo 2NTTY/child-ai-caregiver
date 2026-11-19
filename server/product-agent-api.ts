@@ -20,7 +20,7 @@ const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
 const pendingRoute = new RegExp("^/api/children/(" + uuid + ")/agent/pending$", "i");
 const workRoute = new RegExp("^/api/children/(" + uuid + ")/agent/work(?:/(" + uuid + "))?$", "i");
 const historyRoute = new RegExp("^/api/children/(" + uuid + ")/agent/history(?:/messages/(" + uuid + "))?$", "i");
-const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply(/cancel)?$", "i");
+const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply(/cancel|/discussion)?$", "i");
 export async function handleProductAgentRequest(request: Request, userId: string | null, options: {
   agent: ProductAgent; store: ProductAgentStore; chat: ChatStore; isCurrentUser: (userId: string) => Promise<boolean>;
 }): Promise<Response> {
@@ -55,6 +55,14 @@ export async function handleProductAgentRequest(request: Request, userId: string
     if (request.method === "POST") {
       if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
       try { body = await request.json(); } catch { return apiError("invalid_json", "請檢查輸入。", 400); }
+    }
+    if (reply?.[3] === '/discussion') {
+      if (!options.chat.questionForDiscussion) return apiError('ai_unavailable', '討論暫時未能使用。', 503);
+      const create = request.method === 'POST';
+      if (!create && request.method !== 'GET') return apiError('method_not_allowed', '不支援此操作。', 405);
+      if (create && !z.object({}).strict().safeParse(body).success) return apiError('invalid_input', '請檢查輸入。', 400);
+      const message = await options.chat.questionForDiscussion(userId, childId, reply[2].toLowerCase(), create);
+      return await options.isCurrentUser(userId) ? jsonResponse({ message }) : apiError('session_changed', '登入帳號已改變。', 409);
     }
     if (reply && request.method === "GET" && !reply[3]) {
       if (!options.store.replyState) return apiError("ai_unavailable", "原運行讀取尚未接通。", 503);

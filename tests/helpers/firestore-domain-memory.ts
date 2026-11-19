@@ -16,11 +16,12 @@ export function firestoreDomainFixture() {
   type Ref = { id: string; path: string; collection(name: string): Query };
   type Query = Ref & { query: true; filters: [string, string, any][]; orders: [string, string][]; count: number; cursor: any[] | null;
     doc(id: string): Ref; where(key: string, op: string, value: any): Query; orderBy(key: string, direction?: string): Query;
-    get(): Promise<any>; limit(count: number): Query; startAfter(...values: any[]): Query };
+    get(): Promise<any>; select(...fields: string[]): Query; limit(count: number): Query; startAfter(...values: any[]): Query };
   const ref = (path: string): Ref => ({ id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name) });
   const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, cursor: any[] | null = null): Query => ({
     id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name), query: true, filters, orders, count, cursor, doc: id => ref(path + '/' + id),
     async get() { return read(this); },
+    select() { return this; },
     where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count, cursor),
     orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [key, direction]], count, cursor),
     limit: count => query(path, filters, orders, count, cursor), startAfter: (...values) => query(path, filters, orders, count, values),
@@ -56,7 +57,23 @@ export function firestoreDomainFixture() {
     const writes = new Map<string, any>();
     const write = (target: Ref, value: any) => { writes.set(target.path, copy(value)); };
     const get = async (target: Ref | Query) => { assert.equal(writes.size, 0, 'All reads must precede writes'); return read(target); };
-    const result = await callback({ get, getAll: (...refs: Ref[]) => Promise.all(refs.map(get)), set: write,
+    async function getAll(...targets: (Ref | { fieldMask: string[] })[]) {
+      const mask = targets.at(-1);
+      if (!mask || !('fieldMask' in mask)) return Promise.all((targets as Ref[]).map(get));
+      const documents = await Promise.all((targets.slice(0, -1) as Ref[]).map(get));
+      return documents.map(doc => {
+        const projected: Record<string, any> = {};
+        for (const field of mask.fieldMask) {
+          const keys = field.split('.');
+          const value = keys.reduce((row, key) => row?.[key], doc.data());
+          if (value === undefined) continue;
+          const parent = keys.slice(0, -1).reduce((row, key) => row[key] ??= {}, projected);
+          parent[keys.at(-1)!] = value;
+        }
+        return { ...doc, data: () => copy(projected), get: (key: string) => copy(projected[key]) };
+      });
+    }
+    const result = await callback({ get, getAll, set: write,
       create: (ref: Ref, value: any) => { assert.equal(records.has(ref.path) || writes.has(ref.path), false, 'Create must be unique'); write(ref, value); },
       update: (ref: Ref, value: any) => { assert.equal(records.has(ref.path), true); write(ref, { ...records.get(ref.path), ...value }); },
       delete: (ref: Ref) => write(ref, undefined) });

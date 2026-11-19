@@ -74,7 +74,7 @@ test("knowledge refresh CLI operator boundaries and producer output", async cont
   // The producer cases exercise the legacy adapter explicitly. Production selects Firestore.
   let backend = 'postgres';
   context.mock.module('../server/firebase-config.ts', moduleOptions({ serverStorageBackend: () => backend }));
-  context.mock.module("../server/knowledge-source-catalog.ts", moduleOptions({ SOURCE_WATCHES: [definition] }));
+  context.mock.module("../server/knowledge-source-catalog.ts", moduleOptions({ SOURCE_WATCHES: [definition], platformSourceWatches: [definition] }));
   context.mock.module("../server/config.ts", moduleOptions({ readServerConfig: () => { events.push("config"); return {}; } }));
   context.mock.module("../server/database.ts", moduleOptions({ createPool: () => { events.push("pool.create"); return pool; } }));
   context.mock.module("../server/knowledge-refresh-store.ts", moduleOptions({

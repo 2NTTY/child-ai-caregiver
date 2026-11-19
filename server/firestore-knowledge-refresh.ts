@@ -9,6 +9,7 @@ import { refreshJobSchema, type ObservedContent, type RefreshJob, type SourceFet
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus } from '../src/shared/admin.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
+import { createPlatformMediaStore } from './firestore-platform-media.ts';
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
@@ -31,6 +32,7 @@ export function parseKnowledgeObservation(input: unknown): ObservedContent { ret
 // Bounded lookup hints, not evidence of freshness, approval, applicability or rights.
 const MAX_RETAINED_PER_FEED = 60;
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
+  manualOnly: z.literal(true).optional(),
   retainedSourceIds: z.array(id).max(MAX_RETAINED_PER_FEED).optional(),
   retainedWindows: z.array(z.strictObject({ sourceId: id, until: date })).max(MAX_RETAINED_PER_FEED).optional(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
@@ -87,8 +89,9 @@ function parts(text: string): string[] {
 export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefreshOptions) {
   const { database, projectId, namespace } = options, scope = { schemaVersion: 1 as const, projectId, namespace };
   const originals = createFirestoreKnowledgeOriginals(options);
+  const media = createPlatformMediaStore(database, namespace);
   const definitions = options.definitions.map(definition => definitionSchema.parse(definition));
-  if (definitions.length > 32 || new Set(definitions.map(row => row.id)).size !== definitions.length) reject("knowledge_watch_catalog_invalid");
+  if (definitions.length > 512 || new Set(definitions.map(row => row.id)).size !== definitions.length) reject("knowledge_watch_catalog_invalid");
   const catalog = new Map(definitions.map(row => [row.id, row]));
   const watchRef = (id: string) => database.collection(namespace + "_knowledge_watches").doc(id);
   const observationRef = (id: string) => database.collection(namespace + "_knowledge_observations").doc(id);
@@ -208,7 +211,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
     },
   };
   return {
-    gate, originals,
+    gate, originals, media,
     /** Organization-internal exact RSS evidence, never a public summary or a full article. */
     async internalFeedOriginal(sourceId: string, expectedHash: string) {
       const selected = await database.runTransaction(async tx => {
@@ -261,7 +264,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         } catch { domainReject('invalid_cursor', 400); }
       }
       return database.runTransaction(async tx => {
-        const registered = await Promise.all(definitions.map(definition => watch(tx, definition.id)));
+        const savedWatches = await tx.get(database.collection(namespace + '_knowledge_watches'));
+        const registered = new Map(savedWatches.docs.filter(doc => catalog.has(doc.id)).map(doc => [doc.id, parse(watchSchema, doc.data())]));
         if (after) {
           const saved = await tx.get(checkRef(after.jobId));
           if (!saved.exists) domainReject('invalid_cursor', 400);
@@ -278,23 +282,26 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           return { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus };
         });
         const checks = checked.slice(0, 20), last = checks.at(-1);
-        return adminKnowledgeStatusSchema.parse({ watches: definitions.map((definition, index) => {
-          const row = registered[index];
+        return adminKnowledgeStatusSchema.parse({ watches: definitions.map(definition => {
+          const row = registered.get(definition.id);
           return { id: definition.id, publisher: definition.publisher, url: definition.url, kind: definition.kind,
             registration: !row ? 'not_registered' : !matches(row) ? 'definition_changed' : row.enabled ? 'enabled' : 'disabled',
             lastAttemptAt: row?.lastAttemptAt ?? null, lastSuccessfulCheckAt: row?.lastSuccessfulCheckAt ?? null, lastStatus: row?.lastStatus ?? null };
         }), checks, nextCursor: checked.length > 20 && last ? Buffer.from(JSON.stringify({ checkedAt: last.checkedAt, jobId: last.jobId })).toString('base64url') : null });
       }, { readOnly: true });
     },
-    async register(id: string, by: string) {
+    async register(id: string, by: string, manualOnly = false) {
       operator(by); const definition = catalog.get(id); if (!definition) reject("knowledge_watch_not_in_catalog");
       await database.runTransaction(async tx => {
         const old = await watch(tx, id), nextHash = definitionHash(definition);
+        if (manualOnly && old?.enabled && !old.manualOnly) reject('knowledge_watch_already_scheduled');
         const unchanged = old?.enabled && old.definitionHash === nextHash;
+        if (unchanged && Boolean(old.manualOnly) === manualOnly) return;
         const priorPdfRevision = unchanged ? old.priorPdfRevision
           : nextHash === fullBookletDefinitionHash && old?.enabled && !old.confirmedGone && old.definitionHash === selectedBookletDefinitionHash
             ? old.revision : null;
         const row: Watch = { ...scope, id, definition, definitionHash: nextHash, enabled: true,
+          ...(manualOnly ? { manualOnly: true as const } : {}),
           ...(id === feedingBookletId && priorPdfRevision !== undefined ? { priorPdfRevision } : {}),
           revision: unchanged ? old.revision : randomUUID(), registeredBy: by, registeredAt: new Date().toISOString(),
           lastAttemptAt: old?.lastAttemptAt ?? null, lastSuccessfulCheckAt: old?.lastSuccessfulCheckAt ?? null, lastStatus: old?.lastStatus ?? null,
@@ -327,11 +334,13 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         return { watches, observations: observations.docs.map(row => parse(observationSchema, row.data())), checks: checks.docs.map(row => parse(checkSchema, row.data())) };
       }, { readOnly: true });
     },
-    async jobs(): Promise<{ definition: SourceWatchDefinition; data: RefreshJob; registeredAt: string }[]> {
+    async jobs(manualId?: string): Promise<{ definition: SourceWatchDefinition; data: RefreshJob; registeredAt: string }[]> {
       return database.runTransaction(async tx => {
         const control = await options.readControl(tx); if (!control.enabled) return [];
-        const watches = await Promise.all([...catalog.keys()].map(id => watch(tx, id)));
-        return watches.filter((row): row is Watch => Boolean(row?.enabled && matches(row))).map(row => ({ definition: row.definition, registeredAt: row.registeredAt,
+        const watches = manualId ? [await watch(tx, manualId)] : definitions.length <= 32 ? await Promise.all([...catalog.keys()].map(id => watch(tx, id)))
+          : (await tx.get(database.collection(namespace + '_knowledge_watches'))).docs
+            .filter(doc => catalog.has(doc.id)).map(doc => parse(watchSchema, doc.data()));
+        return watches.filter((row): row is Watch => Boolean(row?.enabled && matches(row) && (manualId === row.id || !row.manualOnly))).map(row => ({ definition: row.definition, registeredAt: row.registeredAt,
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },
@@ -427,6 +436,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
             ...(fetched.status === 'unavailable' && fetched.httpStatus === 410 && row.id === feedingBookletId ? { priorPdfRevision: null } : {}),
             revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
+        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks);
         for (const write of writes) tx.set(write.ref, write.value);
         return { status, items: nextCheck.itemCount, changed };
       });

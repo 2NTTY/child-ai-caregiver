@@ -4,7 +4,7 @@ import { taskParameterDiagnosticHints, type TaskParameterDiagnosticHint } from "
 type ToolRejectionStage = "schema" | "authorization" | "execution";
 type ToolRejectionCode = "invalid_parameters" | "not_authorized" | "unknown"
   | "invalid_input" | "invalid_assignee" | "agent_run_expired" | "confirmation_requires_interactive_scope"
-  | "invalid_citation" | "citation_required" | "citation_limit" | "use_citation_ids" | "not_found"
+  | "invalid_citation" | "original_quote_mismatch" | "citation_required" | "citation_limit" | "use_citation_ids" | "attached_claim_needs_evidence" | "not_found"
   | "version_conflict" | "operation_conflict" | "agent_proposal_limit" | "agent_scope_changed" | "agent_source_mismatch"
   | "confirmation_expired" | "confirmation_scope_changed" | "work_cancelled" | "source_changed" | "document_changed";
 
@@ -50,7 +50,7 @@ function rejectionCode(tool: string, stage: ToolRejectionStage, code: unknown): 
       "version_conflict", "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch"] as const;
     return allowed.find(value => value === code) ?? "unknown";
   }
-  if (tool === "present_answer") return ["invalid_input", "invalid_citation", "citation_required", "citation_limit", "use_citation_ids"].find(value => value === code) as ToolRejectionCode ?? "unknown";
+  if (tool === "present_answer") return ["invalid_input", "invalid_citation", "original_quote_mismatch", "citation_required", "citation_limit", "use_citation_ids", "attached_claim_needs_evidence"].find(value => value === code) as ToolRejectionCode ?? "unknown";
   if (tool === "read_family_documents") return ["invalid_input", "not_found", "version_conflict"].find(value => value === code) as ToolRejectionCode ?? "unknown";
   if (tool === "request_confirmation" || tool === "propose_family_document_change") return ["invalid_input", "not_found", "version_conflict",
     "agent_scope_changed", "confirmation_expired", "confirmation_scope_changed", "work_cancelled", "source_changed", "document_changed"].find(value => value === code) as ToolRejectionCode ?? "unknown";

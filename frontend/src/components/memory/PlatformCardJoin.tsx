@@ -9,7 +9,7 @@ export function PlatformCardJoin({ seriesId, citation }: {
   const workspace = useMemoryReferenceWorkspace();
   const references = workspace?.model.references;
   const save = workspace?.reads?.setLibraryPreference;
-  if (!workspace || !save || references?.state !== 'ready' || references.data.hasMore) return null;
+  if (!workspace || !save || references?.state !== 'ready') return null;
   const items = references.data.catalog?.filter(item => item.series?.id === seriesId) ?? [];
   if (citation && !items.some(item => item.sourceId === citation.sourceId && item.versionId === citation.versionId)) return null;
   const { series, preference } = items[0] ?? {};
@@ -17,8 +17,8 @@ export function PlatformCardJoin({ seriesId, citation }: {
   if (!series || !preference || !join) return null;
   if (preference.mode !== 'platform') {
     const mode = preference.mode === 'fixed' ? '固定快照' : '跟隨同範圍更新';
-    return <Text accessibilityLiveRegion="polite">已加入 · {mode}{preference.enabled ? '' : ' · 已停用'}</Text>;
+    return <Text accessibilityLiveRegion="polite">已下載 · {mode}{preference.enabled ? '' : ' · 已停用'}</Text>;
   }
-  return <AppButton label="免費加入平台卡" accessibilityLabel={`免費加入平台卡「${series.name}」`} density="compact" variant="secondary"
-    disabled={!workspace.model.online || workspace.reads?.referencesBusy} onPress={() => save(join)} />;
+  return <AppButton label="下載到我的參考資料" accessibilityLabel={`下載平台卡「${series.name}」`} density="compact" variant="secondary"
+    disabled={!workspace.model.online || workspace.reads?.referencesBusy} onPress={() => save(references.data.hasMore ? { ...join, wholeSeries: true } : join)} />;
 }

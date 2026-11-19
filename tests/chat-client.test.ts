@@ -188,6 +188,51 @@ test("an unknown save never resends automatically and a reload can identify the 
   assert.equal(values.replies, 1);
 });
 
+test("unknown page questions recover only the matching saved item and version", async () => {
+  const { values, api, controller } = fixture();
+  const pageContext = { page: "/tasks", item: { kind: "task", id: secondChild, version: 2 } } as const;
+  api.saveMessage = async (childId, text, _signal, _user, _voice, _file, _photo, context) => {
+    assert.deepEqual(context, { pageContext, discussion: true });
+    values.saves++;
+    values.messages = [
+      { ...userMessage(childId, text, "other"), discussion: true, pageContext: { ...pageContext, item: { ...pageContext.item, version: 1 } } },
+      { ...userMessage(childId, text, "ordinary"), pageContext },
+      { ...userMessage(childId, text, "requested"), discussion: true, pageContext },
+    ];
+    throw new ChatApiError();
+  };
+  controller.syncContext(alice.id, true, firstChild);
+  await settle();
+  controller.setText(original);
+  await controller.send(undefined, undefined, undefined, { pageContext, discussion: true });
+  await controller.reloadMessages();
+  controller.confirmFoundMessage();
+  assert.equal(controller.getSnapshot().drafts[firstChild].savedUserMessageId, "requested");
+  assert.equal(values.saves, 1);
+  assert.equal(values.replies, 0);
+  controller.dispose();
+});
+
+test("retrying an unconfirmed quick question from the main chat preserves its original selection", async () => {
+  const { api, controller } = fixture();
+  const pageContext = { page: "/tasks", item: { kind: "task", id: secondChild, version: 2 } } as const;
+  const attempts: unknown[] = [];
+  api.saveMessage = async (_childId, _text, _signal, _user, _voice, _file, _photo, context) => {
+    attempts.push(context);
+    throw new ChatApiError();
+  };
+  api.reconcilePending = async () => ({ state: "unconfirmed" });
+  controller.syncContext(alice.id, true, firstChild);
+  await settle();
+  controller.setText(original);
+  await controller.send(undefined, undefined, undefined, { pageContext, discussion: true });
+  await controller.reloadMessages();
+  controller.unlockCheckedSave();
+  await controller.send();
+  assert.deepEqual(attempts, [{ pageContext, discussion: true }, { pageContext, discussion: true }]);
+  controller.dispose();
+});
+
 test("child and account switches isolate drafts and ignore late history", async () => {
   const { api, controller } = fixture();
   controller.syncContext(alice.id, true, firstChild);

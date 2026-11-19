@@ -1,3 +1,4 @@
+import { SiteCompanion } from './companion/SiteCompanion';
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "expo-router";
@@ -146,6 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
+        <SiteCompanion />
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
