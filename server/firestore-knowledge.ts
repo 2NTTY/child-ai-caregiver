@@ -54,6 +54,7 @@ export interface TreatmentEdition {
   source: KnowledgeSourceInput; observationHash: string | null;
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  readonly enforcesPersonalLibrarySelection?: boolean;
   recheckPdfRange(input: PdfRangeRequest, readPdf: (id: string, sha256: string) => Promise<Buffer>): Promise<{ versionId: string; versionHash: string; pageStart: number; pageEnd: number }>;
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
@@ -446,6 +447,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
     || (allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined);
   return {
+    enforcesPersonalLibrarySelection: selections !== null,
     async mayReadLivePage(userId, id) {
       const registered = livePage(id);
       if (!registered || !userId || !selections) return false;
