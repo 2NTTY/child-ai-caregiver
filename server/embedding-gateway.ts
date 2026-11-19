@@ -92,9 +92,8 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || !actor.actorId || actor.actorId.length > 160 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actor.operationId)
         || !["query_embedding", "corpus_maintenance"].includes(actor.kind)
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
-      // Maintenance has its own finite per-day counter but cannot increase the shared global limit.
-      const maintenanceLimit = options.isolatedMaintenanceProject ? config.dailyUserAttempts : 16;
-      const limit = actor.kind === "corpus_maintenance" ? Math.min(maintenanceLimit, config.dailyGlobalAttempts) : config.dailyUserAttempts;
+      // The maintenance payer and chat have separate accounting; the provider-wide ceiling still applies.
+      const limit = actor.kind === "corpus_maintenance" ? Math.min(config.dailyUserAttempts, config.dailyGlobalAttempts) : config.dailyUserAttempts;
       let dailyRequest: DurableAiUsageRequest | undefined;
       if (daily) {
         dailyRequest = { kind: 'embedding', rootRunId: daily.context.binding.rootRunId, attemptKey: daily.attemptKey,

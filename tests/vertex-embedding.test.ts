@@ -4,7 +4,7 @@ import type { EmbedContentResponse } from "@google/genai";
 import { readAiConfig } from "../server/ai-config.ts";
 import { createEmbeddingGateway, EmbeddingFailure } from "../server/embedding-gateway.ts";
 
-test("only a local platform maintenance run may use the configured shared daily allowance", async () => {
+test("corpus maintenance uses the resolved payer allowance, including when it is below the former ceiling", async () => {
   const limits: number[] = [], config = readAiConfig({AI_ENABLED:"true", GCP_PROJECT_ID:"demo-test", AI_DAILY_USER_ATTEMPTS:"40"});
   const base = {config, billingSource:"platform" as const, provider:{async embed() { throw Error("Unexpected dispatch"); }},
     usage:{async reserve(_:unknown,limit:number) { limits.push(limit); return false; }, async record() {}}};
@@ -16,7 +16,9 @@ test("only a local platform maintenance run may use the configured shared daily 
   try {
     process.env.YUYF_LOCAL_DEVELOPMENT="1";process.env.FIRESTORE_EMULATOR_HOST="127.0.0.1:18647";
     await assert.rejects(attempt(createEmbeddingGateway({...base,isolatedMaintenanceProject:"demo-test"})),{code:"quota_exceeded"});
-    assert.deepEqual(limits,[16,40]);
+    await assert.rejects(attempt(createEmbeddingGateway({...base,config:{...config,dailyUserAttempts:3}})),{code:"quota_exceeded"});
+    await assert.rejects(attempt(createEmbeddingGateway({...base,config:{...config,dailyGlobalAttempts:12}})),{code:"quota_exceeded"});
+    assert.deepEqual(limits,[40,40,3,12]);
   } finally {
     if(previous.local===undefined)delete process.env.YUYF_LOCAL_DEVELOPMENT;else process.env.YUYF_LOCAL_DEVELOPMENT=previous.local;
     if(previous.host===undefined)delete process.env.FIRESTORE_EMULATOR_HOST;else process.env.FIRESTORE_EMULATOR_HOST=previous.host;
