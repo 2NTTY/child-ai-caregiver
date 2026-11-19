@@ -104,9 +104,31 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 <a id="source-browser"></a>
 ## 來源卡瀏覽器首次啟用、更新及回退
 
-來源卡 renderer 使用獨立 Compose project `yuban-source-browser`。它一次只處理一項工作，CPU 上限為 1 核、記憶體 384 MiB、swap 為零。worker 和 renderer 共用具名 Unix socket volume。首次把掛載套用到 worker 時，主線須把 [worker 覆蓋檔](../deploy/p1/compose.firestore.source-browser.yaml)納入正式 receiver 的已批准 layout，按部署流程核實 worker 可讀 socket。其後只更新[獨立瀏覽服務](../deploy/source-browser/compose.yaml)。
+來源卡 renderer 在獨立 Compose 專案運行。worker 以 UID 1000 從唯讀 Unix socket 讀取服務狀態。接收器按已登記版本重新產生 worker 掛載，每次日常發布、修復及業務回退都會核對掛載。renderer 保留一核、384 MiB、零 swap 和無網絡設定。
 
-1. 在建置機由已審閱提交執行 `docker buildx build --platform linux/amd64 -f deploy/source-browser/Dockerfile --build-arg SITE_REVISION="$REV" -t "$REPO:$REV" --push .`。`REPO` 為現有香港 registry 下的 `site-release/source-browser`。用發布回傳的 `$REPO@sha256:…` 重取同一映像，核對 revision label，跑 [SOURCE_CARD_BROWSER_ACCEPT=1 的既有合成流程](../tests/source-card-acquire.test.mjs)。保存完整 registry digest、冷佔用 bytes 及 seccomp 指紋。瀏覽器安全更新同步核對 lockfile 的 driver、官方映像 digest、shell revision／SHA-256；Node 或 OS 安全更新要核對基底 digest，以 `--pull --no-cache` 重建。
-2. 在主機重新量度 Docker data root 及 receiver 所在檔案系統的餘量。拉取前預留候選完整冷佔用，拉取後兩處仍須至少有 3 GiB。首次採用的[容量收據](../artifacts/verification/SOURCE_BROWSER_FOOTPRINT_20261119.json)以 4.6 GB 磁碟餘量計算，留兩個完全獨立版本後，超出門檻的餘量約 75 MiB。候選與 backend 分開 staging；容量不足時保留正服務及可回退版本，延後切換。
-3. 首次建立 `docker volume create yuban-p1_source-browser-ipc`。當次以具 registry 唯讀權限的既有營運身份 `docker pull "$SOURCE_BROWSER_IMAGE"`，此變數必須為完整已驗 registry digest。在來源卡工作批次之間執行 `docker compose -p yuban-source-browser -f deploy/source-browser/compose.yaml up -d --no-build --pull never --wait source-browser`。先驗 renderer 健康，再接 worker 掛載。維持兩端 UID 1000、renderer 無網絡及無秘密、worker 對 volume 唯讀。
-4. 往後將正服務 digest 和對應 Compose／seccomp 版本列入交接，保留上一個已驗映像在本機。換至新 digest 後核對容器實際映像、健康、cgroup 及 socket。若切換失敗，還原上一組設定及 `SOURCE_BROWSER_IMAGE`，重用上一步 `--pull never --wait` 命令。日常 web／api／worker 的 release ID 及回退不會自行切換獨立瀏覽器。
+在**已合併並與遠端 master 相同的 checkout** 執行以下命令。建置機須能以現有營運身份推送香港 `site-release` 映像庫，並沿既有 IAP／OS Login 路徑連線原 VM。接收器安裝及業務發布由主線協調，renderer 與 backend 分開拉取。首次啟用次序如下。
+
+```bash
+receipt="$(pwd)/.cache/source-browser-$(git rev-parse HEAD).receipt"
+mkdir -p "$(dirname "$receipt")"
+bash scripts/site-release/source-browser.sh publish "$receipt"
+bash scripts/site-release/install-receiver.sh
+bash scripts/site-release/source-browser.sh status
+bash scripts/site-release/source-browser.sh apply "$receipt"
+bash scripts/site-release/source-browser.sh status
+```
+
+取得第二次 `status` 的現行 digest 及業務 release ID 後，主線按本手冊的 `SITE_REVIEWED_PREREQUISITES` 流程核對該 master 的其餘部署前置，再安排業務映像發布。
+
+- **建置與安全更新。** `publish` 從指定提交取出建置輸入，使用固定基底、Playwright driver 及 shell 指紋。它從實際推送結果取得 digest，再按 digest 拉回並核對平台、revision、冷佔用，寫入收據。保留收據及該版 checkout。若推送後中斷，同一提交會先查現有標籤。安全更新應提交新基底或瀏覽器指紋，以新提交無快取建置。
+- **容量與切換。** 首次拉取候選前，Docker data root 和接收器所在檔案系統均須有候選完整冷佔用加 3 GiB。切換前再次核對兩處仍有 3 GiB 及至少 384 MiB 可用記憶體。按原先 4.6 GB 餘量計，兩個完全獨立版本只比磁碟門檻多約 75 MiB。工具保留現版及上一版映像，成功提交後只按完整 digest 回收已退役的 renderer。現版和回退版的 root 擁有版本目錄均須保留。[容量實測](../artifacts/verification/SOURCE_BROWSER_FOOTPRINT_20261119.json)
+- **鎖及健康。** 操作工具取得原有安裝鎖和發布鎖，核對已登記的 Compose 配置、業務映像身份、容器健康及在途工作。首次接線只重建現有 worker；之後切換 renderer 沿用相同 volume。工具直接從 worker 查 `/healthz`，核對容器實際 digest、隔離設定及唯讀掛載後才提交本機收據。相同收據可重入。
+- **回退與中斷。** 使用實際收據的 digest 回退。首次啟用可還原至沒有 renderer 的原配置。其後回退使用本機保留的上一個 digest 及對應 Compose／seccomp，毋須重新拉取。切換失敗會嘗試還原；若主機中斷，每日接收器會保留日誌並暫停套用。用同一份已安裝 checkout 執行 `recover`，再查 `status`。這兩個命令核對現行狀態，業務版本及資料由原發布流程管理。
+
+```bash
+read -r revision digest cold_bytes < "$receipt"
+bash scripts/site-release/source-browser.sh rollback "$digest"
+bash scripts/site-release/source-browser.sh status
+# Interrupted switch
+bash scripts/site-release/source-browser.sh recover
+```

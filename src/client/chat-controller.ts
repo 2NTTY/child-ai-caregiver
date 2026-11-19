@@ -2,7 +2,13 @@ import type { ChatFileMessageReference } from '../shared/chat-files.ts';
 import type { VoiceMessageReference } from '../shared/voice.ts';
 import type { PhotoMessageReference } from '../shared/photos.ts';
 import { normalizeChatInput } from "./chat-input.ts";
-import { reconcileAgentProgress, type AgentProgress, type AgentProgressSource, type OfficialHelpId } from '../shared/agent-feedback.ts';
+import {
+  isIncompleteModelReplyText,
+  reconcileAgentProgress,
+  type AgentProgress,
+  type AgentProgressSource,
+  type OfficialHelpId,
+} from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
 import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -16,6 +22,8 @@ export interface ChatDraft {
   photo?: Pick<PhotoMessageReference,"id"|"version">;
   phase: DraftPhase;
   savedUserMessageId: string | null;
+  /** A fresh draft must not restore this abandoned turn's automatic help. */
+  dismissedHelpMessageId?: string;
   candidateMessageId: string | null;
   notice: string | null;
   knownIds: string[];
@@ -301,6 +309,25 @@ export class ChatController {
     this.updateDraft(childId, { text, notice: null });
   }
 
+  /** A newer saved row can supersede an SSE stream for the same question. Publish both changes together. */
+  private bindSavedRows(messages: ChatMessage[]): Partial<ChatState> & { messages: ChatMessage[] } {
+    const latest = new Map<string, ChatMessage>();
+    for (const row of messages) if (row.role === "model" && row.inReplyTo) latest.set(row.inReplyTo, row);
+    const mismatched = (target: { messageId: string; runId: string } | null | undefined) => {
+      if (!target) return false;
+      const savedRun = latest.get(target.messageId)?.agentRunId;
+      return !!savedRun && savedRun !== target.runId;
+    };
+    return {
+      messages: messages.map(row => {
+        const savedRun = row.role === "user" && latest.get(row.id)?.agentRunId;
+        return savedRun && savedRun !== row.agentRunId ? { ...row, agentRunId: savedRun } : row;
+      }),
+      ...(mismatched(this.state.feedback) ? { feedback: null } : {}),
+      ...(mismatched(this.state.remoteReply) ? { remoteReply: null, replyError: null } : {}),
+    };
+  }
+
   async reloadMessages(): Promise<void> {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.loading || this.state.loadingOlder || this.state.busy) return;
@@ -309,6 +336,10 @@ export class ChatController {
       return;
     }
     const scope = this.scope();
+    const previousLatestUserId = [...this.state.messages].reverse().find(item => item.role === "user")?.id;
+    const previousFeedbackId = this.state.feedback?.messageId;
+    const previousDraft = this.state.drafts[childId];
+    const previousFailedId = previousDraft?.phase === "reply_failed" ? previousDraft.savedUserMessageId : null;
     this.update({ loading: true, error: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
@@ -329,6 +360,8 @@ export class ChatController {
         }
       }
       const page = await this.api.listMessages(childId, scope.controller.signal);
+      let authoritativePage = page;
+      let checkedOriginal: ChatReplyState | null = null;
       if (!this.current(scope)) return;
       if (page.messages.some(item => item.role === "user" && item.authorUserId !== scope.userId)) {
         this.invalidateIdentity();
@@ -337,21 +370,26 @@ export class ChatController {
       if (!await this.verifyIdentity(scope)) return;
       const newestIds = new Set(page.messages.map(item => item.id));
       const retainOlder = this.state.messages.length > page.limit && this.state.messages.some(item => newestIds.has(item.id));
-      this.update({ messages: retainOlder ? [...this.state.messages.filter(item => !newestIds.has(item.id)), ...page.messages] : page.messages,
+      this.update({ ...this.bindSavedRows(retainOlder ? [...this.state.messages.filter(item => !newestIds.has(item.id)), ...page.messages] : page.messages),
         nextCursor: retainOlder ? this.state.nextCursor : page.nextCursor ?? null, limit: page.limit, loadedAt: new Date().toISOString() });
       const latestUser = [...page.messages].reverse().find(item => item.role === "user");
       if (latestUser && !page.messages.some(item => item.inReplyTo === latestUser.id)) {
         try {
-          const original = await this.readOriginal(scope, latestUser.id);
+          checkedOriginal = await this.readOriginal(scope, latestUser.id);
           if (!this.current(scope)) return;
-          if (original?.status === "completed") {
+          if (checkedOriginal?.status === "completed") {
             const refreshed = await this.api.listMessages(childId, scope.controller.signal);
             if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+            if (refreshed.messages.some(item => item.role === "user" && item.authorUserId !== scope.userId)) {
+              this.invalidateIdentity();
+              return;
+            }
             if (refreshed.messages.some(item => item.role === "model" && item.inReplyTo === latestUser.id)) {
+              authoritativePage = refreshed;
               const refreshedIds = new Set(refreshed.messages.map(item => item.id));
               const keepOlder = this.state.messages.length > refreshed.limit && this.state.messages.some(item => refreshedIds.has(item.id));
               this.update({
-                messages: keepOlder ? [...this.state.messages.filter(item => !refreshedIds.has(item.id)), ...refreshed.messages] : refreshed.messages,
+                ...this.bindSavedRows(keepOlder ? [...this.state.messages.filter(item => !refreshedIds.has(item.id)), ...refreshed.messages] : refreshed.messages),
                 nextCursor: keepOlder ? this.state.nextCursor : refreshed.nextCursor ?? null,
                 limit: refreshed.limit,
                 loadedAt: new Date().toISOString(),
@@ -363,21 +401,54 @@ export class ChatController {
         }
         catch (error) {
           if (sessionError(error) || childAccessDenied(error)) throw error;
-          if (this.current(scope)) this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
+          if (this.current(scope) && this.state.drafts[childId]?.dismissedHelpMessageId !== latestUser.id) {
+            this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
+          }
         }
         if (!this.current(scope)) return;
-      } else this.update({ remoteReply: null, replyError: null });
+      } else if (!this.state.remoteReply || !page.messages.some(row => row.role === "model"
+        && row.inReplyTo === this.state.remoteReply!.messageId && row.agentRunId === this.state.remoteReply!.runId)) {
+        this.update({ remoteReply: null, replyError: null });
+      }
       const draft = this.state.drafts[childId];
-      if (draft?.savedUserMessageId && this.state.messages.some(item => item.role === "model" && item.inReplyTo === draft.savedUserMessageId)) {
-        this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
-          notice: "已在聊天記錄找到 AI 回覆。", knownIds: [] });
+      const latestTurn = [...authoritativePage.messages].reverse().find(item => item.role === "user");
+      const previousRemote = this.state.remoteReply;
+      if (latestTurn && latestTurn.id !== previousLatestUserId && previousRemote
+        && previousRemote.messageId !== latestTurn.id && previousRemote.status !== "running") {
+        this.update({ remoteReply: null, replyError: null });
+      }
+      const latestAnswer = latestTurn && [...authoritativePage.messages].reverse().find(row => row.role === "model" && row.inReplyTo === latestTurn.id);
+      const persistedHelpId = latestAnswer?.agentRunId && latestAnswer.officialHelp?.length
+        && draft?.dismissedHelpMessageId !== latestTurn?.id ? latestTurn?.id : null;
+      // The recovery controls and retained feedback must settle from the same evidence.
+      // A model row can be the persisted record of a stopped run, not an approved answer.
+      for (const messageId of new Set([draft?.savedUserMessageId, previousFeedbackId, this.state.remoteReply?.messageId, persistedHelpId])) {
+        if (!messageId) continue;
+        if (latestTurn && latestTurn.id !== messageId && latestTurn.id !== previousLatestUserId) {
+          const owned = this.state.drafts[childId];
+          if (previousFailedId === messageId && owned?.phase === "reply_failed" && owned.savedUserMessageId === messageId) {
+            this.updateDraft(childId, { ...emptyDraft(), dismissedHelpMessageId: messageId });
+          }
+          if (this.state.feedback?.messageId === messageId) this.update({ feedback: null });
+          continue;
+        }
+        const matchingReply = [...authoritativePage.messages].reverse().find(item => item.role === "model" && item.inReplyTo === messageId);
+        if (!matchingReply) continue;
+        const outcome = await this.verifyResolvedReplyCompleted(scope, childId, messageId, matchingReply, null, undefined, true, checkedOriginal);
+        if (outcome.aborted || !this.current(scope)) return;
+        if (this.state.drafts[childId]?.dismissedHelpMessageId === messageId) continue;
+        this.settleSavedDraft(childId, messageId, outcome.completed, "已在聊天記錄找到 AI 回覆。");
+        if (this.state.feedback?.messageId === messageId && outcome.completed) this.update({ feedback: null });
+        if (!this.state.remoteReply || this.state.remoteReply.messageId === messageId) {
+          this.update({ remoteReply: outcome.remoteReply });
+        }
       }
       if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
         if (this.api.reconcilePending) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: null,
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
-        const matches = page.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
+        const matches = authoritativePage.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
           && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
@@ -404,12 +475,19 @@ export class ChatController {
     }
   }
 
-  private async readOriginal(scope: RequestScope, messageId: string): Promise<ChatReplyState | null> {
+  private async readOriginal(scope: RequestScope, messageId: string, preserveOtherRunning = false): Promise<ChatReplyState | null> {
     if (!scope.childId || !this.api.getOriginalReply) return null;
     const result = await this.api.getOriginalReply(scope.childId, messageId, scope.controller.signal, scope.userId);
     if (!this.current(scope)) return null;
+    const active = this.state.remoteReply;
+    if (preserveOtherRunning && active?.status === "running" && active.messageId !== messageId) {
+      // Looking up an older turn must not retarget the active poll or cancel control.
+      if (result) this.update({ messages: this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) });
+      return result;
+    }
     const alreadyReplied = this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId);
-    if (alreadyReplied) {
+    const dismissedTerminal = this.state.drafts[scope.childId]?.dismissedHelpMessageId === messageId && result?.status !== "running";
+    if (alreadyReplied || dismissedTerminal) {
       this.update({
         remoteReply: null,
         replyError: null,
@@ -432,6 +510,11 @@ export class ChatController {
       || !this.state.online || !this.state.userId || !this.state.selectedChildId) return;
     const scope = this.scope(); this.checkingOriginal = true;
     try {
+      // An already-persisted reply owns its run; the per-question pointer can still name an older one.
+      if (this.state.messages.some(row => row.role === "model" && row.inReplyTo === original.messageId && row.agentRunId)) {
+        await this.reloadMessages();
+        return;
+      }
       const result = await this.readOriginal(scope, original.messageId);
       if (this.current(scope) && result?.status !== "running") await this.reloadMessages();
     } catch (error) {
@@ -498,25 +581,98 @@ export class ChatController {
     }
   }
 
+  private dropReplacedFeedback(messageId: string, savedRunId?: string): void {
+    const feedback = this.state.feedback;
+    if (savedRunId && feedback?.messageId === messageId && feedback.runId !== savedRunId) this.update({ feedback: null });
+  }
+
+  private incompleteReplyNotice(messageId: string, runId?: string | null): string {
+    const feedback = this.state.feedback?.messageId === messageId && (!runId || this.state.feedback.runId === runId) ? this.state.feedback : null;
+    if (feedback?.cards.length) return "這次回覆未完成，請先查看官方求助提示或查核原結果。";
+    if (feedback?.sources.length) return "這次回覆未完成，已保留檢索到的官方來源預覽；未核草稿不作正式回覆，請查核原結果。";
+    return "這次回覆未完成，請查核原結果。";
+  }
+
+  private settleSavedDraft(childId: string, messageId: string, completed: boolean, completedNotice: string): void {
+    if (this.state.drafts[childId]?.savedUserMessageId !== messageId) return;
+    this.updateDraft(childId, completed
+      ? { ...emptyDraft(), notice: completedNotice }
+      : { phase: "reply_failed", notice: this.incompleteReplyNotice(messageId) });
+  }
+
+  private async verifyResolvedReplyCompleted(
+    scope: RequestScope,
+    childId: string,
+    messageId: string,
+    reply: ChatMessage,
+    activeRunId: string | null,
+    verifiedRun?: Pick<ChatReplyState, "runId" | "status">,
+    historyRead = false,
+    checkedOriginal?: ChatReplyState | null,
+  ): Promise<{ aborted: boolean; completed: boolean; runId: string | null; remoteReply: ChatReplyState | null }> {
+    const runId = reply.agentRunId ?? activeRunId;
+    const statusResult = (status: ChatReplyState["status"], id = runId, stopReason: string | null = null) => ({
+      aborted: false, completed: status === "completed", runId: id,
+      remoteReply: status !== "completed" && id ? { messageId, runId: id, status, stopReason } : null,
+    });
+    const aborted = { aborted: true, completed: false, runId, remoteReply: null };
+    if (isIncompleteModelReplyText(reply.text)) {
+      return statusResult(/中斷|未知/u.test(reply.text) ? "unknown" : "stopped");
+    }
+    if (verifiedRun && verifiedRun.runId === runId) return statusResult(verifiedRun.status);
+    if (!runId && !historyRead && this.state.feedback?.messageId !== messageId) return statusResult("completed");
+    try {
+      // A question can have a replacement result. Only the selected row's run can settle it.
+      if (runId && this.api.getReplyState) {
+        const status = await this.api.getReplyState(childId, runId, scope.controller.signal, scope.userId);
+        if (!this.current(scope) || !await this.verifyIdentity(scope)) return aborted;
+        return statusResult(status);
+      }
+      const original = checkedOriginal?.messageId === messageId ? checkedOriginal
+        : await this.api.getOriginalReply?.(childId, messageId, scope.controller.signal, scope.userId);
+      if (!this.current(scope) || !await this.verifyIdentity(scope)) return aborted;
+      if (original && (!runId || original.runId === runId)) return statusResult(original.status, original.runId, original.stopReason);
+      // Legacy untagged history is not evidence about an earlier SSE run.
+      return statusResult(runId ? "unknown" : "completed");
+    } catch (error) {
+      if (!this.current(scope)) return aborted;
+      if (sessionError(error)) { this.invalidateIdentity(); return aborted; }
+      if (childAccessDenied(error)) { this.forgetChild(childId); return aborted; }
+      return statusResult("unknown");
+    }
+  }
+
   private async performReply(scope: RequestScope, messageId: string): Promise<void> {
     const childId = scope.childId!;
     let settledRemoteReply: ChatReplyState | null = null;
+    let replyCompleted = false;
+    let activeRunId: string | null = null;
     try {
       if (!await this.verifyIdentity(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
-        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback : null;
+        if (activeRunId !== null && activeRunId !== event.runId) return;
+        activeRunId = event.runId;
+        // Only a frame from an actual replacement run supersedes the retained original.
+        const previous = this.state.feedback?.messageId === messageId && this.state.feedback.runId === event.runId
+          ? this.state.feedback : null;
         const next = reconcileAgentProgress(previous, event);
         if (next !== previous) this.update({ feedback: next });
       });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
-      const messages = this.state.messages.some(item => item.id === reply.id)
-        ? this.state.messages : [...this.state.messages, reply];
-      this.update({ messages, replyError: null, remoteReply: null });
-      if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null,
-          notice: "聊天已保存，AI 已回覆。", knownIds: [] });
-      }
+      this.dropReplacedFeedback(messageId, reply.agentRunId);
+      const outcome = await this.verifyResolvedReplyCompleted(scope, childId, messageId, reply, activeRunId);
+      if (outcome.aborted || !this.current(scope)) return;
+      replyCompleted = outcome.completed;
+      settledRemoteReply = outcome.remoteReply;
+      const normalizedReply = outcome.runId && !reply.agentRunId ? { ...reply, agentRunId: outcome.runId } : reply;
+      const messages = this.state.messages.some(item => item.id === normalizedReply.id)
+        ? this.state.messages.map(item => item.id === normalizedReply.id ? normalizedReply : item)
+        : [...this.state.messages, normalizedReply];
+      const bound = this.bindSavedRows(messages);
+      this.update({ ...bound, remoteReply: settledRemoteReply,
+        replyError: outcome.completed ? null : this.incompleteReplyNotice(messageId, outcome.runId) });
+      this.settleSavedDraft(childId, messageId, outcome.completed, "聊天已保存，AI 已回覆。");
     } catch (error) {
       if (!this.current(scope)) return;
       if (sessionError(error)) {
@@ -543,14 +699,20 @@ export class ChatController {
           if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
           const page = await this.api.listMessages(childId, scope.controller.signal);
           if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
-          const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
+          const saved = [...page.messages].reverse().find(item => item.role === 'model' && item.inReplyTo === messageId);
           if (saved) {
+            const savedRunId = saved.agentRunId ?? runId;
+            this.dropReplacedFeedback(messageId, saved.agentRunId);
+            const outcome = await this.verifyResolvedReplyCompleted(scope, childId, messageId, saved, savedRunId, { runId, status: original });
+            if (outcome.aborted || !this.current(scope)) return;
+            replyCompleted = outcome.completed;
+            settledRemoteReply = outcome.remoteReply;
             this.update({
-              messages: [...this.state.messages.filter(item => item.id !== saved.id).map(item => item.id === messageId ? { ...item, agentRunId: runId } : item), saved],
-              replyError: null,
-              remoteReply: null,
+              messages: [...this.state.messages.filter(item => item.id !== saved.id).map(item => item.id === messageId ? { ...item, agentRunId: savedRunId } : item), saved],
+              replyError: outcome.completed ? null : this.incompleteReplyNotice(messageId),
+              remoteReply: settledRemoteReply,
             });
-            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, file: undefined, photo: undefined, phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
+            this.settleSavedDraft(childId, messageId, outcome.completed, "已查回原回覆，沒有重新執行。");
             return;
           }
           if (original === 'running') {
@@ -582,7 +744,12 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: settledRemoteReply });
+        const retainFeedback = !replyCompleted
+          && this.state.feedback?.messageId === messageId
+          && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0)
+          ? this.state.feedback
+          : null;
+        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply });
         void this.refreshMetadata();
       }
     }
@@ -634,7 +801,7 @@ export class ChatController {
       if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
         feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
-      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, notice: "聊天已保存，正在等候 AI 回覆。" });
+      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: "聊天已保存，正在等候 AI 回覆。" });
       await this.performReply(scope, saved.id);
     } catch (error) {
       if (!this.current(scope)) return;
@@ -667,11 +834,19 @@ export class ChatController {
     const original = this.state.messages.find(item => item.id === messageId && item.role === "user"
       && item.authorUserId === this.state.userId);
     const savedDraft = this.state.drafts[childId]?.savedUserMessageId === messageId;
-    if ((!original && !savedDraft) || this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId)) return;
+    if (!original && !savedDraft) return;
+    if (this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId)) {
+      if (savedDraft) await this.reloadMessages();
+      return;
+    }
     const scope = this.scope();
-    this.update({ feedback: null, busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
+    this.update({ feedback: this.state.feedback?.messageId === messageId ? this.state.feedback : null,
+      busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
+    if (this.state.drafts[childId]?.dismissedHelpMessageId === messageId) {
+      this.updateDraft(childId, { dismissedHelpMessageId: undefined });
+    }
     try {
-      const existing = await this.readOriginal(scope, messageId);
+      const existing = await this.readOriginal(scope, messageId, true);
       if (!this.current(scope)) return;
       if (existing) {
         this.update({ busy: null, replyingMessageId: null });
@@ -719,10 +894,41 @@ export class ChatController {
         notice: "已確認聊天訊息已保存，可要求 AI 回覆。" });
   }
 
+  dismissRetainedFeedback(messageId: string): void {
+    const childId = this.state.selectedChildId;
+    const feedback = this.state.feedback;
+    if (!childId || this.state.busy || feedback?.messageId !== messageId) return;
+    const remote = this.state.remoteReply;
+    if (remote?.messageId === messageId && remote.status === "running") return;
+    const draft = this.state.drafts[childId] ?? emptyDraft();
+    const latest = [...this.state.messages].reverse().find(item => item.role === "user");
+    this.update({
+      feedback: null,
+      ...(latest?.id === messageId
+        ? { drafts: { ...this.state.drafts, [childId]: { ...draft, dismissedHelpMessageId: messageId } } }
+        : {}),
+      ...(remote?.messageId === messageId ? { remoteReply: null } : {}),
+      ...((!remote || remote.messageId === messageId) && (!draft.savedUserMessageId || draft.savedUserMessageId === messageId)
+        ? { replyError: null, cancelNotice: null }
+        : {}),
+    });
+  }
+
   startNewMessage(): void {
     const childId = this.state.selectedChildId;
-    if (!childId || this.state.busy || this.state.drafts[childId]?.phase !== "reply_failed") return;
-    this.updateDraft(childId, { ...emptyDraft(), notice: "舊訊息已保存；可在聊天記錄中再次要求 AI 回覆。" });
+    if (!childId || this.state.busy) return;
+    const draft = this.state.drafts[childId];
+    if (draft?.phase !== "reply_failed" || !draft.savedUserMessageId) return;
+    const id = draft.savedUserMessageId;
+    const remote = this.state.remoteReply;
+    const noticeOwner = remote?.messageId ?? this.state.feedback?.messageId ?? id;
+    this.update({
+      drafts: { ...this.state.drafts, [childId]: { ...emptyDraft(), dismissedHelpMessageId: id,
+        notice: "舊訊息已保存；可在聊天記錄中再次要求 AI 回覆。" } },
+      ...(this.state.feedback?.messageId === id ? { feedback: null } : {}),
+      ...(remote?.messageId === id && remote.status !== "running" ? { remoteReply: null } : {}),
+      ...(noticeOwner === id ? { replyError: null, cancelNotice: null } : {}),
+    });
   }
 
   dispose(): void {

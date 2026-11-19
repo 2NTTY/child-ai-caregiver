@@ -16,6 +16,9 @@ if (!process.getuid() || Object.keys(networkInterfaces()).some(name => name !== 
 
 let busy = false;
 const server = createServer({ maxHeaderSize: 4096, requestTimeout: 25_000, headersTimeout: 4000 }, async (req, res) => {
+  if (req.method === 'GET' && req.url === '/healthz') {
+    res.writeHead(200, { 'content-type': 'text/plain' }).end(busy ? 'busy' : 'ready'); return;
+  }
   if (req.method !== 'POST' || req.url !== '/render' || !bounded(req.headers['content-length'], maxBody)) {
     res.writeHead(400).end(); return;
   }
@@ -43,3 +46,5 @@ try {
 } catch (e) { if (e.code !== 'ENOENT') throw e; }
 process.umask(0o077);
 server.listen(socketPath, async () => { await chmod(socketPath, 0o600); });
+// Allow the current bounded render to finish when Compose replaces this instance.
+process.once('SIGTERM', () => server.close());
