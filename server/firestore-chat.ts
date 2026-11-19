@@ -1,3 +1,4 @@
+import { chatPageContextSchema } from '../src/shared/chat-page-context.ts';
 import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
 import { usedAccountDirectory } from './agent-account-directory.ts';
 import { messageText, firestoreChatMessageStorageSchema, type StoredChatMessage } from './chat-message-schema.ts';
@@ -36,7 +37,7 @@ import { makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid();
 const text = messageText.refine(value => value.trim().length > 0);
-const inputSchema = z.object({ text: messageText, discussion: z.literal(true).optional(), voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
+const inputSchema = z.object({ text: messageText, pageContext: chatPageContextSchema.optional(), discussion: z.literal(true).optional(), voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional(), photo: photoLinkInputSchema.optional() }).strict()
   .refine(v => [v.voice, v.file, v.photo].filter(Boolean).length <= 1 && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
 const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
@@ -196,6 +197,24 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
       const childId = domainParse(uuid, match[1].toLowerCase()), input = domainParse(inputSchema, submission.payload);
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: binding.scope.ownerUserId,
         role: 'user', text: input.text, ...(input.discussion && { discussion: true }), inReplyTo: null, createdAt: new Date().toISOString() };
+      if (input.pageContext) {
+        const scope = scopeFor(binding, childId);
+        if (binding.sharedAccess || !await binding.readChild(childId)) domainReject('not_found', 404);
+        const item = input.pageContext.item;
+        if (item) {
+          const targets = { task: ['tasks', 'task'], record: ['care_records', 'care-record'], document: ['documents', 'family-document'] } as const;
+          const [collection, kind] = targets[item.kind];
+          const row = await binding.transaction.get(data.ref(collection, kind, item.id));
+          if (!row.exists || Object.entries(data.tags(scope)).some(([key, tag]) => row.get(key) !== tag)
+            || row.get('recordVersion') !== item.version || item.kind === 'record' && row.get('live') !== true)
+            domainReject('selected_item_changed', 409);
+          if (item.snapshotId) {
+            const document = data.open(kind, item.id, scope, z.object({ currentId: uuid.nullable(), historyIds: z.array(uuid) }), row);
+            if (document.currentId !== item.snapshotId && !document.historyIds.includes(item.snapshotId)) domainReject('selected_item_changed', 409);
+          }
+        }
+        message.pageContext = input.pageContext;
+      }
       if (input.voice && !options.voice) domainReject('voice_unavailable', 503);
       if (input.file && !options.files) domainReject('chat_file_unavailable', 503);
       if (input.photo && !options.photos) domainReject('photo_unavailable', 503);

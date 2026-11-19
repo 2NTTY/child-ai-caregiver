@@ -6725,6 +6725,19 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 
 同一整合 SHA `29cee08024a2068192e11c2eee2febb32ecfb5fd`：[GitHub Actions 44566154835](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44566154835/job/135708316545)，41 檔 337/337 及三份嚴格 TypeScript 設定通過。[採用版本、命令及各項結果](PLAN.md#req002-closeout01)。未執行付費模型、原站或實機驗收。
 
+<a id="log-20261120-zundamon"></a>
+## LOG-20261120-ZUNDAMON
+
+- 2026-11-20 02:35 HKT。B 負責全站 Zundamon 助手前後端，Codex 實作及驗證，未有人工真機驗收。分支 `codex/zundamon-site-assistant`，交付基線 `d662a894`。
+- Web 及 Android Expo DOM 共用同一份封裝模型。小對話沿用正式聊天與錄音。待辦、照護記錄及文件詳情只提交已保存項目識別及版本，由 Server 核對孩子、權限及版本。模型和角色的來源見[第三方聲明](licenses/live2d/NOTICE.md)。
+- 390 × 844 Web 的待辦提問只有一次儲存、一次執行及一則回答。主助手能返回原待辦。另驗原運行停止、切換孩子清空舊內容、過期與跨孩子引用遭拒，以及角色失敗時仍可開啟助手並加入合成錄音。初次渲染遇到 Core 初始化及動作設定問題，修正後以兩幀實際畫面重驗。
+- 14 項聊天控制器測試、前後端 TypeScript、Web 及 Android 匯出通過。原站發布及跨分支討論整合交主開發，Android／iPhone 真機、實體咪高峰及軟鍵盤仍待實測。[環境、結果及界限](artifacts/verification/ZUNDAMON_SITE_ASSISTANT_20261120.json)
+
+### Zundamon 共享頁面的私人對話選擇（2026-11-20）
+
+- 主線 review 指出，未選妥私人孩子時，點角色會離開原頁。B 改為在原頁顯示已核對的私人孩子，沿用正式切換流程；沒有孩子時提供新增入口，名單未確認時可重讀。
+- 390 × 844 Edge 以合成帳戶由共享待辦選擇另一孩子，URL 保持不變，原頁的小助手收到正式 API 的保存確認。收據只含新選孩子及頁面，沒有附帶共享項目。這次只補一個瀏覽器情境，未作人工真機核對。[驗收收據](artifacts/verification/ZUNDAMON_SITE_ASSISTANT_20261120.json)
+
 ### 2026-11-20　REQ-009 逐題三方討論（`codex/req009-question-discussion`）
 
 家長可在送出前選擇本題討論，或從已完成回答建立唯一後續題。三個具名 AI 觀點依次讀取上一位的發言及同一份獲准背景，共用原運行、工具預算、期限和獨立核對。展開面板重新核權並讀原結果。普通下一題沿原有流程。

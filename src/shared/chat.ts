@@ -2,7 +2,10 @@ import type { ChatFileMessageReference } from './chat-files.ts';
 import type { PhotoMessageReference } from './photos.ts';
 import type { VoiceMessageReference } from './voice.ts';
 import type { OfficialHelpId } from './agent-feedback.ts';
-export interface ChatSendOptions { discussion?: true }
+export interface ChatSendOptions {
+  discussion?: true;
+  pageContext?: import('./chat-page-context.ts').ChatPageContext;
+}
 
 export interface ChatMessage {
   id: string;
@@ -19,6 +22,7 @@ export interface ChatMessage {
   createdAt: string;
   agentRunId?: string;
   officialHelp?: OfficialHelpId[];
+  pageContext?: import('./chat-page-context.ts').ChatPageContext;
   voice?: VoiceMessageReference;
   file?: ChatFileMessageReference;
   photo?: PhotoMessageReference;

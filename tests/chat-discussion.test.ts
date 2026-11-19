@@ -25,6 +25,8 @@ test('a question binds three successive native turns, the main reply and one ind
     sourceId: 'sample-reading', versionId: 'e7d04db3-65ab-4d67-85ac-57cde623124a', contentHash: 'a'.repeat(64), title: '合成例子', section: '一起玩' };
   let discussion = true, claimed = false, calls = 0, allowed = true, saved: ProductAgentResult | null = null;
   let followup = false, interrupt: AbortController | undefined;
+  const task = { kind: 'task', id: '6dd5227c-0b41-46a3-98ff-12156dc387fe', version: 2 } as const;
+  let taskReads = 0;
   const previousAnswer = { ...base, id: '65078aba-e634-4afd-8d18-bafba4598389', role: 'model', authorUserId: null,
     inReplyTo: base.id, text: 'The earlier reply covered books and songs.' };
   const linkedQuestion = { ...base, id: 'b955733f-1f95-42fa-bfb4-da02c7ad90c0', discussion: true,
@@ -35,9 +37,12 @@ test('a question binds three successive native turns, the main reply and one ind
     chatDeliveryReviewModelCalls: 6, usage: { reserve: async () => true, record: async () => {} },
     provider: { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
-      if (i === 0 && followup) {
+      if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
-        assert.ok(context.includes(base.text) && context.includes(previousAnswer.text));
+        assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
+      }
+      if (followup && i === 1) {
+        assert.ok(inputs.some(p => JSON.stringify(p.functionResponse?.response ?? {}).includes('Prepare the picture book')));
       }
       if (i === 2 && interrupt) interrupt.abort();
       if (!discussion) {
@@ -59,15 +64,24 @@ test('a question binds three successive native turns, the main reply and one ind
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
         : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
         : { kind: 'caregiving', paragraphs: [{ text: main, citationIds: [chunkId] }] };
-      return { content: { role: 'model', parts: [{ functionCall: { id: 'step-' + i, name, args } }] }, finishReason: FinishReason.STOP };
+      const parts = [{ functionCall: { id: 'step-' + i, name, args } }];
+      return { content: { role: 'model', parts: followup && i === 0
+        ? [{ functionCall: { id: 'page-task', name: 'read_context', args: {} } }, ...parts] : parts }, finishReason: FinishReason.STOP };
     } } });
   const service = createProductAgent({ runtime,
+    readPageItem: async (userId: string, childId: string, item: unknown) => {
+      assert.equal(userId, scope.userId);
+      assert.equal(childId, scope.childId);
+      assert.deepEqual(item, task);
+      taskReads++;
+      return { title: 'Prepare the picture book' };
+    },
     store: { claim: async () => { const created = !claimed; claimed = true; return { runId, scope, created, state: 'running', expiresAt: new Date(Date.now()+90000).toISOString() }; },
       authorize: async () => allowed, get: async () => allowed ? saved : null, finish: async (_scope: unknown, result: ProductAgentResult) => { saved = result; return true; } },
     chat: { listForUser: async (_u: string, child: string) => child === base.childId ? { messages: followup ? [linkedQuestion] : [{ ...base, text: discussion ? base.text : '你好', ...(discussion && { discussion }) }] } : null,
       getOriginalMessageForUser: async (_u: string, child: string, id: string, purpose: string) => {
         assert.equal(purpose, 'memory');
-        return allowed && child === base.childId ? [base, previousAnswer].find(item => item.id === id) ?? null : null;
+        return allowed && child === base.childId ? [{ ...base, pageContext: { page: '/tasks', item: task } }, previousAnswer].find(item => item.id === id) ?? null : null;
       } },
     memory: { context: async () => ({ profile: { childId: base.childId, version: 0, data: null }, profileApplicable: false,
       facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) },
@@ -97,7 +111,9 @@ test('a question binds three successive native turns, the main reply and one ind
   assert.equal(calls, 1);
   discussion = true; claimed = false; calls = 0; followup = true;
   const later = await reply();
+  assert.equal(later?.status, 'completed', JSON.stringify({ later, calls, taskReads }));
   assert.deepEqual(later?.discussion, result.discussion);
+  assert.equal(taskReads, 1);
   followup = false; claimed = false; calls = 0; interrupt = new AbortController();
   const stopped = await reply();
   assert.equal(stopped?.status, 'stopped');
