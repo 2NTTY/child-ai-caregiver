@@ -305,6 +305,7 @@ function ChatContents({ compact, onPaneLayout }: {
           degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
             {discussionQuestion ? <QuestionDiscussion key={discussionQuestion.id} runId={discussionReply?.agentRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
               status={discussionRun?.status} state={discussionState} online={chat.online}
+              onToggle={() => timelineRef.current?.holdReadingPosition()}
               read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
               onOpenSource={openAgentSource} />
               : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId

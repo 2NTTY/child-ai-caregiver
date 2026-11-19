@@ -78,6 +78,14 @@
     "additionalEmbeddingCalls": 0,
     "verificationLimit": "沿用原主回答及失敗收據。修正後的獨立審核使用腳本模型，未重新執行 Web 真模型流程。"
   },
+  "pageDiscussionOperationReview": {
+    "base": "1362ec1404532824d0b09b99a08e430d3fcd3d01",
+    "receipt": "REQ009_DISCUSSION_REVIEW_REPLAY_20261120.json",
+    "webScreenshots": ["REQ009_DISCUSSION_DESKTOP_20261120.png", "REQ009_DISCUSSION_NARROW_20261120.png", "REQ009_DISCUSSION_SOURCE_20261120.png"],
+    "result": "在同一張合成待辦以 Web 發問，展開原回答的三方討論，再從討論卡開啟同版原件。主答按雜湊復用，三位角色及獨立審核由真模型產生。重開零次生成。桌面和窄屏均逐段核對文字換行及閱讀位置。",
+    "baselineLimit": "原失敗收據保留了兩段主答及通過的判詞，沒有保存角色原句。已用一段家長假設重現舊版拒絕；新真題的五段文字在舊檢查亦不觸發。",
+    "contentLimit": "第三位提到跟隨孩子可以延長共處時間。所引教材支持家長參與孩子探索，沒有直接驗證這項成效；獨立審核沒有指出這句。"
+  },
   "web": {
     "browser": "Microsoft Edge, Playwright",
     "viewports": [[390, 844], [1100, 850]],
