@@ -45,16 +45,45 @@ test('chat updates the same account card, joins a repeated command and returns o
   assert.equal(tools.operations().at(-1)?.state, 'committed');
 });
 
+test('chat joins only a previously listed platform card through the owner library and never registers its URL privately', async () => {
+  const url = 'https://www.fhs.gov.hk/guide', versionId = crypto.randomUUID();
+  const scope = { userId: 'parent', workspaceId: 'workspace', childId: 'child', authorizationVersion: '1', dataVersion: '1' };
+  const saved: unknown[] = [];
+  const tools = createRegisteredSourceTools({ get: async () => null, list: async () => ({ items: [], nextCursor: null }),
+    command: async () => assert.fail('unexpected private registration') }, scope.userId, 'message', '請加入平台來源卡 ' + url, async () => true,
+    [], { childId: scope.childId, library: {
+      async page(owner, child) {
+        assert.equal(owner, scope.userId); assert.equal(child, scope.childId);
+        return { complete: true, nextCursor: null, items: [{ sourceId: 'guide', versionId, url, title: '育兒指南', publisher: '家庭健康服務',
+          checkedAt: new Date().toISOString(), classification: 'official_guidance', validUntil: null, sourceUpdatedAt: null,
+          series: { id: 'guides', name: '育兒指南', institutionId: 'www.fhs.gov.hk' },
+          preference: { mode: 'platform', revision: 0, eligible: true, enabled: true, selectedVersionId: null } }] };
+      },
+      async save(owner, child, change) { assert.equal(owner, scope.userId); assert.equal(child, scope.childId); saved.push(change); return { revision: 1 }; },
+    } });
+  const invoke = (name: string, args: Record<string, unknown>) => {
+    const tool = tools.tools.find(item => item.name === name)!;
+    return tool.execute(tool.parameters.parse(args), { scope, runId: 'run', callId: 'call', signal: new AbortController().signal });
+  };
+  assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).status, 'rejected');
+  assert.equal((await invoke('register_source_card', { url, name: '育兒指南', kind: 'document' })).status, 'rejected');
+  assert.equal((await invoke('read_platform_source_cards', {})).status, 'succeeded');
+  assert.equal((await invoke('join_platform_source_card', { seriesId: 'guides' })).reference, 'guides');
+  assert.deepEqual(saved, [{ action: 'join', seriesId: 'guides', expectedRevision: 0, editions: [{ sourceId: 'guide', versionId }] }]);
+  assert.equal(tools.operations()[0]?.tool, 'join_platform_source_card');
+});
+
 test('formal chat advertises source settings only in the account owner conversation', () => {
   const budget = new AgentBudget();
   try {
-    const options = { run: { scope: { userId: 'parent' }, runId: 'run', budget }, store: {}, registeredSourceCards: {},
+    const options = { run: { scope: { userId: 'parent' }, runId: 'run', budget }, store: {}, registeredSourceCards: {}, platformLibrary: {},
       knowledge: { createRun: () => ({}) }, authorize: async () => true, trustedUserMessage: '把通告改成每天查一次', currentMessageId: 'message' };
     const assemble = (extra: object) => createProductAgentTools({ ...options, ...extra } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
     const tool = assemble({}).find(item => item.name === 'manage_source_card')!;
     const schema = new FunctionTool({ name: tool.name, description: tool.description, parameters: tool.parameters.strict(), execute: async () => ({}) })._getDeclaration();
     assert.equal(schema?.parameters?.properties?.frequencyMinutes?.minimum, 1);
+    assert.ok(assemble({}).some(item => item.name === 'join_platform_source_card'));
     for (const mode of [{ background: true }, { visibility: 'family' }, { reviewedGrowthPresentation: true }, { currentMessageId: undefined }])
-      assert.equal(assemble(mode).some(item => item.name === tool.name), false);
+      assert.equal(assemble(mode).some(item => [tool.name, 'join_platform_source_card'].includes(item.name)), false);
   } finally { budget.close(); }
 });

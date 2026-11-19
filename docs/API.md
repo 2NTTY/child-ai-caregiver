@@ -159,6 +159,11 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 <a id="knowledge-a04-contract"></a>
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
+<a id="platform-source-follow"></a>
+**免費加入平台來源卡。** 家長在來源庫或聊天點按加入時，客戶端直接向 `POST /api/children/{childId}/library` 提交 `{action:"join", seriesId, expectedRevision, editions:[{sourceId,versionId}]}`，沿用登入帳戶前置條件及孩子讀權。首次加入在同一交易核對整個系列目前可讀的已發布版本，將同範圍跟隨寫入本人原有偏好。已停用的系列保留停用。已跟隨或已固定（包括匯入 ZIP）的系列重複加入會回傳現有 `revision`。未發布、已撤回、首次加入時版本不符，或需要轉移其他系列的個人選擇，均回傳 `409 library_selection_changed`。
+
+本人聊天可用 `read_platform_source_cards` 列出系列，再用 `join_platform_source_card` 按本輪讀到的版本加入；完成收據可重開同一系列。加入只引用平台現有的原件、已審內容及向量，沒有私人巡查或額外模型工作。平台負擔公共維護費。聊天內直接點按免費加入毋須產生 AI 回覆；主動送出自然語言要求助手代辦，對話推理沿用當前聊天的用量安排。
+
 已保存回答的 PDF 點讀使用 `GET /api/children/{childId}/agent/runs/{runId}/citations/{chunkId}/original` 及現有裝置會話。服務以原 run 找回當時的版本、片段和原始 PDF 雜湊，在讀取前後核權；成功回傳 `application/pdf`、實際位元組長度及 `private, no-store`。舊版沒有保存原件時，服務可向登記的發布機構讀取同址檔案並核對雜湊。缺少可讀版本回 404，位元組與原版不符回 409，暫時取源故障回 503。
 
 即時查詢標示 `acquisition=live`。服務可即場讀取已啟用的家庭健康服務網頁；配置 `dh-services` 後，亦可從衞生署公開目錄揀出相關服務、讀取原頁，即使該機構尚未入庫也能引用。查詢字句留在 Server，由 Server 核對來源授權及選取原文。聊天保留當次取得時間、原文位置、可識別的日期及獲准留存的節錄。單次查閱不產生訂閱或已發布版本。
