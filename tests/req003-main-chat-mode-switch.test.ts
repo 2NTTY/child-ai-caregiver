@@ -909,7 +909,8 @@ test("9. ChatController mode switch preserves thread/cursor/draft, isolates per 
   const controller = new ChatController({
     getSession: async () => ({ id: "u1", name: "Parent", email: "p@example.test" }),
     listMessages: async cid => ({ messages: cid === childA ? seededA : [], limit: 100, nextCursor: cid === childA ? "older-cursor-1" : null }),
-    saveMessage: async (cid, text, _sig, _uid, _v, _f, _p, chatMode) => {
+    saveMessage: async (cid, text, _sig, _uid, _v, _f, _p, optionsOrMode) => {
+      const chatMode = typeof optionsOrMode === "string" ? optionsOrMode : optionsOrMode?.chatMode;
       savedModes.push(chatMode);
       return {
         id: randomUUID(),
@@ -977,7 +978,8 @@ test("10. switching assistant -> chat_only during in-flight reply leaves origina
   const controller = new ChatController({
     getSession: async () => ({ id: "u1", name: "Parent", email: "p@example.test" }),
     listMessages: async () => ({ messages: [], limit: 100 }),
-    saveMessage: async (cid, text, _sig, _uid, _v, _f, _p, chatMode) => {
+    saveMessage: async (cid, text, _sig, _uid, _v, _f, _p, optionsOrMode) => {
+      const chatMode = typeof optionsOrMode === "string" ? optionsOrMode : optionsOrMode?.chatMode;
       const id = saved.length === 0 ? msg1Id : msg2Id;
       saved.push({ id, text, chatMode });
       return {
