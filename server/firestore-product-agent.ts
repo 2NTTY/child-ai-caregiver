@@ -4,6 +4,7 @@ import {
   type HighWatermarkPersistenceErrorInfo,
 } from './agent-high-watermark.ts';
 import { createChatFileAgentReader } from './chat-file-agent.ts';
+import type { AgentSourceCards } from './agent-registered-source-tools.ts';
 import { createMixedTaskBatches } from './firestore-mixed-task-batches.ts';
 import { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
 import { createVoiceTranscription } from './voice-transcription.ts';
@@ -57,6 +58,7 @@ import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
 import type { FirestoreContact } from './firestore-contact.ts';
 
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
+  registeredSourceCards?: AgentSourceCards;
   liveSourceReader?: import('./live-source-citation.ts').LiveSourceReaderOption;
   usageFinancialEvidence?: () => import('./ai-financial-evidence.ts').DayFinancialEvidence[] | undefined;
   photos?: import('./firestore-photos.ts').FirestorePhotoStore;
@@ -163,7 +165,8 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     { async embed() { throw new AgentStopped('unavailable'); } });
   const mixedTaskBatches=createMixedTaskBatches({...options,runs:services.runs});
   const agent = createProductAgent({ runtime, liveSourceReader: options.liveSourceReader, publishedLiveSeries: options.knowledge?.publishedLiveSeries, store: services.store, mixed:{runs:services.runs,online:options.online,care:options.care,materials:services.runs.materials,batches:mixedTaskBatches}, actions: services.actions, photos: options.photos, voices: options.voices, readChatFile: options.files ? createChatFileAgentReader(options.files) : undefined,
-    chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
+    chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge,
+    registeredSourceCards: options.registeredSourceCards });
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
   // Cold settlement reads the original billing source, not today's selected settings.
   const summaryDaily = routing.usage;

@@ -1,0 +1,106 @@
+import { z } from 'zod';
+import type { RegisteredSourceCard, RegisteredSourceCommand } from '../src/shared/registered-source-card.ts';
+import { sourceCardDefaultFrequencyMinutes } from '../src/shared/registered-source-card.ts';
+import type { AgentTool, AgentToolResult } from './agent-runtime.ts';
+import type { ChatDeliveryVerifiedOperation } from './chat-delivery-review.ts';
+import { FirestoreDomainError, firestoreDomainUuid } from './firestore-domain-data.ts';
+
+/** The account service passed to chat deliberately has no credential reader or writer. */
+export interface AgentSourceCards {
+  get(owner: string, cardId: string): Promise<RegisteredSourceCard | null>;
+  list(owner: string, cursor?: string): Promise<{ items: RegisteredSourceCard[]; nextCursor: string | null }>;
+  command(owner: string, input: RegisteredSourceCommand): Promise<{ card: RegisteredSourceCard | null }>;
+}
+
+const frequency = z.int().min(1).max(2147483647);
+const registration = z.strictObject({
+  name: z.string().trim().min(1).max(160), url: z.string().max(4096),
+  kind: z.enum(['document', 'directory', 'bulletin']), frequencyMinutes: frequency.optional(),
+});
+const management = z.strictObject({
+  cardId: z.uuid(), expectedRevision: z.int().min(1),
+  action: z.enum(['pause', 'resume', 'check_now', 'change_frequency', 'rename']),
+  frequencyMinutes: frequency.optional(), name: z.string().trim().min(1).max(160).optional(),
+});
+const rejected = (reason: string): AgentToolResult => ({ status: 'rejected', data: { reason } });
+function view(card: RegisteredSourceCard) {
+  const { credentialRef, ...settings } = card;
+  return { ...settings, hasLogin: !!credentialRef };
+}
+
+export function createRegisteredSourceTools(store: AgentSourceCards, owner: string, messageId: string,
+  userMessage: string, authorize: () => Promise<boolean>, previousOwnerMessages: readonly string[] = []) {
+  const operations = new Map<string, ChatDeliveryVerifiedOperation>();
+  const identity = (...parts: unknown[]) => firestoreDomainUuid(['chat-source-card/v1', owner, messageId, ...parts]);
+  const tools: AgentTool[] = [];
+  function add(name: string, description: string, parameters: AgentTool['parameters'], read: boolean,
+    execute: (args: Record<string, unknown>) => Promise<AgentToolResult>) {
+    tools.push({ name, description, parameters, ...(read ? { effect: 'read' as const } : {}),
+      authorize: (_, scope) => scope.userId === owner ? authorize() : Promise.resolve(false),
+      async execute(args, context) {
+        if (context.scope.userId !== owner || !await authorize()) return rejected('access_revoked');
+        try {
+          const result = await execute(args);
+          return await authorize() ? result : rejected('access_revoked');
+        } catch (error) {
+          if (!(error instanceof FirestoreDomainError) || error.status >= 500) throw error;
+          return { status: error.status === 409 ? 'conflict' : 'rejected', data: { reason: error.code } };
+        }
+      } });
+  }
+  async function commit(command: RegisteredSourceCommand, tool: string, describe: (card: RegisteredSourceCard) => string): Promise<AgentToolResult> {
+    const { card } = await store.command(owner, command);
+    if (!card) return rejected('source_card_not_found');
+    operations.set(command.operationId, { kind: 'action_receipt', id: command.operationId, state: 'committed',
+      tool, summary: describe(card) });
+    return { status: 'succeeded', reference: card.cardId, data: { card: view(card), operationId: command.operationId } };
+  }
+  add('read_source_cards', '查看本人在「記憶與參考」設定的來源卡、版本、檢查頻率、最近結果及下次檢查時間。', z.strictObject({
+    cardId: z.uuid().optional(), cursor: z.string().max(512).optional(),
+  }), true, async ({ cardId, cursor }) => {
+    if (typeof cardId === 'string') {
+      const card = await store.get(owner, cardId);
+      return card ? { status: 'succeeded', reference: card.cardId, data: { card: view(card) } } : rejected('source_card_not_found');
+    }
+    const page = await store.list(owner, typeof cursor === 'string' ? cursor : undefined);
+    return { status: 'succeeded', data: { cards: page.items.map(view), nextCursor: page.nextCursor } };
+  });
+  add('register_source_card', '家長交代定期追蹤一個網址時，將它存為本人來源卡。照網址類型選單一文件、目錄或動態公告。只讀一次的問題無須訂閱。頻率以分鐘表示。', registration, false, async args => {
+    const settings = registration.parse(args);
+    const supplied = [userMessage, ...previousOwnerMessages].flatMap(message =>
+      message.match(/https:\/\/[^\s<>"“”「」『』（）。，、！？]+/giu) ?? []);
+    let url: string;
+    try { url = new URL(settings.url).href; } catch { return rejected('invalid_source_url'); }
+    if (!supplied.some(value => {
+      try { return new URL(value).href === url || new URL(value.replace(/[.,;!?)]+$/u, '')).href === url; } catch { return false; }
+    })) return rejected('source_url_required_from_user');
+    const cardId = identity('card', url);
+    return commit({ action: 'create', cardId, expectedRevision: 0, operationId: identity('create', cardId),
+      settings: { ...settings, url, frequencyMinutes: settings.frequencyMinutes ?? sourceCardDefaultFrequencyMinutes(settings.kind) } },
+      'register_source_card', card => '已建立來源卡「' + card.name + '」，每 ' + card.frequencyMinutes + ' 分鐘檢查。');
+  });
+  add('manage_source_card', '按家長交代修改本人來源卡的名稱、檢查間隔、暫停、恢復，或排入一次立即檢查。請沿用卡片目前版本；排入不代表已下載或入庫。', management, false, async args => {
+    const { action, cardId, expectedRevision, name, frequencyMinutes } = management.parse(args);
+    const base = { cardId, expectedRevision, operationId: identity(action, cardId, expectedRevision) };
+    let command: RegisteredSourceCommand;
+    if (action === 'change_frequency' || action === 'rename') {
+      if (action === 'change_frequency' ? !frequencyMinutes : !name) return rejected('missing_changed_setting');
+      const current = await store.get(owner, cardId);
+      if (!current) return rejected('source_card_not_found');
+      command = { ...base, action: 'update', settings: { name: action === 'rename' ? name! : current.name,
+        frequencyMinutes: action === 'change_frequency' ? frequencyMinutes! : current.frequencyMinutes,
+        url: current.url, kind: current.kind, ...(current.allowedPath ? { allowedPath: current.allowedPath } : {}) } };
+    } else command = action === 'check_now' ? { ...base, action } : { ...base, action: 'set_enabled', enabled: action === 'resume' };
+    return commit(command, 'manage_source_card', card => {
+      const label = { pause: '已暫停檢查', resume: '已恢復檢查', check_now: '已安排檢查', rename: '已更名',
+        change_frequency: '已改為每 ' + card.frequencyMinutes + ' 分鐘檢查' }[action];
+      return '來源卡「' + card.name + '」' + label + '。';
+    });
+  });
+  add('open_source_card_login', '來源需要本人登入時，在這段聊天顯示連往該卡的授權按鈕。請家長只在卡內填登入資料。', z.strictObject({ cardId: z.uuid() }), true,
+    async ({ cardId }) => {
+      const card = await store.get(owner, String(cardId));
+      return card ? { status: 'succeeded', reference: card.cardId, data: { name: card.name, loginOnCard: true } } : rejected('source_card_not_found');
+    });
+  return { tools, operations: () => [...operations.values()] };
+}

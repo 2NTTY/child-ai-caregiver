@@ -220,7 +220,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
     const usageFinancialEvidence = () => readFinancialEvidence(env.AI_USAGE_RECONCILIATION_JSON);
-    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, usageFinancialEvidence, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, registeredSourceCards, concerns, growth, contact,
       liveSourceReader: knowledge && (userId => createOfficialLivePages({ sourceIds: config.knowledgeSourceIds ?? [],
         mayRead: sourceId => knowledge.mayReadLivePage(userId, sourceId) })),
       summarySponsor: parseSummarySponsor(env.PRIVATE_SUMMARY_SPONSOR_JSON),
