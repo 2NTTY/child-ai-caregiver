@@ -136,7 +136,20 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const { maintenanceLimit, ...legacy } = request;
       original = { ...legacy, userLimit: Math.min(request.userLimit, maintenanceLimit) };
     }
-    if (canonical(comparable(state.request)) !== canonical(comparable(original)) || state.billingSource !== this.#source) reject('attempt_conflict');
+    const matches = (candidate: DurableAiUsageRequest) => canonical(comparable(state.request)) === canonical(comparable(candidate));
+    if (!matches(original) && request.kind === 'embedding') {
+      // Before configurable corpus admission, these two fields captured a fixed ceiling.
+      // Match the previous wire format only for an already charged maintenance attempt.
+      const formerLimit = Math.min(16, request.globalLimit);
+      if (this.#source === 'platform' && request.userId === KNOWLEDGE_MAINTENANCE_PAYER) {
+        original = { ...request, userLimit: formerLimit };
+      } else if (this.#source === 'personal' && request.budgetPurpose === 'knowledge_maintenance' && request.maintenanceLimit !== undefined) {
+        original = state.request.maintenanceLimit === undefined
+          ? { ...original, userLimit: Math.min(request.userLimit, formerLimit) }
+          : { ...request, maintenanceLimit: formerLimit };
+      }
+    }
+    if (!matches(original) || state.billingSource !== this.#source) reject('attempt_conflict');
     if (state.day !== this.#day(state.reservedAtMs) || state.reservedAtMs >= request.deadlineAtMs) reject('invalid_stored_usage');
     return state;
   }
