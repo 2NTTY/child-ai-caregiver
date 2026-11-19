@@ -6689,3 +6689,9 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
   - 新增 `tests/req002-schema-and-trace.test.ts`（11 cases）、`scripts/ci/verify-req002-schema-trace-offline.sh` 與 `.github/workflows/req002-schema-trace-offline.yml`。
 - Verification：待最終本地離線檢查與型別驗證後於下一筆或確認結果記錄；依指示保留於本地工作樹，未執行 `git push` 或建立 PR。
 
+
+### 2026-11-19　完成 REQ-002 有界基準、SSE 斷線恢復與硬預算門檻離線實作（`codex/req002-live-benchmark-and-disconnect`）
+
+1）**Provider 邊界硬預算與 CLI 安全閘門（`server/req002-acceptance-harness.ts`、`scripts/verify-req002-live.mjs`）**：實作 `parseReq002LiveCliArgs`（未帶 `--live` 或 `--offline` 或同時帶兩個旗標即於任何調用前中止）與 `createProviderBoundaryGuard`（預設上限 `runs <= 3`、`modelCalls <= 10`、`queryEmbeddings <= 4`，在派發前先檢查並阻斷超額調用），支援顯式 `LOCAL_AGENT_CONFIG`、`P4_VERTEX_PROJECT`／`GCP_PROJECT_ID` 與 `GEMINI_API_KEY`（`AI_AGENT_MAX_RETRIES=1`）。
+2）**五份官方種子驗證、SSE 斷線恢復與配對基準（`scripts/lib/req002-acceptance-runner.ts`）**：匯入 `knowledge/hk-official-seed.json` 全部五份官方來源至向量記憶體 Firestore 雙工環境，核對純寒暄短回合（Case G：1 model call、0 embedding、跳過審核）、六個月加固含合成 PII 金絲雀（Case A：外搜與向量載荷 0 洩漏、`fhs-solid-food` 同版 `versionId`/`contentHash` 覆核、`GET .../reply` 同 `runId` 零重跑）、兩個月限制（Case B）、未涵蓋發燒嘔吐（Case C：不編造引用並保留既有醫療求助卡邊界）、真實 HTTP/SSE 串流中斷後 `ChatController.refreshOriginalReply()` 零重複發問復原與 `403` 清卡，以及序貫三輪（4 model calls）對單輪有界批次（2 model calls）＋冷／暖向量快取復用對比與 §7.1 四項核心里程碑統計。
+3）**離線測試、CLI `--offline`、型別與 CI 門檻**：新增 `tests/req002-live-benchmark-and-disconnect.test.ts`（6/6 通過）與離線 CI 設定（`.github/workflows/req002-live-benchmark-offline.yml`、`scripts/ci/verify-req002-live-benchmark-offline.sh`，共 22 檔 / 220 cases 與三份嚴格 `tsc --noEmit`）；本階段未執行 `--live` 計費實調用亦未推送遠端。

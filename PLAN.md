@@ -1643,3 +1643,11 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
   - Provider 明確聲明結構化能力（Vertex / Gemini 宣告 `native_json_schema`，OpenAI 相容供應商宣告 `prompt_strict_json`）；不支援原生 schema 時，gateway 於請求移除不支援欄位、加入嚴格 JSON 指令並於 trace 標記 `schemaMode: "degraded_prompt_strict_json"` 與 `schemaDegradationReason: "provider_native_schema_unsupported"`；任何結構化成功均不放行錯誤 hash 或缺失來源／語義檢查。
   - 新增 `server/agent-trace.ts` 嚴格白名單 metadata collector 與 `formatOtelMetadataSpan`，統一覆蓋 `main_chat`、`background`、`work_followup`、`summary`、`compaction` 與各 `completeText` 專責角色之啟始、重試、錯誤、取消、上下文組裝分類與四項核心里程碑時間點（`firstMeaningfulProgressMs`、`firstUsableSourceMs`、`firstApprovedAnswerMs`、`terminalSettledMs`），並隔離任何輸入／輸出正文或 PII 字串。
 - **驗證門檻**：[離線驗證 workflow](.github/workflows/req002-schema-trace-offline.yml) · [驗證腳本](scripts/ci/verify-req002-schema-trace-offline.sh)。本輪為本地離線驗證與型別檢查，未連真 Vertex/OpenAI 模型或 Firestore，未推送遠端。
+
+### REQ-002 有界真實基準與 SSE 斷線恢復門檻（`codex/req002-live-benchmark-and-disconnect`，基線 `origin/master` `dc9b23d8`）
+
+- **對應需求**：REQ-002 §§6–7.2、AC 506／511／517–518。
+- **交付內容**：
+  - `server/req002-acceptance-harness.ts` 與 `scripts/lib/req002-acceptance-runner.ts`：建立 provider 邊界硬預算計數器與 pre-dispatch fail-stop（預設 `runs <= 3`、`modelCalls <= 10`、`queryEmbeddings <= 4`，覆蓋生成、獨立審核／修復、查詢嵌入與重試）、合成 PII 金絲雀（`陳大文`／`沙田第一城 1 座`／`2026年5月18日`）外送掃描、`POST .../reply` 與 `GET .../reply` 同 `runId` 零重跑復原、`hk-official-seed.json` 5 份官方來源匯入及同版 `versionId`/`contentHash` 核對、SSE 串流途中中止後之 `remoteReply=running` 與 `refreshOriginalReply`／亂序幀忽略／`403` 清卡驗證，以及合成的序貫／有界批次量測與本機 Map 冷暖對照；不是正式向量快取或服務效能證據。
+  - `scripts/verify-req002-live.mjs`：執行合成基準須明確指定 `--offline`；收據核對實際收到的回覆、向量檢索未退化及 B／C 的預期語意。現有合成文件向量與真實供應商的查詢向量不相容；`--live` 只回報基準尚未支援，非零退出，不讀取憑據或呼叫供應商，也不能產生通過收據。
+- **誠實驗證邊界**：本分支僅於本地執行離線合成測試、離線 CLI 模式與既有 `127.0.0.1` loopback SSE 回歸測試；沒有執行真實 Gemini／Vertex、線上或付費測試；正式基準仍須用同模型產生的文件向量及另行核准的實測。[離線驗證 workflow](.github/workflows/req002-live-benchmark-offline.yml) · [驗證腳本](scripts/ci/verify-req002-live-benchmark-offline.sh)
