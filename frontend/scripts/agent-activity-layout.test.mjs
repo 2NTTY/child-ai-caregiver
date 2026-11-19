@@ -58,7 +58,7 @@ test('pending changes precede handled results and retain exact content, destinat
   const accepted = proposal('handled', { status: 'accepted', result: { kind: 'task', version: 2, label: 'Original receipt' } });
   const pending = proposal('pending'), s = setup(run([accepted, pending])); s.render(true);
   assert.ok(s.h.hosts().indexOf(s.h.node('agent-pending-proposals')) < s.h.hosts().indexOf(s.h.node('agent-handled-proposals')));
-  assert.match(s.text(), /Exact change pending/); assert.match(s.text(), /新增待辦/); assert.match(s.text(), /確認後按家庭權限共享/);
+  assert.match(s.text(), /Exact change pending/); assert.match(s.text(), /新增待辦/); assert.equal(s.h.hosts().find(n => n.type === 'AppCheckbox').props.label, '同意將這項資料分享給家庭');
   assert.equal(s.button('建立待辦').props.disabled, true);
   s.h.hosts().find(n => n.type === 'AppCheckbox').props.onChange(true); s.render(true);
   assert.equal(s.button('建立待辦').props.disabled, false); s.button('建立待辦').props.onPress();
@@ -67,7 +67,7 @@ test('pending changes precede handled results and retain exact content, destinat
     const old = s.state.agentModel; s.state.agentModel = { ...old, ...patch }; s.render(true);
     assert.equal(s.button('建立待辦').props.disabled, true); assert.equal(s.button('略過').props.disabled, true); s.state.agentModel = old;
   }
-  pending.expiresAt = at; s.render(true); assert.equal(s.button('建立待辦').props.disabled, true); assert.equal(s.button('略過').props.disabled, false);
+  pending.expiresAt = at; s.render(true); assert.equal(s.button('建立待辦'), undefined); assert.equal(s.button('略過').props.disabled, false);
   s.button('略過').props.onPress(); assert.deepEqual(s.calls.at(-1), ['decide', 'pending', 'dismiss']);
 });
 
@@ -172,7 +172,7 @@ test('list previews preserve actual task cancellation and source deactivation ve
 
 test('handled results start concise, expand without a modal and never treat accepted without a receipt as saved', () => {
   const s = setup(run([proposal('handled', { status: 'accepted', result: null })])); s.render(true);
-  assert.match(s.text(), /不能據此確認已保存/); assert.doesNotMatch(s.text(), /Exact change handled/);
+  assert.match(s.text(), /尚未確認是否已儲存/); assert.doesNotMatch(s.text(), /Exact change handled/);
   assert.equal(s.h.hosts().some(n => n.type === 'Dialog'), false);
   s.button('查看詳情').props.onPress(); s.render(true); assert.match(s.text(), /Exact change handled/);
   s.button('收起詳情').props.onPress(); s.render(true); assert.doesNotMatch(s.text(), /Exact change handled/);
@@ -244,8 +244,7 @@ test('direct receipts retain destination and delivery limits, private-source sna
   const s = setup(); const item = { id: 'receipt', kind: 'save_private_note', state: 'saved', resource: { kind: 'private_note', id: 'note-id', version: 3 }, notification: 'authorized_for_due_event', channels: ['telegram'], createdAt: at };
   s.state.authorization.receipts['synthetic-run'] = { state: 'ready', items: [item] };
   s.state.agentModel.run.privateSourceCitations = [{ citationId: 'private', label: 'Synthetic private source', version: 7, excerpt: 'Exact authorized excerpt' }];
-  s.conversation(); assert.match(s.text(), /只供本人查看/); assert.match(s.text(), /不表示已發送或送達/); assert.doesNotMatch(s.text(), /note-id|Exact authorized excerpt/);
-  s.button('查看保存詳情').props.onPress(); s.conversation(); assert.match(s.text(), /note-id/);
+  s.conversation(); assert.match(s.text(), /只供本人查看/); assert.match(s.text(), /到期提示已授權 ·\s*Telegram/); assert.doesNotMatch(s.text(), /已送達|note-id|Exact authorized excerpt/);
   s.button('私人來源 1 · Synthetic private source').props.onPress(); s.conversation(); assert.match(s.text(), /Exact authorized excerpt/);
   s.button('返回活動').props.onPress(); s.state.agentInbox.state = 'failed'; s.conversation(); assert.match(s.text(), /未能載入其他活動/);
   s.button('重新載入活動記錄').props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox']);
@@ -258,11 +257,11 @@ test('twenty identically titled background runs keep a human date-time and a dis
   const s = setup();
   s.state.agentModel.readState = 'idle';
   s.state.agentInbox = { online: true, locked: false, state: 'ready', loadedAt: at, selectedRunId: 'background-3',
-    entries: Array.from({ length: 20 }, (_, i) => ({ runId: `background-${i}`, label: '已保存背景運行', createdAt: `2026-10-22T00:${String(i).padStart(2, '0')}:00Z` })) };
+    entries: Array.from({ length: 20 }, (_, i) => ({ runId: `background-${i}`, label: i % 2 ? '跟進交辦事項' : '整理記憶', status: 'completed', createdAt: `2026-10-22T00:${String(i).padStart(2, '0')}:00Z` })) };
   s.conversation();
   const controls = s.h.hosts().filter(n => n.type === 'Pressable' && n.props.testID?.startsWith('activity-card-run-'));
   assert.equal(controls.length, 20); assert.equal(new Set(controls.map(n => n.props.accessibilityLabel)).size, 20);
-  assert.ok(controls.every(n => /活動結果；.*08:\d{2}$/.test(n.props.accessibilityLabel)));
+  assert.ok(controls.every(n => /(?:整理記憶|跟進交辦事項)；.*08:\d{2}；已結束$/.test(n.props.accessibilityLabel)));
   assert.match(s.text(), /08:00/); assert.match(s.text(), /08:19/); assert.doesNotMatch(s.text(), /運行建立|香港時間|GMT|UTC|08:00:00/);
   assert.equal(s.h.hosts().filter(n => n.props['aria-current'] === 'true').length, 1);
   controls[3].props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox-select', 'background-3']);
@@ -327,9 +326,7 @@ test('private fact keeps source and scope labels visible, merges only the exact 
   assert.equal(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '來源'), false);
   assert.doesNotMatch(s.text(), /有效至|未設定/); assert.match(s.text(), /確認期限.*2099/);
   assert.equal(s.h.hosts().filter(n => n.type === 'AppCheckbox').length, 0);
-  const snapshot = structuredClone(p); s.named('查看其他詳情：Synthetic fact').props.onPress(); s.render(true);
-  assert.match(s.text(), /Exact original source/); assert.match(s.text(), /候選版本 4/); assert.deepEqual(p, snapshot);
-  s.named('收起其他詳情：Synthetic fact').props.onPress(); s.render(true);
+  assert.equal(s.named('查看其他詳情：Synthetic fact'), undefined);
   p.details[1].value = 'Synthetic differing visibility'; p.details.push({ label: 'Unrecognised safety term', value: 'Exact new condition' });
   s.render(true); assert.match(s.text(), /Synthetic differing visibility/); assert.match(s.text(), /Exact new condition/);
   const { proposalDetailIcon } = s.h.load('src/components/agent/proposal-presentation.ts');
@@ -340,7 +337,7 @@ test('private fact keeps source and scope labels visible, merges only the exact 
   s.render(true);
   for (const label of ['constructor', 'toString', '__proto__']) assert.ok(s.text().includes(`Exact unknown ${label}`));
   p.expiresAt = 'not-a-date'; s.render(true);
-  assert.match(s.text(), /時間資料無效/); assert.match(s.text(), /候選已過期/); assert.equal(s.button('確認資料').props.disabled, true);
+  assert.match(s.text(), /時間資料無效/); assert.ok(s.h.hosts().some(n => n.props.label === '已過期')); assert.equal(s.button('確認資料'), undefined);
 });
 
 test('all ten projected proposal kinds retain complete changes and mandatory scope, target, time and authorization text', () => {
@@ -351,7 +348,7 @@ test('all ten projected proposal kinds retain complete changes and mandatory sco
   const links = { recordId: null, taskId: null, attentionId: null };
   const fixtures = [
     { value: { kind: 'task_create', values: { title: 'Synthetic task', details: 'Exact task body', kind: 'ordinary',
-      assigneeUserId: 'Exact assignee', dueAt: at, timeZone: 'Asia/Hong_Kong' } }, visible: ['Exact task body', 'Exact assignee', at, 'Asia/Hong_Kong'] },
+      assigneeUserId: 'Exact assignee', dueAt: at, timeZone: 'Asia/Hong_Kong' } }, visible: ['Exact task body', 'Exact original target', '2026'] },
     { value: { kind: 'task_change', taskId: 'Exact original task', change: { action: 'reschedule', expectedVersion: 3, note: 'Exact change note',
       assigneeUserId: 'Exact new assignee', dueAt: later, timeZone: 'Asia/Hong_Kong' } }, visible: ['Exact original task', 'Exact change note', 'Exact new assignee', later] },
     { value: { kind: 'memory_fact', key: 'Synthetic fact', content: 'Exact fact body', intendedVisibility: 'private', validUntil: null }, visible: ['Exact fact body'] },
@@ -375,12 +372,16 @@ test('all ten projected proposal kinds retain complete changes and mandatory sco
     const original = structuredClone(p); s.state.agentModel.run.proposals = [p]; s.render(true);
     for (const required of fixture.visible) assert.ok(s.text().includes(required), `${p.kind}: visible ${required}`);
     assert.match(s.text(), /確認期限/); assert.doesNotMatch(s.text(), /候選版本/);
-    assert.ok(s.text().includes(p.scope === 'family' ? '確認後按家庭權限共享' : '本人'));
+    if (p.scope === 'private') assert.ok(s.text().includes('本人'));
     const check = s.h.hosts().find(n => n.type === 'AppCheckbox');
     assert.equal(!!check, p.scope === 'family', p.kind);
-    if (check) { assert.match(check.props.label, /明確同意寫入家庭共享資料/); assert.equal(check.props.disabled, false); }
-    s.named('查看其他詳情：' + p.title).props.onPress(); s.render(true);
+    if (check) { assert.equal(check.props.label, '同意將這項資料分享給家庭'); assert.equal(check.props.disabled, false); }
+    s.named('查看其他詳情：' + p.title)?.props.onPress(); s.render(true);
     for (const detail of p.details) {
+      if (p.kind === 'task_create' && ['種類', '負責人識別', '時區', '到期時間'].includes(detail.label)) {
+        assert.ok(!s.text().includes(detail.value), 'raw identifiers, redundant defaults and ISO timestamps stay off the card');
+        continue;
+      }
       if (p.kind === 'memory_fact' && detail.label === '有效至' && detail.value === '未設定') {
         assert.ok(!s.text().includes('未設定'), 'the exact optional new-fact placeholder is omitted even in disclosure');
       } else if (detail.label === '接受後可見範圍' && detail.value === '只限你本人' && p.kind === 'memory_fact') assert.ok(s.text().includes('本人'));
@@ -422,8 +423,8 @@ test('only the exact new-fact unset validity placeholder is omitted, never real 
   }
   p.expiresAt = '2020-01-01T00:00:00Z'; s.render(true);
   assert.doesNotMatch(s.text(), /有效至|未設定/);
-  assert.match(s.text(), /確認期限.*2020/); assert.match(s.text(), /候選已過期/);
-  assert.equal(s.button('確認資料').props.disabled, true);
+  assert.match(s.text(), /確認期限.*2020/); assert.ok(s.h.hosts().some(n => n.props.label === '已過期'));
+  assert.equal(s.button('確認資料'), undefined);
 });
 
 test('opening an unresolved activity rereads once, including reconnect, but ordinary rerenders never poll or POST', () => {
