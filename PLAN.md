@@ -1634,3 +1634,12 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
   - **引用診斷與針對性局部修復（`server/product-agent-tools.ts`、`server/chat-delivery-review.ts`）**：`present_answer` 自動去除同段重複 `citationIds` 並於引用拒絕錯誤提供 `availableOfficialCitationIds`；`delivery_repair` 注入 `retrievedEvidence` 免重搜、拒絕零修改空轉修復（`delivery_review_rejected`）、重算 `liveHash` 及禁止修復時抽走應附之官方引用（除非屬伺服器驗證之純範圍限制拒答）。
   - **背景／延後帳本隔離與主回覆優先（`tests/req002-batch-reuse-and-repair.test.ts`）**：補齊離線契約測試，驗證 continuation worker 綁定原 `rootRunId`、不可變上限與絕對期限、公開知識維運帳本隔離私域、以及主回覆 `store.finish` 優先提交。
 - **驗收限制與離線門檻**：本分支全程於本機離線驗證（含 [REQ-002 離線驗證腳本](scripts/ci/verify-req002-batch-reuse-repair-offline.sh) 與 [CI workflow](.github/workflows/req002-batch-reuse-repair-offline.yml)，涵蓋 31 個測試檔、276 個離線案例與三組嚴格 TypeScript 檢查），未連接真實 Gemini / Vertex、PostgreSQL / Firestore 或進行雲端／真機實測。
+
+### 無工具角色原生 JSON Schema 與全角色 Metadata-Only Trace（`codex/req002-schema-and-metadata-trace`，基線 `origin/master` `5ddc68e4`）
+
+- **對應需求**：REQ-002 §§3.8、4.4、7.1；AC 514、524。
+- **核心實作**：
+  - 統一 `server/structured-output-schema.ts`（`nativeResponseSchema`），為所有無工具 `completeText` 角色（`delivery_review`、`delivery_repair`、`data_compose`、`compose_review`、`knowledge_organize`、`knowledge_review` 及 PDF windowed/focus 檢查）傳遞原生 `responseMimeType: "application/json"` 與 `responseJsonSchema`。
+  - Provider 明確聲明結構化能力（Vertex / Gemini 宣告 `native_json_schema`，OpenAI 相容供應商宣告 `prompt_strict_json`）；不支援原生 schema 時，gateway 於請求移除不支援欄位、加入嚴格 JSON 指令並於 trace 標記 `schemaMode: "degraded_prompt_strict_json"` 與 `schemaDegradationReason: "provider_native_schema_unsupported"`；任何結構化成功均不放行錯誤 hash 或缺失來源／語義檢查。
+  - 新增 `server/agent-trace.ts` 嚴格白名單 metadata collector 與 `formatOtelMetadataSpan`，統一覆蓋 `main_chat`、`background`、`work_followup`、`summary`、`compaction` 與各 `completeText` 專責角色之啟始、重試、錯誤、取消、上下文組裝分類與四項核心里程碑時間點（`firstMeaningfulProgressMs`、`firstUsableSourceMs`、`firstApprovedAnswerMs`、`terminalSettledMs`），並隔離任何輸入／輸出正文或 PII 字串。
+- **驗證門檻**：[離線驗證 workflow](.github/workflows/req002-schema-trace-offline.yml) · [驗證腳本](scripts/ci/verify-req002-schema-trace-offline.sh)。本輪為本地離線驗證與型別檢查，未連真 Vertex/OpenAI 模型或 Firestore，未推送遠端。

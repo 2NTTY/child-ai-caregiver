@@ -1,5 +1,5 @@
 import type { AgentScope, AgentTool, AgentToolResult } from "./agent-runtime.ts";
-import { AgentStopped, type AgentBudget } from "./agent-budget.ts";
+import { AgentStopped, type AgentBudget, type AgentStopReason } from "./agent-budget.ts";
 
 export interface ReadToolBatchPolicy {
   /** Maximum number of read-only tool calls executing simultaneously. */
@@ -79,6 +79,12 @@ export interface BatchCallOutcome {
   fromBatchCap?: boolean;
 }
 
+export type BatchReadSettlement = Readonly<{
+  status: AgentToolResult["status"];
+  faultCode?: "read_timeout" | "read_unavailable" | "embedding_limit";
+  stopReason?: AgentStopReason;
+}>;
+
 class ReadItemTimeoutError extends Error {
   constructor() { super("read_timeout"); }
 }
@@ -95,6 +101,8 @@ export async function runReadToolBatch(options: {
   budget: AgentBudget;
   authorize: () => Promise<boolean>;
   checkDurable?: () => Promise<void>;
+  /** Called only at dispatch; the returned observer receives the scheduler's final decision. */
+  onDispatch?: (toolName: string, callId: string) => (settlement: BatchReadSettlement) => void;
   executeItem: (item: BatchSliceItem, parsedArgs: Record<string, unknown>, signal: AbortSignal) => Promise<AgentToolResult>;
 }): Promise<{ outcomes: Map<string, BatchCallOutcome>; peakConcurrent: number }> {
   const { slice, policy, scope, budget, authorize, checkDurable, executeItem } = options;
@@ -212,7 +220,21 @@ export async function runReadToolBatch(options: {
         inFlight += 1;
         if (inFlight > peakConcurrent) peakConcurrent = inFlight;
 
+        let finish: ReturnType<NonNullable<typeof options.onDispatch>> | undefined;
+        let faultCode: BatchReadSettlement["faultCode"];
+        // The batch signal synchronously mirrors the original budget and also
+        // stops every sibling. Settle once even while a post-read permit is pending.
+        const settle = (data: BatchReadSettlement) => {
+          const callback = finish;
+          finish = undefined;
+          try { callback?.(data); } catch { /* Observation only. */ }
+        };
+        const onSpanAbort = () => settle({ status: "failed", stopReason:
+          batchController.signal.reason instanceof AgentStopped ? batchController.signal.reason.reason : "unavailable" });
         try {
+          try { finish = options.onDispatch?.(item.tool.name, item.callId); } catch { /* Observation only. */ }
+          batchController.signal.addEventListener("abort", onSpanAbort, { once: true });
+          if (batchController.signal.aborted) { onSpanAbort(); return; }
           const execution = executeItem(item, parsedArgs, combinedSignal);
           // Prevent unhandled rejection if item timeout or batch abort settles the race first.
           execution.catch(() => {});
@@ -239,6 +261,8 @@ export async function runReadToolBatch(options: {
             abortFatal(new AgentStopped("unauthorized"));
             return;
           }
+          if (batchController.signal.aborted) return;
+          budget.check();
           outcomes.set(item.callId, { callId: item.callId, name: item.tool.name, response });
         } catch (error) {
           if (batchController.signal.aborted || budget.signal.aborted) {
@@ -254,12 +278,15 @@ export async function runReadToolBatch(options: {
               abortFatal(new AgentStopped("unauthorized"));
               return;
             }
+            if (batchController.signal.aborted) return;
+            budget.check();
           } catch (authError) {
             abortFatal(authError instanceof AgentStopped ? authError : new AgentStopped("unavailable"));
             return;
           }
           const timedOut = error instanceof ReadItemTimeoutError || itemController.signal.aborted;
           const isEmbeddingLimit = error instanceof AgentStopped && error.reason === "embedding_limit";
+          faultCode = isEmbeddingLimit ? "embedding_limit" : timedOut ? "read_timeout" : "read_unavailable";
           outcomes.set(item.callId, {
             callId: item.callId,
             name: item.tool.name,
@@ -267,7 +294,7 @@ export async function runReadToolBatch(options: {
             response: {
               status: isEmbeddingLimit ? "rejected" : "failed",
               data: {
-                code: isEmbeddingLimit ? "embedding_limit" : timedOut ? "read_timeout" : "read_unavailable",
+                code: faultCode,
                 recovery: "bounded_read",
                 nextAction: isEmbeddingLimit
                   ? "Query embedding budget limit reached; keep already succeeded reads and summarize or conclude within remaining budget."
@@ -278,6 +305,12 @@ export async function runReadToolBatch(options: {
             },
           });
         } finally {
+          // Observe the raced/authorized result, never a late resolution from the detached handler.
+          const result = outcomes.get(item.callId);
+          batchController.signal.removeEventListener("abort", onSpanAbort);
+          settle({ status: result?.response.status ?? "failed",
+            ...(faultCode ? { faultCode } : {}),
+            ...(!result ? { stopReason: fatalError instanceof AgentStopped ? fatalError.reason : "unavailable" } : {}) });
           clearTimeout(timer);
           inFlight -= 1;
         }

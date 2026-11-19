@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { createAgentRunTraceCollector, hashSafeTraceId, type AgentTraceEvent } from "../server/agent-trace.ts";
 import test from "node:test";
 import { InMemorySessionService, type LlmResponse } from "@google/adk";
 import { FinishReason } from "@google/genai";
@@ -12,6 +13,7 @@ import {
   DEFAULT_READ_TOOL_BATCH_POLICY,
   isBatchableReadTool,
   normalizeReadBatchPolicy,
+  runReadToolBatch,
   type BatchCallDescriptor,
 } from "../server/agent-tool-batch.ts";
 import { readAiConfig } from "../server/ai-config.ts";
@@ -158,19 +160,22 @@ function deferred<T = void>() {
 }
 
 test("bounded read-only batching executes concurrently within maxConcurrent and reduces model turns", async () => {
+  const events: AgentTraceEvent[] = [];
   let inFlight = 0;
   let peakInFlight = 0;
   const completedIds: string[] = [];
   let modelTurns = 0;
 
   const readProbe: AgentTool = {
-    name: "read_probe",
+    name: "read_history",
     effect: "read",
     description: "Read synthetic record concurrently.",
     parameters: z.object({ id: z.string() }).strict(),
     authorize: async () => true,
     execute: async args => {
       const id = String(args.id);
+      const hash = hashSafeTraceId(({ alpha: "r1", beta: "r2", gamma: "r3", delta: "r4" })[id as "alpha" | "beta" | "gamma" | "delta"]);
+      assert.deepEqual(events.filter(e => e.callIdHash === hash).map(e => e.phase), ["tool_start"]);
       inFlight++;
       if (inFlight > peakInFlight) peakInFlight = inFlight;
       await new Promise(resolve => setTimeout(resolve, 25));
@@ -211,10 +216,10 @@ test("bounded read-only batching executes concurrently within maxConcurrent and 
 
   const defs = new Map<string, AgentTool>([readProbe, writeProbe, showHelp, terminalTool].map(t => [t.name, t]));
   const mixedCalls: BatchCallDescriptor[] = [
-    { id: "c1", name: "read_probe", args: { id: "r1" } },
-    { id: "c2", name: "read_probe", args: { id: "r2" } },
+    { id: "c1", name: "read_history", args: { id: "r1" } },
+    { id: "c2", name: "read_history", args: { id: "r2" } },
     { id: "c3", name: "show_official_help", args: {} },
-    { id: "c4", name: "read_probe", args: { id: "r3" } },
+    { id: "c4", name: "read_history", args: { id: "r3" } },
   ];
   assert.deepEqual(collectContiguousReadSlice(mixedCalls, 0, defs).map(s => s.callId), ["c1", "c2"]);
 
@@ -226,10 +231,10 @@ test("bounded read-only batching executes concurrently within maxConcurrent and 
         const turn = modelTurns++;
         if (turn === 0) {
           return functionCallResponse([
-            { id: "r1", name: "read_probe", args: { id: "alpha" } },
-            { id: "r2", name: "read_probe", args: { id: "beta" } },
-            { id: "r3", name: "read_probe", args: { id: "gamma" } },
-            { id: "r4", name: "read_probe", args: { id: "delta" } },
+            { id: "r1", name: "read_history", args: { id: "alpha" } },
+            { id: "r2", name: "read_history", args: { id: "beta" } },
+            { id: "r3", name: "read_history", args: { id: "gamma" } },
+            { id: "r4", name: "read_history", args: { id: "delta" } },
           ]);
         }
         const responses = request.contents.flatMap(c => c.parts ?? []).filter(p => p.functionResponse);
@@ -241,6 +246,7 @@ test("bounded read-only batching executes concurrently within maxConcurrent and 
 
   const result = await runtime.run({
     scope: SCOPE,
+    onTrace: event => { events.push(event); },
     recipeId: "p1-chat",
     trigger: { kind: "interactive", reference: randomUUID() },
     messages: [{ role: "user", text: "Read four records." }],
@@ -254,6 +260,14 @@ test("bounded read-only batching executes concurrently within maxConcurrent and 
   assert.equal(peakInFlight, 3, "Concurrent execution must reach maxConcurrent=3 without exceeding it");
   assert.equal(modelTurns, 2, "4 reads + present must complete in 2 model turns instead of 5");
   assert.equal(completedIds.length, 4);
+  for (const id of ["r1", "r2", "r3", "r4"]) {
+    const phases = events.filter(e => e.callIdHash === hashSafeTraceId(id));
+    assert.deepEqual(phases.map(e => e.phase), ["tool_start", "tool_end"]);
+    assert.equal(phases[1]?.outcome, "succeeded");
+    assert.equal(phases[0]?.tool, "read_history");
+  }
+  assert.equal(events.at(-1)?.contextAssembly?.loaderCalls.historyReads, 4);
+  assert.doesNotMatch(JSON.stringify(events), /alpha|beta|gamma|delta|doc:/u);
   assert.deepEqual(result.tools.map(t => t.reference), ["alpha", "beta", "gamma", "delta", undefined]);
   assert.deepEqual(result.counts, { modelCalls: 2, toolCalls: 5, queryEmbeddings: 0 });
 });
@@ -379,6 +393,7 @@ test("batch cap overflow, per-item timeout, read error, and mid-batch embedding_
   };
 
   for (const variant of ["cap_timeout_throw", "embedding_limit"] as const) {
+    const events: AgentTraceEvent[] = [];
     executed.length = 0;
     sharedEmbeddings = 0;
     let modelTurn = 0;
@@ -416,6 +431,7 @@ test("batch cap overflow, per-item timeout, read error, and mid-batch embedding_
 
     const result = await runtime.run({
       scope: SCOPE,
+      onTrace: event => { events.push(event); },
       recipeId: "p1-chat",
       trigger: { kind: "interactive", reference: randomUUID() },
       messages: [{ role: "user", text: `Run ${variant}` }],
@@ -426,7 +442,12 @@ test("batch cap overflow, per-item timeout, read error, and mid-batch embedding_
     });
 
     assert.equal(result.status, "completed", JSON.stringify({ variant, result }));
+    const phasesFor = (id: string) => events.filter(e => e.callIdHash === hashSafeTraceId(id)).map(e => e.phase);
+    assert.doesNotMatch(JSON.stringify(events), /preserved-sibling-evidence|synthetic read failure/u);
     if (variant === "cap_timeout_throw") {
+      assert.deepEqual(phasesFor("i0"), ["tool_start", "tool_end"]);
+      for (const id of ["i1", "i2"]) assert.deepEqual(phasesFor(id), ["tool_start", "tool_error"]);
+      for (const id of ["i3", "i4"]) assert.deepEqual(phasesFor(id), []);
       assert.equal(observedBatchResponses.length, 5);
       assert.equal(observedBatchResponses[0]?.response?.status, "succeeded");
       assert.equal(observedBatchResponses[0]?.response?.data?.value, "preserved-sibling-evidence");
@@ -442,6 +463,8 @@ test("batch cap overflow, per-item timeout, read error, and mid-batch embedding_
       assert.equal(observedBatchResponses[4]?.response?.data?.code, "batch_limit_exceeded");
       assert.equal(executed.filter(m => m === "ok").length, 1, "Overflow items above maxBatchSize must never execute");
     } else {
+      assert.deepEqual(phasesFor("e0"), ["tool_start", "tool_end"]);
+      assert.deepEqual(phasesFor("e1"), ["tool_start", "tool_rejection"]);
       assert.equal(observedBatchResponses.length, 2);
       assert.equal(observedBatchResponses[0]?.response?.status, "succeeded");
       assert.equal(observedBatchResponses[0]?.response?.data?.value, "preserved-sibling-evidence");
@@ -456,6 +479,8 @@ test("mid-batch cancellation and authorization revocation stop queued reads with
   for (const mode of ["cancel", "revoke"] as const) {
     const controller = new AbortController();
     let authorized = true;
+    const events: AgentTraceEvent[] = [];
+    let noteSource = () => {};
     const item0Started = deferred<void>();
     const releaseItem0 = deferred<void>();
     let startedCount = 0;
@@ -475,6 +500,7 @@ test("mid-batch cancellation and authorization revocation stop queued reads with
             new Promise<void>(resolve => ctx.signal.addEventListener("abort", () => resolve(), { once: true })),
           ]);
         }
+        noteSource();
         return { status: "succeeded", data: { secret: "must-not-disclose" } };
       },
     };
@@ -505,7 +531,8 @@ test("mid-batch cancellation and authorization revocation stop queued reads with
       recipeId: "p1-chat",
       trigger: { kind: "interactive", reference: randomUUID() },
       messages: [{ role: "user", text: "Batch reads." }],
-      tools: [readItem, present],
+      onTrace: event => { events.push(event); },
+      tools: context => { noteSource = () => context.trace?.markUsableSource(1); return [readItem, present]; },
       signal: controller.signal,
       authorize: async () => authorized,
       readBatchPolicy: { maxConcurrent: 1, maxBatchSize: 6, itemTimeoutMs: 5000 },
@@ -525,7 +552,56 @@ test("mid-batch cancellation and authorization revocation stop queued reads with
     assert.equal(result.stopReason, mode === "cancel" ? "cancelled" : "unauthorized", mode);
     assert.equal(result.text, null, mode);
     assert.deepEqual(result.tools, [], `${mode}: cancelled/revoked batch must not disclose tool results`);
+    const pair = events.filter(event => event.callIdHash === hashSafeTraceId("b0"));
+    assert.deepEqual(pair.map(event => event.phase), ["tool_start", "tool_error"]);
+    assert.equal(pair[1]?.outcome, mode === "cancel" ? "timeout" : "unauthorized");
+    assert.equal(events.at(-1)?.phase, "run_end");
+    assert.equal(events.some(event => event.phase === "source_usable"), false);
     assert.equal(startedCount, 1, `${mode}: queued read items must not start after cancellation or revocation`);
+  }
+
+  // A completed (or failed) read still has no publishable outcome while its
+  // post-read permit is pending. A sibling stop must win even if that permit resolves true.
+  for (const readFails of [false, true]) {
+    const budget = new AgentBudget(), events: AgentTraceEvent[] = [];
+    const trace = createAgentRunTraceCollector({ runId: "fixture", role: "main_chat", sinks: [e => { events.push(e); }] });
+    const bothStarted = deferred<void>(), postRead = deferred<void>(), permit = deferred<boolean>();
+    const stopped = deferred<void>();
+    const tool: AgentTool = { name: "read_history", effect: "read", description: "fixture", parameters: z.object({}).strict(),
+      authorize: async () => true, execute: async () => ({ status: "succeeded" }) };
+    const started: string[] = [];
+    let checks = 0;
+    const batch = runReadToolBatch({
+      scope: SCOPE, budget, slice: ["first", "sibling", "queued"].map((callId, index) => ({ tool, callId, index, args: {} })),
+      policy: { maxConcurrent: 2, maxBatchSize: 3, itemTimeoutMs: 5000 },
+      authorize: async () => { if (++checks !== 3) return true; postRead.resolve(); return permit.promise; },
+      onDispatch: (name, id) => trace.beginBatchRead(name, id, () => budget.counts),
+      executeItem: (item, _args, signal) => trace.observeBatchSources(item.callId, async () => {
+        started.push(item.callId);
+        if (item.callId === "sibling") {
+          signal.addEventListener("abort", () => stopped.resolve(), { once: true });
+          bothStarted.resolve(); await postRead.promise; throw new AgentStopped("unauthorized");
+        }
+        assert.equal(item.callId, "first");
+        await bothStarted.promise; trace.handle.markUsableSource(1);
+        if (readFails) throw new Error("bounded read failure");
+        return { status: "succeeded" as const };
+      }),
+    });
+    const rejected = assert.rejects(batch, { reason: "unauthorized" });
+    try {
+      await stopped.promise;
+      const pairs = started.map(id => events.filter(e => e.callIdHash === hashSafeTraceId(id)));
+      assert.deepEqual(started, ["first", "sibling"]);
+      for (const pair of pairs) {
+        assert.deepEqual(pair.map(e => e.phase), ["tool_start", "tool_error"]);
+        assert.equal(pair[1]?.outcome, "unauthorized");
+      }
+      assert.equal(events.some(e => e.phase === "source_usable"), false);
+      const before = events.length;
+      permit.resolve(true); await rejected;
+      assert.equal(events.length, before);
+    } finally { permit.resolve(true); budget.close(); }
   }
 });
 
@@ -622,6 +698,7 @@ test("follow-up reply reuses valid prior official citations without re-searching
     ].flat();
 
     let embeddingsCount = 0;
+    const events: AgentTraceEvent[] = [];
     const knowledge = createKnowledgeRetriever(
       {
         enforcesPersonalLibrarySelection: true,
@@ -668,6 +745,7 @@ test("follow-up reply reuses valid prior official citations without re-searching
 
     const runtime = createAgentRuntime({
       config: aiConfig,
+      onTrace: event => { events.push(event); },
       usage: { reserve: async () => true, record: async () => {} },
       provider: {
         generate: async request => {
@@ -769,6 +847,8 @@ test("follow-up reply reuses valid prior official citations without re-searching
       assert.equal(sawReusedContext, true);
       assert.equal(sawInvalidatedFlag, false);
       assert.equal(sawCitationRejection, false);
+      assert.equal(events.filter(event => event.phase === "source_usable").length, 1);
+      assert.equal(events.at(-1)?.contextAssembly?.loaderCalls.knowledgeSearches, 0);
       assert.equal(embeddingsCount, 0, "Valid prior citation reuse must not burn a new query embedding");
       assert.equal(reply.retrievalMode, "vector_keyword");
       assert.deepEqual(reply.citations.map(c => c.chunkId), [CHUNK_A]);
@@ -778,6 +858,7 @@ test("follow-up reply reuses valid prior official citations without re-searching
       if (scenario !== "wrong_child" && scenario !== "wrong_user") {
         assert.equal(sawInvalidatedFlag, true, `${scenario} must expose reusedEvidenceInvalidated=true`);
       }
+      if (scenario !== "version_updated") assert.equal(events.some(event => event.phase === "source_usable"), false);
       if (scenario === "version_updated") {
         assert.equal(reply.citations[0]?.versionId, VERSION_V2);
         assert.equal(embeddingsCount, 1);

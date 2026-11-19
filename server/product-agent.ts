@@ -18,7 +18,7 @@ import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView } from "../src/shared/
 import { enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import { baseAgentKnowledgeFilter } from "./knowledge-query-context.ts";
 import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
-import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
+import type { AgentRunContext, AgentRunResult, AgentContextCategoryMetadata, AgentTraceSink } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
 import { COMPACT_PRODUCT_AGENT_TOOL_CATALOG, PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
@@ -142,6 +142,7 @@ export function createProductAgent(options: {
   runtime: AgentRuntimePort; store: ProductAgentStore;
   memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
   contextCompaction?: boolean | { tokenThreshold?: number; eventRetentionSize?: number };
+  onTrace?: AgentTraceSink;
 }) {
   const compactionConfig = options.contextCompaction ?? true;
   const activeReplies = new Map<string, AbortController>();
@@ -163,6 +164,7 @@ export function createProductAgent(options: {
         const rendered:{value:AgentPresentation|null}={value:null};
         const review:{value:ChatDeliveryReviewBinding|null;text:string|null}={value:null,text:null};
         const result=await options.runtime.run({
+          ...(options.onTrace ? { onTrace: options.onTrace } : {}),
           scope:claim.scope,runId:claim.runId,claimedRun:claim,deadlineAtMs:Date.parse(claim.expiresAt),
           trigger:{kind:'interactive',reference:messageId},recipeId:'product-interactive',promptRecipeId:'product-selected-children',authorize,signal:cancellation.signal,
           contextCompaction: compactionConfig,
@@ -229,6 +231,7 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim,
+        ...(options.onTrace ? { onTrace: options.onTrace } : {}),
         deadlineAtMs: Date.parse(claim.expiresAt), trigger: { kind: "worker", reference: job.eventId }, recipeId: "product-work-followup",
         contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context,
@@ -268,6 +271,8 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
+        ...(options.onTrace ? { onTrace: options.onTrace } : {}),
+        retainsPartialSources: reason => !!retainedSourcesForStoppedReview("stopped", reason, rendered.value),
         deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
         contextCompaction: compactionConfig,
@@ -458,7 +463,36 @@ export function createProductAgent(options: {
           }
         }
       }
+      const readSummary = pureGreetingTurn ? undefined : options.memory.initialConversationSummary?.bind(options.memory);
+      const contextCategories: AgentContextCategoryMetadata[] = [
+        { category: "profile", included: false, reasonCode: "not_loaded" },
+        { category: "confirmed_facts", included: false, reasonCode: "not_loaded" },
+        { category: "conversation_summary", included: false, reasonCode: pureGreetingTurn ? "skipped_short_path" : "not_loaded" },
+        {
+          category: "recent_messages",
+          included: recent.messages.length > 0,
+          count: recent.messages.length,
+          reasonCode: available.length !== currentPage.messages.length
+            ? "omitted_retired_source"
+            : recent.coverage.complete === false
+              ? "truncated"
+              : recent.messages.length > 0
+                ? "included"
+                : "empty",
+        },
+        {
+          category: "confirmation_result",
+          included: Boolean(confirmationResult),
+          reasonCode: confirmationResult ? "included" : "empty",
+        },
+        ...(currentUserMessage.photo ? [{ category: "media_photo" as const, included: true, count: 1, reasonCode: "included" as const }] : []),
+        ...(currentUserMessage.voice ? [{ category: "media_voice" as const, included: true, count: 1, reasonCode: "included" as const }] : []),
+        ...(currentUserMessage.file ? [{ category: "media_file" as const, included: true, count: 1, reasonCode: "included" as const }] : []),
+      ];
       const result = await options.runtime.run({
+        ...(options.onTrace ? { onTrace: options.onTrace } : {}),
+        contextAssembly: { categories: contextCategories },
+        retainsPartialSources: reason => !!retainedSourcesForStoppedReview("stopped", reason, rendered.value),
         onDiagnostic: event => {
           if (event.phase === "model_start") publish("model");
           else if (event.phase === "tool_start") publish(event.tool?.includes("knowledge") ? "searching" : event.tool?.startsWith("read_") || event.tool?.startsWith("search_") ? "reading" : "working");
@@ -467,9 +501,10 @@ export function createProductAgent(options: {
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         contextCompaction: compactionConfig,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
-        ...(!pureGreetingTurn && options.memory.initialConversationSummary ? { readConversationSummary: async () => {
+        ...(readSummary ? { readConversationSummary: async (onRead?: () => void) => {
           if (!await authorize()) throw new AgentStopped("unauthorized");
-          const current = await options.memory.initialConversationSummary!(userId, childId);
+          onRead?.();
+          const current = await readSummary(userId, childId);
           if (!await authorize()) throw new AgentStopped("unauthorized");
           return current;
         } } : {}),
@@ -521,7 +556,9 @@ export function createProductAgent(options: {
             trustedUserMessage: page.messages[index]!.text, currentMessageId: messageId, recentQuoteSources: recentQuotes,
             conversationWindow: workspaceView ? { messages: recent.messages.length, complete: recent.coverage.complete && available.length === currentPage.messages.length } : undefined,
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
-            onKnowledgeSources: (sources, stage) => { publish(stage === "read" ? "reading" : "searching", { sources }); },
+            onKnowledgeSources: (sources, stage) => {
+              publish(stage === "read" ? "reading" : "searching", { sources });
+            },
           });
           return tools.tools;
         }, authorize, signal: replySignal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
@@ -550,6 +587,7 @@ export function createProductAgent(options: {
               rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
               confirmationPendingFallbackUsed = true;
               // This Server-only receipt has no model draft to review and needs no fifth call.
+              _context.trace?.markApprovedAnswer();
               return AGENT_CONFIRMATION_PENDING_TEXT;
             }
           }
@@ -567,6 +605,7 @@ export function createProductAgent(options: {
             review.value = null;
             review.text = null;
             confirmationPendingFallbackUsed = true;
+            _context.trace?.markApprovedAnswer();
             return AGENT_CONFIRMATION_PENDING_TEXT;
           }
         },
