@@ -6652,3 +6652,10 @@ P4 恢復至 S16／S17。沿用原照片、錄音與文件的服務、共享授�
 - 隔離 Edge／Firebase 在模型關閉時從聊天入口開啟平台卡，按加入後只寫一次來源偏好。兩個同時重試均回傳第 5 版，私人卡新增零張。正式 Runner 經模擬供應商完成聊天代辦及收據重開。Server／ZIP 32 項、前端 26 項及兩份 TypeScript 檢查通過。
 - 本機 emulator 提示條令首次滑鼠點擊受阻，後以鍵盤進入。另一次核查將唯讀照護搜尋計入寫入，已按端點修正及重驗。正式發布由整合包處理。[版本與驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 - 整合覆核在 203cb61c 收窄聊天目錄讀取。八份文件分兩頁，完整版本讀取各五份及三份。直接按網址只讀取命中的一份，選定橫跨兩頁的系列才讀取該兩份版本。原生 Firestore emulator 第一頁為空仍能翻到目標卡。四項定向檢查、Server 型別檢查及跨頁模擬 Runner 均通過。
+
+## 2026-11-19 REQ-008 複雜成品專家與隔離核對
+
+- 新增 `src/shared/specialist-artifact.ts`、`server/specialist-artifact-pdf-worker.ts`、`server/specialist-artifact-renderer.ts` 及 `server/specialist-artifact-agent.ts`，並將 `prepare_family_artifact` 掛載到 `server/product-agent-capabilities.ts` 的 `document_compose` 群組與 `server/product-agent-tools.ts`。
+- 專家工具只產生草稿與核對報告（`formalSave: false`、`published: false`、`requiresFormalConfirmation: true`），須檢驗 `sourceQuote`、文件版本、`authorityVersion` 及 `readState === "ready"`，並受同家庭單一併發鎖（`specialist_task_in_progress`）與同一個呼叫方 `AgentBudget` 限制。
+- PDF 建構採零網絡 A4 Type0 Unicode（分塊 `beginbfchar` `/ToUnicode` 與 `/W` 字寬）並於 `node:worker_threads`（128MB 上限、15s 逾時、`pdfjs-dist` 離線檢查）檢出邊界溢位、裁切、重疊、頁尾侵入、空白頁、缺字、不安全連結及缺少標題／章節；HTML 採 `default-src 'none'` CSP 與 `cheerio` 檢驗；自動修復最多兩輪並綁定新版本與雜湊；未接入截圖渲染器時誠實標示 `unverifiedChecks: ["pixel_screenshot_render"]`。
+- 離線驗證腳本 `scripts/ci/verify-req008-specialist-artifact-renderer-offline.sh` 與 workflow `.github/workflows/req008-specialist-artifact-renderer-offline.yml` 涵蓋 `tests/req008-specialist-artifact-renderer.test.ts`（10 項）等共 `12` 個檔案 `145` 項測試及三個嚴格 TypeScript 檢查，全數通過。
