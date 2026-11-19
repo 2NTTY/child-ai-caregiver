@@ -3,7 +3,7 @@ import type { Firestore, Transaction } from '@google-cloud/firestore';
 import type { StorageCipher } from './storage-crypto.ts';
 import { FirestoreDomainData } from './firestore-domain-data.ts';
 import { FamilyError } from './family-access.ts';
-import { librarySelectionMode, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import { librarySelectionMode, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
 const key = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
 const saved = z.strictObject({
@@ -47,9 +47,18 @@ export function createLibrarySelections(options: { database: Firestore; projectI
     const scope = librarySelectionScope(owner);
     tx.set(ref(owner), { ...data.tags(scope), ...data.seal(kind, owner, scope, librarySelectionRecord, { series: rows }) });
   }
-  return { read, async save(tx: Transaction, owner: string, change: LibraryPreferenceChange, available: SelectionEdition[]) {
+  return { read, async save(tx: Transaction, owner: string, change: LibrarySelectionCommand, available: SelectionEdition[]) {
     const rows = await read(tx, owner), prior = rows.find(row => row.seriesId === change.seriesId);
     const editions = available.filter(row => row.seriesId === change.seriesId);
+    if ('action' in change) {
+      if (!editions.length) throw new FamilyError(409, 'library_selection_changed');
+      if (prior && prior.mode !== 'platform') return { revision: prior.revision };
+      // A free follow cannot take a document away from another saved selection after a series move.
+      if (rows.some(row => row.seriesId !== change.seriesId && row.editions.some(pin => editions.some(item => item.sourceId === pin.sourceId))))
+        throw new FamilyError(409, 'library_selection_changed');
+      change = { seriesId: change.seriesId, expectedRevision: change.expectedRevision, editions: change.editions,
+        mode: 'follow', enabled: prior?.enabled ?? true };
+    }
     if (change.expectedRevision !== (prior?.revision ?? 0) || editions.length !== change.editions.length
       || editions.some(row => !change.editions.some(item => item.sourceId === row.sourceId && item.versionId === row.versionId)))
       throw new FamilyError(409, 'library_selection_changed');

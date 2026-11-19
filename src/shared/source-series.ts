@@ -32,6 +32,13 @@ export const libraryPreferenceChangeSchema = z.strictObject({
   editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid().optional(), versionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).refine(row => !!row.versionId || !!row.versionHash)).min(1).max(100),
 }).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
 export type LibraryPreferenceChange = z.infer<typeof libraryPreferenceChangeSchema>;
+const libraryJoinSchema = z.strictObject({
+  action: z.literal('join'), seriesId: id, expectedRevision: z.int().nonnegative(),
+  editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid() })).min(1).max(100),
+}).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
+export type LibraryJoin = z.infer<typeof libraryJoinSchema>;
+export const librarySelectionCommandSchema = z.union([libraryJoinSchema, libraryPreferenceChangeSchema]);
+export type LibrarySelectionCommand = z.infer<typeof librarySelectionCommandSchema>;
 export const libraryPreferenceViewSchema = z.strictObject({
   revision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,
   selectedVersionId: z.uuid().nullable(), selectedVersionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), eligible: z.boolean(),

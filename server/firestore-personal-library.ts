@@ -11,7 +11,7 @@ import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.
 import { canonical } from './firestore-session-codec.ts';
 import { FamilyError } from './family-access.ts';
 
-import type { LibraryArchiveSelection, LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import type { LibraryArchiveSelection, LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeSchema,
   authorizationVersion: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u),
@@ -58,7 +58,7 @@ export function createFirestorePersonalLibrary(options: {
         return { path, bytes: size, sha256: archive.sha256, dispose };
       } catch (error) { await dispose(); throw error; }
     },
-    async save(userId: string, childId: string, change: LibraryPreferenceChange) {
+    async save(userId: string, childId: string, change: LibrarySelectionCommand) {
       const save = options.knowledge.saveLibraryPreference;
       if (!save || !options.authority.runTransaction) throw new Error('library_unavailable');
       try {

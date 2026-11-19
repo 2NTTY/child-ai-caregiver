@@ -19,7 +19,7 @@ import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
-import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibraryPreferenceChange } from '../src/shared/source-series.ts';
+import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 import { createLibrarySelections, explicitlyDisabled, selectedEdition } from './knowledge-library-selection.ts';
 import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
 import { canonical } from './firestore-session-codec.ts';
@@ -57,7 +57,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
   catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
-  saveLibraryPreference(tx: Transaction, owner: string, change: LibraryPreferenceChange): Promise<{ revision: number }>;
+  saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
@@ -883,9 +883,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     async saveLibraryPreference(tx, owner, change) {
       if (!selections) reject('knowledge_preferences_unavailable', 503);
       const current = await corpus(tx);
-      const publicEditions = current.editions.filter(edition => !internalKnowledgeSource(edition.document.url)
-        && edition.observed?.watch.definition.audience !== 'internal_noncommercial');
-      if (!change.imported) return selections.save(tx, owner, change, publicEditions.map(selectionEdition));
+      const publicEditions = current.editions.filter(isPublicEdition);
+      if ('action' in change || !change.imported) return selections.save(tx, owner, change, publicEditions.map(selectionEdition));
       const resolved = [];
       for (const ref of change.editions) {
         const active = publicEditions.find(item => item.source.sourceId === ref.sourceId);

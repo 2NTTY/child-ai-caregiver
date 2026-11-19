@@ -197,6 +197,7 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
       { library, isCurrentUser: async id => id === user, readJson: request => request.json() }));
     return { catalog: async () => (await client.getLibrary(child.scope.childId, signal, user)).items[0]!,
       change: (value: import('../src/shared/source-series.ts').LibraryPreferenceChange) => client.setLibraryPreference!(child.scope.childId, signal, user, value),
+      join: (value: import('../src/shared/source-series.ts').LibraryJoin) => client.setLibraryPreference!(child.scope.childId, signal, user, value),
       search: async () => (await store.candidates(filter, null, { query: 'needle', libraryUserId: user })).map(hit => hit.versionId) };
   }
   const a = await account('synthetic-alice'), b = await account('synthetic-bob');
@@ -204,8 +205,20 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   const change = { seriesId: old.series!.id, expectedRevision: old.preference!.revision, enabled: true,
     editions: [{ sourceId: old.sourceId, versionId: one.versionId }] };
   assert.deepEqual(old.preference, { revision: 0, enabled: true, mode: 'platform', selectedVersionId: null, eligible: true });
+  const join = { action: 'join' as const, seriesId: change.seriesId, expectedRevision: 0, editions: change.editions };
+  await assert.rejects(b.join({ ...join, editions: [{ sourceId: old.sourceId, versionId: crypto.randomUUID() }] }), { status: 409 });
+  const priorKeys = new Set(f.records.keys());
+  await b.join(join);
+  assert.equal((await b.catalog()).preference!.selectedVersionId, one.versionId);
+  assert.equal((await b.catalog()).preference!.mode, 'follow');
+  assert.equal((await a.catalog()).preference!.revision, 0);
+  const addedKeys = [...f.records.keys()].filter(key => !priorKeys.has(key));
+  assert.equal(addedKeys.length, 1);
+  assert.match(addedKeys[0]!, /library_preferences/);
+  const afterJoin = structuredClone([...f.records.entries()]);
+  await b.join(join);
+  assert.deepEqual([...f.records.entries()], afterJoin);
   await a.change({ ...change, mode: 'fixed', imported: true, editions: [{ sourceId: old.sourceId, versionHash: one.hash }] });
-  await b.change({ ...change, expectedRevision: (await b.catalog()).preference!.revision, mode: 'follow' });
   const two = await f.publish({ ...one.document, title: 'Renamed selected guidance' }, one);
   assert.deepEqual(await a.search(), [one.versionId]); assert.deepEqual(await b.search(), [two.versionId]);
   const latest = await a.catalog();
@@ -213,6 +226,9 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
   assert.equal(original.title, old.title); assert.equal(original.series!.name, old.series!.name);
   const next = { ...change, expectedRevision: latest.preference!.revision, editions: [{ sourceId: old.sourceId, versionId: two.versionId }] };
   await a.change({ ...next, enabled: false, mode: 'fixed' });
+  const afterPin = structuredClone([...f.records.entries()]);
+  await a.join(join);
+  assert.deepEqual([...f.records.entries()], afterPin);
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), [two.versionId]);
   await assert.rejects(a.change({ ...next, enabled: true, mode: 'fixed' }), { status: 409 });
   const disabled = await a.catalog();
@@ -242,6 +258,7 @@ test('REQ-006 two authenticated library owners independently pin, follow, adopt 
     editions: [{ sourceId: old.sourceId, versionId: wide.versionId }] });
   assert.deepEqual(await a.search(), [wide.versionId], 'An explicit reset releases a stored fixed selection to the current platform publication');
   await store.disable(old.sourceId, 'Synthetic withdrawal');
+  await assert.rejects(b.join(join), { status: 409 });
   assert.deepEqual(await a.search(), []); assert.deepEqual(await b.search(), []);
 });
 
