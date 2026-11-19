@@ -27,6 +27,8 @@ import type { ProductAgentResult } from "../../src/shared/product-agent.ts";
 import { productAgentResultSchema } from "../../src/shared/product-agent-result.ts";
 import {
   REQ002_CORE_SCENARIOS,
+  REQ002_LIVE_UNSUPPORTED,
+  checkReq002ScriptedAnswer,
   buildSanitizedAcceptanceReceipt,
   classifyTerminalCategory,
   createProviderBoundaryGuard,
@@ -56,9 +58,7 @@ function deterministicSeedVector(text: string): number[] {
 }
 
 /** Seeds all 5 curated HK official sources into an in-memory vector-enabled Firestore double. */
-export async function createSeededOfficialKnowledgeStore(options?: {
-  embedDocument?: (title: string, section: string, text: string) => Promise<number[]>;
-}) {
+export async function createSeededOfficialKnowledgeStore() {
   const rawSeed = JSON.parse(
     await readFile(new URL("../../knowledge/hk-official-seed.json", import.meta.url), "utf8"),
   ) as unknown[];
@@ -167,9 +167,7 @@ export async function createSeededOfficialKnowledgeStore(options?: {
     await store.review(imported.versionId, imported.hash, "req002-seeded-acceptance", buildLocalOfficialSeedAssessment(source, manifest));
     const vectors: FirestoreKnowledgeEmbedding[] = [];
     for (const chunk of source.chunks) {
-      const vec = options?.embedDocument
-        ? await options.embedDocument(source.title, chunk.section, chunk.text)
-        : deterministicSeedVector(`${source.title} ${chunk.section} ${chunk.text} ${chunk.keywords.join(" ")}`);
+      const vec = deterministicSeedVector(`${source.title} ${chunk.section} ${chunk.text} ${chunk.keywords.join(" ")}`);
       vectors.push({
         chunkKey: chunk.key,
         inputHash: embeddingDocument(source.title, chunk.section, chunk.text).hash,
@@ -395,7 +393,7 @@ function createScriptedOfflineSliceModel(
               args: {
                 kind: "clarification",
                 paragraphs: [{
-                  text: "暫無相關資料。",
+                  text: "暫未收錄此情況的官方資料。",
                   citationIds: [],
                 }],
               },
@@ -410,7 +408,7 @@ function createScriptedOfflineSliceModel(
   };
 }
 
-/** In-memory HTTP/SSE product harness used by both live/offline CLI and automated tests. */
+/** In-memory HTTP/SSE product harness used by the scripted offline suite. */
 export function createProductAgentHttpHarness(input: {
   config: AiConfig;
   provider: AgentModelProvider;
@@ -920,16 +918,14 @@ export async function executeReq002AcceptanceSuite(options: {
   budgetCaps?: Partial<Req002BudgetCaps>;
   offlineGreetingOnly?: boolean;
 }): Promise<Req002AcceptanceReceipt> {
-  if (options.mode === "offline" && (options.rawProvider || options.rawEmbedding)) {
+  if (options.mode !== "offline") throw new Error(REQ002_LIVE_UNSUPPORTED);
+  if (options.rawProvider || options.rawEmbedding) {
     throw new Error("Offline verification always uses the built-in scripted providers.");
-  }
-  if (options.mode === "live" && (!options.rawProvider || !options.rawEmbedding || options.offlineGreetingOnly)) {
-    throw new Error("Live verification requires both explicit adapters and the core scenarios.");
   }
   const seed = await createSeededOfficialKnowledgeStore();
   const capturedLogs: string[] = [];
-  const rawProvider = options.rawProvider ?? createScriptedOfflineSliceModel(seed.publishedChunksByKey);
-  const rawEmbedding: EmbeddingProvider = options.rawEmbedding ?? {
+  const rawProvider = createScriptedOfflineSliceModel(seed.publishedChunksByKey);
+  const rawEmbedding: EmbeddingProvider = {
     embed: async req => ({ values: deterministicSeedVector(req.text), inputTokens: 6, billableCharacters: req.text.length }),
   };
 
@@ -988,7 +984,7 @@ export async function executeReq002AcceptanceSuite(options: {
       body: "{}",
     }));
     const isGreeting = item.id === "case_g_greeting_short_path";
-    await observeReq002Reply(sseRes, tracker, userMessage.id, () => harness.getClaimedRunId(userMessage.id), () => {
+    const deliveredText = await observeReq002Reply(sseRes, tracker, userMessage.id, () => harness.getClaimedRunId(userMessage.id), () => {
       const saved = harness.getRunResult(userMessage.id);
       // A/B owe independent review. A greeting or safe uncovered-topic limitation can
       // be cleared by the product's normal completion path without a review binding.
@@ -1031,6 +1027,10 @@ export async function executeReq002AcceptanceSuite(options: {
       status: result?.status ?? "not_observed",
       stopReason: result?.stopReason ?? null,
       terminalCategory: classifyTerminalCategory(result),
+      retrievalMode: result?.retrievalMode ?? null,
+      scriptedAnswerEvidence: checkReq002ScriptedAnswer(item.id, deliveredText,
+        item.id === "case_b_two_month_restriction" && originalVersionVerified && citations[0]
+          ? await seed.readChunkByIdentity(citations[0]) : null),
       cacheMode: isGreeting ? "not_applicable" : "not_measured",
       counts: result?.counts ?? { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 },
       providerBoundaryCalls: boundary.snapshot().modelCalls - callsBefore,
@@ -1057,7 +1057,7 @@ export async function executeReq002AcceptanceSuite(options: {
 
   return buildSanitizedAcceptanceReceipt({
     candidateSha: options.candidateSha,
-    mode: options.mode === "live" ? "live" : "offline_scripted",
+    mode: "offline_scripted",
     suite: options.offlineGreetingOnly ? "offline_greeting_smoke" : "core_abc",
     provider: options.providerName,
     model: options.config.model,

@@ -82,7 +82,7 @@ test("fragmented SSE reports progress before result; a missing or erroneous resu
   assert.equal(tracker.snapshot().firstApprovedAnswerMs, 60, "answer observed even while reader cleanup is pending");
   tick = 65;
   releaseCleanup();
-  await done;
+  assert.equal(await done, "ok", "the exact approved delivery is available to the offline oracle");
   assert.equal(tracker.snapshot().firstApprovedAnswerMs, 60);
   assert.equal(tracker.snapshot().terminalSettledMs, null);
   tick = 70;
@@ -92,7 +92,7 @@ test("fragmented SSE reports progress before result; a missing or erroneous resu
     const fresh = harness.createRunMilestoneTracker();
     const source = new Response(events.map(e => new TextDecoder().decode(encode(e))).join(""), { headers: { "content-type": "text/event-stream" } });
     if (!events.length) await assert.rejects(harness.observeReq002Reply(source, fresh, messageId, () => runId, () => runId));
-    else await harness.observeReq002Reply(source, fresh, messageId, () => runId, () => runId);
+    else assert.equal(await harness.observeReq002Reply(source, fresh, messageId, () => runId, () => runId), null);
     assert.equal(fresh.snapshot().firstApprovedAnswerMs, null);
   }
 });
@@ -103,6 +103,7 @@ test("receipt fails closed on a stopped/missing case, leak, cap, missing source 
     terminalCategory: "completed" as const, cacheMode: "not_measured" as const,
     counts: { modelCalls: 3, queryEmbeddings: 1, toolCalls: 2 }, providerBoundaryCalls: 3,
     reviewDecision: "pass", citedChunkIds: ["chunk-1"], citedSourceIds: ["fhs-solid-food"],
+    retrievalMode: "vector_keyword" as const, scriptedAnswerEvidence: "not_verified" as const,
     originalVersionVerified: true, getReplyReplaySameRunId: true, deterministicHelpCards: [],
     milestones: { firstMeaningfulProgressMs: 2, firstUsableSourceMs: 10, firstApprovedAnswerMs: 20, terminalSettledMs: 30 },
   };
@@ -110,9 +111,9 @@ test("receipt fails closed on a stopped/missing case, leak, cap, missing source 
     candidateSha: "a".repeat(40), suite: "core_abc", mode: "offline_scripted", provider: "fixture", model: "scripted",
     executedAt: "2026-11-19T00:00:00.000Z", budgetCaps: harness.REQ002_DEFAULT_BUDGET_CAPS,
     totals: { capBlocked: false, runsStarted: 3, modelCalls: 9, queryEmbeddings: 3, reviewOrRepairCalls: 3, promptTokens: 0, candidateTokens: 0, totalTokens: 0 },
-    scenarios: [baseScenario, { ...baseScenario, id: "case_b_two_month_restriction", runId: "run-b" },
+    scenarios: [baseScenario, { ...baseScenario, id: "case_b_two_month_restriction", runId: "run-b", scriptedAnswerEvidence: "two_month_restriction" },
       { ...baseScenario, id: "case_c_uncovered_fever_vomiting", runId: "run-c", citedChunkIds: [], citedSourceIds: [],
-        originalVersionVerified: false, deterministicHelpCards: ["medical-consult-hk-v1"] }],
+        scriptedAnswerEvidence: "missing_official_coverage", originalVersionVerified: false, deterministicHelpCards: ["medical-consult-hk-v1"] }],
     sseDisconnectRecovery: { transport: "in_memory_http_sse", abortedMidStream: true, preAbortPhases: ["searching"],
       retainedSourcesBeforeAbort: 1, duplicatePostCalls: 0, recoveredRunId: "run-d", lateOutOfOrderIgnored: true,
       stoppedRetainsQualifiedCards: true, revocationClearedCards: true },
@@ -121,7 +122,10 @@ test("receipt fails closed on a stopped/missing case, leak, cap, missing source 
       boundedBatchToolCalls: 3, coldEmbeddings: 3, warmReusedEmbeddings: 3, note: "fixture only" },
     outboundQueryLeakCount: 0, embeddingPayloadLeakCount: 0, diagnosticAndLogLeakCount: 0,
   };
-  assert.equal(harness.buildSanitizedAcceptanceReceipt(raw).verdict.status, "passed");
+  const offline = harness.buildSanitizedAcceptanceReceipt(raw);
+  assert.equal(offline.verdict.status, "passed");
+  assert.equal(harness.req002AcceptanceReceiptSchema.safeParse({ ...offline, mode: "live" }).success, false,
+    "a passing offline receipt cannot be relabelled as live");
   for (const mutate of [
     (r: typeof raw) => { r.scenarios[0]!.status = "stopped"; },
     (r: typeof raw) => { r.scenarios.pop(); },
@@ -130,6 +134,10 @@ test("receipt fails closed on a stopped/missing case, leak, cap, missing source 
     (r: typeof raw) => { r.diagnosticAndLogLeakCount++; },
     (r: typeof raw) => { r.totals.capBlocked = true; },
     (r: typeof raw) => { r.scenarios[0]!.originalVersionVerified = false; },
+    (r: typeof raw) => { r.scenarios[1]!.retrievalMode = "keyword_degraded"; },
+    (r: typeof raw) => { r.scenarios[2]!.retrievalMode = "not_used"; },
+    (r: typeof raw) => { r.scenarios[1]!.scriptedAnswerEvidence = "not_verified"; },
+    (r: typeof raw) => { r.scenarios[2]!.scriptedAnswerEvidence = "not_verified"; },
     (r: typeof raw) => { r.scenarios[2]!.deterministicHelpCards = []; },
     (r: typeof raw) => { r.sseDisconnectRecovery.duplicatePostCalls++; },
     (r: typeof raw) => { r.baselineComparison.warmReusedEmbeddings--; },
@@ -209,4 +217,19 @@ test("candidate provenance is the clean tracked checkout containing the entrypoi
     mkdirSync(join(dir, "nested/scripts"), { recursive: true });
     assert.throws(() => harness.resolveReq002CandidateSha(pathToFileURL(join(dir, "nested/scripts/entry.mjs"))), /checkout root/u);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("scripted content evidence requires delivered, uncontradicted text and the matching first source for B", () => {
+  const b = "case_b_two_month_restriction", c = "case_c_uncovered_fever_vomiting";
+  const answer = "根據衞生署官方指引，未足四個月大的寶寶不應吃奶以外的食物，因此兩個月大暫時不應開始餵食米糊或固體食物。 [1]";
+  const source = { sourceId: "fhs-solid-food", key: "starting-solids", text: "未滿四個月不應加入奶以外食物。" };
+  assert.equal(harness.checkReq002ScriptedAnswer(b, answer, source), "two_month_restriction");
+  for (const wrong of [null, "請參閱官方指引。 [1]", answer.replace("不應開始", "可以開始"), answer + " 可以先試米糊。"])
+    assert.equal(harness.checkReq002ScriptedAnswer(b, wrong, source), "not_verified");
+  for (const wrong of [null, { ...source, text: "約六個月開始。" }, { ...source, key: "another" }])
+    assert.equal(harness.checkReq002ScriptedAnswer(b, answer, wrong), "not_verified");
+  const gap = "暫未收錄此情況的官方資料。";
+  assert.equal(harness.checkReq002ScriptedAnswer(c, gap, null), "missing_official_coverage");
+  for (const wrong of [null, "請參閱求助卡。", gap + " 建議自行用藥。"])
+    assert.equal(harness.checkReq002ScriptedAnswer(c, wrong, null), "not_verified");
 });

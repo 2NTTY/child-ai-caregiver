@@ -194,6 +194,7 @@ test("receipt builder refuses any serialized canary token", () => {
       reviewDecision: "pass",
       citedChunkIds: [],
       citedSourceIds: [],
+      retrievalMode: "not_used", scriptedAnswerEvidence: "not_verified",
       originalVersionVerified: false,
       getReplyReplaySameRunId: true,
       deterministicHelpCards: [],
@@ -235,6 +236,12 @@ test("seeded 5-source offline suite covers Case G, A, B, C, SSE mid-stream disco
     config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-req002-suite", AI_AGENT_MAX_RETRIES: "0" }),
     providerName: "scripted_offline",
   };
+  let dispatches = 0;
+  await assert.rejects(executeReq002AcceptanceSuite({ ...options, mode: "live",
+    rawProvider: { generate: async () => { dispatches++; throw Error("must not dispatch"); } },
+    rawEmbedding: { embed: async () => { dispatches++; throw Error("must not dispatch"); } },
+  }), /live_baseline_unsupported/u);
+  assert.equal(dispatches, 0);
   const receipt = await executeReq002AcceptanceSuite(options);
   const greetingReceipt = await executeReq002AcceptanceSuite({ ...options, offlineGreetingOnly: true });
 
@@ -271,12 +278,15 @@ test("seeded 5-source offline suite covers Case G, A, B, C, SSE mid-stream disco
   assert.equal(caseB.reviewDecision, "pass");
   assert.deepEqual(caseB.citedSourceIds, ["fhs-solid-food"]);
   assert.equal(caseB.originalVersionVerified, true);
+  assert.equal(caseB.scriptedAnswerEvidence, "two_month_restriction");
 
   const caseC = byId.get("case_c_uncovered_fever_vomiting")!;
   assert.deepEqual(caseC.citedChunkIds, [], "Uncovered fever+vomiting must never fabricate official citations");
   assert.ok(caseC.deterministicHelpCards.includes("medical-consult-hk-v1"));
   assert.equal(caseC.deterministicHelpCards.includes("emergency-hk-v1"), false);
   assert.equal(caseC.getReplyReplaySameRunId, true);
+  assert.equal(caseC.scriptedAnswerEvidence, "missing_official_coverage");
+  assert.ok(receipt.scenarios.every(s => s.retrievalMode === "vector_keyword"));
 
   assert.equal(receipt.sseDisconnectRecovery.abortedMidStream, true);
   assert.ok(receipt.sseDisconnectRecovery.retainedSourcesBeforeAbort >= 1);

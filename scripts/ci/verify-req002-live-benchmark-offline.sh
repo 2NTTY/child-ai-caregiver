@@ -53,7 +53,7 @@ TEST_FILES=(
   tests/agent-budget.test.ts
   tests/product-agent-execution-contract.test.ts
 )
-TEST_CASES=(6 7 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
+TEST_CASES=(6 8 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9 8)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -96,6 +96,12 @@ if "$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs >/dev/null 2>&
   echo "FAIL unflagged verify-req002-live.mjs must refuse execution" >&2
   exit 1
 fi
+receipt="$TMPDIR/req002-unsupported-live.json"
+if LOCAL_AGENT_CONFIG="$TMPDIR/absent-config" "$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs --live --write-receipt="$receipt" >/dev/null; then
+  echo "FAIL live baseline with synthetic document vectors must not run" >&2
+  exit 1
+fi
+"$NODE_BIN" -e 'const r=require(process.argv[1]); if (r.mode !== "live" || r.verdict.status !== "unsupported" || r.scenarios.length || r.totals.runsStarted || r.totals.modelCalls || r.totals.queryEmbeddings) process.exit(1)' "$receipt"
 receipt="$TMPDIR/req002-offline-receipt.json"
 "$NODE_BIN" --import "./$GUARD" scripts/verify-req002-live.mjs --offline --write-receipt="$receipt" >/dev/null
 "$NODE_BIN" -e 'const r=require(process.argv[1]); if (r.verdict.status !== "passed" || r.mode !== "offline_scripted") process.exit(1)' "$receipt"

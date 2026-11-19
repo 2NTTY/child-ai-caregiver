@@ -79,7 +79,7 @@ export function parseReq002LiveCliArgs(argv: readonly string[]): Req002CliOption
   const hasOffline = argv.includes("--offline");
   if (hasLive === hasOffline) {
     throw new Error(
-      "Choose exactly one execution mode: pass --live with explicit credentials for a real bounded check, or --offline for the synthetic offline verification.",
+      "Choose exactly one execution mode: pass --offline for scripted verification; --live currently only reports an unsupported baseline.",
     );
   }
   let writeReceiptPath: string | null = null;
@@ -399,10 +399,11 @@ export function createRunMilestoneTracker(now: () => number = () => performance.
 /** Observe qualified frames at the client boundary, not after buffering the response.
  * There is no earlier approved-answer frame in this protocol. Recoverability is checked separately by GET. */
 export async function observeReq002Reply(response: Response, tracker: ReturnType<typeof createRunMilestoneTracker>,
-  messageId: string, claimedRunId: () => string | null, approvedRunId: () => string | null): Promise<void> {
+  messageId: string, claimedRunId: () => string | null, approvedRunId: () => string | null): Promise<string | null> {
   if (!response.ok || response.headers.get("content-type")?.split(";")[0] !== "text/event-stream") {
     throw new Error("Expected a successful event stream");
   }
+  let delivered: string | null = null;
   let previous: ReconciledAgentProgress | null = null;
   await readAgentFeedback(response, event => {
     // The product persists the message→run claim before publishing any progress.
@@ -415,10 +416,26 @@ export async function observeReq002Reply(response: Response, tracker: ReturnType
     const runId = approvedRunId();
     if (result.status >= 200 && result.status < 300 && runId && runId === claimedRunId() && message?.role === "model"
       && message.agentRunId === runId && message.inReplyTo === messageId && typeof message.text === "string" && message.text.trim()) {
+      delivered = message.text;
       tracker.markApprovedAnswer();
     }
   });
+  return delivered;
 }
+
+// Pin expected wire output independently of the scripted provider. This is not a semantic judge for live output.
+// Only the label leaves memory; never put the delivered text or the source text in the receipt.
+export function checkReq002ScriptedAnswer(id: string, delivered: string | null,
+  firstSource: { sourceId: string; key: string; text: string } | null): Req002AcceptanceReceipt["scenarios"][number]["scriptedAnswerEvidence"] {
+  if (id === "case_b_two_month_restriction"
+    && delivered === "根據衞生署官方指引，未足四個月大的寶寶不應吃奶以外的食物，因此兩個月大暫時不應開始餵食米糊或固體食物。 [1]"
+    && firstSource?.sourceId === "fhs-solid-food" && firstSource.key === "starting-solids"
+    && firstSource.text.includes("未滿四個月不應加入奶以外食物。")) return "two_month_restriction";
+  if (id === "case_c_uncovered_fever_vomiting" && delivered === "暫未收錄此情況的官方資料。") return "missing_official_coverage";
+  return "not_verified";
+}
+
+export const REQ002_LIVE_UNSUPPORTED = "live_baseline_unsupported: the checked-in seed uses synthetic cue vectors, not document vectors from the query provider/model; no live run was started.";
 
 export const req002ReceiptScenarioSchema = z.strictObject({
   id: z.string().min(1).max(64),
@@ -426,6 +443,8 @@ export const req002ReceiptScenarioSchema = z.strictObject({
   status: z.string().min(1).max(32),
   stopReason: z.string().max(80).nullable(),
   terminalCategory: z.enum(["completed", "partial", "failed", "cancelled", "unknown"]),
+  retrievalMode: z.enum(["vector_keyword", "keyword_degraded", "not_used"]).nullable(),
+  scriptedAnswerEvidence: z.enum(["two_month_restriction", "missing_official_coverage", "not_verified"]),
   cacheMode: z.enum(["not_measured", "not_applicable"]),
   counts: z.strictObject({
     modelCalls: z.number().int().min(0),
@@ -449,7 +468,7 @@ export const req002ReceiptScenarioSchema = z.strictObject({
 
 export const req002AcceptanceReceiptSchema = z.strictObject({
   candidateSha: z.string().min(7).max(64),
-  mode: z.enum(["live", "offline_scripted"]),
+  mode: z.literal("offline_scripted"),
   suite: z.enum(["core_abc", "offline_greeting_smoke"]),
   verdict: z.strictObject({ status: z.enum(["passed", "failed"]), failures: z.array(z.string()) }),
   provider: z.string().min(1).max(80),
@@ -540,7 +559,7 @@ export function evaluateReq002Receipt(receipt: Omit<Req002AcceptanceReceipt, "ve
   const { totals, budgetCaps, scenarios, sseDisconnectRecovery: recovery } = receipt;
   const greeting = "case_g_greeting_short_path", a = "case_a_half_year_solid_food", b = "case_b_two_month_restriction", c = "case_c_uncovered_fever_vomiting";
   const expected = receipt.suite === "offline_greeting_smoke" ? [greeting] : [a, b, c];
-  if (receipt.suite === "offline_greeting_smoke" && receipt.mode !== "offline_scripted") failures.push("wrong_mode");
+  if (receipt.mode !== "offline_scripted") failures.push("wrong_mode");
   if (scenarios.length !== expected.length || !expected.every((id, i) => scenarios[i]?.id === id)) failures.push("incomplete_scenarios");
   if (totals.capBlocked || totals.runsStarted !== scenarios.length || totals.runsStarted > budgetCaps.maxRuns
     || totals.modelCalls > budgetCaps.maxModelCalls || totals.queryEmbeddings > budgetCaps.maxQueryEmbeddings
@@ -551,6 +570,10 @@ export function evaluateReq002Receipt(receipt: Omit<Req002AcceptanceReceipt, "ve
     if (s.status !== "completed" || s.terminalCategory !== "completed" || s.stopReason !== null || !s.runId
       || !s.getReplyReplaySameRunId || s.providerBoundaryCalls < 1 || s.milestones.firstApprovedAnswerMs === null
       || s.milestones.terminalSettledMs === null || s.milestones.firstMeaningfulProgressMs === null) failures.push("scenario_not_delivered");
+    if ((s.id === a || s.id === b || s.id === c) && s.retrievalMode !== "vector_keyword")
+      failures.push("vector_retrieval_not_observed");
+    if (s.id === b && s.scriptedAnswerEvidence !== "two_month_restriction") failures.push("age_restriction_not_verified");
+    if (s.id === c && s.scriptedAnswerEvidence !== "missing_official_coverage") failures.push("coverage_limitation_not_verified");
     if ((s.id === a || s.id === b) && (s.reviewDecision !== "pass" || !s.originalVersionVerified || !s.citedChunkIds.length
       || !s.citedSourceIds.includes("fhs-solid-food") || s.milestones.firstUsableSourceMs === null)) failures.push("unverified_official_answer");
     if (s.id === c && (s.citedChunkIds.length || s.citedSourceIds.length || !s.deterministicHelpCards.includes("medical-consult-hk-v1")
