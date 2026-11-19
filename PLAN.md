@@ -1832,3 +1832,59 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 - Enforces strict server-side isolation and bounded cleanup (`src/shared/temporary-chat.ts`, `server/temporary-chat-store.ts`, `server/temporary-chat-agent.ts`, `server/temporary-chat-api.ts`, `server/knowledge-retriever.ts`, `server/firestore-knowledge.ts`, `server/chat-delivery-review.ts`, `server/app.ts`, `server/firebase-app.ts`, `server/firebase-runtime.ts`, `server/index.ts`): every session starts blank, rejects child/scope fields, searches only public knowledge (`publicOnly: true`, `mayReadPublicLivePage`, plus `matchOfficialHelpForText`), blocks write/memory/confirmation tools, passes delivery review with temporary redirection checks (`chatDeliveryDraft.temporaryChat`), applies existing user-level daily AI quota without per-message Firestore/PostgreSQL persistence or content logs, physically erases in-memory content + aborts in-flight requests on exit (dropping late replies), and reaps abnormal disconnects after 15m sliding idle / 60m hard TTL, with timer disposal on shutdown in both Firebase and PostgreSQL runtimes.
 - Explicitly distinguishes immediate local clearing from server confirmation (`local_cleared_remote_pending` vs `remote_confirmed`) with auto-retry on reconnect, and clearly discloses that external model/search provider processing and temporary retention remain governed by provider policy.
 - Verification in this branch ran offline with scripted model/embedding/in-memory stubs (zero live Gemini/Vertex or external network calls): `tests/req003-ephemeral-temporary-chat.test.ts` (12 cases) and `frontend/scripts/req003-ephemeral-temporary-chat.test.mjs` (6 cases) within the 16-file offline gate (`scripts/ci/verify-req003-ephemeral-temporary-chat-offline.sh`, `.github/workflows/req003-ephemeral-temporary-chat-offline.yml`, 171 total cases under network guard + summary progress contract check) and all three strict `tsc --noEmit` checks (`tsconfig.server.json`, `tsconfig.json`, `frontend/tsconfig.json`).
+
+<a id="req003-closeout01"></a>
+## REQ-003 交付總結、二十一項場景對照與待決收束（Stage 0–5）
+
+> **離線合成驗證邊界與部署揭示：** 本階段所有驗證均於斷網沙盒內以腳本化模型、靜態嵌入替身與記憶體／假 Firestore 領域執行（合計 18 份測試、180 項案例及 Server／Root／Frontend 三份嚴格 `tsc --noEmit` 通過）。離線合成通過**不代表**已完成真實 Gemini／Vertex AI 回應品質、實際外部網路搜尋與官網抓取、線上 Firebase／PostgreSQL 叢集部署及 Android／iOS 實機無障礙驗收；多實例部署下，`TemporaryChatStore` 採用伺服器單體記憶體存放會話，須搭配單行程或 sticky session routing（若跨實例轉移則傳回 `404 temporary_session_not_found` 並重置為空白新會話而不寫入或洩漏資料）；此外，當使用者於正式環境啟用第三方模型或搜尋供應商時，請求文字與供應商側暫存／日誌受該供應商政策與協議約束，應用程式無法保證供應商側即時清除。
+
+### 五階段 PR 堆疊與基線同步總覽
+
+- **Stage 0（盤點與契約對齊）：** 盤點既有「記錄與核對」提案／確認綁定、操作歷史、撤銷覆蓋矩陣（`src/shared/operation-undo.ts`）及雙運行環境入口（`server/firebase-runtime.ts`、`server/index.ts`），明確界定本包不新增平行待確認匣、不建全站通用撤銷引擎、且不增加額外意圖分類 LLM 回合。
+- **Stage 5（跨 PR 合成驗收與文件收束）：** 在分支 `codex/req003-acceptance-closeout` 交付 `tests/req003-acceptance-closeout.test.ts`（6 項跨 PR 合成驗收案例）、離線 CI 閘口（`scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，含 18 份測試共 180 項案例）及 `PLAN.md`／`docs/REQUIREMENTS_BACKLOG.md`／`WORKLOG.md` 同步。
+
+| PR | 分支與 GitHub 編號 | 驗證 SHA | 核心交付與整合測試結果 |
+|---|---|---|---|
+| **PR 1** | `codex/req003-auth-mode-and-draft-binding`（`#690`） | `b5cc97f152a5cb7c6647b57154833a74bacff70f` | `confirm_first`／`auto_authorized` 執行模式、普通照護與私人筆記草稿提案、確認綁定與 `editProposal` 版本保護、`OPERATION_UNDO_CAPABILITIES`；11 份測試 99 項 + 三份 `tsc` |
+| **PR 2** | `codex/req003-unified-pending-shortcut-ui`（`#691`） | `b680e0c048b641f06d532db1562daadbaae53212` | 頂欄右上 `PendingReviewShortcut` 與 `/care` 共用 `ProductAgentOwner` 佇列與 `PendingReviewList`、確認前行內編輯與差異對比、`DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY` 與執行模式選擇器；8 份測試 107 項 + 三份 `tsc` |
+| **PR 3** | `codex/req003-main-chat-mode-switch`（`#692`） | `e06fc298e5423bf1c3961f6d3f2af7e17f66a390` | 單一主聊天手動切換 `assistant`／`chat_only`、按孩保存模式與 `messageTopology` 標記、`CHAT_ONLY_ALLOWED_TOOL_NAMES` 與 `CHAT_ONLY_TOOL_CATALOG` 邊界、切換回助手引用前文、技術摘要 `sourceMessages` 傳遞 `chatMode`，並與 REQ-009 `discussion` 正交；13 份清單測試 144 項 + `tests/chat-discussion.test.ts` 3 項 = 147 項 + 三份 `tsc` |
+| **PR 4** | `codex/req003-ephemeral-temporary-chat`（`#693`） | `495e81cff0d666c00d3324a1122d4450006fd753` | 頂欄左上隔離 `TemporaryChatEntry`／`TemporaryChatModal`、純公共檢索與香港求助卡片、`TemporaryChatStore` 實體清除與 15m/60m TTL、斷線狀態區分，及同步接線 `server/firebase-runtime.ts` 與 PostgreSQL `server/index.ts`（含 `dispose()`）；16 份測試 171 項 + 三份 `tsc` |
+| **PR 5** | `codex/req003-acceptance-closeout`（本 PR） | 本 PR 分支提交 | 跨 PR 合成驗收 6 項（`tests/req003-acceptance-closeout.test.ts`）、§7 二十一項與 §8 七項待決收束對照、檔案同步與規範；18 份測試 180 項 + 三份 `tsc` |
+
+### §7 二十一項驗收清單對照（S7-01 至 S7-21）
+
+| 編號 | 需求場景 | 主要實作模組 | 離線合成驗證對應 |
+|---|---|---|---|
+| **S7-01** | 預設整理一項新增／修改 | `src/shared/agent-actions.ts`、`server/agent-action-tools.ts`、`server/product-agent-tools.ts` | `tests/req003-auth-mode-and-draft-binding.test.ts`、closeout Case 1 |
+| **S7-02** | 使用者修改或取消草稿 | `server/firestore-ordinary-proposals.ts`、`frontend/src/production/proposal-draft-edit.ts`、`src/shared/operation-undo.ts` | `tests/req003-auth-mode-and-draft-binding.test.ts`、`frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs`、closeout Case 1 |
+| **S7-03** | 自動模式的授權內操作 | `src/shared/agent-actions.ts`、`server/agent-actions-store.ts`、`server/agent-action-tools.ts`、`frontend/src/production/AgentConversation.tsx` | `tests/req003-auth-mode-and-draft-binding.test.ts`、`frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs` |
+| **S7-04** | 授權外、撤回授權或目標不明 | `server/agent-action-tools.ts`、`server/firestore-agent-actions.ts`、`server/product-agent-tools.ts` | `tests/req003-auth-mode-and-draft-binding.test.ts` |
+| **S7-05** | 內容通過但未獲動作批准／反之 | `src/shared/agent-actions.ts`（`evaluateFormalSaveGate`）、`server/firestore-ordinary-proposals.ts` | `tests/req003-auth-mode-and-draft-binding.test.ts` |
+| **S7-06** | 舊卡片、原資料更新、重複確認 | `server/firestore-agent-proposals.ts`、`server/product-agent-api.ts`、`src/client/product-agent-api.ts` | `tests/req003-auth-mode-and-draft-binding.test.ts`、closeout Case 1 |
+| **S7-07** | 右上角與「記錄與核對」互相操作 | `frontend/src/components/PendingReviewShortcut.tsx`、`frontend/src/screens/PendingReviewList.tsx`、`frontend/src/components/AppShell.tsx`、`frontend/src/components/NativeAppShell.tsx`、`frontend/src/screens/careScreen.tsx` | `frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs` |
+| **S7-08** | 操作歷史與撤銷 | `src/shared/operation-undo.ts`、`frontend/src/components/agent/AgentRunView.tsx`、`frontend/src/production/AgentConversation.tsx` | `tests/req003-auth-mode-and-draft-binding.test.ts`、`frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs`、closeout Case 1 |
+| **S7-09** | 手動切到只是聊天後問問題 | `src/shared/chat.ts`、`server/product-agent-capabilities.ts`、`server/product-agent-tools.ts`、`server/product-agent.ts`、`server/chat-delivery-review.ts` | `tests/req003-main-chat-mode-switch.test.ts`、closeout Case 2 |
+| **S7-10** | 只是聊天產生文字後切回助手 | `server/product-agent.ts`（`messageTopology` + `instructionPolicy`）、`src/client/chat-controller.ts` | `tests/req003-main-chat-mode-switch.test.ts`、closeout Case 3 |
+| **S7-11** | 只是聊天 → 技術摘要 → 切回助手 | `src/shared/memory.ts`、`server/memory-summary.ts`、`server/summary-projection.ts`、`server/firestore-memory.ts`、`server/product-agent-tools.ts` | `tests/req003-main-chat-mode-switch.test.ts`、`tests/summary-projection-delivery.test.ts`、`tests/memory-summary-projection.test.ts` |
+| **S7-12** | 切回助手後說「把剛才那份記下來」 | `server/product-agent.ts`、`server/product-agent-tools.ts`、`server/agent-context-window.ts` | `tests/req003-main-chat-mode-switch.test.ts`、closeout Case 3 |
+| **S7-13** | 在只是聊天提出保存要求 | `server/product-agent.ts`、`server/chat-delivery-review.ts`（`isPureChatOnlyModeBoundaryNotice`）、`frontend/src/screens/chatScreen.tsx` | `tests/req003-main-chat-mode-switch.test.ts`、`frontend/scripts/req003-main-chat-mode-switch.test.mjs` |
+| **S7-14** | 有在途助手操作時切換模式 | `src/client/chat-controller.ts`（`modeSwitchedDuringReply`）、`frontend/src/production/ProductionProvider.tsx`、`frontend/src/screens/chatScreen.tsx` | `tests/req003-main-chat-mode-switch.test.ts`、`frontend/scripts/req003-main-chat-mode-switch.test.mjs` |
+| **S7-15** | 只是聊天／臨時聊天的 UI | `frontend/src/components/chat/ChatModeSwitch.tsx`、`frontend/src/components/TemporaryChatEntry.tsx`、`frontend/src/components/TemporaryChatModal.tsx`、`frontend/src/screens/chatScreen.tsx` | `frontend/scripts/req003-main-chat-mode-switch.test.mjs`、`frontend/scripts/req003-ephemeral-temporary-chat.test.mjs` |
+| **S7-16** | 進入臨時聊天及當次追問 | `src/shared/temporary-chat.ts`、`server/temporary-chat-agent.ts`、`server/knowledge-retriever.ts`、`server/firestore-knowledge.ts` | `tests/req003-ephemeral-temporary-chat.test.ts`、`tests/search-query-minimization.test.ts`、closeout Case 4 |
+| **S7-17** | 臨時聊天內容與日誌檢查 | `server/temporary-chat-store.ts`、`server/temporary-chat-agent.ts`、`server/chat-delivery-review.ts`、`frontend/src/production/TemporaryChatOwner.ts` | `tests/req003-ephemeral-temporary-chat.test.ts`、`frontend/scripts/req003-ephemeral-temporary-chat.test.mjs`、closeout Case 4 |
+| **S7-18** | 正常退出臨時聊天後重新進入 | `server/temporary-chat-store.ts`（`closeSession`）、`frontend/src/production/TemporaryChatOwner.ts` | `tests/req003-ephemeral-temporary-chat.test.ts`、`frontend/scripts/req003-ephemeral-temporary-chat.test.mjs`、closeout Case 4 |
+| **S7-19** | 退出後舊搜索／模型結果才返回 | `server/temporary-chat-store.ts`、`server/temporary-chat-agent.ts`（`AbortSignal` + 世代檢查）、`src/client/temporary-chat-api.ts` | `tests/req003-ephemeral-temporary-chat.test.ts`、`frontend/scripts/req003-ephemeral-temporary-chat.test.mjs` |
+| **S7-20** | 關閉、斷網、崩潰或失聯 | `server/temporary-chat-store.ts`（15m 閒置／60m 上限與墓碑）、`frontend/src/production/TemporaryChatOwner.ts`（`local_cleared_remote_pending` 與重連補清） | `tests/req003-ephemeral-temporary-chat.test.ts`、`frontend/scripts/req003-ephemeral-temporary-chat.test.mjs` |
+| **S7-21** | 既有流程回歸（含 REQ-009 正交性） | `server/product-agent.ts`、`server/product-agent-tools.ts`、`server/firestore-chat.ts`、`server/firebase-runtime.ts`、`server/index.ts` | `tests/chat-discussion.test.ts`、`tests/chat-delivery-review.test.ts`、`tests/chat-client.test.ts`、`tests/summary-progress.test.ts`、`tests/req008-context-and-blindspot-discovery.test.ts`、closeout Cases 2 & 4 |
+
+### §8 七項待決與延伸定案對照（D8-01 至 D8-07）
+
+| 編號 | 待決議題（§8） | 實施定案與實際邊界 |
+|---|---|---|
+| **D8-01** | 既有「記錄與核對」、確認綁定、歷史及撤銷覆蓋 | 沿用同一 `ProductAgentOwner` 待確認佇列與 `PendingReviewList`（右上角快捷與 `/care` 同步）；以 `OPERATION_UNDO_CAPABILITIES` 及 `DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY` 明確區分「取消草稿」與 7 類資源實際撤銷能力，不建全站通用撤銷引擎 |
+| **D8-02** | 自動模式範圍、細調與授權生效時點 | 預設 `confirm_first`；僅於明確切換 `auto_authorized` 並通過版次／家庭授權檢查後直接落庫；不新增未實作功能的細項開關 |
+| **D8-03** | 模式切換、草稿與在途操作契約 | 切換到 `chat_only` 不確認也不取消既有草稿；`ChatController` 按孩保存模式與草稿，並以 `modeSwitchedDuringReply` 區分運行中回覆與後續新訊息 |
+| **D8-04** | 主聊天上下文產生模式與最小搜索能力 | 每則訊息持久化 `chatMode`、`messageTopology` 與技術摘要 `sourceMessages`；`chat_only` 僅保留 `CHAT_ONLY_ALLOWED_TOOL_NAMES`（含公共知識、對話附件及歷史檢索，零寫入／提案／工作），切回後僅在新明確請求下引用 |
+| **D8-05** | 臨時聊天儲存、正常退出與晚到結果阻擋 | 採用純記憶體 `TemporaryChatStore`（零 DB／零 browser storage／零正文日誌），正常退出中止 `AbortSignal`、核對 generation 並物理抹除正文，寫入只含雜湊元數據的 revoked 墓碑 |
+| **D8-06** | 異常清理時限、雙運行環境與供應商政策 | 15 分鐘滑動閒置與 60 分鐘硬上限 TTL、雙運行環境（`server/firebase-runtime.ts` 與 PostgreSQL `server/index.ts`）停機呼叫 `dispose()`；客戶端分狀態 `local_cleared_remote_pending` 與重連補清；單行程／sticky routing 及第三方供應商保留邊界如前文揭示 |
+| **D8-07** | 最少合成驗收及與 REQ-001／002／009 正交性 | 五支 PR 分層與 PR 5 跨 PR 合成驗收（共 18 份測試 180 項）覆蓋全部 §7 場景；`chatMode=chat_only` 與 REQ-009 三角色討論 `discussion=true` 完全正交，即使在純聊天發起討論亦受 `CHAT_ONLY_ALLOWED_TOOL_NAMES + discussionToolNames` 雙重邊界限制 |
