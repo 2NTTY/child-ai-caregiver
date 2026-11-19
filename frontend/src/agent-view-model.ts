@@ -14,6 +14,7 @@ export interface AgentProposalView {
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
+  sourceCardLinks?: { cardId: string; authorize: boolean }[];
   id: string; childId: string; status: AgentRunStatus; createdAt: string | null;
   text: string; stopReasonLabel: string | null; stopReasonDetail: string | null;
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number } | null;
