@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { originalChatMessageSchema } from '../server/chat-message-schema.ts';
 import { FinishReason } from '@google/genai';
@@ -6,6 +7,9 @@ import { createAgentRuntime } from '../server/agent-runtime.ts';
 import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
 import { createQuestionDiscussion, discussionToolNames } from '../server/chat-discussion.ts';
+import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
+import { chatDeliveryContentHash, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
+import type { AgentRunContext } from '../server/agent-runtime.ts';
 import type { ProductAgentResult } from '../src/shared/product-agent.ts';
 import { productAgentResultSchema } from '../src/shared/product-agent-result.ts';
 
@@ -32,7 +36,7 @@ test('a question binds three successive native turns, the main reply and one ind
     inReplyTo: base.id, text: 'The earlier reply covered books and songs.' };
   const linkedQuestion = { ...base, id: 'b955733f-1f95-42fa-bfb4-da02c7ad90c0', discussion: true,
     discussionOf: previousAnswer.id, text: '討論這個回答。' };
-  const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '看書要預備甚麼？放工後家長可能只想輕鬆唱歌。', '回應預備時間的問題，可以先唱熟悉的童謠，周末再試圖畫書。'];
+  const turns = ['一起看書可以跟孩子喜歡的圖畫談天。', '如果家長只顧完成待辦，孩子想行開時怎麼辦？', '回應家長的疑問，可以先唱熟悉的童謠，周末再試圖畫書。'];
   const main = ['孩子拿起圖畫書時，可以一起看。', '想省準備，可以唱熟悉的童謠。', '讓遊戲成為探索的過程而非一定要完成的任務。'];
   const taskDetails = '已經準備藍色圖畫書。';
   const taskRestatement = '按這項待辦，準備好了的是那本藍色的圖畫書。';
@@ -70,7 +74,9 @@ test('a question binds three successive native turns, the main reply and one ind
         if (followup) assert.deepEqual(payload.paragraphs[3].citationIds, ['page-item']);
         if (followup) assert.ok(content.includes(chunk.sourceExcerpt) && !content.includes(paraphrase));
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
-        return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
+        assert.ok(payload.outputContract.required.includes('claimedAppChanges'));
+        return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [],
+          claimedAppChanges: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
       assert.ok(!('propose_fact' in request.toolsDict));
       if (i === 5) {
@@ -168,4 +174,49 @@ test('a parallel or out-of-order viewpoint cannot observe a fabricated predecess
   const parallel = await discussion.tools[1].execute({ previous:'start', kind:'clarification', text:'哪一種？', citationIds:[] }, {} as never);
   assert.equal(parallel.status,'rejected');
   assert.deepEqual(discussion.render(['主回答']), { text:'主回答', discussion:[] });
+});
+
+test('replays the reviewed Web discussion and rejects unsupported app changes in either a role or the main reply', async () => {
+  const { reviewInput, reviewOutput } = JSON.parse(await readFile(
+    new URL('../artifacts/verification/REQ009_DISCUSSION_REVIEW_REPLAY_20261120.json', import.meta.url), 'utf8'));
+  const scope = { userId: 'parent', childId: base.childId, workspaceId: 'test-family', authorizationVersion: '1', dataVersion: 'epoch:1' };
+  const draft: ChatDeliveryDraft = {
+    scope, serverSubstitutedSourceText: false, userRequest: reviewInput.userRequest,
+    kind: reviewInput.kind, visibility: reviewInput.visibility, discussionRoles: reviewInput.discussionRoles,
+    paragraphs: reviewInput.paragraphs.map(({ index, ...p }: ChatDeliveryDraft['paragraphs'][number] & { index: number }) => p),
+    sources: reviewInput.sources,
+  };
+  const presentation = { text: 'Test presentation', citations: [], retrievalMode: 'not_used' as const };
+  async function review(candidate: ChatDeliveryDraft, result: (payload: typeof reviewInput) => object) {
+    const budget = new AgentBudget();
+    try {
+      return await enforceChatDeliveryReview({ presentation,
+        tools: { deliveryDraft: () => candidate, presentation: async () => presentation, replaceDeliveryAnswer: () => assert.fail('Unexpected discussion repair') },
+        context: { budget, scope, completeText: async ({ user }) => JSON.stringify(result(JSON.parse(user.slice(user.indexOf('{'))))) } as AgentRunContext,
+        provenance: { packVersion: 'test', model: 'recorded' } });
+    } finally { budget.close(); }
+  }
+  const replay = await review(draft, payload => { assert.deepEqual(payload, reviewInput); return reviewOutput; });
+  assert.equal(replay.review?.draftHash, reviewOutput.draftHash);
+
+  const withClaim = (index: number, text: string) => ({ ...draft,
+    paragraphs: draft.paragraphs.map((p, i) => i === index ? { ...p, text } : p) });
+  const rejected = (reason: string) => (error: unknown) => error instanceof AgentStopped && error.reason === reason;
+  const pass = (draftHash: string, claimedAppChanges?: number[]) => ({ decision: 'pass', issues: [], draftHash, claimedAppChanges });
+  for (const index of [1, 4]) {
+    // An implicit notification is still an external action; a citation cannot serve as its receipt.
+    await assert.rejects(review(withClaim(index, '已經通知其他家庭成員。'), p => pass(p.draftHash, [index])), rejected('delivery_review_rejected'));
+  }
+  await assert.rejects(review(withClaim(0, '我已經刪除待辦。'), p => pass(p.draftHash, [])), rejected('delivery_review_rejected'));
+  await assert.rejects(review(withClaim(4, '已替你通知其他照顧者。'), p => pass(p.draftHash, [])), rejected('delivery_review_rejected'));
+  await assert.rejects(review(draft, p => pass(p.draftHash)), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(draft, p => pass(p.draftHash, [draft.paragraphs.length])), rejected('delivery_review_incomplete'));
+  const hypothetical = await review(withClaim(0, '如果我已經完成待辦，是否可以陪孩子玩？'), p => pass(p.draftHash, []));
+  assert.equal(hypothetical.review?.decision, 'pass');
+  const excerpt = JSON.stringify({ children: [{ displayName: '小悠' }] });
+  const workspaceSource = { citationId: 'workspace:children:1', version: '1', contentHash: chatDeliveryContentHash(excerpt),
+    classification: 'private' as const, excerpt, excerptComplete: true };
+  const workspace: ChatDeliveryDraft = { ...draft, kind: 'private_reference', sources: [workspaceSource], userRequest: '我登記了哪些孩子？',
+    paragraphs: draft.paragraphs.map(() => ({ text: '你帳戶登記了小悠。', citationIds: [workspaceSource.citationId] })) };
+  await assert.rejects(review(workspace, p => ({ ...pass(p.draftHash, []), observedReadOnly: false })), rejected('delivery_review_rejected'));
 });
