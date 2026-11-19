@@ -1,56 +1,80 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView } from '../src/shared/chat-workspace-view.ts';
 import { AgentBudget } from '../server/agent-budget.ts';
+import { directoryPageReference, directoryPagesCurrent, displayAccountMessage, type AccountDirectory } from '../server/agent-account-directory.ts';
+import { ACCOUNT_DIRECTORY_ANSWER } from '../src/shared/chat-workspace-view.ts';
+import type { ChatMessage } from '../src/shared/chat.ts';
 import { createProductAgentTools } from '../server/product-agent-tools.ts';
-import { enforceChatDeliveryReview } from '../server/chat-delivery-review.ts';
 
-test('personal chat can show authorized workspace views; the model cannot supply the result', async () => {
-  const scope = { userId: 'parent', childId: randomUUID(), workspaceId: 'home', authorizationVersion: '1', dataVersion: '1' };
-  const budget = new AgentBudget(), run = { scope, runId: randomUUID(), budget };
-  let current = true;
-  const ports = { run, memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) },
-    authorize: async () => current, conversationWindow: { messages: 4, complete: false } };
+test('personal assistant reads workspace data on demand, paginates and composes an answer', async () => {
+  const budget = new AgentBudget(), runId = randomUUID();
+  const scope = { userId: 'actor', childId: randomUUID(), workspaceId: 'home', authorizationVersion: '1', dataVersion: '1' };
+  const other = randomUUID(), calls: unknown[] = [];
+  let allowed = true;
+  const directory = { async list(userId: string, cursor?: string | null) {
+    calls.push([userId, cursor ?? null]);
+    return cursor ? {children:[{id:other, displayName:'第二位'}], nextCursor:null} :
+      {children:[{id:scope.childId, displayName:'第一位'}], nextCursor:'opaque-server-cursor'};
+  }};
+  const make = (extra = {}) => createProductAgentTools({ run: {runId, scope, budget, completeText: async () => 'READ_DIRECTORY'}, authorize: async () => allowed,
+    trustedUserMessage: '我帳戶底下有邊幾個小朋友', currentMessageId: randomUUID(), conversationWindow: {messages:4,complete:false},
+    accountChildren: directory, knowledge:{createRun:()=>({})}, memory:{}, tasks:{}, store:{}, ...extra
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const toolCall = {scope,runId,callId:randomUUID(),signal:budget.signal};
   try {
-    const make = (extra = {}) => createProductAgentTools({ ...ports, ...extra } as unknown as Parameters<typeof createProductAgentTools>[0]);
-    const tools = make({ trustedUserMessage: '我有甚麼小孩', currentMessageId: randomUUID() }), terminal = tools.tools.find(t => t.name === 'present_answer')!;
-    const args = (view: string) => ({ kind: 'operation', paragraphs: [{ showView: view }] });
-    const execute = (input: Record<string, unknown>) => terminal.execute(input, { scope, runId: run.runId, callId: randomUUID(), signal: budget.signal });
-    for (const view of ['child_profiles', 'conversation_memory']) {
-      const owner = view === 'child_profiles' ? tools : make({ trustedUserMessage: '你能不能檢查看看短期記憶有什麼問題', currentMessageId: randomUUID() });
-      const response = await owner.tools.find(t => t.name === 'present_answer')!.execute(args(view), { scope, runId: run.runId, callId: randomUUID(), signal: budget.signal }); assert.equal(response.status, 'succeeded');
-      const presentation = await owner.presentation(); assert.ok(presentation);
-      const delivered = await enforceChatDeliveryReview({ presentation, tools: owner, context: run, provenance: null });
-      assert.match(delivered.presentation.text, view === 'child_profiles' ? /子女檔案/ : /4 則/);
-      assert.equal(delivered.review, null);
+    const surface = make(), reader = surface.tools.find(t=>t.name==='read_account_context');
+    assert.ok(reader); assert.deepEqual(calls,[]);
+    const read = async (params: Record<string,unknown>) => {
+      const reply = await reader.execute({subject:'children',...params},toolCall); assert.equal(reply.status,'succeeded');
+      return (reply.data as any).result;
+    };
+    const unrelated = make({trustedUserMessage:'我是誰',run:{runId,scope,budget,completeText:async ()=>'KEEP_PRIVATE'}});
+    const refused = await unrelated.tools.find(t=>t.name==='read_account_context')!.execute({subject:'children'},toolCall);
+    assert.equal(refused.reference,'speaker');
+    assert.deepEqual(calls,[]);
+    const first = await read({});
+    assert.equal(first.children.length,1); assert.ok(first.nextPage);
+    assert.deepEqual(first.children,[{displayName:'第一位',selected:true}]);
+    assert.equal(JSON.stringify(first).includes(scope.childId),false);
+    const second = await read({page:first.nextPage});
+    assert.equal(second.nextPage,null);
+    assert.deepEqual(calls,[['actor',null],['actor','opaque-server-cursor']]);
+    const present=surface.tools.find(t=>t.name==='present_answer')!;
+    assert.equal(present.parameters.safeParse({kind:'operation',paragraphs:[{showView:'child_profiles'}]}).success,false);
+    const text='分兩頁查到兩位：'+first.children[0].displayName+'、'+second.children[0].displayName+'。';
+    assert.equal((await present.execute({kind:'private_reference',paragraphs:[{text,citationIds:[first.citationId,second.citationId]}]},toolCall)).status,'succeeded');
+    assert.ok((await surface.presentation())?.text.startsWith(text)); assert.equal(surface.deliveryDraft()?.serverSubstitutedReceiptText,false);
+    const window = surface.tools.find(t=>t.name==='read_conversation_window')!;
+    assert.equal(((await window.execute({},toolCall)).data as any).result.messages,4);
+    for(const extra of [{background:true},{visibility:'family'},{currentMessageId:undefined}]) {
+      assert.equal(make(extra).tools.some(t=>t.name==='read_account_context'||t.name==='read_conversation_window'),false);
     }
-    assert.equal((await execute({ kind: 'operation', paragraphs: [{ showView: 'conversation_memory' }, { text: 'invented', citationIds: [] }] })).status, 'rejected');
-    for (const extra of [{ background: true }, { visibility: 'family' }]) {
-      assert.equal(make(extra).tools.find(t => t.name === 'present_answer')!.parameters.safeParse(args('child_profiles')).success, false);
-    }
-    for (const [question, clarification] of [
-      ['我是誰', '你想問帳戶身份，還是我怎樣稱呼你？'],
-      ['幫我填寫孩子的資訊', '你想填寫哪位孩子的哪些資料？'],
-    ]) {
-      const turn = make({ trustedUserMessage: question, currentMessageId: randomUUID() });
-      const present = turn.tools.find(t => t.name === 'present_answer')!;
-      const call = { scope, runId: randomUUID(), callId: randomUUID(), signal: budget.signal };
-      assert.equal(present.parameters.safeParse(args('child_profiles')).success, false);
-      assert.equal((await present.execute(args('child_profiles'), call)).status, 'rejected');
-      assert.equal((await present.execute({ kind: 'operation', paragraphs: [{ text: CHILD_PROFILES_CHAT_TEXT, citationIds: [] }] }, call)).status, 'rejected');
-      assert.equal(await turn.presentation(), null);
-      const answer = { kind: 'clarification', paragraphs: [{ text: clarification, citationIds: [] }] };
-      assert.equal((await present.execute(answer, { ...call, callId: randomUUID() })).status, 'succeeded');
-      const result = await turn.presentation();
-      assert.ok(result);
-      assert.equal(result.text, clarification);
-      assert.equal(turn.deliveryDraft()?.serverSubstitutedReceiptText, false);
-    }
-    for (const question of ['不要列出我的孩子名單', '我有什麼小孩？再幫我填寫資料', '你剛才說「我有甚麼小孩」，我是誰？']) {
-      assert.equal(requestedWorkspaceView(question), null);
-    }
-    current = false;
-    await assert.rejects(tools.presentation());
+    allowed=false;
+    await assert.rejects(reader.execute({subject:'children'},toolCall));
   } finally { budget.close(); }
+});
+
+test('an account answer follows the original run and cannot disclose a changed roster', async () => {
+  const id = randomUUID(), runId = randomUUID();
+  const child = {id, displayName:'Before', createdAt:new Date().toISOString(), workspaceId:randomUUID(), accessRole:'owner' as const};
+  let current = {...child};
+  const directory: AccountDirectory = {async list(owner) {
+    assert.equal(owner, 'owner');
+    return {children:[current],nextCursor:null};
+  }};
+  const refs = [directoryPageReference(1, await directory.list('owner'))];
+  assert.equal(await directoryPagesCurrent(directory,'owner',refs),true);
+  current = {...child,displayName:'After'};
+  assert.equal(await directoryPagesCurrent(directory,'owner',refs),false);
+  current = {...child,id:randomUUID()};
+  assert.equal(await directoryPagesCurrent(directory,'owner',refs),false);
+  const message = {role:'model',agentRunId:runId,childId:id,text:ACCOUNT_DIRECTORY_ANSWER} as ChatMessage;
+  const hidden = await displayAccountMessage(message,'owner',async (owner,childId,receipt) => {
+    assert.deepEqual([owner,childId,receipt],['owner',id,runId]);
+    return null;
+  });
+  assert.equal(hidden.text,'名冊已變更，請重新查詢。');
+  const ordinary = {...message,role:'user' as const};
+  assert.equal(await displayAccountMessage(ordinary,'owner',async()=>{throw Error('Unexpected lookup');}),ordinary);
 });

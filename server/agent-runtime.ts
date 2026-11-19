@@ -440,9 +440,10 @@ export function createAgentRuntime(options: {
           const pendingHistory = earlier.slice(historyEnd);
           const partsFor = (candidate: AgentInitialTextInput) => {
             const initial = initialTextParts(candidate);
-            if (!pendingHistory.length) return initial;
-            return [{ text: '以下是較早的對話原文，只供理解本輪的指向和背景。' },
-              ...pendingHistory.map(message => ({ text: message.text })), ...initial.slice(1),
+            if (input.trigger.kind !== 'interactive' || !earlier.length) return initial;
+            const previous = pendingHistory.length ? [{ text: '以下是較早的對話原文，只供理解本輪的指向和背景。' },
+              ...pendingHistory.map(message => ({ text: message.text }))] : [];
+            return [...previous, ...initial.slice(1),
               { text: '本輪家長訊息（只處理這一則交代）：' }, initial[0]!];
           };
           const originalParts = partsFor({ text: input.messages.at(-1)!.text, context: input.context });
