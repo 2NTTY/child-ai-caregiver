@@ -13,6 +13,8 @@ import { sourceFetchUrl } from './knowledge-source-fetch.ts';
 import { firestoreTopicStorageSchema } from './firestore-memory.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { topicMayAsk } from './memory-policy.ts';
+import { isTimelyEventActive } from '../src/shared/knowledge-timely.ts';
+import { proactiveKindForTimelyEvent } from './knowledge-timely-policy.ts';
 
 const selectionSchema = proactiveManagedPublicDaySchema.shape.events.element.omit({ versionHash: true, contentHash: true });
 /** Operator deployment configuration, never model arguments or a family request. */
@@ -119,14 +121,15 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
         if (edition.source.chunks.length > 8) coverage.push('bounded_projection_truncated');
         // Reviewed recent editions can generate ordinary notices; importance comes only from an explicit selection.
         for (const chunk of edition.source.chunks.slice(0, 8)) {
-          const kind = recent ? 'announcement' : 'guidance';
+          const kind = proactiveKindForTimelyEvent(edition.source.classification, edition.source.timelyEvent);
+          const state = !recent || (edition.current && isTimelyEventActive(edition.source.timelyEvent)) ? 'active' as const : 'withdrawn' as const;
           automatic.push({ eventId: kind + '-' + firestoreDomainHash([sourceId, chunk.key]).slice(0, 48), issuerId: institution.id,
-            sourceId, key: chunk.key, kind, state: 'active', validFrom: recent ? edition.source.sourcePublishedAt : null,
+            sourceId, key: chunk.key, kind, state, validFrom: recent ? edition.source.sourcePublishedAt : null,
             validUntil: edition.source.validUntil ?? null });
         }
       }
-      if (!managed.length && !automatic.some(event => event.kind === 'announcement')) coverage.push('managed_recent_events_not_configured');
-      automatic.sort((left, right) => Number(right.kind === 'announcement') - Number(left.kind === 'announcement')
+      if (!managed.length && !automatic.some(event => event.kind !== 'guidance' && event.state === 'active')) coverage.push('managed_recent_events_not_configured');
+      automatic.sort((left, right) => Number(right.kind !== 'guidance') - Number(left.kind !== 'guidance')
         || (right.validFrom ?? '').localeCompare(left.validFrom ?? ''));
       if (selections.length + automatic.length > 8) coverage.push('bounded_projection_truncated');
       selections.push(...automatic.slice(0, 8 - selections.length));

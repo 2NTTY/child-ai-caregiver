@@ -94,6 +94,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     config: { systemInstruction: input.systemInstruction } });
   return {
     agent: {
+      structuredOutput: 'native_json_schema',
       preflight: (request, duration, counted) => nativeContextPreflight(build(request), duration, counted),
       ...(countTokens ? { countInput: (request: LlmRequest) => countTokens(build(request)) } : {}),
       async generate(request, signal) {

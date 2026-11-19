@@ -1168,8 +1168,23 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
     text: "衞生署指引：孩子約六個月時應開始加入固體食物；未滿四個月不應加入奶以外食物。",
     sourceExcerpt: "未足四個月大的寶寶不應吃奶以外的食物",
   });
+  // The positive repair fixture must enforce the same owner/edition contract as the scoped reader.
+  let solidGrant: { owner: string; sourceId: string; versionId: string; versionHash: string } | null = {
+    owner: userId, sourceId: solidChunk.sourceId, versionId: solidChunk.versionId, versionHash: solidChunk.versionHash,
+  };
+  let exactSolidReads = 0;
   const solidRetriever = createKnowledgeRetriever({
-    candidates: async () => [solidChunk],
+    enforcesPersonalLibrarySelection: true,
+    async candidates(filter, _vector, selection) {
+      if (!solidGrant || !selection || selection.libraryUserId !== solidGrant.owner || filter.classification !== solidChunk.classification
+        || solidChunk.sourceId !== solidGrant.sourceId || solidChunk.versionId !== solidGrant.versionId
+        || solidChunk.versionHash !== solidGrant.versionHash || (selection.versionId && selection.versionId !== solidGrant.versionId)) return [];
+      if (selection.chunkIds) {
+        if (!selection.chunkIds.includes(solidChunk.chunkId)) return [];
+        exactSolidReads++;
+      }
+      return [solidChunk];
+    },
   }, gateway);
   const tools = createProductAgentTools({
     authorize: async () => true,
@@ -1193,6 +1208,7 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
   const repairedParagraphText = "衞生署指引：孩子約六個月時應開始加入固體食物；未滿四個月不應加入奶以外食物。";
   let reviewCalls = 0;
   let repairCalls = 0;
+  const readsBeforeRepair = exactSolidReads;
   const repairedOutcome = await enforceChatDeliveryReview({
     presentation: initialPresentation,
     tools,
@@ -1229,6 +1245,9 @@ test("pure clarifying questions deliver cleanly while uncited care claims wrappe
   assert.equal(reviewCalls, 2);
   assert.equal(repairedOutcome.review?.decision, "pass");
   assert.equal(repairedOutcome.presentation.text, `${repairedParagraphText} [1]`);
+  assert.ok(exactSolidReads > readsBeforeRepair, "the repair must re-read its authorized edition");
+  solidGrant = null;
+  assert.equal(await tools.bindRepairEvidence()(), false, "withdrawn fixture grants cannot support another repair");
 });
 
 test("post-illness timing, bare Cantonese operation claims, and Chinese-numeral doses fail closed end-to-end (R3 F1-F3)", async (t) => {
