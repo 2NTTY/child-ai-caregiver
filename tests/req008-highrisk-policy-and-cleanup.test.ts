@@ -292,12 +292,15 @@ test("sticky run obligation stays monotonic and dynamically reserves review call
     assert.equal(requiresChatDeliveryReview(highRiskDraft, obligation), true);
     assert.equal(obligation.required, true);
     assert.equal(obligation.evidenceRequired, true);
+    assert.equal(obligation.officialEvidenceRequired, true);
 
     assert.equal(budget.planningSnapshot(true, { reserveDeliveryReview: () => obligation.required }).reserveForDeliveryReview.modelCalls, 1);
 
     const neutralRelabelledRetry = makeDraft("已為你整理以上基本說明。", { kind: "operation" });
     assert.equal(requiresChatDeliveryReview(neutralRelabelledRetry, obligation), true);
-    assert.deepEqual(evaluateChatDeliveryReviewPolicy(neutralRelabelledRetry, obligation).triggerReasons, ["sticky_run_obligation"]);
+    const retryPolicy = evaluateChatDeliveryReviewPolicy(neutralRelabelledRetry, obligation);
+    assert.deepEqual(retryPolicy.triggerReasons, ["sticky_run_obligation"]);
+    assert.equal(retryPolicy.requiresOfficialEvidence, true);
   } finally {
     budget.close();
   }

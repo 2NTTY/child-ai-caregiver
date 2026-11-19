@@ -1548,7 +1548,7 @@ export function evaluateChatDeliveryReviewPolicy(
     return {
       policyVersion: HIGH_RISK_CARE_POLICY_VERSION,
       requiresReview: true,
-      obligationReason: official ? "official_citation" : "evidence",
+      obligationReason: "official_citation",
       requiresOfficialEvidence: true,
       shortPathExemption: null,
       highRiskCategories: highRisk.categories,
@@ -1622,7 +1622,7 @@ export function evaluateChatDeliveryReviewPolicy(
       policyVersion: HIGH_RISK_CARE_POLICY_VERSION,
       requiresReview: true,
       obligationReason: "review",
-      requiresOfficialEvidence: false,
+      requiresOfficialEvidence: obligation.officialEvidenceRequired,
       shortPathExemption: null,
       highRiskCategories: [],
       triggerReasons: ["sticky_run_obligation"],
