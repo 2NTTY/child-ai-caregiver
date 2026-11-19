@@ -161,7 +161,7 @@ export class ProductAgentOwner {
     this.update({ runs: { ...this.snapshot.runs, [result.runId]: run } });
     return run;
   }
-  async readChatEvidence(scopeKey: string, runIds: readonly string[], signal: AbortSignal) {
+  async readChatEvidence(scopeKey: string, runIds: readonly string[], signal: AbortSignal, refresh = false) {
     const scope = this.scope, epoch = this.epoch;
     if (!scope || scope.key !== scopeKey) return;
     const current = () => !signal.aborted && epoch === this.epoch && this.snapshot.model.online && this.snapshot.model.readState !== 'denied';
@@ -169,13 +169,14 @@ export class ProductAgentOwner {
     const api = this.createApi();
     for (const id of new Set(runIds)) {
       if (!current()) return;
-      if (this.snapshot.runs[id]) continue;
+      if (!refresh && this.snapshot.runs[id]) continue;
       try {
         const result = await api.getRun(scope.childId, id, signal, scope.userId);
         if (!current()) return;
-        if (!this.snapshot.runs[id]) {
+        if (refresh || !this.snapshot.runs[id]) {
           this.update({ runs: { ...this.snapshot.runs, [id]: projectAgentRun(result, scope.childId, null) } });
         }
+        if (refresh) return this.snapshot.runs[id];
       } catch (error) {
         if (!current()) return;
         if (error instanceof ProductAgentApiError && error.status !== 404 && accessLost(error)) {

@@ -217,6 +217,8 @@ export interface AgentRunInput {
   finalizeOnModelLimit?: boolean;
   /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
   presentationRepair?: "present_answer";
+  /** Server-authored current speaker, only for an explicitly requested question discussion. */
+  discussionInstruction?: () => string;
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
@@ -740,7 +742,8 @@ export function createAgentRuntime(options: {
                 reserveForDeliveryReview: projected.reserveForDeliveryReview,
                 softRemaining: projected.softRemaining,
               } : projected;
-              return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope: projectedScope, trigger: input.trigger,
+              const speaker = input.discussionInstruction?.();
+              return `${currentPrompt.text}${speaker ? '\n\n' + speaker : ''}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope: projectedScope, trigger: input.trigger,
                 now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
                 recipeId: currentPrompt.recipeId, capabilities: finishing ? visible.filter(name => terminalToolNames.has(name)) : visible,
                 ...(capabilitySelection && !finishing ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}),

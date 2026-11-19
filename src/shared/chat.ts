@@ -3,6 +3,7 @@ import type { PhotoMessageReference } from './photos.ts';
 import type { VoiceMessageReference } from './voice.ts';
 import type { OfficialHelpId } from './agent-feedback.ts';
 export interface ChatSendOptions {
+  discussion?: true;
   pageContext?: import('./chat-page-context.ts').ChatPageContext;
 }
 
@@ -13,6 +14,9 @@ export interface ChatMessage {
   role: "user" | "model";
   text: string;
   inReplyTo: string | null;
+  discussion?: true;
+  /** A discussion explicitly requested after this model message was delivered. */
+  discussionOf?: string;
   /** A server-initiated message in the existing private conversation. */
   proactive?: true;
   createdAt: string;

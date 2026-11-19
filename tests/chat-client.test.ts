@@ -192,18 +192,19 @@ test("unknown page questions recover only the matching saved item and version", 
   const { values, api, controller } = fixture();
   const pageContext = { page: "/tasks", item: { kind: "task", id: secondChild, version: 2 } } as const;
   api.saveMessage = async (childId, text, _signal, _user, _voice, _file, _photo, context) => {
-    assert.deepEqual(context, pageContext);
+    assert.deepEqual(context, { pageContext, discussion: true });
     values.saves++;
     values.messages = [
-      { ...userMessage(childId, text, "other"), pageContext: { ...pageContext, item: { ...pageContext.item, version: 1 } } },
-      { ...userMessage(childId, text, "requested"), pageContext },
+      { ...userMessage(childId, text, "other"), discussion: true, pageContext: { ...pageContext, item: { ...pageContext.item, version: 1 } } },
+      { ...userMessage(childId, text, "ordinary"), pageContext },
+      { ...userMessage(childId, text, "requested"), discussion: true, pageContext },
     ];
     throw new ChatApiError();
   };
   controller.syncContext(alice.id, true, firstChild);
   await settle();
   controller.setText(original);
-  await controller.send(undefined, undefined, undefined, { pageContext });
+  await controller.send(undefined, undefined, undefined, { pageContext, discussion: true });
   await controller.reloadMessages();
   controller.confirmFoundMessage();
   assert.equal(controller.getSnapshot().drafts[firstChild].savedUserMessageId, "requested");
@@ -224,11 +225,11 @@ test("retrying an unconfirmed quick question from the main chat preserves its or
   controller.syncContext(alice.id, true, firstChild);
   await settle();
   controller.setText(original);
-  await controller.send(undefined, undefined, undefined, { pageContext });
+  await controller.send(undefined, undefined, undefined, { pageContext, discussion: true });
   await controller.reloadMessages();
   controller.unlockCheckedSave();
   await controller.send();
-  assert.deepEqual(attempts, [pageContext, pageContext]);
+  assert.deepEqual(attempts, [{ pageContext, discussion: true }, { pageContext, discussion: true }]);
   controller.dispose();
 });
 

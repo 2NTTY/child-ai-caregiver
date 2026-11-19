@@ -14,8 +14,10 @@ export const originalChatMessageSchema = z.object({
   role: z.enum(['user', 'model']), text: messageText, inReplyTo: uuid.nullable(), createdAt: datetime,
   pageContext: chatPageContextSchema.optional(),
   proactive: z.literal(true).optional(), agentRunId: uuid.optional(), officialHelp: z.array(officialHelpIdSchema).max(2).optional(),
+  discussion: z.literal(true).optional(), discussionOf: uuid.optional(),
   voice: voiceMessageReferenceSchema.optional(), file: chatFileMessageReferenceSchema.optional(), photo: photoMessageReferenceSchema.optional(),
 }).strict().refine(v => (!v.proactive || (v.role === 'model' && v.authorUserId === null && v.inReplyTo === null))
+  && (!v.discussion || v.role === 'user') && (!v.discussionOf || v.discussion === true)
   && (!v.pageContext || v.role === 'user')
   && (!(v.voice || v.file || v.photo) || v.role === 'user') && [v.voice, v.file, v.photo].filter(Boolean).length <= 1
   && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined || v.photo !== undefined));

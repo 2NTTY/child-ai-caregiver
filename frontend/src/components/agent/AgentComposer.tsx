@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Keyboard, Platform, Pressable, StyleSheet, View, type GestureResponderEvent, type PressableStateCallbackType } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Portal, Text } from "react-native-paper";
@@ -23,7 +23,8 @@ type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focu
 type SendFocusTicket = { serial: number; document: Document; dispose(): void };
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabled = false, stopTarget, queueAction, compact, draft, attachments, onChangeDraft, onPreview, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabled = false, stopTarget, queueAction, discussionControl, compact, draft, attachments, onChangeDraft, onPreview, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+  discussionControl?: ReactNode;
   queueAction?: { queued: boolean; press(): void };
   allowTyping?: boolean; onStop?(): void; stopDisabled?: boolean; stopTarget?: string;
   enabled: boolean; compact: boolean; draft: string; attachments: readonly AssistantAttachment[]; onChangeDraft: (value: string) => void; onPreview: () => void | Promise<void>;
@@ -160,7 +161,7 @@ export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabl
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
         style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
-        <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable> : null}</View>
+        <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable> : null}{discussionControl}</View>
       <View testID="composer-send-actions" style={styles.rightActions}>
       {queueAction?.queued ? <Text accessibilityLiveRegion="polite" style={styles.queuedLabel}>待傳送</Text> : null}
       {!onStop ? <AgentVoiceControl disabled={!enabled || voiceOpen} compact={touchControls} unavailableReason={voiceUnavailableReason}
