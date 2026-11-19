@@ -744,7 +744,7 @@ export function createProductAgent(options: {
                 includePrivateSources: false,
                 includeConcerns: false,
               }
-            : isChatOnly || discussion
+            : isChatOnly
               ? {
                   includeDocuments: false,
                   includeConcerns: false,
@@ -760,7 +760,7 @@ export function createProductAgent(options: {
                   registeredSourceCards: undefined,
                   registeredSourceDocuments: undefined,
                 }
-              : conversationMode === "chat_only"
+              : conversationMode === "chat_only" || discussion
                 ? {
                     actions: undefined,
                     includeDocuments: true,
@@ -782,14 +782,19 @@ export function createProductAgent(options: {
               publish(stage === "read" ? "reading" : "searching", { sources });
             },
           });
+          if (isChatOnly) {
+            return conversationMode === "ephemeral"
+              ? tools.tools.filter(tool => EPHEMERAL_ALLOWED_TOOL_NAMES.has(tool.name) || (discussion && discussionToolNames.some(name => name === tool.name)))
+              : tools.tools;
+          }
           if (discussion) {
-            const allowed = conversationMode === 'ephemeral' ? EPHEMERAL_ALLOWED_TOOL_NAMES : CHAT_ONLY_ALLOWED_TOOL_NAMES;
+            const allowed = conversationMode === 'ephemeral' ? EPHEMERAL_ALLOWED_TOOL_NAMES : LEGACY_CONVERSATION_CHAT_ONLY_TOOL_NAMES;
             return tools.tools.filter(tool => allowed.has(tool.name) || discussionToolNames.some(name => name === tool.name));
           }
           if (conversationMode === "ephemeral") {
             return tools.tools.filter(tool => EPHEMERAL_ALLOWED_TOOL_NAMES.has(tool.name));
           }
-          if (!isChatOnly && conversationMode === "chat_only") {
+          if (conversationMode === "chat_only") {
             return tools.tools.filter(tool => LEGACY_CONVERSATION_CHAT_ONLY_TOOL_NAMES.has(tool.name));
           }
           return tools.tools;
