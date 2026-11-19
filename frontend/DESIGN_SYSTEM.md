@@ -149,6 +149,8 @@ Web「更多」是次要分類目錄，按實際正文寬度兩／三欄，極�
 <a id="codex-chat-presentation"></a>
 ### FE-W36 Codex 聊天配方
 
+Web 及手機各頁的鈴鐺與資訊側欄使用相同的無框圖示和完整點按區。助手的「對話活動」打開待確認與其他活動清單，「回覆詳情」打開該次結果。步驟就地展開，鍵盤導覽時顯示焦點框。符合情境的官方求助卡在輸入框上方顯示，與聊天正文對齊。
+
 2026-10-04 按使用者指定及 [官方視覺研究](CHAT_UI_RESEARCH.md#codex-desktop-presentation)改 Agent 聊天；以下是本項目選值，不當作 Codex 的實際 CSS。
 
 - chat-presentation 保留系統字體及 Codex 參考的閱讀比例，配色依 2026-10-04 最新指示沿既有 theme：canvas 近白畫布、paleTeal 使用者氣泡、ink／muted 深藍紫文字、softLine 分隔、controlSurface 白色輸入面板及 line 柔和細邊界；主要送出採 accent 黃底、onAccent 深色箭嘴。來源沿父底及細線，不加整片色板；錯誤／警告仍沿語意色。正文與區段 15／24（區段 600），工具 13／20、metadata 12／18、輸入 16／24。助手為連續正文；使用者氣泡 20 圓角、上下 12／左右 16 內距。

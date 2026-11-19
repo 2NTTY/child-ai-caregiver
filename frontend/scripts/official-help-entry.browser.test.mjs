@@ -13,7 +13,7 @@ const EPOCH_ID = '33333333-3333-4333-8333-333333333333';
 const CHILD_1_ID = '44444444-4444-4444-8444-444444444441';
 const CHILD_2_ID = '44444444-4444-4444-8444-444444444442';
 
-const HELP_TOGGLE_LABEL = '官方求助入口';
+const BELL_LABEL = '開啟最近消息';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -139,6 +139,11 @@ function createSyntheticBackend({ hasChildren = true, failReplyWithHelpCard = fa
       const url = new URL(req.url());
       if (['data:', 'blob:', 'about:'].includes(url.protocol)) { await route.continue(); return; }
       if (url.origin !== baseUrl) {
+        // Some Windows installations inject this script into localhost pages.
+        if (url.hostname.endsWith('.scr.kaspersky-labs.com') && req.resourceType() === 'script') {
+          await route.fulfill({ contentType: 'application/javascript', body: '' });
+          return;
+        }
         await route.abort('blockedbyclient');
         return;
       }
@@ -438,6 +443,7 @@ async function assertDockGeometryAndNoOcclusion(page, label, maxExpectedDockHeig
       htmlZoom,
       rootOverflow: document.documentElement.scrollWidth - window.innerWidth,
       dockOffsetHeight: dockRect?.offsetHeight ?? null,
+      toolbarRect: pick('[data-testid="chat-top-toolbar"]'),
       dockRect,
       composerRect,
       boxRect,
@@ -446,6 +452,7 @@ async function assertDockGeometryAndNoOcclusion(page, label, maxExpectedDockHeig
     };
   });
   const geomSummary = () => JSON.stringify(geom);
+  assert.ok(Math.abs(geom.dockRect.left - geom.toolbarRect.left) <= 1 && Math.abs(geom.dockRect.right - geom.toolbarRect.right) <= 1, `${label}: official help must stay inside the chat column`);
   assert.ok(geom.rootOverflow <= 1, `${label}: horizontal overflow ${geom.rootOverflow}px (${geomSummary()})`);
   assert.ok(geom.dockOffsetHeight !== null && geom.dockOffsetHeight > 20, `${label}: dock must render with positive layout height (${geomSummary()})`);
   assert.ok(geom.dockOffsetHeight <= maxExpectedDockHeight + 2, `${label}: dock layout height ${geom.dockOffsetHeight} exceeds cap ${maxExpectedDockHeight} (zoom=${geom.htmlZoom}) (${geomSummary()})`);
@@ -474,33 +481,14 @@ test.after(async () => {
   await serverInfo?.close();
 });
 
-test('E2E 1: Permanent toolbar toggle works with keyboard + ARIA roles even without a selected child', async () => {
+test('E2E 1: an empty conversation has no permanent help entry or cards', async () => {
   const backend = createSyntheticBackend({ hasChildren: false });
   const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend, { width: 390, height: 844 });
   try {
     await page.getByText('先選擇孩子。', { exact: true }).waitFor();
-    const toggle = page.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
-    await toggle.waitFor();
-    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
-    assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'help dock should start collapsed');
-
-    // Keyboard activation
-    await toggle.focus();
-    const focused = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
-    assert.equal(focused, HELP_TOGGLE_LABEL, 'toolbar toggle button must accept keyboard focus');
-    await page.keyboard.press('Enter');
-
-    await page.getByTestId('chat-official-help-dock').waitFor();
-    await page.getByTestId('chat-official-help-panel').waitFor();
-    assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
-    assert.equal(await page.getByTestId('official-help-card').count(), 2, 'manual toggle reveals both emergency & medical cards');
-    const cardLabels = await page.getByTestId('official-help-card').evaluateAll(els => els.map(el => el.getAttribute('aria-label')));
-    assert.deepEqual(cardLabels, ['緊急求助', '醫療與用藥諮詢']);
-    assert.equal(await page.getByRole('textbox', { name: '撰寫對話問題', exact: true }).isDisabled(), true, 'composer disabled without child but still mounted cleanly');
-
-    await toggle.press('Enter');
-    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
-    assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0, 'second keyboard press collapses help dock');
+    assert.equal(await page.getByTestId('chat-top-toolbar').getByRole('button', { name: /求助/ }).count(), 0);
+    assert.equal(await page.getByTestId('chat-official-help-dock').count(), 0);
+    assert.equal(await page.getByRole('textbox', { name: '撰寫對話問題', exact: true }).isDisabled(), true);
     assert.deepEqual(errors, [], `unexpected browser errors: ${JSON.stringify(errors)}`);
   } finally {
     await context.close();
@@ -543,7 +531,7 @@ test('E2E 2: Real DOM layout across desktop, mobile, keyboard-height simulation,
       await textbox.fill('BB笑到抽筋，之後失去意識');
       const alertNode = page.getByTestId('chat-official-help-urgent-notice');
       await alertNode.waitFor();
-      await page.getByRole('button', { name: '緊急／醫療官方求助入口', exact: true }).waitFor();
+      assert.deepEqual(await page.getByTestId('official-help-card').evaluateAll(cards => cards.map(card => card.getAttribute('aria-label'))), ['緊急求助']);
       assert.equal(await alertNode.getAttribute('role'), 'alert', `${cfg.label}: emergency notice must expose ARIA alert role`);
 
       if (cfg.scale > 1) {
@@ -566,6 +554,34 @@ test('E2E 2: Real DOM layout across desktop, mobile, keyboard-height simulation,
       await textbox.fill('BB笑到抽筋，之後失去意識！');
       assert.equal(await textbox.inputValue(), 'BB笑到抽筋，之後失去意識！');
       assert.deepEqual(errors, [], `${cfg.label} errors: ${JSON.stringify(errors)}`);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test('shared header keeps its borderless bell and sidebar usable on home and chat', async () => {
+  for (const width of [1440, 390]) {
+    const { context, page } = await openChatPage(browser, serverInfo.baseUrl, createSyntheticBackend(), { width, height: 844 });
+    try {
+      for (const pathname of ['/chat', '/']) {
+        if (pathname === '/') await page.goto(serverInfo.baseUrl);
+        const header = page.getByTestId('header-actions');
+        const bell = header.getByRole('button', { name: BELL_LABEL });
+        const sidebar = header.getByRole('button', { name: '開啟資訊側欄' });
+        for (const control of [bell, sidebar]) {
+          await control.waitFor();
+          const { width: w, height: h } = await control.boundingBox();
+          assert.ok(w >= 44 && h >= 44, `${pathname} at ${width}px: target ${w}×${h}`);
+          assert.equal(await control.evaluate(el => [el, ...el.querySelectorAll('div')].every(node => getComputedStyle(node).borderTopWidth === '0px')), true);
+        }
+        await bell.press('Enter');
+        const dialog = page.getByRole('dialog');
+        await dialog.getByText('最近消息', { exact: true }).waitFor();
+        await dialog.getByRole('button', { name: '關閉', exact: true }).click();
+        await sidebar.click();
+        await header.getByRole('button', { name: '收起資訊側欄', includeHidden: true }).waitFor({ state: 'attached' });
+      }
     } finally {
       await context.close();
     }
@@ -616,15 +632,14 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
     const textbox = p1.getByRole('textbox', { name: '撰寫對話問題', exact: true });
     await textbox.fill('BB幾時可以開始食固體食物？');
     await p1.getByRole('button', { name: '送出', exact: true }).click();
-    const helpToggle = p1.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
-    await helpToggle.focus();
+    await p1.getByRole('button', { name: BELL_LABEL, exact: true }).focus();
 
     await p1.getByTestId('chat-progress-sources').waitFor({ timeout: 10000 });
     await p1.getByTestId('chat-progress-sources-retained-notice').waitFor({ timeout: 10000 });
     await p1.getByText('重試原訊息回覆', { exact: true }).waitFor({ timeout: 5000 });
 
     const focusedDuringAndAfter = await p1.evaluate(() => document.activeElement?.getAttribute('aria-label'));
-    assert.equal(focusedDuringAndAfter, HELP_TOGGLE_LABEL, 'SSE progress updates and retained source cards must never steal keyboard focus');
+    assert.equal(focusedDuringAndAfter, BELL_LABEL, 'SSE progress updates and retained source cards must never steal keyboard focus');
 
     const retainedText = await p1.getByTestId('chat-progress-sources').innerText();
     assert.match(retainedText, /嬰幼兒飲食－引進固體食物過渡期/);
@@ -695,7 +710,6 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
   try {
     const textbox = p4.getByRole('textbox', { name: '撰寫對話問題', exact: true });
     const urgent = p4.getByTestId('chat-official-help-urgent-notice');
-    const toggle = p4.getByRole('button', { name: HELP_TOGGLE_LABEL, exact: true });
     await textbox.fill('BB突然呼吸困難');
     await p4.getByRole('button', { name: '送出', exact: true }).click();
     const retained = p4.getByTestId('chat-progress-sources-retained-notice');
@@ -708,11 +722,9 @@ test('E2E 4: Focus stays put on progress updates, retained official sources surv
     await p4.getByTestId('chat-progress-sources').waitFor({ state: 'hidden' });
     assert.equal(await textbox.inputValue(), '');
     await p4.getByText('BB突然呼吸困難', { exact: true }).waitFor();
-    await toggle.click();
-    await p4.getByTestId('chat-official-help-panel').waitFor();
-    assert.equal(await p4.getByTestId('official-help-card').count(), 2);
-    assert.equal(await urgent.count(), 0, 'manual access does not revive the old emergency');
-    await toggle.click();
+    await textbox.fill('Can I book a non-emergency medicine review?');
+    await p4.getByTestId('chat-official-help-consult-notice').waitFor();
+    assert.equal(await urgent.count(), 0, 'a new consultation must not revive the old emergency');
     await textbox.fill('BB而家抖唔到氣');
     await urgent.waitFor();
     assert.deepEqual(e4, [], `E2E 4 Part D errors: ${JSON.stringify(e4)}`);

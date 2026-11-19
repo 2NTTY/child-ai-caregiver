@@ -1,6 +1,8 @@
 import { layoutFactsSchema, layoutFactContract } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { knowledgeChunkInputSchema } from "./knowledge-inputs.ts";
+import { nativeResponseSchema } from "./structured-output-schema.ts";
+export { nativeResponseSchema };
 
 export const NATIVE_PDF_READER_VERSION = "native-pdf-physical-pages/4";
 
@@ -48,11 +50,4 @@ export function pdfOrganizationContract(units: readonly { id: string; page: numb
         ...(ageRange?.exclusiveEnd ? { maxAgeMonthsExclusive: true } : {}) } };
     }) };
   } };
-}
-
-export function nativeResponseSchema(shape: z.ZodType) {
-  const { $schema: _dialect, ...schema } = z.toJSONSchema(shape, { io: "input", reused: "ref" });
-  // Keep the provider grammar small. The original Zod schema still enforces every local bound.
-  return JSON.parse(JSON.stringify(schema, (key, value) =>
-    ["minLength", "maxLength", "pattern", "minItems", "maxItems", "maximum", "minimum"].includes(key) ? undefined : value)) as Record<string, unknown>;
 }

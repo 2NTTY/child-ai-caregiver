@@ -38,6 +38,23 @@ export const CHAT_CLASSIFICATION_LABELS = {
   synthetic: "合成來源示例",
 } as const;
 
+export const CHAT_TIMELY_EVENT_KIND_LABELS = {
+  news: "近期新聞",
+  announcement: "官方公告",
+  safety_alert: "安全警報",
+  recall: "產品召回",
+  policy_change: "政策變動",
+  deadline: "限期事項",
+} as const;
+
+export const CHAT_TIMELY_EVENT_STATUS_LABELS = {
+  active: "生效中",
+  corrected: "已更正",
+  lifted: "已解除",
+  superseded: "已被新版取代",
+  expired: "已過期",
+} as const;
+
 export const CHAT_PHASE_LABELS = {
   thinking: "思考中",
   streaming: "正在回覆",

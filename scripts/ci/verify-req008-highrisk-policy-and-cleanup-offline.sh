@@ -42,8 +42,11 @@ TEST_FILES=(
   tests/agent-runtime-contract.test.ts
   tests/product-agent-execution-contract.test.ts
   tests/library-citation-roundtrip.test.mjs
+  tests/req002-mixed-repair.test.ts
+  tests/req002-schema-and-trace.test.ts
+  tests/req008-context-scope.test.ts
 )
-TEST_CASES=(9 44 17 12 11 16 9 9 18 21 17 8 4)
+TEST_CASES=(9 44 17 12 11 16 9 9 18 21 17 8 4 3 13 6)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

@@ -28,6 +28,46 @@ async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
+test("editing the next draft and stopping twice targets only the original saved message", async () => {
+  const { values, api, controller } = fixture();
+  const started = deferred<void>(), finish = deferred<void>();
+  const reply = api.requestReply;
+  api.requestReply = async (...args) => { started.resolve(); await finish.promise; return reply(...args); };
+  const cancelled: string[] = [];
+  api.cancelReply = async (child, id) => { assert.equal(child, firstChild); cancelled.push(id); return true; };
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  controller.setText(original);
+  const running = controller.send(); await started.promise;
+  controller.setText("下一句");
+  assert.equal(controller.getSnapshot().drafts[firstChild].nextText, "下一句");
+  await controller.cancelReply(); await controller.cancelReply();
+  assert.deepEqual(cancelled, [values.messages[0].id]);
+  finish.resolve(); await running;
+  assert.equal(values.saves, 1);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, "下一句");
+  controller.dispose();
+});
+
+test("an explicitly queued next question is sent once after the first reply; withdrawing it keeps the draft", async () => {
+  for (const withdraw of [false, true]) {
+    const { values, controller, api } = fixture();
+    const started = deferred<void>(), finish = deferred<void>();
+    const reply = api.requestReply;
+    api.requestReply = async (...args) => { started.resolve(); await finish.promise; return reply(...args); };
+    controller.syncContext(alice.id, true, firstChild); await settle();
+    controller.setText("第一句");
+    const run = controller.send(); await started.promise;
+    controller.setText("第二句"); controller.queueNextText(); controller.queueNextText();
+    if (withdraw) controller.unqueueNextText();
+    assert.equal(values.saves, 1);
+    finish.resolve(); await run; await settle();
+    assert.equal(values.saves, withdraw ? 1 : 2);
+    assert.equal(values.replies, withdraw ? 1 : 2);
+    assert.equal(controller.getSnapshot().drafts[firstChild].text, withdraw ? "第二句" : "");
+    controller.dispose();
+  }
+});
+
 test("online receipt recovery uses the original message identity and does not infer from equal text", async () => {
   const { values, api, controller } = fixture();
   let pending = false;

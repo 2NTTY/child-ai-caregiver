@@ -56,7 +56,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
     }
   };
   const make = (name: keyof typeof AGENT_WORK_TOOL_DESCRIPTIONS, parameters: z.ZodObject,
-    execute: AgentTool["execute"]): AgentTool => ({ name, description: AGENT_WORK_TOOL_DESCRIPTIONS[name], parameters, authorize, execute });
+    execute: AgentTool["execute"], effect?: "read"): AgentTool => ({ name, ...(effect ? { effect } : {}), description: AGENT_WORK_TOOL_DESCRIPTIONS[name], parameters, authorize, execute });
   async function originalQuote(fact: MemoryFact) {
     if (!onHistoryRead || !fact.applicable || !factIsApplicable(fact) || fact.childId !== childId
       || fact.source.kind !== 'private_chat' || !fact.source.messageId) return undefined;
@@ -87,7 +87,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         && JSON.stringify(result).length > Math.max(0, run.budget.toolResponseCharacters - 512))
         return { status: "rejected", data: { code: "response_limit" } };
       return result;
-    }),
+    }, "read"),
     make("read_background_result", z.object({ runId: z.uuid(), offset: z.number().int().min(0).max(1000000),
       limit: z.number().int().min(1).max(4000) }).strict(), args => guard(async () => {
       const input = args as { runId: string; offset: number; limit: number };
@@ -101,7 +101,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       const text = value.text.slice(input.offset, input.offset + available), end = input.offset + text.length;
       return { ...metadata, text, complete: end === value.text.length, nextOffset: end < value.text.length ? end : null,
         budgetLimited: available < input.limit && end < value.text.length };
-    })),
+    }), "read"),
     make("save_work", saveAgentWorkSchema, (args, call) => guard(() => store.saveWork(run.scope, run.runId, call.callId, saveAgentWorkSchema.parse(args)))),
     make("search_history", chatHistorySearchSchema, args => guard(async () => {
       const input = historySearchSchema.parse(chatHistorySearchSchema.parse(args));
@@ -149,7 +149,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       return { ...page, matches, ...(page.matches.some(match => match.excerptRange) ? {
         answerGuidance: '選能回答問題的家長原句，把該句的 quoteHistory 原樣填入 present_answer 的 paragraphs，kind 用 private_reference。缺片段才需續讀。'
       } : {}) };
-    })),
+    }), "read"),
     make("read_history", historyReadSchema, async args => {
       let reference: string | undefined;
       const response = await guard(async () => {
@@ -161,7 +161,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
         return { ...message, ...onHistoryRead(message, reread) };
       });
       return reference && response.status === 'succeeded' ? { ...response, reference } : response;
-    }),
+    }, "read"),
     make("read_memory_facts", memoryFactReadSchema, args => guard(async () => {
       const parsed = memoryFactReadSchema.parse(args);
       const input = { factId: parsed.factId ?? null, afterId: parsed.afterId ?? null, ...(parsed.keys?.length ? { keys: parsed.keys } : {}) };
@@ -208,7 +208,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       return { items: quote ? [{ ...items[0], ...quote }] : items, nextAfterId: items.length < page.items.length ? items.at(-1)?.id ?? input.afterId : page.nextAfterId, partial: more,
         conflictingKeys: [...keys].filter(([, values]) => values.size > 1).map(([key]) => key),
         unavailableFactKeys: items.filter(item => !item.applicable).map(item => normalizedFactKey(item.key)) };
-    })),
+    }), "read"),
     make("propose_fact_revision", z.object(revisionShape).strict(), (args, call) => guard(async () => {
       const proposal = await store.propose(run.scope, run.runId, call.callId, agentProposalSchema.parse({ ...args, kind: "memory_fact_revise" }));
       if (!proposal) throw new AgentStopped("unauthorized");

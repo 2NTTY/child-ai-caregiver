@@ -95,7 +95,7 @@ test('composer voice click starts once in place, then stops for preview and expl
       s.button('停止並試聽').props.onPress(); await flush(s.h);
       assert.ok(s.h.hosts().find(node => node.type === 'AudioPreview')); assert.equal(s.calls.pick.length, 0);
       const stops = s.calls.stop;
-      s.button('加入未送出草稿').props.onPress(); await flush(s.h);
+      s.button('使用錄音').props.onPress(); await flush(s.h);
       assert.equal(s.calls.pick.length, 1); assert.equal(s.calls.disposed, 0, 'the draft receives ownership of the local audio');
       if (platform === 'android') assert.equal(s.calls.stop, stops, 'adopting a completed clip does not start another recorder stop');
       assert.equal(s.h.node('voice-capture'), undefined);

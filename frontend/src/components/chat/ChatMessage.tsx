@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type PressableStateCallbackType } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import type { ChatMessageView, ChatReplyPhase } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
 import { AppIcon } from "../AppIcon";
+import { ChatAction } from "./ChatAction";
 import { AppButton } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
@@ -47,14 +48,12 @@ export function ChatMessage({ message, children, header, footer, testID, embedde
         {attention && onCheck ? <AppButton label={CHAT_MESSAGE_COPY.checkOriginal} variant="quiet" density="compact" onPress={onCheck} /> : null}
       </View> : null}
       {assistant && activities.length ? <View style={styles.process}>
-        <Pressable testID="chat-process-toggle" accessibilityRole="button" accessibilityLabel={CHAT_MESSAGE_COPY.processToggle}
-          accessibilityState={{ expanded: processOpen }} aria-expanded={processOpen} onPress={() => setProcessOpen(value => !value)}
-          style={({ pressed, hovered, focused }: PressableStateCallbackType & { hovered?: boolean; focused?: boolean }) => [styles.processToggle, (pressed || hovered) && styles.pressed, focused && styles.focused]}>
-          <Text style={styles.processLabel}>{CHAT_MESSAGE_COPY.processToggle} · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? CHAT_MESSAGE_COPY.processPendingNote : ""}</Text>
-          <AppIcon name={processOpen ? "chevron-up" : "chevron-down"} size={16} color={chatColors.secondary} />
-        </Pressable>
-        <MotionDisclosure expanded={processOpen} scopeKey={message.id}><View testID="chat-process-details" style={styles.processDetails}>{activities.map((activity, index) => <View key={activity.id} style={[styles.activity, index > 0 && styles.divider]}>
-          <View style={styles.statusRow}><Text style={styles.activityTitle}>{activity.label}</Text><Text style={activity.state === "failed" ? [styles.warning, styles.error] : activity.state === "unknown" ? styles.warning : styles.meta}>{activityLabels[activity.state]}</Text></View>
+        <ChatAction testID="chat-process-toggle" label={`${CHAT_MESSAGE_COPY.processToggle} · ${activities.length} 項${activities.some(item => item.state === "failed" || item.state === "unknown") ? CHAT_MESSAGE_COPY.processPendingNote : ""}`}
+          expanded={processOpen} disclosure onPress={() => setProcessOpen(value => !value)} />
+        <MotionDisclosure expanded={processOpen} scopeKey={message.id}><View testID="chat-process-details" style={styles.processDetails}>{activities.map(activity => <View key={activity.id} style={styles.activity}>
+          <View style={styles.statusRow}>{activity.state === "succeeded" ? <AppIcon name="check" size={13} /> : null}
+            <Text accessibilityLabel={activity.state === "succeeded" ? `${activity.label}，${activityLabels.succeeded}` : undefined} style={styles.activityTitle}>{activity.label}</Text>
+            {activity.state !== "succeeded" && <Text style={activity.state === "failed" ? [styles.warning, styles.error] : activity.state === "unknown" ? styles.warning : styles.meta}>{activityLabels[activity.state]}</Text>}</View>
           {activity.summary ? <Text style={styles.meta}>{activity.summary}</Text> : null}
         </View>)}</View></MotionDisclosure>
       </View> : null}
@@ -76,13 +75,11 @@ const styles = StyleSheet.create({
   status: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   progressIndicator: { width: 16, height: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   progressStatic: { width: 8, height: 8, borderRadius: 4, backgroundColor: chatColors.secondary },
-  messageActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 4, minWidth: 0 }, userActions: { justifyContent: "flex-end" },
+  messageActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 16, rowGap: 4, minWidth: 0 }, userActions: { justifyContent: "flex-end" },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool, flexShrink: 1 },
   error: { color: colors.errorInk },
-  process: { minWidth: 0 }, processToggle: { backgroundColor: "transparent", borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
-  processLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, minWidth: 0, flexShrink: 1 },
-  processDetails: { gap: spacing.sm, paddingBottom: spacing.sm }, activity: { gap: spacing.xs, minWidth: 0 },
-  divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: chatColors.line },
-  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { backgroundColor: chatColors.hover },
-  focused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
+  process: { minWidth: 0 },
+  processDetails: { gap: spacing.sm, paddingLeft: spacing.md, borderLeftWidth: 1, borderLeftColor: chatColors.line },
+  activity: { gap: spacing.xs, minWidth: 0 },
+  activityTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
 });
