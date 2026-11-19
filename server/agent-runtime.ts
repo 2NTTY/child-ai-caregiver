@@ -189,6 +189,8 @@ export interface AgentRunInput {
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Metadata-only all-role trace sink; strictly allowlisted without prompts or message bodies. */
   onTrace?: AgentTraceSink;
+  /** Pure Server predicate shared with the output projection; never infer partial delivery from an earlier read. */
+  retainsPartialSources?: (reason: AgentStopReason) => boolean;
   /** Whitelisted metadata describing initial context assembly categories and omission reasons. */
   contextAssembly?: {
     categories: readonly AgentContextCategoryMetadata[];
@@ -347,6 +349,7 @@ export function createAgentRuntime(options: {
       const scope = bindingInput.scope;
       let acquired = false;
       const lease: { current: Awaited<ReturnType<AgentRunAdmission["acquire"]>> } = { current: null };
+      let stoppedProjectionAuthorized = false;
       let toolFailure: AgentStopped | undefined;
       let requestFailure: AgentStopped | undefined;
       let cleanupOwnedSession: (() => Promise<void>) | undefined;
@@ -583,7 +586,7 @@ export function createAgentRuntime(options: {
               const embeddingKey = budget.durable && (tool.name === "search_knowledge" || tool.name === "search_source_card_evidence")
                 ? queryEmbeddingAttemptKey(context, scope, runId, tool.name, args) : undefined;
               const callId = context?.functionCallId ?? "";
-              const callIdHash = callId ? hashSafeTraceId(callId) : undefined;
+              const callIdHash = hashSafeTraceId(callId || randomUUID());
               const toolStartMs = Date.now();
               if (tool.name === "load_capabilities") traceCollector.handle.noteLoaderCall("capabilityLoads");
               else if (tool.name === "read_history" || tool.name === "search_history") traceCollector.handle.noteLoaderCall("historyReads");
@@ -592,8 +595,23 @@ export function createAgentRuntime(options: {
                 role: runtimeTraceRole,
                 phase: "tool_start",
                 tool: tool.name,
-                ...(callIdHash ? { callIdHash } : {}),
+                callIdHash,
               });
+              let settled = false;
+              const finish = (phase: "tool_end" | "tool_rejection" | "tool_error", outcome: AgentTraceEvent["outcome"],
+                extra: Pick<AgentTraceEvent, "code" | "stopReason"> = {}) => {
+                if (settled) return;
+                settled = true;
+                traceCollector.emit({ role: runtimeTraceRole, phase, tool: tool.name, callIdHash,
+                  durationMs: Math.max(0, Date.now() - toolStartMs), counts: budget.counts, outcome, ...extra });
+              };
+              const stopped = (reason: AgentStopReason) => finish("tool_error", reason === "unauthorized" ? "unauthorized"
+                : reason === "deadline" || reason === "cancelled" ? "timeout" : "failed", { stopReason: reason });
+              // The outer wait can finish before ADK unwinds. Close the span on the
+              // original signal; a late physical read must neither re-open it nor run again.
+              const onAbort = () => stopped(budget.signal.reason instanceof AgentStopped ? budget.signal.reason.reason : "cancelled");
+              budget.signal.addEventListener("abort", onAbort, { once: true });
+              if (budget.signal.aborted) onAbort();
               const progress: AgentRunResult["tools"][number] = { name: tool.name, callId, status: "unknown" };
               result.tools.push(progress);
               try {
@@ -602,54 +620,28 @@ export function createAgentRuntime(options: {
                 progress.status = response.status;
                 if (response.reference) progress.reference = response.reference;
                 observer.recordToolRejection(tool.name, "execution", response);
-                const toolDurationMs = Math.max(0, Date.now() - toolStartMs);
-                const code = typeof response.data?.code === "string" ? response.data.code : undefined;
-                traceCollector.emit({
-                  role: runtimeTraceRole,
-                  phase: response.status === "succeeded" ? "tool_end" : "tool_rejection",
-                  tool: tool.name,
-                  ...(callIdHash ? { callIdHash } : {}),
-                  durationMs: toolDurationMs,
-                  outcome: response.status,
-                  ...(code ? { code } : {}),
-                  counts: budget.counts,
-                });
+                finish(response.status === "succeeded" ? "tool_end" : "tool_rejection", response.status,
+                  typeof response.data?.code === "string" ? { code: response.data.code } : {});
                 return response;
               } catch (error) {
-                budget.check();
-                if (error instanceof AgentStopped) {
-                  traceCollector.emit({
-                    role: runtimeTraceRole,
-                    phase: "tool_error",
-                    tool: tool.name,
-                    ...(callIdHash ? { callIdHash } : {}),
-                    durationMs: Math.max(0, Date.now() - toolStartMs),
-                    outcome: error.reason === "unauthorized" ? "unauthorized" : "failed",
-                    stopReason: error.reason,
-                    counts: budget.counts,
-                  });
-                  toolFailure = error;
-                  throw error;
+                try {
+                  budget.check();
+                  if (error instanceof AgentStopped) throw error;
+                  if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+                } catch (stop) {
+                  toolFailure = stop instanceof AgentStopped ? stop : new AgentStopped("unavailable");
+                  stopped(toolFailure.reason);
+                  throw toolFailure;
                 }
-                // Authorization failures must never look like missing data or invite a retry.
-                try { if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized"); }
-                catch (error) { toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable"); throw toolFailure; }
                 progress.status = tool.effect === "read" ? "failed" : "unknown";
                 const response: AgentToolResult = { status: progress.status, data: tool.effect === "read"
                   ? { code: "read_unavailable", recovery: "bounded_read", nextAction: "This read failed, not an empty result. Use a relevant read within the remaining budget or state the limitation." }
                   : { code: "effect_unknown", recovery: "original_receipt_only" } };
                 observer.recordToolRejection(tool.name, "execution", response);
-                traceCollector.emit({
-                  role: runtimeTraceRole,
-                  phase: "tool_error",
-                  tool: tool.name,
-                  ...(callIdHash ? { callIdHash } : {}),
-                  durationMs: Math.max(0, Date.now() - toolStartMs),
-                  outcome: progress.status,
-                  code: tool.effect === "read" ? "read_unavailable" : "effect_unknown",
-                  counts: budget.counts,
-                });
+                finish("tool_error", progress.status, { code: tool.effect === "read" ? "read_unavailable" : "effect_unknown" });
                 return response;
+              } finally {
+                budget.signal.removeEventListener("abort", onAbort);
               }
             } }));
           let continuationInstructions: { phase: 'work' | 'finish'; text: string }[] = [];
@@ -1106,7 +1098,8 @@ export function createAgentRuntime(options: {
         if (result.stopReason === "unauthorized" || budget.signal.aborted) result.tools = [];
         else {
           try {
-            if (!await budget.wait(authorize)) { result.stopReason = "unauthorized"; result.tools = []; }
+            stoppedProjectionAuthorized = await budget.wait(authorize);
+            if (!stoppedProjectionAuthorized) { result.stopReason = "unauthorized"; result.tools = []; }
           } catch { result.tools = []; }
         }
       } finally {
@@ -1165,10 +1158,14 @@ export function createAgentRuntime(options: {
         if (acquired) activeUsers.delete(scope.userId);
         if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = frozenSummaryCounts ?? budget.counts;
+        let hasUsablePartial = false;
+        if (stoppedProjectionAuthorized && result.status === "stopped" && result.stopReason) {
+          try { hasUsablePartial = input.retainsPartialSources?.(result.stopReason) === true; } catch { /* Observation only. */ }
+        }
         traceCollector.finalize({
           status: result.status,
           stopReason: result.stopReason,
-          hasUsablePartial: traceCollector.snapshotMilestones().firstUsableSourceMs !== null,
+          hasUsablePartial,
           counts: result.counts,
         });
         if (monitor) {

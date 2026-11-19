@@ -4,6 +4,7 @@ import type { PrivateSourceCitation } from "../src/shared/product-agent.ts";
 import type { SharedInputStore } from "./shared-input-store.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
+import { AgentStopped } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
 
 // Private references never enter the public retriever, embedding queue or family context.
@@ -32,7 +33,9 @@ export function createAgentSourceTools(sources:SharedInputStore,store:ProductAge
         // Whole permission scopes only: ask the user to narrow instead of silently truncating.
         if(management.modelExcerpt.length>6000)throw new FamilyError(400,"source_excerpt_too_large");
         const citation:PrivateSourceCitation={citationId:`private:${input.id}:${input.version}`,inputId:input.id,version:input.version,label:input.sourceLabel,excerpt:management.modelExcerpt,sha256:input.sha256,nature:management.nature};
+        if (!await authorize()) throw new AgentStopped("unauthorized");
         evidence.set(citation.citationId,citation);
+        if (run.trace && !run.budget.signal.aborted) run.trace.markUsableSource(1);
         run.deliveryReview?.require("review");
         return {citation,purpose:management.purpose,timeScope:management.timeScope,validityText:management.validityText,verifiedOfficial:false};})},
     {name:"propose_private_source",description:"按本人提供的連結或原文提出私人來源設定候選，確認後才保存到同一來源清單。不要編造正文；用途、選取原文交模型及家庭共享是不同授權。modelExcerpt 預設 null，只有本人核對選取原文後才授權；不擷取網址、不加入公共知識庫。",parameters:z.object({input:sharedInputCreateSchema.options[0],management:sourceManagementSchema}).strict(),authorize,

@@ -1,3 +1,5 @@
+import { isKnownAgentStopReason } from "../src/shared/agent-stop-message.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 import { createHash } from "node:crypto";
 import type { AgentStopReason, AgentModelPurpose } from "./agent-budget.ts";
 import type { TokenUsage } from "./ai-usage.ts";
@@ -184,10 +186,26 @@ const VALID_TERMINAL_CATEGORIES = new Set<AgentTraceTerminalCategory>([
   "completed", "partial", "failed", "cancelled", "unknown",
 ]);
 
-const SAFE_TOKEN_RE = /^[A-Za-z0-9._:/-]{1,64}$/u;
-const SAFE_TOOL_RE = /^[a-z][a-z0-9_]{0,63}$/u;
+// Only product-authored names are useful as metric dimensions. A syntactically valid
+// identifier may still be private text, including an adapter's unrecognized error code.
+const VALID_RECIPES = new Set([
+  "p1-chat", "capture-confirm", "knowledge-answer", "memory-refresh", "proactive-follow-up",
+  "contact-reply", "private-source-reading", "knowledge-organize", "knowledge-review", "summary-visit",
+  "product-interactive", "product-selected-children", "product-background", "product-work-followup",
+  "photo-capture", "shared-capture", "voice-transcription", "chat-delivery-review", "data-compose", "data-compose-review",
+]);
+const VALID_TOOLS = new Set<string>([PRODUCT_AGENT_TOOL_CATALOG.loader.name,
+  ...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...PRODUCT_AGENT_TOOL_CATALOG.groups.flatMap(group => [...group.toolNames] as string[]),
+  "read_selected_tasks", "prepare_selected_tasks", "search_selected_care", "search_selected_materials",
+]);
+const VALID_CODES = new Set(["read_unavailable", "effect_unknown", "invalid_parameters", "not_authorized", "unknown",
+  "invalid_input", "invalid_assignee", "agent_run_expired", "confirmation_requires_interactive_scope",
+  "invalid_citation", "citation_required", "citation_limit", "use_citation_ids", "not_found", "version_conflict",
+  "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch",
+  "confirmation_expired", "confirmation_scope_changed", "work_cancelled", "source_changed", "document_changed"]);
 const SAFE_HEX_PREFIX_RE = /^[a-f0-9]{6,16}$/u;
-const SAFE_CODE_RE = /^[a-z][a-z0-9_]{0,63}$/u;
+const PACK_VERSION = /^(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})$/u;
+const RUN_ID = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|trace:[a-f0-9]{16})$/u;
 
 export function hashSafeTraceId(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -222,8 +240,8 @@ function safeNullableNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.round(value * 1000) / 1000 : null;
 }
 
-function safeStringToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN_RE.test(value) ? value : undefined;
+function recipe(value: unknown): string | undefined {
+  return typeof value === "string" && VALID_RECIPES.has(value) ? value : undefined;
 }
 
 function sanitizeVersionRefs(refs: readonly AgentContextVersionRef[] | undefined): AgentContextVersionRef[] | undefined {
@@ -231,7 +249,7 @@ function sanitizeVersionRefs(refs: readonly AgentContextVersionRef[] | undefined
   const cleaned: AgentContextVersionRef[] = [];
   for (const ref of refs.slice(0, 12)) {
     if (!ref || typeof ref !== "object" || !VALID_REF_KINDS.has(ref.kind)) continue;
-    const version = safeStringToken(ref.version);
+    const version = typeof ref.version === "string" && (/^[0-9]{1,9}$/u.test(ref.version) || PACK_VERSION.test(ref.version)) ? ref.version : undefined;
     const hashPrefix = typeof ref.hashPrefix === "string" && SAFE_HEX_PREFIX_RE.test(ref.hashPrefix) ? ref.hashPrefix : undefined;
     cleaned.push({
       kind: ref.kind,
@@ -244,9 +262,9 @@ function sanitizeVersionRefs(refs: readonly AgentContextVersionRef[] | undefined
 
 function sanitizeContextAssembly(raw: AgentContextAssemblyMetadata | undefined): AgentContextAssemblyMetadata | undefined {
   if (!raw || typeof raw !== "object") return undefined;
-  const packVersion = safeStringToken(raw.packVersion);
-  const recipeId = safeStringToken(raw.recipeId);
-  const assemblyPolicyVersion = safeStringToken(raw.assemblyPolicyVersion) ?? AGENT_CONTEXT_ASSEMBLY_POLICY_VERSION;
+  const packVersion = typeof raw.packVersion === "string" && PACK_VERSION.test(raw.packVersion) ? raw.packVersion : undefined;
+  const recipeId = recipe(raw.recipeId);
+  const assemblyPolicyVersion = AGENT_CONTEXT_ASSEMBLY_POLICY_VERSION;
   if (!packVersion || !recipeId) return undefined;
 
   const categories: AgentContextCategoryMetadata[] = [];
@@ -290,20 +308,20 @@ function sanitizeContextAssembly(raw: AgentContextAssemblyMetadata | undefined):
  * Never passes arbitrary strings, user prompts, message text, tool arguments, or raw errors.
  */
 export function sanitizeAgentTraceEvent(raw: AgentTraceEvent): AgentTraceEvent {
-  const runId = safeStringToken(raw.runId) ?? hashSafeTraceId(String(raw.runId ?? ""));
+  const runId = typeof raw.runId === "string" && RUN_ID.test(raw.runId) ? raw.runId : "trace:" + hashSafeTraceId(typeof raw.runId === "string" ? raw.runId : "");
   const role: AgentTraceRole = VALID_ROLES.has(raw.role) ? raw.role : "main_chat";
   const phase: AgentTracePhase = VALID_PHASES.has(raw.phase) ? raw.phase : "run_end";
-  const recipeId = safeStringToken(raw.recipeId);
+  const recipeId = recipe(raw.recipeId);
   const elapsedMs = safeNonNegativeNumber(raw.elapsedMs) ?? 0;
   const durationMs = safeNonNegativeNumber(raw.durationMs);
   const attemptIndex = safeNonNegativeInt(raw.attemptIndex);
   const retryIndex = safeNonNegativeInt(raw.retryIndex);
   const attemptKeyHash = typeof raw.attemptKeyHash === "string" && SAFE_HEX_PREFIX_RE.test(raw.attemptKeyHash) ? raw.attemptKeyHash : undefined;
-  const tool = typeof raw.tool === "string" && SAFE_TOOL_RE.test(raw.tool) ? raw.tool : undefined;
+  const tool = typeof raw.tool === "string" && VALID_TOOLS.has(raw.tool) ? raw.tool : undefined;
   const callIdHash = typeof raw.callIdHash === "string" && SAFE_HEX_PREFIX_RE.test(raw.callIdHash) ? raw.callIdHash : undefined;
   const outcome = raw.outcome && VALID_OUTCOMES.has(raw.outcome) ? raw.outcome : undefined;
-  const stopReason = typeof raw.stopReason === "string" && SAFE_CODE_RE.test(raw.stopReason) ? raw.stopReason as AgentStopReason : undefined;
-  const code = typeof raw.code === "string" && SAFE_CODE_RE.test(raw.code) ? raw.code : undefined;
+  const stopReason = typeof raw.stopReason === "string" && isKnownAgentStopReason(raw.stopReason) ? raw.stopReason as AgentStopReason : undefined;
+  const code = typeof raw.code === "string" && VALID_CODES.has(raw.code) ? raw.code : undefined;
   const schemaMode = raw.schemaMode && VALID_SCHEMA_MODES.has(raw.schemaMode) ? raw.schemaMode : undefined;
   const schemaDegradationReason = raw.schemaDegradationReason === "provider_native_schema_unsupported"
     ? raw.schemaDegradationReason : undefined;
@@ -501,7 +519,8 @@ export function createAgentRunTraceCollector(options: {
   };
 
   const handle: AgentRunTraceHandle = {
-    markUsableSource(count?: number) {
+    markUsableSource(count = 1) {
+      if (terminalSettledMs !== null || firstUsableSourceMs !== null || !Number.isSafeInteger(count) || count < 1) return;
       const t = elapsed();
       if (firstUsableSourceMs === null) firstUsableSourceMs = t;
       emit({

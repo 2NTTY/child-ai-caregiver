@@ -605,8 +605,8 @@ export class AgentGatewayModel extends BaseLlm {
       } finally {
         const durationMs = Math.max(0, Date.now() - start);
         const record = { outcome, ...tokens, durationMs };
-        if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
-        else await usage.record({ userId, childId, model: config.model, ...record });
+        // This span measures the model attempt, not persistence. Never release a
+        // response or retry before the original accounting operation succeeds.
         emitTrace({
           phase: outcome === "succeeded" ? "model_attempt_end" : retryDelay !== undefined ? "model_attempt_retry" : "model_attempt_error",
           attemptIndex,
@@ -619,6 +619,8 @@ export class AgentGatewayModel extends BaseLlm {
           counts: budget.counts,
           remainingModelCalls: budget.remainingModelCalls,
         });
+        if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
+        else await usage.record({ userId, childId, model: config.model, ...record });
       }
       if (retryDelay !== undefined) {
         await budget.wait(() => delay(retryDelay, undefined, { signal: budget.signal }));

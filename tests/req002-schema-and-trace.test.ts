@@ -19,6 +19,7 @@ import { composeFamilyDocumentDraft, enforceDataComposeReview } from "../server/
 import { prepareKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
+import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { createProductAgent } from "../server/product-agent.ts";
 import { productAgentResultSchema } from "../src/shared/product-agent-result.ts";
 import { dataComposeDraftSchema } from "../src/shared/data-compose.ts";
@@ -205,14 +206,58 @@ test("review and repair request the schema, yet valid JSON with a wrong hash or 
   }
 });
 
+test("only permitted live originals with a retained excerpt mark usable evidence", async () => {
+  for (const kind of ["excerpt", "locator", "denied"] as const) {
+    const budget = new AgentBudget(), { sink, events } = collector();
+    const trace = createAgentRunTraceCollector({ runId: "fixture", role: "main_chat", sinks: [sink] });
+    const surface = createProductAgentTools({ run: { runId: "fixture", scope: SCOPE, budget, trace: trace.handle },
+      store: {} as never, tasks: {} as never, memory: {} as never, knowledge: { createRun: () => ({}) } as never,
+      authorize: async () => true, liveSourceReader: { classifications: ["recent_information"], mayUse: async () => kind !== "denied",
+        search: async () => [{ original: "synthetic_live_excerpt", start: 0, end: 12, documentId: "synthetic", title: "Synthetic", publisher: "Synthetic",
+          url: "https://example.test/original", termsUrl: null, fetchedAt: "2026-01-01T00:00:00Z", version: null, sourceDate: null,
+          section: null, page: null, conditions: [], classification: "recent_information", rights: kind === "locator" ? "locator_only" : "retain_excerpt" }] } });
+    try {
+      const read = surface.tools.find(tool => tool.name === "search_knowledge")!;
+      const output = await read.execute({ query: "固體食物", classification: "recent_information", acquisition: "live" },
+        { scope: SCOPE, runId: "fixture", callId: "one", signal: budget.signal });
+      assert.equal(output.status, "succeeded");
+      assert.equal(events.filter(e => e.phase === "source_usable").length, kind === "excerpt" ? 1 : 0);
+      assert.ok(!JSON.stringify(events).includes("synthetic_live"));
+    } finally { budget.close(); }
+  }
+});
+
+test("started sequential reads settle exactly once on cancellation, deadline and failed authorization", async () => {
+  for (const stop of ["cancelled", "deadline", "unauthorized"] as const) {
+    let authorized = true;
+    const { events, sink } = collector(), parent = new AbortController();
+    const tool: AgentTool = { name: "read_context", effect: "read", description: "Read a fixture.", parameters: z.object({}),
+      authorize: async () => true, execute: async () => {
+        if (stop === "unauthorized") { authorized = false; throw new Error("fixture unavailable"); }
+        if (stop === "cancelled") parent.abort();
+        return new Promise<never>(() => {});
+      } };
+    const runtime = createAgentRuntime({ config, usage, provider: { generate: async () => callReply("read_context", {}) } });
+    const result = await runtime.run(runInput([tool], { signal: parent.signal, onTrace: sink,
+      authorize: async () => authorized, ...(stop === "deadline" ? { deadlineMs: 1000 } : {}) }));
+    assert.equal(result.stopReason, stop);
+    const marks = events.filter(e => e.tool === "read_context");
+    assert.deepEqual(marks.map(e => e.phase), ["tool_start", "tool_error"]);
+    assert.ok(marks[0]!.callIdHash);
+    assert.equal(marks[0]!.callIdHash, marks[1]!.callIdHash);
+    assert.equal(marks[1]!.stopReason, stop);
+    assert.equal(events.at(-1)?.phase, "run_end");
+  }
+});
+
 test("a real run emits metadata-only phases for every stage and the attempt count equals the root budget", async () => {
   const { events, sink } = collector();
-  const probe: AgentTool = { name: "read_probe", effect: "read", description: "Read one synthetic record.",
+  const probe: AgentTool = { name: "read_context", effect: "read", description: "Read one synthetic record.",
     parameters: z.object({ id: z.string() }).strict(), authorize: async () => true,
     execute: async () => ({ status: "succeeded", reference: "ref-1", data: { echo: CANARY } }) };
   let turn = 0;
   const runtime = createAgentRuntime({ config, usage, provider: { structuredOutput: "native_json_schema", generate: async () =>
-    turn++ === 0 ? callReply("read_probe", { id: CANARY }) : callReply("present_answer", { text: CANARY }) } });
+    turn++ === 0 ? callReply("read_context", { id: CANARY }) : callReply("present_answer", { text: CANARY }) } });
   const result = await runtime.run(runInput([probe, terminal], { onTrace: sink,
     contextAssembly: { categories: [{ category: "profile", included: true, reasonCode: "included", versionRefs: [{ kind: "profile", version: "3" }] },
       { category: "conversation_summary", included: false, reasonCode: "omitted_capacity" }] } }));
@@ -226,7 +271,7 @@ test("a real run emits metadata-only phases for every stage and the attempt coun
   assert.equal(context.packVersion, result.provenance!.packVersion);
   assert.equal(context.recipeId, result.provenance!.recipeId);
   assert.deepEqual(context.categories.map(c => `${c.category}:${c.reasonCode}`).sort(), ["conversation_summary:omitted_capacity", "profile:included"]);
-  assert.equal(events.find(e => e.phase === "tool_start")!.tool, "read_probe");
+  assert.equal(events.find(e => e.phase === "tool_start")!.tool, "read_context");
   const end = events.at(-1)!;
   assert.equal(end.phase, "run_end");
   assert.equal(end.terminalCategory, "completed");
@@ -372,7 +417,7 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
     url: "https://www.fhs.gov.hk/solid", title: "Solid food", publisher: "FHS",
     sourcePublishedAt: null, sourceUpdatedAt: null, fetchedAt: new Date().toISOString(), checkedAt: new Date().toISOString(), reviewState: "reviewed",
   };
-  const runCase = async (userText: string, mode: "greeting" | "knowledge", summary?: "empty" | "unavailable") => {
+  const runCase = async (userText: string, mode: "greeting" | "knowledge" | "discard" | "retained", summary?: "empty" | "unavailable") => {
     const { events, sink } = collector();
     const runId = randomUUID(), ref = randomUUID();
     let saved: any = null, calls = 0, reads = 0;
@@ -381,12 +426,14 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
       provider: { structuredOutput: "native_json_schema", generate: async request => {
         const text = request.contents.flatMap(c => c.parts ?? []).map(p => p.text ?? "").join("\n");
         if (text.includes("chat-delivery-review")) {
+          if (mode === "retained") return textReply("{}");
           const body = JSON.parse(text.slice(text.indexOf("{")));
           return textReply(JSON.stringify({ draftHash: body.draftHash, decision: "pass", issues: [] }));
         }
         const step = calls++;
         if (mode === "greeting") return callReply("present_answer", { kind: "clarification", paragraphs: [{ text: "早晨，有咩可以幫到你？", citationIds: [] }] });
         if (step === 0) return callReply("search_knowledge", { query: "加固", classification: "official_guidance" });
+        if (mode === "discard") throw new Error("scripted unavailable");
         return callReply("present_answer", { kind: "caregiving", paragraphs: [{ text: "六個月大可按發展徵象嘗試固體食物。", citationIds: [chunkId] }] });
       } },
     });
@@ -408,7 +455,7 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
       knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }), revalidateCitations: async () => true }) } as never,
     });
     const out = await service.reply(userId, childId, ref, async () => true);
-    assert.equal(out?.status, summary === "unavailable" ? "stopped" : "completed");
+    assert.equal(out?.status, summary === "unavailable" || mode === "discard" || mode === "retained" ? "stopped" : "completed");
     return { events, out, reads };
   };
 
@@ -419,6 +466,13 @@ test("ProductAgent records short-path summary skip, loader calls, milestones and
   assert.equal(gEnd.counts?.modelCalls, 1);
   assert.equal(gEnd.contextAssembly?.loaderCalls.summaryReads, 0);
 
+  const discarded = await runCase("請查找固體食物資料。", "discard");
+  assert.ok(discarded.events.some(e => e.phase === "source_usable"));
+  assert.deepEqual(discarded.out?.citations, []);
+  assert.equal(discarded.events.at(-1)?.terminalCategory, "failed");
+  const retained = await runCase("請查找固體食物資料。", "retained");
+  assert.equal(retained.out?.citations.length, 1);
+  assert.equal(retained.events.at(-1)?.terminalCategory, "partial");
   const knowledge = await runCase(CANARY + "幾時可以食固體食物？", "knowledge");
   const kEnd = knowledge.events.at(-1)!;
   assert.equal(kEnd.contextAssembly?.loaderCalls.knowledgeSearches, 1);

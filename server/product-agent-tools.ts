@@ -708,6 +708,8 @@ export function createProductAgentTools(options: {
           }
           if (!await authorize()) throw new AgentStopped('unauthorized');
           if (sources.length) deliveryReview.require('review');
+          const usable = sources.filter(source => !!source.excerpt).length;
+          if (run.trace && usable && !budget.signal.aborted) run.trace.markUsableSource(usable);
           return { acquisition: 'live', classification, sources };
         }
         const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
@@ -723,7 +725,10 @@ export function createProductAgentTools(options: {
         }
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
-        if (result.chunks.length > 0) deliveryReview.require("review");
+        if (result.chunks.length > 0) {
+          deliveryReview.require("review");
+          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
+        }
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(chunk, "found"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -742,7 +747,10 @@ export function createProductAgentTools(options: {
         for (const chunk of result.chunks) {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
-        if (result.chunks.length > 0) deliveryReview.require("review");
+        if (result.chunks.length > 0) {
+          deliveryReview.require("review");
+          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.original.text.trim()).length);
+        }
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -954,6 +962,7 @@ export function createProductAgentTools(options: {
       (id, target, source, valid) => {
         selectedEvidence.set(id, source);
         accountReadings.set(id, target);
+        if (run.trace && source.excerpt && !budget.signal.aborted) run.trace.markUsableSource(1);
         householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
       }, attemptKey => run.billingSource !== 'personal' ? null : async (query, authorizeSource) => {
         if (!run.embeddings) throw new AgentStopped('unavailable');
@@ -1208,6 +1217,11 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
+      // Some private readers (chat history, selected records) expose a citation only
+      // during presentation. Count revalidated selected originals, never inventory labels.
+      if (run.trace && !budget.signal.aborted) {
+        run.trace.markUsableSource(ids.filter(id => householdEvidence.has(id) && !!selectedEvidence.get(id)?.excerpt).length);
+      }
       const sourceCardReadings = ids.flatMap(id => accountReadings.has(id) ? [accountReadings.get(id)!] : []);
       return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations, retrievalMode: mode };
     },

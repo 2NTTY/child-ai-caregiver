@@ -269,6 +269,7 @@ export function createProductAgent(options: {
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
         ...(options.onTrace ? { onTrace: options.onTrace } : {}),
+        retainsPartialSources: reason => !!retainedSourcesForStoppedReview("stopped", reason, rendered.value),
         deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
         contextCompaction: compactionConfig,
@@ -428,6 +429,7 @@ export function createProductAgent(options: {
       const result = await options.runtime.run({
         ...(options.onTrace ? { onTrace: options.onTrace } : {}),
         contextAssembly: { categories: contextCategories },
+        retainsPartialSources: reason => !!retainedSourcesForStoppedReview("stopped", reason, rendered.value),
         onDiagnostic: event => {
           if (event.phase === "model_start") publish("model");
           else if (event.phase === "tool_start") publish(event.tool?.includes("knowledge") ? "searching" : event.tool?.startsWith("read_") || event.tool?.startsWith("search_") ? "reading" : "working");
@@ -480,7 +482,6 @@ export function createProductAgent(options: {
             conversationWindow: { messages: recent.messages.length, complete: recent.coverage.complete && available.length === currentPage.messages.length },
             onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", { card }); } },
             onKnowledgeSources: (sources, stage) => {
-              if (sources.length) run.trace?.markUsableSource(sources.length);
               publish(stage === "read" ? "reading" : "searching", { sources });
             },
           });

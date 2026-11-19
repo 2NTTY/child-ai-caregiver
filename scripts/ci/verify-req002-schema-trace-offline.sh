@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/req002-schema-and-trace.test.ts
+  tests/req002-trace-settlement.test.ts
   tests/initial-conversation-summary.test.ts
   tests/agent-observer.test.ts
   tests/agent-model-gateway.test.ts
@@ -62,7 +63,7 @@ TEST_FILES=(
   tests/chat-delivery-review.test.ts
   tests/agent-budget.test.ts
 )
-TEST_CASES=(11 6 4 18 3 14 7 2 4 1 2 3 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9)
+TEST_CASES=(13 3 6 4 18 3 14 7 2 4 1 2 3 16 13 4 6 3 9 3 5 21 17 3 7 1 2 3 11 12 17 44 9)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
