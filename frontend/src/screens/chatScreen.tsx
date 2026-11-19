@@ -308,7 +308,7 @@ function ChatContents({ compact, onPaneLayout }: {
               read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
               onOpenSource={openAgentSource} />
               : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId
-                ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || !chat.online || !chatWritesAllowed}
+                ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || chat.loading || !chat.online || !chatWritesAllowed}
                   onPress={() => { setFollowRequest(`discuss-${Date.now()}`); void chatController.discussAnswer(message.id); }} /> : null}
             {childProfiles ? <ChatAction label="查看子女檔案" compact={compact} onPress={() => actions.open("profile")} /> : null}
             {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
