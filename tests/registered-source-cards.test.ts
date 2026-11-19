@@ -72,9 +72,11 @@ test('work claims fence settings, update the schedule and suspend interactive lo
   await f.store.command('alice', { action: 'check_now', cardId: f.cardId, expectedRevision: rename.card!.revision, operationId: randomUUID() });
   const third = await f.store.claim((await f.store.due(10))[0]!);
   assert.ok(third);
-  await f.store.finish(third, { status: 'unchanged', documentCount: 2 });
+  const counts = { status: 'unchanged' as const, documentCount: 2, savedDocumentCount: 2, indexedDocumentCount: 0 };
+  await f.store.finish(third, counts);
   const after = await f.store.get('alice', f.cardId);
   assert.equal(after?.lastCheckedAt, f.now());
+  assert.deepEqual(after?.lastResult, counts);
   assert.equal(Date.parse(after!.nextCheckAt!) - Date.parse(f.now()), 15 * 60000);
   const updated = await f.store.command('alice', { action: 'update', cardId: f.cardId, operationId: randomUUID(), expectedRevision: after!.revision,
     settings: { ...settings, url: 'https://different.example.org/news' } });

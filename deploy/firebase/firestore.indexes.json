@@ -5642,6 +5642,17 @@
       "collectionGroup": "yuban_authority_mixed_messages",
       "fieldPath": "recovery",
       "indexes": []
-    }
+    },
+    { "collectionGroup": "yuban_authority_source_cards", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_cards", "fieldPath": "ciphertext", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_cards", "fieldPath": "recovery", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_cards", "fieldPath": "targetTag", "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }] },
+    { "collectionGroup": "yuban_authority_source_cards", "fieldPath": "dueAt", "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }] },
+    { "collectionGroup": "yuban_authority_source_card_ops", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_card_ops", "fieldPath": "ciphertext", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_card_ops", "fieldPath": "recovery", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_credentials", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_credentials", "fieldPath": "ciphertext", "indexes": [] },
+    { "collectionGroup": "yuban_authority_source_credentials", "fieldPath": "recovery", "indexes": [] }
   ]
 }
