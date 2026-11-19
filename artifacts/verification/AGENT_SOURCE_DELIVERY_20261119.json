@@ -1,7 +1,52 @@
 {
   "observedDateHongKong": "2026-11-19",
   "requirements": ["REQ-004", "REQ-006", "REQ-007"],
-  "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660],
+  "implementationPullRequests": [650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660, 661],
+  "finalApplicationRelease": {
+    "id": "r44431291572-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44431291572",
+    "observedAt": "2026-11-19T00:54:27+00:00",
+    "result": "deployed",
+    "services": {
+      "api": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:628edd5536806c6834c652cf7bb96b7df7f5e128671b14c89927be9de3967489"
+      },
+      "web": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:399131093fe68ef53ad48b79bfe7016b201c09bf5182e5a44d384fcc50ceef4e"
+      },
+      "worker": {
+        "sha": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+        "digest": "sha256:628edd5536806c6834c652cf7bb96b7df7f5e128671b14c89927be9de3967489"
+      }
+    },
+    "publicSiteRevision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "publicApiRevision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "publicHealth": "ok",
+    "rollback": [
+      {
+        "releaseId": "r44418436246-1",
+        "compatibility": "web-only"
+      },
+      {
+        "releaseId": "r44409256593-1",
+        "compatibility": "web-only"
+      }
+    ]
+  },
+  "androidPreviewDelivery": {
+    "buildVersionCode": 8,
+    "revision": "31e3b61d49b12fcfc6b61e50494bf323b85b474b",
+    "runtime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "group": "83a54d54-d24b-4ac1-8ce4-a7836b679ac3",
+    "url": "https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/83a54d54-d24b-4ac1-8ce4-a7836b679ac3",
+    "updateId": "01a1f14f-c6bb-73ce-bd00-4e4fe6e1cb0a",
+    "manifestHttpStatus": 200,
+    "manifestMatchedAt": "2026-11-19T00:59:17.787Z",
+    "newApkBuilds": 0,
+    "physicalDeviceInstallAndTaps": "not tested"
+  },
   "productionRelease": {
     "id": "r44402209727-1",
     "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44402209727",
