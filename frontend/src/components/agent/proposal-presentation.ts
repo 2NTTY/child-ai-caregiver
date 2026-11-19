@@ -3,6 +3,8 @@ import type { AppIconName } from "../AppIcon";
 
 // Display-only, exact-schema mappings. Unrecognised rows stay visible verbatim.
 const supportingLabels: Partial<Record<AgentProposalView["kind"], readonly string[]>> = {
+  care_record_revise: ["原記錄與版本"],
+  private_note_revise: ["原備註與版本"],
   memory_fact_revise: ["原事實與版本", "本人原話參照"],
   memory_fact_deactivate: ["原事實與版本"],
   family_document_change: ["原文件及版本"],
@@ -12,6 +14,8 @@ const supportingLabels: Partial<Record<AgentProposalView["kind"], readonly strin
 };
 
 export const proposalDestinationIcons: Record<AgentProposalView["kind"], AppIconName> = {
+  care_record_create: "notebook-outline", care_record_revise: "notebook-outline",
+  private_note_create: "notebook-outline", private_note_revise: "notebook-outline",
   task_create: "clipboard-check-outline", task_change: "clipboard-check-outline",
   family_document_change: "file-document-outline",
   memory_fact: "notebook-outline", memory_fact_revise: "notebook-outline", memory_fact_deactivate: "notebook-outline",
@@ -39,6 +43,9 @@ export function proposalDetailIcon(label: string, value?: string): AppIconName |
 }
 
 export function proposalDetailIsChange(kind: AgentProposalView["kind"], label: string): boolean {
+  if (kind === "care_record_create" || kind === "care_record_revise" || kind === "private_note_create" || kind === "private_note_revise") {
+    return ["建議內容", "修改前內容", "修改前標題", "操作"].includes(label);
+  }
   if (kind === "task_change") return ["操作", "新到期時間", "新負責人識別", "覆核為"].includes(label);
   if (kind === "concern_create" || kind === "concern_change") return label === "將共享的觀察";
   if (kind === "private_source_create" || kind === "private_source_change") return label === "將保存的原文";
@@ -47,6 +54,8 @@ export function proposalDetailIsChange(kind: AgentProposalView["kind"], label: s
 }
 
 export function proposalContextLabel(proposal: AgentProposalView): string {
+  if (proposal.kind === "private_note_create") return `新增私人備註 · ${proposal.title}`;
+  if (proposal.kind === "private_note_revise") return `更正私人備註 · ${proposal.title}`;
   if (proposal.kind === "task_create") return `新增待辦 · ${proposal.title}`;
   if (proposal.kind === "family_document_change") return `修改文件 · ${proposal.title}`;
   if (["task_change", "memory_fact_revise", "memory_fact_deactivate", "private_source_create", "private_source_change"].includes(proposal.kind)) {

@@ -65,6 +65,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   recheckPdfRange(input: PdfRangeRequest, readPdf: (id: string, sha256: string) => Promise<Buffer>): Promise<{ versionId: string; versionHash: string; pageStart: number; pageEnd: number }>;
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
+  mayReadPublicLivePage(sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
   catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
   saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
@@ -508,16 +509,27 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
     || (allowed.has(id) ? SOURCE_WATCHES.find(watch => watch.id === id && watch.kind === 'page' && watch.audience === 'public_noncommercial') : undefined);
+  async function livePagePublicAllowed(tx: Transaction, id: string, registered: NonNullable<ReturnType<typeof livePage>>) {
+    const source = await readSource(tx, id), local = await options.observations?.read(tx, id);
+    if (source && (source.url !== registered.url || source.disabledReason !== null || source.activeVersionId && !source.enabled)
+      || local && (!local.catalogMatches || !local.watch.enabled || local.watch.definition.url !== registered.url
+        || local.watch.definition.audience !== 'public_noncommercial' || local.observation?.unavailable)) return { allowed: false as const, source: null };
+    return { allowed: true as const, source };
+  }
   return {
     enforcesPersonalLibrarySelection: selections !== null,
+    async mayReadPublicLivePage(id) {
+      const registered = livePage(id);
+      if (!registered) return false;
+      return database.runTransaction(async tx => (await livePagePublicAllowed(tx, id, registered)).allowed, { readOnly: true });
+    },
     async mayReadLivePage(userId, id) {
       const registered = livePage(id);
       if (!registered || !userId || !selections) return false;
       return database.runTransaction(async tx => {
-        const source = await readSource(tx, id), local = await options.observations?.read(tx, id);
-        if (source && (source.url !== registered.url || source.disabledReason !== null || source.activeVersionId && !source.enabled)
-          || local && (!local.catalogMatches || !local.watch.enabled || local.watch.definition.url !== registered.url
-            || local.watch.definition.audience !== 'public_noncommercial' || local.observation?.unavailable)) return false;
+        const checked = await livePagePublicAllowed(tx, id, registered);
+        if (!checked.allowed) return false;
+        const source = checked.source;
         const active = source?.activeVersionId && source.enabled ? await metadata(tx, source.activeVersionId, source) : null;
         const series = sourceSeries(active?.document ?? { sourceId: id, title: registered.title ?? id, url: registered.url });
         const rows = await selections.read(tx, userId);
