@@ -9,7 +9,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 const time = z.iso.datetime({ offset: true }), uuid = z.uuid(), text = z.string().min(1).max(256);
 const version = z.number().int().positive().max(2147483647);
 export const backgroundKindSchema = z.enum(['child-change', 'growth', 'concern', 'shared-concern', 'work-check', 'work-continuation', 'task-agent', 'proactive-day', 'proactive-assessment',
-  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'avatar-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact', 'handover-export', 'handover-cleanup', 'handover-import', 'handover-upload-cleanup', 'knowledge-index-batch', 'source-card-check']);
+  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'avatar-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact', 'handover-export', 'handover-cleanup', 'handover-import', 'handover-upload-cleanup', 'knowledge-index-batch', 'source-card-check', 'source-card-index']);
 const identitySchema = z.object({ kind: backgroundKindSchema, scope: workRecoveryScopeSchema, resourceId: text,
   basis: text, generation: uuid, authorizationVersion: text }).strict();
 export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -107,7 +107,7 @@ export async function prepareObjectCleanupWake(data: FirestoreDomainData, tx: Tr
 export const preparePhotoCleanupWake = prepareObjectCleanupWake;
 
 /** A native worker lease is the only route to a background model claim. Knowledge maintenance never uses a family run. */
-export async function readFirestoreBackgroundClaim(data: FirestoreDomainData, b: Binding, reference: string) {
+export async function readFirestoreBackgroundClaim(data: FirestoreDomainData, b: Binding, reference: string, expectedKind?: 'source-card-index') {
   domainParse(uuid, reference);
   const id = JSON.stringify([b.scope.ownerUserId, b.scope.childId, reference]);
   const pointer = await b.transaction.get(data.ref('background_references', 'background-reference', id)); if (!pointer.exists) return null;
@@ -116,7 +116,7 @@ export async function readFirestoreBackgroundClaim(data: FirestoreDomainData, b:
   if (!job || route.reference !== reference || firestoreBackgroundReference(job) !== reference || job.state !== 'leased' || !job.lease
     || Date.parse(job.lease.until) <= Date.now() || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion
     || firestoreDomainHash(job.scope) !== firestoreDomainHash(b.scope)
-    || !['growth', 'concern', 'task-agent', 'work-continuation', 'memory-refresh', 'voice-transcription','proactive-assessment'].includes(job.kind)) return null;
+    || !(expectedKind ? job.kind === expectedKind : ['growth', 'concern', 'task-agent', 'work-continuation', 'memory-refresh', 'voice-transcription','proactive-assessment'].includes(job.kind))) return null;
   return job;
 }
 

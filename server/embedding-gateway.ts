@@ -16,7 +16,7 @@ export interface EmbeddingProvider { embed(input: EmbeddingInput, signal: AbortS
 export { EmbeddingFailure } from "./embedding-failure.ts";
 import { EmbeddingFailure, EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 export interface EmbeddingActor {
-  kind: "query_embedding" | "corpus_maintenance";
+  kind: "query_embedding" | "corpus_maintenance" | "private_document_embedding";
   actorId: string;
   operationId: string;
 }
@@ -29,7 +29,7 @@ export interface EmbeddingUsage {
   reserve(actor: EmbeddingActor, userLimit: number, globalLimit: number): Promise<boolean>;
   record(attempt: EmbeddingAttempt): Promise<void>;
 }
-/** Internal only: supplied from the initialized root budget, never from tool/HTTP arguments. */
+/** Internal only: query or private-document metadata from the initialized root budget, never tool/HTTP arguments. */
 export interface DurableQueryEmbeddingUsage {
   adapter: DurableAiUsage;
   context: RootBudgetContext;
@@ -39,6 +39,7 @@ export interface DurableQueryEmbeddingUsage {
 export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "platform"): EmbeddingUsage {
   const counters = createAiUsageStore(pool, source);
   function requireActor(actor: EmbeddingActor) {
+    if (actor.kind === "private_document_embedding") throw new EmbeddingFailure("unauthorized");
     if (source === "personal" && actor.kind === "corpus_maintenance") throw new EmbeddingFailure("unauthorized");
   }
   return {
@@ -77,10 +78,14 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
       };
       if (daily) {
         input = Object.freeze({ ...input }); actor = Object.freeze({ ...actor });
-        if (daily.adapter.billingSource !== (options.billingSource ?? 'platform') || actor.kind !== 'query_embedding' || input.task !== 'RETRIEVAL_QUERY'
+        const privateDocument = actor.kind === 'private_document_embedding' && input.task === 'RETRIEVAL_DOCUMENT'
+          && daily.context.binding.trigger.kind === 'private-source-index';
+        const query = actor.kind === 'query_embedding' && input.task === 'RETRIEVAL_QUERY';
+        if (daily.adapter.billingSource !== (options.billingSource ?? 'platform') || !(query || privateDocument)
           || actor.actorId !== daily.context.binding.ownerId || actor.operationId !== daily.context.binding.rootRunId
           || !daily.attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
       }
+      if (actor.kind === 'private_document_embedding' && !daily) throw new AgentStopped('unavailable');
       if (signal.aborted) throw new EmbeddingFailure("cancelled");
       if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
       if (!config.enabled || !provider) throw new EmbeddingFailure("disabled");
@@ -90,7 +95,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || (input.task === "RETRIEVAL_QUERY" && input.title !== undefined)
         || (input.task === "RETRIEVAL_DOCUMENT" && !input.title?.trim())
         || !actor.actorId || actor.actorId.length > 160 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actor.operationId)
-        || !["query_embedding", "corpus_maintenance"].includes(actor.kind)
+        || !["query_embedding", "corpus_maintenance", "private_document_embedding"].includes(actor.kind)
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
       // The maintenance payer and chat have separate accounting; the provider-wide ceiling still applies.
       const limit = actor.kind === "corpus_maintenance" ? Math.min(config.dailyUserAttempts, config.dailyGlobalAttempts) : config.dailyUserAttempts;
@@ -136,6 +141,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         inputTokens = reply.inputTokens; billableCharacters = reply.billableCharacters;
         if (![inputTokens, billableCharacters].every(value => value === null || (Number.isSafeInteger(value) && value >= 0))) throw new EmbeddingFailure("invalid_response");
         try { vectorLiteral(reply.values); } catch { throw new EmbeddingFailure("invalid_response"); }
+        if (daily) await authority(daily.revalidate);
         if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
         if (controller.signal.aborted) throw controller.signal.reason;
         outcome = "succeeded";

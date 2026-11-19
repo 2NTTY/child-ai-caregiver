@@ -66,6 +66,7 @@ import { createSharedInputService } from './shared-input-service.ts';
 import { createFirestoreGrowthStore } from "./firestore-growth.ts";
 import { createFirestoreConcernStore } from "./firestore-concerns.ts";
 import { FirestoreDomainData } from './firestore-domain-data.ts';
+import { createPrivateSourceServices } from './private-source-services.ts';
 import { createFirestoreBackgroundDispatcher, readFirestoreBackgroundClaim } from './firestore-background-work.ts';
 import { createFirebaseBackgroundDelivery } from './firebase-task-delivery.ts';
 import { readFirebaseWorkerConfig } from './firebase-worker-config.ts';
@@ -268,6 +269,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       },
     });
     const sourceService = createSharedInputService(sources, product.runtime);
+    const privateSources = createPrivateSourceServices(domain,registeredSourceDocuments,product.routing,currentAuth);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const configuredAdminUid = localAdminUid ?? readAdminUid(env);
@@ -294,7 +296,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const ownedApp = app;
     let closing: Promise<void> | undefined;
     return { proactive,proactiveEvents,knowledgeAgent,...persistence, admin, knowledgeIndexes, configuredAdminUid, sessions, auth, nativeAuth, currentAuth, reminders, online, documents, photos, avatars, avatarObjects, avatarCleanup, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, handover, handoverUploads, handoverImports, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
-      registeredSourceCards, registeredSourceDocuments,
+      registeredSourceCards, registeredSourceDocuments: { ...registeredSourceDocuments, searchPrivate:privateSources.searchPrivate,
+        readPrivateEvidence:privateSources.readPrivateEvidence,privateIndexStatus:privateSources.privateIndexStatus }, privateSourceWorker:privateSources.process,
       close() { return closing ??= (async () => {
         try { await nativeChatDelivery?.close(); }
         finally { try { await avatarCodec?.close(); await deleteApp(ownedApp); } finally { await persistence.close(); } }

@@ -87,7 +87,7 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
     const input = domainParse(registeredSourceCommandSchema, raw), { cardId, expectedRevision } = input;
     return mutate(owner, cardId, input.operationId, expectedRevision, input, (binding, row) => {
       const revision = expectedRevision + 1, at = iso(now());
-      if (input.action === 'create') return { removed: false, lease: null, finished: null, card: { ...input.settings,
+      if (input.action === 'create') return { removed: false, accessRevision: 1, lease: null, finished: null, card: { ...input.settings,
         cardId, revision, enabled: true, credentialRef: null, nextCheckAt: at, lastCheckedAt: null, lastResult: null } };
       if (!row) domainReject('source_card_not_found', 404);
       const card = row.card;
@@ -104,7 +104,8 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
       const settings = input.action === 'update' ? input.settings : { ...(allowedPath ? { allowedPath } : {}) };
       const sourceChanged = input.action === 'update' && (input.settings.url !== card.url || input.settings.kind !== card.kind || input.settings.allowedPath !== allowedPath);
       if (sourceChanged) deleteCredential(binding, card.credentialRef);
-      return { removed: false, lease: null, finished: null, card: { ...base, ...settings, revision, enabled,
+      const accessRevision = (row.accessRevision ?? 1) + Number(sourceChanged || enabled !== card.enabled);
+      return { removed: false, accessRevision, lease: null, finished: null, card: { ...base, ...settings, revision, enabled,
         credentialRef: sourceChanged ? null : card.credentialRef,
         ...(sourceChanged ? { lastResult: null, lastCheckedAt: null } : {}),
         nextCheckAt: enabled && (input.action !== 'update' || sourceChanged || card.nextCheckAt !== null) ? at : null } };
@@ -122,7 +123,7 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
         binding.transaction.create(vault(key), { ...data.tags(binding.scope), ...data.seal('registered-source-credential', key,
           binding.scope, sourceCredentialRecord, { cardId, credentialRef, origin, loginUrl, username: input.username, password: input.password }) });
       }
-      return { removed: false, lease: null, finished: null, card: { ...card, revision: card.revision + 1,
+      return { removed: false, accessRevision: (row.accessRevision ?? 1) + 1, lease: null, finished: null, card: { ...card, revision: card.revision + 1,
         credentialRef, nextCheckAt: card.enabled ? iso(now()) : null } };
     });
   }
@@ -176,10 +177,10 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
       || firestoreDomainHash(jobFor(binding.scope.ownerUserId, row)) !== firestoreDomainHash(job)) return expired();
     return row;
   }
-  function withCurrentCheck<T>(job: RegisteredSourceJob, run: (binding: FirestoreAuthorityTransaction) => Promise<T>) {
+  function withCurrentCheck<T>(job: RegisteredSourceJob, run: (binding: FirestoreAuthorityTransaction, accessRevision: number) => Promise<T>) {
     return authority.runTransaction(job.ownerUserId, null, async binding => {
-      checkLease(binding, job, await read(binding, id(job.cardId)));
-      return run(binding);
+      const row = checkLease(binding, job, await read(binding, id(job.cardId)));
+      return run(binding, row.accessRevision ?? 1);
     });
   }
   function credentialFor(job: RegisteredSourceJob) {
@@ -207,7 +208,7 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
         && current.finished.token === job.leaseToken && firestoreDomainHash(current.finished.result) === firestoreDomainHash(result)) return;
       const row = checkLease(binding, job, current), time = now();
       const automatic = ['changed', 'unchanged', 'failed'].includes(result.status);
-      save(binding, { removed: false, lease: null, finished: { checkId: job.checkId, token: job.leaseToken, result },
+      save(binding, { removed: false, accessRevision: (row.accessRevision ?? 1) + Number(!automatic), lease: null, finished: { checkId: job.checkId, token: job.leaseToken, result },
         card: { ...row.card, lastCheckedAt: iso(time), lastResult: result, nextCheckAt: automatic ? iso(time + row.card.frequencyMinutes * 60000) : null } });
     });
   }
