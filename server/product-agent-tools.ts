@@ -1,3 +1,4 @@
+import { bindRepairSourceChecks } from "./agent-evidence-reuse.ts";
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
@@ -28,7 +29,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
+import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -45,15 +46,19 @@ import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 import { citedOriginalSpans } from '../src/shared/knowledge.ts';
-import { CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
+import { CHILD_PROFILES_CHAT_TEXT, requestedWorkspaceView, type ChatWorkspaceView } from '../src/shared/chat-workspace-view.ts';
 
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
-const workspaceView = z.enum(['child_profiles', 'conversation_memory']);
-const workspaceViewParagraph = z.strictObject({ showView: workspaceView.describe('Show the signed-in parent their profiles or the actual current chat window. Use alone, with kind=operation.') });
-const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kind,
-  originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
-    .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'), paragraphs:
-  z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph, workspaceViewParagraph])).min(1).max(6) });
+function personalPresentationSchema(view: ChatWorkspaceView | null) {
+  const answerParagraph = agentAnswerSchema.shape.paragraphs.element;
+  const paragraph = view
+    ? z.union([answerParagraph, historyQuoteParagraph, z.strictObject({ showView: z.enum([view]).describe('Display this view alone with kind=operation.') })])
+    : z.union([answerParagraph, historyQuoteParagraph]);
+  return z.strictObject({ kind: agentAnswerSchema.shape.kind,
+    originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
+      .describe('For library evidence, select the exact contiguous original wording used. Keep conditions and units.'),
+    paragraphs: z.array(paragraph).min(1).max(6) });
+}
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -174,6 +179,8 @@ export function createProductAgentTools(options: {
   recentQuoteSources?: ChatMessage[];
   /** Optional household/child display identifiers kept out of external search queries. */
   knownPrivateIdentifiers?: readonly string[];
+  /** Previously validated public citations scoped cleanly to this child's conversation turn. */
+  seededOfficialEvidence?: readonly { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[];
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const knownPrivateIdentifiers = new Set<string>();
@@ -201,6 +208,19 @@ export function createProductAgentTools(options: {
   const noteRecallExpiry = (until: string) => { recalledFactsValidUntil = Math.min(recalledFactsValidUntil, Date.parse(until)); };
   let selectedSources: ChatDeliverySource[] = [];
   const selectedEvidence=new Map<string,ChatDeliverySource>();
+  type ReadSelectedPage = () => Promise<ChatDeliverySource[]>;
+  type SelectedPageProof = { key: string; read: ReadSelectedPage };
+  const mixedRepairReaders = new Map<string, SelectedPageProof | null>();
+  function registerMixedPage(sources: ChatDeliverySource[], proof: SelectedPageProof) {
+    for (const source of sources) {
+      const id = source.citationId, prior = selectedEvidence.get(id);
+      // Record locators may recur with other filters or cursors. Identical
+      // evidence keeps its first scope; conflicting content cannot be replayed.
+      if (!mixedRepairReaders.has(id)) mixedRepairReaders.set(id, proof);
+      else if (!prior || !repairSourcesRemainBound([prior], [source])) mixedRepairReaders.set(id, null);
+      selectedEvidence.set(id, source);
+    }
+  }
   const householdEvidence = new Map<string, { label: string; isCurrent: () => Promise<boolean> }>();
   const accountReadings = new Map<string, SourceReading>();
   const precedingHistoryMatch = new Map<string, string>();
@@ -230,7 +250,9 @@ export function createProductAgentTools(options: {
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
-  let selectedView: z.infer<typeof workspaceView> | null = null;
+  const allowedView = options.currentMessageId && options.conversationWindow ? requestedWorkspaceView(options.trustedUserMessage) : null;
+  const chatPresentationInput = personalPresentationSchema(allowedView);
+  let selectedView: ChatWorkspaceView | null = null;
   let pendingMemoryProposalCount = 0;
   const selectedOfficialHelp = new Set<string>();
   function summarizeDirectAction(action: AgentDirectAction, receipt: AgentActionReceipt): DirectActionSummary {
@@ -315,6 +337,26 @@ export function createProductAgentTools(options: {
   const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,trackedStore,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
+  let activeRepairChecks: (() => Promise<boolean>) | undefined;
+  const seeded = options.seededOfficialEvidence ?? [];
+  // Original seed text persists in native events, and the first draft persists in the rereview payload.
+  // Never recursively call the gateway's evidence check from the underlying source reader.
+  run.authorizeModelEvidence = async () => {
+    if (seeded.length && (retrieval.supportsScopedEvidenceReuse !== true || !await retrieval.revalidateCitations(seeded.map(item => item.chunk), seeded[0]!.filter))) return false;
+    if (activeRepairChecks && !await activeRepairChecks()) return false;
+    // An authorized follow-up can already carry original text without a new search.
+    // Do not mark preflight metadata, blank excerpts, or a denied physical permit.
+    if (run.trace && seeded.length && !budget.signal.aborted) {
+      run.trace.markUsableSource(seeded.filter(({ chunk }) => !!chunk.sourceExcerpt?.trim()).length);
+    }
+    return true;
+  };
+  if (options.seededOfficialEvidence?.length) {
+    for (const item of options.seededOfficialEvidence) {
+      evidence.set(item.chunk.chunkId, { chunk: item.chunk, filter: item.filter });
+    }
+    retrieval.seedEvidence?.(options.seededOfficialEvidence.map(item => item.chunk));
+  }
   async function refreshVerifiedOperations(includePending = true): Promise<ChatDeliveryVerifiedOperation[]> {
     if (options.background) { selectedVerifiedOperations = []; return []; }
     const verified: ChatDeliveryVerifiedOperation[] = registeredSources?.operations() ?? [];
@@ -473,12 +515,20 @@ export function createProductAgentTools(options: {
         nextAction: "從 quoteOptions 選能回答問題的原話。用 kind=private_reference 及 paragraphs=[{quoteHistory: 所選識別}]，Server 會代入原句再審核。"
       } };
       const hasOfficialEvidence = Array.from(evidence.values()).some(item => item.chunk.classification === "official_guidance");
+      const availableOfficialCitationIds = Array.from(evidence.values())
+        .filter(item => item.chunk.classification === "official_guidance")
+        .slice(0, 6)
+        .map(item => ({ chunkId: item.chunk.chunkId, title: item.chunk.title, section: item.chunk.section }));
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
           ? "不要將 emergency-hk-v1 或 medical-consult-hk-v1 等固定求助卡 ID 放進 citationIds（官方引用只接受本次 search_knowledge 回傳的 chunkId UUID）。若無適用官方片段，請用 kind=\"operation\" 與 citationIds=[]（緊急危險請直接輸出「請先使用畫面上的緊急求助入口。」）。"
           : options.actionReaders ? "引用本人交代或照護記錄時，以 records 按 id 讀回原項，使用該工具回傳的 citationId。公共建議引用 search_knowledge 的 chunkId。" : "search_knowledge", citationField: "chunks[].chunkId", message: "官方引用只能取本次 search_knowledge 結果的原始 chunkId；私人及家庭記錄須使用對應讀取工具回傳的 citationId；固定卡 ID 與背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
-      if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
+      if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
+        nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code,
+        ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.has("emergency-hk-v1")
           ? "emergency-hk-v1 是畫面固定緊急卡 ID，不能填入 citationIds，亦不得在無官方片段下以 safety_help／caregiving 輸出自擬醫療或用藥處置。請立即單獨呼叫 present_answer({ kind: \"operation\", paragraphs: [{ text: \"請先使用畫面上的緊急求助入口。\", citationIds: [] }] })，勿增刪或改寫該固定句字眼。"
           : !hasOfficialEvidence && selectedOfficialHelp.has("medical-consult-hk-v1")
@@ -498,6 +548,9 @@ export function createProductAgentTools(options: {
   }
   const permitted = async () => authorize();
   function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
+    if (parsed.paragraphs.some(paragraph => paragraph.text.trim() === CHILD_PROFILES_CHAT_TEXT)) {
+      throw new FamilyError(400, 'invalid_input');
+    }
     const citedLocations = new Set(parsed.paragraphs.flatMap(p => p.citationIds).filter(id => accountReadings.has(id)));
     if (citedLocations.size > 6) throw new FamilyError(400, 'invalid_citation');
     const candidateDraft: ChatDeliveryDraft = {
@@ -656,13 +709,34 @@ export function createProductAgentTools(options: {
           if (!fits(makeResult([...selected, message]))) break;
           selected.push(message);
         }
+        run.trace?.recordContextCategory({
+          category: "profile",
+          included: Boolean(metadata.profile),
+          reasonCode: metadata.profile ? "included" : context.profile.data ? "not_applicable" : "empty",
+          ...(context.profile.version ? { versionRefs: [{ kind: "profile", version: String(context.profile.version) }] } : {}),
+        });
+        run.trace?.recordContextCategory({
+          category: "confirmed_facts",
+          included: metadata.facts.length > 0,
+          count: metadata.facts.length,
+          reasonCode: metadata.factsPartial ? "truncated" : metadata.facts.length > 0 ? "included" : "empty",
+        });
+        run.trace?.recordContextCategory({
+          category: "tasks",
+          included: metadata.tasks.length > 0,
+          count: metadata.tasks.length,
+          reasonCode: metadata.tasksHaveMore ? "truncated" : metadata.tasks.length > 0 ? "included" : "empty",
+        });
+        if (metadata.summaryOmittedForCapacity) {
+          run.trace?.recordContextCategory({ category: "conversation_summary", included: false, reasonCode: "omitted_capacity" });
+        }
         // A refreshed read invalidates a staged draft; coverage always names this exact complete prefix.
         summaryInput = prepared && selected.length ? { ...prepared, messages: selected,
           moreUncovered: prepared.moreUncovered || selected.length < prepared.messages.length } : null;
         summaryText = null;
         return makeResult(selected);
       }) },
-    { name: "search_knowledge", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge + (liveReader ? ' 如需即時查原文，可用 acquisition=live，classification 限 ' + liveReader.classifications.join('、') + '。一般公共資訊、近期事件、社群經驗與商品比較用 kind=public_information，照護指引仍須適用的 official_guidance。必須區分官方依據與社群自述，明確說明不可讀／過舊／疑似廣告或無完整數據限制，不得宣稱整體家長統計或商業推薦；只引用實際返回的 id，保留取得時間及條件。' : ''),
+    { name: "search_knowledge", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge + (liveReader ? ' 如需即時查原文，可用 acquisition=live，classification 限 ' + liveReader.classifications.join('、') + '。一般公共資訊、近期事件、社群經驗與商品比較用 kind=public_information，照護指引仍須適用的 official_guidance。必須區分官方依據與社群自述，明確說明不可讀／過舊／疑似廣告或無完整數據限制，不得宣稱整體家長統計或商業推薦；只引用實際返回的 id，保留取得時間及條件。' : ''),
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         ...(liveReader ? { acquisition: z.enum(['library', 'live']).optional() } : {}),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
@@ -717,6 +791,8 @@ export function createProductAgentTools(options: {
           }
           if (!await authorize()) throw new AgentStopped('unauthorized');
           if (sources.length) deliveryReview.require('review');
+          const usable = sources.filter(source => !!source.excerpt).length;
+          if (run.trace && usable && !budget.signal.aborted) run.trace.markUsableSource(usable);
           return { acquisition: 'live', classification, sources, ...(limitations.length ? { limitations } : {}) };
         }
         const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
@@ -732,7 +808,10 @@ export function createProductAgentTools(options: {
         }
         if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
-        if (result.chunks.length > 0) deliveryReview.require("review");
+        if (result.chunks.length > 0) {
+          deliveryReview.require("review");
+          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
+        }
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(chunk, "found"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -751,7 +830,10 @@ export function createProductAgentTools(options: {
         for (const chunk of result.chunks) {
           evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
         }
-        if (result.chunks.length > 0) deliveryReview.require("review");
+        if (result.chunks.length > 0) {
+          deliveryReview.require("review");
+          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.original.text.trim()).length);
+        }
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
           .filter((item): item is AgentProgressSource => item !== null)
@@ -805,7 +887,7 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；純澄清、超出範圍拒答、限制說明及純操作（用 operation 或記錄回述；兼答指引時用 mixed）可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
@@ -818,7 +900,7 @@ export function createProductAgentTools(options: {
           const wire = chatPresentationInput.parse(args);
           const view = wire.paragraphs.find(p => 'showView' in p);
           if (view && 'showView' in view) {
-            if (!options.conversationWindow || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
+            if (!options.conversationWindow || view.showView !== allowedView || wire.kind !== 'operation' || wire.paragraphs.length !== 1 || wire.originalQuotes?.length)
               throw new FamilyError(400, 'invalid_input');
             if (!await permitted()) throw new AgentStopped('unauthorized');
             selectedView = view.showView;
@@ -848,7 +930,14 @@ export function createProductAgentTools(options: {
             return { kind: 'private_reference', text, citationIds: [source.citationId] };
           }) };
         }
-        const parsed = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const parsedRaw = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
+        const parsed = parsedRaw.kind === "no_action" ? parsedRaw : {
+          ...parsedRaw,
+          paragraphs: parsedRaw.paragraphs.map(paragraph => ({
+            ...paragraph,
+            citationIds: [...new Set(paragraph.citationIds)],
+          })),
+        };
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
         // Durable personal-fact statements must persist a pending candidate first; chat delivery
         // must not stand in for propose_fact. Questions / read-backs are unaffected.
@@ -963,6 +1052,7 @@ export function createProductAgentTools(options: {
       (id, target, source, valid) => {
         selectedEvidence.set(id, source);
         accountReadings.set(id, target);
+        if (run.trace && source.excerpt && !budget.signal.aborted) run.trace.markUsableSource(1);
         householdEvidence.set(id, { label: '[來源卡原文]', isCurrent: valid });
       }, attemptKey => run.billingSource !== 'personal' ? null : async (query, authorizeSource) => {
         if (!run.embeddings) throw new AgentStopped('unavailable');
@@ -1006,6 +1096,12 @@ export function createProductAgentTools(options: {
       })});
   }
   if (options.mixedTasks) {
+    const read = options.mixedTasks;
+    function taskSource(child: AssistantTaskContextPage['children'][number], continued: boolean): ChatDeliverySource {
+      const text = JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued,hasMore:child.nextCursor!==null});
+      const hash = chatDeliveryContentHash(text);
+      return {citationId:'tasks:'+hash,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)};
+    }
     const cursorSchema=assistantTaskContextRequestSchema.shape.targets.element.shape.cursor;
     const parameters=z.strictObject({from:z.int().min(0).default(0),childId:z.uuid().optional(),cursor:cursorSchema});
     tools.push({name:'read_selected_tasks',effect:'read',
@@ -1013,22 +1109,29 @@ export function createProductAgentTools(options: {
       parameters,authorize:permitted,execute:args=>guard(async()=>{
         const query=parameters.parse(args);
         if (query.cursor && !query.childId) throw new FamilyError(400,'invalid_input');
-        const page=await options.mixedTasks!(query);
+        const page=await read(query);
         const children: (AssistantTaskContextPage['children'][number] & {citationId:string})[]=[];
         let nextFrom=page.nextFrom;
         const allowance=Math.max(0,budget.toolResponseCharacters-512);
         for (const child of page.children) {
-          const text=JSON.stringify({childId:child.childId,name:child.childName,tasks:child.tasks,continued:!!query.cursor,hasMore:child.nextCursor!==null});
-          const hash=chatDeliveryContentHash(text), citationId='tasks:'+hash;
-          const item={...child,citationId};
+          const source = taskSource(child, !!query.cursor);
+          const item={...child,citationId:source.citationId};
           if (JSON.stringify({children:[...children,item],nextFrom:query.from+children.length+1}).length>allowance) {
             if (!children.length) throw new FamilyError(400,'response_limit');
             nextFrom=query.from+children.length;
             break;
           }
+          const childId = child.childId, from = query.childId ? query.from : query.from + children.length;
+          const target = {...query, from, childId};
+          // With an explicit childId the task reader ignores the original roster offset.
+          registerMixedPage([source], { key: agentBudgetFingerprint(['tasks', childId, query.cursor ?? null]), read: async () => {
+            const live = await read(target);
+            budget.check();
+            const row = live.children[0];
+            return live.children.length === 1 && row?.childId === childId ? [taskSource(row, !!query.cursor)] : [];
+          } });
           children.push(item);
           noteKnownPrivateIdentifier(child.childName);
-          selectedEvidence.set(citationId,{citationId,version:hash,contentHash:hash,classification:'private',...chatDeliveryReviewSourceExcerpt(text)});
         }
         return {children,nextFrom};
       })});
@@ -1088,10 +1191,12 @@ export function createProductAgentTools(options: {
         let nextFrom=page.nextFrom;
         for (const child of page.children) {
           const from=input.from+children.length;
+          let pageLimit=limit;
           let {item,sources}=describe(child,from);
           const fits=(candidate:typeof item)=>JSON.stringify({children:[...children,candidate],nextFrom:from+1}).length<=allowance;
           if (!children.length && !fits(item) && child.records.length>1) {
-            const smaller=await read({...input,from,limit:1,singleChild:true});
+            pageLimit=1;
+            const smaller=await read({...input,from,limit:pageLimit,singleChild:true});
             if (!smaller.children[0]) throw new AgentStopped('unauthorized');
             ({item,sources}=describe(smaller.children[0],from));
           }
@@ -1102,13 +1207,20 @@ export function createProductAgentTools(options: {
           }
           children.push(item);
           noteKnownPrivateIdentifier(item.childName);
-          for (const source of sources) selectedEvidence.set(source.citationId,source);
+          const childId = item.childId;
+          const target = {...input, from, limit:pageLimit, singleChild:true};
+          registerMixedPage(sources, { key: agentBudgetFingerprint(['care', childId, target]), read: async () => {
+            const live = await read(target);
+            budget.check();
+            const row = live.children[0];
+            return live.children.length === 1 && row?.childId === childId ? describe(row, from).sources : [];
+          } });
         }
         return {children,nextFrom};
       })});
   }
   if(options.contact)tools.splice(tools.length-1,0,
-    {name:"read_contact_options",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
+    {name:"read_contact_options",effect:"read",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
      parameters:z.object({taskId:z.uuid()}).strict(),authorize:permitted,
      execute:args=>guard(async()=>{const value=await options.contact!.options(scope.userId,scope.childId,args.taskId as string);if(!value)throw new AgentStopped("unauthorized");return value;})},
     {name:"contact_caregiver",description:"只按 read_contact_options 當次回傳的任務、版本及收件人建立唯一聯絡請求。queued 只是持久入列，不是送達或完成；Server worker 會再查授權、安靜時段與終態，只發固定一般提示。缺授權須請使用者到聯絡設定明確確認。",
@@ -1130,6 +1242,7 @@ export function createProductAgentTools(options: {
       serverReceiptText = null;
       if (!answer) return null;
       if (selectedView) {
+        if (selectedView !== allowedView) throw new FamilyError(400, 'invalid_input');
         if (!await permitted()) throw new AgentStopped('unauthorized');
         serverReceiptText = answer.paragraphs[0]!.text;
         return { text: serverReceiptText, citations: [], retrievalMode: 'not_used' };
@@ -1217,8 +1330,74 @@ export function createProductAgentTools(options: {
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
         return paragraph.citationIds.length ? text+' '+paragraph.citationIds.map(citationLabel).join('') : text;
       }).join('\n\n');
+      // Some private readers (chat history, selected records) expose a citation only
+      // during presentation. Count revalidated selected originals, never inventory labels.
+      if (run.trace && !budget.signal.aborted) {
+        run.trace.markUsableSource(ids.filter(id => householdEvidence.has(id) && !!selectedEvidence.get(id)?.excerpt).length);
+      }
       const sourceCardReadings = ids.flatMap(id => accountReadings.has(id) ? [accountReadings.get(id)!] : []);
-      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations, retrievalMode: mode };
+      return { text: rendered, citations: citations.map(({ chunk }) => originalQuotes.has(chunk.chunkId) ? { ...chunk, citedExcerpt: originalQuotes.get(chunk.chunkId) } : chunk), ...(liveCitations.length ? { liveCitations } : {}), ...(sourceCardReadings.length ? { sourceCardReadings } : {}), privateSourceCitations,
+        retrievalMode: citations.length > 0 && mode === "not_used" ? "vector_keyword" : mode };
+    },
+    // Bind only the sources selected for the draft. Do not copy unrelated retrieved excerpts into a repair.
+    bindRepairEvidence() {
+      const previous = new Map(selectedSources.map(source => [source.citationId, source]));
+      // A record and its coverage can share a page. Read that child once per check,
+      // never cache a successful check across repair, rereview or delivery.
+      const pages = new Map<string, { read: ReadSelectedPage; bound: ChatDeliverySource[] }>();
+      const otherIds: string[] = [];
+      for (const [id, source] of previous) {
+        const proof = mixedRepairReaders.get(id);
+        if (proof === null) {
+          activeRepairChecks = async () => false;
+          return activeRepairChecks;
+        }
+        if (!proof) { otherIds.push(id); continue; }
+        const group = pages.get(proof.key);
+        if (group) group.bound.push(source); else pages.set(proof.key, { read: proof.read, bound: [source] });
+      }
+      const otherSourcesCurrent = bindRepairSourceChecks(otherIds, id => {
+        const bound = previous.get(id)!;
+        const grounded = [...memoryGrounding.values()].find(value => value.source.citationId === id);
+        const staged = grounded?.source ?? deliverySource(id, originalQuotes);
+        if (!staged || staged.version !== bound.version || staged.contentHash !== bound.contentHash
+          || staged.classification !== bound.classification || staged.excerpt !== bound.excerpt
+          || staged.excerptComplete !== bound.excerptComplete) return undefined;
+        const household = householdEvidence.get(id);
+        if (household) return household.isCurrent;
+        const personal = privateSources?.evidence.get(id);
+        if (personal) return () => privateSources!.revalidate(personal);
+        const live = liveEvidence.get(id);
+        if (live && liveReader) return () => liveReader.mayUse(live, budget.signal);
+        const item = evidence.get(id);
+        if (item && retrieval.supportsScopedEvidenceReuse === true) return () => retrieval.revalidateCitations([item.chunk], item.filter);
+        if (grounded && typeof memory.getFact === "function") return async () => {
+          const fact = await memory.getFact!(scope.userId, scope.childId, grounded.fact.id);
+          return !!fact && usableMemoryFact(fact) && fact.version === grounded.fact.version
+            && chatDeliveryContentHash(fact.content) === chatDeliveryContentHash(grounded.fact.content);
+        };
+        return undefined;
+      });
+      if (!pages.size) {
+        activeRepairChecks = otherSourcesCurrent;
+        return activeRepairChecks;
+      }
+      async function checked<T>(operation: () => Promise<T>): Promise<T> {
+        const value = await budget.wait(operation);
+        budget.check();
+        return value;
+      }
+      activeRepairChecks = async () => {
+        if (!await checked(otherSourcesCurrent)) return false;
+        for (const { read, bound } of pages.values()) {
+          if (!await checked(authorize)) return false;
+          const live = await checked(read);
+          // The current page may contain uncited rows; every bound row must still match exactly.
+          if (!await checked(authorize) || !repairSourcesRemainBound(live, bound)) return false;
+        }
+        return true;
+      };
+      return activeRepairChecks;
     },
     deliveryDraft(): ChatDeliveryDraft | null {
       if (!answer || answer.kind === "no_action") return null;

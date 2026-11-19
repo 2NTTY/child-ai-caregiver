@@ -77,7 +77,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     checkedAt: source.checkedAt, fetchedAt: source.fetchedAt, lastSuccessfulCheckAt: source.lastSuccessfulCheckAt ?? null,
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
-    validUntil: source.validUntil ?? null, internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
+    validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
     applicabilityLabel: [age.region, age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
       age.minAgeMonths === null ? "沒有最低月齡" : `最低 ${age.minAgeMonths} 個月`,
       age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`,

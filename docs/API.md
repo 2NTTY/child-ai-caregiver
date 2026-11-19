@@ -68,7 +68,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 | GET `/api/children/:childId/agent/runs/:runId` | `{result}`：本人運行、工具狀態、當時引用、候選及停止原因；中斷且未保存統計以 `countsKnown=false` 表示未知 |
 | POST `/api/children/:childId/agent/runs/:runId/proposals/:proposalId/decide` | `{expectedVersion,decision:accept\|dismiss,confirmShared}` → `{proposal}`；精確重試返回原結果，過期候選不可接受但可明確略過；接受仍核對權限及版本 |
 | GET `/api/children/:childId/agent/pending?cursor=…` | `{proposals,nextCursor}`：本人及該孩子的 pending／expired，每頁最多 20 項，獨立於近期聊天及 20 次背景清單；過期項只能重新核對或略過 |
-| GET `/api/children/:childId/agent/runs` | `{runs:[{runId,createdAt}]}`：本人最近最多 20 次背景運行，供手動重讀；不是啟動 Agent 的入口 |
+| GET `/api/children/:childId/agent/runs` | 本人最近最多 20 次背景運行。每項回傳 `runId`、`createdAt`、活動類別 `activityKind`（`memory_refresh`／`work_followup`／`background`）及原運行 `status`。舊版只有編號及時間；正文按原運行權限另讀。 |
 
 `propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。受限聯絡工具按 [W07 授權](#proactive-contact-http) 執行，入列、聯絡結果與照護完成分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
 
@@ -94,6 +94,8 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 獨立 reviewer 只讀同一成果與原件。`userRequest` 僅取同 run 已核實的本人當次訊息，不為審核另抓歷史；最多一次 repair，且須餘下兩次生成供修訂及 rereview。重核同時取得原 draft 與 repair issues，兩者都是資料，不能授權或修改規則。review output 仍為 `pass／revise／insufficient_evidence`。`draftHash` 綁請求、正文、來源版本／content hash／分類、實際 excerpt hash／完整度、原件及修正上下文；批准另綁 user／workspace／child、授權與資料版本、可見範圍、prompt 及 `p3-m01-chat-delivery-review/2` policy。來源或語義綁定改變便不能沿用批准，舊 `/1` 不跨版復用。
 
 相關已確認記憶與引用須在審核前選成同一穩定來源集合，用於 payload、hash、重驗及 binding；最多 12 項，超出拒絕而非在最後截斷或混入無關事實。當前權限、來源／版本／hash、撤回、到期及可見範圍在通過後仍重查；無來源、審核拒絕、預算不足與其他未完成分開回報。審核停止只保留再次重驗仍有效的來源及固定未完成提示，不展示未核正文或重做已成功／unknown 操作。候選實作、檢查及未驗狀態見 [修復包](../PLAN.md#agent-review-repair01)，不由本契約推定已部署或完整驗收。
+
+私人聊天的 `present_answer.showView`（位於單一 paragraph）只接受當前已保存訊息明確要求的介面。名單由用戶端按該則問題及同一 run 的成功工具收據展示。其他問題照常回答或追問缺項。新增可直接交付的介面時，須在同一段對話驗一次命中，再換題，並核對工具不能沿用上一輪的資格。
 
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 

@@ -11,7 +11,7 @@ import { PlatformCardJoin } from '../memory/PlatformCardJoin';
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 
-import { CHAT_CLASSIFICATION_LABELS, CHAT_LIVE_ACQUISITION_BADGE, CHAT_LIVE_SOURCE_KIND_LABELS, CHAT_SOURCE_COPY } from "./chat-copy";
+import { CHAT_CLASSIFICATION_LABELS, CHAT_LIVE_ACQUISITION_BADGE, CHAT_LIVE_SOURCE_KIND_LABELS, CHAT_SOURCE_COPY, CHAT_TIMELY_EVENT_KIND_LABELS, CHAT_TIMELY_EVENT_STATUS_LABELS } from "./chat-copy";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -97,7 +97,7 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
   const original = source.readSegments?.filter(Boolean) ?? [];
   return <AppDialog visible accessibilityLabel={source.title} onDismiss={onClose}>
     <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
-      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? liveSourceLabel(source) : classificationLabels[source.classification], page].filter(Boolean).join(' · ')}>
+      <SourceDocumentCard title={source.title} byline={[source.publisher, source.acquisition === 'live' ? liveSourceLabel(source) : classificationLabels[source.classification], source.timelyEvent ? `${CHAT_TIMELY_EVENT_KIND_LABELS[source.timelyEvent.kind]}（${CHAT_TIMELY_EVENT_STATUS_LABELS[source.timelyEvent.status]}）` : null, page].filter(Boolean).join(' · ')}>
         {source.section ? <Text style={styles.section}>{source.section}</Text> : null}
         {source.excerpt ? <View style={styles.quote}>
           {source.excerptKind === 'visual_page' ? <Text style={styles.meta}>圖像說明（助手整理）</Text>
@@ -105,6 +105,7 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
           <Text selectable style={styles.body}>{source.excerpt}</Text>
         </View> : <Text style={styles.meta}>此引用沒有可顯示的原文摘錄。</Text>}
         {source.validUntil && Date.parse(source.validUntil) <= Date.now() ? <Text style={styles.warning}>這份引用已過有效期。</Text> : null}
+        {source.timelyEvent && (source.timelyEvent.status === 'lifted' || source.timelyEvent.status === 'superseded' || source.timelyEvent.status === 'expired') ? <Text style={styles.warning}>此近期事項狀態為「{CHAT_TIMELY_EVENT_STATUS_LABELS[source.timelyEvent.status]}」，不再作為現行最新有效指引。</Text> : null}
         {source.cautionLabels?.length ? <View testID="live-source-cautions" style={styles.detail}>{source.cautionLabels.map((item, idx) => <Text key={idx} style={styles.warning}>{item}</Text>)}</View> : null}
         {source.productSpecLabel ? <Detail label="商品規格／型號" value={source.productSpecLabel} /> : null}
         {source.applicabilityLabel ? <Detail label="適用範圍" value={source.applicabilityLabel} /> : null}
@@ -123,6 +124,9 @@ function OriginalCard({ source, onClose, onOpenSource }: { source: ChatCitationV
           {source.versionHash ? <Detail technical label="版本校驗" value={source.versionHash} /> : null}
           {source.sourceDate ? <Detail label="來源日期" value={source.sourceDate} /> : null}
           {source.validUntil ? <Detail label="有效至" value={sourceTime(source.validUntil)} /> : null}
+          {source.timelyEvent?.statusUpdatedAt ? <Detail label="狀態更新時間" value={sourceTime(source.timelyEvent.statusUpdatedAt)} /> : null}
+          {source.timelyEvent?.statusReason ? <Detail label="狀態說明" value={source.timelyEvent.statusReason} /> : null}
+          {source.timelyEvent?.supersededBySourceId ? <Detail technical label="取代來源" value={source.timelyEvent.supersededBySourceId} /> : null}
           {source.checkedAt ? <Detail label="核對時間" value={sourceTime(source.checkedAt)} /> : null}
           {source.fetchedAt ? <Detail label="取得時間" value={sourceTime(source.fetchedAt)} /> : null}
           {source.lastSuccessfulCheckAt ? <Detail label="最近成功核對" value={sourceTime(source.lastSuccessfulCheckAt)} /> : null}

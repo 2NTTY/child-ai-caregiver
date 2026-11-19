@@ -55,6 +55,7 @@ export async function prepareFocusedKnowledgePage(input: {
         applicability: chunk.applicability }, factKeys: keys });
     const attemptKey = "knowledge-page-" + role + ":" + knowledgeReviewHash([prompt.text, user, scope.contentHash, responseJsonSchema, "HIGH"]);
     const raw = await input.completeText({ system: prompt.text, user, attemptKey, pdf, responseJsonSchema,
+      role: role === "review" ? "knowledge_review" : "knowledge_organize",
       ...(role === "review" ? { purpose: "knowledge_review" as const } : {}) });
     input.signal?.throwIfAborted();
     const reply = shape.parse(JSON.parse(raw));

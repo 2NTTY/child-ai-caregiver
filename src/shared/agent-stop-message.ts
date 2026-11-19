@@ -51,6 +51,9 @@ const stopReasons: Record<string, string> = {
   compose_review_incomplete: "這份編製草稿尚未通過獨立核對，未成為正式保存",
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
+export function isKnownAgentStopReason(reason: string): boolean {
+  return Object.hasOwn(stopReasons, reason);
+}
 /** Product copy only: never expose raw provider errors, arguments or private diagnostic text. */
 export function agentStopMessage(reason: string | null): string | null {
   return reason ? Object.hasOwn(stopReasons, reason) ? stopReasons[reason] : "未能確認停止原因" : null;

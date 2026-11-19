@@ -73,7 +73,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
     }
   };
   return [
-    { name: "read_family_documents", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_documents, authorize,
+    { name: "read_family_documents", effect: "read", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_documents, authorize,
       parameterErrorHints: () => [{ path: "documentId", reason: "invalid_parameters", expected: 'To list documents use {"documentId":null}; to read one use the exact UUID returned by that list. Optional cursor must be null or a returned nextCursor; optional status is all, active or archived. Omit other keys.' }],
       parameters: z.object({ documentId: z.uuid().nullable(), cursor: z.string().max(2048).nullable().optional(), status: z.enum(["all", "active", "archived"]).optional() }).strict(), execute: args => guard(async () => {
         if (!args.documentId) {
@@ -94,7 +94,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         if (!description) return { status: "rejected" };
         return view(description);
       }) },
-    { name: "read_family_document_content", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_document_content, authorize,
+    { name: "read_family_document_content", effect: "read", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_document_content, authorize,
       parameters: z.object({ documentId: z.uuid(), snapshotId: z.uuid(), snapshotVersion: z.number().int().min(1), offset: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) }).strict(), execute: args => guard(async () => {
         const { documentId, ...input } = args;
         const page = await store.readContent(scope.userId, scope.childId, documentId as string, input as DocumentContentQuery);
@@ -107,7 +107,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         }
         return page.text.length || page.complete ? { status: "succeeded", data: { ...page } } : { status: "rejected", data: { code: "response_limit" } };
       }) },
-    { name: "list_family_document_versions", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.list_family_document_versions, authorize,
+    { name: "list_family_document_versions", effect: "read", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.list_family_document_versions, authorize,
       parameters: z.object({ documentId: z.uuid(), cursor: z.string().max(2048).nullable() }).strict(), execute: args => guard(async () => {
         const page = await store.listVersions(scope.userId, scope.childId, args.documentId as string, args.cursor as string | null);
         return page ? { status: "succeeded", data: { ...page } } : { status: "rejected", data: { code: "not_found" } };

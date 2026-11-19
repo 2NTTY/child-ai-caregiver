@@ -57,10 +57,12 @@ test("native Runner sends one request-local projection and retains original part
 test("expiry after quota reservation omits the whole projection, while revocation stops before the provider", async () => {
   for (const revoked of [false, true]) {
     const budget = new AgentBudget(); let authorized = true, calls = 0, reserved = false;
+    const coverage: string[] = [];
     const initial = summary(), realNow = Date.now, start = realNow(); initial.validUntil = new Date(start + 1000).toISOString();
     const original = request(), before = structuredClone(original);
     const model = new AgentGatewayModel({ config, budget, userId: scope.userId, childId: scope.childId,
       initialConversationSummary: initial, authorize: async () => authorized,
+      onSummaryCoverage: reason => { coverage.push(reason); },
       usage: { reserve: async () => { reserved = true; if (revoked) authorized = false; return true; }, record: async () => {} },
       provider: { generate: async outgoing => { calls++; assert.equal(hasProjection(outgoing), false); return response(); } } });
     try {
@@ -69,6 +71,7 @@ test("expiry after quota reservation omits the whole projection, while revocatio
         Date.now = () => start + (reserved ? 1000 : 0);
         try { await invoke(model, original); } finally { Date.now = realNow; }
         assert.equal(calls, 1);
+        assert.deepEqual(coverage, ["included", "omitted_expired"]);
       } else { await assert.rejects(invoke(model, original), { message: "unauthorized" }); assert.equal(calls, 0); }
       assert.deepEqual(original, before);
     } finally { budget.close(); }
@@ -113,15 +116,20 @@ test("only an actual provider invocation consumes the initial projection opportu
 });
 
 test("product projection is read after claim between authorization checks, and replay keeps the original run", async () => {
-  const events: string[] = []; let claimed = false, reads = 0, runs = 0;
+  const events: string[] = []; let claimed = false, allowed = true, reads = 0, runs = 0, noted = 0;
   const fresh = summary("Fresh authorized post-claim summary"), stale = summary("Stale pre-claim summary");
   const options = { runtime: { run: async (input: AgentRunInput) => {
-    runs++; assert.equal(input.initialConversationSummary, undefined); assert.deepEqual(await input.readConversationSummary!(), fresh);
+    runs++; assert.equal(input.initialConversationSummary, undefined);
+    assert.deepEqual(await input.readConversationSummary!(() => { noted++; }), fresh);
+    allowed = false;
+    await assert.rejects(input.readConversationSummary!(() => { noted++; }), { message: "unauthorized" });
+    allowed = true;
+    assert.equal(noted, reads);
     assert.ok(!JSON.stringify(input.context).includes(fresh.summary.text));
     return { runId: "synthetic-run", status: "stopped", stopReason: "unavailable", tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
   } }, store: {
     claim: async () => { events.push("claim"); const created = !claimed; claimed = true; return { runId: "synthetic-run", scope, created, expiresAt: new Date(Date.now() + 90_000).toISOString() }; },
-    authorize: async () => { events.push("authorize"); return true; }, finish: async () => true, get: async () => null,
+    authorize: async () => { events.push("authorize"); return allowed; }, finish: async () => true, get: async () => null,
   }, memory: { context: async () => ({ summary: stale.summary, truncated: { messages: false } }), initialConversationSummary: async (userId: string, childId: string) => {
     assert.equal(userId, scope.userId); assert.equal(childId, scope.childId); reads++; events.push("summary"); return fresh;
   } }, chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "Original synthetic user instruction" }] }) } } as unknown as Parameters<typeof createProductAgent>[0];
