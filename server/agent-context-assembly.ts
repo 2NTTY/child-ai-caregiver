@@ -6,7 +6,7 @@ import type { ConcernStore } from "./concern-store.ts";
 import type { GrowthStore } from "./growth-store.ts";
 import { profileKnowledgeAge } from "./knowledge-query-context.ts";
 import { knowledgeTokens } from "./knowledge-ranking.ts";
-import { factIsApplicable } from "./memory-policy.ts";
+import { factIsApplicable, normalizedFactKey } from "./memory-policy.ts";
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
 
@@ -39,6 +39,8 @@ export interface TurnRelevantFactItem {
 }
 
 export interface TurnBackgroundAssembly {
+  /** Server-only deadline; never included in prompt or observation projections. */
+  readonly sourceDeadlineMs: number;
   readonly assemblyVersion: "req008-turn-bg-v1";
   readonly mode: TurnConversationMode;
   readonly scopeBinding: {
@@ -154,6 +156,7 @@ function emptyAssembly(
   return {
     assemblyVersion: "req008-turn-bg-v1",
     mode,
+    sourceDeadlineMs: Infinity,
     scopeBinding: binding,
     childProfile: {
       status,
@@ -249,6 +252,7 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
   const maxTaskItems = Math.max(1, Math.min(8, options.maxTaskItems ?? 4));
   const queryTokens = knowledgeTokens(options.userText, true);
 
+  let sourceDeadlineMs = Infinity;
   let childProfile: TurnBackgroundAssembly["childProfile"] = {
     status: "not_loaded",
     version: null,
@@ -283,18 +287,22 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
     } else if (!memContext || !await options.authorize()) {
       return emptyAssembly(binding, options.mode, "invalidated", "authorization_revoked");
     } else {
-      if (!memContext.profileApplicable || !memContext.profile?.data) {
+      if (memContext.profile && memContext.profile.childId !== binding.childId) {
+        childProfile = { ...childProfile, status: "invalidated", reasonCode: "profile_scope_mismatch" };
+      } else if (!memContext.profileApplicable || !memContext.profile?.data) {
         childProfile = {
           status: "empty_authorized",
           version: memContext.profile?.version ?? null,
           agePrecision: "unknown",
           ageMonthsMin: null,
           ageMonthsMax: null,
-          region: memContext.profile?.data?.region ?? null,
+          region: null,
           truncated: false,
           reasonCode: memContext.profile?.data ? "profile_not_applicable" : "profile_not_recorded",
         };
       } else {
+        // Profile validUntil is inclusive through the end of its Hong Kong calendar day.
+        if (memContext.profile.data.validUntil) sourceDeadlineMs = Date.parse(memContext.profile.data.validUntil + "T16:00:00Z");
         const ageInfo = profileKnowledgeAge(memContext, now);
         const agePrecision = ageInfo.precision === "confirmed" ? "birth_date"
           : ageInfo.precision === "approximate" ? "approximate" : "unknown";
@@ -312,9 +320,11 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
 
       const matchedSafety: TurnRelevantFactItem[] = [];
       const matchedQuery: TurnRelevantFactItem[] = [];
+      const conflicts = new Set((memContext.conflictingKeys ?? []).map(normalizedFactKey));
       for (const fact of memContext.facts) {
         if (fact.childId !== binding.childId || !fact.applicable || !factIsApplicable(fact, nowMs)) continue;
         if (visibility === "family" && fact.visibility !== "family") continue;
+        if (conflicts.has(normalizedFactKey(fact.key))) continue;
         const reason = factMatchReason(fact, queryTokens);
         if (!reason) continue;
         const entry: TurnRelevantFactItem = {
@@ -338,6 +348,7 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
         if (selected.length > 0 && usedChars + itemCost > maxFactChars) break;
         if (itemCost > maxFactChars && selected.length === 0) break;
         selected.push(item);
+        if (item.validUntil) sourceDeadlineMs = Math.min(sourceDeadlineMs, Date.parse(item.validUntil));
         usedChars += itemCost;
       }
 
@@ -411,7 +422,7 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
           }
           const disabledSet = new Set(disabledGrowthTopics);
           for (const item of page.items) {
-            if (disabledSet.has(item.topicId)) continue;
+            if (item.childId !== binding.childId || disabledSet.has(item.topicId)) continue;
             const snoozeExpired = item.state === "snoozed" && item.snoozeUntil !== null && Date.parse(item.snoozeUntil) <= nowMs;
             if (item.state === "proposed" || snoozeExpired) {
               growthItemsAll.push({
@@ -434,7 +445,7 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
         if (!page) focusFailed = true;
         else {
           for (const concern of page.items) {
-            if (concern.status === "following") {
+            if (concern.childId === binding.childId && concern.status === "following") {
               openConcernsAll.push({
                 id: concern.id,
                 title: concern.title,
@@ -503,14 +514,15 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
       if (!page || !await options.authorize()) {
         return emptyAssembly(binding, options.mode, "invalidated", "authorization_revoked");
       }
-      const scheduled = page.items.filter(item => item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review");
+      const scopedItems = page.items.filter(item => item.childId === binding.childId);
+      const scheduled = scopedItems.filter(item => item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review");
       const sliced = scheduled.slice(0, maxTaskItems).map(item => ({
         id: item.id,
         title: item.title,
         dueAt: item.occurrence.dueAt,
         status: item.occurrence.state,
       }));
-      const omitted = Math.max(0, page.items.length - sliced.length);
+      const omitted = Math.max(0, scopedItems.length - sliced.length);
       tasks = {
         status: sliced.length > 0 ? "provided" : "empty_authorized",
         items: sliced,
@@ -529,11 +541,13 @@ export async function assembleTurnBackground(options: AssembleTurnBackgroundOpti
     }
   }
 
+  if (!await options.authorize()) return emptyAssembly(binding, options.mode, "invalidated", "authorization_revoked");
   const scopeFingerprint = computeScopeFingerprint(binding, options.mode);
   const focusCount = activeFocus.growthItems.length + activeFocus.openConcerns.length;
   return {
     assemblyVersion: "req008-turn-bg-v1",
     mode: options.mode,
+    sourceDeadlineMs,
     scopeBinding: binding,
     childProfile,
     relevantFacts,
@@ -656,6 +670,7 @@ export function revalidateTurnBackground(
   return {
     assemblyVersion: "req008-turn-bg-v1",
     mode: nextMode,
+    sourceDeadlineMs: Infinity,
     scopeBinding: binding,
     childProfile: {
       status: nextChildStatus,

@@ -436,7 +436,7 @@ test("pure greeting short path skips private background stores and projects comp
   });
 });
 
-test("ephemeral mode enforces blank private scope, zero private store reads, and public-only tools end-to-end", async () => {
+test("injected synthetic ephemeral turn uses blank profile and public-only tools; this is not a persistent chat session", async () => {
   const scope = makeScope();
   const messageId = randomUUID();
   const runId = randomUUID();
@@ -574,7 +574,7 @@ test("chat_only mode enables authorized reads while removing all write, proposal
   const scope = makeScope();
   const messageId = randomUUID();
   const runId = randomUUID();
-  let memCalls = 0, policyCalls = 0, receiptCalls = 0;
+  let memCalls = 0, policyCalls = 0, receiptCalls = 0, consumeCalls = 0;
   let capturedTools: string[] = [];
   let savedResult: ProductAgentResult | null = null;
   let savedSummaryDraft: unknown = "unset";
@@ -633,6 +633,7 @@ test("chat_only mode enables authorized reads while removing all write, proposal
     store: {
       claim: async () => ({ runId, scope, created: true, expiresAt: new Date(Date.now() + 90000).toISOString() }),
       authorize: async () => true,
+      consumeConfirmation: async () => { consumeCalls++; return null; },
       finish: async (_scope: unknown, result: ProductAgentResult, draft: unknown) => {
         savedResult = result;
         savedSummaryDraft = draft;
@@ -685,7 +686,7 @@ test("chat_only mode enables authorized reads while removing all write, proposal
   assert.equal(reply?.status, "completed", JSON.stringify(reply));
   assert.equal(reply?.tools.find(t => t.name === "read_knowledge_context")?.status, "succeeded");
   assert.equal(memCalls, 3);
-  assert.equal(policyCalls + receiptCalls, 0);
+  assert.equal(policyCalls + receiptCalls + consumeCalls, 0);
   assert.equal(savedSummaryDraft, undefined);
   assert.equal(assemblyEvents[0]?.mode, "chat_only");
   assert.equal(assemblyEvents[0]?.sections.childProfile.status, "provided");

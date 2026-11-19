@@ -396,7 +396,7 @@ export function createProductAgent(options: {
       const readPage = () => options.chat.listForUser(userId, childId, null, 'agent');
       const initialPage = await readPage();
       if (!initialPage?.messages.some(item => item.id === messageId && item.role === "user") || !await isCurrentUser()) return null;
-      const confirmationResult = conversationMode === "ephemeral" ? null : (await options.store.consumeConfirmation?.(userId, childId, messageId) ?? null);
+      const confirmationResult = conversationMode === "assistant" ? (await options.store.consumeConfirmation?.(userId, childId, messageId) ?? null) : null;
       const operationPolicy = conversationMode === "assistant" && options.actions ? await options.actions.policy(userId, childId) : null;
       const recipeId = "product-interactive";
       const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
@@ -442,7 +442,8 @@ export function createProductAgent(options: {
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
       try {
-      const authorize = async (): Promise<boolean> => Date.now() < recentValidUntil && (tools?.recalledFactsCurrent() ?? true)
+      let sourceDeadlineMs = recentValidUntil;
+      const authorize = async (): Promise<boolean> => Date.now() < sourceDeadlineMs && (tools?.recalledFactsCurrent() ?? true)
         && await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId)
         && (!page.messages[index].voice || Boolean(options.voices && await options.voices.authorizeAudio(userId, childId, messageId, page.messages[index].voice!)));
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
@@ -465,6 +466,7 @@ export function createProductAgent(options: {
         allowTaskPreload: false,
         authorize,
       });
+      sourceDeadlineMs = Math.min(sourceDeadlineMs, turnBackground.sourceDeadlineMs);
       const dailyNeeds = discoverDailyNeeds({ userText: currentUserMessage.text, background: turnBackground });
       try { replyOptions?.onContextAssembly?.(turnBackground.assemblyMetadata); } catch { /* Observation cannot change execution. */ }
       const result = await options.runtime.run({
@@ -679,14 +681,32 @@ export function createProductAgent(options: {
         ...(presentation?.liveCitations?.length ? { liveCitations: presentation.liveCitations } : {}),
         ...(result.status === 'completed' && presentation?.sourceCardReadings?.length ? { sourceCardReadings: presentation.sourceCardReadings } : {}),
         countsKnown: true, counts: result.counts, proposals: [] }, review);
+      // Receipt reads, terminal settlement and readback may outlive a source even after the runtime finished.
+      // Reuse the original run and its separate receipt ledger; an expired draft is never a new operation.
+      const withholdIfExpired = (candidate: ProductAgentResult | null, fromStore: boolean): ProductAgentResult | null => {
+        if (!candidate || Date.now() < sourceDeadlineMs || candidate.status === "running") return candidate;
+        // The store projection rebuilds these references from the committed action/document/contact ledgers.
+        // Before settlement only the action receipts read above are independently verified here.
+        const receiptTools: ProductAgentResult["tools"] = fromStore
+          ? candidate.tools.filter(tool => tool.status === "succeeded" && !!tool.reference
+            && (Object.values(agentActionToolNames).includes(tool.name)
+              || ["confirmed_proposal", "generate_family_document", "change_family_document", "contact_caregiver"].includes(tool.name)))
+          : receipts.map(receipt => ({ name: agentActionToolNames[receipt.kind], status: "succeeded", reference: receipt.id }));
+        return {
+          runId: candidate.runId, provenance: candidate.provenance, counts: candidate.counts,
+          ...(candidate.countsKnown !== undefined && { countsKnown: candidate.countsKnown }),
+          status: candidate.status === "completed" ? "stopped" : candidate.status,
+          stopReason: candidate.status === "completed" ? "source_changed" : candidate.stopReason,
+          text: "資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。",
+          citations: [], privateSourceCitations: [], retrievalMode: "not_used", tools: receiptTools, proposals: [],
+        };
+      };
       if (!await isCurrentUser()) return null;
-      if (!await options.store.finish(claim.scope, value, conversationMode === "assistant" && value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
-        const persisted = await options.store.readCancelled(claim.scope, claim.runId)
-          ?? await options.store.get(userId, childId, claim.runId);
-        return await isCurrentUser() ? persisted : null;
-      }
-      const stored = await options.store.get(userId, childId, claim.runId);
-      return await isCurrentUser() ? stored : null;
+      const terminal = withholdIfExpired(value, false)!;
+      const finished = await options.store.finish(claim.scope, terminal, conversationMode === "assistant" && terminal.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined);
+      const stored = (!finished ? await options.store.readCancelled(claim.scope, claim.runId) : null)
+        ?? await options.store.get(userId, childId, claim.runId);
+      return await isCurrentUser() ? withholdIfExpired(stored, true) : null;
       } finally { if (activeReplies.get(key) === cancellation) activeReplies.delete(key); }
     },
   };
