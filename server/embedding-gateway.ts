@@ -57,7 +57,11 @@ export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "p
     },
   };
 }
-export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource }) {
+export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource;
+  isolatedMaintenanceProject?: string }) {
+  if (options.isolatedMaintenanceProject !== undefined && (!options.isolatedMaintenanceProject.startsWith("demo-")
+    || process.env.YUYF_LOCAL_DEVELOPMENT !== "1" || !/^127\.0\.0\.1:[0-9]+$/u.test(process.env.FIRESTORE_EMULATOR_HOST ?? "")
+    || options.billingSource !== "platform")) throw new EmbeddingFailure("unauthorized");
   return {
     async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>, durable?: DurableQueryEmbeddingUsage): Promise<number[]> {
       const { provider, usage } = options;
@@ -89,7 +93,8 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || !["query_embedding", "corpus_maintenance"].includes(actor.kind)
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
       // Maintenance has its own finite per-day counter but cannot increase the shared global limit.
-      const limit = actor.kind === "corpus_maintenance" ? Math.min(16, config.dailyGlobalAttempts) : config.dailyUserAttempts;
+      const maintenanceLimit = options.isolatedMaintenanceProject ? config.dailyUserAttempts : 16;
+      const limit = actor.kind === "corpus_maintenance" ? Math.min(maintenanceLimit, config.dailyGlobalAttempts) : config.dailyUserAttempts;
       let dailyRequest: DurableAiUsageRequest | undefined;
       if (daily) {
         dailyRequest = { kind: 'embedding', rootRunId: daily.context.binding.rootRunId, attemptKey: daily.attemptKey,
