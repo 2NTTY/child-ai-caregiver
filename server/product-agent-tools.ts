@@ -40,6 +40,7 @@ import { createAgentActionReadTools, createAgentActionTools, type AgentActionRea
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
+import { createSpecialistArtifactTools } from "./specialist-artifact-agent.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
@@ -951,6 +952,10 @@ export function createProductAgentTools(options: {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
       documents: options.documents, agent: trackedStore, run, authorize: permitted,
+      trustedUserMessage: options.trustedUserMessage ?? "",
+    }));
+    tools.splice(tools.length-1,0,...createSpecialistArtifactTools({
+      documents: options.documents, run, authorize: permitted,
       trustedUserMessage: options.trustedUserMessage ?? "",
     }));
   }
