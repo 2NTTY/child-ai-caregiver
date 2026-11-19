@@ -387,13 +387,13 @@ export function createProductAgentTools(options: {
     for (const fact of facts) if (usableMemoryFact(fact) && fact.validUntil) noteRecallExpiry(fact.validUntil);
     noteConfirmedMemoryFacts(facts);
   }
-  function selectDeliverySources(value: AgentAnswer) {
+  function sourcesForDelivery(value: AgentAnswer, quotes: ReadonlyMap<string, string>) {
     const sources: ChatDeliverySource[] = [], facts: MemoryFact[] = [];
     const cited = value.paragraphs.flatMap(paragraph => paragraph.citationIds);
     // The reviewer needs the actual preceding subject to interpret a subjectless reply.
     // A chronological neighbour is context, never an automatic claim or a citation in the parent's answer.
     for (const id of new Set(cited.flatMap(id => [id, ...(precedingHistoryMatch.has(id) ? [precedingHistoryMatch.get(id)!] : [])]))) {
-      const source = deliverySource(id);
+      const source = deliverySource(id, quotes);
       if (source) sources.push(source);
     }
     if (isMemoryRestatementAnswer(value) || memoryGrounding.size > 0) {
@@ -405,8 +405,7 @@ export function createProductAgentTools(options: {
     }
     // Refuse an over-wide draft before hashing/review; never silently omit required evidence.
     if (sources.length > 12) throw new AgentStopped("delivery_review_incomplete");
-    selectedSources = sources.sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0);
-    selectedMemoryFacts = facts;
+    return { sources: sources.sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0), facts };
   }
   async function revalidateSelectedMemory() {
     for (const previous of selectedMemoryFacts) {
@@ -478,7 +477,7 @@ export function createProductAgentTools(options: {
     }
   }
   const permitted = async () => authorize();
-  function acceptPresentedAnswer(parsed: AgentAnswer) {
+  function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
     const candidateDraft: ChatDeliveryDraft = {
       ...(options.trustedUserMessage !== undefined ? { userRequest: options.trustedUserMessage } : {}),
       kind: parsed.kind,
@@ -487,7 +486,7 @@ export function createProductAgentTools(options: {
       ...(selectedVerifiedOperations.length ? { verifiedOperations: selectedVerifiedOperations.map(item => ({ ...item })) } : {}),
       paragraphs: parsed.paragraphs,
       sources: [...new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds))]
-        .map(deliverySource).filter((source): source is ChatDeliverySource => source !== null),
+        .map(id => deliverySource(id, quotes)).filter((source): source is ChatDeliverySource => source !== null),
       scope,
       ...(run.images?.references().length ? { images: run.images.references() } : {}),
       ...(run.voice ? { voice: run.voice } : {}),
@@ -537,9 +536,13 @@ export function createProductAgentTools(options: {
     }
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
     // Give a text-only history answer a chance to repair its own citation before the terminal tool exits.
-    if (parsed.paragraphs.every(paragraph => (paragraph.kind ?? parsed.kind) === "private_reference") && !candidateDraft.voice && !candidateDraft.images?.length
+    const selected = sourcesForDelivery(parsed, quotes);
+    const onlyReferences = parsed.paragraphs.every(paragraph => (paragraph.kind ?? parsed.kind) === 'private_reference');
+    const mixedWithRestatement = parsed.kind === 'mixed' && parsed.paragraphs.every(paragraph =>
+      paragraph.kind === 'private_reference' || paragraph.kind === 'record_restatement');
+    if ((onlyReferences || mixedWithRestatement) && !candidateDraft.voice && !candidateDraft.images?.length
       && candidateDraft.sources.length && candidateDraft.sources.every(source => source.citationId.startsWith("chat:"))
-      && chatDeliveryPassNeedsSources(candidateDraft, deliveryReview)) {
+      && chatDeliveryPassNeedsSources(mixedWithRestatement ? { ...candidateDraft, sources: selected.sources } : candidateDraft, deliveryReview)) {
       const quotes = candidateDraft.sources.flatMap(source => {
         if (!source.excerptComplete) return [];
         const message = JSON.parse(source.excerpt) as { text: string };
@@ -547,8 +550,10 @@ export function createProductAgentTools(options: {
       });
       throw new HistoryExcerptMismatch(quotes);
     }
+    selectedSources = selected.sources;
+    selectedMemoryFacts = selected.facts;
   }
-  function deliverySource(id: string): ChatDeliverySource | null {
+  function deliverySource(id: string, quotes: ReadonlyMap<string, string>): ChatDeliverySource | null {
     const selectedSource=selectedEvidence.get(id);
     if (selectedSource) return selectedSource;
     const privateCitation = privateSources?.evidence.get(id);
@@ -560,7 +565,7 @@ export function createProductAgentTools(options: {
     const item = evidence.get(id);
     if (!item) return null;
     // accumulateKnowledgeRead may hold up to 4000 chars; do not hide support past the old 800-char head truncate.
-    const quote = originalQuotes.get(id);
+    const quote = quotes.get(id);
     const body = quote ? quote + '\n\n' + item.chunk.text : item.chunk.text ?? "";
     const excerpt = item.chunk.readCoverage ? chatDeliveryReviewSourceExcerpt(body) : chatDeliveryExcerpt(body);
     const supplied = item.chunk.contentHash ?? "";
@@ -805,9 +810,8 @@ export function createProductAgentTools(options: {
           await refreshVerifiedOperations(false);
         }
         if (parsed.kind !== "no_action") {
-          acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
+          acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
           originalQuotes = quotes;
-          selectDeliverySources({ ...parsed, kind: parsed.kind });
         }
         answer = parsed;
         serverReceiptText = null;
@@ -1147,7 +1151,6 @@ export function createProductAgentTools(options: {
     replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);
       acceptPresentedAnswer(parsed);
-      selectDeliverySources(parsed);
       answer = parsed;
       serverReceiptText = null;
     },
