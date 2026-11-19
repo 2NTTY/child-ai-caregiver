@@ -8,6 +8,7 @@ export interface ChatCitationView {
   classification: "official_guidance" | "recent_information" | "synthetic";
   versionId: string; versionHash: string; checkedAt: string; fetchedAt: string;
   lastSuccessfulCheckAt: string | null; sourceDate: string | null; validUntil: string | null;
+  timelyEvent?: import("../../src/shared/knowledge-timely.ts").TimelyEventLifecycle;
   applicabilityLabel: string; internalOnly: boolean; url: string | null;
 }
 

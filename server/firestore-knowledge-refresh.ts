@@ -8,6 +8,7 @@ import { definitionHash, observationHash, observationId } from "./knowledge-obse
 import { refreshJobSchema, type ObservedContent, type RefreshJob, type SourceFetcher, type SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus } from '../src/shared/admin.ts';
 import { domainReject } from './firestore-domain-data.ts';
+import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
@@ -106,7 +107,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       if (documentUrl && !feeds.some(id => catalog.get(id)?.audience === 'public_noncommercial')) return [];
       if (feeds.length > 10) reject("knowledge_watch_catalog_invalid");
       const page = await tx.get(database.collection(namespace + "_knowledge_observations").where("watchId", "in", feeds)
-        .where("sourcePublishedAt", ">=", new Date(Date.now() - 7 * 86400_000).toISOString())
+        .where("sourcePublishedAt", ">=", new Date(Date.now() - TIMELY_KNOWLEDGE_POLICY_DEFAULTS.observationLookbackDays * 86400_000).toISOString())
         .orderBy("sourcePublishedAt", "desc").orderBy("sourceId").limit(60));
       return page.docs.flatMap(snapshot => {
         const row = parse(observationSchema, snapshot.data());

@@ -1,4 +1,7 @@
 /** Public knowledge only. Child scope and age bounds must be supplied by the server. */
+import type { TimelyEventKind, TimelyEventLifecycle, TimelyEventStatus } from "./knowledge-timely.ts";
+
+export type { TimelyEventKind, TimelyEventLifecycle, TimelyEventStatus };
 export const KNOWLEDGE_EMBEDDING = Object.freeze({ model: "gemini-embedding-001", dimensions: 1024, pipeline: "section-v1" });
 export type KnowledgeClass = "official_guidance" | "recent_information";
 export interface KnowledgeApplicability {
@@ -60,6 +63,7 @@ export interface KnowledgeSourceInput {
   /** Preserve month/year-only source labels without inventing an exact publication time. */
   sourceDateText?: string | null;
   validUntil?: string | null;
+  timelyEvent?: TimelyEventLifecycle;
   fetchedAt: string;
   termsUrl: string;
   chunks: KnowledgeChunkInput[];
@@ -82,6 +86,7 @@ export interface KnowledgeEvidence extends KnowledgeChunkInput {
   sourceUpdatedAt: string | null;
   sourceDateText?: string | null;
   validUntil?: string | null;
+  timelyEvent?: TimelyEventLifecycle;
   fetchedAt: string;
   checkedAt: string;
   /** Successful source retrieval, independent of the human content review timestamp. */

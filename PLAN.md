@@ -1603,3 +1603,14 @@ S01 的 coo-ai-agent、Baby Buddy、CareLoop、BreastfeedingTracker、UNICEF Beb
 Current implementation skips the initial conversation summary only for a pure greeting user turn without voice, photo, file or a confirmation result. At presentation, confirmed-memory hydration is skipped separately when the complete answer is a bounded greeting or clarifying question with no citations; that presentation condition does not require a greeting user input. Authorization, retained review obligations, and source/receipt verification remain in force.
 
 The integrated short-path offline gate retains all 244 cases in master 39f2f322 official-evidence manifest and adds 13 short-path cases (257 total), plus the three strict TypeScript checks.
+
+
+### REQ-001 B 類時效資訊生命週期與主聊天檢索閉環 (`codex/req001-timely-news-and-expiry`)
+
+- **對應需求**：REQ-001 §3.2 (`:107-125`)、§6 階段 3 (`:259-264`)、§7 (`:294-296`)。
+- **基線與範圍**：基於 `origin/master` (`3c02633a`)，於隔離 worktree 實作，未改動進行中的 REQ-002 收尾分支（`#675`–`#678`）或 `docs/REQUIREMENTS_BACKLOG.md`。
+- **核心設計與契約**：
+  - 新增 [`src/shared/knowledge-timely.ts`](src/shared/knowledge-timely.ts)（`TIMELY_EVENT_KINDS`、`TIMELY_EVENT_STATUSES`、`timelyEventLifecycleSchema`、`isTimelyEventActive`、`isPersistentTimelyKind`），並於 `src/shared/knowledge.ts` 及 `src/shared/product-agent-result.ts` 擴充可選 `timelyEvent` metadata（不破壞既有未標註版本 hash）。
+  - 新增 [`server/knowledge-timely-policy.ts`](server/knowledge-timely-policy.ts)（`evaluateTimelyEligibility`、`proactiveKindForTimelyEvent`、`sqlTimelyEligibilityClause`、`TIMELY_KNOWLEDGE_POLICY_DEFAULTS`），統一 Firestore 與 Postgres 保留與退場規則：有效／已更正之 `recall` 與 `safety_alert` 超過 7 天仍可檢索（需符合 `sourcePublishedAt <= now`、`lastSuccessfulCheckAt <= 24h` 及 `validUntil`）；具明確 `validUntil` 之 `policy_change`／`deadline` 保留至期限屆滿；一般 `news`／`announcement` 與無標註項目維持 7 天滾動窗口；任何標記為 `lifted`、`superseded` 或 `expired` 之項目立即退出日常檢索與主動通知派發，並保留版本溯源與歷史回覆不可變快照。
+  - 接通 `server/knowledge-inputs.ts`、`server/firestore-knowledge.ts`、`server/firestore-knowledge-refresh.ts`（`recentSourceIds` 沿用既有 composite index 並將觀察回溯窗放寬至 180 天）、`server/knowledge-store.ts`、`server/proactive-event-sources.ts`，以及前端 `frontend/src/chat-view-model.ts`、`frontend/src/production/agent-projection.ts`、`frontend/src/components/chat/chat-copy.ts` 與 `frontend/src/components/chat/AnswerSources.tsx`（維持摺疊引用卡精簡，只於展開後 `OriginalCard` 顯示時效類型、狀態、失效警告及取代來源）。
+- **離線驗證範圍與限制**：本分支僅於本地進行離線合成測試（[`tests/req001-timely-news-and-expiry.test.ts`](tests/req001-timely-news-and-expiry.test.ts) 7/7 通過，離線清單 14 檔／103 案全過；`tests/firestore-knowledge.test.ts` 於無網路守衛下 22/22 通過）及三組嚴格 `tsc --noEmit`；尚未執行真實外部 RSS 抓取、真實 Gemini／Vertex 調用、原站部署或手機實機驗收。[離線驗證 workflow](.github/workflows/req001-timely-news-and-expiry-offline.yml) · [驗證腳本](scripts/ci/verify-req001-timely-news-and-expiry-offline.sh)

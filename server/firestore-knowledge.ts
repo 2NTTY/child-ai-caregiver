@@ -23,6 +23,8 @@ import { needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeri
 import { createLibrarySelections, explicitlyDisabled, selectedEdition, type ListedPlatformCard } from './knowledge-library-selection.ts';
 import { checkPortableSeries, familySharingAllowed, portableSeries, portableSeriesSchema, verifyPortableMethod, type PortableSeries } from './knowledge-portable-series.ts';
 import { canonical } from './firestore-session-codec.ts';
+import { timelyEventLifecycleSchema } from "../src/shared/knowledge-timely.ts";
+import { evaluateTimelyEligibility } from "./knowledge-timely-policy.ts";
 import type { StorageCipher } from './storage-crypto.ts';
 
 export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[]; cipher?: StorageCipher;
@@ -93,7 +95,7 @@ const sourceSchema = z.strictObject({ ...binding, sourceId, url: z.url(), active
   revision: z.string().regex(/^(0|[1-9][0-9]{0,18})$/), disabledReason: z.string().min(1).max(400).nullable() });
 const headerSchema = z.strictObject({ series: sourceSeriesSchema.optional(), sourceId, url: z.url(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   classification: z.enum(["official_guidance", "recent_information"]), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
-  sourceDateText: z.string().min(1).max(200).nullable().optional(), validUntil: date.nullable().optional(), fetchedAt: date,
+  sourceDateText: z.string().min(1).max(200).nullable().optional(), validUntil: date.nullable().optional(), timelyEvent: timelyEventLifecycleSchema.optional(), fetchedAt: date,
   termsUrl: z.url(), extraction: knowledgeExtractionSchema.optional() });
 const versionSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, versionHash: hash, header: headerSchema,
   chunks: z.array(z.strictObject({ chunkId: uuid, key: sourceId, order: z.number().int().min(1).max(32),
@@ -269,13 +271,17 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   function publication(edition: Edition, operation: 'read' | 'publish' = 'publish'): boolean {
     const now = Date.now();
     const { source, version, document } = edition, review = version.review;
+    const timely = evaluateTimelyEligibility({
+      classification: document.classification,
+      sourcePublishedAt: document.sourcePublishedAt,
+      validUntil: document.validUntil ?? null,
+      lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
+      timelyEvent: document.timelyEvent,
+    }, now);
     return source.enabled && source.activeVersionId === version.versionId && version.reviewState === "reviewed" && version.checkedAt !== null
       && version.publishedAt !== null && review !== null && review.assessment.decision === "approve" && review.assessment.growthRuleImpact !== "requires_review"
-      && (!document.validUntil || Date.parse(document.validUntil) > now) && (observationCurrent(edition) || operation === 'read' && (verifiedPdfRange(edition) || previousPageUnderGrowthReview(edition)))
-      && (options.audience === "internal" || !internalKnowledgeSource(document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial")
-      && (document.classification !== "recent_information" || document.sourcePublishedAt !== null
-        && Date.parse(document.sourcePublishedAt) <= now && Date.parse(document.sourcePublishedAt) >= now - 7 * 86400_000
-        && Date.parse(edition.observed!.observation!.lastSuccessfulCheckAt) >= now - 86400_000);
+      && timely.eligible && (observationCurrent(edition) || operation === 'read' && (verifiedPdfRange(edition) || previousPageUnderGrowthReview(edition)))
+      && (options.audience === "internal" || !internalKnowledgeSource(document.url) && edition.observed?.watch.definition.audience !== "internal_noncommercial");
   }
   async function catalogIds(tx: Transaction, url?: string) {
     return [...new Set([...sourceIds, ...await options.observations?.recentSourceIds(tx, sourceIds, url) ?? []])].sort(compareId);
@@ -336,7 +342,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     return { ...chunk.document, series: sourceSeries(document), chunkId: chunk.chunkId, sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
       contentHash: chunk.contentHash, url: document.url, termsUrl: document.termsUrl, title: document.title, publisher: document.publisher, classification: document.classification,
       sourcePublishedAt: document.sourcePublishedAt, sourceUpdatedAt: document.sourceUpdatedAt, sourceDateText: document.sourceDateText ?? null,
-      validUntil: document.validUntil ?? null, fetchedAt: document.fetchedAt, checkedAt: version.checkedAt!,
+      validUntil: document.validUntil ?? null, ...(document.timelyEvent ? { timelyEvent: document.timelyEvent } : {}), fetchedAt: document.fetchedAt, checkedAt: version.checkedAt!,
       lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
       usageScope: internalKnowledgeSource(document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial" ? "internal_noncommercial" : "public_noncommercial",
       reviewState: "reviewed", ...(document.extraction ? { extraction: document.extraction } : {}),
