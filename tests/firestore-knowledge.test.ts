@@ -1090,7 +1090,8 @@ test('external material admission binds each reviewed PDF to its exact publisher
   const changed = { ...doc, extraction: { ...doc.extraction!, contentHash: 'c'.repeat(64) } };
   assert.equal(familySharingAllowed(changed), false);
   for (const invalid of [changed, { ...doc, publisher: 'Another department' }, { ...doc, termsUrl: new URL('/other', doc.url).href },
-    { ...doc, sourceId: 'synthetic-guidance' }, { ...doc, sourceId: 'synthetic-guidance', url: rights.find(row => row.url.includes('www.cfs.gov.hk'))!.url }])
+    { ...doc, sourceId: 'synthetic-guidance' }, { ...doc, sourceId: 'synthetic-guidance', url: rights.find(row => row.url.includes('www.cfs.gov.hk'))!.url },
+    { ...doc, sourceId: 'synthetic-guidance', url: new URL('/unreviewed.pdf', selected.url).href }])
     await assert.rejects(store.importSource(invalid), rejects('knowledge_transfer_source_binding_invalid'));
   assert.equal(sourceFetchUrl(selected.url, selected).href, selected.url);
   assert.throws(() => sourceFetchUrl(new URL('/other.pdf', selected.url).href, selected), /source_url_rejected/);

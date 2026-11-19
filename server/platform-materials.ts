@@ -22,6 +22,8 @@ interface ExternalDecision {
 const external: ExternalDecision[] = JSON.parse(readFileSync(new URL('../knowledge/fhs-external-rights.json', import.meta.url), 'utf8')).materials;
 const externalById = new Map(external.map(row => [row.sourceId, row]));
 const externalByUrl = new Map(external.map(row => [row.url, row]));
+// Sources supported before the catalogue extension retain their existing publication and audience rules.
+const priorSourceHosts = new Set(['www.fhs.gov.hk', 'www.studenthealth.gov.hk', 'www.chp.gov.hk', 'www.dh.gov.hk', 'news.rthk.hk', 'rthk.hk', 'www.rthk.hk']);
 export const externalMaterialWatches: SourceWatchDefinition[] = external.filter(row => row.disposition === 'public_noncommercial').map(row => {
   if (!row.publisher || !row.termsUrl || !row.sha256 || !inventory.pdfOriginals.some(pdf => pdf.url === row.url && pdf.sha256 === row.sha256))
     throw Error('Invalid reviewed external material');
@@ -34,7 +36,7 @@ export function reviewedExternalOriginal(url: string) {
 }
 export function externalMaterialAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'publisher' | 'extraction' | 'classification'>) {
   const entry = externalById.get(source.sourceId) ?? externalByUrl.get(source.url);
-  if (!entry) return true;
+  if (!entry) return priorSourceHosts.has(new URL(source.url).hostname);
   return entry.disposition === 'public_noncommercial' && entry.sourceId === source.sourceId && entry.url === source.url
     && source.classification === 'official_guidance' && source.publisher === entry.publisher && source.termsUrl === entry.termsUrl
     && source.extraction?.format === 'text_pdf' && source.extraction.contentHash === entry.sha256;
