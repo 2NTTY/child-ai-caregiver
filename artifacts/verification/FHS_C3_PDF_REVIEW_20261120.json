@@ -253,7 +253,9 @@
       "source": "The original immutable slice and both settled request hashes were verified before offline replay. Visual review compared the printed age groups, labels and time icon on the public original.",
       "exercise": "In a network-disabled worker with in-memory Firestore and an isolated registry for its synthetic watch identifiers, the parent held on the original mismatch. The child reread both stages, generated zero model calls, wrote one synthetic vector, listed one edition, and reopened the hash-checked original through a synthetic saved citation. Repetition added zero vectors. The release registry admits the screen poster and rejects the daily-routine poster before opening persistence.",
       "negative": "Unregistered containment, a changed offset, different wording, different request hash, and an independent hold were rejected. Server TypeScript and five focused tests passed.",
-      "production": "At verification this additional recovery had not run in the live campaign."
+      "production": "The registered poster was recovered using both existing readings and zero new generation. Its live published edition, one vector, the physical first page of the original, and the complete excerpt at both registered transcript offsets were verified in the production worker.",
+      "publishedVersion": "c1f8b503-4a75-53f8-89cb-593c49f25778",
+      "release": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44684090457"
     }
   },
   "firstLiveDelivery": {
@@ -499,27 +501,31 @@
     "retainedCompatibility": "Six registered PDF organizer and independent reviewer request fingerprint pairs unchanged in a network-disabled worker."
   },
   "sourceDeliverySnapshot": {
-    "checkedAt": "2026-11-20T05:44:13.614Z",
+    "checkedAt": "2026-11-20T06:07:17.709Z",
     "scope": "Original 116 rows; sourceId joins to the official URL, SHA-256 and pages in FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json.",
     "counts": {
-      "no_source_result_in_sequence": 87,
+      "no_source_result_in_sequence": 83,
       "observation_recovered_awaiting_model": 4,
       "candidate_held": 13,
-      "published_and_verified": 12
+      "published_and_verified": 16
     },
     "publishedSourceIds": [
       "pdf-0669ab4cf34bd1b3b598db64",
+      "pdf-a8b1017b75ded7e02814cdb2",
       "pdf-231c869513252fae5e5ce54e",
       "pdf-0c2d0deb2abdeb1d5949e661",
+      "pdf-f4804bcf1d97c9f5c624043a",
       "pdf-51a3b0aebacc5c2f6a002561",
       "pdf-28468771ad2490f045bd5d56",
+      "pdf-3fca76df105dc64c4e94f76c",
       "pdf-c35022f4755f452c3ab6ca7c",
       "pdf-4158ea5c2f138e45a4a7568d",
       "pdf-16ecfbe91853bb20831c4b97",
       "pdf-d6cb530c2cc3605fb28a0241",
       "pdf-258dbc8a8c69d4f66dd0ab05",
       "pdf-8d229a086ffa572923ed027f",
-      "pdf-5acb6474a38d19249e4933d6"
+      "pdf-5acb6474a38d19249e4933d6",
+      "pdf-5a08a58cc4bef28ff2dc3c0d"
     ],
     "additionalPublished": [
       {
@@ -731,6 +737,148 @@
           "excerptSha256": "4a38dd82504a6903323e44d21ceef957ecf26091d0d5d5a9710dff7d06c4d54d",
           "completeExcerptMatch": "exact"
         }
+      },
+      {
+        "sourceId": "pdf-a8b1017b75ded7e02814cdb2",
+        "versionId": "d3a5b281-d111-512b-996e-129239404ad2",
+        "versionHash": "970249df638beda4bae24a8032e799055e6bc6756e59e2136e67e866cab557a7",
+        "publishedAt": "2026-11-20T05:52:36.464Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2,
+          3
+        ],
+        "reviewerPages": [
+          1,
+          2,
+          3
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:b7691ae89107f2a384a800234fd53c71c0674c97533a2d804c2e524153b0e72d",
+          "knowledge-review:f2555db4e61619f85662b2c2b5785678371833876257010a24fea1d229c9c13c"
+        ],
+        "citation": {
+          "chunkId": "a84716c4-e744-5c59-93b1-b6fd78fa97dd",
+          "range": [
+            1,
+            3
+          ],
+          "physicalPage": 1,
+          "originalBytes": 2464694,
+          "excerptSha256": "557042b293eedfc6ebb6b0e99dd8d7315b6a69d136b461f2ac9ba9adfb698cb0",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-f4804bcf1d97c9f5c624043a",
+        "versionId": "5708cc78-1a33-5db5-a8bd-6075dee4de4d",
+        "versionHash": "39b537dcd355104592498ed7d97ece9e83bb9142316900d7448f537c11c830cb",
+        "publishedAt": "2026-11-20T05:51:29.750Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:98e1009db2ccfff326dbe1b65ac0964ac034bdf478c54940204ac323a3b9b5b1",
+          "knowledge-review:9202e42065bdc6c4e88295741a5e0fadbdf095cf9d2c4ddc5231d3fdc884e106"
+        ],
+        "citation": {
+          "chunkId": "20637383-81c2-556a-9f37-f9aab0152768",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 1410006,
+          "excerptSha256": "b93209ac40c8284c2c0ce0caf7df3669fd7440c54fcaa689931aac8233b7f291",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-3fca76df105dc64c4e94f76c",
+        "versionId": "fef2b2bc-0322-52a5-9d3f-90caace8683c",
+        "versionHash": "7bb45ab04c494df84e3cabb128f028f9381660b34584ec748d1322fcfafafe31",
+        "publishedAt": "2026-11-20T05:54:12.569Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "reviewerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:59f218e778333780c46f8af48ba3700ac781bf7b1254838f5b04cb3309f10812",
+          "knowledge-review:466ae0391e7e3ec2576d60e0218e1702b9f8a437cdd1e57fe7ed04520b8d6131"
+        ],
+        "citation": {
+          "chunkId": "446b38e6-8fbd-5933-ae6f-19a7e6c085e4",
+          "range": [
+            1,
+            4
+          ],
+          "physicalPage": 1,
+          "originalBytes": 4458123,
+          "excerptSha256": "4e3a3312078df2f4140c10c916a78196e07802afd9311cf21f91f7c0fbf19679",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "versionId": "c1f8b503-4a75-53f8-89cb-593c49f25778",
+        "versionHash": "1277fdea0291c7aaac95acc6eac111ceed55f2585e1be3d47b6ccf824382446c",
+        "publishedAt": "2026-11-20T06:05:40.203Z",
+        "documentVectors": 1,
+        "windows": [
+          {
+            "range": [
+              1,
+              1
+            ],
+            "sliceHash": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+            "readingKeys": [
+              "knowledge-window-organize:d29ea093aecff373f0e3ca924a6a89e7f44b362fd238ea2f469d4b3ac73a03dc",
+              "knowledge-window-review:7df7ab55d74a554e256bdad3d2f5174ee5a3fc5c6cee300eee4dbdf4fbac8daa"
+            ]
+          }
+        ],
+        "visualSource": {
+          "kind": "page_transcription",
+          "physicalPage": 1,
+          "sliceHash": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+          "readings": [
+            {
+              "role": "organize",
+              "requestHash": "7f3cfce70f2ef2bd267c727ee3d7041dd4ab28af35729cdb7c2c989b4610819f"
+            },
+            {
+              "role": "review",
+              "requestHash": "2e6c0ddd21562b205fee775ee9ed70f01ce41535adeb0ccca72b61d4a3a6025d"
+            }
+          ]
+        },
+        "citation": {
+          "chunkId": "9769753b-71e2-5088-a2d3-2084394d5d54",
+          "range": [
+            1,
+            1
+          ],
+          "physicalPage": 1,
+          "originalBytes": 3098122,
+          "excerptSha256": "34f0714e27471664ec7890176751deefbf36d334deb59e4280e6844ee43509f6",
+          "completeExcerptMatch": "independent_page_transcriptions"
+        }
       }
     ],
     "held": [
@@ -755,6 +903,10 @@
         "reason": "knowledge_review_failed"
       },
       {
+        "sourceId": "pdf-4ace9fb38791edb68e91ac3b",
+        "reason": "knowledge_age_one_sided"
+      },
+      {
         "sourceId": "pdf-6637fb9890bacf75064562bd",
         "reason": "knowledge_review_failed"
       },
@@ -777,10 +929,6 @@
       {
         "sourceId": "pdf-0036bc862846cdd19984930b",
         "reason": "knowledge_age_one_sided"
-      },
-      {
-        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
-        "reason": "knowledge_window_quote_mismatch"
       },
       {
         "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
@@ -824,7 +972,6 @@
       "pdf-811789c9be36ae025ee7e2a2",
       "pdf-5b0a73131bf6fc9120d7dd48",
       "pdf-3428e3d13ed575680a0fa8a5",
-      "pdf-a8b1017b75ded7e02814cdb2",
       "pdf-75f4948b23d797f1e6883149",
       "pdf-1de70dac6945f17a3891a257",
       "pdf-110b0452a51c2bc488fbe7f5",
@@ -853,16 +1000,13 @@
       "pdf-a98acb33a6e913bf871a6b5a",
       "pdf-f545d1be1fbbbe60d939ccde",
       "pdf-5855948c00226584d5e57f2c",
-      "pdf-4ace9fb38791edb68e91ac3b",
       "pdf-88bcbb29830a2b0bf2bda335",
       "pdf-48e37ddf27a8864e98362fa9",
       "pdf-a195a3e5ac7644036bdaf073",
-      "pdf-f4804bcf1d97c9f5c624043a",
       "pdf-25f6d14e786c74f161e631d1",
       "pdf-40e5eb1a042e9dee765714ef",
       "pdf-902a9652db3c94e03ea54d75",
       "pdf-780e4c1676a794ee6e89c6db",
-      "pdf-3fca76df105dc64c4e94f76c",
       "pdf-877466905d56f6616266ffb5",
       "pdf-b50a158f021811e4c7daafba",
       "pdf-ce75ff9d0a4c5b0ac1410b26",
@@ -902,7 +1046,8 @@
         "minimumModelCalls": 14
       }
     ],
-    "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The independent review and publication of the 24-page representative are outstanding at this snapshot."
+    "otherSourceReceipts": [],
+    "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The same-campaign 20-page chart belongs to C2 and is counted separately."
   },
   "sharedCampaignLongRead": {
     "sourceId": "resource-d8149af7847e38",
