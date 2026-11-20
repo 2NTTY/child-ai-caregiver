@@ -1,0 +1,85 @@
+{
+  "group": {
+    "id": "deleted-private-memory-old-saved-answer",
+    "title": "刪掉一條舊記憶後，為甚麼昨天的助手回答還看得到？",
+    "index": "external-comparison",
+    "readerNote": "刪掉記憶不是刪掉原對話。只要仍有權，本人可以手動查看當時已保存的回答。如果那則回答確實綁定到已刪的記憶版本，助手不能把它再當有效脈絡，也不會重播原回覆。原運行仍可顯示已完成；來源未核實就不猜你刪了甚麼。這不是按文字搜尋所有副本，也不涵蓋重新輸入的內容。兩案是只讀設計比較。",
+    "choices": [
+      {
+        "name": "先看舊回答｜從原聊天分清可查看與可再引用",
+        "note": "已保存的回答仍可由有權家長在原聊天查看；已核實原記憶來源刪除後，助手不再把這則綁定回覆當作新一輪的有效脈絡。ChatGPT 原圖只演示答案與記憶來源分開呈現，不是刪除後畫面。",
+        "source": "https://images.ctfassets.net/j22is2dtoxu1/4HqlKblQXe9gvo2Q7NeI6P/91b47c9c42f6be15c3ef9cb3ff1c6294/8.png",
+        "sourceNotes": [
+          {
+            "label": "OpenAI 官方完整手機示例：原回覆與下方 Sources",
+            "url": "https://images.ctfassets.net/j22is2dtoxu1/4HqlKblQXe9gvo2Q7NeI6P/91b47c9c42f6be15c3ef9cb3ff1c6294/8.png"
+          },
+          {
+            "label": "官方記憶說明：刪除已儲存記憶不移除對話中的提及",
+            "url": "https://help.openai.com/en/articles/8590148-memory-in-chatgpt"
+          },
+          {
+            "label": "官方歷史說明：本人可重新開啟仍可存取的舊對話",
+            "url": "https://help.openai.com/en/articles/10056348-finding-your-chats-projects-and-files-in-chatgpt"
+          },
+          {
+            "label": "育伴港：手動資料瀏覽與 Agent 來源讀取分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0c59be95c74f3d4292cb0b8eb9a5eeddf501be49/server/chat-api.ts#L20-L50"
+          },
+          {
+            "label": "育伴港：已核對來源綁定與原則",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0c59be95c74f3d4292cb0b8eb9a5eeddf501be49/server/firestore-chat.ts#L112-L176"
+          }
+        ],
+        "version": "ChatGPT 手機版 Sources 說明原圖；官方圖說標 2026-06-04，資產標示 2026-07-17 更新。未標 App 組建，並非刪除後驗證。",
+        "rights": "OpenAI 官方說明圖，未確認重刊授權；只連官方原圖，不轉載、不內嵌。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 OpenAI 官方手機對話及 Sources 原圖 ↗（需連網）"
+      },
+      {
+        "name": "記憶管理｜以後會用甚麼",
+        "note": "先交代這一版記憶不再供助手回想，再分開說本人仍可查看有權讀到的原對話。查不到同一原訊息，就不補標題或內容。Perplexity 把用歷史回答、儲存記憶和管理記憶分開；它不證明刪一筆記憶會刪對話，也沒有這個來源限制頁。",
+        "source": "https://cdn.sanity.io/images/aqo64vfr/production/41c1ef1aed24cf5be8d021f7c13af75a570f9963-672x281.png",
+        "sourceNotes": [
+          {
+            "label": "Perplexity 官方完整 Memory 面板原圖：往後使用歷史、Notes 和管理入口各自分開",
+            "url": "https://cdn.sanity.io/images/aqo64vfr/production/41c1ef1aed24cf5be8d021f7c13af75a570f9963-672x281.png"
+          },
+          {
+            "label": "Perplexity 官方原文：記憶和用舊對話回答是不同的來源",
+            "url": "https://www.perplexity.ai/hub/blog/ai-memory"
+          },
+          {
+            "label": "Perplexity 官方版本記錄：歷史對話有自己的瀏覽入口",
+            "url": "https://www.perplexity.ai/changelog/what-we-shipped---december-5th"
+          },
+          {
+            "label": "Perplexity 官方資料選項：移除個別對話是獨立操作",
+            "url": "https://www.perplexity.ai/en-GB/hub/legal/self-serve-data-options"
+          },
+          {
+            "label": "育伴港：新的助手脈絡不納入失效來源",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0c59be95c74f3d4292cb0b8eb9a5eeddf501be49/server/product-agent.ts#L423-L444"
+          },
+          {
+            "label": "育伴港：來源改變不重播舊結果",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0c59be95c74f3d4292cb0b8eb9a5eeddf501be49/server/product-agent-api.ts#L67-L88"
+          },
+          {
+            "label": "育伴港：合成測試：舊聊天可查看，不再用作記憶或原回覆重播",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0c59be95c74f3d4292cb0b8eb9a5eeddf501be49/scripts/verify-private-fact-recall.mjs#L167-L198"
+          }
+        ],
+        "version": "Perplexity Web 官方 Memory 面板，原文 2026-11-09 發布、2026-11-20 核對；原圖未標 UI 版號或精確攝圖時間。",
+        "rights": "Perplexity 保留服務介面及圖像權利；工作台只外連原圖與官文，不嵌入、加工或重刊。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Perplexity 官方 Memory 面板原圖 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "d354e5c4c1a613889f408e305e55e730598820a4e30627851f1783ba9d26a83b"
+}
