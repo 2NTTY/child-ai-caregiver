@@ -1,0 +1,84 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "release": {
+    "commit": "11b8fe2f38bbbc00ded9251b4858fa2d046c0c1f",
+    "receipt": "r44673288123-1"
+  },
+  "material": {
+    "title": "「童」你在家工作，點先做得安樂？",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30144.pdf",
+    "pages": 1
+  },
+  "priorCheckpoint": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "utc": "2026-11-20T04:32:14.263287+00:00",
+  "phase": "original_approved_pdf_published",
+  "before": {
+    "sourceId": "pdf-a036f537a86308ec16eb7d21",
+    "operationFingerprint": "7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4",
+    "ageOutput": "source-unit-age/1",
+    "maxOutputTokens": 8192,
+    "status": "budget_exhausted",
+    "code": "knowledge_embedding_daily_admission",
+    "published": false
+  },
+  "after": {
+    "id": "pdf-a036f537a86308ec16eb7d21",
+    "operationFingerprint": "7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4",
+    "approved": "approve_candidate",
+    "prepared": true,
+    "versionHash": "b7a4f123fba8723557f8040650f497f9ca7fc0ae3553edc2123a7e4d7933f45c",
+    "result": "published",
+    "modelCalls": 2,
+    "receipt": "committed",
+    "active": "70db2201-c4bc-5f3a-a011-81fabcad6f66"
+  },
+  "newEmbeddingReceipts": [
+    {
+      "id": "89143667-b69e-430b-a167-5901d25c9437",
+      "kind": "embedding",
+      "sourceId": "pdf-a036f537a86308ec16eb7d21",
+      "ceiling": 308,
+      "state": "settled",
+      "at": "2026-11-20T04:32:02.790Z",
+      "inputTokens": 544,
+      "outputTokens": 0,
+      "cost": 82
+    }
+  ],
+  "scope": {
+    "balance": {
+      "campaign": "fhs-child-initial-20261120",
+      "limit": 30000000,
+      "model": "gemini-3.8-flash",
+      "location": "global",
+      "held": 3207168,
+      "spent": 5509277,
+      "attempts": 401,
+      "settled": 399
+    },
+    "daily": {
+      "day": "2026-11-20",
+      "policyVersion": 3,
+      "maintenanceAttempts": 201,
+      "maintenanceLimit": 300,
+      "globalAttempts": 201,
+      "globalLimit": 400,
+      "grant": {
+        "campaign": "fhs-child-initial-20261120",
+        "day": "2026-11-20",
+        "policyVersion": 3,
+        "attempts": 300
+      }
+    }
+  },
+  "balance": {
+    "campaign": "fhs-child-initial-20261120",
+    "limit": 30000000,
+    "model": "gemini-3.8-flash",
+    "location": "global",
+    "held": 3207168,
+    "spent": 5509277,
+    "attempts": 401,
+    "settled": 399
+  }
+}
