@@ -4,13 +4,13 @@ import { randomUUID } from 'node:crypto';
 import { readAiConfig } from '../server/ai-config.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER } from '../server/firestore-ai-usage.ts';
-import { createKnowledgeCampaignBudget, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
+import { createKnowledgeCampaignBudget, campaign, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
 import { createKnowledgeSourceFetcher, fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
-import { openFhsCampaignPdfReads } from './fhs-pdf-reads.ts';
+import { matchesFhsPdfObservation, openFhsCampaignPdfReads, resolveFhsPdfObservation } from './fhs-pdf-reads.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
 import { platformMaterials, campaignMaterialWatches } from '../server/platform-materials.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
@@ -22,6 +22,7 @@ import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
+import { publicationAssignments } from './fhs-publication-lanes.mjs';
 
 const [command, id, expected, ...extra] = process.argv.slice(2);
 const recovering = command === 'recover';
@@ -36,6 +37,12 @@ const explicitAgeScope = command === 'process-age-checked' || command === 'resum
   || draftRevision?.action === 'review_pdf_region' || draftRevision?.action === 'retain_pdf_transcription';
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
 const handlesSource = recovering || resuming || repairing || firstPass || inspecting;
+const lane = process.env.FHS_CAMPAIGN_LANE;
+const originalPin = process.env.FHS_CAMPAIGN_ORIGINAL_OPERATION;
+const assigned = handlesSource && !inspecting ? [...publicationAssignments()].find(([, rows]) => rows.some(row => row.sourceId === id)) : undefined;
+const laneSource = assigned?.[1].find(row => row.sourceId === id);
+if (assigned && (!lane || lane !== assigned[0]) || lane && (!assigned || !['resume-approved', 'publish-approved'].includes(process.argv[2])
+  || !/^[a-f0-9]{64}$/u.test(originalPin ?? '')) || originalPin && !lane) throw Error('fhs_lane_source_owned');
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
   || (resuming || repairing || recoveryCommand ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
@@ -88,10 +95,15 @@ try {
         || await knowledge.publishedEdition(unknown.sourceId)) throw Error('knowledge_campaign_retained_work_mismatch');
     }
     const credentials = campaignCredentials;
-    if (firstPass) await refresh.register(id, 'fhs-initial-20261120', true);
+    if (firstPass && !lane) await refresh.register(id, 'fhs-initial-20261120', true);
     const [job] = await refresh.jobs(id);
     if (!job) throw Error('knowledge_campaign_watch_unavailable');
     const original = knowledgeReviewHash([credentials, id, job.data.revision, job.data.workerGeneration]);
+    if (lane) {
+      const bound = (await database.collection(config.namespace + '_knowledge_campaigns').doc(campaign).collection('publicationBindings').doc(id).get()).data();
+      if (original !== originalPin || bound?.operationFingerprint !== original || bound.sourceId !== id || bound.lane !== lane
+        || bound.sha256 !== laneSource.sha256 || bound.pages !== laneSource.pages) throw Error('fhs_lane_operation_changed');
+    }
     if (expected && original !== (draftRevision?.priorOperationFingerprint ?? expected)) throw Error('knowledge_campaign_resume_binding_changed');
     const originalRequest = { watchId: id, operationFingerprint: original, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
     const prior = repairing || resuming || recoveryCommand ? await work.inspect({ ...originalRequest, operationFingerprint: draftRevision?.operationFingerprint ?? original }) : null;
@@ -103,7 +115,8 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const operationFingerprint = draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
-    const checkId = knowledgeOperationId('knowledge-observation/1', original);
+    const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
+    const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', original);
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
@@ -151,9 +164,10 @@ try {
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
         if ((repairing || recovering) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
-        if (resuming || repairing || recovering) {
-          const snapshot = await refresh.resumeCheck(job.data, checkId);
+        if (resuming || repairing || recovering || lane) {
+          const snapshot = laneObservation ? laneObservation.snapshot : await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
+          if (laneSource && !matchesFhsPdfObservation(laneSource, snapshot)) throw Error('fhs_lane_original_check_changed');
           if (recovering && (snapshot.items.length !== 1 || snapshot.items[0].url !== recovery.url
             || observationHash(snapshot.items[0]) !== draftRevision.observationHash))
             throw Error('knowledge_campaign_original_observation_changed');

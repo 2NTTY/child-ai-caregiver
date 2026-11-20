@@ -55,6 +55,8 @@ scripts/**
 !scripts/fhs-publication-receipt.mjs
 !scripts/fhs-initial-campaign.mjs
 !scripts/fhs-catalog-batch.mjs
+!scripts/fhs-publication-lanes.mjs
+!scripts/fhs-lane-operations.mjs
 !scripts/fhs-pdf-reads.ts
 !scripts/fhs-recovery-plan.mjs
 !artifacts/

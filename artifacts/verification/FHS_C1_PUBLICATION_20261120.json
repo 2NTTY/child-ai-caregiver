@@ -1,0 +1,231 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "lane": "C1",
+  "manifestCommit": "ff43e917",
+  "sourceCount": 28,
+  "physicalPages": 468,
+  "originalBytesChecked": 175382778,
+  "initialWorker": "98eea8be3614314043d43751b668885dbe3c779f",
+  "initialReadAt": "2026-11-20T13:01:03.329Z",
+  "initialState": {
+    "registrations": 0,
+    "providerAttempts": 0,
+    "activeEditions": 0,
+    "balanceMicros": {
+      "campaign": "fhs-child-initial-20261120",
+      "limit": 30000000,
+      "model": "gemini-3.8-flash",
+      "location": "global",
+      "attempts": 500,
+      "held": 8110080,
+      "settled": 495,
+      "spent": 6959583
+    }
+  },
+  "productionPreparation": {
+    "readbackFinishedAt": "2026-11-20T13:05:23+00:00",
+    "entry": "fhs-catalog-batch.mjs --lane C1 prepare; a separate status process read back the same Firestore bindings on the deployed worker using a preparation-only copy of the CLI.",
+    "preparedOriginals": 28,
+    "providerAttempts": 0,
+    "modelCalls": 0,
+    "published": 0
+  },
+  "entries": [
+    {
+      "sourceId": "pdf-63e7d5463521682636a066e5",
+      "pages": 192,
+      "operationFingerprint": "125245f585eeaf703109aea65cabee42c92edee169617a7c2e4aaa647a58de41",
+      "checkId": "6209ad5d-c344-53f7-825b-45bc1f391197",
+      "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5"
+    },
+    {
+      "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+      "pages": 40,
+      "operationFingerprint": "462e96ea0cec8394e8340b6dc14fc3b03340032c39c2918dd3331b08b04c30c0",
+      "checkId": "c0d2d86d-681b-559f-8fa7-75ef9af1cb0e",
+      "observationHash": "d4a5d326d80c188a7eb7369dcd5535fa2c895031996e223d1545dab4ed0d7b1d"
+    },
+    {
+      "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+      "pages": 32,
+      "operationFingerprint": "76486aa5e7fd64948af67258dd5334e073f4d6429241324fefa3363e73aa8115",
+      "checkId": "cc7bd2ff-85c3-5a60-81a1-d8d70eab870c",
+      "observationHash": "82d782d2fb532cd856e40a7552589f8b56a1d144a970e0c4dc18daf31f81c1ce"
+    },
+    {
+      "sourceId": "pdf-c212ef9814e180c2794a4aa1",
+      "pages": 20,
+      "operationFingerprint": "5f59adadf66d26eb6a3283817b96ba1c8ebfbfe0fd2830189b2cf8cd5c19ce81",
+      "checkId": "86cabefc-adb1-50da-8b61-8059f607517f",
+      "observationHash": "f5a7fc000559f140470985e70312dc66619b686f8aec277a432c64783b204bf5"
+    },
+    {
+      "sourceId": "resource-af8c3e8cc813be",
+      "pages": 18,
+      "operationFingerprint": "17d6080c2c028426e39ec34d0fbb870038cf5aa04a15c67e03748430ca36a283",
+      "checkId": "82630547-3532-59da-82d9-879e476c2dac",
+      "observationHash": "7fbad46ab556d5661e3168414a178f0efb14233099ba74c0a8f198558c394de7"
+    },
+    {
+      "sourceId": "pdf-422bb3fc181398ac29e0f914",
+      "pages": 12,
+      "operationFingerprint": "3c4ae9c1b387b60d8f3900c52e3545d53978788eafca041836e9e85997553eb5",
+      "checkId": "9585dcfe-9d63-5bfa-82b4-c32455bddc76",
+      "observationHash": "c15324cb97b41c382f42b79e14ff1f7bf704e1fe9d8934f31dd6d95b6fcd42c3"
+    },
+    {
+      "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
+      "pages": 12,
+      "operationFingerprint": "418c9b9d5619b24aa4236267367869b9582b860a05d7dfb5aa88cd69856c152b",
+      "checkId": "49a5b6f3-54c5-54f4-8582-267287db45ea",
+      "observationHash": "c430c7a3ee1e1e828bfe8be586caba01425ac121385fd485a888b34a2bf67511"
+    },
+    {
+      "sourceId": "pdf-0964fd47800bc6931d69b130",
+      "pages": 8,
+      "operationFingerprint": "9a7e4c642dd823c94558d4d832d9794bc1daa6267544ea56e7c11e840bad99aa",
+      "checkId": "57993517-1329-5028-8fd4-c3969ad524a2",
+      "observationHash": "d68e6a57580b0619fc9d668ece53d11b4094adefd419785999900c19ab62b39c"
+    },
+    {
+      "sourceId": "pdf-10198577dd00f5dbce4da010",
+      "pages": 8,
+      "operationFingerprint": "bbb9310997e19c3357dc918f67293d3335c2c74e62658989f370a24392e7bc35",
+      "checkId": "23f922c3-73d9-54ec-80fb-69f6d7edd1d6",
+      "observationHash": "92dbfbd34e4a05a6d266982d9603ccc9ca7342ce0d04684766ab4283ad947035"
+    },
+    {
+      "sourceId": "pdf-26a1e80e0727a8e30c63f634",
+      "pages": 8,
+      "operationFingerprint": "34565798b7ab49b43da84544429376f9c72c74c7ea7279fe31814b1fbfaf84fe",
+      "checkId": "7621260e-f1f3-51ce-8677-2757f92cee06",
+      "observationHash": "eaf1161f837a2ddc6a47aea39a74977fb39bb34f51d9a767ec55be59601ad001"
+    },
+    {
+      "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
+      "pages": 8,
+      "operationFingerprint": "a2e1b949097f0f2e9a5e929be57421dbeac4257cc4f962f57515244ad388977d",
+      "checkId": "64de9107-c4d1-59ae-8909-6c4bc22a240d",
+      "observationHash": "bea590f15181b7b310dc28c055a3b3f5e7127a13dd7166a640c6ad05907df88c"
+    },
+    {
+      "sourceId": "pdf-6488540e32c5e926ecee6787",
+      "pages": 8,
+      "operationFingerprint": "75f3200c6ebd4640314f209f521f0c54153d0432f2f06bc24afcd63d1ee266d1",
+      "checkId": "3e795afb-f5d8-5c1d-8c2c-3451554d4f5c",
+      "observationHash": "52e668ad0b62454e4ccc09f87775ecd384ba7382bfcc3e5a7425bcd7ca73e3b3"
+    },
+    {
+      "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
+      "pages": 8,
+      "operationFingerprint": "39532e5673ffd316bafa172df6d580f0263ce36cd0015dea37987cc78a7d07b6",
+      "checkId": "e86b1fec-63b1-5df1-8090-e6006da346c6",
+      "observationHash": "436d40eeb50aa694f0dddea8122687b154ad98ec51928d318f357d655c6cef25"
+    },
+    {
+      "sourceId": "pdf-811789c9be36ae025ee7e2a2",
+      "pages": 8,
+      "operationFingerprint": "9130fd3b92bdccb2b68be48ff3598b35e475d024d7d2d105431a7793265a64af",
+      "checkId": "8630e1ff-cc77-53c3-8b02-aa69bb5403b6",
+      "observationHash": "8a442357648d890a34c198488c06943b1bbf8e19c716ac3e6f128434214906f3"
+    },
+    {
+      "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
+      "pages": 8,
+      "operationFingerprint": "3630b57e08ce66bf6200ee59f7d230f3c9fbd8f7ed1ad6dc47454f0d89e9a2a3",
+      "checkId": "194656b3-5886-5be4-88a6-e6f0c11473a2",
+      "observationHash": "2683bea63d6a62409e2bcad45c42a3419e1a001cc1687137643fa0775ea4a5e2"
+    },
+    {
+      "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
+      "pages": 8,
+      "operationFingerprint": "cfb14d5b603b74654aea6c30a81da256216d2facd745f0bc3038c703ac0b7e28",
+      "checkId": "b8c7312f-bde8-5bce-84e5-01d965ead194",
+      "observationHash": "fa1322c7775878a560ed3dca993b0877080819d4d893e8bc088015259b939f00"
+    },
+    {
+      "sourceId": "pdf-b23cd70ace657d574bfaa15b",
+      "pages": 8,
+      "operationFingerprint": "d7141aaaf4abddfac863f2a4c886aa1a9f0e2e54ddb3f86375e16791dc8e3eba",
+      "checkId": "f656d8b9-190d-5dbd-8393-71b41f2b9432",
+      "observationHash": "14017f2dbde204930256ff3ce6733d4dca91968d8e9acfb8d58a89876469eb62"
+    },
+    {
+      "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
+      "pages": 8,
+      "operationFingerprint": "33a6fb0ebfc5a0c1882ad87b2da8995fe8523260255fb7b41439beb1c6d32637",
+      "checkId": "c507c8bd-eb46-5979-8a84-ecd5fa594dba",
+      "observationHash": "2f2bd0ca60a9adcf82ceb401dc1be6d7cb746f24fb9bde0c8bd8c386fa82f469"
+    },
+    {
+      "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
+      "pages": 8,
+      "operationFingerprint": "0dc6d4567ab35b58a4d4ad29f8f164551d655e3f9b4047e99d4ec98093b02076",
+      "checkId": "b8f47f86-e451-54dd-8617-cc4c0601de64",
+      "observationHash": "53ece6de285ec40a1a38be84a4db87dfa9d5f1d5cef79615d25d5c1a87c2d311"
+    },
+    {
+      "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
+      "pages": 8,
+      "operationFingerprint": "5334debd416c6d6d066db47096f7c8a2084fd4c4cb020c15a3c77e5eb0aa5ad6",
+      "checkId": "e50c9ac4-7fde-50af-873b-9c140f6802e7",
+      "observationHash": "0d3bf14bd340f6d235c3c3f349fb50e0535caffb9b07499e564befb0ccbbc492"
+    },
+    {
+      "sourceId": "pdf-3428e3d13ed575680a0fa8a5",
+      "pages": 6,
+      "operationFingerprint": "72f840a8b57daf95b623b3c19e9cb85de734078b320000b40ae701f80f2c5ce0",
+      "checkId": "3fd54345-0895-5c45-8fd7-2ea438247d9a",
+      "observationHash": "411a5668dec5e6a7f4a25192ccaf6450cc76fe09d598d374302239f865539d5e"
+    },
+    {
+      "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
+      "pages": 6,
+      "operationFingerprint": "b8dda26c53fb4bc6a8555fac802b61f2528d78bf033abfa077d05ac6ede899b4",
+      "checkId": "879e7925-2f01-5c25-8109-3db9c0e647dc",
+      "observationHash": "3f1ccbf3c7cacce9c6953feb213d85c5bb35346c59d79d804b42ece9c04de51f"
+    },
+    {
+      "sourceId": "pdf-a195a3e5ac7644036bdaf073",
+      "pages": 6,
+      "operationFingerprint": "4a589c653a28270ec74b2f10caca72f5b264b5dba3f626fe9e2421944a3e5688",
+      "checkId": "cebd745b-94ef-504d-8535-86c2608c03c1",
+      "observationHash": "88e5a8eee36051db8866381149f6961def5e35badeea76d9f55e13787160c7c3"
+    },
+    {
+      "sourceId": "pdf-01991cbeb3f85382c992d63a",
+      "pages": 4,
+      "operationFingerprint": "9f1a9b29f79fbb73def547c0bf390032a2af4162d598a40b8418ac7ddf86297b",
+      "checkId": "5c74b518-330a-5dfc-8ff9-e3d76cd649e8",
+      "observationHash": "fb5a16781f44cbf6a8c5b1ce61e11975e728025ded1408477cc147afb41554bd"
+    },
+    {
+      "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
+      "pages": 4,
+      "operationFingerprint": "5b5d81259f3c261d9b0e8dd3fd70e3c2e31ed2f22b70ba39f88129d45f83c826",
+      "checkId": "03d6b64f-ec02-5e96-8f0a-774b73281b0b",
+      "observationHash": "6a9b62c245af4d2cd50c06d7198d04f66af2791f1dd09209c961005378b8504f"
+    },
+    {
+      "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
+      "pages": 4,
+      "operationFingerprint": "2fa43b0ee0cc84db58ff905821d3e5f61c770cba3ee0ea3320a017482df3064c",
+      "checkId": "1f956e73-94c2-55f8-87ca-8495ae96cc03",
+      "observationHash": "82e6896c7533a7bbfab057405a579e4c89de02449e4376dc47c21fcb3d309d2b"
+    },
+    {
+      "sourceId": "pdf-d6050975ffe38c8275c7c121",
+      "pages": 4,
+      "operationFingerprint": "eea3cb4a3d1dc0580064cd2996b7413659c8c89fa3c9103e9dfa5dbd821c65f9",
+      "checkId": "1b531f1c-2ebd-5af8-8c23-26080ec43c08",
+      "observationHash": "839146069ee10fce29c6ce70e585e09b92ecabe1ea1021a9c55bae0a7a38aaf7"
+    },
+    {
+      "sourceId": "pdf-f43b59147093cacef5308dcd",
+      "pages": 4,
+      "operationFingerprint": "d08b74ab2b1f78006ca9a8ecb04c87e948e14313a86a5a7d2f6bddeabf15c8c5",
+      "checkId": "755caba4-585a-5fd2-8e94-92c023b8a886",
+      "observationHash": "b8b81653e8976872be7a8ce0ffef16d6c812e2b732f6a2aac2552cd2db130126"
+    }
+  ]
+}

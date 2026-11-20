@@ -173,6 +173,7 @@ test('global discovery uses actual published chunk keys and profile resolution n
   const sources = createProactiveEventSources({ ...options, sourceIds: ['synthetic-source'], care: { async readProfile() { return profile; } },
     knowledge: { async publishedEdition() {
       editions++; return { versionId: current.versionId, versionHash: current.versionHash, observationHash: null, enabled: true, current: true,
+        chunkIdentities: [{ key: current.key, chunkId: current.chunkId, contentHash: current.contentHash }],
         source: { sourceId: current.sourceId, url: current.url, title: current.title, publisher: current.publisher, classification: current.classification,
           sourcePublishedAt: current.sourcePublishedAt, validUntil: current.validUntil, sourceUpdatedAt: null, fetchedAt: at, termsUrl: definition.termsUrl,
           chunks: [{ key: current.key, section: current.section, sourceExcerpt: current.sourceExcerpt, text: current.text,

@@ -15,7 +15,7 @@ type PdfPin = {sourceId: string; url: string; sha256: string; pages: number};
 type Observations = Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'resumeCheck'>;
 type Snapshot = Awaited<ReturnType<Observations['resumeCheck']>>;
 
-function matchesFhsPdfObservation(source: PdfPin, snapshot: Snapshot) {
+export function matchesFhsPdfObservation(source: PdfPin, snapshot: Snapshot) {
   if (snapshot?.status !== 'ok' || snapshot.items.length !== 1) return false;
   const [item] = snapshot.items;
   return item?.url === source.url && item.extraction?.format === 'text_pdf'

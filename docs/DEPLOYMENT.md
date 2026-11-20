@@ -138,6 +138,32 @@ node --input-type=module -e 'import {openFhsPdfReads} from "./scripts/fhs-pdf-re
 
 如需重建，從倉庫根目錄執行 `node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT`。`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對分工清單、每份原件、實頁範圍和分窗附件，並輸出新目錄及索引指紋。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
 
+<a id="fhs-publication-lanes"></a>
+### 受命製卡的分組執行
+
+三位主責在同一個正式 worker 的 `/app` 執行以下命令，把 `C1` 換成自己的組別。可在最後加一個本組 `SOURCE_ID`。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
+
+```sh
+node scripts/fhs-catalog-batch.mjs --lane C1 status
+node scripts/fhs-catalog-batch.mjs --lane C1 prepare
+node scripts/fhs-catalog-batch.mjs --lane C1 run
+```
+
+`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留；已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，既有五張結果未明的票據繼續足額預留。自動維護的每日次數適用於排程及自動查新。
+
+先確認正式發布收據已包含分組 CLI、受命製卡准入及共享預留。原 C 在交接時接回原有的待審教材，並停妥舊映像的續跑程序。新目錄命令會略過全部 84 份已分組教材。以下 VM 命令使用首批已驗的 PDF 讀本，SSH 離線後仍會執行；換組時一併替換命令和日誌內的組名。
+
+```sh
+sudo docker exec -d -w /app \
+  -e FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15 \
+  -e FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978 \
+  yuban-p1-worker-1 sh -c 'umask 077; exec node scripts/fhs-catalog-batch.mjs --lane C1 run >>/var/tmp/yuban-knowledge/fhs-C1.ndjson 2>&1'
+```
+
+重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
+
+逐份驗收用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可將該工作指紋加作第三個參數；原操作仍是第二個參數。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。

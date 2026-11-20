@@ -889,6 +889,7 @@ test("Proactive public event discovery maps active recalls to kind='recall' and 
           versionId: current.versionId,
           versionHash: current.versionHash,
           observationHash: null,
+          chunkIdentities: [{ key: current.key, chunkId: current.chunkId, contentHash: current.contentHash }],
           enabled: true,
           current: status === "active",
           source: {
