@@ -162,6 +162,17 @@
     "publishedByThisPreparation": 0,
     "next": "The sole campaign owner uses the existing lock, gross ledger and original continuation. Reconcile by sourceId and original hash after each actual run. A local attachment check is not a publication receipt."
   },
+  "localWorkerImage": {
+    "target": "firebase-server",
+    "source": "3e0490febf17efe9639cd74a8943018685a4f2a1 with the .dockerignore and Dockerfile reader inclusion",
+    "baseImage": "node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+    "linuxImageConfig": "sha256:9e748ecad2a11f7e3d70a54ffb482aa68d4b71da0639888a660b1ceff4924016",
+    "docker": "29.4.0",
+    "cliSmoke": "Fresh read-only container, UID 1000, network disabled and no host mounts. The actual campaign CLI reached its argument validation and the packaged parser binding matched the prepared index.",
+    "nativeRead": "A second network-disabled container with only the private opening read pack and the official sample mounted read-only returned pages 14-29 of the 36-page comic.",
+    "windowBytes": 1581548,
+    "windowSha256": "607591a8d0d795c6920e48d43273c29671daf66197d7543e5def1dad1640772a"
+  },
   "openingArchive": {
     "name": "fhs-pdf-opening.tar.gz",
     "records": 329,
