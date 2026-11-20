@@ -1,0 +1,67 @@
+{
+  "group": {
+    "id": "incoming-mobile-file-draft-or-package-validation",
+    "title": "手機分享檔案後，只加入聊天草稿，還是上載作資料包？",
+    "index": "external-comparison",
+    "readerNote": "同一份手機分享檔案待本人選擇：只加入私人聊天草稿，不上載、不送出；明選資料包才上載驗證，仍未匯入，也沒有選定接收對象。不根據副檔名自動決定或上載。若舊匯入結果未明，先打開原操作查核，不重送；保留這次新分享，不覆寫或吃掉它。A 先看檔案，B 先選去向；兩款只是整頁設計參考，不是 Android 真機驗收。",
+    "choices": [
+      {
+        "name": "先看收到的檔案｜草稿與上載驗證分開",
+        "note": "先看同一份分享檔，再選「只加到私人草稿，未送出」或「現在上載驗證，稍後再選接收位置」。舊匯入另開，不會用掉本次檔案。Adobe 官方整頁圖示範在同一份 PDF 旁分列邀請與傳送副本，並提示上載；它是外送面的版型類比，不是育伴港的收件、草稿或資料包流程。",
+        "source": "https://helpx-prod.scene7.com/is/image/HelpxProd/Share-document-link-screen-in-Acrobat-on-Android-s?fmt=png",
+        "sourceNotes": [
+          {
+            "label": "Adobe Android 官方整頁圖：同一 PDF 下分列邀請與傳副本，並提示雲端上載",
+            "url": "https://helpx-prod.scene7.com/is/image/HelpxProd/Share-document-link-screen-in-Acrobat-on-Android-s?fmt=png"
+          },
+          {
+            "label": "Adobe 官方使用說明：Android 的連結分享與傳送副本",
+            "url": "https://helpx.adobe.com/acrobat/mobile/share-files/share-for-review.html"
+          },
+          {
+            "label": "育伴港：收到檔案只加入草稿",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/incoming-share-target.ts#L4-L32"
+          },
+          {
+            "label": "育伴港：由本人選擇聊天或資料包",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/screens/shareScreen.tsx#L22-L68"
+          }
+        ],
+        "version": "Adobe Acrobat Android 新版介面的第一方說明圖；文章更新於 2026-11-10，截圖 build 未標。",
+        "rights": "Adobe 官方說明圖含第三方平台圖示；未核實此用途獲准重刊，只連原圖。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "先選去向｜只加聊天草稿，或上載資料包驗證",
+        "note": "先決定要問助手還是準備匯入，再核對同一份檔。草稿只加入、未送出；資料包明按後才上載驗證，接收對象仍未選。ENVY 原圖借用的是「效果選項在上、細節在下、按鈕寫明要做甚麼」，不是手機分享原圖；Tomis 指南另有實際收檔分流。",
+        "source": "https://envydesign.jp/new/wp-content/themes/envydesign/assets/img/DIO-004-import-duplicates-design-figmaf-pc.webp?v=1794635720",
+        "sourceNotes": [
+          {
+            "label": "ENVY DESIGN 作者整頁示例 6：先選處理目的，再看影響、明確執行",
+            "url": "https://envydesign.jp/patterns/en/import-duplicates/#design-6"
+          },
+          {
+            "label": "Tomis 官方文字指南：手機分享後選目前聊天草稿或專案（非截圖）",
+            "url": "https://tomis.app/docs/#share-extension"
+          },
+          {
+            "label": "育伴港：明選資料包才上載驗證",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/scripts/incoming-share-package.test.cjs#L115-L137"
+          },
+          {
+            "label": "育伴港：先查舊匯入時保留新分享",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/scripts/incoming-share-package.test.cjs#L146-L188"
+          }
+        ],
+        "version": "ENVY DESIGN UI PATTERNS DIO-004 示例 6，Yuta Okano，2026-11-18，設計樣本。Tomis 指南 2026.11.19.1，非 App 組建或真機收據。",
+        "rights": "ENVY DESIGN 原圖有署名並回鏈的重刊條件；商業使用需另詢。此處只外連。Tomis 官方指南也只外連。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "da83e0be1c043d101a60c4cca701364d6281690e0d3dc5dcceba6ada51ec9af8"
+}
