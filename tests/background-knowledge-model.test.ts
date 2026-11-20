@@ -1,13 +1,18 @@
 import { matchesFhsLayout } from "./helpers/knowledge-pdf-layout-sample.ts";
 import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
+import { createStorageCipher } from "../server/storage-crypto.ts";
+import { EmbeddingAdmissionDeferred } from "../server/embedding-failure.ts";
+import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import test from "node:test";
 import { createModelKnowledgeReviewPort, includePriorRetrieval, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
-import { knowledgeHash, sourceVersionHash } from "../server/knowledge-inputs.ts";
+import { knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
+import { reviseRetainedDraft } from '../server/knowledge-retained-draft.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
 const fetchedAt = "2026-10-20T00:00:00.000Z";
@@ -112,6 +117,26 @@ test("the initial corpus age grammar couples bounds and holds one-sided evidence
   assert.throws(() => pdf.parse({ ranges: { [page.key]: { section: 'Section', keywords: ['care'], region: 'HK', topics: ['care'],
     conditions: [], pageText: {physicalPage1: 'Text'}, ageRange: {requiresAgeReview: 'uncertain'} } },
     nativeCoverage: {pages: [{page: 1, finding: 'Text'}], unreadablePages: [], layoutAnswer: null} }), {code:'knowledge_age_uncertain'});
+});
+
+test("same-day admission reopens the identical sealed candidate only when capacity is available", async () => {
+  const source = candidate(), generation = randomUUID(), fingerprint = knowledgeHash('synthetic-original-operation');
+  const work = createFirestoreKnowledgeWork({ database: firestoreDomainFixture().database, namespace: 'synthetic',
+    projectId: 'demo-maintenance', cipher: createStorageCipher(Buffer.alloc(32, 1)), readControl: async () => ({ enabled: true, generation }) });
+  const request = { watchId: source.watchId, operationFingerprint: fingerprint, workerGeneration: generation, publishMode: 'live' as const };
+  const config = knowledgeHash('original-config'), limits = { modelCalls: 2, deadlineMs: 60000, publicationConfigHash: config };
+  const token = randomUUID(), session = await work.bind(request, token, config, limits);
+  await session.ports.claimOperation(fingerprint, token, Date.now() + 60000);
+  const prepared = await prepareKnowledgeMaintenance({ candidate: source, baseline: null, fetchedAt, growthRules: [], completeText: provider([]) });
+  await session.savePrepared(source, prepared);
+  await session.waitForQuota();
+  const waiting = await work.inspect(request);
+  await assert.rejects(work.bind(request, randomUUID(), config, limits, undefined, async () => false), EmbeddingAdmissionDeferred);
+  assert.deepEqual(await work.inspect(request), waiting);
+  const resumedToken = randomUUID(), resumed = await work.bind(request, resumedToken, config, limits, undefined, async () => true);
+  await resumed.ports.claimOperation(fingerprint, resumedToken, Date.now() + 60000);
+  assert.deepEqual(await resumed.readPrepared(source), prepared);
+  assert.equal((await work.inspect(request))?.waitingForQuotaDay, undefined);
 });
 
 test("retained page proposals reuse the original request, preserve conditions and require a fresh reviewer decision", async () => {
@@ -278,6 +303,34 @@ test("retained PDF region corrections preserve the original reading and send the
   revision.regionEdits[0]!.range = 'fromPage2Through2Unit1';
   await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText }), /pdf_region_changed/u);
   assert.equal(reviews, 1);
+});
+
+test("retained official PDF endpoints survive storage while the original organizer and family query keep their registered limits", () => {
+  const units = [{id: 'u1', page: 1, pageEnd: 1}];
+  const original = pdfOrganizationContract(units);
+  const key = original.ranges[0]!.key;
+  const ageRange = {basis: 'actual' as const, minMonths: 0 as const, maxMonths: 216 as const, exclusiveEnd: true};
+  const raw = { ranges: { [key]: { section: 'Child protection', keywords: ['care'], region: '香港', topics: ['care'],
+    conditions: ['People under 18'], ageRange, pageText: {physicalPage1: 'Children are people under 18.'} } },
+    nativeCoverage: {pages: [{page: 1, finding: 'Age definition'}], unreadablePages: [], layoutAnswer: null} };
+  const revision = { action: 'review_pdf_source_age' as const, sourceId: 'fixture', sha256: 'a'.repeat(64),
+    operationFingerprint: 'b'.repeat(64), observationHash: 'c'.repeat(64), organizerRequestHash: 'd'.repeat(64),
+    reason: 'Check the original upper bound.', sections: ['Page 1'], sourceRanges: {[key]: ageRange},
+    regionEdits: [{range: key, from: '香港' as const, to: 'HK' as const}] };
+  const proposed = reviseRetainedDraft(raw, revision, []);
+  assert.throws(() => original.parse(proposed));
+  const parsed = pdfOrganizationContract(units, [], [], undefined, false, true).parse(proposed).units[0]!.applicability;
+  const watch = candidate().definition;
+  const document = {sourceId: watch.id, url: watch.url, title: 'Fixture', publisher: watch.publisher, termsUrl: watch.termsUrl,
+    classification: 'official_guidance', sourcePublishedAt: null, sourceUpdatedAt: null, fetchedAt,
+    chunks: [{key:'fixture', section:'Page one', sourceExcerpt:'Children under 18', text:'People under 18', keywords:['care'], applicability:parsed}]};
+  assert.equal(parseKnowledgeSource(document).chunks[0]!.applicability.maxAgeMonths, 216);
+  assert.throws(() => parseKnowledgeSource({...document, classification:'recent_information'}), /Only official guidance/);
+  assert.equal(parsed.maxAgeMonthsExclusive, true);
+  const query = {region: 'HK', topics: [], age: {basis: 'actual', minMonths: 120, maxMonths: 120}};
+  assert.equal(parseKnowledgeFilter(query).age?.maxMonths, 120);
+  assert.throws(() => parseKnowledgeFilter({...query, age: {...query.age, maxMonths: 121}}));
+  assert.throws(() => reviseRetainedDraft(raw, {...revision, sourceRanges: {[key]: {...ageRange, exclusiveEnd: false}}}, []), /pdf_age_changed/);
 });
 
 test("grouped PDF sections require one keyed summary for each physical page in its range", () => {

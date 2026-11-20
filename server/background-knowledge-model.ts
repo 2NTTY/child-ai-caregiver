@@ -13,7 +13,7 @@ import {
 import type { BackgroundKnowledgeCandidate, KnowledgeSemanticReviewPort } from "./background-knowledge-maintenance.ts";
 import { backgroundKnowledgePdfCoverageIssue } from "./background-knowledge-maintenance.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
-import { knowledgeChunkInputSchema, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import {
   knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment,
@@ -27,7 +27,7 @@ const organizedSchema = z.strictObject({
   units: z.array(z.strictObject({
     unitId: z.string().regex(/^p[0-9]+-[a-f0-9]{20}$/u),
     section: fields.section, text: fields.text,
-    keywords: fields.keywords, applicability: fields.applicability,
+    keywords: fields.keywords, applicability: originalOrganizerApplicability,
   })).min(1).max(32),
 });
 const explicitAgeOrganization = organizedSchema.extend({
@@ -200,8 +200,9 @@ export async function prepareKnowledgeMaintenance(input: {
 }): Promise<PreparedKnowledgeMaintenance> {
   const { candidate, baseline, signal } = input;
   const retained = input.retainedDraft;
-  if (retained && (baseline || (retained.revision.action === 'review_pdf_region'
-    ? candidate.definition.kind !== 'pdf' || candidate.observed.extraction?.contentHash !== retained.revision.sha256 || !input.explicitAgeScope
+  if (retained && (baseline || (retained.revision.action !== 'review_age_draft'
+    ? candidate.definition.kind !== 'pdf' || candidate.observed.extraction?.contentHash !== retained.revision.sha256
+      || Boolean(input.explicitAgeScope) !== (retained.revision.action === 'review_pdf_region')
     : candidate.definition.kind !== 'page' || input.explicitAgeScope)
     || candidate.watchId !== retained.revision.sourceId || candidate.observationHash !== retained.revision.observationHash))
     reject('knowledge_retained_page_binding');
@@ -314,7 +315,8 @@ export async function prepareKnowledgeMaintenance(input: {
     ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(output, { io: "input" }) }),
   }, pdfContract ? pdfContract.schema : nativeResponseSchema(output)) : null;
-  const parsedDraft = organized && pdfContract ? pdfContract.parse(organized.value) : null;
+  const pdfParser = retained?.revision.action === 'review_pdf_source_age' ? pdfOrganizationContract(units, [], [], undefined, false, true) : pdfContract;
+  const parsedDraft = organized && pdfParser ? pdfParser.parse(organized.value) : null;
   const organizedCoverage = parsedDraft ? coverage(parsedDraft.nativeCoverage) : amendments ? coverage(priorReading!.organize) : null;
   if (sample && input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"organize",organizedCoverage!.layoutFacts!))
     reject("knowledge_native_visual_sample_mismatch");
@@ -397,6 +399,7 @@ export async function prepareKnowledgeMaintenance(input: {
     ...(input.explicitAgeScope || retained ? { ageScopeCheck: independentAgeCheck } : {}),
     ...(retained?.revision.action === 'review_age_draft' ? { editorialAgeProposal: { change: 'Only the numeric bounds were cleared in the listed units. Check the full original audience, exceptions and conditions. Hold if this broadens the intended audience.', reason: retained.revision.reason, originalScopes: retained.revision.units } } : {}),
     ...(retained?.revision.action === 'review_pdf_region' ? { editorialRegionProposal: { edits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),
+    ...(retained?.revision.action === 'review_pdf_source_age' ? { officialAgeRanges: { ranges: retained.revision.sourceRanges, regionEdits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),
     binding, comparisonUnits, growthRuleBindings,
     ...(held ? { revisionFeedback: held.feedback } : {}),
     ...(amendments ? { proposedAmendments: amendments } : {}),

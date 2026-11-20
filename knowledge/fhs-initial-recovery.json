@@ -113,9 +113,15 @@
       "priorOperationFingerprint": "af335003a82cba9be2d6ae5d3a1a3ac6233027ecd0ab4e2d89b59d7c1f1db4a3",
       "action": "retain_incomplete",
       "sections": [
-        "第一章 母乳餵哺開展生命歷程",
-        "第六章 哺乳期間的營養",
-        "第八章 母乳餵哺診症室"
+        "0–826｜給準爸媽的信及目錄",
+        "827–2664｜第一章 母乳餵哺開展生命歷程",
+        "2665–5036｜第二章 母乳餵哺好開始",
+        "5037–9148｜第三章 母乳餵哺好時光",
+        "9149–12753｜第四章 母乳餵哺實戰攻略",
+        "12754–14584｜第五章 齊來學擠奶",
+        "14585–16359｜第六章 哺乳期間的營養",
+        "16360–17194｜第七章 媽媽的疑惑",
+        "17195–21735｜第八章 母乳餵哺診症室及支援資料"
       ],
       "reason": "原整理及其一次修復均在輸出上限截斷，沒有完整候選可交審。須按同版八章分段整理，核齊各章孕婦、哺乳母親及嬰兒對象後，再作獨立審核。"
     },
@@ -751,7 +757,7 @@
         "你的初生寶寶安全嗎？／初生寶寶家居環境自評",
         "理想的情況"
       ],
-      "reason": "須保留初生寶寶的家居安全自評、跳題及不適用選項。將題目逐題與答案表配對後再獨立審核。",
+      "reason": "原整理只回報單邊月齡。原件是一份給初生寶寶的 24 題自評，未列整份適用的月齡上限。沒有同牀睡要跳到第 6 題，每題另有不適用選項。須保留新生階段和答題條件，依題序連回理想答案後再獨立審核。",
       "observationHash": "da587782b7ea5cd855161931ac8f9d440e88861e580d4bc20f3e8065136653ed",
       "validation": [
         "knowledge_age_one_sided"
@@ -771,7 +777,7 @@
         "丙.不宜接種的人士",
         "丁.接種的副作用"
       ],
-      "reason": "分開新生嬰兒與十五歲以下、居港且從未接種的兒童。丙段的近期活疫苗、免疫抑制治療、免疫缺乏、癌病、嚴重皮膚病及母親孕期生物製劑治療等條件須逐項保留，包括專科評估是否延遲。現行月齡欄最大 120，無法忠實表示十五歲以下全組。",
+      "reason": "原整理只回報單邊月齡，沒有準備好可用的適用條件。乙段分列出生後的新生嬰兒及十五歲以下、居港且從未接種的兒童。丙段另列近期活疫苗、免疫抑制治療、免疫缺乏、癌病、嚴重皮膚病及母親孕期生物製劑治療，包括專科評估是否延遲。須分別保留兩組及其例外，再交獨立審核。",
       "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
       "validation": [
         "knowledge_age_one_sided"
@@ -861,8 +867,12 @@
       "sha256": "49f7926f9595666a9a300d0ad09517d44389d654abe226fcb185ad6e750649ea",
       "pages": 1,
       "operationFingerprint": "7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4",
-      "code": "knowledge_embedding_daily_admission",
-      "action": "resume_prepared",
+      "code": "published",
+      "action": "already_published",
+      "checkpointCode": "knowledge_embedding_daily_admission",
+      "activeVersionId": "70db2201-c4bc-5f3a-a011-81fabcad6f66",
+      "publicationReceipt": "committed",
+      "publishedAtReadback": "2026-11-20T04:32:14.263287Z",
       "versionHash": "b7a4f123fba8723557f8040650f497f9ca7fc0ae3553edc2123a7e4d7933f45c",
       "ageOutput": "source-unit-age/1",
       "maxOutputTokens": 8192
@@ -877,18 +887,33 @@
       "code": "knowledge_review_failed",
       "observationHash": "e62e782f958eb72b0d43131cdb984309432f9208dbd6cb14d0e5ea34e8cb6eca",
       "priorOperationFingerprint": "4b2d77191f63fc7c2f5e0b56f279b37ecae1cf708415416e73cced5da5c08de3",
-      "action": "scope_unresolved",
+      "action": "review_pdf_source_age",
       "sections": [
         "2–10｜男孩頭圍、體重、身長／身高、BMI",
         "12–20｜女孩相應圖表",
         "9、19｜2 至 5 歲 BMI；10、20｜5 至 18 歲 BMI"
       ],
-      "reason": "已保存的兩個男女圖表組上限均為 216 個月，現行來源欄位最多 120 個月。要保留原圖的 18 歲端點並逐圖核對性別、量度單位、年齡區間和曲線標示，再交獨立審核。",
+      "reason": "原圖冊涵蓋由出生至十八歲。保留兩組原來的 0–216 個月端點，逐張比對男女、量度單位、百分位數及每張實際年齡範圍；圖表不授權改動成長規則。",
       "validation": [
         "ranges.fromPage1Through11Unit1.ageRange.maxMonths/too_big",
         "ranges.fromPage12Through20Unit2.ageRange.maxMonths/too_big"
       ],
-      "organizerRequestHash": "7ffc47d9f4f762037ed010df4e9b7f516116da0deb6c08aa8b670508b4812144"
+      "organizerRequestHash": "7ffc47d9f4f762037ed010df4e9b7f516116da0deb6c08aa8b670508b4812144",
+      "sourceRanges": {
+        "fromPage1Through11Unit1": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": false
+        },
+        "fromPage12Through20Unit2": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": false
+        }
+      },
+      "regionEdits": []
     },
     {
       "sourceId": "resource-6c18c8d7a17495",
@@ -900,12 +925,12 @@
       "code": "knowledge_review_failed",
       "observationHash": "4a64e53682e87d00c77c98d02f097279dbbb2ec6b0a5d7a947f55c189c985231",
       "priorOperationFingerprint": "281ee8c2103e167081524f29b5e8ff8588243d28db96a4173cb2db6a725eb490",
-      "action": "scope_unresolved",
+      "action": "review_pdf_source_age",
       "sections": [
         "1｜中文左欄「何謂虐待兒童」、中欄行為類別及右欄協助",
         "2｜英文相應段落"
       ],
-      "reason": "已保存的五組上限均為 216 個月且不包括端點，現行來源欄位最多 120 個月；中文兩組另有地域格式錯誤。須保留十八歲以下的原定義，並從中文原圖和英文對頁核回照顧者責任及支援途徑，再交獨立審核。",
+      "reason": "原圖定義兒童為十八歲以下，五個單元均保留 216 個月的排除端點。兩個中文單元只修訂香港地區代碼。須對照中文原圖及英文對頁核實定義、照顧者責任和求助資料。",
       "validation": [
         "ranges.fromPage1Through1Unit1.region/invalid_format",
         "ranges.fromPage1Through1Unit1.ageRange.maxMonths/too_big",
@@ -915,7 +940,51 @@
         "ranges.fromPage2Through2Unit4.ageRange.maxMonths/too_big",
         "ranges.fromPage2Through2Unit5.ageRange.maxMonths/too_big"
       ],
-      "organizerRequestHash": "747c46da64b599cdef6d3c6240f33650ce5d6a556e01f90de53ded1deefe6d8a"
+      "organizerRequestHash": "747c46da64b599cdef6d3c6240f33650ce5d6a556e01f90de53ded1deefe6d8a",
+      "sourceRanges": {
+        "fromPage1Through1Unit1": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage1Through1Unit2": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit3": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit4": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit5": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        }
+      },
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        },
+        {
+          "range": "fromPage1Through1Unit2",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
     }
   ]
 }

@@ -2,7 +2,9 @@ import { openFirebasePersistence } from '../server/firebase-persistence.ts';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { readAiConfig } from '../server/ai-config.ts';
-import { createKnowledgeCampaignBudget, campaignModel, retainedCampaignReceipts } from '../server/knowledge-campaign-budget.ts';
+import { createFirestoreAdmin } from '../server/firestore-admin.ts';
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER } from '../server/firestore-ai-usage.ts';
+import { createKnowledgeCampaignBudget, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
@@ -24,17 +26,16 @@ const [command, id, expected, ...extra] = process.argv.slice(2);
 const recovering = command === 'recover';
 const recovery = recovering && id && campaignRecoveryPlan(id).entries[0];
 if (recovering && (!recovery?.campaignArgs || recovery.operationFingerprint !== expected)) throw Error('knowledge_campaign_recovery_ineligible');
-const draftRevision = recovering && recovery.action !== 'resume_prepared' ? retainedDraftRevisionSchema.parse(recovery) : undefined;
-const preparedRecovery = recovery?.action === 'resume_prepared';
-const resuming = command === 'resume';
+const draftRevision = recovering ? retainedDraftRevisionSchema.parse(recovery) : undefined;
+const resuming = command === 'resume' || command === 'resume-age-checked';
 const repairing = command === 'repair-truncated';
-const explicitAgeScope = command === 'process-age-checked' || preparedRecovery || draftRevision?.action === 'review_pdf_region';
+const explicitAgeScope = command === 'process-age-checked' || command === 'resume-age-checked' || draftRevision?.action === 'review_pdf_region';
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
 const handlesSource = recovering || resuming || repairing || firstPass || command === 'inspect';
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
   || (resuming || repairing || recovering ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
-  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|repair-truncated|recover SOURCE_ID ORIGINAL_FINGERPRINT');
+  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|resume-age-checked|repair-truncated|recover SOURCE_ID ORIGINAL_FINGERPRINT');
 const persistence = await openFirebasePersistence(process.env);
 try {
   const { database, cipher, config, authority } = persistence;
@@ -44,6 +45,21 @@ try {
     ? new URL('../artifacts/verification/FHS_INITIAL_RETAINED_UNKNOWN_20261120.json', import.meta.url) : undefined);
   const retained = retainedFile ? retainedCampaignReceipts.parse(JSON.parse(readFileSync(retainedFile, 'utf8'))).retained : [];
   const gate = createKnowledgeCampaignBudget(database, config.namespace, retained);
+  const selected = selectCampaignDayAdmission(process.env.FHS_CAMPAIGN_DAY_ADMISSION);
+  const admission = selected?.day === new Date().toISOString().slice(0, 10) ? selected : undefined;
+  const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
+  let daily;
+  if (command === 'status') {
+    const day = new Date().toISOString().slice(0, 10);
+    const policy = await createFirestoreAdmin(domain, readAiConfig(process.env)).readPolicy();
+    const usage = new FirestoreAiUsage({ ...domain, namespace: config.namespace + '_ai_usage', billingSource: 'platform' });
+    const owner = await usage.getForUser(KNOWLEDGE_MAINTENANCE_PAYER, undefined, day);
+    const global = await usage.getGlobal(day);
+    const currentGrant = admission?.day === day ? admission : null;
+    if (currentGrant && currentGrant.policyVersion !== policy.version) throw Error('knowledge_campaign_policy_changed');
+    daily = { day, policyVersion: policy.version, maintenanceAttempts: owner.attempts, maintenanceLimit: currentGrant?.attempts ?? policy.dailyUserAttempts,
+      globalAttempts: global.attempts, globalLimit: policy.dailyGlobalAttempts, grant: currentGrant };
+  }
   if (command === 'initialize') await gate.initialize();
   if (handlesSource) {
     const ledger = await gate.status();
@@ -53,7 +69,6 @@ try {
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
     const definition = campaignMaterialWatches.find(w => w.id === id);
     if (!definition) throw Error('knowledge_campaign_source_not_approved');
-    const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
     const readControl = tx => authority.readControl(tx);
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
       originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
@@ -66,7 +81,7 @@ try {
       if (held?.result?.status !== 'candidate_held' || !held.result.observationHash || held.lease || held.prepared || held.receipt
         || await knowledge.publishedEdition(unknown.sourceId)) throw Error('knowledge_campaign_retained_work_mismatch');
     }
-    const credentials = knowledgeReviewHash(['platform', 'fhs-initial-20261120', campaignModel, 'global', 'gemini-embedding-001', 'us-central1']);
+    const credentials = campaignCredentials;
     if (firstPass) await refresh.register(id, 'fhs-initial-20261120', true);
     const [job] = await refresh.jobs(id);
     if (!job) throw Error('knowledge_campaign_watch_unavailable');
@@ -77,10 +92,6 @@ try {
     if (draftRevision && (prior?.result?.status !== 'candidate_held' || prior.result.code !== recovery.code
       || prior.result.observationHash !== draftRevision.observationHash || prior.prepared || prior.receipt || prior.lease))
       throw Error('knowledge_campaign_recovery_parent_changed');
-    if (preparedRecovery && (prior?.prepared?.versionHash !== recovery.versionHash || prior.prepared.review.decision !== 'approve_candidate'
-      || prior.prepared.source.extraction?.contentHash !== recovery.sha256 || recovery.ageOutput !== AGE_OUTPUT_VERSION
-      || (!prior.result && (!prior.waitingForQuotaDay || prior.quotaPhase === 'model'))))
-      throw Error('knowledge_campaign_prepared_binding_changed');
     if (resuming && !prior) throw Error('knowledge_campaign_resume_binding_changed');
     if (repairing && (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit'
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
@@ -90,7 +101,6 @@ try {
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
-    if (preparedRecovery && maxOutputTokens !== recovery.maxOutputTokens) throw Error('knowledge_campaign_prepared_binding_changed');
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
     const reserve = async (kind, limit) => {
       try { return await gate.reserve(kind, id, limit); }
@@ -99,14 +109,15 @@ try {
         throw error;
       }
     };
+    // The one-day grant applies only to the registered original operation.
+    const runAdmission = explicitAgeScope && !draftRevision ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
-      explicitAgeScope, retainedDraft: draftRevision,
+      explicitAgeScope, retainedDraft: draftRevision, campaignAdmission: runAdmission,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchKnowledgeSource, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
         const native = createVertexAgentProvider(cfg), vectors = createVertexEmbeddingProvider({ ...cfg, location: 'us-central1' });
         return { agent: { ...native, async generate(request, signal) {
-          if (preparedRecovery) throw Error('knowledge_campaign_prepared_generation_forbidden');
           const settle = await reserve('generation', cfg.maxOutputTokens);
           const response = await native.generate(request, signal);
           const input = response.usageMetadata?.promptTokenCount, total = response.usageMetadata?.totalTokenCount;
@@ -136,7 +147,7 @@ try {
           const snapshot = await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
           if (recovering && (snapshot.items.length !== 1 || snapshot.items[0].url !== recovery.url
-            || observationHash(snapshot.items[0]) !== (draftRevision?.observationHash ?? prior.prepared.review.observationHash)))
+            || observationHash(snapshot.items[0]) !== draftRevision.observationHash))
             throw Error('knowledge_campaign_original_observation_changed');
         } else {
           const check = await refresh.process(job.data, checkId, fetchKnowledgeSource, signal);
@@ -169,13 +180,14 @@ try {
           if (edition.versionHash !== active.versionHash || edition.source.url !== recovery.url) throw Error('knowledge_campaign_recovery_card_mismatch');
           listedCard = { seriesId: card.seriesId, versionId: card.versionId, chunks: edition.source.chunks.length, vectors: edition.embeddings.length };
         }
-        readback = { recoveryOf: recovery.operationFingerprint, receiptState: recorded?.receipt?.state ?? null, listedCard,
+        readback = { ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint } : {}),
+          receiptState: recorded?.receipt?.state ?? null, listedCard,
           candidateVersionHash: recorded?.prepared?.versionHash ?? null, activeVersionId: active?.versionId ?? null,
           activeVersionHash: active?.versionHash ?? null, observationHash: recorded?.result?.observationHash ?? recorded?.prepared?.review.observationHash ?? null,
           reviewDecision: recorded?.prepared?.review.decision ?? null, reviewNotes: recorded?.prepared?.review.notes ?? [] };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
-        ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), maxOutputTokens,
+        ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), ...(runAdmission ? { campaignDayAdmission: runAdmission } : {}), maxOutputTokens,
         status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {
         process.exitCode = 2;
@@ -194,5 +206,5 @@ try {
       }
     }
   }
-  console.log(JSON.stringify({ balance: await gate.status() }));
+  console.log(JSON.stringify({ balance: await gate.status(), ...(daily ? { daily } : {}) }));
 } finally { await persistence.close(); }

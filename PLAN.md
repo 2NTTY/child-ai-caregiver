@@ -69,16 +69,29 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 148 份相異 PDF、1,799 頁，5 項未能取得。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
 
+#### 兒童健康首批交付分工
+
+各線從 [11 月 20 日 09:00 的逐份收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)認領工作，依 `sourceId` 和原件版本追蹤至正式結果。工作範圍採用這份快照，後來由原批次完成的教材直接認領原收據。
+
+| 主責 | 計劃與結案證據 |
+|---|---|
+| C · 卡庫發行 | 接續已通過審核、待向量處理的 PDF。統籌唯一正式批次、費用預留和家長可下載的卡庫，最後按教材對回各線結果及總支出。 |
+| C1 · 維護額度與排程 | 11 月 20 日 11:51 香港，正式維護身份為 200／200，全站 200／400。主線批准僅本首批及本 UTC 帳日使用最多 300 次維護額度。原批次鎖按[續作手冊](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)接回待向量 PDF。結案須核原指紋、已審版本及同一毛額帳本的正式收據。 |
+| C2 · 24 份待審教材 | 從原件及已保存的審核工作修復可恢復項目，沿正式管線送審、發布及查回。逐份交付卡片版本，或具體的保留理由及原操作。兩宗用量未知的 504 繼續保留費用，待原票據對帳。 |
+| C3 · 116 份 PDF | 負責這批 1,471 頁由原頁閱讀至家長可用的知識卡。復用已有原件與分窗，沿同一管線完成多模態閱讀、獨立審核、向量及發布。以可點回原頁的正式卡片驗收，逐份交代尚欠的結果。 |
+
+各線自行完成程式、修正及必要驗收。主對話負責跨線決定與最終覆核。所有付費操作沿用同一活動、原收據及 US$30 總額。
+
 共同驗收只串一條流程：家長下載一張已審核卡，在待辦頁點角色提問，開助手頁讀到同一原問題及回答，發起討論，再由引用打開當時的官方原件。每線實作、定向驗收、正式交付、仍待本人操作分開記錄。
 
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
 <a id="fhs-initial-recovery"></a>
-**首批 09:00 的 24 份待審教材。** 從 `c5334be9` 的[逐源快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)接手。原 C 先完成已審待向量的 PDF，再由同一持鎖序列逐份處置可恢復教材。兩宗 504 保留原票據。用 `node scripts/fhs-recovery-plan.mjs [SOURCE_ID]` 離線讀取[恢復清單](knowledge/fhs-initial-recovery.json)。有 `campaignArgs` 的項目可由原 C 在其原環境把整個參數陣列交給 `scripts/fhs-initial-campaign.mjs`。每個來源只沿一個固定操作接續。已刊登的截斷修復在清單內標作完成。
+**首批 09:00 的 24 份待審教材。** 從 `c5334be9` 的[逐源快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)接手。另計的待向量 PDF 已由原 C 在香港 12:32 沿原工作發布，版本為 `70db2201-c4bc-5f3a-a011-81fabcad6f66`。兩宗 504 保留原票據。用 `node scripts/fhs-recovery-plan.mjs [SOURCE_ID]` 離線讀取[恢復清單](knowledge/fhs-initial-recovery.json)。有 `campaignArgs` 的項目可由持鎖者在原環境把整個參數陣列交給 `scripts/fhs-initial-campaign.mjs`。每個來源只沿一個固定操作接續。已刊登的截斷修復在清單內標作完成。
 
 先完成原件及收據綁定，再逐份修復、獨立審核、發布及讀回。正式交付須為這 24 個來源各留生效版及刊登收據，或保留原操作、原因及仍需處理的證據。原 C 的 US$30 總帳、執行次序及維護配額由原責任線統籌。
 
-目前八份網頁及兩份 PDF 已用正式保存的整理輸出重建送審內容。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；需要換日時用同一恢復命令接續，已完成操作會查回原結果。每份刊登須讀回生效版本、原觀測及已提交收據。另十二份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
+八份網頁及四份 PDF 已以正式保存的整理輸出重建送審內容。生長圖表及保護兒童單張保留原來的十八歲端點及包含／排除語義，須在正式 API 與 worker 均支援該來源範圍後刊登。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；遇每日限額用同一命令接續。每份刊登須按原網址查回家長卡、可匯出版本、原觀測及已提交收據。另十份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶

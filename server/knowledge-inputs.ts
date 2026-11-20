@@ -12,7 +12,7 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 const region = z.string().regex(/^[A-Z]{2}$/);
 const date = z.iso.datetime({ offset: true });
 const topicList = z.array(id).max(12).refine(values => new Set(values).size === values.length);
-const applicability = z.strictObject({
+export const originalOrganizerApplicability = z.strictObject({
   region, ageBasis: z.enum(["actual", "corrected", "any"]),
   minAgeMonths: z.number().min(0).max(120).nullable(), maxAgeMonths: z.number().min(0).max(120).nullable(),
   maxAgeMonthsExclusive: z.boolean().optional(),
@@ -23,6 +23,9 @@ const applicability = z.strictObject({
     ctx.addIssue({ code: "custom", message: "Invalid age applicability" });
   }
 });
+// An official source can extend beyond the families' 0–10 query range, e.g. a 0–18 growth chart.
+// Keep the historical organizer grammar stable so its sealed requests can be resumed.
+const applicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable() });
 const publicSourceUrl = z.url().refine(value => {
   const url = new URL(value);
   return url.protocol === "https:" && !url.username && !url.password && !url.port
@@ -61,6 +64,9 @@ const sourceSchema = z.strictObject({
   if (value.series && value.series.institutionId !== new URL(value.url).hostname)
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
+    if ((chunk.applicability.maxAgeMonths ?? 0) > 120 && value.classification !== 'official_guidance') {
+      ctx.addIssue({ code: 'custom', message: 'Only official guidance may retain an upper age beyond the family query range' });
+    }
     if (chunk.treatment?.kind === 'structured' && chunk.treatment.fields.some(field => !(chunk.originalText ?? chunk.sourceExcerpt).includes(field.value)))
       ctx.addIssue({ code: 'custom', message: 'Structured values require exact source text' });
     if (chunk.mediaClip) {

@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { knowledgeTruncatedOutputRepairId } from '../server/firestore-knowledge-work.ts';
+import { matchesRegisteredRetainedDraft, retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 
 test('the held recovery queue dispatches only bound checkpoint drafts and stops on a daily deferral', () => {
   const root = new URL('../', import.meta.url);
@@ -10,13 +11,19 @@ test('the held recovery queue dispatches only bound checkpoint drafts and stops 
   const printed = spawnSync(process.execPath, ['scripts/fhs-recovery-plan.mjs'], {cwd: root, encoding: 'utf8'});
   assert.equal(printed.status, 0);
   const plan = JSON.parse(printed.stdout);
-  const expected = plan.entries.filter((r: {action: string}) => ['review_age_draft', 'review_pdf_region'].includes(r.action));
+  const expected = plan.entries.filter((r: {action: string}) => ['review_age_draft', 'review_pdf_region', 'review_pdf_source_age'].includes(r.action));
   for (const item of expected) {
     const original = checkpoint.entries.find((r: {sourceId: string}) => r.sourceId === item.sourceId);
     assert.equal(original.outcome, 'candidate_held');
     assert.equal(original.operationFingerprint, item.operationFingerprint);
     if (item.priorOperationFingerprint) assert.equal(knowledgeTruncatedOutputRepairId(item.priorOperationFingerprint), item.operationFingerprint);
     assert.deepEqual(item.campaignArgs, ['recover', item.sourceId, original.operationFingerprint]);
+    const revision = retainedDraftRevisionSchema.parse(item), registered = original.history[0].operationFingerprint;
+    const work = retainedDraftWorkId(original.operationFingerprint);
+    assert.ok(matchesRegisteredRetainedDraft(revision, registered, work));
+    assert.equal(matchesRegisteredRetainedDraft(revision, registered, original.operationFingerprint), false);
+    assert.equal(matchesRegisteredRetainedDraft({...revision, observationHash: '0'.repeat(64)}, registered, work), false);
+    assert.equal(matchesRegisteredRetainedDraft({...revision, sourceId: 'fhs-14851'}, registered, work), false);
   }
   function queue(status: number) {
     // Replace the child launcher before loading the batch. No campaign child or provider is started.

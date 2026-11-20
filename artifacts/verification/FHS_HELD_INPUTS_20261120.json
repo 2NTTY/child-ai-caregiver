@@ -2,10 +2,10 @@
   "campaign": "fhs-child-initial-20261120",
   "checkpoint": "2026-11-20T01:00:52.589Z",
   "readCompletedAt": "2026-11-20T03:57:25.197Z",
-  "reviewInputVerificationCompletedAt": "2026-11-20T04:14:22.042Z",
+  "reviewInputVerificationCompletedAt": "2026-11-20T04:25:41.469Z",
   "scope": "Public corpus production readback; local assembly of the independent reviewer request from the original sealed organizer responses. No reviewer or embedding dispatch in this verification.",
   "node": "24.22.3",
-  "reviewInputsVerified": 10,
+  "reviewInputsVerified": 12,
   "entries": [
     {
       "sourceId": "fhs-30034",
@@ -257,7 +257,9 @@
       "code": "knowledge_review_failed",
       "activeVersionId": null,
       "publicationReceipt": null,
-      "action": "scope_unresolved"
+      "action": "review_pdf_source_age",
+      "rebuiltReviewInput": "knowledge-review:716c5ec4fcd9a38e37efba1b2ff911f69d4babd5be32b8ad3d00a636b41bc738",
+      "chunks": 2
     },
     {
       "sourceId": "resource-6c18c8d7a17495",
@@ -267,7 +269,9 @@
       "code": "knowledge_review_failed",
       "activeVersionId": null,
       "publicationReceipt": null,
-      "action": "scope_unresolved"
+      "action": "review_pdf_source_age",
+      "rebuiltReviewInput": "knowledge-review:dee6422ef65d6c8ad7a039306536ba2231140732a30917de5db4e016162a1386",
+      "chunks": 5
     }
   ]
 }
