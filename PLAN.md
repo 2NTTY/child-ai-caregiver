@@ -1844,3 +1844,43 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 8. **無工具 schema 降級契約與 trace 白名單／compaction（§8 #8）：** *原生支援與白名單有分支收據；降級提示及組合追蹤待驗* — PR 4 確定 `responseJsonSchema`／`outputSchema`＋`provider_native_schema_unsupported` 顯式降級、`sanitizeAgentTraceEvent` 與 `formatOtelMetadataSpan` 嚴格白名單、`AGENT_CONTEXT_ASSEMBLY_POLICY_VERSION = "context-assembly/1"`，同 run compaction 沿 REQ-005 `context-compactor.ts`；正式生產 exporter 接線須維持同一白名單過濾器。
 
 - **本包明確不展開項目：** 不更換 ADK／既有 Agent 框架、不建置通用多代理排程平台、不執行全量壓力測試、不擅自切換付費模型或提升配額、不繞過引用或獨立審核、不展示模型內部思考或轉錄，且不將真實家庭資料用於測試外發。
+
+
+---
+
+<a id="req008-closeout01"></a>
+### REQ-008 全包專責產物預覽整合與離線驗收收束
+
+以現行主線契約（主聊天工具循環、`assembleTurnBackground`、`discoverDailyNeeds`、`evaluateHighRiskPolicyMatrix`、`createAgentRuntime`、加密 Firestore domain 儲存、`pdfjs-dist` 隔離 worker）為基礎，補齊繁體中文字型子集內嵌（`server/assets/fonts/LXGWWenKaiTC-Regular.ttf` via `fontkit` ＋ `zlib.deflateSync`）、離線 `createSharpVisualArtifactVerifier()` 光柵像素與邊界檢查、`document_compose`／`prepare_family_artifact` 條件式能力暴露、受保護的 `agent_specialist_drafts` 加密草稿暫存、`GET /api/children/:childId/agent/runs/:runId/artifacts/:artifactId` CSP `sandbox` 即時重核預覽端點（版本或權限變動回 `409 document_changed`，`formalSave: false`／`published: false`），以及前端 `AgentRunView` 草稿預覽卡，並完成 REQ-008 §9（`R008-S01`..`R008-S18`）與 §10（`R008-D01`..`R008-D06`）之全包離線合成閉環驗收。
+
+#### 1. 離線驗收矩陣（§9 全部 18 項情境 `R008-S01`..`R008-S18`）
+
+| 編號 | 需求文件 §9 情境 | 實作／測試驗證位置 | 離線實測狀態 |
+|---|---|---|---|
+| **R008-S01** | 單純寒暄／純澄清 | `tests/req008-acceptance-closeout.test.ts` Test 1 ＋ `tests/req008-highrisk-policy-and-cleanup.test.ts` ＋ `tests/chat-delivery-review.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S02** | 首輪個人化問題與已知必要背景 | `tests/req008-acceptance-closeout.test.ts` Test 2 ＋ `tests/req008-context-and-blindspot-discovery.test.ts` ＋ `tests/req008-context-scope.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S03** | 切孩子／模式／撤權及外部指令 | `tests/req008-acceptance-closeout.test.ts` Test 2 ＋ `tests/req008-context-and-blindspot-discovery.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S04** | 未開討論但有相關需要／盲點 | `tests/req008-acceptance-closeout.test.ts` Test 3 ＋ `tests/req008-context-and-blindspot-discovery.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S05** | 無相關盲點、已關閉或已處理事項 | `tests/req008-acceptance-closeout.test.ts` Test 3 ＋ `tests/req008-context-and-blindspot-discovery.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S06** | 只聊／臨時模式的需要發現 | `tests/req008-acceptance-closeout.test.ts` Test 3 ＋ `tests/req008-context-scope.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S07** | 普通搜索與簡單既有操作 | `tests/req008-acceptance-closeout.test.ts` Test 1 ＋ `tests/product-agent-execution-contract.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S08** | 原樣可信收據與模型自寫「已完成」 | `tests/req008-acceptance-closeout.test.ts` Test 4 ＋ `tests/agent-document-receipts.test.ts` ＋ `tests/chat-delivery-review.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S09** | 缺引用、改標普通文字、問句包裝或「小修改」 | `tests/req008-acceptance-closeout.test.ts` Test 4 ＋ `tests/req008-highrisk-policy-and-cleanup.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S10** | 引用錯配、來源撤回或條件不適用 | `tests/req008-acceptance-closeout.test.ts` Test 5 ＋ `tests/agent-document-source-quote.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S11** | 來源正確但正文新增未支持結論 | `tests/req008-acceptance-closeout.test.ts` Test 5 ＋ `tests/chat-delivery-review.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S12** | 不需 review 與中途新增 review 義務 | `tests/req008-acceptance-closeout.test.ts` Test 6 ＋ `tests/agent-review-obligation.test.ts` ＋ `tests/agent-budget.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S13** | 複雜文件／頁面多步製作 | `tests/req008-acceptance-closeout.test.ts` Test 7 ＋ `tests/req008-specialist-artifact-renderer.test.ts` Case 11 ＋ `tests/data-compose.test.ts` | **離線合成＋Firestore 記憶體夾具已驗證** |
+| **R008-S14** | 純文字 review 通過但產物有溢出／缺字／失效按鈕 | `tests/req008-acceptance-closeout.test.ts` Test 7–8 ＋ `tests/req008-specialist-artifact-renderer.test.ts` Cases 3–5, 7, 9, 11 | **離線 Sharp 光柵＋worker＋TSX 已驗證 \| 實體 Chromium/PDFium 目視待驗** |
+| **R008-S15** | 生成完成但未獲保存／公開發布授權 | `tests/req008-acceptance-closeout.test.ts` Test 7–8 ＋ `server/product-agent-api.ts` (`x-specialist-formal-save: false`, `formalSave: false`) | **離線合成與權限邊界已驗證** |
+| **R008-S16** | 委派上下文與惡意附件／工具結果 | `tests/req008-acceptance-closeout.test.ts` Test 2, 9 ＋ `tests/agent-document-confirmation.test.ts` ＋ `tests/family-document-workflows.test.ts` | **主線＋離線合成已驗證** |
+| **R008-S17** | 子代理重試、並行、取消、版本衝突及後段失敗 | `tests/req008-acceptance-closeout.test.ts` Test 8–9 ＋ `tests/agent-budget.test.ts` ＋ `tests/req008-specialist-artifact-renderer.test.ts` Cases 5–6, 8 | **離線合成已驗證** |
+| **R008-S18** | 家長未開聊天、公共維護冪等、版本競爭與私人隔離 | `tests/req008-acceptance-closeout.test.ts` Test 10 ＋ `tests/handover-document-export.test.ts` | **離線合成已驗證 \| 線上雲端排程待部署驗收** |
+
+#### 2. §10 決策定案與剩餘閘門（`R008-D01`..`R008-D06`）
+
+1. **R008-D01 主循環與預設短路徑：** 維持單一 `ProductAgent` 工具循環；純寒暄、純澄清與 `serverSubstitutedReceiptText` 免除冗餘 reviewer 呼叫，不引入額外每輪路由／分類模型（`tests/req008-acceptance-closeout.test.ts` Test 1, 4, 11）。
+2. **R008-D02 條件式高風險義務：** 由 `evaluateHighRiskPolicyMatrix` 與 `createChatDeliveryReviewObligation` 動態計算審核義務及同 root 餘額預留，高風險斷言／缺來源失敗時 fail-closed（Test 4–6, 11）。
+3. **R008-D03 按需選擇上下文與盲點發現：** `assembleTurnBackground` 按本題與當前孩子載入必要摘要與確認事實，臨時模式空白化；`discoverDailyNeeds` 於急症抑制日常提醒，且 `canMutateTasksOrMemory === false`（Test 2–3）。
+4. **R008-D04 專責產物與真實光柵驗證：** `prepare_family_artifact` 僅在 `stageSpecialistDraft` 就緒時暴露於 `document_compose`，PDF 內嵌 subsetted `LXGWWenKaiTC-Regular.ttf`（`/FontFile2` ＋ `/CIDToGIDMap /Identity`），以 `createSharpVisualArtifactVerifier()` 與隔離 `pdfjs-dist` worker 雙重檢驗（上限 2 輪修復），不自動正式保存或發布；預覽由 `GET /api/children/:childId/agent/runs/:runId/artifacts/:artifactId`（CSP `sandbox`＋版本重核 `409 document_changed`）提供（Test 7–9, 11）。
+5. **R008-D05 開源參考與架構邊界：** 維持現有 ADK／runtime／Firestore domain 加密契約，不引入外部 DeepSeek Runtime 依賴，亦不建立通用多代理排程平台（Test 11）。
+6. **R008-D06 誠實剩餘閘門（尚未於本離線 PR 執行）：** 含真實 Gemini `--live` 延遲／成本與多步行為基準、無頭瀏覽器與真實 PDFium 目視截圖驗收、REQ-003 模式分支持續合併、線上背景知識排程執行，以及 iOS／Android 真機顯示與輔助閱讀驗證。

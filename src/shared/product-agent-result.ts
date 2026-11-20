@@ -7,6 +7,7 @@ import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
 import { liveSourceCitationSchema } from './live-source-citation.ts';
 import { chunkTreatmentSchema, sourceSeriesSchema } from './source-series.ts';
 import { timelyEventLifecycleSchema } from './knowledge-timely.ts';
+import { specialistArtifactSummarySchema } from './specialist-artifact.ts';
 
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u);
 const timestamp = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -57,8 +58,9 @@ export const productAgentResultSchema = z.object({
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: count, toolCalls: count, queryEmbeddings: count }),
   proposals: z.array(agentSavedProposalSchema),
+  specialistArtifacts: z.array(specialistArtifactSummarySchema).max(6).optional(),
   deliveryReview: chatDeliveryReviewBindingSchema.optional(),
 }).refine(value => !value.discussion?.length || value.status === 'completed' && !value.outcome && value.deliveryReview?.decision === 'pass',
   'Visible discussion requires a reviewed, completed answer')
   .refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
-  && value.citations.length === 0 && !value.liveCitations?.length && !value.privateSourceCitations?.length && !value.sourceCardReadings?.length && value.proposals.length === 0, 'No-action cannot carry user content');
+  && value.citations.length === 0 && !value.liveCitations?.length && !value.privateSourceCitations?.length && !value.sourceCardReadings?.length && value.proposals.length === 0 && !value.specialistArtifacts?.length, 'No-action cannot carry user content');

@@ -42,6 +42,9 @@ import { createAgentActionReadTools, createAgentActionTools, type AgentActionRea
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
+import { createSpecialistArtifactTools } from "./specialist-artifact-agent.ts";
+import { createSharpVisualArtifactVerifier } from "./specialist-artifact-renderer.ts";
+import type { SpecialistArtifactSummary } from "../src/shared/specialist-artifact.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
@@ -1180,12 +1183,58 @@ export function createProductAgentTools(options: {
         return run.embeddings.embed(request, { kind: 'query_embedding', actorId: scope.userId, operationId: runId },
           budget.signal, permitted, attemptKey ? budget.queryEmbeddingDailyUsage(attemptKey) : undefined);
       }));
+  const stagedSpecialistDrafts: SpecialistArtifactSummary[] = [];
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,trackedStore,run,permitted));
     tools.splice(tools.length-1,0,...createDataComposeTools({
       documents: options.documents, agent: trackedStore, run, authorize: permitted,
       trustedUserMessage: options.trustedUserMessage ?? "",
     }));
+    if (typeof trackedStore.stageSpecialistDraft === "function") {
+      tools.splice(tools.length-1,0,...createSpecialistArtifactTools({
+        documents: options.documents,
+        run,
+        authorize: permitted,
+        trustedUserMessage: options.trustedUserMessage ?? "",
+        visualRenderer: createSharpVisualArtifactVerifier(),
+        stageDraft: async ({ artifactId, result: artifactResult, bytes, input }) => {
+          const doc = artifactResult.artifact;
+          if (!doc || !artifactResult.verification) throw new FamilyError(409, "specialist_draft_unavailable");
+          const safeStem = doc.title.replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 48) || "family-draft";
+          const summary: SpecialistArtifactSummary = {
+            artifactId,
+            runId,
+            documentId: doc.documentId,
+            expectedVersion: doc.expectedVersion,
+            authorityVersion: doc.authorityVersion,
+            artifactVersion: doc.artifactVersion,
+            artifactHash: doc.artifactHash,
+            format: doc.format,
+            mimeType: doc.mimeType,
+            fileName: `${safeStem}-${artifactId.slice(0, 8)}.${doc.format === "pdf" ? "pdf" : "html"}`,
+            title: doc.title,
+            byteLength: doc.byteLength,
+            pageCount: doc.pageCount,
+            status: artifactResult.status as "verified" | "partial",
+            stopReason: artifactResult.stopReason,
+            repairIterations: artifactResult.repairIterations,
+            verification: artifactResult.verification,
+            formalSave: false,
+            published: false,
+            requiresFormalConfirmation: true,
+            contentState: "ready",
+          };
+          const persisted = await trackedStore.stageSpecialistDraft!(scope, runId, {
+            artifactId,
+            summary,
+            bytes,
+            sourceQuote: input.sourceQuote,
+          });
+          stagedSpecialistDrafts.push(persisted);
+          return persisted;
+        },
+      }));
+    }
   }
   if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,trackedStore,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{
@@ -1352,6 +1401,7 @@ export function createProductAgentTools(options: {
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
+    specialistArtifacts: () => stagedSpecialistDrafts,
     async presentation(): Promise<AgentPresentation | null> {
       serverReceiptText = null;
       if (!answer) return null;

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { projectDocumentExport } from "../src/shared/document-export-view.ts";
 import {
@@ -8,6 +9,7 @@ import {
   type SpecialistArtifactInput,
   type SpecialistArtifactMetadata,
   type SpecialistArtifactResult,
+  type SpecialistArtifactSummary,
   type SpecialistArtifactVerificationReport,
 } from "../src/shared/specialist-artifact.ts";
 import { AgentStopped, agentBudgetFingerprint, type AgentBudget } from "./agent-budget.ts";
@@ -292,6 +294,12 @@ export function createSpecialistArtifactTools(options: {
   visualRenderer?: VisualArtifactRendererPort;
   initialFaultMode?: ArtifactFaultMode;
   repairFaultMode?: ArtifactFaultMode;
+  stageDraft?: (draft: {
+    artifactId: string;
+    result: SpecialistArtifactResult;
+    bytes: Uint8Array;
+    input: SpecialistArtifactInput;
+  }) => Promise<SpecialistArtifactSummary>;
 }): AgentTool[] {
   const authorize = options.run.authorize ?? options.authorize;
   const noDraft = { draftAvailable: false, formalSave: false, published: false, requiresFormalConfirmation: true } as const;
@@ -323,11 +331,12 @@ export function createSpecialistArtifactTools(options: {
     authorize,
     parameters: specialistArtifactInputSchema,
     execute: args => guard(async () => {
+      const parsedInput = specialistArtifactInputSchema.parse(args);
       const outcome = await runSpecialistArtifactLoop({
         documents: options.documents,
         run: options.run,
         trustedUserMessage: options.trustedUserMessage,
-        input: args,
+        input: parsedInput,
         visualRenderer: options.visualRenderer,
         initialFaultMode: options.initialFaultMode,
         repairFaultMode: options.repairFaultMode,
@@ -339,6 +348,29 @@ export function createSpecialistArtifactTools(options: {
           data: {
             code: outcome.blockedCode ?? outcome.result.stopReason,
             ...noDraft,
+          },
+        };
+      }
+
+      if (options.stageDraft && outcome.bytes && outcome.bytes.byteLength > 0
+        && (outcome.result.status === "verified" || outcome.result.status === "partial")) {
+        const artifactId = randomUUID();
+        const summary = await options.stageDraft({
+          artifactId,
+          result: outcome.result,
+          bytes: outcome.bytes,
+          input: parsedInput,
+        });
+        return {
+          status: "succeeded",
+          reference: summary.artifactId,
+          data: {
+            draftAvailable: true,
+            artifactId: summary.artifactId,
+            summary,
+            formalSave: false,
+            published: false,
+            requiresFormalConfirmation: true,
           },
         };
       }

@@ -6977,3 +6977,11 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 六份教材在獨立審核中獲准，因兩份讀稿的引文長短、PDF 換行或圖文混排而保留。已對照凍結原件、實頁及兩份封存引文，登記 31 處可重用的完整句子、標題或可獨立閱讀的原文片段。兩個有文字層的頁面漏收了印刷文字，該兩處採用逐頁核對的雙重轉錄。另有一份七頁教材在「香港」地區格式被截停，只保留整理稿，下一步仍需真正獨立審核。
 
 從 `01a53716` 接線，沿原操作查回確定的修訂工作。正式工位會核對原件、封存請求和來源觀測，再經原發布及向量流程處理。本機 Node 24 通過 22 項定向檢查，另以封存引文、凍結實頁及合成內容核回全部 31 個位置。這批修訂的正式收據待發布後核實。[逐頁登記](knowledge/fhs-reviewed-windows.json) · [修訂檢查](tests/fhs-reviewed-window.test.ts)
+
+### 2026-11-21　REQ-008 專責產物預覽整合與離線全包驗收
+
+以 `6e91757e` 為基線，完成 REQ-008 專責 PDF／HTML 草稿交付閉環與全包 §9（`R008-S01`..`R008-S18`）、§10（`R008-D01`..`R008-D06`）離線合成驗收：
+- 渲染與視覺驗證：`server/specialist-artifact-renderer.ts` 改用 `fontkit` ＋ `zlib.deflateSync` 內嵌子集化 `LXGWWenKaiTC-Regular.ttf`（`/FontFile2` ＋ `/CIDToGIDMap /Identity`、二進位 `Buffer.concat` 組裝）並匯出 `createSharpVisualArtifactVerifier()` 執行 1x A4 RGBA 光柵檢查；`server/specialist-artifact-pdf-worker.ts` 補上 `/CIDFontType2` 缺少 `/FontFile2` 之缺字防線。
+- 加密草稿暫存、預覽端點與前端 UI：`src/shared/specialist-artifact.ts`、`src/shared/product-agent.ts`、`src/shared/product-agent-result.ts`、`server/firestore-agent-documents.ts`、`server/firestore-product-agent-store.ts`、`server/product-agent-store.ts`、`server/specialist-artifact-agent.ts`、`server/product-agent-capabilities.ts`、`server/product-agent-tools.ts`、`server/product-agent.ts`、`server/product-agent-api.ts`、`src/client/product-agent-api.ts`、`frontend/src/agent-view-model.ts`、`frontend/src/production/agent-projection.ts`、`frontend/src/components/agent/AgentRunView.tsx`；支援條件式 `prepare_family_artifact` 暴露、`formalSave: false` 限制、`GET /api/children/:childId/agent/runs/:runId/artifacts/:artifactId`（CSP `sandbox`＋版本變動回 `409 document_changed`）及草稿預覽卡片。
+- 測試、CI 與文件：擴充 `tests/req008-specialist-artifact-renderer.test.ts`（11 cases）、新增 `tests/req008-acceptance-closeout.test.ts`（12 cases）及離線 workflow `.github/workflows/req008-acceptance-closeout-offline.yml`（`scripts/ci/verify-req008-acceptance-closeout-offline.sh`，15 檔 161 cases），並更新 `docs/REQUIREMENTS_BACKLOG.md` 與 `PLAN.md#req008-closeout01`。
+- 未執行閘門：真實 Gemini `--live` 基準、實體 Chromium／PDFium 截圖目視檢查、REQ-003 模式分支持續合併、雲端背景排程部署及流動裝置真機測試。

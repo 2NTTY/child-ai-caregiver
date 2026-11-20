@@ -88,6 +88,8 @@ export interface ProductAgentResult extends AgentPresentation {
   countsKnown?: boolean;
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
   proposals: AgentProposal[];
+  /** Ephemeral run-bound specialist draft previews; never auto-saved as a formal document. */
+  specialistArtifacts?: import("./specialist-artifact.ts").SpecialistArtifactSummary[];
   /** Present only after an independent pass that still matches this draft. */
   deliveryReview?: ChatDeliveryReviewBinding;
 }
