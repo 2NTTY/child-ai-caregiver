@@ -13,7 +13,7 @@ import {
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, KnowledgeSemanticReviewPort } from "./background-knowledge-maintenance.ts";
 import { backgroundKnowledgePdfCoverageIssue } from "./background-knowledge-maintenance.ts";
-import { loadAgentPrompt } from "./agent-prompt.ts";
+import { loadAgentPrompt, loadRecordedKnowledgePrompt } from "./agent-prompt.ts";
 import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import {
@@ -260,16 +260,29 @@ export async function prepareKnowledgeMaintenance(input: {
   if (priorVisual && (!priorVisual.focus || priorVisual.focus.parentHash !== sha || !priorVisual.layoutQuestion || sample))
     reject("knowledge_focus_binding_mismatch");
   const organize = await loadAgentPrompt("knowledge-organize", "structured", INPUTS);
+  let recordedLineEnding: "\n" | "\r\n" | undefined;
   const complete = async (stage: "organize" | "review", system: string, payload: unknown, responseJsonSchema?: Record<string, unknown>) => {
     checkSignal(signal);
     const user = JSON.stringify(payload);
+    const keyFor = (prompt: string) => `knowledge-${stage}:${knowledgeReviewHash({ system: prompt, user, ...(pdf ? { pdfHash: sha, responseJsonSchema } : {}) })}`;
+    let attemptKey = keyFor(system);
+    const fromOriginal = retained && stage === 'organize';
+    if (fromOriginal && knowledgeReviewHash({system, user, attemptKey}) !== retained.revision.organizerRequestHash) {
+      for (const ending of ["\r\n", "\n"] as const) {
+        const historical = await loadRecordedKnowledgePrompt("knowledge-organize", INPUTS, ending);
+        const key = keyFor(historical.text);
+        if (knowledgeReviewHash({ system: historical.text, user, attemptKey: key }) === retained.revision.organizerRequestHash) {
+          recordedLineEnding = ending;
+          system = historical.text;
+          attemptKey = key;
+          break;
+        }
+      }
+      if (!recordedLineEnding) reject('knowledge_retained_page_request_changed');
+    }
     // Fail explicitly rather than silently truncate evidence; the gateway also
     // applies its actual model/runtime capacity and the shared work budget.
     if (system.length + user.length > 64000) reject("knowledge_maintenance_input_limit");
-    const attemptKey = `knowledge-${stage}:${knowledgeReviewHash({ system, user, ...(pdf ? { pdfHash: sha, responseJsonSchema } : {}) })}`;
-    const fromOriginal = retained && stage === 'organize';
-    if (fromOriginal && knowledgeReviewHash({system, user, attemptKey}) !== retained.revision.organizerRequestHash)
-      reject('knowledge_retained_page_request_changed');
     const raw = fromOriginal ? await retained.readOrganizer(attemptKey) : await input.completeText({ system, user, attemptKey, ...(pdf && !(held && stage === "organize") ? { pdf } : {}),
       ...(responseJsonSchema ? { responseJsonSchema } : {}),
       role: stage === "review" ? "knowledge_review" : "knowledge_organize",
@@ -355,7 +368,8 @@ export async function prepareKnowledgeMaintenance(input: {
         ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.pageEnd! } : {}) };
     }),
   });
-  const reviewPrompt = await loadAgentPrompt("knowledge-review", "structured", INPUTS);
+  const reviewPrompt = recordedLineEnding ? await loadRecordedKnowledgePrompt("knowledge-review", INPUTS, recordedLineEnding)
+    : await loadAgentPrompt("knowledge-review", "structured", INPUTS);
   const priorConditions = units.flatMap(unit => samePages(unit).flatMap(old =>
     old.applicability.conditions.map(original => ({ oldKey: old.key, pageStart: old.pageStart!, pageEnd: old.pageEnd!,
       original, newKey: unit.id, conditions: source.chunks.find(chunk => chunk.key === unit.id)!.applicability.conditions }))))
