@@ -7,6 +7,35 @@ import { planKnowledgePdfWindows, readKnowledgePdfWindow } from '../server/knowl
 import { observationHash } from '../server/knowledge-observation.ts';
 import { fhsPdfReadKey, matchesFhsPdfObservation, openFhsPdfReads, resolveFhsPdfObservation } from './fhs-pdf-reads.ts';
 
+export async function readRecordedShapeFailure(replay, load) {
+  let role, response, loaded = false;
+  try {
+    await replay(async input => {
+      loaded = false;
+      response = await load(input);
+      role = input.role;
+      loaded = true;
+      return response;
+    });
+  } catch (error) {
+    if (!loaded) throw error;
+    if (error instanceof SyntaxError) return { role, state: 'invalid_json' };
+    if (error?.name === 'ZodError' && Array.isArray(error.issues)) {
+      const value = JSON.parse(response);
+      const issues = error.issues.slice(0, 32).map(({ path, code, maximum, minimum }) => {
+        const field = path.reduce((parent, key) => parent?.[key], value);
+        return { path, code, ...(typeof maximum === 'number' ? { maximum } : {}), ...(typeof minimum === 'number' ? { minimum } : {}),
+          ...(typeof field === 'string' || Array.isArray(field) ? { length: field.length } : {}),
+          ...(path.at(-1) === 'region' && ['HK', 'hk', '香港'].includes(field) ? { region: field } : {}) };
+      });
+      return { role, state: 'schema_rejected', issues };
+    }
+    if (/^knowledge_[a-z_]+$/u.test(error?.code ?? '')) return { role, state: 'other_boundary', code: error.code };
+    throw error;
+  }
+  return { role, state: 'format_failure_not_reproduced' };
+}
+
 /** Reconstruct the normal two requests, stopping after reading the original review. */
 export async function readRecordedWindowQuotes(range, replay, load) {
   let draft, review;
@@ -35,12 +64,13 @@ export async function readRecordedWindowQuotes(range, replay, load) {
 }
 
 /** The operator supplies verified opening-page reads. The failed work, stages and slice remain read-only. */
-export async function inspectHeldWindowQuotes({ domain, refresh, job, pin, definition, original, saved, reads, indexHash }) {
+export async function inspectHeldWindowEvidence({ domain, refresh, job, pin, definition, original, saved, reads, indexHash }) {
   const { database, cipher, projectId, namespace } = domain;
   if (pin?.lane !== 'C2' || pin.sourceId !== definition.id || pin.sourceId !== job.watchId || saved?.request?.operationFingerprint !== original
     || saved.request.watchId !== pin.sourceId || saved.request.publishMode !== 'live' || definition.audience !== 'public_noncommercial' || definition.kind !== 'pdf'
     || new URL(definition.url).hostname !== 'www.fhs.gov.hk' || !saved?.windowed || saved.lease || saved.prepared || saved.receipt
-    || saved.result?.status !== 'candidate_held' || saved.result.code !== 'knowledge_window_quote_mismatch') throw Error('fhs_evidence_scope');
+    || saved.result?.status !== 'candidate_held' || !['knowledge_window_quote_mismatch', 'knowledge_review_failed'].includes(saved.result.code))
+    throw Error('fhs_evidence_scope');
   const sourceId = pin.sourceId, parentHash = pin.sha256;
   const binding = (await database.collection(namespace + '_knowledge_campaigns').doc(campaign)
     .collection('publicationBindings').doc(sourceId).get()).data();
@@ -51,7 +81,7 @@ export async function inspectHeldWindowQuotes({ domain, refresh, job, pin, defin
   const { snapshot } = await resolveFhsPdfObservation(refresh, job, original, source);
   if (!matchesFhsPdfObservation(source, snapshot) || observationHash(snapshot.items[0]) !== saved.result.observationHash)
     throw Error('fhs_evidence_observation_changed');
-  const index = saved.budget.modelCalls / 2 - 1;
+  const index = Math.ceil(saved.budget.modelCalls / 2) - 1;
   const range = planKnowledgePdfWindows(pin.pages, saved.budget.maxModelCalls)[index];
   if (!Number.isInteger(index) || !range) throw Error('fhs_evidence_failed_window');
   const collection = database.collection(namespace + '_knowledge_work');
@@ -67,14 +97,17 @@ export async function inspectHeldWindowQuotes({ domain, refresh, job, pin, defin
   if (descriptor.total !== pin.pages || Object.entries(identity).some(([key, value]) => descriptor[key] !== value)) throw Error('fhs_evidence_slice_changed');
   const bytes = await refresh.originals.readPdf(sourceId, descriptor.contentHash);
   const candidate = { watchId: sourceId, definition, observed: snapshot.items[0], observationHash: saved.result.observationHash, previousObservationHash: null };
-  const quotes = await readRecordedWindowQuotes(range, completeText => readKnowledgePdfWindow({ candidate, range, bytes,
-    baseline: null, explicitAgeScope: true, sliceHash: descriptor.contentHash, textLayers: [], signal: new AbortController().signal, completeText }),
-  async ({ system, user, attemptKey }) => {
+  const replay = completeText => readKnowledgePdfWindow({ candidate, range, bytes, baseline: null, explicitAgeScope: true,
+    sliceHash: descriptor.contentHash, textLayers: [], signal: new AbortController().signal, completeText });
+  const load = async ({ system, user, attemptKey }) => {
     const stage = await opened(ref('model', original, attemptKey));
     if (stage.state !== 'ready' || typeof stage.text !== 'string' || stage.requestHash !== knowledgeReviewHash({ system, user, attemptKey }))
       throw Error('fhs_evidence_stage_changed');
     return stage.text;
-  });
+  };
+  const bounds = { window: index + 1, first: range.first, last: range.last };
+  if (saved.result.code === 'knowledge_review_failed') return { ...bounds, failure: await readRecordedShapeFailure(replay, load) };
+  const quotes = await readRecordedWindowQuotes(range, replay, load);
   const extract = await openFhsPdfReads(reads, indexHash);
   const rawIndex = await readFile(join(reads, 'index.json'));
   if (createHash('sha256').update(rawIndex).digest('hex') !== indexHash) throw Error('fhs_pdf_index_integrity');
@@ -94,5 +127,5 @@ export async function inspectHeldWindowQuotes({ domain, refresh, job, pin, defin
     quote.organizerMatch = match(quote.organizerExcerpt);
     quote.reviewerMatch = match(quote.reviewerExcerpt);
   }
-  return { window: index + 1, first: range.first, last: range.last, quotes };
+  return { ...bounds, quotes };
 }

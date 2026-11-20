@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { inspectHeldWindowQuotes, readRecordedWindowQuotes } from '../scripts/fhs-held-window-evidence.mjs';
+import { inspectHeldWindowEvidence, readRecordedShapeFailure, readRecordedWindowQuotes } from '../scripts/fhs-held-window-evidence.mjs';
+import { z } from 'zod';
 
 const range = { first: 1, last: 4, ranges: [{ first: 1, last: 4 }] };
 const draft = { ranges: { 'pages-1-4': { quotePage: 3, quote: 'Organizer excerpt', originalKind: 'page_transcription', text: 'Unrelated draft text' } } };
@@ -30,7 +31,15 @@ test('another lane or a changed publication binding stops before reading model s
     url: 'https://www.fhs.gov.hk/fixture.pdf' }, job: { watchId: sourceId }, original, saved: { windowed: true,
     request: { watchId: sourceId, operationFingerprint: original, publishMode: 'live' },
     result: { status: 'candidate_held', code: 'knowledge_window_quote_mismatch' } } };
-  await assert.rejects(inspectHeldWindowQuotes(scope), /fhs_evidence_scope/);
+  await assert.rejects(inspectHeldWindowEvidence(scope), /fhs_evidence_scope/);
   const ref = { collection: () => ref, doc: () => ref, get: async () => ({ data: () => ({ operationFingerprint: 'wrong' }) }) };
-  await assert.rejects(inspectHeldWindowQuotes({ ...scope, pin: { ...scope.pin, lane: 'C2' }, domain: { database: ref } }), /fhs_evidence_operation_changed/);
+  await assert.rejects(inspectHeldWindowEvidence({ ...scope, pin: { ...scope.pin, lane: 'C2' }, domain: { database: ref } }), /fhs_evidence_operation_changed/);
+});
+
+test('a sealed schema failure reports its field and measured size while keeping response text private', async () => {
+  const parse = async complete => z.object({ reason: z.string().max(4) }).parse(JSON.parse(await complete(requests[0])));
+  const result = await readRecordedShapeFailure(parse, async () => JSON.stringify({ reason: 'a synthetic reason' }));
+  assert.deepEqual(result, { role: 'knowledge_organize', state: 'schema_rejected',
+    issues: [{ path: ['reason'], code: 'too_big', maximum: 4, length: 18 }] });
+  await assert.rejects(readRecordedShapeFailure(parse, async () => { throw Error('fhs_evidence_stage_changed'); }), /stage_changed/);
 });
