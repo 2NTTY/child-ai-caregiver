@@ -32,12 +32,18 @@ export function submitSourceLogin(url: URL, form: URLSearchParams, signal: Abort
 }
 async function transfer(initialUrl:string,validate:(value:string)=>URL,outerSignal:AbortSignal,accept:string,options:SourceTransportOptions, loginBody?:string):Promise<SourceResult>{
   const maxBytes=options.maxBytes??1024*1024;
-  if(!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>32*1024*1024)throw new Error("source_max_bytes_invalid");
+  if(!Number.isSafeInteger(maxBytes)||maxBytes<1)throw new Error("source_max_bytes_invalid");
+  if (maxBytes > 32 * 1024 * 1024) {
+    const { largeFhsPdf } = await import('./platform-materials.ts');
+    if (accept !== 'application/pdf' || loginBody !== undefined || largeFhsPdf(initialUrl)?.bytes !== maxBytes)
+      throw new Error('source_max_bytes_invalid');
+  }
   const signal = AbortSignal.any([outerSignal, AbortSignal.timeout(20000)]);
   try {
     let url = validate(initialUrl);
     for (let redirects = 0; redirects <= 2; redirects++) {
       signal.throwIfAborted();
+      if (maxBytes > 32 * 1024 * 1024 && url.href !== initialUrl) return { status: 'failed', reason: 'response' };
       // Prefer IPv4 deliberately; never fall back to unchecked IPv6 or a second DNS lookup.
       const addresses = await new Promise<{ address: string; family: number }[]>((resolve, reject) => {
         const abort = () => reject(new Error("source_request_aborted"));

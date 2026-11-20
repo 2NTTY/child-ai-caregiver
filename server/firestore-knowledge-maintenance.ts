@@ -50,6 +50,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   refresh: ReturnType<typeof createFirestoreKnowledgeRefresh>;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
   fetch: SourceFetcher;
+  pdfReader?: typeof extractKnowledgePdf;
   fixtureFetch?: SourceFetcher;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
@@ -288,7 +289,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                         if (window.descriptor.total !== extraction.totalPages) reject("knowledge_window_binding_changed");
                         const textLayers = [];
                         for (let startPage = 1; startPage <= count; startPage += 8) {
-                          const local = await extractKnowledgePdf(window.bytes, { startPage, pageLimit: 8,
+                          const local = await (options.pdfReader ?? extractKnowledgePdf)(window.bytes, { startPage, pageLimit: 8,
                             expectedHash: window.descriptor.contentHash, signal: abort });
                           if (local.totalPages !== count) reject("knowledge_window_binding_changed");
                           textLayers.push(...local.pages.map(p => ({ ...p, page: p.page + range.firstRead - 1 })));

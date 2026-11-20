@@ -3,19 +3,25 @@ import type { Firestore } from "@google-cloud/firestore";
 import { Storage } from "@google-cloud/storage";
 import { z } from "zod";
 import { KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
-import { createFirebasePhotoBucketPort, type FirebasePhotoBucketPort } from "./firebase-photo-objects.ts";
+import { createFirebasePhotoBucketPort, readFirebaseStorageResponse, type FirebasePhotoBucketPort } from "./firebase-photo-objects.ts";
 import { readChatFileCiphertext } from "./firebase-chat-file-objects.ts";
+import { largeFhsPdf, largestFhsOriginalBytes } from './platform-materials.ts';
 
 const digest = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 const source = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
 const sha = z.string().regex(/^[a-f0-9]{64}$/u);
 const mime = z.enum(["application/pdf", "application/rss+xml"]);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u);
-const size = z.number().int().positive().max(KNOWLEDGE_PDF_MAX_BYTES);
+const size = z.number().int().positive().max(largestFhsOriginalBytes);
+function allowedSize(m: { size: number; contentHash: string; sourceId: string; mimeType: string }) {
+  if (m.size <= KNOWLEDGE_PDF_MAX_BYTES) return true;
+  const large = largeFhsPdf(m.sourceId);
+  return m.mimeType === 'application/pdf' && large?.sourceId === m.sourceId && large.sha256 === m.contentHash && large.bytes === m.size;
+}
 export const knowledgeOriginalManifest = z.strictObject({
   schemaVersion: z.literal(1), projectId: z.string().min(1), namespace: z.string().min(1),
   sourceId: source, contentHash: sha, mimeType: mime, size, bucketName: z.string().min(1), generation,
-});
+}).refine(allowedSize);
 export type KnowledgeOriginalManifest = z.infer<typeof knowledgeOriginalManifest>;
 type Mime = z.infer<typeof mime>;
 type Identity = Omit<KnowledgeOriginalManifest, "bucketName" | "generation">;
@@ -23,7 +29,9 @@ export type KnowledgeOriginalBucket = { bucketName: string; bucket: FirebasePhot
 
 export function cloudKnowledgeOriginalBucket(projectId: string, bucketName: string): KnowledgeOriginalBucket {
   const storage = new Storage({ projectId, retryOptions: { autoRetry: false }, timeout: 20000 });
-  return { bucketName, bucket: createFirebasePhotoBucketPort(storage.bucket(bucketName), KNOWLEDGE_PDF_MAX_BYTES) };
+  const bucket = storage.bucket(bucketName);
+  return { bucketName, bucket: { ...createFirebasePhotoBucketPort(bucket, KNOWLEDGE_PDF_MAX_BYTES),
+    readPinned: (name, revision) => readFirebaseStorageResponse(bucket, name, revision, largestFhsOriginalBytes) } };
 }
 
 export function knowledgeOriginalName(m: Identity) {
@@ -52,13 +60,14 @@ function checkedMetadata(target: KnowledgeOriginalBucket, name: string, m: Ident
 
 export async function readKnowledgeOriginalObject(target: KnowledgeOriginalBucket, name: string, m: Identity,
   revision: string, retainedUntil?: string) {
+  if (!allowedSize(m)) throw Error('knowledge_original_binding');
   checkedMetadata(target, name, m, await target.bucket.metadata(name, revision), revision, retainedUntil);
-  return readChatFileCiphertext(target.bucket, name, revision, m.size, m.contentHash);
+  return readChatFileCiphertext(target.bucket, name, revision, m.size, m.contentHash, largestFhsOriginalBytes);
 }
 
 export async function putKnowledgeOriginalObject(target: KnowledgeOriginalBucket, name: string, m: Identity,
   bytes: Buffer, retainedUntil?: string) {
-  if (bytes.length !== m.size || digest(bytes) !== m.contentHash) throw Error("knowledge_original_hash_mismatch");
+  if (!allowedSize(m) || bytes.length !== m.size || digest(bytes) !== m.contentHash) throw Error("knowledge_original_hash_mismatch");
   const binding = objectBinding(m);
   let raw: unknown;
   try {
@@ -69,7 +78,7 @@ export async function putKnowledgeOriginalObject(target: KnowledgeOriginalBucket
     // A concurrent create or lost acknowledgement is resolved against exactly this address.
     raw = await target.bucket.metadata(name);
     const existing = checkedMetadata(target, name, m, raw, undefined, retainedUntil);
-    await readChatFileCiphertext(target.bucket, name, existing, m.size, m.contentHash);
+    await readChatFileCiphertext(target.bucket, name, existing, m.size, m.contentHash, largestFhsOriginalBytes);
     return existing;
   }
   return checkedMetadata(target, name, m, raw, undefined, retainedUntil);

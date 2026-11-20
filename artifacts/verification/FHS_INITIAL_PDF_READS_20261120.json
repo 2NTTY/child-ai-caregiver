@@ -1,0 +1,165 @@
+{
+  "schema": "fhs-initial-pdf-read-preparation/1",
+  "capturedAt": "2026-11-20T04:10:11.396Z",
+  "baseline": "1cc95c146289406aa30b32d103c37beec473b053",
+  "scopeCheckpoint": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "scope": "Only entries with kind pdf and outcome no_terminal_receipt in the 09:00 HKT checkpoint. Source identities and original hashes remain in that receipt and knowledge/fhs-child-inventory.json.",
+  "verified": {
+    "originals": 116,
+    "bytes": 539592688,
+    "physicalPages": 1471,
+    "over20Pages": 12,
+    "newPublisherDownloads": 0,
+    "whole": 48,
+    "windowed": 68,
+    "nativeWindows": 125,
+    "wholeOrganizerInputsChecked": 48,
+    "localTextLayers": {
+      "text": 934,
+      "unreadable": 378,
+      "empty": 159
+    }
+  },
+  "archive": {
+    "name": "fhs-pdf-reads.tar.gz",
+    "bytes": 440664725,
+    "sha256": "4184b2d58b7dc425b4942c69477252cb63b7addc090a5e129878d51dd3666c46",
+    "indexSha256": "6ff102b184434a148b802ce83acf34ed9e372f4ad0ac0d0dabb337aa7583faa6",
+    "parserBinding": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "records": 448,
+    "recordBytes": 476681996,
+    "handling": "Operator-private archive outside Git. The original FHS catalogue cache is keyed by SHA-256 of the official URL. Only extraction outputs enter this bundle."
+  },
+  "method": {
+    "node": "v24.22.3",
+    "pdfjs": "6.4.299",
+    "readLayer": "createKnowledgeSourceFetcher using the original inventory responses; local transport, exact registered URLs, real PDF reader and persisted authenticated results.",
+    "windowLayer": "All planned attached ranges were extracted and reopened with PDF.js, checked for physical page count and bound to parent and slice digests. The exemplar passed through createFirestoreKnowledgeOriginals and createFirestoreKnowledgeWork.readPdfWindow with in-memory storage ports; cached descriptors reopened without derivation.",
+    "inputBoundary": "The exemplar organizer inputs were inspected inside readKnowledgePdfWindow before a provider could be called. Whole PDF organizer inputs were inspected inside createModelKnowledgeReviewPort. Model semantics, independent review and live publication require the shared campaign.",
+    "initialFailure": {
+      "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+      "pages": [
+        9,
+        16
+      ],
+      "code": "ERR_WORKER_OUT_OF_MEMORY",
+      "boundedWorkerHeapMiB": 128,
+      "offlineWorkerHeapMiB": 384,
+      "outcome": "Same verified parent and exact reader with an offline preparation heap completed these eight pages. The pinned result reached the whole-document organizer in the standard campaign path."
+    }
+  },
+  "representative": {
+    "sourceId": "pdf-63e7d5463521682636a066e5",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.pdf",
+    "sha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+    "bytes": 63746648,
+    "pages": 192,
+    "windows": 16,
+    "organizerInputsChecked": 16,
+    "rendered": [
+      {
+        "physicalPage": 1,
+        "core": [
+          1,
+          12
+        ],
+        "attached": [
+          1,
+          13
+        ],
+        "windowPage": 1,
+        "sha256": "94ea46c81a92227da61e121965aa4316b48f020ccd1a7b2c920e21e9699987af",
+        "rasterSha256": "3d319decfe2b0343ea050bdfdabcfbe1b5c008182bac6f87794a93f4686e91d0"
+      },
+      {
+        "physicalPage": 99,
+        "core": [
+          97,
+          108
+        ],
+        "attached": [
+          96,
+          109
+        ],
+        "windowPage": 4,
+        "sha256": "d76e30408818095f1fc39c5450349baf31d80d85cf702d9f83e899ce4c555d12",
+        "rasterSha256": "997cab6d7ad522d716bb2e97454e43e742e0551d0b3aa3345114cd8fbfb07229"
+      },
+      {
+        "physicalPage": 192,
+        "core": [
+          181,
+          192
+        ],
+        "attached": [
+          180,
+          192
+        ],
+        "windowPage": 13,
+        "sha256": "1fc975df454bd68417313bb488c86dd000ac82e2abeea0f9e3a0cf0887c04d27",
+        "rasterSha256": "3d319decfe2b0343ea050bdfdabcfbe1b5c008182bac6f87794a93f4686e91d0"
+      }
+    ],
+    "localCitationSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177"
+  },
+  "physicalPageNote": "Physical page 99 displays printed page 97. Physical pages 1 and 192 are matching covers. Each listed original/slice raster pair matched at 72 dpi.",
+  "admission": {
+    "source": "PUBLIC_MAINTENANCE_ENABLED_20261119.json",
+    "policyVersion": 3,
+    "maxModelCallsPerRun": 8,
+    "withinRecordedModelCallLimit": 110,
+    "exceedsRecordedModelCallLimit": [
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "pages": 96,
+        "windows": 8,
+        "minimumModelCalls": 16
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "pages": 84,
+        "windows": 7,
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "pages": 84,
+        "windows": 7,
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "pages": 192,
+        "windows": 16,
+        "minimumModelCalls": 32
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "pages": 112,
+        "windows": 10,
+        "minimumModelCalls": 20
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "pages": 80,
+        "windows": 7,
+        "minimumModelCalls": 14
+      }
+    ],
+    "limits": "These are minimum organizer/reviewer calls, before any billable work. Runtime daily admission, durable work-unit allowance, available gross budget and independent review remain authoritative."
+  },
+  "suggestedLiveExample": {
+    "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+    "physicalPages": 36,
+    "windows": 3,
+    "minimumModelCalls": 6,
+    "reason": "33 physical pages have an empty or unreadable local text layer. The approved campaign can demonstrate visual reading and independent review."
+  },
+  "production": {
+    "modelCallsByThisPreparation": 0,
+    "embeddingCallsByThisPreparation": 0,
+    "writesByThisPreparation": 0,
+    "publishedByThisPreparation": 0,
+    "next": "The sole campaign owner uses the existing lock, gross ledger and original continuation. Reconcile by sourceId and original hash after each actual run. A local attachment check is not a publication receipt."
+  }
+}

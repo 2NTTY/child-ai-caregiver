@@ -141,7 +141,11 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 
 ### 失敗、日期與恢復
 
-抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；網絡呼叫總計 20 秒，HTML／RSS 最多1MiB／50個RSS項目；已登記PDF最多32MiB，另用受限20秒worker解析已指定的最多八頁。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；網絡呼叫總計 20 秒，HTML／RSS 最多1MiB／50個RSS項目；已登記PDF一般限32MiB，另用受限20秒worker解析已指定的最多八頁。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+
+FHS 首批的 `30034.pdf` 及 `30035.pdf` 有兩份已核對的大原件。只在已登記網址容許該版實際長度，超過 32 MiB 的內容須核對完整 SHA-256 才可解析及保存。原件庫、備份與引用讀回沿相同版本，模型逐窗接收不超過 32 MiB 的原頁。
+
+首批持鎖者可將[頁段準備收據](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)所列私用壓縮包解到 worker 可讀目錄，核對包的 SHA-256，並在原批次環境設定 `FHS_CAMPAIGN_PDF_READS` 為該目錄及 `FHS_CAMPAIGN_PDF_READS_SHA256` 為收據內的索引指紋。`process-age-checked` 仍會按原觀測流程查官方網址。首次讀取核對解析器版本，逐段核對原件、物理頁及輸出指紋。已記錄的分窗仍優先使用，官方版本變動則沿現有流程解析。每份所需的模型呼叫仍受該次運行的有效政策約束。
 
 觀察的 fetched_at 與 last_successful_check_at、來源發布／修訂日期及既有版本 checked_at（人工核對）分開。hash 未變只更新成功抓取 metadata，沒有向量呼叫；失敗保留最後成功內容與時間。404／410 或停用立即排除，恢復後也需重新批准。feed 不再列某項不自動判斷官方撤回，其成功時間停止前進；超過 24 小時或七日發布窗口便不進近期結果。
 

@@ -33,8 +33,9 @@ export function chatFileObjectAddress(config: FirebasePhotoObjectsConfig, scopeI
   return { objectName: "chat-file/v1/" + scopeHash + "/" + id, aad: identity, tag: digest(identity) };
 }
 /** Bounded encrypted media read shared by original file objects and their pinned backup artifacts. */
-export async function readChatFileCiphertext(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>,objectName:string,revision:string,maximum:number,sha256:string) {
-  if (!Number.isSafeInteger(maximum)||maximum<1||maximum>CHAT_FILE_OBJECT_MAX_BYTES) throw new ChatFileObjectError();
+export async function readChatFileCiphertext(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>,objectName:string,revision:string,maximum:number,sha256:string,
+  objectLimit = CHAT_FILE_OBJECT_MAX_BYTES) {
+  if (!Number.isSafeInteger(objectLimit)||objectLimit>64*1024*1024||!Number.isSafeInteger(maximum)||maximum<1||maximum>objectLimit) throw new ChatFileObjectError();
   const stream=bucket.readPinned(objectName,revision),chunks:Buffer[]=[];let size=0,accepted=false;
   stream.once('response',(response:{statusCode?:number;headers?:Record<string,string>})=>{
     const h=response.headers??{},length=h['content-length'];

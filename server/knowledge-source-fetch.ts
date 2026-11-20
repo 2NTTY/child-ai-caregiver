@@ -1,7 +1,7 @@
 import { load } from "cheerio";
 import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
-import { fhsPdfMediaPages, reviewedExternalOriginal } from './platform-materials.ts';
+import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
@@ -39,7 +39,10 @@ export function sourceFetchUrl(value: string, definition: SourceWatchDefinition)
 export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition, original: Buffer, title: string,
   revision: string | null, readMethod: string, signal: AbortSignal, reader = extractKnowledgePdf): Promise<Awaited<ReturnType<SourceFetcher>>> {
   if (!definition.leafletPage || definition.kind !== "pdf") throw Error("knowledge_pdf_source_mismatch");
-  let batch = await reader(original, { startPage: 1, pageLimit: 8, signal });
+  const large = original.length > KNOWLEDGE_PDF_MAX_BYTES ? largeFhsPdf(definition.url) : undefined;
+  if (original.length > KNOWLEDGE_PDF_MAX_BYTES && (!large || large.sourceId !== definition.id || large.bytes !== original.length))
+    return { status: 'failed', reason: 'response' };
+  let batch = await reader(original, { startPage: 1, pageLimit: 8, ...(large ? { expectedHash: large.sha256 } : {}), signal });
   const { fileHash, totalPages } = batch;
   const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
     status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: original }, items: [{
@@ -114,7 +117,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
     }
     const fetched = await transport(definition.url, definition.leafletPage || definition.id === "chp-recent" ? exact(definition.url) : value => sourceFetchUrl(value, definition), signal,
       pdf ? "application/pdf" : definition.kind === "rss" ? "application/rss+xml, application/xml, text/xml" : "text/html",
-      pdf ? { maxBytes: KNOWLEDGE_PDF_MAX_BYTES } : {});
+      pdf ? { maxBytes: largeFhsPdf(definition.url)?.bytes ?? KNOWLEDGE_PDF_MAX_BYTES } : {});
     if (fetched.status !== "response") return fetched;
     const result = fetched.response;
     if (result.status === 404 || result.status === 410) return { status: "unavailable", httpStatus: result.status };
