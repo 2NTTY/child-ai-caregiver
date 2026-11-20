@@ -10,7 +10,7 @@ import {fhsPdfReadKey, openFhsPdfReads} from './fhs-pdf-reads.ts';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
 /** Copy only reads the normal fetcher and admitted windows actually use. Publish the index last. */
-export async function stageFhsPdfReads({sources, originals, prepared, indexSha256, outputParent}) {
+export async function stageFhsPdfReads({sources, originals, prepared, indexSha256, outputParent, textOnly = false}) {
   const full = await readFile(join(prepared, 'index.json'));
   if (sha(full) !== indexSha256) throw Error('fhs_pdf_index_integrity');
   const index = JSON.parse(full.toString('utf8'));
@@ -23,7 +23,7 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
     const key = fhsPdfReadKey(options.expectedHash ?? sha(bytes), options);
     if (!Object.hasOwn(index.records, key)) throw Error('fhs_pdf_prepared_read_missing');
     const result = await read(bytes, options);
-    records[key] = index.records[key];
+    if (!textOnly || !options.includePagePdf) records[key] = index.records[key];
     return result;
   };
   for (const {sourceId, sha256, pages} of sources) {
@@ -68,13 +68,15 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const [originals, prepared, outputParent, ...extra] = process.argv.slice(2);
+  const [originals, prepared, outputParent, selection, ...extra] = process.argv.slice(2);
   if (!originals || !prepared || !outputParent || extra.length)
-    throw Error('Use fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT');
+    throw Error('Use fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT [--text-only|SOURCE_ID]');
   const json = async path => JSON.parse(await readFile(new URL(path, import.meta.url), 'utf8'));
   const frozen = await json('../knowledge/fhs-initial-publication-lanes.json');
   const evidence = await json('../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json');
-  const sources = frozen.lanes.flatMap(lane => lane.sources);
-  const staged = await stageFhsPdfReads({sources, originals, prepared, indexSha256:evidence.archive.indexSha256, outputParent});
+  const assigned = frozen.lanes.flatMap(lane => lane.sources);
+  const textOnly = selection === '--text-only';
+  const sources = !selection || textOnly ? assigned : assigned.filter(row => row.sourceId === selection);
+  const staged = await stageFhsPdfReads({sources, originals, prepared, indexSha256:evidence.archive.indexSha256, outputParent, textOnly});
   console.log(JSON.stringify(staged));
 }

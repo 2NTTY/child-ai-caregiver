@@ -1256,6 +1256,14 @@
       {"records":244,"bytes":194986403,"sha256":"b11e02c169c2067b99e8bf605753f35e8c2e36670998d5b12bb9aa40cd625593"},
       {"additionalRecords":164,"bytes":237926236,"sha256":"a3cd8a3adb9aeeb4150979048418289bacd7d17462d6a197944a177674752271"}
     ],
+    "productionCache": {
+      "releasedFullCacheAfter":"r44746426203-1",
+      "releaseGuardMiB":3072,"beforeReclaimMiB":2277,"afterReclaimMiB":3138,
+      "textIndexSha256":"e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c",
+      "textRecords":287,"textArchiveBytes":563858,"installedAt":"2026-11-20T13:57:28.181Z",
+      "afterTextInstallMiB":3133,"c3SinglePdfBundles":21,"largestC3ArchiveBytes":30251687,
+      "scope":"The complete verified cache and archives remain on the operator workstation. The worker can open original PDFs with the small text-layer index. A selected source bundle also supplies all its pinned native attachments and is reclaimable when its command exits."
+    },
     "c3": {
       "sources": 28, "pages": 468, "whole": 7, "windowed": 21, "physicalWindows": 41,
       "originalOperationReadAt": "2026-11-20T12:53:40.413Z",
