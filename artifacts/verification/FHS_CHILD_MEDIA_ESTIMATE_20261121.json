@@ -1,0 +1,166 @@
+{
+  "dateHongKong": "2026-11-21",
+  "currency": "USD",
+  "baseline": "e603c67474764e0dbdd5d5bfae25436b442ba1cd",
+  "revises": "FHS_CHILD_CATALOG_ESTIMATE_20261120.json (optional media only)",
+  "inventory": "knowledge/fhs-child-inventory.json",
+  "campaign": {
+    "paperAndHtmlGrossEstimateUsd": [
+      11.94,
+      58.81
+    ],
+    "approvedGrossLimitUsd": 30,
+    "mediaEnabled": false,
+    "incrementalMediaUsd": 0
+  },
+  "route": {
+    "code": [
+      "server/platform-card-providers.ts",
+      "server/platform-media-processing.ts",
+      "server/platform-media-evidence.ts",
+      "server/agent-model-gateway.ts"
+    ],
+    "behavior": "Each enabled card resolves official WebVTT locally first. Otherwise a new original sends its public media URI and any official un-timed transcript together in one native generateContent request. The platform reuses the edition by URL and normalized evidence hash. Family downloads do not dispatch a request."
+  },
+  "inventoryReplay": {
+    "source": "Local copies of the public official pages captured for the November 20 inventory; replayed through loadMediaOriginals with a cache-only transport.",
+    "rawLinks": 86,
+    "officialHtmlPagesRead": 61,
+    "failedReads": 0,
+    "distinctEvidenceHashes": 86,
+    "distinctVideoIds": 86,
+    "eligibleCatalogueSources": 251,
+    "observedLinksOnEligibleCards": 64,
+    "discoveryOnly": {
+      "uniqueOriginals": 22,
+      "withTranscript": 0,
+      "timedCaptions": 0,
+      "knownDurationCount": 20,
+      "knownSeconds": 15321,
+      "unknownDurations": 2,
+      "transcriptCharacters": 0
+    },
+    "knownSecondsForThe61ScriptedVideos": 13772,
+    "notes": "The 22 additional videos have no link on an eligible platform card in this inventory. The entire-inventory calculation is a cost comparison only. Captions here mean WebVTT accepted by the implemented reader; embedded player captions are outside that route."
+  },
+  "assumptions": {
+    "newEditionPasses": 1,
+    "outputCandidates": 1,
+    "videoFramesPerSecond": 1,
+    "visionTokensPerFrame": 70,
+    "audioTokensPerSecond": 32,
+    "timestampAllowanceTokensPerSecond": [
+      0,
+      8
+    ],
+    "unknownDurationSecondsPerOriginal": [
+      120,
+      1200
+    ],
+    "systemInstructionCharactersPerOriginal": 196,
+    "noTranscriptMessageCharacters": 10,
+    "textTokensPerCharacter": [
+      0.65,
+      1.6
+    ],
+    "requestFramingTokensPerOriginal": [
+      24,
+      64
+    ],
+    "outputIncludingReasoningTokensPerOriginal": [
+      250,
+      1024
+    ],
+    "formula": "Seconds = known seconds + assumed duration per unknown. Input = seconds × (70 + 32 + timestamp allowance) + ceil((script characters + 196 × originals + 10 × unscripted originals) × text tokens/character) + framing × originals. Output = expected total billed output per original × originals.",
+    "limitations": "Cold-cache scenarios for all originals in each scope, assuming the provider accepts the public videos. The duration interval, text factor, framing, timestamp allowance and output use are estimate inputs. Reused or manually disabled items cost zero. The upper scenario is not an invoice ceiling. No paid media processing or provider token counting was performed."
+  },
+  "requestedModel": {
+    "model": "gemini-3.8-flash",
+    "location": "global",
+    "grossUsdPerMillion": {
+      "input": 1.5,
+      "outputIncludingReasoning": 7.5
+    },
+    "afterFullEligibleCreditsUsdPerMillion": {
+      "input": 0.75,
+      "outputIncludingReasoning": 3.75
+    },
+    "introductoryPricingThrough": "2026-12-31"
+  },
+  "cardScope": {
+    "uniqueOriginals": 64,
+    "withTranscript": 61,
+    "timedCaptions": 0,
+    "knownDurationCount": 63,
+    "knownSeconds": 14119,
+    "unknownDurations": 1,
+    "transcriptCharacters": 62609,
+    "lower": {
+      "seconds": 14239,
+      "videoTokens": 996730,
+      "audioTokens": 455648,
+      "textAndRequestTokens": 50405,
+      "timestampAllowanceTokens": 0,
+      "totalInputTokens": 1502783,
+      "outputTokens": 16000
+    },
+    "upper": {
+      "seconds": 15319,
+      "videoTokens": 1072330,
+      "audioTokens": 490208,
+      "textAndRequestTokens": 124389,
+      "timestampAllowanceTokens": 122552,
+      "totalInputTokens": 1809479,
+      "outputTokens": 65536
+    },
+    "requestedGemini38FlashGrossUsd": [
+      2.37,
+      3.21
+    ],
+    "requestedGemini38FlashAfterFullEligibleCreditsUsd": [
+      1.19,
+      1.6
+    ]
+  },
+  "entireInventory": {
+    "uniqueOriginals": 86,
+    "withTranscript": 61,
+    "timedCaptions": 0,
+    "knownDurationCount": 83,
+    "knownSeconds": 29440,
+    "unknownDurations": 3,
+    "transcriptCharacters": 62609,
+    "lower": {
+      "seconds": 29800,
+      "videoTokens": 2086000,
+      "audioTokens": 953600,
+      "textAndRequestTokens": 53879,
+      "timestampAllowanceTokens": 0,
+      "totalInputTokens": 3093479,
+      "outputTokens": 21500
+    },
+    "upper": {
+      "seconds": 33040,
+      "videoTokens": 2312800,
+      "audioTokens": 1057280,
+      "textAndRequestTokens": 133048,
+      "timestampAllowanceTokens": 264320,
+      "totalInputTokens": 3767448,
+      "outputTokens": 88064
+    },
+    "requestedGemini38FlashGrossUsd": [
+      4.8,
+      6.31
+    ],
+    "requestedGemini38FlashAfterFullEligibleCreditsUsd": [
+      2.4,
+      3.16
+    ]
+  },
+  "sources": {
+    "vertexPricing": "https://cloud.google.com/model-garden/pricing",
+    "vertexVideo": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/video-understanding",
+    "audioTokenization": "https://ai.google.dev/gemini-api/docs/audio",
+    "unmeasuredEligibleVideo": "https://www.lib.cuhk.edu.hk/tc/about/events/ls-exam-support-202011/"
+  }
+}
