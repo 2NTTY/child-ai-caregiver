@@ -1,0 +1,116 @@
+{
+  "group": {
+    "id": "class-task-due-reminder-landing",
+    "title": "老師點開到期提示：先看原待辦，還是先看班級？",
+    "index": "embedded-comparison",
+    "readerNote": "老師只在 Android 手機接收指派給自己的班級待辦，平板沒開。提示不露班級、孩子或事項。重新核對權限後，A 直接開原待辦；B 先到正確班級與孩子的待辦頁，標出那一筆。未登入先請登入；核對不過只說「未能開啟原待辦」，不露舊資料、不跳到另一名孩子，也不從通知完成或改派。育伴港原碼走 A 的方向，未驗證部署或真機；B 是設計對照，兩張都不是育伴港現有畫面。",
+    "choices": [
+      {
+        "name": "到期提示-01｜直接看那一筆",
+        "note": "適合趕着處理一件事：詳情頂部標清班級、孩子和狀態，可回同班待辦。Deck Android 的 FAQ 說明，到期推播直接開被提醒的卡；圖是單卡目的頁示例，沒顯示看板名稱，也不是這張卡的到期推播實錄。",
+        "source": "https://github.com/stefan-niedermann/nextcloud-deck/blob/d936723f36b5695385867260311b5e3d910b0edb/fastlane/metadata/android/en-US/images/phoneScreenshots/5.png",
+        "sourceNotes": [
+          {
+            "label": "Deck FAQ：點到期推播，直接開被提醒的卡",
+            "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/d936723f36b5695385867260311b5e3d910b0edb/FAQ.md#L112-L122"
+          },
+          {
+            "label": "作者 README：原圖是單卡畫面",
+            "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/d936723f36b5695385867260311b5e3d910b0edb/README.md#L28-L32"
+          },
+          {
+            "label": "GPL 3+ 及原作者保留著作權",
+            "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/d936723f36b5695385867260311b5e3d910b0edb/README.md#L56-L62"
+          },
+          {
+            "label": "育伴港：先核對原班級和孩子，再選原待辦",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/ProductionProvider.tsx#L74-L88"
+          }
+        ],
+        "version": "Nextcloud Deck for Android 文件及圖檔固定版本 d936723f36b5695385867260311b5e3d910b0edb；原圖未列拍攝組建。",
+        "rights": "Nextcloud Deck for Android 專案貢獻者；GPL-3.0-or-later。原圖未改，貢獻者保留著作權。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "Deck Android 原圖：完整單卡頁",
+            "label": "作者原圖：完整手機單卡頁，顯示標題及細項",
+            "width": 1152,
+            "height": 2465,
+            "sha256": "d12c23765da0005a4879dc7b73b861151b8b1342c581c207956174d63f87d480",
+            "gitBlob": "100e6e2b4952e5167c9acc651ff4ad7e4a118ce1",
+            "file": "notif-a-deck-5.png",
+            "mime": "png"
+          }
+        ]
+      },
+      {
+        "name": "到期提示-02｜在班級內標出那一筆",
+        "note": "適合順手處理同班的其他待辦：保留班級脈絡，高亮原事項，一按可看詳情。Element X iOS 測試原圖在房間內以綠線標出 Message ID 5，旁邊還有前後訊息。原產品的通知聚焦選項預設關閉；圖示同一落點，不是真推播實錄。",
+        "source": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/UITests/Sources/__Snapshots__/Application/roomScreen.testTimelineLayoutHighlightExisting-iPhone-en-GB.png",
+        "sourceNotes": [
+          {
+            "label": "Element X：通知帶進指定房間及原訊息",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/ElementX/Sources/Application/AppCoordinator.swift#L371-L395"
+          },
+          {
+            "label": "Element X：通知聚焦預設關閉",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/ElementX/Sources/Application/Settings/AppSettings.swift#L377-L378"
+          },
+          {
+            "label": "同一房間定位方法：通知路由",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/ElementX/Sources/FlowCoordinators/RoomFlowCoordinator.swift#L586-L596"
+          },
+          {
+            "label": "同一房間定位方法：原圖合成資料",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/ElementX/Sources/UITests/UITestsAppCoordinator.swift#L482-L505"
+          },
+          {
+            "label": "作者截圖測試：定位第 5 則訊息",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/UITests/Sources/RoomScreenTests.swift#L107-L129"
+          },
+          {
+            "label": "原作者與 AGPL 3+ 授權",
+            "url": "https://github.com/element-hq/element-x-ios/blob/093ece2ab0ee8094bb7afc88817c102a766097e6/README.md#L43-L54"
+          },
+          {
+            "label": "上游確認原創測試素材及授權",
+            "url": "https://github.com/element-hq/element-x-ios/pull/3783"
+          },
+          {
+            "label": "育伴港：重核裝置同意、班級權限及提醒原指向",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-class-task-notification.ts#L20-L48"
+          }
+        ],
+        "version": "Element X iOS UI 測試快照 093ece2ab0ee8094bb7afc88817c102a766097e6；完整 iPhone 合成房間畫面。",
+        "rights": "© 2025–2026 Element Creations Ltd.；© 2022–2025 New Vector Ltd.。採 AGPL 第 3 版；房間插圖為作者測試素材，原圖未改。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "Element X iOS 原圖：整個房間內定位原訊息",
+            "label": "作者完整測試原圖：房間「Timeline highlight」以綠線定位 Message ID 5",
+            "width": 1206,
+            "height": 2622,
+            "sha256": "d4000b1a36efd36a02fc875d9279d9fc4882c4e0519f07d8f9aa360bc6855ac9",
+            "gitLfsSha256": "d4000b1a36efd36a02fc875d9279d9fc4882c4e0519f07d8f9aa360bc6855ac9",
+            "gitLfsPointerBlob": "f1ccf9c45b0d2d2d18de036ae395c0f18d9011d7",
+            "file": "notif-b-element-room.png",
+            "mime": "png"
+          }
+        ]
+      }
+    ],
+    "notices": []
+  },
+  "notices": [
+    {
+      "name": "103A｜Nextcloud Deck for Android 原版 GPL 3",
+      "file": "notif-a-deck-GPL-3.txt",
+      "gitBlob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7"
+    },
+    {
+      "name": "103B｜Element X iOS 原版 AGPL 第 3 版",
+      "file": "notif-b-element-AGPL-3.txt",
+      "gitBlob": "be3f7b28e564e7dd05eaf59d64adba1a4065ac0e"
+    }
+  ]
+}
