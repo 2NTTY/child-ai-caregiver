@@ -15,6 +15,7 @@ import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowle
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
+import { retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -38,7 +39,7 @@ const preparedSchema = z.strictObject({
   prepared: z.strictObject({
     source: z.unknown().transform(parseKnowledgeSource), versionHash: hash,
     assessment: knowledgeReviewAssessmentSchema, review: backgroundKnowledgeReviewBindingSchema,
-    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), nativePdf: nativePdfProvenanceSchema.optional(), destinationReview: destinationReviewSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
+    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), retainedDraft: retainedDraftProvenanceSchema.optional(), nativePdf: nativePdfProvenanceSchema.optional(), destinationReview: destinationReviewSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
   }),
 });
 /** Restore keeps immutable evidence, binding and spent allowance across the snapshot boundary. */
@@ -85,6 +86,19 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
+    async readHeldOrganizer(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision, attemptKey: string) {
+      const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
+      const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
+      return database.runTransaction(async tx => {
+        const [work, stage] = await tx.getAll(root, stageRef);
+        const old = open(root, work!.data(), workSchema), saved = open(stageRef, stage!.data(), stageSchema);
+        if (knowledgeReviewHash(old.request) !== knowledgeReviewHash(priorRequest) || old.lease || old.preparedHash || old.receipt
+          || old.result?.status !== 'candidate_held' || old.result.code !== 'knowledge_review_failed' || old.budget.modelCalls !== 1
+          || old.result.observationHash !== revision.observationHash || saved.requestHash !== revision.organizerRequestHash
+          || saved.state !== 'ready' || saved.text === null) reject('knowledge_retained_page_binding');
+        return saved.text;
+      }, { readOnly: true });
+    },
     /** Reuse a successful stage from a recorded MAX_TOKENS operation, including its complete organizer output. */
     async readTruncatedStage(request: BackgroundKnowledgeRunRequest, observation: string, input: { system: string; user: string; attemptKey: string }) {
       const workRef = ref("work", request.operationFingerprint), stageRef = ref("model", request.operationFingerprint, input.attemptKey);

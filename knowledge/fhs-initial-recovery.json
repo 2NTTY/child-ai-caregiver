@@ -1,0 +1,990 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "checkpoint": "2026-11-20T01:00:52.589Z",
+  "checkpointFile": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "entries": [
+    {
+      "sourceId": "fhs-30034",
+      "title": "共享育兒樂 (三) 嬰幼兒篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.html",
+      "textHash": "c987df6c2415efbdd54e3eb86ca343e52b9ec9ef93ed1fb4797d31843b463587",
+      "operationFingerprint": "b91110b6ffe375163c91bfe23239dffa1801ab5e8b3b2991b3e249a95f5fce49",
+      "code": "knowledge_review_failed",
+      "observationHash": "89a6a9a443348b09942efa3d8a7d5e51ee7dd5c3a7b26836a28a4cccf658a9ba",
+      "action": "review_age_draft",
+      "reason": "目錄按一至十二個月、一至兩歲分組，但個別連結另有適用範圍。沒有為整個目錄訂明 0–24 個月。",
+      "organizerRequestHash": "f62618e2a94914ec33da87a2eda7a7f9a8f0088856315353a9b6efd058ba9c14",
+      "units": [
+        {
+          "unitId": "p0-e96dcee4e73c2716c4b1",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24,
+          "conditions": [
+            "內容為家庭健康服務嬰幼兒育兒資訊專題目錄導覽，個別主題如電子屏幕涵蓋0至5歲，意外預防涵蓋至3歲。"
+          ],
+          "passages": [
+            {
+              "start": 15,
+              "quote": "一至十二個月"
+            },
+            {
+              "start": 269,
+              "quote": "一至兩歲 一至兩歲大兒童的發展"
+            },
+            {
+              "start": 348,
+              "quote": "你的 0 – 5 歲孩子需要電子屏幕產品嗎？"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30136",
+      "title": "餵哺孩子 由你作主 (組合套裝)",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.html",
+      "textHash": "94015a549c0f4cf9d1904975cabd66163a80329f5c17cd8e75e955b2602ca90f",
+      "operationFingerprint": "6005ec447496656367bc43b8958a23877ba7dd5190af57773221adf73b5cb986",
+      "code": "knowledge_review_failed",
+      "observationHash": "cee7157afb4a60000ef74cafc45bf603e40c82266ddbd5b0e766c49911e6bf27",
+      "priorOperationFingerprint": "cfefa008c690b44298be7ad2c13f5017cfb55712a31ccc44b928a1c85be7aed8",
+      "action": "review_age_draft",
+      "sections": [
+        "母乳餵哺的疑慮與可能遇到的挑戰",
+        "餵哺嬰兒配方奶的問題"
+      ],
+      "reason": "原修復已完成整理。第一段是準父母的餵養決定，第二段保留產後餵哺、乙肝與其他個別情況，兩段各自的 12、24 個月上限均非全段限制。疫苗及免疫球蛋白的條件須連同乙肝段核對。",
+      "validation": [
+        "units.0.applicability/custom",
+        "units.1.applicability/custom"
+      ],
+      "organizerRequestHash": "d058d5e38a05708ed7d3d54ba075df2b357903e3590875659dbe1accf47a8747",
+      "units": [
+        {
+          "unitId": "p0-a1a663eba156d80086c0",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "適用於準備迎接新生兒的準父母及初生嬰兒家長"
+          ],
+          "passages": [
+            {
+              "start": 85,
+              "quote": "作為準爸媽"
+            },
+            {
+              "start": 968,
+              "quote": "如你有以上或其他的疑慮"
+            }
+          ]
+        },
+        {
+          "unitId": "p0-e47392233c82b780893e",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24,
+          "conditions": [
+            "適用於初生至兩歲以上嬰幼兒之餵哺管理",
+            "媽媽患傷風感冒或為乙肝帶菌者時的餵哺指引"
+          ],
+          "passages": [
+            {
+              "start": 5,
+              "quote": "帶乙型肝炎病毒"
+            },
+            {
+              "start": 13,
+              "quote": "寶寶於出生後不久會接種乙型肝炎免疫球蛋白和疫苗"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-20000",
+      "title": "愛·從母乳開始……",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.html",
+      "textHash": "1b8d74cc7eee30491a97a53b30f2ac2aad2b81765b69e1174d1a70e3255741f3",
+      "operationFingerprint": "0064203201779253221dd5f7beb7b3dfd1dbad1bcd99317ac2910be5895df345",
+      "code": "model_output_limit",
+      "observationHash": "b107cd01b5f6cc3cff14aa80c32c1b140f66de22eb2c9b42c87e51109e3f7e89",
+      "priorOperationFingerprint": "af335003a82cba9be2d6ae5d3a1a3ac6233027ecd0ab4e2d89b59d7c1f1db4a3",
+      "action": "retain_incomplete",
+      "sections": [
+        "0–826｜給準爸媽的信及目錄",
+        "827–2664｜第一章 母乳餵哺開展生命歷程",
+        "2665–5036｜第二章 母乳餵哺好開始",
+        "5037–9148｜第三章 母乳餵哺好時光",
+        "9149–12753｜第四章 母乳餵哺實戰攻略",
+        "12754–14584｜第五章 齊來學擠奶",
+        "14585–16359｜第六章 哺乳期間的營養",
+        "16360–17194｜第七章 媽媽的疑惑",
+        "17195–21735｜第八章 母乳餵哺診症室及支援資料"
+      ],
+      "reason": "原整理及其一次修復均在輸出上限截斷，沒有完整候選可交審。須按同版八章分段整理，核齊各章孕婦、哺乳母親及嬰兒對象後，再作獨立審核。"
+    },
+    {
+      "sourceId": "fhs-30073",
+      "title": "全方位認識「泵奶器」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.html",
+      "textHash": "0b79d2dc48d40092677d8e5ee72eae8cff56e10620bb831ae2b45b6b3feeedf0",
+      "operationFingerprint": "4ab214d1f138b73fd6a87c27ea5a13cca899ff402d95e8c444394e7bea8b6306",
+      "code": "knowledge_review_failed",
+      "observationHash": "a2fa92f77fe297fda96c10911db6723c2d9dda99ee1c622a668b094398267c98",
+      "action": "review_age_draft",
+      "reason": "兩段的對象都是使用泵奶器的授乳母親。原文提及早產、泵奶次數及用具，兩段都沒有訂明兒童 0–12 個月。",
+      "organizerRequestHash": "5d1ea3dad067ca7ba30de7e3c1eb87afe4edeba896af761c66b42b1188374e9a",
+      "units": [
+        {
+          "unitId": "p0-0efec4cf19360fb8aa96",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "正在使用或考慮使用泵奶器的授乳母親",
+            "以母乳餵哺嬰兒"
+          ],
+          "passages": [
+            {
+              "start": 78,
+              "quote": "究竟應該在哪些情況使用泵奶器"
+            },
+            {
+              "start": 1315,
+              "quote": "若以全母乳餵哺而寶寶並沒有直接吸吮乳房"
+            }
+          ]
+        },
+        {
+          "unitId": "p0-84a311f21ea2233dce28",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "授乳母親泵奶疑難",
+            "乳脹處理"
+          ],
+          "passages": [
+            {
+              "start": 46,
+              "quote": "若懷疑自己奶量不夠，可尋求母乳餵哺指導"
+            },
+            {
+              "start": 640,
+              "quote": "若乳脹持續24 小時以上"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-20036",
+      "title": "懷孕及哺乳期的健康飲食",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/woman/20036.html",
+      "textHash": "35ecac25ea91abca4ff47858f3f12c226dbb45c181c633699d1dd4b9f9cbd85d",
+      "operationFingerprint": "54de44101da243ebf938aa5528405b3eee3059b9ee05df08efe33e63aff59b16",
+      "code": "published",
+      "observationHash": "d2399447dc1143d54da7c10933f38068ed8f6d04092e007bcab36b26321a8e9a",
+      "priorOperationFingerprint": "9bb2707cce213a1eb26cca44375497e1ef08c15769ac450eefc32f4f1f988f48",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30018",
+      "title": "「媽記奶品工場」漫畫",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.html",
+      "textHash": "12505f06bf403380d22f7406780c273ad6130f2d0945917e3ca52754dca3159c",
+      "operationFingerprint": "9ae1831abeccbcaa3a88fbb819bc3794722a1102976a29a3fcdace55a9870097",
+      "code": "knowledge_review_failed",
+      "observationHash": "d85e75a25fd2f1df2ff5fdda31885b4f3e330c7043c7cbf76f04b20e5ee160f2",
+      "priorOperationFingerprint": "43e9b57d6cc05b1b95c6f53c16b497851b3ac46735a80236305d0bdd0c9188c5",
+      "action": "review_age_draft",
+      "sections": [
+        "第13頁／母乳的生產",
+        "第16頁／埋身同全泵",
+        "第28頁／注意"
+      ],
+      "reason": "原修復已完成整理。第一段交代一位授乳母親的漫畫經驗，第二段接續餵哺經歷和支援。兩段均沒有全段 12 個月上限。審核時要區分個人經驗和醫護指引。",
+      "validation": [
+        "units.0.applicability/custom",
+        "units.1.applicability/custom"
+      ],
+      "organizerRequestHash": "b503f74e7273ba578543682ce33a95953f69e72239e801d5290fc4072e5cabb3",
+      "units": [
+        {
+          "unitId": "p0-de744498efd3228f83af",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "漫畫內容屬個別授乳母親經驗分享，不代表每對母嬰必然經歷"
+          ],
+          "passages": [
+            {
+              "start": 66,
+              "quote": "一位授乳母親的親身體驗"
+            }
+          ]
+        },
+        {
+          "unitId": "p0-698f7ff8b6cf0a703a7b",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "若出現持續乳管阻塞、奶量顯著不足或餵哺痛楚，應尋求醫護或專業哺乳顧問協助"
+          ],
+          "passages": [
+            {
+              "start": 0,
+              "quote": "奶的方法"
+            },
+            {
+              "start": 1101,
+              "quote": "第28頁"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-12146",
+      "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html",
+      "textHash": "5c3b28b854c8aa73984a47b52444025be7a36d7ca0d06395c726679ebba2a673",
+      "operationFingerprint": "e5ebfa91d9227216d75a6a26031b65321e2f5d340568564f7d9a576c2635b257",
+      "code": "published",
+      "observationHash": "3e414cad8d086e37c3db615e56b1fb0568101e2e47b2e462b9545074d4475001",
+      "priorOperationFingerprint": "2f22965ad1503ffddfd604d38795c778bf4eb81b51c045957ed634ec052d74e3",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30146",
+      "title": "你攝取足夠碘嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/woman/30146.html",
+      "textHash": "a123e34873516222d1e114a52660b6488be08d210aefc94d6e216ac08d3b700e",
+      "operationFingerprint": "a97552f43d4688914e3b213f5886881a0461ce7be9dcf2fa151fca4a1c6388cf",
+      "code": "published",
+      "observationHash": "78765cd7765aa8fcec30abbbd4c690ee559654d21a500039abbc3460a3b4a367",
+      "priorOperationFingerprint": "5d52973ab3fc2428d49ec005f8dca6a600ce6905657199e5d817158f2ffedba4",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30190",
+      "title": "預防嬰幼兒及孕婦缺乏維他命D的聯合建議",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30190.html",
+      "textHash": "b91bf6c9ec46c106eff60d05e97a2974ed3498c94283cf12581fd978f777e2e8",
+      "operationFingerprint": "f63bf5420f5971a584474b9bbdb82b725bc8ea88b62a065b07ea310a59cf3d3b",
+      "code": "published",
+      "observationHash": "9c841efadeb6add2953f625089953cc0fa4c20c210524f668ec8ffd28496236f",
+      "priorOperationFingerprint": "a88636a8b382784c9a8949dc2527de6d3d22c79a2a4093d8ca35b2631897029c",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-14727",
+      "title": "6至24個月嬰幼兒健康飲食 (1) 起步篇小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.html",
+      "textHash": "17503235b3dd623c638fe38bf34cbf4892a1ea33adb9d2c53a881834b0fa188b",
+      "operationFingerprint": "778e78c74fe7e4698147eafd521d0b6ee2e56596d166a4413e8feb2204993c6e",
+      "code": "published",
+      "observationHash": "a77a55a113e550a3f303922518369b1daec404105bd642681eaf2b08e27a0416",
+      "priorOperationFingerprint": "9969b22b7d3f4ce8666a93be0ff7b6fca539872afffdf5cdb5e3fa0b5b007c94",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-14722",
+      "title": "6至24個月嬰幼兒健康飲食(2)進展篇(上)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14722.html",
+      "textHash": "cd22677286816b4270ec6e5139934c291ce3980b7d291d4a2e5e682617c3dfa6",
+      "operationFingerprint": "40a41ad79168a219df579bf096ff02845049563f6c5f5bf9a73f39c1a330f248",
+      "code": "published",
+      "observationHash": "d20b665edf30e1254a4e669fa0d94588c4b9f591495773e4e0ac31aab213d7ae",
+      "priorOperationFingerprint": "1fec7fdd05f2f9d009020fbf96e18db08dc73da2cc793d6d39dca3a4bdf093a6",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-16301",
+      "title": "6至24個月嬰幼兒 健康飲食(3) 進展篇(下)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/16301.html",
+      "textHash": "2af7f4af13d34bb1ee567cae3e6437e2804c7d133414eecbf8ba1c44f285ffe5",
+      "operationFingerprint": "25ebd02ef8d7fc6629b84878de9215a592b4580843756969b99f5fedddcddf67",
+      "code": "published",
+      "observationHash": "72005ffcf7dfdf6918556a954e010ec44bba61426ff33769d3358771f01c1f42",
+      "priorOperationFingerprint": "69e7fe0315d7643b18c542623a3686642043298ae5fda0a5e973655eee375c9a",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-14732",
+      "title": "6至24個月嬰幼兒7日飲食全攻略小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14732.html",
+      "textHash": "18da14d972ae2a03b621af19c48d33a89638a9b083b620baabc402e56b679db6",
+      "operationFingerprint": "7abe70e882b328d7a2439cac03a52739265d9de4407df8a5fc1209f75bc2e375",
+      "code": "published",
+      "observationHash": "bd79b8a6af565eb672985049a37fa6b93c35edeb0cc83baa1c5ab2b7f9ccbc24",
+      "priorOperationFingerprint": "4ed83fc7fd1bc9c12b3afa463ba0a29a993064aaea22b6744281434e36d4ec22",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-12549",
+      "title": "嬰幼兒健康飲食 - 飲奶知多少",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html",
+      "textHash": "f631893482937f6393737fc816e0b7fce6c433802b5e7f1538d520b083435683",
+      "operationFingerprint": "ed63dc7fbbe993d27ac46a914ec932efee771dd5715fe9eb7887433fe697aae9",
+      "code": "published",
+      "observationHash": "72a8beeca448f15f0b37785e5c6940bf8660cadd112164a6d31615ad69cc22d5",
+      "priorOperationFingerprint": "0c123bded12c03a6564b1dc4f1a19762ba11ecee9f3c327eb79a1de13e8943bf",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30008",
+      "title": "替孩子轉換奶粉",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.html",
+      "textHash": "d212934933acb04f8e993807e3ed70d32f16494826affecd86abe54f3f47426e",
+      "operationFingerprint": "3817d8cd192534e6a6f30f09ff8a347c012c80f882cd13850fc102a16ecd0d08",
+      "code": "knowledge_review_failed",
+      "observationHash": "c5186658896dfd7ca92e7607c5e7108d775434f7ef6b14f61b9ec3ebb6a2cbef",
+      "action": "review_age_draft",
+      "reason": "初生至六個月、六至十二個月及一歲或以上各有自己的條件。末段的單側界限受原文支持，整個單元的 24 個月上限沒有根據。",
+      "organizerRequestHash": "f33cde42bcd8bb8bdd00e9462ed0bca6e19cc737bf2024064889f62665e1a964",
+      "units": [
+        {
+          "unitId": "p0-3945e4269848abb3a9f3",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24,
+          "conditions": [
+            "初生至6個月嬰兒不可食用較大嬰兒配方（2號奶粉）",
+            "全脂牛奶不適合12個月以下嬰兒",
+            "切勿把兩款或以上不同品牌的配方奶粉混合沖調",
+            "特殊醫用配方應由醫生按個別情況建議並指示使用"
+          ],
+          "passages": [
+            {
+              "start": 244,
+              "quote": "初生至6個月："
+            },
+            {
+              "start": 358,
+              "quote": "6至12個月："
+            },
+            {
+              "start": 507,
+              "quote": "一歲或以上："
+            },
+            {
+              "start": 589,
+              "quote": "「特殊醫用配方」奶粉："
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30169",
+      "title": "幼兒成長健康生活好習慣",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30169.html",
+      "textHash": "3c895b85261e41357066511b3558328e13e2f4a3c7ad1d81ebf3adae197784bb",
+      "operationFingerprint": "e52c6d1c7210e5588176a7cc24bf7cebf25a2d8dbe14f5b1770866430b7292a0",
+      "code": "published",
+      "observationHash": "5486735cc251385a53c082702654158645f2dd2a496c8efa6132acffc8346f91",
+      "priorOperationFingerprint": "7c910d770ba3f99bf32b879f66d21fb92ae67e414806c123ae90c041f063f79e",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-20033",
+      "title": "孩子「偏食」怎麼辦?",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
+      "textHash": "ed298866ac0bde9a0a7d1318392450a650a9c2db7151998a4793e0c330067334",
+      "operationFingerprint": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+      "code": "knowledge_review_failed",
+      "observationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+      "action": "scope_unresolved",
+      "reason": "原文指定幼兒和學前階段，沒有把這兩個詞定義成 12–72 個月。整段受眾若無法忠實表達，須保留待審。",
+      "organizerRequestHash": "bf2659a11526c43755b9a2cda53f984adde8447f4663fb08aa19c7a01b697bc1",
+      "units": [
+        {
+          "unitId": "p0-3ad26ff5bfdc5145807a",
+          "ageBasis": "any",
+          "minAgeMonths": 12,
+          "maxAgeMonths": 72,
+          "conditions": [
+            "適用於幼兒及學前兒童出現揀飲擇食或抗拒新食物的情況",
+            "若孩子長期拒吃某一大類別食物，應尋求醫護人員或註冊營養師評估"
+          ],
+          "passages": [
+            {
+              "start": 11,
+              "quote": "在幼兒和學前階段"
+            },
+            {
+              "start": 1495,
+              "quote": "若果孩子長期拒吃某一大類別的食物"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30012",
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
+      "textHash": "78d31e91d881f3a2c264a047caa89e20244802bd4c09637cd544affbbd7abf86",
+      "operationFingerprint": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+      "code": "knowledge_review_failed",
+      "observationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+      "action": "scope_unresolved",
+      "reason": "7 至 9 個月指開始學用有杯嘴的訓練杯。吸管在習慣後才引入，其他杯子注意事項亦沒有給整段統一的上下限。原輸出只填 7，沒有理由補上限。",
+      "organizerRequestHash": "e42ea4ec4da28b29c891583912a734689314deeb1395b2da0fe59f287b43075d",
+      "units": [
+        {
+          "unitId": "p0-44468e527107f966122c",
+          "ageBasis": "actual",
+          "minAgeMonths": 7,
+          "maxAgeMonths": null,
+          "conditions": [
+            "適用於開始由奶瓶轉用訓練杯或吸管杯的嬰幼兒",
+            "飲料不應含有渣滓或粒狀物以策安全"
+          ],
+          "passages": [
+            {
+              "start": 96,
+              "quote": "7至9個月的寶寶開始學習用有杯嘴的訓練杯"
+            },
+            {
+              "start": 117,
+              "quote": "當他習慣後，再引入用吸管"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30074",
+      "title": "食物與營養素",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30074.html",
+      "textHash": "2d8e95e535078c789100dc7d958cd0748b0206c62b47db3bbac815f771a8a4ce",
+      "operationFingerprint": "b552ec82537af56b1a3d94f4cd1a07c72c1b369414336d6036dcc097beaea8c1",
+      "code": "published",
+      "observationHash": "742eeeb19e761b4da0c313afb6ce28512cf08691bc3a05471b6b7b8fe5bae4f4",
+      "priorOperationFingerprint": "ba7f91069f7bf7dd49035df612aeebf23d1d7530c32c4c3432dbb93e31294f4d",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30109",
+      "title": "寶寶愛活動",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30109.html",
+      "textHash": "daaf79b14dab451b24d69bdb740c5db5458156e885d1d8cb5721a06810780cb4",
+      "operationFingerprint": "294c88af2133adf97475575751d2ee84e6864612e823c3bf2b6ec30424defc5a",
+      "code": "published",
+      "observationHash": "c3c3e87c3bf98b64bacdc7b3eea7cbc2ba1c0090946ff3479656da1c4fc033bf",
+      "priorOperationFingerprint": "f559d92ca3d41fc146e4502b7ac34444c5b2790851aee58a1dd94ebcc4f1eed6",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30047",
+      "title": "你的 0 – 5 歲孩子需要電子屏幕產品嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30047.html",
+      "textHash": "19366c4b0a90837b6aad3133849af853c8ec9b5bb54ceb3bfd75c1ad22e80489",
+      "operationFingerprint": "703931813655192ee4196d682b4f52d21fc750b79bca8d76de94e367577a998d",
+      "code": "published",
+      "observationHash": "a74f45ac463adff43c7f09aa072187b12163b51e591d1230c598c6110b57a441",
+      "priorOperationFingerprint": "f79dfdb2200a575b29cf48649f573822dba29554b96d22a723d60d1c047fb829",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-13034",
+      "title": "育兒預備篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13034.html",
+      "textHash": "60d96f4bd475a53c8a1e23dd4b7911e8aa9c65bd6518ec501e21db64a9f65c4c",
+      "operationFingerprint": "1ce643542c6fadbdbac0ff761f74ac94045ed0f327f8daeb154bbe395c4690f4",
+      "code": "knowledge_review_failed",
+      "observationHash": "ce2ba41bde2dcde610ad47f1e9a96873d7cc11dd87f1481a8b46a65503ea6781",
+      "action": "review_age_draft",
+      "reason": "原文涵蓋出生前後的心理預備及家庭適應，沒有全段至 12 個月的限制。",
+      "organizerRequestHash": "ed6299440fb027f8e2a36dedcfaaa6e468055013e7253fc396da81691f8dc522",
+      "units": [
+        {
+          "unitId": "p0-a2d8b570336b61cd2925",
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "適用於準父母及新生兒家長之心理調適與育兒準備"
+          ],
+          "passages": [
+            {
+              "start": 6,
+              "quote": "寶寶快要出生了，作為準父母"
+            },
+            {
+              "start": 1761,
+              "quote": "如何處理可能會出現的情緒問題"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-13040",
+      "title": "貼心照顧: 建立親密的親子感情",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13040.html",
+      "textHash": "b3a3ae3d11b3cd63e96a8e7556094f4b79f9ee53873c7f5e4733b8793451c16c",
+      "operationFingerprint": "d11189c454de9cfb24fc1fe16f319021718ad0e297b6fc9d2fbfc3e514cda121",
+      "code": "published",
+      "observationHash": "b48a1d2789be2796df4afc8f9357645b63b23fc3553424949eecb8535b822117",
+      "priorOperationFingerprint": "feec5eec99d54519da99c7746a659f5c6d6b90bbb0613b4522a93e90b4a98019",
+      "action": "already_published"
+    },
+    {
+      "sourceId": "fhs-30130",
+      "title": "陪我玩、同我講",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30130.html",
+      "textHash": "5c37b267d4291e8603431a524fe62dc2ec544a774155f6473c93289bec0c8ea3",
+      "operationFingerprint": "5a7fd20d95ba08febf59edb9d5e1585621e837f5468b41551cf947b5ac6fc978",
+      "code": "knowledge_review_failed",
+      "observationHash": "4edde67e4bfca633d70ece50494bb8452a97e929c9e6665953751f766181e479",
+      "action": "review_age_draft",
+      "reason": "講述日常溝通及遊戲。書名和發展里程描述各有年齡或階段，沒有訂明整段 0–24 個月。",
+      "organizerRequestHash": "784e1592a97ba40e667b5b369965a20b4804f166b01004c78a6bb2d8207c66dd",
+      "units": [
+        {
+          "unitId": "p0-ca16c5a1b0fca34306bd",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24,
+          "conditions": [
+            "適用於嬰幼兒日常親子溝通、遊戲互動及語言發展觀察",
+            "當孩子失去興趣時應停下來讓其休息"
+          ],
+          "passages": [
+            {
+              "start": 8,
+              "quote": "每個孩子都需要在一個語言豐富的環境下學說話"
+            },
+            {
+              "start": 235,
+              "quote": "八至十二個月大嬰兒的發展"
+            },
+            {
+              "start": 547,
+              "quote": "記錄孩子在哪個歲數"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30006",
+      "title": "培育還是催谷子女",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
+      "textHash": "7886ae5e3922145f7ba2d21a3377ba257dbf988e885cbc2a1bc6a4c1e1f77304",
+      "operationFingerprint": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+      "code": "knowledge_review_failed",
+      "observationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+      "action": "review_age_draft",
+      "reason": "原文 0 至 3 歲用來解釋發展速度。學前評估也有特定情境，兩者均不能推出整段 0–72 個月。",
+      "organizerRequestHash": "eb719ab24f16fa2f97a36d7166c7dd6c060c0706514d3ac0fc3d81a4935128d3",
+      "units": [
+        {
+          "unitId": "p0-de7bca339ef4d7e75d00",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 72,
+          "conditions": [
+            "適用於學前及幼童之家長及照顧者一般培育與發展指引",
+            "除非懷疑學習或社群適應困難，一般不建議為學前兒童進行常規智力評估"
+          ],
+          "passages": [
+            {
+              "start": 372,
+              "quote": "在0至3歲發育得最快"
+            },
+            {
+              "start": 1214,
+              "quote": "除非懷疑兒童在學習或社群適應上有困難"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30143",
+      "title": "足不出戶的「親子遊樂團」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
+      "textHash": "40ab3c2281e62c7ad66a61f55263b4220050832a2c5da3ad9f148a31c42f20a6",
+      "operationFingerprint": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+      "code": "knowledge_review_failed",
+      "observationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+      "action": "scope_unresolved",
+      "reason": "原文以幼兒和學前孩子為對象，較難的活動另指三歲以上。沒有為整段訂明至 72 個月，亦不能把局部下限套在其他活動。 原整理的文字條件也寫入 0 至 6 歲，單改數字欄不足。",
+      "organizerRequestHash": "45c94a575626353fbc28c74a1921d445236b585a3725d54bcaa12431a6458300",
+      "units": [
+        {
+          "unitId": "p0-93241693e83a2da6288d",
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 72,
+          "conditions": [
+            "適用於幼兒及學前兒童（0至6歲階段）留在家中時的日常活動與作息安排",
+            "部分活動如用紙球拋接投籃或尋寶遊戲適合3歲以上孩子",
+            "進行體能與自由活動時須確保家居環境安全"
+          ],
+          "passages": [
+            {
+              "start": 55,
+              "quote": "給幼兒和學前孩子安排日常活動"
+            },
+            {
+              "start": 452,
+              "quote": "三歲以上的孩子可以嘗試一些更高難度的動作"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-14836",
+      "title": "正面親職（二）：學前階段的實踐",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+      "textHash": "a231d7abca9ea39dac170a9c9d10d58d86af501ffd4a3589077409bcdcedf666",
+      "operationFingerprint": "962d0ed2b1179f762c82072d0c135e79e1ee75cca06c8cde5a646cce34f4c2f7",
+      "code": "review_hold",
+      "observationHash": "fe0c92ed1dcfc4fb6093a9a0b3b80181cf4671597c37f1bfc908952f341f345e",
+      "action": "retain_reviewer_hold",
+      "sections": [
+        "認識你的孩子",
+        "獎勵計劃"
+      ],
+      "reason": "原獨立審核退回切斷的獎勵計劃末句。首段在第 3000 字「避免」結束，餘下十字自成一段。兩段也套用原文未界定的 24–72 個月。須接回完整末句，按幼稚園階段保留適用條件後再獨立審核。",
+      "heldVersionHash": "2fd6e0d09b73b73ef21bafbf158b6e60d7a6309e965d50021c3bb6d78bd841ae",
+      "reviewNotes": [
+        "候選片段 p0-4e1f4c27cc372560001e 的 originalText 和 sourceExcerpt 僅有未完整句子「孩子長期依賴物質獎勵」，其整理正文內容實際源自 p0-d51716f3ae06d6074e52 結尾被截斷的文字，屬於切分錯誤與內容殘缺，須重新分段整合後再行收錄。"
+      ]
+    },
+    {
+      "sourceId": "fhs-14838",
+      "title": "品德培育之一",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+      "textHash": "a6f1917dab57c1ca3c4fc1309d291c4225dff4fa50d3327a9fae01da7a473238",
+      "operationFingerprint": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+      "code": "knowledge_review_failed",
+      "observationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+      "action": "scope_unresolved",
+      "reason": "七歲、十歲和三歲分別出現在故事或示例中。十歲不是整段親職指引的上限。 原整理條件另列學齡兒童；先釐清學前管教方法的對象。",
+      "organizerRequestHash": "a25fb80ef6be5c66775272473f0cea5a7fc8b71e748d7c6f1c45227a1fce5d83",
+      "units": [
+        {
+          "unitId": "p0-f8e6d83b3dc259535e0a",
+          "ageBasis": "any",
+          "minAgeMonths": null,
+          "maxAgeMonths": 120,
+          "conditions": [
+            "適用於學前兒童及學齡兒童的品德培育與行為管教",
+            "行為獎勵表不適合長期使用，應漸漸減少物質獎賞並輔以稱讚",
+            "不要在孩子情緒未完全平伏時立即說道理"
+          ],
+          "passages": [
+            {
+              "start": 18,
+              "quote": "阿達，七歲"
+            },
+            {
+              "start": 75,
+              "quote": "卓怡，十歲"
+            },
+            {
+              "start": 267,
+              "quote": "建立學前兒童正確的價值觀"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-13050",
+      "title": "新生嬰兒護理預備篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13050.html",
+      "textHash": "b6aeb6cc61ad0b06ad60176f78ea30fd40545c06ce3dc4c625e1c350a471271f",
+      "operationFingerprint": "68d00f4ebac76d616717aa3250cf7e56ea8482b2608c1a3813fbe21dbd2dd289",
+      "code": "review_hold",
+      "action": "retain_reviewer_hold",
+      "sections": [
+        "新生嬰兒護理預備篇／預備嬰兒用品／揹帶",
+        "嬰兒護理／常見嬰兒餵哺問題"
+      ],
+      "reason": "原獨立審核指整理把新生嬰兒擴至幼兒。原頁沒有為整篇列出月齡上下限，三個月或以上只屬一般揹帶。須可分別保存新生嬰兒這個對象和揹帶條件，再把修訂交獨立審核。",
+      "observationHash": "f917732a5d7b983f99a05fad97b9351afae4268636f526be78fd77de0082a894",
+      "heldVersionHash": "fed9a5ed2e6ea2b20ce9f0f63fd7a70953fb24489e98cd6c13a53481f4a2e267",
+      "reviewNotes": [
+        "內容整理與原文數值、禁止及照護要點吻合，但候選 metadata 中 applicability.ageBasis 設為 'any' 且 minAgeMonths/maxAgeMonths 皆為 null，且 conditions 將適用範圍泛化為『適用於新生嬰兒至幼兒照顧預備』，失去了指引明確針對新生嬰兒（0-1個月）及揹帶3個月限制的年齡界限與精度，依據審核規範必須標記 hold 以待修正適用年齡段設定。"
+      ]
+    },
+    {
+      "sourceId": "fhs-14851",
+      "title": "常見嬰兒皮膚問題",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+      "textHash": "795be09f54aeec04b2768237f45073246db3e35a591886922f67175608c307c0",
+      "operationFingerprint": "86c92d9da315819036bc6b86c6e8fe212b7dd6b581db477eea36dbe2287bbcb8",
+      "code": "knowledge_review_failed",
+      "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+      "priorOperationFingerprint": "e2f043b6991c703ef026fe1427233b0812cc29a85b712286125fcaf4c04c1970",
+      "action": "quarantine_504",
+      "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
+      "reservedMicros": 1603584
+    },
+    {
+      "sourceId": "fhs-15672",
+      "title": "三至四歲大兒童發展",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.html",
+      "textHash": "e306c0442ff1aa9690c4bf2bf61e77fa129077bc5f2963d329575719c461d111",
+      "operationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18",
+      "code": "knowledge_review_failed",
+      "action": "quarantine_504",
+      "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+      "ticketId": "667f96bb-5806-47c1-8fb1-f40e82befba2",
+      "reservedMicros": 1603584
+    },
+    {
+      "sourceId": "fhs-30108",
+      "title": "你的初生寶寶安全嗎?",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30108.html",
+      "textHash": "74f5fa148e9905f6c2bebdec305913787a8550a8ff4bf55092b993a4d1269238",
+      "operationFingerprint": "c703c1a8916b406cfc4ebbd428dd815dd247ca1bcf4988e67b0ebb97d0876f49",
+      "code": "knowledge_age_one_sided",
+      "action": "scope_unresolved",
+      "sections": [
+        "你的初生寶寶安全嗎？／初生寶寶家居環境自評",
+        "理想的情況"
+      ],
+      "reason": "原整理只回報單邊月齡。原件是一份給初生寶寶的 24 題自評，未列整份適用的月齡上限。沒有同牀睡要跳到第 6 題，每題另有不適用選項。須保留新生階段和答題條件，依題序連回理想答案後再獨立審核。",
+      "observationHash": "da587782b7ea5cd855161931ac8f9d440e88861e580d4bc20f3e8065136653ed",
+      "validation": [
+        "knowledge_age_one_sided"
+      ],
+      "organizerRequestHash": "39363245e0f6ed86e73f6486b800b10ee207933c44180317ec97f57d95fadc5c"
+    },
+    {
+      "sourceId": "fhs-481",
+      "title": "卡介苗（預防結核病）",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
+      "textHash": "04f62daa55a37a5f92e95824ceba8066edd2e1faf2f9d0a57dcefa3eb97ca006",
+      "operationFingerprint": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+      "code": "knowledge_age_one_sided",
+      "action": "scope_unresolved",
+      "sections": [
+        "乙.接種的時間",
+        "丙.不宜接種的人士",
+        "丁.接種的副作用"
+      ],
+      "reason": "原整理只回報單邊月齡，沒有準備好可用的適用條件。乙段分列出生後的新生嬰兒及十五歲以下、居港且從未接種的兒童。丙段另列近期活疫苗、免疫抑制治療、免疫缺乏、癌病、嚴重皮膚病及母親孕期生物製劑治療，包括專科評估是否延遲。須分別保留兩組及其例外，再交獨立審核。",
+      "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+      "validation": [
+        "knowledge_age_one_sided"
+      ],
+      "organizerRequestHash": "489a67309529102ce767868993a40c6a6ccb1e2bfb71b256515415cd257e13de"
+    },
+    {
+      "sourceId": "pdf-24570709d1a53c93d8c9e581",
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.pdf",
+      "sha256": "8984253cddec469f943756fd6751460c1cb16cb80b2167fd448c9c5fef10a279",
+      "pages": 1,
+      "operationFingerprint": "048a88d2807ee6cfbc404a6485a680f5b4cc1211449cbf0df844aaf837cc4eb2",
+      "code": "knowledge_age_one_sided",
+      "action": "scope_unresolved",
+      "sections": [
+        "1｜頁首問題及首兩點",
+        "1｜寶寶使用吸管杯子的提示"
+      ],
+      "reason": "7 至 9 個月是開始學用有杯嘴訓練杯的時段。習慣後才引入吸管；保留坐姿、飲料及安全提示。此 PDF 與網頁分開審核。",
+      "observationHash": "e0abf6dc42b7d49e885fb07d509a5e8adf46ab2cbd1729015f91c687f312fa44",
+      "validation": [
+        "knowledge_age_one_sided"
+      ],
+      "organizerRequestHash": "49fff8fbc474c653b4dd184980cb2a5baf18ecea2eee526b71d7de9ec9158309"
+    },
+    {
+      "sourceId": "pdf-eefb43f9c484a1a24343d64e",
+      "title": "孩子轉用杯飲奶，分量比以前少，怎麼辦？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30017.pdf",
+      "sha256": "6201b61746b170f693a970ffc1b3acaf7388f0469625d2e3009f2e26d42ad1c7",
+      "pages": 1,
+      "operationFingerprint": "fbc4d7a0419a2348cb483e7965628b86bb3180dca00fd12b65d76dbf9e0baf96",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "1｜頁首十四個月個案",
+        "1｜轉杯過渡及一歲至五歲幼童的奶量段"
+      ],
+      "reason": "唯一欄位錯誤為香港地區名稱。第 1 頁的十四個月是個案，飲奶建議的一至五歲只屬該段。核對原整理設定的整段 12–60 個月有否錯套，並保留轉杯的發展階段。",
+      "observationHash": "2758c927f4f7490c37a792dba5f23aa3351fa1fad2aa6821155ce0b8488d31be",
+      "validation": [
+        "ranges.fromPage1Through1Unit1.region/invalid_format"
+      ],
+      "organizerRequestHash": "9cdd6311c1098f9471bfd048c8e811f1bae7cd5bcb628cd17d74507a40fbfd6d",
+      "ageOutput": "source-unit-age/1",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-17a3f9316300dcf81b376854",
+      "title": "足不出戶的「親子遊樂團」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.pdf",
+      "sha256": "aa26ab9132b470d636bf2f812728ab453d7009c871d41aa522ac21835ca81ae7",
+      "pages": 1,
+      "operationFingerprint": "b9d298025cad5878b8804b825f7124bd2d272816f7feb7c07325f6b404319934",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "1｜左欄動態篇、右欄靜態篇",
+        "1｜下方家務／自理篇及留意事項"
+      ],
+      "reason": "唯一欄位錯誤為香港地區代碼的小寫寫法。重新以整張海報核對動態、靜態、家務及注意事項；同題網頁的三歲條件不能移植。",
+      "observationHash": "b00d4387ca178b9f436568fa098f4b28844242f4dc8c4b46e91f670cd59f3994",
+      "validation": [
+        "ranges.fromPage1Through1Unit1.region/invalid_format"
+      ],
+      "organizerRequestHash": "6392e602c065e1797b6c769d69a58d79a0ec5b91062c6d6c76363941b706c202",
+      "ageOutput": "source-unit-age/1",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "hk",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-a036f537a86308ec16eb7d21",
+      "title": "「童」你在家工作，點先做得安樂？",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30144.pdf",
+      "sha256": "49f7926f9595666a9a300d0ad09517d44389d654abe226fcb185ad6e750649ea",
+      "pages": 1,
+      "operationFingerprint": "7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4",
+      "code": "published",
+      "action": "already_published",
+      "checkpointCode": "knowledge_embedding_daily_admission",
+      "activeVersionId": "70db2201-c4bc-5f3a-a011-81fabcad6f66",
+      "publicationReceipt": "committed",
+      "publishedAtReadback": "2026-11-20T04:32:14.263287Z",
+      "versionHash": "b7a4f123fba8723557f8040650f497f9ca7fc0ae3553edc2123a7e4d7933f45c",
+      "ageOutput": "source-unit-age/1",
+      "maxOutputTokens": 8192
+    },
+    {
+      "sourceId": "resource-d8149af7847e38",
+      "title": "香港2020生長圖表",
+      "url": "https://www.dh.gov.hk/english/useful/useful_PP_Growth_Chart/files/growth_charts.pdf",
+      "sha256": "73a8961326934dfaa598052b00a5cfccbe101459e1c51ea4fcf4e8ab27cf7eb1",
+      "pages": 20,
+      "operationFingerprint": "91c5563f5371ce3ea231bf874323476cc2f43930d734f9be3cc14882796100a2",
+      "code": "knowledge_review_failed",
+      "observationHash": "e62e782f958eb72b0d43131cdb984309432f9208dbd6cb14d0e5ea34e8cb6eca",
+      "priorOperationFingerprint": "4b2d77191f63fc7c2f5e0b56f279b37ecae1cf708415416e73cced5da5c08de3",
+      "action": "review_pdf_source_age",
+      "sections": [
+        "2–10｜男孩頭圍、體重、身長／身高、BMI",
+        "12–20｜女孩相應圖表",
+        "9、19｜2 至 5 歲 BMI；10、20｜5 至 18 歲 BMI"
+      ],
+      "reason": "原圖冊涵蓋由出生至十八歲。保留兩組原來的 0–216 個月端點，逐張比對男女、量度單位、百分位數及每張實際年齡範圍；圖表不授權改動成長規則。",
+      "validation": [
+        "ranges.fromPage1Through11Unit1.ageRange.maxMonths/too_big",
+        "ranges.fromPage12Through20Unit2.ageRange.maxMonths/too_big"
+      ],
+      "organizerRequestHash": "7ffc47d9f4f762037ed010df4e9b7f516116da0deb6c08aa8b670508b4812144",
+      "sourceRanges": {
+        "fromPage1Through11Unit1": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": false
+        },
+        "fromPage12Through20Unit2": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": false
+        }
+      },
+      "regionEdits": []
+    },
+    {
+      "sourceId": "resource-6c18c8d7a17495",
+      "title": "保護兒童 你我有責",
+      "url": "https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf",
+      "sha256": "afa57bcfc265dcec5c49d89958bc7ae4e0d3dd3dea251d1e33563cb2e6cea63c",
+      "pages": 2,
+      "operationFingerprint": "43a2c64683631f1935049c5b9500f734037612d11d6bd5fbc7618aaafdf42c2e",
+      "code": "knowledge_review_failed",
+      "observationHash": "4a64e53682e87d00c77c98d02f097279dbbb2ec6b0a5d7a947f55c189c985231",
+      "priorOperationFingerprint": "281ee8c2103e167081524f29b5e8ff8588243d28db96a4173cb2db6a725eb490",
+      "action": "review_pdf_source_age",
+      "sections": [
+        "1｜中文左欄「何謂虐待兒童」、中欄行為類別及右欄協助",
+        "2｜英文相應段落"
+      ],
+      "reason": "原圖定義兒童為十八歲以下，五個單元均保留 216 個月的排除端點。兩個中文單元只修訂香港地區代碼。須對照中文原圖及英文對頁核實定義、照顧者責任和求助資料。",
+      "validation": [
+        "ranges.fromPage1Through1Unit1.region/invalid_format",
+        "ranges.fromPage1Through1Unit1.ageRange.maxMonths/too_big",
+        "ranges.fromPage1Through1Unit2.region/invalid_format",
+        "ranges.fromPage1Through1Unit2.ageRange.maxMonths/too_big",
+        "ranges.fromPage2Through2Unit3.ageRange.maxMonths/too_big",
+        "ranges.fromPage2Through2Unit4.ageRange.maxMonths/too_big",
+        "ranges.fromPage2Through2Unit5.ageRange.maxMonths/too_big"
+      ],
+      "organizerRequestHash": "747c46da64b599cdef6d3c6240f33650ce5d6a556e01f90de53ded1deefe6d8a",
+      "sourceRanges": {
+        "fromPage1Through1Unit1": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage1Through1Unit2": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit3": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit4": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        },
+        "fromPage2Through2Unit5": {
+          "basis": "actual",
+          "minMonths": 0,
+          "maxMonths": 216,
+          "exclusiveEnd": true
+        }
+      },
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        },
+        {
+          "range": "fromPage1Through1Unit2",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    }
+  ]
+}

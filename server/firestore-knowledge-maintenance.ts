@@ -1,6 +1,7 @@
 import type { PdfAmendment } from "./knowledge-pdf-amendments.ts";
 import { assembleKnowledgePdfWindows, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { AGE_OUTPUT_VERSION } from './knowledge-age-output.ts';
+import { matchesRegisteredRetainedDraft, retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaignCredentials, type CampaignDayAdmission } from "./knowledge-campaign-budget.ts";
@@ -46,6 +47,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   config: AiConfig;
   credentialBinding: string;
   explicitAgeScope?: boolean;
+  retainedDraft?: RetainedDraftRevision;
   providers?: PlatformProviderFactory;
   sponsor?: { userId: string; routing: Pick<FirestoreModelRouting, 'resolve'>; identityActive(): Promise<boolean> };
   knowledge: FirestoreKnowledgeStore;
@@ -89,11 +91,16 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration
         || (expectedRevision !== undefined && expectedRevision !== registration.data.revision))
         reject("knowledge_watch_not_registered");
-      if (grant && (!options.explicitAgeScope || !options.providers || options.credentialBinding !== campaignCredentials
-        || !campaignMaterialWatches.some(watch => watch.id === request.watchId) || request.publishMode !== 'live'
-        || expectedRevision !== registration.data.revision || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', request.operationFingerprint)
-        || request.operationFingerprint !== knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration])))
-        reject("knowledge_campaign_operation_changed");
+      const retained = options.retainedDraft;
+      if (grant) {
+        const original = knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration]);
+        const bound = retained ? matchesRegisteredRetainedDraft(retained, original, request.operationFingerprint)
+          : options.explicitAgeScope && request.operationFingerprint === original;
+        if (!bound || !options.providers || options.credentialBinding !== campaignCredentials
+          || !campaignMaterialWatches.some(watch => watch.id === request.watchId) || request.publishMode !== 'live'
+          || expectedRevision !== registration.data.revision || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', original))
+          reject("knowledge_campaign_operation_changed");
+      }
       const prompt = await loadAgentPrompt("knowledge-organize", "structured",
         ["run", "scope", "context", "evidence", "capabilities", "outputContract"]);
       const sponsor = options.sponsor;
@@ -106,6 +113,12 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
       const recovery = options.truncatedOutput;
+      if (retained && (sponsor || recovery || reusedOrganizationFrom || !expectedRevision
+        || request.publishMode !== 'live' || definition.kind !== (retained.action === 'review_age_draft' ? 'page' : 'pdf') || request.watchId !== retained.sourceId
+        || request.operationFingerprint !== retainedDraftWorkId(retained.operationFingerprint)
+        || (retained.priorOperationFingerprint && retained.operationFingerprint !== knowledgeTruncatedOutputRepairId(retained.priorOperationFingerprint))
+        || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', retained.priorOperationFingerprint ?? retained.operationFingerprint)))
+        reject('knowledge_retained_page_binding');
       const originalRequest = recovery ? { ...request, operationFingerprint: recovery.priorWork } : undefined;
       if (recovery && originalRequest) {
         if (sponsor || !recordedCheckId || !expectedRevision || reusedOrganizationFrom || request.publishMode !== 'live'
@@ -128,7 +141,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       }
       const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
       const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
-      const modelAllowance = windowed ? current.maxModelCalls : 2;
+      const modelAllowance = retained ? 1 : windowed ? current.maxModelCalls : 2;
       const limits = { modelCalls: Math.min(modelAllowance, current.maxModelCalls, personal?.runLimits.modelCalls ?? modelAllowance),
         toolCalls: Math.min(8, current.maxToolCalls, personal?.runLimits.toolCalls ?? 8), queryEmbeddings: 1,
         deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000, personal?.runLimits.deadlineMs ?? 300_000) };
@@ -136,7 +149,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts }),
         timeoutMs: Math.min(personal?.config.timeoutMs ?? base.timeoutMs, current.modelRequestSeconds * 1000), maxAttempts: 1, agentMaxRetries: 0 };
       const corpusPolicy = options.useIsolatedPlatformDailyLimit ? { isolatedMaintenanceProject: options.projectId } : {};
-      const ageContract = options.explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {};
+      const ageContract = retained ? { retainedDraftRevision: knowledgeReviewHash(retained) }
+        : options.explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {};
       const configBinding = { config, limits, ...corpusPolicy, ...ageContract, ...(recovery ? { truncatedOutput: recovery } : {}), ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
       const focus = options.focusedPage;
@@ -246,6 +260,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               }, tx => quotaReader.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts));
             };
             const reviewer = createModelKnowledgeReviewPort({ completeText, explicitAgeScope: options.explicitAgeScope, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
+              ...(retained ? { retainedDraft: { revision: retained, readOrganizer: key => work.readHeldOrganizer(request, retained, key) } } : {}),
               comparison,
               ...(revision ? { async heldDraft() {
                 const previous = await work.inspect({ ...request, operationFingerprint:revision.priorWork });

@@ -6,7 +6,7 @@ import { loadAgentPrompt } from "./agent-prompt.ts";
 import { originalKnowledgePdf, type AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { KnowledgeMaintenanceModelError, type KnowledgeMaintenanceBaseline, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
-import { knowledgeChunkInputSchema, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import type { KnowledgePdfPage } from "./knowledge-pdf.ts";
 import { nativeResponseSchema } from "./knowledge-pdf-output.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment } from "./knowledge-review-assessment.ts";
@@ -75,7 +75,7 @@ export async function readKnowledgePdfWindow(input: {
   const pageRecord = z.strictObject(keysFor(physical.map(p => "page" + p), pageFinding.omit({ page: true })));
   const material = z.strictObject({
     section: chunk.shape.section, text: chunk.shape.text, keywords: chunk.shape.keywords,
-    applicability: input.explicitAgeScope ? modelAgeApplicability : chunk.shape.applicability, quotePage: location, quote: z.string().max(600),
+    applicability: input.explicitAgeScope ? modelAgeApplicability : originalOrganizerApplicability, quotePage: location, quote: z.string().max(600),
     originalKind: z.enum(["text_layer", "page_transcription", "visual_page"])
   });
   const organizeShape = z.strictObject({ pages: pageRecord, ranges: z.strictObject(keysFor(keys, material.nullable())) });

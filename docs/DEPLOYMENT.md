@@ -109,6 +109,8 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 這份 PDF 的已審版本指紋為 `b7a4f123fba8723557f8040650f497f9ca7fc0ae3553edc2123a7e4d7933f45c`，已有兩次生成。再用同一 `inspect` 核對已提交的發布收據、生效版本及模型次數，對回新增的向量票據。若交送結果未知，先查原操作。原鎖接回整個排序時可用 `node scripts/fhs-catalog-batch.mjs --wait-for-daily --from-deferred SOURCE_ID ORIGINAL_FINGERPRINT`，該入口先接回同一份工作；已完成的原工作直接讀回。再次用盡日額時保留進度並等到下一個 UTC 帳日。要提早結束這項批准，由持鎖者在兩份工作之間移除本次命令的日期選項。
 
+同一持鎖者可在兩份教材之間執行 `node scripts/fhs-catalog-batch.mjs --recover-held`，處理[已綁定原稿的教材](../knowledge/fhs-initial-recovery.json)。若持鎖者選用上述當日批准，重審須同時符合原登記、固定重審指紋及映像內的完整修訂。每份沿同一總帳最多派一次新審核，通過後才處理向量和刊登。按來源查進度可用 `node scripts/fhs-initial-campaign.mjs inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT`，只讀取工作及生效版本。遇未知交送先查同一指紋及票據。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
