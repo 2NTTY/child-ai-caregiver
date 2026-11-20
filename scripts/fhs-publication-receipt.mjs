@@ -88,7 +88,9 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
     code: work?.result?.code ?? null, modelCalls: work?.budget.modelCalls ?? 0, observationHash: work?.result?.observationHash ?? null };
   if (row.outcome !== 'published') {
     if (work?.receipt || work?.result?.published) throw Error('fhs_receipt_publication_mismatch');
-    return { ...row, prepared: Boolean(work?.prepared), review: work?.prepared?.review.decision ?? null,
+    const review = work?.result?.review ?? work?.prepared?.review;
+    return { ...row, originalPdf: { url: ports.pin.url, sha256: ports.pin.sha256, totalPages: ports.pin.pages },
+      prepared: Boolean(work?.prepared), review: review?.decision ?? null, reviewNotes: review?.notes ?? [],
       quotaDay: work?.waitingForQuotaDay ?? null, otherActiveVersionId: active?.versionId ?? null };
   }
   const prepared = work.prepared;
@@ -173,7 +175,7 @@ async function main() {
       }, { readOnly: true }), exportEdition: (...args) => store.exportPublishedEdition(...args),
       resolve: citation => store.citedPdf(citation), readOriginal: (id, hash) => refresh.originals.readPdf(id, hash), extract };
     const row = await readFhsDelivery({ sourceId, originalOperation, deliveryOperation }, ports);
-    console.log(JSON.stringify(row));
+    console.log(JSON.stringify({ ...row, checkedAt: new Date().toISOString() }));
     if (row.readback && row.readback !== 'verified') process.exitCode = 2;
   } finally { await persistence.close(); }
 }

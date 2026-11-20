@@ -4,6 +4,20 @@
   "lane": "C2",
   "manifest": "knowledge/fhs-initial-publication-lanes.json",
   "manifestCommit": "ff43e917",
+  "receiptVerification": {
+    "checkedAt": "2026-11-20T13:10:39Z",
+    "candidateCommit": "263a556d",
+    "workerBase": "98eea8be",
+    "sourceId": "pdf-eefb43f9c484a1a24343d64e",
+    "versionId": "65377b4a-99ab-57bc-b332-1996e86c16ff",
+    "versionHash": "8b42dab9f803ad273664b6d0a8b2586fd9c5d5e2df290d98872d8e11427f5da5",
+    "requiredVectors": 1,
+    "exportedVectors": 1,
+    "openingPage": 1,
+    "proof": "text_exact",
+    "additionalProviderDispatches": 0,
+    "scope": "Previously published PDF outside this lane, read through the candidate CLI against the production family catalogue."
+  },
   "intake": {
     "observedAt": "2026-11-20T12:50:00.288Z",
     "sources": 28,
@@ -12,23 +26,15 @@
     "registeredSources": 2,
     "campaignAttemptsForLane": 0,
     "publishedVersions": 0,
-    "originalObservations": [
-      {
-        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
-        "originalOperation": "31a1bbe7372c95ffb0249c98a455bb6319d56679ed53567e6a88b42e6bb8d286",
-        "observationHash": "24b04f40998e77535a7d360a4451649d6fb3cd8377c1ba5a700edad257b03229"
-      },
-      {
-        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
-        "originalOperation": "670507f22027210d7f8177cde8cb157bac319f7fbfbd6054660f885a0d72404f",
-        "observationHash": "5807804b5dda48248abd0813774feb8f6566467a1693e46dc7bac9ee0aa740e3"
-      }
-    ],
     "sharedLedgerUsdMicros": {
       "cap": 30000000,
       "settledGross": 6959583,
       "outstandingReservations": 8110080,
       "outstandingAttempts": 5
-    }
+    },
+    "observedSourceIds": [
+      "pdf-3b3c1043ac8e7aa74b5a7beb",
+      "pdf-f2ed89529922c1ab403f28d2"
+    ]
   }
 }

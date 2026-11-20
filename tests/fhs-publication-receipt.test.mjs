@@ -57,11 +57,14 @@ test('a legacy excerpt may cross a page break only when it starts on the family 
 
 test('a separate active edition cannot turn a held operation into a publication', async () => {
   const row = await readFhsDelivery({sourceId:'pdf-test',originalOperation:'a'.repeat(64)}, {
-    originalOperation:'a'.repeat(64), pin:{url:metadata.url}, inspect:async()=>({budget:{modelCalls:1},result:{status:'candidate_held',code:'review_hold'}}),
+    originalOperation:'a'.repeat(64), pin:{url:metadata.url, sha256:digest, pages:2}, inspect:async()=>({budget:{modelCalls:1},
+      result:{status:'candidate_held',code:'review_hold',review:{decision:'hold_candidate',notes:['Age scope needs review']}}}),
     active:async()=>({versionId:'unrelated-live-edition'}),
   });
   assert.equal(row.outcome, 'candidate_held');
   assert.equal(row.otherActiveVersionId, 'unrelated-live-edition');
+  assert.equal(row.originalPdf.sha256, digest);
+  assert.deepEqual(row.reviewNotes, ['Age scope needs review']);
   assert.equal(row.card, undefined);
   await assert.rejects(readFhsDelivery({sourceId:'pdf-test',originalOperation:'b'.repeat(64)}, {
     originalOperation:'a'.repeat(64),
