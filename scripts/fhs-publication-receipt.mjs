@@ -108,6 +108,10 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
     || expected.length !== actual.length || expected.some((key, index) => key !== actual[index])) throw Error('fhs_receipt_export_mismatch');
   const metadata = { sourceId, versionId: active.versionId, versionHash: active.versionHash, url: active.source.url };
   const pdf = await verifyFhsPdfPages(metadata, exported.source, active.chunkIdentities, prepared.provenance.windows ?? [], ports.pin, ports);
+  // Historical citations can remain readable while the current catalogue switches editions.
+  const currentCard = await ports.familyCard(metadata.url, sourceId, metadata.versionId);
+  if (!currentCard?.enabled || currentCard.seriesId !== card.seriesId || currentCard.versionId !== metadata.versionId)
+    return { ...row, readback: 'edition_not_current', versionHash: active.versionHash };
   return { ...row, readback: pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
     card: { ...metadata, seriesId: card.seriesId }, vectors: { required: expected.length, exported: actual.length, chunkKeys: actual }, pdf };
 }

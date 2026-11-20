@@ -87,6 +87,9 @@ test('a published receipt binds the committed observation, family edition and ev
   await assert.rejects(readFhsDelivery(input, { ...ports, inspect: async () => ({ ...work, receipt: null }) }), /publication_mismatch/);
   await assert.rejects(readFhsDelivery(input, { ...ports, exportEdition: async () => ({ ...archive, embeddings: [] }) }), /export_mismatch/);
   assert.equal((await readFhsDelivery(input, { ...ports, active: async () => ({ ...edition, current: false }) })).readback, 'edition_not_current');
+  let catalogReads = 0;
+  const changed = await readFhsDelivery(input, { ...ports, familyCard: async () => ++catalogReads === 1 ? ports.familyCard() : undefined });
+  assert.equal(changed.readback, 'edition_not_current');
   await assert.rejects(readFhsDelivery({ ...input, deliveryOperation: sha('unrelated') }, {
     ...ports, verifyRepair: async () => false,
   }), /repair_binding/);
