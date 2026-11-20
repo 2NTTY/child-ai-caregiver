@@ -1,9 +1,9 @@
+import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import { mediaCue, mediaUrlSchema, platformCardMedia, type MediaCue } from '../src/shared/platform-media.ts';
 import { loadMediaOriginals, type MediaOriginal } from './platform-media-evidence.ts';
 import type { PlatformMediaStore } from './firestore-platform-media.ts';
 import { platformMaterials } from './platform-materials.ts';
-import { knowledgeHash } from './knowledge-inputs.ts';
 
 const savedCues = z.array(mediaCue).min(1).max(200);
 export const mediaEditionRecord = z.strictObject({ url: mediaUrlSchema, sourceId: z.string().regex(/^[a-z0-9-]{1,80}$/u),
@@ -18,6 +18,7 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
     const read = () => database.runTransaction(tx => store.read(tx, id), { readOnly: true });
     const card = await read();
     if (!card.enabled) return;
+    let unavailable: Error | undefined;
     for (const link of card.links) {
       signal.throwIfAborted();
       const before = await read();
@@ -26,8 +27,17 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
         const state = await read();
         return !signal.aborted && state.enabled && state.revision === before.revision && state.links.includes(link);
       };
-      const originals = await loadOriginals(link, signal);
+      let originals: MediaOriginal[];
+      try {
+        originals = await loadOriginals(link, signal);
+      } catch (error) {
+        signal.throwIfAborted();
+        if (!(error instanceof Error) || error.message !== 'knowledge_media_source_unavailable') throw error;
+        unavailable ??= error;
+        continue;
+      }
       const clips: NonNullable<typeof card.clips> = [];
+      const pendingUrls = new Set<string>();
       for (const original of originals) {
         const ref = database.collection(namespace + '_platform_media_editions').doc(original.hash);
         const claim = await database.runTransaction(async tx => {
@@ -35,14 +45,18 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
           if (!state.enabled || state.revision !== before.revision || !state.links.includes(link)) return null;
           if (snap.exists) {
             if (snap.get('url') !== original.url) throw Error('knowledge_media_binding_invalid');
-            if (snap.get('state') !== 'ready') return null;
+            if (snap.get('state') !== 'ready') return 'pending' as const;
             return { cues: savedCues.parse(snap.get('cues')) };
           }
           tx.create(ref, { state: 'reserved', url: original.url, sourceId: id, at: new Date().toISOString() });
           return { cues: null };
         });
-        // Another card or a lost acknowledgement owns the same original.
         if (!claim) return;
+        if (claim === 'pending') {
+          // Keep the last confirmed clips for this stream while its original claim is unresolved.
+          pendingUrls.add(original.url);
+          continue;
+        }
         let result = claim.cues;
         if (!result) {
           try {
@@ -65,11 +79,12 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
       await database.runTransaction(async tx => {
         const prior = await store.read(tx, id);
         if (!prior.enabled || prior.revision !== before.revision || !prior.links.includes(link)) return;
-        const combined = [...(prior.clips ?? []).filter(clip => clip.link !== link), ...clips]
+        const combined = [...(prior.clips ?? []).filter(clip => clip.link !== link || pendingUrls.has(clip.url)), ...clips]
           .sort((a, b) => a.link.localeCompare(b.link) || a.url.localeCompare(b.url) || a.start - b.start);
-        if (knowledgeHash(combined) === knowledgeHash(prior.clips ?? [])) return;
+        if (isDeepStrictEqual(combined, prior.clips ?? [])) return;
         tx.set(store.ref(id), platformCardMedia.parse({ ...prior, clips: combined, revision: prior.revision + 1 }));
       });
     }
+    if (unavailable) throw unavailable;
   };
 }
