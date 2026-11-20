@@ -1,6 +1,6 @@
 {
   "campaign": "fhs-child-initial-20261120",
-  "capturedAt": "2026-11-20T00:07:17.837Z",
+  "capturedAt": "2026-11-20T00:42:11.549Z",
   "retained": [
     {
       "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
@@ -9,6 +9,14 @@
       "ceiling": 1603584,
       "at": "2026-11-20T00:03:11.096Z",
       "operationFingerprint": "86c92d9da315819036bc6b86c6e8fe212b7dd6b581db477eea36dbe2287bbcb8"
+    },
+    {
+      "ticketId": "667f96bb-5806-47c1-8fb1-f40e82befba2",
+      "sourceId": "fhs-15672",
+      "kind": "generation",
+      "ceiling": 1603584,
+      "at": "2026-11-20T00:30:31.317Z",
+      "operationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18"
     }
   ],
   "investigations": [
@@ -29,6 +37,31 @@
       "verifiedAuditLog": {
         "from": "2026-11-20T00:03:10Z",
         "until": "2026-11-20T00:05:00Z",
+        "method": "GenerateContent",
+        "service": "aiplatform.googleapis.com",
+        "matchingEntries": 0
+      },
+      "actualGenerationUsage": null,
+      "reservationDisposition": "Keep the full amount reserved in the original ticket. Exclude this source and operation from subsequent processing."
+    },
+    {
+      "sourceId": "fhs-15672",
+      "operationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18",
+      "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+      "providerDiagnostic": {
+        "httpStatus": 504,
+        "category": "timeout",
+        "lastErrorLogWriteAt": "2026-11-20T00:31:58.758773216Z",
+        "policyRequestTimeoutMs": 90000
+      },
+      "result": "knowledge_review_failed",
+      "prepared": false,
+      "publicationReceipt": null,
+      "activeEdition": null,
+      "modelStages": 1,
+      "verifiedAuditLog": {
+        "from": "2026-11-20T00:30:30Z",
+        "until": "2026-11-20T00:32:30Z",
         "method": "GenerateContent",
         "service": "aiplatform.googleapis.com",
         "matchingEntries": 0
