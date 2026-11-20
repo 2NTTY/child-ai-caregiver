@@ -1,0 +1,34 @@
+{
+  "schema": "fhs-lane-delivery/1",
+  "campaign": "fhs-child-initial-20261120",
+  "lane": "C2",
+  "manifest": "knowledge/fhs-initial-publication-lanes.json",
+  "manifestCommit": "ff43e917",
+  "intake": {
+    "observedAt": "2026-11-20T12:50:00.288Z",
+    "sources": 28,
+    "pdfPages": 464,
+    "originalFilesMatchingDigestAndLength": 28,
+    "registeredSources": 2,
+    "campaignAttemptsForLane": 0,
+    "publishedVersions": 0,
+    "originalObservations": [
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "originalOperation": "31a1bbe7372c95ffb0249c98a455bb6319d56679ed53567e6a88b42e6bb8d286",
+        "observationHash": "24b04f40998e77535a7d360a4451649d6fb3cd8377c1ba5a700edad257b03229"
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "originalOperation": "670507f22027210d7f8177cde8cb157bac319f7fbfbd6054660f885a0d72404f",
+        "observationHash": "5807804b5dda48248abd0813774feb8f6566467a1693e46dc7bac9ee0aa740e3"
+      }
+    ],
+    "sharedLedgerUsdMicros": {
+      "cap": 30000000,
+      "settledGross": 6959583,
+      "outstandingReservations": 8110080,
+      "outstandingAttempts": 5
+    }
+  }
+}
