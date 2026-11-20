@@ -92,6 +92,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         || (expectedRevision !== undefined && expectedRevision !== registration.data.revision))
         reject("knowledge_watch_not_registered");
       const retained = options.retainedDraft;
+      const transcript = retained?.action === 'retain_pdf_transcription' ? retained : undefined;
       if (grant) {
         const original = knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration]);
         const bound = retained ? matchesRegisteredRetainedDraft(retained, original, request.operationFingerprint)
@@ -119,6 +120,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         || (retained.priorOperationFingerprint && retained.operationFingerprint !== knowledgeTruncatedOutputRepairId(retained.priorOperationFingerprint))
         || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', retained.priorOperationFingerprint ?? retained.operationFingerprint)))
         reject('knowledge_retained_page_binding');
+      if (transcript && (options.credentialBinding !== campaignCredentials || !options.providers || !matchesRegisteredRetainedDraft(transcript,
+        knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration]), request.operationFingerprint)))
+        reject('knowledge_retained_transcription_binding');
       const originalRequest = recovery ? { ...request, operationFingerprint: recovery.priorWork } : undefined;
       if (recovery && originalRequest) {
         if (sponsor || !recordedCheckId || !expectedRevision || reusedOrganizationFrom || request.publishMode !== 'live'
@@ -141,7 +145,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       }
       const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
       const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
-      const modelAllowance = retained ? 1 : windowed ? current.maxModelCalls : 2;
+      if (transcript && !windowed) reject('knowledge_retained_transcription_binding');
+      const modelAllowance = transcript ? 2 : retained ? 1 : windowed ? current.maxModelCalls : 2;
       const limits = { modelCalls: Math.min(modelAllowance, current.maxModelCalls, personal?.runLimits.modelCalls ?? modelAllowance),
         toolCalls: Math.min(8, current.maxToolCalls, personal?.runLimits.toolCalls ?? 8), queryEmbeddings: 1,
         deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000, personal?.runLimits.deadlineMs ?? 300_000) };
@@ -234,6 +239,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) => {
               const stage = { system: input.system, user: input.user, attemptKey: input.attemptKey };
+              if (transcript) return work.readHeldStage(request, transcript, stage.attemptKey, knowledgeReviewHash(stage));
               if (recovery && originalRequest) {
                 const saved = await work.readTruncatedStage(originalRequest, recovery.observationHash, stage);
                 if (saved !== null) return saved;
@@ -260,7 +266,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               }, tx => quotaReader.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts));
             };
             const reviewer = createModelKnowledgeReviewPort({ completeText, explicitAgeScope: options.explicitAgeScope, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
-              ...(retained ? { retainedDraft: { revision: retained, readOrganizer: key => work.readHeldOrganizer(request, retained, key) } } : {}),
+              ...(retained && retained.action !== 'retain_pdf_transcription' ? { retainedDraft: { revision: retained,
+                readOrganizer: key => work.readHeldStage(request, retained, key, retained.organizerRequestHash) } } : {}),
               comparison,
               ...(revision ? { async heldDraft() {
                 const previous = await work.inspect({ ...request, operationFingerprint:revision.priorWork });
@@ -325,7 +332,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                           textLayers.push(...local.pages.map(p => ({ ...p, page: p.page + range.firstRead - 1 })));
                         }
                         reading = await readKnowledgePdfWindow({ range, candidate, baseline, sliceHash: window.descriptor.contentHash,
-                          explicitAgeScope: options.explicitAgeScope, bytes: window.bytes, textLayers, completeText, signal: abort });
+                          explicitAgeScope: options.explicitAgeScope, bytes: window.bytes, textLayers, completeText, signal: abort,
+                          retainedTranscription: transcript });
                         const hasNext = index < plan.length - 1;
                         await session.saveWindow(index, reading, hasNext);
                         if (hasNext) throw new KnowledgeWindowPending();
@@ -337,7 +345,10 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                     const prepared = assembleKnowledgePdfWindows({ candidate, baseline, windows: readings,
                       fetchedAt: currentObservation.observation.fetchedAt, packVersion: prompt.packVersion,
                       growthRules: GROWTH_RULES.filter(r => r.sourceId === candidate.watchId) });
-                    await session.savePrepared(candidate, prepared);
+                    await session.savePrepared(candidate, transcript ? { ...prepared, provenance: { ...prepared.provenance, retainedDraft: {
+                      priorWork: transcript.operationFingerprint, organizerRequestHash: transcript.organizerRequestHash,
+                      reviewerRequestHash: transcript.reviewerRequestHash, revisionHash: knowledgeReviewHash(transcript),
+                    } } } : prepared);
                     return prepared.review;
                   }
                   if (focus) {

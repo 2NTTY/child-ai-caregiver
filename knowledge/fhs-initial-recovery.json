@@ -1133,6 +1133,28 @@
           "to": "HK"
         }
       ]
+    },
+    {
+      "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+      "title": "電子屏幕與幼兒",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/poster/30163.pdf",
+      "sha256": "f476d352d00e870616cf90f532421d195d6a12acde335f1f58d1e16c4894211b",
+      "pages": 1,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+      "code": "knowledge_window_quote_mismatch",
+      "action": "retain_pdf_transcription",
+      "sections": [
+        "第 1 頁左上淺藍區，兩組年齡與對應的屏幕時間"
+      ],
+      "reason": "原審核轉錄包含整理者選取的整段。原頁兩組年齡的文字及右方時間圖示均可重開核對。",
+      "observationHash": "634d1f81c37451b848d518d28baf5cc8121e0520b8a103b3d4ff787ffcd3fc87",
+      "organizerRequestHash": "7f3cfce70f2ef2bd267c727ee3d7041dd4ab28af35729cdb7c2c989b4610819f",
+      "reviewerRequestHash": "2e6c0ddd21562b205fee775ee9ed70f01ce41535adeb0ccca72b61d4a3a6025d",
+      "sliceHash": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+      "excerpt": "2歲前的孩子 盡量避免 2-5歲的孩子 每天累積時間 少於1小時",
+      "organizerStart": 0,
+      "reviewerStart": 16
     }
   ]
 }

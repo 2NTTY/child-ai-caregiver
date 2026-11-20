@@ -19,9 +19,13 @@ export const retainedDraftRevisionSchema = z.discriminatedUnion('action', [bindi
   })).min(1),
 }), pdf.extend({ action: z.literal('review_pdf_region'), regionEdits: z.array(regionEdit).min(1) }),
 pdf.extend({ action: z.literal('review_pdf_source_age'), regionEdits: z.array(regionEdit),
-  sourceRanges: z.record(z.string().min(1), sourceRange) })]);
+  sourceRanges: z.record(z.string().min(1), sourceRange) }),
+pdf.extend({ action: z.literal('retain_pdf_transcription'), pages: z.literal(1), reviewerRequestHash: hash, sliceHash: hash,
+  excerpt: z.string().trim().min(1).max(150), organizerStart: z.number().int().nonnegative(), reviewerStart: z.number().int().nonnegative() })]);
 export type RetainedDraftRevision = z.infer<typeof retainedDraftRevisionSchema>;
-export const retainedDraftProvenanceSchema = z.strictObject({ priorWork: hash, organizerRequestHash: hash, revisionHash: hash });
+export type RetainedTranscription = Extract<RetainedDraftRevision, {action:'retain_pdf_transcription'}>;
+export type RetainedOrganizerRevision = Exclude<RetainedDraftRevision, RetainedTranscription>;
+export const retainedDraftProvenanceSchema = z.strictObject({ priorWork: hash, organizerRequestHash: hash, reviewerRequestHash: hash.optional(), revisionHash: hash });
 export const retainedDraftWorkId = (prior: string) => knowledgeReviewHash(['fhs-retained-page-review/1', hash.parse(prior)]);
 
 // Only the exact packaged editorial revision may use the original source's campaign admission.
@@ -36,7 +40,7 @@ export function matchesRegisteredRetainedDraft(revision: RetainedDraftRevision, 
 }
 
 // Apply only the bound edits. The organizer schema validates the whole draft before independent review.
-export function reviseRetainedDraft(value: unknown, revision: RetainedDraftRevision, originals: {id: string; originalText: string}[]) {
+export function reviseRetainedDraft(value: unknown, revision: RetainedOrganizerRevision, originals: {id: string; originalText: string}[]) {
   if (revision.action !== 'review_age_draft') {
     const draft = z.looseObject({ ranges: z.record(z.string(), z.looseObject({region: z.string()})) }).parse(value);
     if (revision.action === 'review_pdf_source_age') {

@@ -216,5 +216,44 @@
     "originalParents": "Six production parents checked read-only: same registered operation, first observation, original PDF SHA, exactly one settled organizer, candidate held without lease, prepared draft or publication receipt.",
     "result": "Each explicit ID and original operation selects one packaged recovery. Its original stage was replayed against the same request, and its independent reviewer received the complete hash-checked PDF and the source-specific page notes. Dispatch intercepted before calling a provider. The original default recovery queue retains its 24 held and 15 previously published entries.",
     "integration": "The first Windows build context had CRLF prompt bytes and correctly failed the original organizer-request guard. The repeat used Git LF source bytes and matched all six reviewer request hashes. The original 504 was refused before opening persistence. The fresh-draft test now observes HK reaching review, and the retained-draft test still checks the unchanged original organizer. Five focused tests and the server TypeScript project passed."
+  },
+  "posterFollowup": {
+    "checkedAt": "2026-11-20T05:22:32.605Z",
+    "base": "ab7e5775b0c134312474d40dfdf815ad04919990",
+    "scope": "Three sources held for discrepancies between independent transcriptions. Both original model outputs and their actual sections remain unchanged.",
+    "accepted": {
+      "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+      "originalOperation": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+      "recoveryOperation": "3b81f5717045ca886f194b0678b0a11cabd64696ac6278587e95dbebefcd0405",
+      "originalSha256": "f476d352d00e870616cf90f532421d195d6a12acde335f1f58d1e16c4894211b",
+      "sliceSha256": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+      "organizerRequestHash": "7f3cfce70f2ef2bd267c727ee3d7041dd4ab28af35729cdb7c2c989b4610819f",
+      "reviewerRequestHash": "2e6c0ddd21562b205fee775ee9ed70f01ce41535adeb0ccca72b61d4a3a6025d",
+      "physicalPage": 1,
+      "locator": "第 1 頁左上淺藍區，兩組年齡與對應的屏幕時間",
+      "originalSpanOffsets": [
+        0,
+        16
+      ],
+      "reason": "原審核轉錄包含整理者選取的整段。原頁兩組年齡的文字及右方時間圖示均可重開核對。"
+    },
+    "stillHeld": [
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "reason": "A complete caption in the lower left panel occurs in both transcriptions. The page prints ages 1–2 and 3–4 alongside sleep times; the stored draft and review extend 12–59 months to the whole day. An excerpt-only recovery cannot resolve the whole-unit scope."
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "reason": "The second page has two disjoint independently chosen paragraphs. The original quote mismatch remains."
+      }
+    ],
+    "verification": {
+      "localWorker": "sha256:f5fe026653995c1c5eee50ef60eeee097ba961af3c808f368eeefc48a2a24818",
+      "node": "24.19.0",
+      "source": "The original immutable slice and both settled request hashes were verified before offline replay. Visual review compared the printed age groups, labels and time icon on the public original.",
+      "exercise": "In a network-disabled worker with in-memory Firestore and an isolated registry for its synthetic watch identifiers, the parent held on the original mismatch. The child reread both stages, generated zero model calls, wrote one synthetic vector, listed one edition, and reopened the hash-checked original through a synthetic saved citation. Repetition added zero vectors. The release registry admits the screen poster and rejects the daily-routine poster before opening persistence.",
+      "negative": "Unregistered containment, a changed offset, different wording, different request hash, and an independent hold were rejected. Server TypeScript and five focused tests passed.",
+      "production": "At verification this additional recovery had not run in the live campaign."
+    }
   }
 }
