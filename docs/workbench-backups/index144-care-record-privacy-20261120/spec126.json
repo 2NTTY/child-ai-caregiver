@@ -1,0 +1,85 @@
+{
+  "group": {
+    "id": "shared-care-record-not-private-chat",
+    "title": "家人看到午睡記錄，也能看到我和助手的整段聊天嗎？",
+    "index": "external-comparison",
+    "readerNote": "在同一孩子的照顧記錄已有讀取權時，家人可讀這筆已存正文、來源描述和已保存的更正原因（如有）；就算把一句聊天原話寫入那些欄位，那句也會隨記錄顯示。只留在私人對話而沒有寫入記錄的內容，不會因這筆記錄開放；「記錄原文」是已存記錄，不是私人聊天全文。B 的獨立畫面是設計提案，不是育伴港現有功能。唯讀樣張只用已可讀欄位，不扮演某位家人、也不檢查對方已讀。此為工作台只讀比較，用合成示例，不分享、不發送、不改權限，不承諾自動去除私人內容。",
+    "choices": [
+      {
+        "name": "留在原記錄詳情｜就地核對已存正文和來源",
+        "note": "Zenodo 原記錄整頁同時呈現本筆描述、來源背景與 DOI，Files 另列受限，不展示原檔。育伴港只借這種分區：在這一筆看已存正文、來源描述和事件時間，就地展開確認時間及版本。已寫進正文、來源或更正原因的字，有權看這筆的人可讀；沒寫進本筆的私人聊天不附上，記錄原文不是聊天原文。原例不是照顧記錄，不移植登入、檔案存取或分享流程。",
+        "source": "https://zenodo.org/records/8152674",
+        "sourceNotes": [
+          {
+            "label": "Zenodo 官方說明：一筆記錄的描述、檔案及識別碼是不同部分",
+            "url": "https://help.zenodo.org/docs/deposit/about-records/"
+          },
+          {
+            "label": "Zenodo 官方政策：記錄描述可重用，檔案循自身授權及存取條件",
+            "url": "https://about.zenodo.org/policies/#access-and-reuse"
+          },
+          {
+            "label": "育伴港：原記錄欄位及來源說明",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordDetail.tsx#L16-L26"
+          },
+          {
+            "label": "育伴港：在同頁展開來源、時間及版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordDetail.tsx#L54-L69"
+          },
+          {
+            "label": "育伴港：「記錄原文」是已存的 record.text",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileProjections.ts#L53-L71"
+          }
+        ],
+        "version": "Zenodo σ-IASI 記錄 8152674，Version 2.4，原頁標示 2023-10-24 發布（DOI 10.5281/zenodo.8152674）；2026-11-20 核對第一方記錄全文。不是凍結的服務介面版本。",
+        "rights": "Zenodo 將公開記錄描述的 CC0（電子郵件除外）與受限檔案權利分開，不推定介面及標誌可再刊。只外連原記錄及官方說明，不嵌入、截錄或取受限檔案。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "開啟 Zenodo 官方資源記錄整頁（需連網）↗"
+      },
+      {
+        "name": "獨立唯讀樣張｜這一筆家人可讀的內容",
+        "note": "從午睡記錄另開樣張，先讀「下午睡了約四十分鐘」，再看這筆照顧資料及已保存的來源「我放學後記下」。已存入正文、來源或更正原因的字會隨記錄可見；其他私聊不會附上。只按現有權限讀這筆，不選家人、不發送。「返回原記錄」不改資料。Adobe 原圖把樣本欄位與讀者會看到的內容分開；本方案不借測試資料管理或發送功能。",
+        "source": "https://raw.githubusercontent.com/AdobeDocs/journey-optimizer.en/2ec7de841e3d871ad4cfc545d80c5271c4137d2c/help/using/test-approve/assets/simulate-custom-variants-list.png",
+        "sourceNotes": [
+          {
+            "label": "Adobe Experience League：使用樣本欄位另開 Simulate 預覽，不需建立正式客戶資料",
+            "url": "https://experienceleague.adobe.com/en/docs/journey-optimizer/using/test/preview-test/simulate-sample-input"
+          },
+          {
+            "label": "Adobe 官方文件庫：此整頁原圖的固定提交及完整畫布",
+            "url": "https://github.com/AdobeDocs/journey-optimizer.en/blob/2ec7de841e3d871ad4cfc545d80c5271c4137d2c/help/using/test-approve/assets/simulate-custom-variants-list.png"
+          },
+          {
+            "label": "Adobe 產品畫面及圖中素材的使用條件",
+            "url": "https://www.adobe.com/legal/permissions/images-user-guides.html"
+          },
+          {
+            "label": "育伴港：已保存記錄的原文與來源來自記錄本身",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileProjections.ts#L53-L71"
+          },
+          {
+            "label": "育伴港：可共享照顧記錄，不包含聊天",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/sharing.ts#L3-L13"
+          },
+          {
+            "label": "育伴港：讀取照顧記錄受同一孩子、空間及權限約束",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-care.ts#L313-L320"
+          },
+          {
+            "label": "育伴港：私人對話另外綁定本人及有效範圍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-chat.ts#L294-L305"
+          }
+        ],
+        "version": "Adobe Journey Optimizer 經典版 Simulate content variations；原圖固定於 Adobe Docs 2026-06-03 提交 2ec7de8，1796 × 888。官方說明標示 2026-11-05 更新；文件日期不是 Adobe 產品版號或攝圖日。",
+        "rights": "Adobe 對產品截圖和圖中的第三方素材另有使用條件；本題不以公開文件庫推定再刊權。只外連 Adobe 原圖及說明，不內嵌、重刊或改畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "看 Adobe 官方獨立預覽整頁（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "96a1f729883776ee8ae4514ddbd2dc290ef44671131a79198369893b5730a271"
+}
