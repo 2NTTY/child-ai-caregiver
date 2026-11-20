@@ -1,0 +1,79 @@
+{
+  "group": {
+    "id": "commissioned-fhs-original-shared-budget-gate",
+    "title": "自動巡查日額已滿，這份受命官文還可以人工續做嗎？",
+    "index": "external-comparison",
+    "readerNote": "有可能。合資格的受命人工工作不扣自動日額，但仍登記平台用量，並受本批共用毛額約束。A 看全批餘額和保留；B 先核這份原件的原操作。未結票保留全額，同一原件先查回執、不重送。這是只讀設計比較，不會調額、付費、派送或發布。",
+    "choices": [
+      {
+        "name": "全頁監察台｜自動日額／人工與共用毛額",
+        "note": "在同一頁分開看自動巡查次數、受命人工用量和共用毛額。假設上限 US$30、已結算 US$18、未結預留 US$11，只餘 US$1，不能預留下步 US$2。Procore 原圖只示範總覽與各組承諾分列；原圖的「剩餘」不是這裏的可用額。",
+        "source": "https://support.procore.com/@api/deki/files/158964/cost-summary-tracker-overview.png?revision=1",
+        "sourceNotes": [
+          {
+            "label": "Procore 官方 Cost Tracker 原圖：同頁總覽、承諾、待批與保留",
+            "url": "https://support.procore.com/@api/deki/files/158964/cost-summary-tracker-overview.png?revision=1"
+          },
+          {
+            "label": "Procore 原作者手冊：預算、分組、預測與各欄定義",
+            "url": "https://support.procore.com/products/portfolio-financials/user-guide/cost-tracker/tutorials/view-the-cost-tracker-in-portfolio-financials"
+          },
+          {
+            "label": "育伴港：只有合資格受命人工不受自動日額限制",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-ai-usage.ts#L87-L124"
+          },
+          {
+            "label": "育伴港：受命資格與平台用量仍分開登記",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-ai-usage.ts#L216-L266"
+          },
+          {
+            "label": "育伴港：已結算、仍預留和下步上限須在同一筆交易核對",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/knowledge-campaign-budget.ts#L103-L156"
+          }
+        ],
+        "version": "Procore Portfolio Financials 官方示例附件 158964／revision 1，服務端日期 2024-03-29；組建和拍攝日未標。",
+        "rights": "Procore 官方說明圖，未見重刊授權；只連官方來源，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "單份教材｜沿原操作能否接續",
+        "note": "先看這份原件、受命分組和原操作。已提交就查回執；同一原件有已綁定但未結的預留，先對帳，不重送。帳本不一致或有未綁定的舊預留，整批先對帳。沒有阻擋也只表示可再核對下步資格與預留，不等於已派送或發布。AWS 原圖把單次執行、從原工作接續與新建分開，不涵蓋付費預留。",
+        "source": "https://d2908q01vomqb2.cloudfront.net/b6692ea5df920cad691c20319a6fffd7a4a766b8/2023/12/13/DBBLOG3690_5_image5-masked.png",
+        "sourceNotes": [
+          {
+            "label": "AWS 官方原圖：單次執行詳情與從失敗處接續／新建的不同入口",
+            "url": "https://d2908q01vomqb2.cloudfront.net/b6692ea5df920cad691c20319a6fffd7a4a766b8/2023/12/13/DBBLOG3690_5_image5-masked.png"
+          },
+          {
+            "label": "AWS 官方完整核對窗：另一個執行先列原身分和續做位置",
+            "url": "https://d2908q01vomqb2.cloudfront.net/1b6453892473a467d07372d45eb05abc2031647a/2023/11/14/Picture-7.png"
+          },
+          {
+            "label": "AWS 官方文章：單次執行詳情原例",
+            "url": "https://aws.amazon.com/blogs/big-data/build-efficient-etl-pipelines-with-aws-step-functions-distributed-map-and-redrive-feature/"
+          },
+          {
+            "label": "AWS 官方文件：接續資格、時間及歷史事件限制",
+            "url": "https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html"
+          },
+          {
+            "label": "育伴港：讀回同一原操作，區分保留、已發表及不一致",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/scripts/fhs-lane-operations.mjs#L18-L44"
+          },
+          {
+            "label": "育伴港：只讀資格不會預留；預留另核租約與階段",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/knowledge-campaign-budget.ts#L130-L156"
+          }
+        ],
+        "version": "AWS Step Functions Standard Workflows 2023 年 Web Console 官方示例；主文 2023-12-18、補例 2023-11-15，2026-11-20 核對，未標精確 UI 版號。",
+        "rights": "AWS 保留官方界面圖片權利；只外連原始參考，不嵌入、重刊、改圖或使用品牌素材。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "df6f796552cefecf7d4e2c4ff916717585cb2fb804f0450673b4e5174d868084"
+}
