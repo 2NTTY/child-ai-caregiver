@@ -6938,3 +6938,9 @@ C3 的兩份舊解析失敗均從原操作核回成功的四頁重讀。《奶�
 以 `27b400ac` 為基線，逐一讀取五個指定網址。[學生健康服務](https://www.studenthealth.gov.hk/tc_chi/internet/health_effects.html)回傳含四項導覽的專題目錄。[衞生防護中心原帖](https://www.facebook.com/CentreforHealthProtection/posts/1104338059582110)的公開中繼資料列出《喝多杯》。[單張網址](https://www.healthatwork.gov.hk/files/pdf/drink_tc.pdf)轉往[衞生防護中心存檔](https://www.chp.gov.hk/archive/healthatwork/files/pdf/drink_tc.pdf)，回傳一頁 PDF，277,267 bytes。其 SHA-256 與原有 148 份均有別。[食安中心同題圖表](https://www.cfs.gov.hk/english/multimedia/multimedia_pub/images/fsb_201701/Feature_Article_water.pdf)的標題、版面尺寸及指紋另有不同，清冊只計原帖直接列出的附件。
 
 「白瞳症」、「切勿獨留兒童不顧」及「兒童的預防護理」原網址均回傳 HTTP 404。最後一項有[醫務衞生局現行同名專題](https://www.healthbureau.gov.hk/phcc/rfs/tc_chi/reference_framework/pre_care_for_child.html)，舊版原件仍待核。清冊逐項核對得 201 項、149 份相異 PDF、1,800 頁。原帖、單張與目錄均維持只供連結。離線逐項比對活動來源及平台卡清單，原批次的 251 個來源、設定與次序一致。對外教材入庫授權測試通過 1/1。本次只做公開來源核查及離線驗證，付費生成及向量寫入均為零。[清冊](knowledge/fhs-child-inventory.json) · [外部來源處置](knowledge/fhs-external-rights.json)
+
+### 2026-11-20　正式 PDF 請求指紋的記憶體用量
+
+香港 23:34，《交朋友》的首筆生成已結算 US$0.066315。製卡容器在 256 MiB 限制下達到 268,439,552 bytes，核心記錄顯示程序被終止。其後按原操作查到一筆已結算費用，未見生效家長卡。原單留待正式 worker 更新後再查。
+
+在 Windows 的 Node 24.22.3，以同一份 4,463,531 bytes 原頁附件分別模擬整理與獨立審核，各計四次請求指紋。兩個全新程序均載入正式 gateway。舊算法峰值 300,112 KiB，分段計算為 200,528 KiB，八個指紋逐項相同。已核原件沿原 SHA-256 及 JSON 排序計算。gateway 及 PDF 分窗共 24 項測試通過，Server TypeScript 檢查通過。這次量度在本機執行，正式容器峰值待發布後實測。
