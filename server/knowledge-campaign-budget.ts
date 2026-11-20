@@ -1,10 +1,20 @@
 import { randomUUID } from 'node:crypto';
 import type { Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 
 export const campaign = 'fhs-child-initial-20261120';
 export const campaignModel = 'gemini-3.8-flash';
 export const campaignLimitMicros = 30_000_000;
+export const campaignCredentials = knowledgeReviewHash(['platform', 'fhs-initial-20261120', campaignModel, 'global', 'gemini-embedding-001', 'us-central1']);
+// The operator selects this reviewed grant by date. No caller supplies a numeric override.
+export const campaignDayAdmission = Object.freeze({ campaign, day: '2026-11-20', policyVersion: 3, attempts: 300 } as const);
+export type CampaignDayAdmission = typeof campaignDayAdmission;
+export function selectCampaignDayAdmission(selector: string | undefined) {
+  if (selector === undefined) return undefined;
+  if (selector !== campaignDayAdmission.day) throw Error('knowledge_campaign_day_not_approved');
+  return campaignDayAdmission;
+}
 const count = z.int().nonnegative();
 const balance = z.strictObject({ campaign: z.literal(campaign), limit: z.literal(campaignLimitMicros),
   model: z.literal(campaignModel), location: z.literal('global'), held: count, spent: count, attempts: count, settled: count,

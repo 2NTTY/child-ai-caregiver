@@ -30,9 +30,11 @@ if (repairOnly) {
     repairs.set(entry.sourceId, entry.operationFingerprint);
   }
 }
-const [resumeFlag, resumeId, ...extra] = args;
-if (resumeFlag !== undefined && (resumeFlag !== '--after' || !campaignMaterialWatches.some(source => source.id === resumeId) || extra.length)) {
-  throw Error('Use --after SOURCE_ID to resume after an inspected terminal receipt');
+const [resumeFlag, resumeId, fingerprint, ...extra] = args;
+const fromDeferred = resumeFlag === '--from-deferred';
+if (resumeFlag !== undefined && ((!fromDeferred && resumeFlag !== '--after') || !campaignMaterialWatches.some(source => source.id === resumeId)
+  || (fromDeferred ? repairOnly || !/^[a-f0-9]{64}$/u.test(fingerprint ?? '') : fingerprint !== undefined) || extra.length)) {
+  throw Error('Use --from-deferred SOURCE_ID ORIGINAL_FINGERPRINT or --after SOURCE_ID after a terminal receipt');
 }
 let resumed = resumeFlag === undefined;
 const familyHealth = [...fhsMaterialWatches].sort((a, b) => {
@@ -49,10 +51,12 @@ for (const source of sources) {
   if (seen.has(hash)) continue;
   seen.add(hash);
   if (!resumed) {
-    if (source.id === resumeId) resumed = true;
-    continue;
+    if (source.id !== resumeId) continue;
+    resumed = true;
+    if (!fromDeferred) continue;
   }
-  const action = repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-age-checked', source.id];
+  const action = fromDeferred && source.id === resumeId ? ['resume-age-checked', source.id, fingerprint]
+    : repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-age-checked', source.id];
   let status;
   do {
     const nextDay = new Date();
