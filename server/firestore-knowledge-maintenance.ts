@@ -227,7 +227,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
             const session = await work.bind(boundRequest, leaseToken, configHash,
               { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
                 maxUnits: 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) }, reusedOrganizationFrom,
-              grant?.day === today ? tx => platformDaily.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts) : undefined);
+              grant?.day === today ? tx => platformDaily.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts) : undefined, retained);
             const authorize = async () => {
               if (signal.aborted || !await session.authorize()) return false;
               const latest = await policy.readPolicy();

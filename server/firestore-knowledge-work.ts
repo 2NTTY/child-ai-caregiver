@@ -15,7 +15,7 @@ import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowle
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
-import { retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
+import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -27,9 +27,18 @@ const workSchema = z.strictObject({
   quotaPhase:z.literal('model').optional(), waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
   lease: z.strictObject({ token: z.uuid(), untilMs: time }).nullable(),
   budget: backgroundKnowledgeWorkBudgetSchema, result: backgroundKnowledgeRunResultSchema.nullable(),
+  retainedPromptFailure: backgroundKnowledgeRunResultSchema.optional(),
   receipt: receiptSchema.nullable(), preparedHash: hash.nullable(),
 });
 type Work = z.infer<typeof workSchema>;
+
+export function canResumeRetainedPromptFailure(row: Work | null | undefined, revision?: RetainedDraftRevision) {
+  return Boolean(row && revision && row.result?.status === 'candidate_held' && row.result.code === 'knowledge_retained_page_request_changed'
+    && !row.result.published && row.result.observationHash === revision.observationHash
+    && row.request.watchId === revision.sourceId && row.result.watchId === revision.sourceId && row.request.publishMode === 'live'
+    && row.budget.modelCalls === 0 && !row.lease && !row.preparedHash && !row.receipt && !row.retainedPromptFailure && !row.waitingForQuotaDay
+    && matchesRegisteredRetainedDraft(revision, revision.priorOperationFingerprint ?? revision.operationFingerprint, row.request.operationFingerprint));
+}
 const stageSchema = z.strictObject({
   rootRunId: hash.optional(), requestHash: hash, state: z.enum(["pending", "ready", "unknown", "daily_refused"]), refusedDay: z.iso.date().optional(), text: z.string().max(128000).nullable(),
 }).refine(row => (row.state === "ready") === (row.text !== null)
@@ -174,7 +183,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
       limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
-      sameDayCapacity?: (tx: Transaction) => Promise<boolean>) {
+      sameDayCapacity?: (tx: Transaction) => Promise<boolean>, retained?: RetainedDraftRevision) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       if (reusedOrganizationFrom && knowledgeOrganizationRepairId(reusedOrganizationFrom) !== request.operationFingerprint)
         reject("knowledge_work_repair_binding");
@@ -205,6 +214,11 @@ export function createFirestoreKnowledgeWork(options: Options) {
         if (!control.enabled || control.generation !== request.workerGeneration) reject("knowledge_work_disabled");
         if (snapshot.exists) {
           const row = verify(open(workRef, snapshot.data(), workSchema));
+          if (row.result && canResumeRetainedPromptFailure(row, retained)) {
+            const resumed = { ...row, retainedPromptFailure: row.result, result: null, deadlineAtMs: Date.now() + limits.deadlineMs };
+            tx.set(workRef, seal(workRef, resumed));
+            return resumed;
+          }
           const day = new Date().toISOString().slice(0, 10);
           if (row.waitingForQuotaDay && row.waitingForQuotaDay <= day
             && (row.preparedHash || row.quotaPhase === 'model') && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {

@@ -1,8 +1,11 @@
 import { matchesFhsLayout } from "./helpers/knowledge-pdf-layout-sample.ts";
 import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { assembleAgentPrompt } from "../server/agent-prompt.ts";
+import { retainedDraftRevisionSchema, retainedDraftWorkId } from "../server/knowledge-retained-draft.ts";
 import { createHash, randomUUID } from "node:crypto";
-import { createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
+import { canResumeRetainedPromptFailure, createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { EmbeddingAdmissionDeferred } from "../server/embedding-failure.ts";
 import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
@@ -163,11 +166,59 @@ test("retained page proposals reuse the original request, preserve conditions an
   assert.deepEqual(payload.candidate.chunks[0].applicability, { region: 'HK', topics: ['care'], ...scope, minAgeMonths: null, maxAgeMonths: null });
   assert.equal(prepared.review.decision, 'hold_candidate');
   assert.equal(prepared.provenance.retainedDraft?.revisionHash, knowledgeReviewHash(revision));
+  const promptRoot = new URL('../prompts/', import.meta.url);
+  const manifest = JSON.parse(readFileSync(new URL('manifest.json', promptRoot), 'utf8'));
+  const otherEnding = system.includes('\r\n') ? '\n' : '\r\n';
+  const recorded = (recipeId: string) => assembleAgentPrompt({manifest, recipeId, mode:'structured',
+    availableInputs:['run','scope','context','evidence','capabilities','outputContract'],
+    readModule: async path => readFileSync(new URL(path, promptRoot), 'utf8').replace(/\r?\n/gu, otherEnding)});
+  const historicalSystem = (await recorded('knowledge-organize')).text;
+  const historicalKey = 'knowledge-organize:' + knowledgeReviewHash({system:historicalSystem, user});
+  assert.notEqual(historicalKey, attemptKey);
+  const historicalReview: Parameters<Completion>[0][] = [];
+  await prepareKnowledgeMaintenance({...base, retainedDraft:{
+    revision:{...revision, organizerRequestHash:knowledgeReviewHash({system:historicalSystem, user, attemptKey:historicalKey})},
+    async readOrganizer(key) {assert.equal(key,historicalKey); return retainedDraft.readOrganizer(attemptKey);}
+  }, completeText:provider(historicalReview,'hold')});
+  assert.equal(historicalReview.length,1);
+  assert.equal(historicalReview[0]!.system,(await recorded('knowledge-review')).text);
   revision.units[0]!.passages[0]!.start++;
   await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText: provider(reviews) }), /scope_changed/);
   revision.organizerRequestHash = 'b'.repeat(64);
   await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText: provider(reviews) }), /request_changed/);
   assert.equal(reviews.length, 1);
+});
+
+test('a registered retained preflight can resume once on the same operation with its failure preserved', async () => {
+  const manifest = JSON.parse(readFileSync(new URL('../knowledge/fhs-initial-recovery.json', import.meta.url), 'utf8'));
+  const revision = retainedDraftRevisionSchema.parse(manifest.entries.find((row: {sourceId: string}) => row.sourceId === 'fhs-30034'));
+  const fingerprint = retainedDraftWorkId(revision.operationFingerprint), generation = randomUUID();
+  const work = createFirestoreKnowledgeWork({ database: firestoreDomainFixture().database, namespace: 'synthetic',
+    projectId: 'demo-maintenance', cipher: createStorageCipher(Buffer.alloc(32, 1)), readControl: async () => ({enabled: true, generation}) });
+  const request = { watchId: revision.sourceId, operationFingerprint: fingerprint, workerGeneration: generation, publishMode: 'live' as const };
+  const config = knowledgeHash('original-config'), limits = { modelCalls: 1, deadlineMs: 60000 };
+  async function recordFailure() {
+    const token = randomUUID(), session = await work.bind(request, token, config, limits, undefined, undefined, revision);
+    const claim = await session.ports.claimOperation(fingerprint, token, Date.now() + 30000);
+    assert.equal(claim.status, 'claimed');
+    await session.ports.saveResult(fingerprint, {status: 'candidate_held', code: 'knowledge_retained_page_request_changed',
+      watchId: request.watchId, observationHash: revision.observationHash, published: false, publishMode: 'live'});
+    await session.ports.releaseOperation(fingerprint, token);
+  }
+  await recordFailure();
+  const failed = await work.inspect(request);
+  assert.ok(failed?.result);
+  assert.equal(canResumeRetainedPromptFailure({...failed, budget: {...failed.budget, modelCalls: 1}}, revision), false);
+  assert.equal(canResumeRetainedPromptFailure({...failed, result: {...failed.result, code: 'knowledge_review_failed'}}, revision), false);
+  assert.equal(canResumeRetainedPromptFailure(failed, {...revision, reason: 'changed revision'}), false);
+  await work.bind(request, randomUUID(), config, limits);
+  assert.deepEqual((await work.inspect(request))?.result, failed.result);
+  await recordFailure();
+  const second = await work.inspect(request);
+  assert.deepEqual(second?.retainedPromptFailure, failed.result);
+  assert.equal(second?.budget.modelCalls, 0);
+  await work.bind(request, randomUUID(), config, limits, undefined, undefined, revision);
+  assert.deepEqual((await work.inspect(request))?.result, second?.result);
 });
 
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {

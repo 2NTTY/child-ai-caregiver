@@ -113,6 +113,8 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 12:43 香港收據另有六份 PDF，只需修正原稿的地區寫法。持鎖者以 `node scripts/fhs-recovery-plan.mjs SOURCE_ID` 查看該份登記，按回傳的 `campaignArgs` 執行 `node scripts/fhs-initial-campaign.mjs recover SOURCE_ID ORIGINAL_FINGERPRINT`。這六份須逐份指定；原有 `--recover-held` 繼續處理 09:00 收據。[六份原操作及審核重點](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
+首批有兩份在新 worker 讀回舊提示時得到 `knowledge_retained_page_request_changed`。持鎖者使用支援舊提示換行的版本後，對 `fhs-30034` 及 `pdf-eefb43f9c484a1a24343d64e` 再執行清單內原來的 `recover` 參數。入口只允許已登記、零模型呼叫且沒有租約、候選稿或發布收據的這種失敗接續一次，`inspect-recovery` 的 `retainedPromptFailure` 保留舊結果。其餘十份可沿原序列繼續。
+
 《電子屏幕與幼兒》可按同一逐份入口接回兩次已結算的分窗閱讀。原件、單頁、兩個請求及兩段轉錄各自的引文位置均已固定。重開後應見恢復工作新增生成 0 次，向量及發布結果仍以正式收據核實。《幼兒的一天》須先釐清睡眠年齡能否用於整頁，《臍帶護理》第 2 頁的兩次轉錄分屬不同段落，兩份均繼續保留。[逐頁覆核](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 ### 公共知識 ZIP 暫存

@@ -93,6 +93,8 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 八份網頁及四份 PDF 已以正式保存的整理輸出重建送審內容。生長圖表及保護兒童單張保留原來的十八歲端點及包含／排除語義，須在正式 API 與 worker 均支援該來源範圍後刊登。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；遇每日限額用同一命令接續。每份刊登須按原網址查回家長卡、可匯出版本、原觀測及已提交收據。另十份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
 
+正式版本 `ab7e5775` 已上線。首份網頁及首份 PDF 在供應商派送前因整理提示換行差異停下，兩份的模型次數均為零。已用正式 LF 提示及舊稿驗出模組內換行差異，修正後十二份整理和獨立審核指紋在斷網 Linux worker 一致。正式重審及刊登仍待持鎖者沿[同一操作接續](docs/DEPLOYMENT.md)。
+
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
 

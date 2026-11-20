@@ -16,7 +16,7 @@ import { platformMaterials, campaignMaterialWatches } from '../server/platform-m
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createVertexAgentProvider } from '../server/agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from '../server/vertex-embedding.ts';
-import { createFirestoreKnowledgeWork, knowledgeTruncatedOutputRepairId } from '../server/firestore-knowledge-work.ts';
+import { canResumeRetainedPromptFailure, createFirestoreKnowledgeWork, knowledgeTruncatedOutputRepairId } from '../server/firestore-knowledge-work.ts';
 import { AGENT_OUTPUT_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
@@ -148,11 +148,11 @@ try {
         receipt: saved?.receipt?.state, active: active?.versionId ?? null,
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
           started: Boolean(saved), quotaDay: saved?.waitingForQuotaDay ?? null, activeVersionHash: active?.versionHash ?? null,
-          reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
+          retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
     } else {
       const signal = new AbortController().signal;
       const saved = resuming ? prior : await work.inspect(request);
-      let result = saved?.result;
+      let result = canResumeRetainedPromptFailure(saved, draftRevision) ? null : saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
         if ((repairing || recovering) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
