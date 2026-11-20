@@ -121,6 +121,23 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 《電子屏幕與幼兒》可按同一逐份入口接回兩次已結算的分窗閱讀。原件、單頁、兩個請求及兩段轉錄各自的引文位置均已固定。重開後應見恢復工作新增生成 0 次，向量及發布結果仍以正式收據核實。《幼兒的一天》須先釐清睡眠年齡能否用於整頁，《臍帶護理》第 2 頁的兩次轉錄分屬不同段落，兩份均繼續保留。[逐頁覆核](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
+### FHS 首批分組的 PDF 讀取資料
+
+三組的 `prepare`、送審及中斷接續可共用同一份 [PDF 原件與實頁收據](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)。本次 worker 的讀取目錄及索引 SHA-256 如下。在容器內執行分組入口時，將兩項環境變數一併傳入該命令。
+
+```sh
+export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15
+export FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978
+```
+
+更換 worker 後先在新容器的 `/app` 核對讀取資料。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。
+
+```sh
+node --input-type=module -e 'import {openFhsPdfReads} from "./scripts/fhs-pdf-reads.ts"; await openFhsPdfReads(process.env.FHS_CAMPAIGN_PDF_READS,process.env.FHS_CAMPAIGN_PDF_READS_SHA256)'
+```
+
+如需重建，從倉庫根目錄執行 `node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT`。`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對分工清單、每份原件、實頁範圍和分窗附件，並輸出新目錄及索引指紋。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
