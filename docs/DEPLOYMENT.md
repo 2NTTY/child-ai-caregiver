@@ -130,9 +130,18 @@ node scripts/fhs-catalog-batch.mjs --lane C1 run
 
 `prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留；已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，既有五張結果未明的票據繼續足額預留。自動維護的每日次數適用於排程及自動查新。
 
-在 VM 可用 `docker exec -d -w /app` 接相同 worker、環境選項與 `node` 命令，SSH 離線後繼續執行。先確認該 worker 的發布收據已包含分組 CLI、受命製卡准入及共享預留。共用的 PDF 讀本可用 `FHS_CAMPAIGN_PDF_READS` 和 `FHS_CAMPAIGN_PDF_READS_SHA256` 指向該 worker 內已驗的目錄和索引。舊單序列交接時停止舊映像的續跑程序，原來那份待審教材由原 C 接回；新目錄命令會略過全部 84 份已分組教材。
+先確認正式發布收據已包含分組 CLI、受命製卡准入及共享預留。原 C 在交接時接回原有的待審教材，並停妥舊映像的續跑程序。新目錄命令會略過全部 84 份已分組教材。以下 VM 命令使用首批已驗的 PDF 讀本，SSH 離線後仍會執行；換組時一併替換命令和日誌內的組名。
+
+```sh
+sudo docker exec -d -w /app \
+  -e FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-4c205559755e \
+  -e FHS_CAMPAIGN_PDF_READS_SHA256=4c205559755ee545bf4c128e803b9ba24418572dd45a7bd48fdfa53a1ea065c6 \
+  yuban-p1-worker-1 sh -c 'umask 077; exec node scripts/fhs-catalog-batch.mjs --lane C1 run >>/var/tmp/yuban-knowledge/fhs-C1.ndjson 2>&1'
+```
 
 重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
+
+逐份驗收用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可將該工作指紋加作第三個參數；原操作仍是第二個參數。
 
 ### 公共知識 ZIP 暫存
 
