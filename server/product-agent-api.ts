@@ -15,6 +15,7 @@ import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const artifactRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")/artifacts/(" + uuid + ")$", "i");
 const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/decide)?$", "i");
 const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
 const pendingRoute = new RegExp("^/api/children/(" + uuid + ")/agent/pending$", "i");
@@ -28,10 +29,32 @@ export async function handleProductAgentRequest(request: Request, userId: string
   const expected = request.headers.get("x-expected-user-id");
   if (!expected) return apiError("account_precondition_required", "請重新確認登入帳號。", 428);
   if (expected !== userId || !await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
-  const url = new URL(request.url), path = url.pathname, reply = replyRoute.exec(path), run = runRoute.exec(path), list = listRoute.exec(path), pending = pendingRoute.exec(path), work = workRoute.exec(path), history = historyRoute.exec(path);
-  if (!reply && !run && !list && !pending && !work && !history) return apiError("not_found", "找不到資料。", 404);
-  const childId = (reply ?? run ?? list ?? pending ?? work ?? history)![1].toLowerCase();
+  const url = new URL(request.url), path = url.pathname, reply = replyRoute.exec(path), artifact = artifactRoute.exec(path), run = runRoute.exec(path), list = listRoute.exec(path), pending = pendingRoute.exec(path), work = workRoute.exec(path), history = historyRoute.exec(path);
+  if (!reply && !artifact && !run && !list && !pending && !work && !history) return apiError("not_found", "找不到資料。", 404);
+  const childId = (reply ?? artifact ?? run ?? list ?? pending ?? work ?? history)![1].toLowerCase();
   try {
+    if (artifact) {
+      if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
+      if (url.search) return apiError("invalid_input", "預覽路徑無效。", 400);
+      if (!options.store.readSpecialistDraft) return apiError("ai_unavailable", "草稿預覽讀取尚未接通。", 503);
+      const draft = await options.store.readSpecialistDraft(userId, childId, artifact[2].toLowerCase(), artifact[3].toLowerCase());
+      if (!draft || !await options.isCurrentUser(userId)) return apiError("not_found", "找不到可預覽的草稿。", 404);
+      const ext = draft.summary.format === "pdf" ? "pdf" : "html";
+      const rawAscii = draft.summary.fileName.replace(/[^A-Za-z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
+      const asciiFallback = rawAscii && rawAscii.includes(".") ? rawAscii : `specialist-draft.${ext}`;
+      const encodedName = encodeURIComponent(draft.summary.fileName.replace(/["\\\r\n]/gu, "_"));
+      return new Response(new Uint8Array(draft.bytes), {
+        headers: {
+          "content-type": draft.summary.format === "pdf" ? "application/pdf" : "text/html; charset=utf-8",
+          "content-length": String(draft.bytes.byteLength),
+          "content-disposition": `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodedName}`,
+          "content-security-policy": "sandbox",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, no-store",
+          "x-specialist-formal-save": "false",
+        },
+      });
+    }
     if (work || history) {
       if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
       for (const key of url.searchParams.keys()) if (url.searchParams.getAll(key).length > 1) throw new FamilyError(400, "invalid_input");

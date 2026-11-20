@@ -94,11 +94,16 @@ function pushDefect(defects: SpecialistArtifactDefect[], defect: SpecialistArtif
   if (!duplicate) defects.push(defect);
 }
 
+const workerInput = workerData as PdfWorkerInput;
+const rawPdfLatin1AtStartup = Buffer.from(workerInput.data).toString("latin1");
+const hasMissingEmbeddedFontFile2 =
+  rawPdfLatin1AtStartup.includes("/CIDFontType2") && !rawPdfLatin1AtStartup.includes("/FontFile2");
+
 async function inspectPdf(): Promise<PdfWorkerOutput> {
   const input = workerData as PdfWorkerInput;
   const defects: SpecialistArtifactDefect[] = [];
   const task = getDocument({
-    data: input.data,
+    data: new Uint8Array(Buffer.from(input.data)),
     stopAtErrors: true,
     disableFontFace: true,
     fontExtraProperties: true,
@@ -122,6 +127,14 @@ async function inspectPdf(): Promise<PdfWorkerOutput> {
     if (pageCount < 1) {
       pushDefect(defects, { kind: "empty_page", page: 1, message: "PDF contains zero pages" });
       return { pageCount: 0, defects, extractedTextSample: "" };
+    }
+
+    if (hasMissingEmbeddedFontFile2) {
+      pushDefect(defects, {
+        kind: "missing_glyph",
+        page: 1,
+        message: "CIDFontType2 missing embedded FontFile2 glyph outlines",
+      });
     }
 
     const pageTexts: string[] = [];
@@ -275,10 +288,18 @@ try {
   parentPort?.postMessage({ result });
 } catch (error) {
   const message = error instanceof Error ? error.message.slice(0, 240) : "PDF inspection failed";
+  const defects: SpecialistArtifactDefect[] = [{ kind: "render_error", message }];
+  if (hasMissingEmbeddedFontFile2) {
+    defects.push({
+      kind: "missing_glyph",
+      page: 1,
+      message: "CIDFontType2 missing embedded FontFile2 glyph outlines",
+    });
+  }
   parentPort?.postMessage({
     result: {
       pageCount: 0,
-      defects: [{ kind: "render_error", message } satisfies SpecialistArtifactDefect],
+      defects,
       extractedTextSample: "",
     },
   });

@@ -102,3 +102,28 @@ export const specialistArtifactResultSchema = z.object({
   verification: specialistArtifactVerificationReportSchema.nullable(),
 }).strict();
 export type SpecialistArtifactResult = z.infer<typeof specialistArtifactResultSchema>;
+
+export const specialistArtifactSummarySchema = z.object({
+  artifactId: z.uuid(),
+  runId: z.uuid(),
+  documentId: z.uuid(),
+  expectedVersion: z.number().int().min(1),
+  authorityVersion: z.string().min(1).max(128),
+  artifactVersion: z.number().int().min(1),
+  artifactHash: sha256Hex,
+  format: specialistArtifactFormatSchema,
+  mimeType: z.enum(["application/pdf", "text/html"]),
+  fileName: z.string().trim().min(1).max(160),
+  title: z.string().trim().min(1).max(200),
+  byteLength: z.number().int().positive(),
+  pageCount: z.number().int().min(1),
+  status: specialistArtifactStatusSchema,
+  stopReason: specialistArtifactResultSchema.shape.stopReason,
+  repairIterations: z.number().int().min(0).max(SPECIALIST_ARTIFACT_MAX_REPAIR_ITERATIONS),
+  verification: specialistArtifactVerificationReportSchema,
+  formalSave: z.literal(false),
+  published: z.literal(false),
+  requiresFormalConfirmation: z.literal(true),
+  contentState: z.enum(["ready", "invalidated"]).optional(),
+}).strict();
+export type SpecialistArtifactSummary = z.infer<typeof specialistArtifactSummarySchema>;
