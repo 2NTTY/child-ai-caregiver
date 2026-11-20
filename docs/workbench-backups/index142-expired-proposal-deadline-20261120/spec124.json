@@ -1,0 +1,77 @@
+{
+  "group": {
+    "id": "expired-assistant-task-proposal-vs-suggested-due",
+    "title": "星期五才要帶圖畫簿，為甚麼星期三已不能按「建立待辦」？",
+    "index": "external-comparison",
+    "readerNote": "星期一收到建議，提案有獨立 24 小時確認期限；星期二期限已過，星期三不能再用它建立待辦。原提案建議星期五完成，不代表可接受到星期五。此例從未按接受，過期不等於曾建立、完成或取消待辦，也不能推斷別人沒有另建同名待辦；若先前已按而結果不明，要先核對原決定。原卡在「已結束事項」可查看；有權並讀回同一張原提案的版本才可另行略過，只結束提案，不更改待辦。現有詳情有兩個欄位，以下只是更清楚的排列和措辭。工作台只讀比較，不接受、不續期、不重發或改期。",
+    "choices": [
+      {
+        "name": "先看活動清單｜辨認確認期限已過的提案",
+        "note": "在「已結束事項」找回「帶圖畫簿」的原提案。同一列分開寫「確認期限已過」和「建議星期五完成」。後一個日期還沒到，不代表仍能接受。Oracle 原圖只借用逐列標示：同一張請求表中，一筆 Cleared、一筆 Expired，不能拿來證明育伴港已有這個日期欄，或過期的提案可以重新派送。按入只核對原提案，略過須在詳情另決定。",
+        "source": "https://docs.oracle.com/cd/E41197_01/books/PTA%201.0/pta_UG_6.2.2_1ed.pdf#page=50",
+        "sourceNotes": [
+          {
+            "label": "Oracle 官方手冊 PDF 第 50 頁（印刷頁 36 圖 27）：完整請求清單",
+            "url": "https://docs.oracle.com/cd/E41197_01/books/PTA%201.0/pta_UG_6.2.2_1ed.pdf#page=50"
+          },
+          {
+            "label": "育伴港：在「已結束事項」查看確認期已過的原提案",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AgentConversation.tsx#L141-L165"
+          },
+          {
+            "label": "育伴港：展開區塊後可開啟該張原卡",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AgentConversation.tsx#L191-L209"
+          }
+        ],
+        "version": "Oracle Financial Services Personal Trading Approval Web Release 6.2.2，2013 年 12 月第一版（UG-13-PTA-0001-1.0-01）。2026-11-20 以官方圖目錄及 PDF 第 50 頁畫面核對（印刷頁 36）；未標攝圖日期。",
+        "rights": "Oracle 及／或其關聯公司保留所有權利，未確認可重刊；僅外連作者原 PDF，不內嵌、不轉載、不改圖。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Oracle 官方整頁原圖：手冊印刷頁 36 圖 27 ↗（需連網）"
+      },
+      {
+        "name": "建議詳情｜分開看確認期限和建議完成日",
+        "note": "星期三開啟「帶圖畫簿」這張建議。先看「確認期限：星期二，已過」，再看「建議完成：星期五」。星期五是原建議的內容，並不是已建立待辦的期限。「返回」不作決定；如有權且已讀回這張建議的版本，可選「略過這張建議」，不會建立、取消或改期任何待辦。OPSEU 官圖借看的是兩個日期的排列，不是過期畫面。",
+        "source": "https://opseu.org/wp-content/uploads/2020/11/Event-Registration-Tutorial.pdf#page=2",
+        "sourceNotes": [
+          {
+            "label": "OPSEU 官方會員平台教材，第 2 頁：完整活動詳情，10 月 6 日截止報名，10 月 29 日才開始",
+            "url": "https://opseu.org/wp-content/uploads/2020/11/Event-Registration-Tutorial.pdf#page=2"
+          },
+          {
+            "label": "同一教材第 1 頁：進入報名前的活動畫面，亦把截止和活動日期分行",
+            "url": "https://opseu.org/wp-content/uploads/2020/11/Event-Registration-Tutorial.pdf#page=1"
+          },
+          {
+            "label": "OPSEU/SEFPO 官方素材的有限使用條款",
+            "url": "https://opseu.org/disclaimer-copyright-and-trade-marks/"
+          },
+          {
+            "label": "育伴港：提案另外有 24 小時確認期限",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-agent-proposals.ts#L202-L211"
+          },
+          {
+            "label": "育伴港：現行提案詳情顯示確認期限與可用操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/AgentRunView.tsx#L99-L136"
+          },
+          {
+            "label": "育伴港：星期五這個值屬建議建立的待辦",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/agent-projection.ts#L160-L163"
+          },
+          {
+            "label": "育伴港：過期不可接受；略過只結束提案",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-agent-proposals.ts#L138-L168"
+          }
+        ],
+        "version": "OPSEU/SEFPO 會員平台 MemberLink 英文報名教學；圖中是 2016 年的測試活動。未標 UI 版號、攝圖日或文件發行日；2026-11-20 核對 PDF 第 1、2 頁，不當成現行介面。",
+        "rights": "OPSEU/SEFPO 官方條款限制再使用，不可把內容附在分發的產品或複製到他人網站。本頁只外連原 PDF 指定頁和權利說明，不嵌圖、重刊或收錄文件。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 OPSEU 官方活動詳情原圖：教學第 2 頁 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "023c1341e045e1ee01f931312f2eee02c9bf15f2d618f168e87712d7a79baea2"
+}
