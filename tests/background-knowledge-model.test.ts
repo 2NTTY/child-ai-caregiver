@@ -8,6 +8,7 @@ import type { BackgroundKnowledgeCandidate } from "../server/background-knowledg
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
 import { knowledgeHash, sourceVersionHash } from "../server/knowledge-inputs.ts";
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
 const fetchedAt = "2026-10-20T00:00:00.000Z";
 function candidate(): BackgroundKnowledgeCandidate {
@@ -111,6 +112,37 @@ test("the initial corpus age grammar couples bounds and holds one-sided evidence
   assert.throws(() => pdf.parse({ ranges: { [page.key]: { section: 'Section', keywords: ['care'], region: 'HK', topics: ['care'],
     conditions: [], pageText: {physicalPage1: 'Text'}, ageRange: {requiresAgeReview: 'uncertain'} } },
     nativeCoverage: {pages: [{page: 1, finding: 'Text'}], unreadablePages: [], layoutAnswer: null} }), {code:'knowledge_age_uncertain'});
+});
+
+test("retained page proposals reuse the original request, preserve conditions and require a fresh reviewer decision", async () => {
+  const source = candidate(), calls: Parameters<Completion>[0][] = [];
+  const base = { candidate: source, baseline: null, fetchedAt, growthRules: [] };
+  await prepareKnowledgeMaintenance({ ...base, completeText: provider(calls) });
+  const { system, user, attemptKey } = calls[0]!;
+  const unitId = JSON.parse(user).originalUnits[0].id;
+  const scope = { ageBasis: 'any' as const, minAgeMonths: 0, maxAgeMonths: 12, conditions: ['Only for the registered audience'] };
+  const revision = { sourceId: source.watchId, observationHash: source.observationHash, organizerRequestHash: knowledgeReviewHash({system, user, attemptKey}),
+    operationFingerprint: 'a'.repeat(64), reason: 'The example has no whole-unit upper bound.',
+    units: [{ unitId, ...scope, passages: [{ start: 0, quote: source.observed.text.slice(0, 5) }] }] };
+  const retainedPage = { revision, async readOrganizer(key: string) {
+    assert.equal(key, attemptKey);
+    return JSON.stringify({ units: [{ unitId, section: 'Fixture', text: source.observed.text, keywords: ['fixture'],
+      applicability: { region: 'HK', topics: ['care'], ...scope } }] });
+  } };
+  const reviews: Parameters<Completion>[0][] = [];
+  const prepared = await prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews, 'hold') });
+  assert.equal(reviews.length, 1);
+  const payload = JSON.parse(reviews[0]!.user);
+  assert.equal(payload.role, 'knowledge-semantic-review');
+  assert.deepEqual(payload.editorialAgeProposal.originalScopes, revision.units);
+  assert.deepEqual(payload.candidate.chunks[0].applicability, { region: 'HK', topics: ['care'], ...scope, minAgeMonths: null, maxAgeMonths: null });
+  assert.equal(prepared.review.decision, 'hold_candidate');
+  assert.equal(prepared.provenance.retainedPage?.revisionHash, knowledgeReviewHash(revision));
+  revision.units[0]!.passages[0]!.start++;
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews) }), /scope_changed/);
+  revision.organizerRequestHash = 'b'.repeat(64);
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews) }), /request_changed/);
+  assert.equal(reviews.length, 1);
 });
 
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
