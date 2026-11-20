@@ -1,0 +1,51 @@
+{
+  "group": {
+    "id": "class-handover-cross-period-document",
+    "title": "交接只選本週，跨週文件會交出哪一部分？",
+    "index": "embedded-comparison",
+    "readerNote": "育伴港預設略過跨期文件。老師可明確加回整份目前可讀的版本；不會裁半份，也不會放寬其他記錄的日期。兩個原作者流程只供版面對照，未執行匯出。01 看原站，02 可在工作台看完整原版對話框。",
+    "choices": [
+      {
+        "name": "交接期間-01｜先看這一份，再標明會交出整份",
+        "note": "Brolly 從結果打開一串對話，另有整串匯出視窗，寫明所含訊息數。選日期的整批匯出是另一條路，不是同一張表內加回一項。",
+        "source": "https://support.brolly.io/articles/archive/archive-messages#exporting-a-conversation",
+        "sourceNotes": [
+          {"label": "同日官方整批匯出流程：按日期與帳戶", "url": "https://support.brolly.io/articles/exports/new-export-wizard"},
+          {"label": "育伴港：跨期文件預設略過，可明確加回整份", "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c5334be942df12c672c15a2ebe653e9614998a58/frontend/src/components/account/HandoverControls.tsx#L238-L269"}
+        ],
+        "version": "Brolly Help Centre《Archive Messages》，官方標示 2026-10-12 更新；未列產品 build。",
+        "rights": "© Brolly。原站保留權利，未找到可轉載授權，只連結官方示例。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "交接期間-02｜同一頁先說清全份與選定區間",
+        "note": "Kdenlive 在匯出前同頁列出完整專案與選定區間。這個工具能裁區間；育伴港不能裁文件。可借的是在主要按鈕旁說清交出的範圍。",
+        "source": "https://github.com/KDE/documentation-docs-kdenlive-org/blob/02fcac89ab0cbc1b9771a40e4b61d461e2b9282c/images/getting_started/kdenlive_renderer.webp",
+        "sourceNotes": [
+          {"label": "原作者固定版快速入門及整張圖", "url": "https://github.com/KDE/documentation-docs-kdenlive-org/blob/02fcac89ab0cbc1b9771a40e4b61d461e2b9282c/getting_started/quickstart.rst#L230-L251"},
+          {"label": "Kdenlive 手冊授權與作者", "url": "https://github.com/KDE/documentation-docs-kdenlive-org/blob/02fcac89ab0cbc1b9771a40e4b61d461e2b9282c/more_information/credits_and_license.rst#L15-L23"},
+          {"label": "CC BY-SA 4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/"},
+          {"label": "育伴港：只可交出核對過的可讀版本", "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c5334be942df12c672c15a2ebe653e9614998a58/server/handover-document-period.ts#L38-L68"}
+        ],
+        "version": "Kdenlive 官方快速入門文件快照 02fcac89ab0cbc1b9771a40e4b61d461e2b9282c；畫面未列 Kdenlive build。",
+        "rights": "Kdenlive Documentation contributors（KDE），官方手冊 CC BY-SA 4.0；完整原圖未改，僅供比較。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "Kdenlive 原圖：完整 Render Project 對話框",
+            "label": "Kdenlive 原圖：完整 Render Project 對話框，列出全專案與選定區間",
+            "width": 470,
+            "height": 475,
+            "sha256": "bd88982bc2099244fe48cfc3ab8841f9cbb2f352387bb5b30edd26d5a5e738d6",
+            "gitBlob": "f0a8b49b6de8cbd3ef9fbba73184c091841d92d1",
+            "file": "b-kden3.webp",
+            "mime": "webp"
+          }
+        ]
+      }
+    ],
+    "notices": []
+  },
+  "notices": []
+}
