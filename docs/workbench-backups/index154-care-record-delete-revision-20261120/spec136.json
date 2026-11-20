@@ -1,0 +1,101 @@
+{
+  "group": {
+    "id": "care-record-delete-revision-changed",
+    "title": "家人剛改過這筆照顧記錄，之前勾選的永久刪除還算嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：「週六手作」由 v2 更新到 v3，舊勾選失效。A 先列這筆摘要、刪除及保留範圍；B 先看原擬刪版本與家人最新版本的差異，再決定保留或採用最新基準。兩款均可取消。採用最新版本不等於同意刪除，須重新勾選並另按確認。只會永久刪除本筆及全部更正歷史，刪後無法還原；孩子、其他記錄及私人聊天不受影響。離線或無編輯權不提交；結果未知先查同一操作的原收據，不視為失敗或新送一筆。工作台比較整頁，不執行真實刪除；兩個原圖只外連。",
+    "choices": [
+      {
+        "name": "先讀原記錄｜家人改過，舊勾選便作廢",
+        "note": "先讀「週六手作」記錄，核對刪除範圍：只有這筆記錄及其全部更正歷史會永久消失；孩子檔案、其他記錄及私人聊天保留。家人已把 v2 更正成 v3？舊勾選作廢。可以保留並返回，或先讀 v3，再從空白方格重新確認；開啟最新版不會刪除。離線或無編輯權不送出；若之前已送出但未收到結果，只查原操作收據，不重送。原圖是把案件移出個人清單，只參考整頁核對的次序；本工作台不執行刪除。",
+        "source": "https://design-patterns.service.justice.gov.uk/assets/images/submission-1783074553746/confirm-action-screen.png",
+        "sourceNotes": [
+          {
+            "label": "英國司法部指引：何時用專頁確認、怎樣列出對象與影響，以及何時顯示結果",
+            "url": "https://design-patterns.service.justice.gov.uk/patterns/confirm-an-action/"
+          },
+          {
+            "label": "英國司法部原始碼庫：鎖定 2026-08-18 貢獻版本的原始 PNG",
+            "url": "https://github.com/ministryofjustice/moj-frontend/blob/88d4f213db1aa007711d9a239338a9bda8f5ba21/docs/assets/images/submission-1783074553746/confirm-action-screen.png"
+          },
+          {
+            "label": "英國司法部：加入此確認頁的提交",
+            "url": "https://github.com/ministryofjustice/moj-frontend/commit/88d4f213db1aa007711d9a239338a9bda8f5ba21"
+          },
+          {
+            "label": "英國國家檔案館：Open Government Licence v3.0",
+            "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+          },
+          {
+            "label": "育伴港原碼：本筆、全部更正歷史與保留範圍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordDelete.tsx#L9-L22"
+          },
+          {
+            "label": "育伴港原碼：比較最新版本、採用後重設勾選",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L311-L335"
+          },
+          {
+            "label": "育伴港原碼：未知先查同一操作收據",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L253-L273"
+          },
+          {
+            "label": "育伴港原碼：提交須帶版本與明確確認",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/care-api.ts#L173-L177"
+          }
+        ],
+        "version": "英國司法部 MOJ Design System「Confirm an action」，Experimental，2026 年 8 月加入；2026-08-18 官方提交 88d4f213db1aa007711d9a239338a9bda8f5ba21 收錄此圖，Git blob 72d705e5b67c206efbc2aad7649b55359da8a511，89,663 bytes。2026-11-20 核對官方頁與原 PNG；未標示 Legal Aid Agency 應用程式版號或截圖日期。",
+        "rights": "© Crown copyright。MOJ 文件頁標示除另有說明外適用 Open Government Licence v3.0；不假定所有標誌或第三方素材均授權。本工作台僅外連官方原圖與文件，不內嵌、不下載、不裁剪、不重刊或仿製其品牌，不表示官方背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看英國司法部原圖：先核對案件，再確認移出自己的清單（需連網）↗"
+      },
+      {
+        "name": "先看改了甚麼｜保留這筆，或使用最新版重新核對",
+        "note": "擬議整頁。合成記錄「週六手作」：原先核對 v2 是 14:00，家人更正後 v3 是 15:00。先並列兩版，指出改了哪項；舊勾選不再有效。「保留這筆記錄」保留 v3 及其歷史；「使用 v3 重新核對」只更新刪除基準，勾選框重新留白。只有版本仍相符、已連線且仍有編輯權，重新勾選並另行確認後才可提交。只會永久刪除本筆及全部更正歷史，無法還原；孩子、其他記錄及私人聊天保留。結果未明先查原操作收據，不另起刪除。樣張全程只讀。Confluence 只借版本標籤及差異呈現，不借其還原或刪除行為。",
+        "source": "https://confluence.atlassian.com/conf716/files/1108682039/1108682040/1/1643591797563/CompareChanges.png",
+        "sourceNotes": [
+          {
+            "label": "Confluence 7.16 官方說明：比較兩版、突出差異、收合大段未改內容",
+            "url": "https://confluence.atlassian.com/conf716/page-history-and-page-comparison-views-1108682039.html"
+          },
+          {
+            "label": "育伴港：一筆記錄及其更正歷史的刪除範圍、兩版對照及退出",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordDelete.tsx#L9-L22"
+          },
+          {
+            "label": "育伴港：確認所選記錄、範圍及版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L315-L319"
+          },
+          {
+            "label": "育伴港：採用最新基準會清空舊勾選，不會刪除",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L330-L335"
+          },
+          {
+            "label": "育伴港：先查同一操作的收據，再讀回結果",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L254-L273"
+          },
+          {
+            "label": "育伴港原碼：比較最新版本、採用後重設勾選",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L311-L335"
+          },
+          {
+            "label": "育伴港原碼：未知先查同一操作收據",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareProfileDomains.tsx#L253-L273"
+          },
+          {
+            "label": "育伴港原碼：提交須帶版本與明確確認",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/care-api.ts#L173-L177"
+          }
+        ],
+        "version": "Atlassian Confluence 7.16 版本文件，最後更新 2022-03-21。CompareChanges.png 附件第 1 版；畫面中的 v5／v6 是示例頁面的兩版，不是產品版本。未列擷取日或產品 build，2026-11-20 核對。",
+        "rights": "官方文件頁署名 © Atlassian，此頁及附件未另列該圖的個別授權。只外連官方原圖；不下載、重製、裁圖、嵌入或搬用示例人物與商標。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Atlassian 官方版本比較原畫面（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "095a65857b935befb799a7cfeefd7e96dea36c067e832112216640cdd31e11bb"
+}
