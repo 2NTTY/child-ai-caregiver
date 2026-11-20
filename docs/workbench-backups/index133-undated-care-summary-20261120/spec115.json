@@ -1,0 +1,83 @@
+{
+  "group": {
+    "id": "undated-care-record-outside-summary",
+    "title": "記低了「傍晚做拼貼」，七日照顧摘要為甚麼找不到？",
+    "index": "external-comparison",
+    "readerNote": "「傍晚做拼貼」已保存，但沒有可歸入日期窗的事件時間，不計入七日總數。最初加入及確認不等於發生。未歸入日期的缺項數是同一孩子已掃描紀錄中的數量，不是本週漏記或可點開的原件清單。A 去既有已存記錄搜尋，B 按有權讀到的原件另列日期未定位；兩案只讀設計比較，不代填日期，不改紀錄，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "從七日摘要查回｜到已保存記錄搜尋",
+        "note": "保留同一孩子的所選七日範圍與數字。未能歸入日期的數量來自這位孩子已掃描的記錄，不是這七天漏記。去已保存記錄搜「拼貼」，打開可讀的原項，再分開看事件原句、最初加入與確認時間。Google 的原圖示範摘要與未納入原因分區；原項檢查另見官方說明，並非育伴港實機。 缺項數不帶原件 ID，不能點一個數字就猜是哪一筆。",
+        "source": "https://developers.google.com/static/search/blog/images/video-indexing-report.png",
+        "sourceNotes": [
+          {
+            "label": "Google 官方完整報告主體：日期圖、已索引與未索引原因",
+            "url": "https://developers.google.com/static/search/blog/images/video-indexing-report.png"
+          },
+          {
+            "label": "Google 官方發布公告與歷史版本",
+            "url": "https://developers.google.com/search/blog/2022/07/video-indexing-report"
+          },
+          {
+            "label": "官方說明：報告範圍與沿實際 URL 查詳情",
+            "url": "https://support.google.com/webmasters/answer/9495631?hl=en"
+          },
+          {
+            "label": "育伴港：正式摘要不以加入或確認時間補事件時間",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/firestore-care-summary.ts#L56-L78"
+          },
+          {
+            "label": "育伴港：既有同一孩子的已存記錄搜尋及原件詳情",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/frontend/src/components/care/CareSavedRecordsView.tsx#L39-L66"
+          },
+          {
+            "label": "育伴港：缺事件時間先另計，不進日期窗",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/care-summary-policy.ts#L71-L95"
+          }
+        ],
+        "version": "Google Search Console 正式報告 2022-07-11 發布時的歷史說明圖；精確組建及拍攝日未標。",
+        "rights": "Google 官方圖片；公告一般為 CC BY 4.0，影像及品牌可能有不同條件，本案只連官方來源，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "已保存但未定日期｜另列原記錄",
+        "note": "不用記得關鍵詞也可查原項：先看「傍晚，日期未定位」，另列「最初加入：星期六」及「由你確認：星期六」。按加入時間找不等於按發生時間排；只列有權讀到的筆數。參考的 Todoist 另列無排定日期的任務，建立時間另查；它不證明照顧事件或確認時間。 只列目前使用者有權讀取、屬於這位孩子的原紀錄；照顧資料的約數／未知不帶可放進日期窗的時間點，不代填、不改原件。",
+        "source": "https://images.ctfassets.net/dm4oa8qtogq0/7da6f3b8455a51b7214c17a46a32b5fdb1ee4e6a/b7948920ea62c8ce268117bbeab91b2b/No_due_date_filter",
+        "sourceNotes": [
+          {
+            "label": "Todoist 官方整頁原圖：No due date 和 Today／Upcoming 分開",
+            "url": "https://images.ctfassets.net/dm4oa8qtogq0/7da6f3b8455a51b7214c17a46a32b5fdb1ee4e6a/b7948920ea62c8ce268117bbeab91b2b/No_due_date_filter"
+          },
+          {
+            "label": "Todoist 官方補圖：另一例把建立時間放在任務選單",
+            "url": "https://images.ctfassets.net/dm4oa8qtogq0/480dbaaef39f4c2d37d738554e279cdd00a94f38/5dc7fa4134a09d424ac55d4d763a7890/At_the_top_of_the_three_dots_menu_it_says_the_exact_date_including_year_and_time_the_task_was_created._In_shared_projects_it_in."
+          },
+          {
+            "label": "Todoist 官方原文：無排定日期的任務另列",
+            "url": "https://www.todoist.com/inspiration/todoist-filters"
+          },
+          {
+            "label": "Todoist 官方說明：Date、Deadline、Created 是獨立欄位",
+            "url": "https://www.todoist.com/help/todoist/features/use-the-table-layout-in-todoist-WHCRjI3af"
+          },
+          {
+            "label": "育伴港：正式驗證僅精確時間有時間點，約數和未知為空",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/care-validation.ts#L14-L20"
+          },
+          {
+            "label": "育伴港：表單保留原句，無時間點不猜日期",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/frontend/src/production/CareProfileProjections.ts#L21-L45"
+          }
+        ],
+        "version": "Todoist 官方桌面式介面，2026-11-20 核對。主圖資產伺服器標示 2025-03-24 更新；文章發布於 2020-07-16，未標軟件版號或精確攝圖日期。",
+        "rights": "Todoist 保留官方介面及宣傳圖權利；工作台只外連原圖及說明，不嵌、不重刊或加工。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "78d99e644def4b1af9f5c67597fc0eee8339a10a0abacef566b80d54d331312a"
+}
