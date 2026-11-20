@@ -236,8 +236,9 @@ test("grouped PDF sections require one keyed summary for each physical page in i
   const group = {section:"Fruit",keywords:["fruit"],region:"HK",topics:["care"],conditions:[],ageRange:null};
   const nativeCoverage = {pages:[{page:5,finding:"Table introduction"},{page:6,finding:"Fruit row"}],unreadablePages:[],layoutAnswer:null};
   const parse = (pageText:Record<string,string>) => contract.parse({ranges:{[range.key]:{...group,pageText}},nativeCoverage});
-  const spelling = contract.parse({ranges:{[range.key]:{...group,region:"Hong Kong",pageText:{physicalPage5:"Opening",physicalPage6:"Fruit"}}},nativeCoverage});
-  assert.equal(spelling.units[0]!.applicability.region,"HK");
+  const withRegion = (region: string) => contract.parse({ranges:{[range.key]:{...group,region,pageText:{physicalPage5:"Opening",physicalPage6:"Fruit"}}},nativeCoverage});
+  for (const spelling of ["Hong Kong", "香港", "hk"]) assert.equal(withRegion(spelling).units[0]!.applicability.region, "HK");
+  assert.throws(() => withRegion("未註明"));
   assert.deepEqual(range.pages,["physicalPage5","physicalPage6"]);
   assert.throws(() => parse({physicalPage1:"Wrong physical page",physicalPage6:"Figure"}));
   assert.throws(() => parse({physicalPage6:"Figure"}));
