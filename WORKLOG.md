@@ -6971,3 +6971,7 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 按 Vertex global Gemini 3.8 Flash 估算，64 段全數首次啟用的增量為抵免前 US$2.37–3.21，全額符合優惠抵免時為 US$1.19–1.60。86 段的比較情景為抵免前 US$4.80–6.31，其中 22 段只在首批卡範圍外發現。兩個情景均以獨立算式核對。現行活動影音關閉，本次沒有生成或向量請求。[片長、路由、估算及官方費率](artifacts/verification/FHS_CHILD_MEDIA_ESTIMATE_20261121.json)
 
 香港 00:41，從正式版 `883426b6` 的管理政策唯讀接口核對，逐卡影音當時選用 Vertex global Gemini 3.1 Flash-Lite，API 及 worker 輸出上限均為 1,024 tokens。按視訊與文字、音軌、輸出三項分別估價，首批卡的 64 段合共 US$0.51–0.67；全目錄 86 段的比較數字為 US$1.04–1.34。首批文件整理及獨立審核使用指定的 3.8 Flash，原抵免前報價連向量仍為 US$11.94–58.81。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44773701383) · [分項報價](artifacts/verification/FHS_CHILD_MEDIA_ESTIMATE_20261121.json)
+
+### 2026-11-21　C 核對首批原生生成拒件的費用
+
+首批帳本可憑已查實的原始 Vertex 非成功 HTTP 回應、同一來源／操作／階段及證據摘要，按原票據記零收費並釋放該筆預留。供應商沒有回報的 token 數留空。相同證據重入只讀回，其他已結算結果及不同證據均不能覆寫。7 項帳本檢查、3 項備份還原定向檢查及 Server 型別檢查通過。實際原單須另行核對唯一派送及原始回應。[Google 首方模型收費條款](https://cloud.google.com/model-garden/pricing)

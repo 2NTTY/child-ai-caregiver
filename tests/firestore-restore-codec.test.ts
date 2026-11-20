@@ -85,6 +85,21 @@ test('restore binds a commissioned ticket to its original source, operation and 
   assert.throws(() => f.codec.decode({ path, data: { ...data, sourceId: 'different-source' } }), errors('restore_binding'));
 });
 
+test('restore preserves a nonbillable native rejection and its original ticket binding', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await ledger.reserveShared('generation', { sourceId: 'fhs-synthetic', operationFingerprint: digest,
+    stageKey: 'review', assertLease: async () => {} }, 8192);
+  const [path, before] = [...f.fake.records].find(([key]) => key.includes('/attempts/'))!;
+  await ledger.settleRejectedGeneration({ ticketId: path.split('/').at(-1), sourceId: before.sourceId,
+    operationFingerprint: digest, stageHash: before.stageHash, at: before.at, ceiling: before.ceiling,
+    rejection: { httpStatus: 400, evidenceSha256: 'd'.repeat(64) } });
+  const record = { path, data: f.fake.records.get(path)! };
+  const restored = f.codec.transform(f.codec.decode(record), input());
+  assert.deepEqual(f.codec.decode(restored).value, record.data);
+  assert.throws(() => f.codec.decode({ path, data: { ...record.data, sourceId: 'other-source' } }), errors('restore_binding'));
+});
+
 test('restore preserves the original publication assignment and rejects an altered lane or generation', () => {
   const f = fixture(), pin = manualPublicationPin('pdf-63e7d5463521682636a066e5')!, revision = randomUUID();
   const path = namespace + '_knowledge_campaigns/' + campaign + '/publicationBindings/' + pin.sourceId;
