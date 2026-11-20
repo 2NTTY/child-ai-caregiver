@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-20 香港 23:40**　C2 本批 28 份原件已核實 1 張家長卡、9 份保留。《寶寶愛活動》的文件向量可匯出，引用逐字對上第 1 頁。C2 帳本 19 次請求已結算 US$0.733131；《僱員指引－母乳餵哺與工作相容》的程序觸及記憶體上限，正查原工作。其餘教材按原操作繼續。[分組進度](PLAN.md#fhs-c2-publication-lane) · [正式收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json)
+
 **2026-11-20 香港 22:34**　正式機已恢復。C3 已核對 28 份教材、468 頁，只有 24 頁《奶瓶餵哺指引》有一次生成預留，尚待結算。28 份均未見生效卡，餘下 27 份等候正式機的製卡資源限制就緒。[C3 分組進度](PLAN.md#active) · [重啟後核對](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 **2026-11-20 香港 13:49**　早上 09:00 快照內的 24 份待審教材已有十份上架、十二份保留、兩份 504 隔離。十份已從正式卡庫核對生效及匯出版本。13:44 的正式發布收據為 `r44682020469-1`，API 及 worker 均為 `fa1bdecb`。另計的待向量 PDF 已於 12:32 發布。[24 份逐項結果與限制](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [首批原快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469)

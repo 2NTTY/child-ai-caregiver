@@ -19,6 +19,8 @@ export interface ChatMessage {
   discussionOf?: string;
   /** A server-initiated message in the existing private conversation. */
   proactive?: true;
+  /** Display-only projection from the authenticated proactive receipt. */
+  proactiveUnread?: boolean;
   createdAt: string;
   agentRunId?: string;
   officialHelp?: OfficialHelpId[];

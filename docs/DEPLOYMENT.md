@@ -171,6 +171,10 @@ sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAM
 
 安裝或更新主機工具時，從已核對的提交取出 `deploy/knowledge-worker/publication.py`，核對檔案 SHA-256，再以 root 擁有、0644 安裝至上述位置。日常查帳用 `sudo python3 -I "$tool" accounting`。在同一張四頁原單等候供應商結果期間，用 `sudo python3 -I "$tool" inspect SOURCE_ID` 查租約、預留及生效版。
 
+C2 原單因 `knowledge_window_quote_mismatch` 保留時，可用 `--reads DIR --reads-hash SHA256 inspect SOURCE_ID` 核對引文。讀本須含原 PDF 的引用頁段，每段由第 1、9、17 等頁起，最後一段取實際餘頁。工具讀回原操作最後失敗窗口內的兩份封存回應，核對整理及審核請求指紋，分別比對整理稿所指實頁。操作員可在本機檢視兩段摘錄；公開收據只記核對結果。圖像頁須另開官方原頁核實。這個查核不會送出模型請求或刊登教材。
+
+同一入口亦可核查分窗原單的 `knowledge_review_failed`。它用封存回應重現原來的輸出驗證，報告出錯的欄位、長度或地區代碼。若只能重現其他邊界，沿用原保留結果。
+
 需要離開 SSH 時，可把本組命令和收據留在 VM 上本人可讀的檔案。
 
 ```sh
