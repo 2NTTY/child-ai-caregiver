@@ -1,0 +1,565 @@
+{
+  "capturedAt": "2026-11-20T04:43:33.757Z",
+  "campaign": "fhs-child-initial-20261120",
+  "baseline": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "releaseReceipt": "FHS_INITIAL_APPROVED_PDF_RELEASE_20261120.json",
+  "retainedUnknown": "FHS_INITIAL_RETAINED_20261120T0443Z.json",
+  "counts": {
+    "eligibleInSequence": 251,
+    "published": 111,
+    "held": 38,
+    "deferred": 0,
+    "otherRecorded": 0,
+    "withoutResult": 102
+  },
+  "grossCapUsd": 30,
+  "grossUsageUsd": 5.817525,
+  "reservedUsd": 4.841472,
+  "availableAfterReservationsUsd": 19.341003,
+  "providerAttempts": 418,
+  "settledAttempts": 415,
+  "byProvider": {
+    "generation": {
+      "attempts": 285,
+      "inputTokens": 2669101,
+      "outputTokens": 240596,
+      "grossMicros": 5808188,
+      "reservedMicros": 4841472
+    },
+    "embedding": {
+      "attempts": 133,
+      "inputTokens": 61828,
+      "outputTokens": 0,
+      "grossMicros": 9337,
+      "reservedMicros": 0
+    }
+  },
+  "c3": {
+    "originalScope": 116,
+    "recorded": 14,
+    "published": 0,
+    "remaining": 102,
+    "entries": [
+      {
+        "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+        "title": "嬰幼兒健康飲食 - 飲奶知多少",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf",
+        "kind": "pdf",
+        "sha256": "247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "41a3e024a4735187e4cb8ba673bb8f6a7b58bf7a6cfc81bf5fc417ff79ec02d2",
+        "history": [
+          {
+            "operationFingerprint": "41a3e024a4735187e4cb8ba673bb8f6a7b58bf7a6cfc81bf5fc417ff79ec02d2",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8139,
+            "outputTokens": 1826,
+            "grossMicros": 25904,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+        "title": "兒童發展監察計劃",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13033.pdf",
+        "kind": "pdf",
+        "sha256": "9dae9888b2f14ba385603e268943541e37c3b901a1de03af2657230d5555dc28",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "2baa96c156fe185ce969670b937dfd9fc1da09fa021a47c1d674553db643dd34",
+        "history": [
+          {
+            "operationFingerprint": "2baa96c156fe185ce969670b937dfd9fc1da09fa021a47c1d674553db643dd34",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8046,
+            "outputTokens": 1139,
+            "grossMicros": 20612,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "title": "臍帶護理",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15669.pdf",
+        "kind": "pdf",
+        "sha256": "9ea1a7465a07e5c3fa0b5374ab09c5eb406213eb4d962389f8c971eb6e91c9a4",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "operationFingerprint": "cb8496fd3159ab784370c5595b55147b9a333e5e053af7d9147622aa23687906",
+        "history": [
+          {
+            "operationFingerprint": "cb8496fd3159ab784370c5595b55147b9a333e5e053af7d9147622aa23687906",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_window_quote_mismatch",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 2,
+            "inputTokens": 20157,
+            "outputTokens": 1859,
+            "grossMicros": 44178,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-96b158a588a4b294cbbd010b",
+        "title": "孩子「偏食」怎麼辦?",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.pdf",
+        "kind": "pdf",
+        "sha256": "1e2bdf986c583ea77656c71e9ab11ea7aa4a887819fc6ce420bec30736b31c3f",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "operationFingerprint": "4eeed8b217790c67150936660df1299f35d0460f09403efed1454d14cb5c452b",
+        "history": [
+          {
+            "operationFingerprint": "4eeed8b217790c67150936660df1299f35d0460f09403efed1454d14cb5c452b",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_age_uncertain",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8167,
+            "outputTokens": 2149,
+            "grossMicros": 28368,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-15f80bcfe4c3560a68c19a89",
+        "title": "水痘疫苗",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30004.pdf",
+        "kind": "pdf",
+        "sha256": "2b8257ea68ff28e6d2db164e97f99a7c32f436c1bdd44e596c3ab32d7b3964b8",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "d690f08d091cbd8793bf7e91a66e4092ea6c7303387200b8a68f194a1fa4b790",
+        "history": [
+          {
+            "operationFingerprint": "d690f08d091cbd8793bf7e91a66e4092ea6c7303387200b8a68f194a1fa4b790",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8091,
+            "outputTokens": 1133,
+            "grossMicros": 20634,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-231c869513252fae5e5ce54e",
+        "title": "替孩子轉換奶粉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.pdf",
+        "kind": "pdf",
+        "sha256": "0dd054a3e224b63374f9cc37706d7f79f9f4c4742dc9ba83b64e370d1d64e2fc",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "91c44e86009a9917ddfb74c6ffadbd32b59a6112d868c9264b7669056362dba5",
+        "history": [
+          {
+            "operationFingerprint": "91c44e86009a9917ddfb74c6ffadbd32b59a6112d868c9264b7669056362dba5",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8120,
+            "outputTokens": 1127,
+            "grossMicros": 20633,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "title": "怎樣引導孩子掌握自己進食的技能〈六至二十四個月大〉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30010.pdf",
+        "kind": "pdf",
+        "sha256": "d5d0047950a5e887fa106329acb323dbd6fc66129fbf2ed8c04ed5904f50d72c",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "3acc07e97d22aa4c3e94ede95d64c2ee089b5587ea2b1716fd003f1f4c1dc6e6",
+        "history": [
+          {
+            "operationFingerprint": "3acc07e97d22aa4c3e94ede95d64c2ee089b5587ea2b1716fd003f1f4c1dc6e6",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 8055,
+            "outputTokens": 693,
+            "grossMicros": 17280,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-6637fb9890bacf75064562bd",
+        "title": "寶寶不願意用杯子",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30011.pdf",
+        "kind": "pdf",
+        "sha256": "3c3dd10a3562d4fc81a2f0aebb57174f144f847aa8205e1051671330711358a6",
+        "pages": 2,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "8a72a9fabe7504529c2233fc538c196ce4632c3fd6385ee9548299c850c6e3a9",
+        "history": [
+          {
+            "operationFingerprint": "8a72a9fabe7504529c2233fc538c196ce4632c3fd6385ee9548299c850c6e3a9",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "retainedTicketId": "55239b19-c354-4b6f-9423-38ec0f312cad",
+        "grossUsageForReservedAttempt": null,
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "grossMicros": 0,
+            "reservedMicros": 1634304
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-4bdbc1ab6341b2e2f08bf986",
+        "title": "智醒家長貼士：藥物安全",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30152.pdf",
+        "kind": "pdf",
+        "sha256": "a25c834306113618940f31b34c5ca36d06da593632338cb3f8c39a6139d0d3c5",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "c927122661418f7047cc28e7556ef9dedfa8da5738ee34a3c13c42a1e1ac7775",
+        "history": [
+          {
+            "operationFingerprint": "c927122661418f7047cc28e7556ef9dedfa8da5738ee34a3c13c42a1e1ac7775",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 7421,
+            "outputTokens": 788,
+            "grossMicros": 17042,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+        "title": "哺乳媽媽需要服用含碘補充劑",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30168.pdf",
+        "kind": "pdf",
+        "sha256": "f696c3c3f36839f2953ee209d2a9bb50b3ff7fc4b7b79ef134f021c3efa1abc1",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "93ab393d2e3f808c0b7765d0297f95343988f329e0e127737030550426524856",
+        "history": [
+          {
+            "operationFingerprint": "93ab393d2e3f808c0b7765d0297f95343988f329e0e127737030550426524856",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 7558,
+            "outputTokens": 779,
+            "grossMicros": 17180,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-0036bc862846cdd19984930b",
+        "title": "卡介苗（預防結核病）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.pdf",
+        "kind": "pdf",
+        "sha256": "3dc96df1afd014c6939e8aa963c8c206301c485fd8ac114794f21d3db003e8cd",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "operationFingerprint": "9ede850b350079751386efa3ce01815a19cd1452b1769f9aa76c3bb9ec8021e1",
+        "history": [
+          {
+            "operationFingerprint": "9ede850b350079751386efa3ce01815a19cd1452b1769f9aa76c3bb9ec8021e1",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_age_one_sided",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 7415,
+            "outputTokens": 706,
+            "grossMicros": 16418,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+        "title": "滅活小兒麻痺疫苗",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/484.pdf",
+        "kind": "pdf",
+        "sha256": "5e7099c223e034c4a959434d813578e1fecc46f9263f4095db2a3825da4709ce",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_review_failed",
+        "operationFingerprint": "28d8376cb41957dbf2ffc58fa221370f248dcdb2f90f3e57199b0c488a329d53",
+        "history": [
+          {
+            "operationFingerprint": "28d8376cb41957dbf2ffc58fa221370f248dcdb2f90f3e57199b0c488a329d53",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_review_failed",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 1,
+            "inputTokens": 7416,
+            "outputTokens": 634,
+            "grossMicros": 15879,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "title": "電子屏幕與幼兒",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/poster/30163.pdf",
+        "kind": "pdf",
+        "sha256": "f476d352d00e870616cf90f532421d195d6a12acde335f1f58d1e16c4894211b",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "operationFingerprint": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+        "history": [
+          {
+            "operationFingerprint": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_window_quote_mismatch",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 2,
+            "inputTokens": 16446,
+            "outputTokens": 971,
+            "grossMicros": 31952,
+            "reservedMicros": 0
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "title": "幼兒的一天",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/poster/30164.pdf",
+        "kind": "pdf",
+        "sha256": "47d3c4e7657163f65b0e06a8e2b927f7e94fd38fb01c60ab7be6b35f36d9516a",
+        "pages": 1,
+        "outcome": "candidate_held",
+        "receiptStatus": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "operationFingerprint": "8c64e381adf5852436d7dabadb0de68f0d08afada344e6df7e7bc3a76ccc6e26",
+        "history": [
+          {
+            "operationFingerprint": "8c64e381adf5852436d7dabadb0de68f0d08afada344e6df7e7bc3a76ccc6e26",
+            "maxOutputTokens": 8192,
+            "ageOutput": "source-unit-age/1",
+            "campaignDayAdmission": {
+              "campaign": "fhs-child-initial-20261120",
+              "day": "2026-11-20",
+              "policyVersion": 3,
+              "attempts": 300
+            },
+            "status": "candidate_held",
+            "code": "knowledge_window_quote_mismatch",
+            "published": false
+          }
+        ],
+        "usage": {
+          "generation": {
+            "attempts": 2,
+            "inputTokens": 16435,
+            "outputTokens": 1002,
+            "grossMicros": 32168,
+            "reservedMicros": 0
+          }
+        }
+      }
+    ]
+  }
+}
