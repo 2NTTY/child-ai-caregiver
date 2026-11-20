@@ -73,6 +73,16 @@ test('restore preserves the campaign balance and every attempt and fences new sp
   await assert.rejects(ledger.reserve('embedding', 'fhs-synthetic', 0), /reconcile_before_next_attempt/);
 });
 
+test('restore binds a commissioned ticket to its original source, operation and stage', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await ledger.reserveShared('embedding', { sourceId: 'fhs-synthetic', operationFingerprint: digest,
+    stageKey: 'document', assertLease: async () => {} }, 0);
+  const [path, data] = [...f.fake.records].find(([key]) => key.includes('/attempts/'))!;
+  assert.equal(f.codec.decode({ path, data }).path, path);
+  assert.throws(() => f.codec.decode({ path, data: { ...data, sourceId: 'different-source' } }), errors('restore_binding'));
+});
+
 test('restore permits account scope only for mixed agent runs and claims while preserving stopped execution and deduplication', () => {
   const f = fixture(), runId = randomUUID(), sourceMessageId = randomUUID();
   const mixedChat = { roomId: randomUUID(), scope: { kind: 'personal' as const }, childIds: [scope.childId], basis: digest };

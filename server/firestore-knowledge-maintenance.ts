@@ -159,6 +159,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         }
       }
       const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
+      let verifyCommission: ((tx: Transaction) => Promise<void>) | undefined;
       if (manual) {
         const check = knowledgeOperationId('knowledge-observation/1', request.operationFingerprint);
         const recovered = recordedCheckId === knowledgeOperationId('knowledge-observation/parser-recovery/1', request.operationFingerprint);
@@ -168,6 +169,14 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           || (recordedCheckId !== check && !(recovered && original?.status === 'failed' && original.reason === 'parse' && item?.nativeWindowMethod === PDF_WINDOW_METHOD))
           || item?.url !== definition.url || item.extraction?.contentHash !== manual.sha256 || item.extraction.totalPages !== manual.pages)
           reject('knowledge_manual_publication_binding');
+        const expectedObservation = observationHash(item);
+        verifyCommission = async tx => {
+          const current = await options.refresh.gate.read(tx, manual.sourceId);
+          if (!current?.watch.enabled || !current.watch.manualOnly || !current.catalogMatches || current.watch.revision !== expectedRevision
+            || current.observation?.contentHash !== expectedObservation || current.observation.unavailable)
+            reject('knowledge_manual_publication_binding');
+        };
+        await options.database.runTransaction(verifyCommission, { readOnly: true });
       }
       const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
       if (transcript && !windowed) reject('knowledge_retained_transcription_binding');
@@ -262,7 +271,10 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
             };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
             const meter = options.campaignBudget?.meter({ sourceId: boundRequest.watchId, operationFingerprint: boundRequest.operationFingerprint,
-              assertLease: session.assertLease }, config.maxOutputTokens);
+              async assertLease(tx) {
+                await session.assertLease(tx);
+                await verifyCommission?.(tx);
+              } }, config.maxOutputTokens);
             const quotaReader = personal
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) => {

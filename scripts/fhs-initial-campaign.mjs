@@ -98,6 +98,7 @@ try {
   if (handlesSource) await handleSource();
   async function handleSource() {
     const admissionState = await gate.sourceStatus(id);
+    const reservations = admissionState.reservations.map(({kind, ceiling}) => ({kind, ceiling}));
     if (!inspecting && !admissionState.admissible) throw Error('knowledge_campaign_reconcile_before_next_source');
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
@@ -116,7 +117,7 @@ try {
     const [job] = await refresh.jobs(id);
     if (!job && inspecting && !draftRevision) {
       console.log(JSON.stringify({ id, registered: false, started: false, operationFingerprint: null,
-        active: (await knowledge.publishedEdition(id))?.versionId ?? null, reservations: admissionState.reservations,
+        active: (await knowledge.publishedEdition(id))?.versionId ?? null, reservations,
         leaseUntilMs: null, quotaDay: null, receipt: null, prepared: false }));
       return;
     }
@@ -154,7 +155,7 @@ try {
       console.log(JSON.stringify({ id, registered: true, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
-        leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations: admissionState.reservations,
+        leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations,
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
           activeVersionHash: active?.versionHash ?? null,
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
