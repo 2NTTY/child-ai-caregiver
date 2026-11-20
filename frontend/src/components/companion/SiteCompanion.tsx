@@ -1,22 +1,28 @@
-import { Component, useLayoutEffect, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { usePathname } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useChatExposure, useChatForeground } from '../../production/useChatExposure';
 import { assistantPages, type ChatPageContext } from '../../../../src/shared/chat-page-context';
 import { useProduction } from '../../production/ProductionProvider';
-import { colors, mobileLayout } from '../../theme';
+import { colors } from '../../theme';
 import { AppDialog } from '../AppDialog';
-import { AppIcon } from '../AppIcon';
+import { CharacterDock } from './CharacterDock';
 import { AppButton } from '../ui';
 import { VoiceCapture } from '../agent/VoiceCapture';
 import { useCompanionSelection } from './CompanionSelection';
-import CharacterFrame from './CharacterFrame';
+function characterSource(apiBaseUrl: string) {
+  return Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
+}
 
-class RenderBoundary extends Component<{children: ReactNode}, {failed: boolean}> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() { return this.state.failed ? null : this.props.children; }
+export function ChatToolbarCompanion({ compact }: { compact: boolean }) {
+  const { identityKey, apiBaseUrl } = useProduction();
+  const foreground = useChatForeground(), pathname = usePathname();
+  const height = compact ? 50 : 62;
+  if (!identityKey || pathname !== '/chat') return null;
+  return <View style={{ width: Math.ceil(height * .71), height, flexShrink: 0 }}>
+    <CharacterDock key={identityKey} src={characterSource(apiBaseUrl)} page="/chat" foreground={foreground} inToolbar />
+  </View>;
 }
 
 export function SiteCompanion() {
@@ -24,15 +30,15 @@ export function SiteCompanion() {
   return identityKey ? <Companion key={identityKey} /> : null;
 }
 
-type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean };
+type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean; reminderId?: string };
 
 function Companion() {
-  const pathname = usePathname(), insets = useSafeAreaInsets(), { width, height } = useWindowDimensions();
-  const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState } = useProduction();
+  const pathname = usePathname(), { height } = useWindowDimensions(), foreground = useChatForeground();
+  const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState, online } = useProduction();
   const childId = !sharedChild.target && scopeKey && selectedChildId === chatState.selectedChildId ? selectedChildId : null;
   const scope = scopeKey ?? (sharedChild.target ? JSON.stringify(sharedChild.target) : null);
-  const [gesture, setGesture] = useState(0), [ready, setReady] = useState(false);
-  const [minimized, setMinimized] = useState(false), [panel, setPanel] = useState<Panel | null>(null);
+  const unread = childId && online && !chatState.error ? chatState.messages.find(m => m.childId === childId && m.proactive && m.proactiveUnread === true)?.id : undefined;
+  const [panel, setPanel] = useState<Panel | null>(null);
   const quiet = pathname === '/chat';
   const open = !quiet && panel?.page === pathname && panel.scope === scope;
   useLayoutEffect(() => {
@@ -45,29 +51,11 @@ function Companion() {
       return null;
     });
   }, [pathname, scope, selectedChildId, sharedChild.target]);
-  const small = width < mobileLayout.breakpoint;
-  const size = quiet ? 48 : small ? 64 : 88;
-  const src = Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
-  const collapsed = minimized && !quiet;
   return <>
-    <View style={[styles.dock, quiet ? styles.quiet : { right: 8, bottom: Platform.OS === 'web' ? 6 : mobileLayout.tabMinHeight + insets.bottom + 4 }]}>
-      <Pressable testID="site-companion" accessibilityRole="button" accessibilityLabel={quiet ? '跟助手揮手' : collapsed ? '展開小助手' : '跟小助手對話'}
-        onPress={() => {
-          if (collapsed) { setMinimized(false); return; }
-          setGesture(n => n + 1);
-          if (!quiet) setPanel({ page: pathname, scope, includeItem: !!childId });
-        }} style={[styles.character, { width: collapsed ? 44 : size, height: collapsed ? 44 : size }]}>
-        {(!ready || collapsed) && <AppIcon name="message-text-outline" size={24} color={colors.teal} />}
-        <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, (!ready || collapsed) && { opacity: 0 }]}>
-          <RenderBoundary><CharacterFrame src={src} gesture={gesture} onState={async value => setReady(value)}
-            dom={{ style: { width: '100%', height: '100%', backgroundColor: 'transparent' }, scrollEnabled: false }} /></RenderBoundary>
-        </View>
-      </Pressable>
-      {!collapsed && !quiet && <Pressable accessibilityRole="button" accessibilityLabel="收起小助手" hitSlop={5}
-        style={styles.minimize} onPress={() => setMinimized(true)}><AppIcon name="close" size={13} /></Pressable>}
-    </View>
+    <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground} panelOpen={open}
+      onChat={() => setPanel({ page: pathname, scope, includeItem: !!childId, reminderId: unread || undefined })} />
     {open && (childId
-      ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} height={height} close={() => setPanel(null)} />
+      ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} reminderId={panel.reminderId} height={height} close={() => setPanel(null)} />
       : <ConversationChoices close={() => setPanel(null)} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} />)}
   </>;
 }
@@ -102,7 +90,7 @@ function ConversationChoices({ close, onChoose }: { close(): void; onChoose(id: 
   </AppDialog>;
 }
 
-function QuickConversation({ page, childId, includeItem, height, close }: { page: string; childId: string; includeItem: boolean; height: number; close(): void }) {
+function QuickConversation({ page, childId, includeItem, reminderId, height, close }: { page: string; childId: string; includeItem: boolean; reminderId?: string; height: number; close(): void }) {
   const { chatState: chat, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, sendChat,
     chatController, chatWritesAllowed, voiceUpload, fileUpload, photoUpload, openAgentDraft, checkVoiceUpload } = useProduction();
   const selected = useCompanionSelection();
@@ -114,7 +102,12 @@ function QuickConversation({ page, childId, includeItem, height, close }: { page
   const canStartNext = draft?.phase === 'reply_failed' && !!draft.savedUserMessageId && !chat.busy && !activeReply;
   const editable = chatWritesAllowed && chat.online && !chat.busy && !activeReply && !!chat.loadedAt && !chat.loading
     && (!draft || draft.phase === 'draft') && ![voiceUpload,fileUpload,photoUpload].some(u => u.busy || u.unknown);
-  const recent = chat.messages.filter(m => m.childId === childId).slice(-4);
+  const reminder = reminderId ? chat.messages.find(m => m.id === reminderId && m.childId === childId && m.proactive) : undefined;
+  const [exposed, setExposed] = useState(false);
+  const foreground = useChatForeground();
+  const exposedIds = useMemo(() => exposed && reminder ? [reminder.id] : [], [exposed, reminder?.id]);
+  useChatExposure(foreground && exposed, exposedIds);
+  const recent = chat.messages.filter(m => m.childId === childId && m.id !== reminder?.id && !m.proactiveUnread).slice(-4);
   const validPage = assistantPages.find(p => p === page);
   const send = () => {
     if (!editable || !validPage) return;
@@ -125,6 +118,8 @@ function QuickConversation({ page, childId, includeItem, height, close }: { page
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.heading}><Text variant="titleMedium">小助手</Text><AppButton variant="quiet" label="開啟助手頁" onPress={() => { close(); openAgentDraft(); }} /></View>
       <ScrollView style={{maxHeight:Math.max(100,Math.min(height * .48, 350))}} keyboardShouldPersistTaps="handled">
+        {reminder && <View testID="companion-reminder" onLayout={() => setExposed(true)} style={styles.line}>
+          <Text variant="labelSmall">助手提醒</Text><Text selectable>{reminder.text}</Text></View>}
         {recent.map(m => <View key={m.id} style={[styles.line,m.role === 'user' && styles.userLine]}><Text variant="labelSmall">{m.role === 'user' ? '你' : '助手'}</Text>
           <Text selectable>{m.text || (m.voice ? '語音訊息' : '附件訊息')}</Text></View>)}
         {voiceOpen && <VoiceCapture visible onDismiss={() => setVoiceOpen(false)} onPick={a => { if (addAgentAttachment(a)) setVoiceOpen(false); }} />}
@@ -144,9 +139,6 @@ function QuickConversation({ page, childId, includeItem, height, close }: { page
   </AppDialog>;
 }
 const styles = StyleSheet.create({
-  dock:{position:'absolute', zIndex:4, alignItems:'center'}, quiet:{top:0,left:6},
-  character:{alignItems:'center',justifyContent:'center',overflow:'hidden',borderRadius:24},
-  minimize:{position:'absolute',right:-2,top:-3,width:23,height:23,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:colors.white},
   dialog:{width:'91%',maxWidth:420,alignSelf:'center',paddingHorizontal:14,paddingBottom:10},
   heading:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, actions:{flexDirection:'row',flexWrap:'wrap',alignItems:'center',justifyContent:'flex-end',gap:4},
   input:{maxHeight:90,backgroundColor:colors.white}, line:{marginBottom:8,alignSelf:'flex-start',maxWidth:'94%',padding:8,borderRadius:10,backgroundColor:colors.white},

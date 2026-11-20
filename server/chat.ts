@@ -12,7 +12,7 @@ export interface ChatStore {
   listImportedForUser?(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedForUser?(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
-  listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent'): Promise<(ChatPage & {
+  listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent' | 'display'): Promise<(ChatPage & {
     dataVersion?: string; sourceDeadlines?: Record<string, string>;
   }) | null>;
   createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;

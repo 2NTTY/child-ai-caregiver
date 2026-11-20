@@ -71,3 +71,70 @@ test('published WebVTT timecodes outrank audio analysis and malformed times are 
     async () => [{url, hash: knowledgeHash(captions), captions, transcript:''}])(id,new AbortController().signal);
   assert.equal((await database.runTransaction(tx => store.read(tx,id))).clips?.[0]?.end, 3.5);
 });
+
+test('an unresolved shared original keeps its previous clip while sibling streams and later links update', async () => {
+  const { database } = firestoreDomainFixture(), store = createPlatformMediaStore(database, 'test');
+  const id = 'fhs-14799', owner = 'fhs-14743', signal = new AbortController().signal;
+  const base = 'https://www.fhs.gov.hk/tc_chi/mulit_med/';
+  const page = base + 'a.html', shared = base + 'shared.mp4', removed = base + 'removed.mp4';
+  const sibling = base + 'sibling.mp4', later = base + 'z.mp4';
+  const cue = (text: string) => [{ start: 1, end: 2, text }];
+  const captioned = (url: string, text: string) => ({ url, hash: knowledgeHash([url, text]), captions: cue(text), transcript: '' });
+  const old = captioned(shared, 'Previous caption'), pending = { url: shared, hash: knowledgeHash('updated stream'), captions: [], transcript: '' };
+  let updated = false, dispatches = 0;
+  const process = createPlatformMediaProcessor(store, 'test', async () => {
+    dispatches++;
+    throw Error('provider_acknowledgement_unknown');
+  }, async link => {
+    if (link === shared) return [pending];
+    if (link === later) return [captioned(later, 'Later link')];
+    assert.equal(link, page);
+    return updated ? [pending, captioned(sibling, 'Sibling stream')] : [old, captioned(removed, 'Removed stream')];
+  });
+  async function enable(cardId: string, links: string[]) {
+    await database.runTransaction(tx => store.reconcile(tx, cardId, links));
+    const state = await database.runTransaction(tx => store.read(tx, cardId));
+    await database.runTransaction(tx => store.toggle(tx, cardId, true, state.revision));
+  }
+  await enable(id, [page]);
+  await process(id, signal);
+  await enable(owner, [shared]);
+  await assert.rejects(process(owner, signal), /provider_acknowledgement_unknown/u);
+  await database.runTransaction(tx => store.reconcile(tx, id, [page, later]));
+  updated = true;
+  const readCard = () => database.runTransaction(tx => store.read(tx, id));
+  await process(id, signal);
+  const refreshed = await readCard();
+  assert.deepEqual(refreshed.clips?.map(c => [c.link, c.url, c.text]), [
+    [page, shared, 'Previous caption'], [page, sibling, 'Sibling stream'], [later, later, 'Later link'],
+  ]);
+  assert.equal(refreshed.clips![0]!.evidenceHash, old.hash);
+  await process(id, signal);
+  assert.deepEqual(await readCard(), refreshed);
+  assert.equal(dispatches, 1);
+});
+
+test('an unavailable media page retains its clips and reports the error after refreshing another link', async () => {
+  const { database } = firestoreDomainFixture(), store = createPlatformMediaStore(database, 'test');
+  const id = 'fhs-14799', base = 'https://www.fhs.gov.hk/tc_chi/mulit_med/';
+  const page = base + 'a.html', video = base + 'a.mp4', later = base + 'z.mp4';
+  const signal = new AbortController().signal;
+  let unavailable = false;
+  const process = createPlatformMediaProcessor(store, 'test', async () => assert.fail('Official captions suffice'), async link => {
+    if (link === page && unavailable) throw Error('knowledge_media_source_unavailable');
+    const url = link === page ? video : later;
+    const text = unavailable ? 'Updated caption' : 'First caption';
+    return [{ url, hash: knowledgeHash([url, text]), transcript: '', captions: [{ start: 1, end: 3, text }] }];
+  });
+  await database.runTransaction(tx => store.reconcile(tx, id, [page, later]));
+  const read = () => database.runTransaction(tx => store.read(tx, id));
+  const initial = await read();
+  await database.runTransaction(tx => store.toggle(tx, id, true, initial.revision));
+  await process(id, signal);
+  const first = await read();
+  unavailable = true;
+  await assert.rejects(process(id, signal), /knowledge_media_source_unavailable/u);
+  const refreshed = await read();
+  assert.deepEqual(refreshed.clips?.[0], first.clips?.[0]);
+  assert.equal(refreshed.clips?.[1]?.text, 'Updated caption');
+});
