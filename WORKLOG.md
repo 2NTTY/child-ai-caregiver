@@ -6977,3 +6977,11 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 六份教材在獨立審核中獲准，因兩份讀稿的引文長短、PDF 換行或圖文混排而保留。已對照凍結原件、實頁及兩份封存引文，登記 31 處可重用的完整句子、標題或可獨立閱讀的原文片段。兩個有文字層的頁面漏收了印刷文字，該兩處採用逐頁核對的雙重轉錄。另有一份七頁教材在「香港」地區格式被截停，只保留整理稿，下一步仍需真正獨立審核。
 
 從 `01a53716` 接線，沿原操作查回確定的修訂工作。正式工位會核對原件、封存請求和來源觀測，再經原發布及向量流程處理。本機 Node 24 通過 22 項定向檢查，另以封存引文、凍結實頁及合成內容核回全部 31 個位置。這批修訂的正式收據待發布後核實。[逐頁登記](knowledge/fhs-reviewed-windows.json) · [修訂檢查](tests/fhs-reviewed-window.test.ts)
+
+### 2026-11-20　REQ-001 收束與 B 類一般新聞免擾守衛（`codex/req001-acceptance-closeout`）
+
+完成 REQ-001 跨 A／B／C 三類搜尋之 Stage 5 離線收束與逐項驗收對照：
+
+1. **B 類一般滾動新聞免打擾守衛（`server/knowledge-timely-policy.ts`、`server/proactive-event-sources.ts`）**：新增 `shouldAutoNotifyTimelyEvent` 並接入 `createProactiveEventSources().prepareGlobal`，使標記為 `timelyEvent.kind === "news"` 的時效新聞繼續保留於 7 日對話檢索視窗（`within_recent_window`），但不再自動產生主動推送候選，僅保留召回／安全警報與運維顯式選取之重要公告，並維持 `fingerprint` 未更新重用及 `semanticId`/`assessmentId` 去重。
+2. **跨類離線綜合驗收與門檻（`tests/req001-acceptance-closeout.test.ts`、`.github/workflows/req001-acceptance-closeout-offline.yml`、`scripts/ci/verify-req001-acceptance-closeout-offline.sh`）**：10 項零外網綜合測試逐項對應 REQ-001 §7 全部 15 項情境（`R001-S01`–`R001-S15`）及 §8 全數 8 項待決事項（`R001-D01`–`R001-D08`），連同既有 A／B／C 離線測試清單及 3 份嚴格 TypeScript 檢查通過。
+3. **文件同步與誠實邊界（`PLAN.md#req001-closeout01`、`docs/REQUIREMENTS_BACKLOG.md`）**：明確記錄 C 類線上外部搜尋連接器、REQ-003 待合併 PR（`#690`–`#701`）、真實付費 Gemini `--live` 基準與 Web／Android／iOS 實體機無障礙驗收均仍未在本次離線 PR 宣稱完成。
