@@ -1,0 +1,113 @@
+{
+  "group": {
+    "id": "saved-chat-missing-vector-search-setup",
+    "title": "聊天設定已保存，為甚麼需要向量的知識搜尋仍不能用？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：僅適用於帳戶服務已啟用、且權限容許調整此設定的環境。已保存本人相容 API 聊天設定，但未測試連線，向量服務也未配置。不是所有搜尋都需要向量；需要向量的搜尋遇缺配置會在計費向量服務前停止，不借平台額度、不自動切換提供者。A 在同頁分開聊天與可選向量設定；B 擬議先看能力狀態，可另選進設定，並不是現有診斷頁。Vertex 向量須獨立憑證、項目及地區；只有聊天和向量都用 Gemini 時才可重用同一密鑰。保存不等於已驗證或免費，配置後也不保證成功；未配置、密鑰無效、權限及額度不足均不同。工作台只讀比較，不使用真實憑證、不呼叫模型、不連真實後端、不更改設定。",
+    "choices": [
+      {
+        "name": "同一設定頁｜聊天已保存，向量搜尋另配",
+        "note": "同一設定頁先顯示「聊天：已保存，未測試連線」，再分開顯示「知識搜尋的向量服務（可選）：未配置」。若只填資料而未按保存，仍是草稿，不變成已配置或已驗證。只有需要向量的知識搜尋受缺項影響；不借平台額度補缺、不自動切換提供者，也不把保存當成聊天或向量可用的保證。RAGFlow 原圖只借同頁按用途分列，不是育伴港設定或連線結果。",
+        "source": "https://raw.githubusercontent.com/infiniflow/ragflow-docs/1dacd1c32cb05980eabccc70ba975635f3309909/images/select_model_provider.jpeg",
+        "sourceNotes": [
+          {
+            "label": "RAGFlow 官方指南固定版：Model providers 整頁出處",
+            "url": "https://github.com/infiniflow/ragflow/blob/03c1246150febe6b204b3799dffb3afe52103fb8/docs/guides/models/llm_api_key_setup.md#L22-L28"
+          },
+          {
+            "label": "RAGFlow 官方指南：模型用途各有一欄；其知識庫教程並非把向量省略",
+            "url": "https://github.com/infiniflow/ragflow/blob/03c1246150febe6b204b3799dffb3afe52103fb8/docs/guides/models/llm_api_key_setup.md#L104-L119"
+          },
+          {
+            "label": "RAGFlow 官方指南：測試模型連線和保存設定是兩件事",
+            "url": "https://github.com/infiniflow/ragflow/blob/03c1246150febe6b204b3799dffb3afe52103fb8/docs/guides/models/llm_api_key_setup.md#L93-L102"
+          },
+          {
+            "label": "RAGFlow 主程式授權（不當成圖中第三方標誌的再刊許可）",
+            "url": "https://github.com/infiniflow/ragflow/blob/03c1246150febe6b204b3799dffb3afe52103fb8/LICENSE"
+          },
+          {
+            "label": "育伴港：聊天設定與可選向量服務分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/model-settings/ModelSettingsView.tsx#L193-L225"
+          },
+          {
+            "label": "育伴港：Gemini 同提供者才可重用，Vertex 需獨立憑證和項目地區",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/model-settings/ModelSettingsView.tsx#L226-L258"
+          },
+          {
+            "label": "育伴港：不借平台認證；保存不等於已測",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/personal-model-providers.ts#L12-L26"
+          },
+          {
+            "label": "育伴港：未檢查與不支援狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/personal-model-providers.ts#L36-L51"
+          }
+        ],
+        "version": "RAGFlow 官方文件所載整頁，原圖固定在 ragflow-docs 提交 1dacd1c32cb05980eabccc70ba975635f3309909；圖上顯示 v0.26.4-1017-g6677f14bd，引用指南是 v1.0.0-rc3。JPEG 3799 × 1823，260,147 bytes，2026-11-20 核對原檔；SHA-256 89284927acf932bae42c628e53ed3e6bf3c5c5b0ef30f85121763638109d7f89。",
+        "rights": "RAGFlow 主程式 Apache 2.0 不代表各家標誌或官方圖可單獨轉載。只外連官方原圖和指南，不內嵌、裁剪、重刊、重繪或聲稱背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 RAGFlow 官方模型設定整頁原圖（需連網）↗"
+      },
+      {
+        "name": "能力狀態｜先看哪項已保存，再選要不要設定",
+        "note": "擬議整頁。合成例：「聊天設定已保存・未驗證連線」；「需要向量的知識搜尋・未配置」。兩項獨立：自備相容 API 聊天設定保存後，不會替 Google 向量補設定，也不借平台額度或切換供應商。可先略過；有需要才按「設定向量搜尋」，到獨立設定，不在狀態頁輸入密鑰或測試。並非所有搜尋均需向量，也不保證配置後可用或聊天免費。Home Assistant 原圖只借分開顯示狀態及明確進入設定。",
+        "source": "https://www.home-assistant.io/images/blog/2023-06/integrations-dashboard.png",
+        "sourceNotes": [
+          {
+            "label": "Home Assistant 2023.6 官方版本說明：整合總覽與獨立詳情",
+            "url": "https://www.home-assistant.io/blog/2023/06/07/release-20236/#integrations-dashboard--pages"
+          },
+          {
+            "label": "Home Assistant 官方使用說明：主動選擇加入或設定整合",
+            "url": "https://www.home-assistant.io/getting-started/integration/"
+          },
+          {
+            "label": "Home Assistant 文件授權與官方商標條款",
+            "url": "https://contributors.home-assistant.io/start/licensing/"
+          },
+          {
+            "label": "Home Assistant 官網條款：商標不因使用網站而獲授權",
+            "url": "https://www.home-assistant.io/tos/#9-intellectual-property"
+          },
+          {
+            "label": "育伴港：聊天設定與可選向量配置分開，需向量時不借平台額度",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/model-settings/ModelSettingsView.tsx#L211-L233"
+          },
+          {
+            "label": "育伴港：供應商狀態分未檢查與不支援",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/personal-model-providers.ts#L36-L51"
+          },
+          {
+            "label": "育伴港：有本人服務配置時分別路由",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-model-routing.ts#L130-L145"
+          },
+          {
+            "label": "育伴港：缺所需個人向量密鑰時先停止，不進向量計費閘道",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-model-routing.ts#L166-L183"
+          },
+          {
+            "label": "育伴港：分開缺少、無效、權限和額度",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/agent-stop-message.ts#L13-L20"
+          },
+          {
+            "label": "育伴港合成測試原文：相容平台獨立向量配置",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/tests/personal-compatible-provider.test.ts#L72-L83"
+          },
+          {
+            "label": "育伴港合成測試原文：缺憑證不借平台",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/tests/personal-vertex-embedding.test.ts#L84-L100"
+          }
+        ],
+        "version": "Home Assistant Core 2023.6 官方發佈文章（2023-06-07）；原始 integrations-dashboard.png 網站倉庫 Git blob cc0dbed4bb7a59dad9415c8b68afab973e6d3b20，2026-11-20 核對。畫面未標攝圖日期或獨立前端 build。",
+        "rights": "Home Assistant 文件一般採 CC BY-NC-SA 4.0，官網條款保留 Home Assistant 與第三方商標權；不把文件授權當成畫面內品牌的重製許可。只外連官方原圖、說明與條款，不內嵌、不改畫、不下載入成品。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Home Assistant 官方整合狀態總覽原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "bc6197e50dd439e9b2ca1870fab0e1642ceca99042a71f81de77eebac69f5ab6"
+}
