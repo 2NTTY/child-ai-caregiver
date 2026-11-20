@@ -903,5 +903,84 @@
       }
     ],
     "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The independent review and publication of the 24-page representative are outstanding at this snapshot."
-  }
+  },
+  "sharedCampaignLongRead": {
+    "sourceId": "resource-d8149af7847e38",
+    "title": "香港2020生長圖表",
+    "scope": "C2 original held list in the same campaign. Excluded from all 116 C3 source counts.",
+    "checkedAt": "2026-11-20T05:54:11.731Z",
+    "url": "https://www.dh.gov.hk/english/useful/useful_PP_Growth_Chart/files/growth_charts.pdf",
+    "sourceSha256": "73a8961326934dfaa598052b00a5cfccbe101459e1c51ea4fcf4e8ab27cf7eb1",
+    "sourceBytes": 8499482,
+    "physicalPages": 20,
+    "versionId": "05a3a66f-0bb6-527d-9fe7-169e9976dcab",
+    "versionHash": "3640ce5888c3f20e8850d342a1a4cb59a9582990fcef9f35afebbb10fb87e4d3",
+    "publication": "2026-11-20T05:48:26.950Z",
+    "nativeReader": "gemini-3.8-flash",
+    "readyStages": [
+      {
+        "role": "organize",
+        "nonemptyPageFindings": 20,
+        "perPageFindingDigest": "bb275cd1e1f5474dc6107a53be3ac5e38ebb688dce69b9ed801428115c8f5bc8"
+      },
+      {
+        "role": "review",
+        "nonemptyPageFindings": 20,
+        "perPageFindingDigest": "a535145a22922518e53991c50692cdb2177e540bd9fa111eed21b9ca15ed4751"
+      }
+    ],
+    "settledGenerationAndEmbeddingUsageChecked": true,
+    "documentVectors": 2,
+    "citations": [
+      {
+        "chunkId": "35b90bd6-2b1c-57d7-9703-f8699f8ea38f",
+        "range": [
+          1,
+          11
+        ],
+        "openingPage": 1,
+        "completeExcerptPages": [
+          1,
+          2
+        ],
+        "excerptSha256": "09920022434886eedc1ddf78848ab815200524eec2b85abb27d8b69bc6e26edc"
+      },
+      {
+        "chunkId": "619194b3-afaa-50cd-9d2f-5e10d16545d2",
+        "range": [
+          12,
+          20
+        ],
+        "openingPage": 12,
+        "completeExcerptPages": [
+          12
+        ],
+        "excerptSha256": "92694158a6385d54f16303d10c028ff7fecd79fe2f9b99e2bbfcbc747060c9fc"
+      }
+    ],
+    "verification": "Matched the original organizer and independent reviewer stages to the material and operation. Verified all pages 1–20 in both roles, settled generation and embedding, committed live version, public catalogue and stored vectors. Reopened the SHA-256-pinned original with the production resolver through a synthetic saved run. The first stored excerpt spans physical pages 1 and 2; the second appears verbatim on page 12.",
+    "earlierFamilyBrowser": "AGENT_SOURCE_DELIVERY_20261119.json documents a separate English 20-page FHS booklet and an actual Edge family click to physical page 6."
+  },
+  "clarifiedHolds": [
+    {
+      "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+      "formalCode": "knowledge_review_failed",
+      "reason": "The original reviewer outcome is unknown. The existing operation stays held."
+    },
+    {
+      "sourceId": "pdf-9aef95ce230e1ad16ec567f0",
+      "formalCode": "knowledge_review_failed",
+      "reason": "The organizer supplied 全單元通用 as the jurisdiction. It describes coverage of the unit and supplies no geographic jurisdiction."
+    },
+    {
+      "sourceId": "pdf-4fd38b86578fa01ebbd32579",
+      "formalCode": "knowledge_age_one_sided",
+      "reason": "The retained organizer provided only one age bound. The observation has no approved replacement scope."
+    },
+    {
+      "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+      "formalCode": "knowledge_review_failed",
+      "reason": "The original organizer outcome is unknown. The existing operation stays held."
+    }
+  ]
 }

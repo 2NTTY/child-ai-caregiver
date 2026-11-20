@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-11-20 香港**　13:44 對回 09:00 收據內的 116 份 PDF。正式家長卡庫已有 12 份，每份均可匯出文件向量、重開同版官方原件，並在實頁逐字找到完整摘錄。另有 13 份保留，4 份已恢復來源觀察，87 份未有來源結果。兩本 24 頁小冊子的引用定位已用原件離線核對，代表長檔仍待正式獨立審核及發布。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [09:00 全批收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [同一帳日續作](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)
+**2026-11-20 香港**　13:44 對回 09:00 收據內的 116 份 PDF。正式家長卡庫已有 12 份，每份均可匯出文件向量、重開同版官方原件，並在實頁逐字找到完整摘錄。另有 13 份保留，4 份已恢復來源觀察，87 份未有來源結果。13:54 在同一批次核實 C2 的 20 頁圖表已有兩次完整閱讀、兩個向量及可開啟的原頁。C3 清單內兩本 24 頁小冊子已離線核對引用，正式送審仍待原批次接續。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [09:00 全批收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [同一帳日續作](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)
 
 **2026-11-20 香港**　Web、API、worker 已發布至 `07d6d5c2`，Android 版本 8 的 preview 通道回傳同版 OTA。Edge 已驗從待辦頁向角色提問、在主聊天展開三方討論，並從討論點讀同版教材。C 首批收據為 55 份已發布、31 份保留、1 份等候每日額度、164 份待處理。手機實際操作待驗。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44620294763) · [跨功能收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json) · [首次入庫收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)
 
