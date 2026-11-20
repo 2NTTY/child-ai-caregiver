@@ -1188,6 +1188,74 @@ test('published campaign cards get observation-only weekly checks and retain a c
   assert.deepEqual((await refresh.jobs(definition.id))[0]?.data, job!.data);
 });
 
+test('a weekly check flags a replacement large FHS edition and the saved citation opens its reviewed physical page', async () => {
+  const { campaignMaterialWatches, largeFhsPdf, platformMaterials } = await import('../server/platform-materials.ts');
+  const { openCitedPdf } = await import('../server/knowledge-cited-pdf.ts');
+  const { extractKnowledgePdf } = await import('../server/knowledge-pdf.ts');
+  const [{ createElement }, { Document, Page, Text, renderToBuffer }] = await Promise.all([import('react'), import('@react-pdf/renderer')]);
+  const quote = 'The reviewed text on physical page two.';
+  const bytes = await renderToBuffer(createElement(Document, {}, ...['First physical page of the booklet.', quote].map((line, i) =>
+    createElement(Page, { key: i }, createElement(Text, {}, line)))));
+  const id = 'pdf-836e9d989e83046a43059df7', pin = largeFhsPdf(id)!;
+  const definition = campaignMaterialWatches.find(row => row.id === id)!;
+  const f = fixture([id]), bucket = avatarMemoryBucket('private-pdf-fixture'), generation = crypto.randomUUID();
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+    originalBucket: { bucketName: 'private-pdf-fixture', bucket: bucket.port }, readControl: async () => ({ enabled: true, generation }) });
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate, platformMaterials });
+  await refresh.register(id, 'fixture-maintainer', true);
+  const job = (await refresh.jobs(id))[0]!.data, signal = new AbortController().signal;
+  let body = bytes, exceedsLimit = false;
+  const fetch = createKnowledgeSourceFetcher({ async transport(url, validate, _signal, _accept, options) {
+    validate(url);
+    if (url !== definition.url) return { status: 'response', response: { status: 404, contentType: '', body: Buffer.alloc(0) } };
+    assert.equal(options?.maxBytes, pin.bytes);
+    if (exceedsLimit) {
+      options?.onBodyLimit?.(200, 'application/pdf');
+      return { status: 'failed', reason: 'network' };
+    }
+    return { status: 'response', response: { status: 200, contentType: 'application/pdf', body } };
+  } });
+  await refresh.process(job, crypto.randomUUID(), fetch, signal);
+  const observed = (await refresh.inspect(id)).document;
+  const document = { ...source(id, [chunk('original', { sourceExcerpt: quote, originalText: quote, pageStart: 2, pageEnd: 2 })]),
+    title: observed.title, url: pin.url, termsUrl: definition.termsUrl, publisher: definition.publisher, extraction: observed.extraction! };
+  const first = await store.importSource(document);
+  await store.review(first.versionId, first.hash, 'fixture-maintainer', { ...assessment(document), observationHash: observationHash(observed) });
+  while (!(await store.prepareSearch(first.versionId, first.hash)).complete) {}
+  await store.publish(first.versionId, first.hash, embeddings(document));
+  const [citation] = await store.candidates(filter, null, { query: 'needle' });
+  assert.ok(citation);
+  const slot = new Date().toISOString();
+  assert.deepEqual((await refresh.publishedCardChecks(null, slot)).entries.map(row => row.definition.id), [id]);
+  body = Buffer.alloc(pin.bytes, 32);
+  bytes.copy(body);
+  const checkId = crypto.randomUUID();
+  assert.equal((await refresh.process(job, checkId, fetch, signal, slot)).status, 'needs_review');
+  const fingerprint = { reason: 'new_fingerprint', bytes: body.length, sha256: createHash('sha256').update(body).digest('hex') };
+  const admin = await refresh.adminStatus();
+  assert.deepEqual(admin.watches[0]?.pdfEditionReview, fingerprint);
+  assert.deepEqual(admin.checks.find(check => check.jobId === checkId)?.pdfEditionReview, fingerprint);
+  assert.deepEqual(await refresh.resumeCheck(job, checkId), { status: 'failed', reason: 'response', pdfEditionReview: fingerprint });
+  assert.equal((await refresh.process(job, checkId, async () => assert.fail('Duplicate weekly fetch'), signal, slot)).status, 'already_recorded');
+  exceedsLimit = true;
+  const later = crypto.randomUUID();
+  assert.equal((await refresh.process(job, later, fetch, signal, slot)).status, 'needs_review');
+  assert.deepEqual((await refresh.adminStatus()).watches[0]?.pdfEditionReview, { reason: 'download_limit', limitBytes: pin.bytes });
+  assert.equal(bucket.writes(), 1);
+  assert.equal((await store.catalog()).items[0]?.versionId, first.versionId);
+  const opened = await openCitedPdf(new Request('https://fixture.test/original'), citation.chunkId,
+    async () => ({ status: 'completed', citations: [citation] }), { resolve: store.citedPdf, read: target => refresh.originals.readPdf(id, target.sha256) });
+  assert.equal(opened.status, 200);
+  const page = await extractKnowledgePdf(new Uint8Array(await opened.arrayBuffer()), { expectedHash: document.extraction.contentHash,
+    startPage: citation.pageStart!, pageLimit: 1 });
+  assert.equal(page.pages[0]?.text, quote);
+  await refresh.process(job, crypto.randomUUID(), async () => ({ status: 'failed', reason: 'network' }), signal, slot);
+  assert.equal((await refresh.adminStatus()).watches[0]?.pdfEditionReview?.reason, 'download_limit');
+  body = bytes; exceedsLimit = false;
+  assert.equal((await refresh.process(job, crypto.randomUUID(), fetch, signal, slot)).status, 'unchanged');
+  assert.equal((await refresh.adminStatus()).watches[0]?.pdfEditionReview, undefined);
+});
+
 test('a downloaded card cites reviewed official captions outside the page text and excludes a removed clip from new retrieval', async () => {
   const { fhsMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { createPlatformMediaProcessor } = await import('../server/platform-media-processing.ts');

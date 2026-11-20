@@ -9,7 +9,8 @@ import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-orig
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
-import { fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
+import { createKnowledgeSourceFetcher, fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
+import { openFhsPdfReads } from './fhs-pdf-reads.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
 import { platformMaterials, campaignMaterialWatches } from '../server/platform-materials.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
@@ -24,24 +25,26 @@ import { observationHash } from '../server/knowledge-observation.ts';
 
 const [command, id, expected, ...extra] = process.argv.slice(2);
 const recovering = command === 'recover';
-const recovery = recovering && id && campaignRecoveryPlan(id).entries[0];
-if (recovering && (!recovery?.campaignArgs || recovery.operationFingerprint !== expected)) throw Error('knowledge_campaign_recovery_ineligible');
-const draftRevision = recovering ? retainedDraftRevisionSchema.parse(recovery) : undefined;
+const recoveryCommand = recovering || command === 'inspect-recovery';
+const inspecting = command === 'inspect' || command === 'inspect-recovery';
+const recovery = recoveryCommand && id && campaignRecoveryPlan(id).entries[0];
+if (recoveryCommand && (!recovery?.campaignArgs || recovery.operationFingerprint !== expected)) throw Error('knowledge_campaign_recovery_ineligible');
+const draftRevision = recoveryCommand ? retainedDraftRevisionSchema.parse(recovery) : undefined;
 const resuming = command === 'resume' || command === 'resume-age-checked';
 const repairing = command === 'repair-truncated';
 const explicitAgeScope = command === 'process-age-checked' || command === 'resume-age-checked' || draftRevision?.action === 'review_pdf_region';
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
-const handlesSource = recovering || resuming || repairing || firstPass || command === 'inspect';
+const handlesSource = recovering || resuming || repairing || firstPass || inspecting;
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
-  || (resuming || repairing || recovering ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
+  || (resuming || repairing || recoveryCommand ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
-  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|resume-age-checked|repair-truncated|recover SOURCE_ID ORIGINAL_FINGERPRINT');
+  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|resume-age-checked|repair-truncated|recover|inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT');
 const persistence = await openFirebasePersistence(process.env);
 try {
   const { database, cipher, config, authority } = persistence;
   if (config.projectId !== 'ai-caregivers-for-children' || process.env.FIRESTORE_EMULATOR_HOST
     || process.env.AI_KNOWLEDGE_MAINTENANCE_PAYER !== 'platform') throw Error('knowledge_campaign_environment_mismatch');
-  const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS || (recovering
+  const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS || (recoveryCommand
     ? new URL('../artifacts/verification/FHS_INITIAL_RETAINED_UNKNOWN_20261120.json', import.meta.url) : undefined);
   const retained = retainedFile ? retainedCampaignReceipts.parse(JSON.parse(readFileSync(retainedFile, 'utf8'))).retained : [];
   const gate = createKnowledgeCampaignBudget(database, config.namespace, retained);
@@ -63,12 +66,19 @@ try {
   if (command === 'initialize') await gate.initialize();
   if (handlesSource) {
     const ledger = await gate.status();
-    if (!ledger || command !== 'inspect' && !gate.canAdvance(ledger, id)) throw Error('knowledge_campaign_reconcile_before_next_source');
+    if (!ledger || !inspecting && !gate.canAdvance(ledger, id)) throw Error('knowledge_campaign_reconcile_before_next_source');
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
     const definition = campaignMaterialWatches.find(w => w.id === id);
     if (!definition) throw Error('knowledge_campaign_source_not_approved');
+    const directory = process.env.FHS_CAMPAIGN_PDF_READS, indexHash = process.env.FHS_CAMPAIGN_PDF_READS_SHA256;
+    let pdfReader;
+    if (command === 'process-age-checked' && definition.kind === 'pdf' && (directory || indexHash)) {
+      if (!directory || !indexHash) throw Error('fhs_pdf_reads_configuration');
+      pdfReader = await openFhsPdfReads(directory, indexHash);
+    }
+    const fetchSource = pdfReader ? createKnowledgeSourceFetcher({ pdfReader }) : fetchKnowledgeSource;
     const readControl = tx => authority.readControl(tx);
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
       originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
@@ -88,7 +98,7 @@ try {
     const original = knowledgeReviewHash([credentials, id, job.data.revision, job.data.workerGeneration]);
     if (expected && original !== (draftRevision?.priorOperationFingerprint ?? expected)) throw Error('knowledge_campaign_resume_binding_changed');
     const originalRequest = { watchId: id, operationFingerprint: original, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
-    const prior = repairing || resuming || recovering ? await work.inspect({ ...originalRequest, operationFingerprint: draftRevision?.operationFingerprint ?? original }) : null;
+    const prior = repairing || resuming || recoveryCommand ? await work.inspect({ ...originalRequest, operationFingerprint: draftRevision?.operationFingerprint ?? original }) : null;
     if (draftRevision && (prior?.result?.status !== 'candidate_held' || prior.result.code !== recovery.code
       || prior.result.observationHash !== draftRevision.observationHash || prior.prepared || prior.receipt || prior.lease))
       throw Error('knowledge_campaign_recovery_parent_changed');
@@ -109,12 +119,11 @@ try {
         throw error;
       }
     };
-    // The one-day grant applies only to the registered original operation.
-    const runAdmission = explicitAgeScope && !draftRevision ? admission : undefined;
+    const runAdmission = explicitAgeScope || draftRevision ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
       explicitAgeScope, retainedDraft: draftRevision, campaignAdmission: runAdmission,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
-      fetch: fetchKnowledgeSource, refresh, knowledge, providers(cfg) {
+      fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
         const native = createVertexAgentProvider(cfg), vectors = createVertexEmbeddingProvider({ ...cfg, location: 'us-central1' });
         return { agent: { ...native, async generate(request, signal) {
@@ -131,11 +140,14 @@ try {
           return result;
         } }, model: { async generate() { throw Error('knowledge_campaign_unexpected_provider'); } } };
       } });
-    if (command === 'inspect') {
+    if (inspecting) {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
       console.log(JSON.stringify({ id, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
-        receipt: saved?.receipt?.state, active: active?.versionId ?? null }));
+        receipt: saved?.receipt?.state, active: active?.versionId ?? null,
+        ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
+          started: Boolean(saved), quotaDay: saved?.waitingForQuotaDay ?? null, activeVersionHash: active?.versionHash ?? null,
+          reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
     } else {
       const signal = new AbortController().signal;
       const saved = resuming ? prior : await work.inspect(request);
@@ -150,7 +162,7 @@ try {
             || observationHash(snapshot.items[0]) !== draftRevision.observationHash))
             throw Error('knowledge_campaign_original_observation_changed');
         } else {
-          const check = await refresh.process(job.data, checkId, fetchKnowledgeSource, signal);
+          const check = await refresh.process(job.data, checkId, fetchSource, signal);
           if (!['changed', 'unchanged', 'already_recorded'].includes(check.status)) throw Error('knowledge_campaign_fetch_' + check.status);
         }
         let completedUnits = -1;

@@ -1,7 +1,7 @@
 import type { PdfAmendment } from "./knowledge-pdf-amendments.ts";
 import { assembleKnowledgePdfWindows, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { AGE_OUTPUT_VERSION } from './knowledge-age-output.ts';
-import { retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
+import { matchesRegisteredRetainedDraft, retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaignCredentials, type CampaignDayAdmission } from "./knowledge-campaign-budget.ts";
@@ -54,6 +54,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   refresh: ReturnType<typeof createFirestoreKnowledgeRefresh>;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
   fetch: SourceFetcher;
+  pdfReader?: typeof extractKnowledgePdf;
   fixtureFetch?: SourceFetcher;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
@@ -90,11 +91,16 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration
         || (expectedRevision !== undefined && expectedRevision !== registration.data.revision))
         reject("knowledge_watch_not_registered");
-      if (grant && (!options.explicitAgeScope || !options.providers || options.credentialBinding !== campaignCredentials
-        || !campaignMaterialWatches.some(watch => watch.id === request.watchId) || request.publishMode !== 'live'
-        || expectedRevision !== registration.data.revision || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', request.operationFingerprint)
-        || request.operationFingerprint !== knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration])))
-        reject("knowledge_campaign_operation_changed");
+      const retained = options.retainedDraft;
+      if (grant) {
+        const original = knowledgeReviewHash([campaignCredentials, request.watchId, expectedRevision, request.workerGeneration]);
+        const bound = retained ? matchesRegisteredRetainedDraft(retained, original, request.operationFingerprint)
+          : options.explicitAgeScope && request.operationFingerprint === original;
+        if (!bound || !options.providers || options.credentialBinding !== campaignCredentials
+          || !campaignMaterialWatches.some(watch => watch.id === request.watchId) || request.publishMode !== 'live'
+          || expectedRevision !== registration.data.revision || recordedCheckId !== knowledgeOperationId('knowledge-observation/1', original))
+          reject("knowledge_campaign_operation_changed");
+      }
       const prompt = await loadAgentPrompt("knowledge-organize", "structured",
         ["run", "scope", "context", "evidence", "capabilities", "outputContract"]);
       const sponsor = options.sponsor;
@@ -107,7 +113,6 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
       const recovery = options.truncatedOutput;
-      const retained = options.retainedDraft;
       if (retained && (sponsor || recovery || reusedOrganizationFrom || !expectedRevision
         || request.publishMode !== 'live' || definition.kind !== (retained.action === 'review_age_draft' ? 'page' : 'pdf') || request.watchId !== retained.sourceId
         || request.operationFingerprint !== retainedDraftWorkId(retained.operationFingerprint)
@@ -129,7 +134,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         if (fetcher) {
           const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
           const checked = await options.refresh.process(registration.data, checkId, fetcher, signal);
-          if (!["changed", "unchanged", "already_recorded", "failed", "unavailable"].includes(checked.status))
+          if (!["changed", "unchanged", "already_recorded", "failed", "needs_review", "unavailable"].includes(checked.status))
             return { status: "rejected" as const, code: checked.status, published: false };
           recordedCheckId = checkId;
         }
@@ -201,7 +206,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           if (!pinned) reject("knowledge_observation_outcome_unknown");
           return pinned;
         }
-        if (!fetched || !["changed", "unchanged", "failed", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
+        if (!fetched || !["changed", "unchanged", "failed", "needs_review", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
         return fetched;
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({
@@ -314,7 +319,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                         if (window.descriptor.total !== extraction.totalPages) reject("knowledge_window_binding_changed");
                         const textLayers = [];
                         for (let startPage = 1; startPage <= count; startPage += 8) {
-                          const local = await extractKnowledgePdf(window.bytes, { startPage, pageLimit: 8,
+                          const local = await (options.pdfReader ?? extractKnowledgePdf)(window.bytes, { startPage, pageLimit: 8,
                             expectedHash: window.descriptor.contentHash, signal: abort });
                           if (local.totalPages !== count) reject("knowledge_window_binding_changed");
                           textLayers.push(...local.pages.map(p => ({ ...p, page: p.page + range.firstRead - 1 })));

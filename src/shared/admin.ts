@@ -83,17 +83,23 @@ export interface AdminUsage { day: string; attempts: number; inputTokens: number
   breakdown?: AdminUsageBreakdown; finance?: AdminUsageFinance; maintenanceFinance?: AdminUsageFinance;
   budgetVersions?: { general: number; maintenance: number } }
 export interface AdminOverview { policy: PlatformPolicy; platformConfigured: boolean; serverEnabled: boolean; toolCalls: number; deadlineMs: number; outputTokens: number; inputCharacters: number }
-const knowledgeCheckStatus = z.enum(['changed', 'unchanged', 'failed', 'unavailable', 'superseded']);
+export const knowledgeCheckStatus = z.enum(['changed', 'unchanged', 'failed', 'unavailable', 'superseded', 'needs_review']);
+export const pdfEditionReviewSchema = z.discriminatedUnion('reason', [
+  z.strictObject({ reason: z.literal('new_fingerprint'), sha256: z.string().regex(/^[a-f0-9]{64}$/u), bytes: z.number().int().positive() }),
+  z.strictObject({ reason: z.literal('download_limit'), limitBytes: z.number().int().positive() }),
+]);
+export type PdfEditionReview = z.infer<typeof pdfEditionReviewSchema>;
 const knowledgeWatchId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
 const knowledgeCheckedAt = z.iso.datetime({ offset: true });
 export const adminKnowledgeStatusSchema = z.object({
   watches: z.array(z.object({ id: knowledgeWatchId, publisher: z.string().min(1).max(160), url: z.url(), kind: z.enum(['page', 'rss', 'pdf']),
     registration: z.enum(['not_registered', 'enabled', 'disabled', 'definition_changed']), lastAttemptAt: knowledgeCheckedAt.nullable(),
-    lastSuccessfulCheckAt: knowledgeCheckedAt.nullable(), lastStatus: knowledgeCheckStatus.nullable() }).strict()).max(512),
+    lastSuccessfulCheckAt: knowledgeCheckedAt.nullable(), lastStatus: knowledgeCheckStatus.nullable(), pdfEditionReview: pdfEditionReviewSchema.optional() }).strict()).max(512),
   checks: z.array(z.object({ jobId: z.uuid(), watchId: knowledgeWatchId, checkedAt: knowledgeCheckedAt,
     state: z.enum(['running', 'recorded', 'unknown']), status: knowledgeCheckStatus.nullable(), attempts: z.number().int().min(1).max(2),
     itemCount: z.number().int().min(0).max(50), changedCount: z.number().int().min(0).max(50),
-    failureCode: z.enum(['network', 'timeout', 'response', 'parse']).nullable(), httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() }).strict()).max(20),
+    failureCode: z.enum(['network', 'timeout', 'response', 'parse']).nullable(), httpStatus: z.union([z.literal(404), z.literal(410)]).nullable(),
+    pdfEditionReview: pdfEditionReviewSchema.optional() }).strict()).max(20),
   nextCursor: z.string().min(1).max(2048).nullable(),
 }).strict();
 export type AdminKnowledgeStatus = z.infer<typeof adminKnowledgeStatusSchema>;

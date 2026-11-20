@@ -524,6 +524,8 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
 
     if (fetched.status === "failed") {
+      if (fetched.pdfEditionReview) return finish({ status: 'candidate_held', code: 'pdf_' + fetched.pdfEditionReview.reason,
+        watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
       return finish({ status: "fetch_failed", code: fetched.reason, watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
     }
     if (fetched.status === "unavailable") {

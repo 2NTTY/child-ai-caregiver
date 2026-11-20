@@ -273,5 +273,26 @@
       "rebuiltReviewInput": "knowledge-review:dee6422ef65d6c8ad7a039306536ba2231140732a30917de5db4e016162a1386",
       "chunks": 5
     }
-  ]
+  ],
+  "integratedVerification": {
+    "base": "3f6d2d7c5b59f8d5e4da39570cbb8a8ba908566a",
+    "runtimeInputTree": "76565952d8a4dd2e699dbd812531716db23818e4",
+    "node": "24.22.3",
+    "serverTypecheck": "passed",
+    "reviewerRequestsUnchanged": 12,
+    "focusedTests": 6,
+    "preparedPdfWindowTest": 1,
+    "localImage": {
+      "target": "firebase-server",
+      "configDigest": "sha256:eabf981d9da900315df1416922e8120d74bae2fea1b804c2bd630f3e9e720d58",
+      "node": "24.19.0",
+      "uid": 1000,
+      "network": "none",
+      "rootFilesystem": "read-only",
+      "hostMounts": 0,
+      "boundDrafts": 12,
+      "quarantinedDispatchesRejected": 2
+    },
+    "firstBuild": "Network-disabled dependency installation could not resolve npm. The normal Dockerfile build reused the installed dependency layer and succeeded."
+  }
 }

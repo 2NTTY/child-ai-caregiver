@@ -55,6 +55,7 @@ export class FirestoreKnowledgeWorkError extends Error {
 }
 function reject(code: string): never { throw new FirestoreKnowledgeWorkError(code); }
 type Options = FirestoreDomainOptions & {
+  pdfReader?: typeof extractKnowledgePdf;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
 };
 const MAX_PAYLOAD_BYTES = 512 * 1024;
@@ -132,7 +133,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
       if (prior.exists) descriptor = open(reference, prior.data(), schema);
       else {
         const original = await originals.readPdf(sourceId, parentHash);
-        const result = await extractKnowledgePdf(original, { expectedHash: parentHash, startPage: first, pageLimit: count, includePagePdf: true, signal });
+        const result = await (options.pdfReader ?? extractKnowledgePdf)(original, { expectedHash: parentHash, startPage: first, pageLimit: count, includePagePdf: true, signal });
         if (!result.pagePdf || result.pages.length !== count) reject("knowledge_window_range_invalid");
         const contentHash = await originals.save(sourceId, "application/pdf", Buffer.from(result.pagePdf));
         const proposed = schema.parse({ ...identity, total: result.totalPages, contentHash });
