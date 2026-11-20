@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
-import { planKnowledgePdfWindows, readKnowledgePdfWindow } from "../server/knowledge-pdf-windows.ts";
+import { manualPdfWindowBudget, planKnowledgePdfWindows, readKnowledgePdfWindow } from "../server/knowledge-pdf-windows.ts";
 import { knowledgeReviewHash } from "../server/knowledge-review-assessment.ts";
 import type { RetainedTranscription } from "../server/knowledge-retained-draft.ts";
 import { checkKnowledgeObservation } from "../server/knowledge-observation.ts";
 import { parseKnowledgeSource } from "../server/knowledge-inputs.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
+test("a commissioned PDF reserves one organizer and reviewer per window and at most one vector per reviewed range", () => {
+  assert.deepEqual(manualPdfWindowBudget(192), {modelCalls:32, maxUnits:50});
+  assert.deepEqual(manualPdfWindowBudget(96), {modelCalls:16, maxUnits:42});
+  assert.deepEqual(manualPdfWindowBudget(4), {modelCalls:2, maxUnits:7});
+  assert.throws(() => manualPdfWindowBudget(449), /knowledge_window_model_budget_required/);
+});
 test("native windows cover the full source once and attach adjacent pages within the original allowance", () => {
   const plan = planKnowledgePdfWindows(33, 6);
   assert.deepEqual(plan.map(w => [w.first, w.last, w.firstRead, w.lastRead]), [[1, 14, 1, 15], [15, 28, 14, 29], [29, 33, 28, 33]]);

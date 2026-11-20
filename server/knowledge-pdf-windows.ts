@@ -2,9 +2,10 @@ import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { BACKGROUND_KNOWLEDGE_POLICY_VERSION } from "../src/shared/background-knowledge-maintenance.ts";
+import { AGENT_RUN_LIMITS } from "../src/shared/agent-run-limits.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { originalKnowledgePdf, type AgentGatewayModel } from "./agent-model-gateway.ts";
-import type { BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
+import { BACKGROUND_KNOWLEDGE_RESERVED_UNITS, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { KnowledgeMaintenanceModelError, type KnowledgeMaintenanceBaseline, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import type { KnowledgePdfPage } from "./knowledge-pdf.ts";
@@ -57,6 +58,14 @@ export function planKnowledgePdfWindows(total: number, allowance: number): PdfRe
   }
   return windows;
 }
+
+/** Size the commissioned work from its verified physical pages. Each range yields at most one embedding. */
+export function manualPdfWindowBudget(totalPages: number) {
+  const windows = planKnowledgePdfWindows(totalPages, AGENT_RUN_LIMITS.modelCalls.max);
+  const ranges = windows.reduce((total, window) => total + window.ranges.length, 0);
+  return { modelCalls: 2 * windows.length, maxUnits: BACKGROUND_KNOWLEDGE_RESERVED_UNITS + windows.length + ranges };
+}
+
 const keyOf = (range: Range) => "pages-" + range.first + "-" + range.last;
 export async function readKnowledgePdfWindow(input: {
   explicitAgeScope?: boolean;

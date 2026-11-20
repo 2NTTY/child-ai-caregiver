@@ -1237,5 +1237,38 @@
     },
     "grossLimitUsd": 30,
     "verification": "The other 20-page PDF verified in this campaign belongs to the earlier C2 list and is excluded. Both 24-page C3 sources still have no provider attempt or published version."
+  },
+  "publicationLaneInputs": {
+    "manifestCommit": "ff43e917",
+    "scopedOriginals": 84,
+    "physicalPages": 1400,
+    "wholePdfs": 20,
+    "windowedPdfs": 64,
+    "physicalWindows": 121,
+    "automaticPolicyComparison": {"version":3,"modelCalls":8,"booksAboveSetting":6},
+    "commissionedWindowExecutionCeiling": 64,
+    "workerRevision": "98eea8be3614314043d43751b668885dbe3c779f",
+    "installedAt": "2026-11-20T13:08:23.909Z",
+    "records": 408,
+    "indexSha256": "17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978",
+    "parserBinding": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "archives": [
+      {"records":244,"bytes":194986403,"sha256":"b11e02c169c2067b99e8bf605753f35e8c2e36670998d5b12bb9aa40cd625593"},
+      {"additionalRecords":164,"bytes":237926236,"sha256":"a3cd8a3adb9aeeb4150979048418289bacd7d17462d6a197944a177674752271"}
+    ],
+    "c3": {
+      "sources": 28, "pages": 468, "whole": 7, "windowed": 21, "physicalWindows": 41,
+      "originalOperationReadAt": "2026-11-20T12:53:40.413Z",
+      "registeredAtTakeover": 2, "unregisteredAtTakeover": 26,
+      "confirmedRereadsAt": "2026-11-20T12:59:29.322Z",
+      "confirmedRereads": ["pdf-3342882b79f7108a67ee08e1", "pdf-a251b7696c8d6660d7aad77e"],
+      "confirmedRepresentative": {"sourceId":"pdf-3af602cff5d00f305e7cc95e","pages":24,"operationFingerprint":"55052da35fbc02982ab8881d89868cb4342e35183786873d265d9d9b8f16cec9","status":"ready","modelCalls":0},
+      "minimumCallsForLongestBooks": {
+        "pdf-82798af3747e7b5fb61b4127": 16,
+        "pdf-b061777e96a27e5124285ba5": 14,
+        "pdf-0fe7441f2dc6adec1299fad4": 14
+      }
+    },
+    "method": "The source fetcher's leaflet reader verified each frozen original and selected whole or windowed input. Every parent range, native PDF attachment and inner text-layer range came from the authenticated parser cache. The production worker opened the installed index after checking both archive digests and all 408 records. No provider was called during staging."
   }
 }
