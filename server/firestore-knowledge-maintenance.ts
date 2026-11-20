@@ -52,6 +52,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   refresh: ReturnType<typeof createFirestoreKnowledgeRefresh>;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
   fetch: SourceFetcher;
+  pdfReader?: typeof extractKnowledgePdf;
   fixtureFetch?: SourceFetcher;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
@@ -120,7 +121,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         if (fetcher) {
           const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
           const checked = await options.refresh.process(registration.data, checkId, fetcher, signal);
-          if (!["changed", "unchanged", "already_recorded", "failed", "unavailable"].includes(checked.status))
+          if (!["changed", "unchanged", "already_recorded", "failed", "needs_review", "unavailable"].includes(checked.status))
             return { status: "rejected" as const, code: checked.status, published: false };
           recordedCheckId = checkId;
         }
@@ -191,7 +192,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           if (!pinned) reject("knowledge_observation_outcome_unknown");
           return pinned;
         }
-        if (!fetched || !["changed", "unchanged", "failed", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
+        if (!fetched || !["changed", "unchanged", "failed", "needs_review", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
         return fetched;
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({
@@ -303,7 +304,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                         if (window.descriptor.total !== extraction.totalPages) reject("knowledge_window_binding_changed");
                         const textLayers = [];
                         for (let startPage = 1; startPage <= count; startPage += 8) {
-                          const local = await extractKnowledgePdf(window.bytes, { startPage, pageLimit: 8,
+                          const local = await (options.pdfReader ?? extractKnowledgePdf)(window.bytes, { startPage, pageLimit: 8,
                             expectedHash: window.descriptor.contentHash, signal: abort });
                           if (local.totalPages !== count) reject("knowledge_window_binding_changed");
                           textLayers.push(...local.pages.map(p => ({ ...p, page: p.page + range.firstRead - 1 })));

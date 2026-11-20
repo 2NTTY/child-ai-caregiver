@@ -8,7 +8,8 @@ import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-orig
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
-import { fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
+import { createKnowledgeSourceFetcher, fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
+import { openFhsPdfReads } from './fhs-pdf-reads.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
 import { platformMaterials, campaignMaterialWatches } from '../server/platform-materials.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
@@ -60,6 +61,13 @@ try {
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
     const definition = campaignMaterialWatches.find(w => w.id === id);
     if (!definition) throw Error('knowledge_campaign_source_not_approved');
+    const directory = process.env.FHS_CAMPAIGN_PDF_READS, indexHash = process.env.FHS_CAMPAIGN_PDF_READS_SHA256;
+    let pdfReader;
+    if (command === 'process-age-checked' && definition.kind === 'pdf' && (directory || indexHash)) {
+      if (!directory || !indexHash) throw Error('fhs_pdf_reads_configuration');
+      pdfReader = await openFhsPdfReads(directory, indexHash);
+    }
+    const fetchSource = pdfReader ? createKnowledgeSourceFetcher({ pdfReader }) : fetchKnowledgeSource;
     const readControl = tx => authority.readControl(tx);
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
       originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
@@ -100,7 +108,7 @@ try {
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
       explicitAgeScope, campaignAdmission: explicitAgeScope ? admission : undefined,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
-      fetch: fetchKnowledgeSource, refresh, knowledge, providers(cfg) {
+      fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
         const native = createVertexAgentProvider(cfg), vectors = createVertexEmbeddingProvider({ ...cfg, location: 'us-central1' });
         return { agent: { ...native, async generate(request, signal) {
@@ -133,7 +141,7 @@ try {
           const snapshot = await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
         } else {
-          const check = await refresh.process(job.data, checkId, fetchKnowledgeSource, signal);
+          const check = await refresh.process(job.data, checkId, fetchSource, signal);
           if (!['changed', 'unchanged', 'already_recorded'].includes(check.status)) throw Error('knowledge_campaign_fetch_' + check.status);
         }
         let completedUnits = -1;

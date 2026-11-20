@@ -69,3 +69,16 @@ export const fhsMaterialWatches: SourceWatchDefinition[] = [...platformMaterials
     termsUrl: 'https://www.fhs.gov.hk/english/notice/notice.html', audience: 'public_noncommercial',
   }));
 export const campaignMaterialWatches = [...fhsMaterialWatches, ...externalMaterialWatches];
+
+// Pin the large-object exceptions across catalogue updates, including citation and backup reads of old editions.
+const largeBooklets = [
+  { file: '30034.pdf', bytes: 63746648, sha256: '48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177' },
+  { file: '30035.pdf', bytes: 53090252, sha256: 'be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34' },
+].map(({ file, bytes, sha256 }) => {
+  const url = 'https://www.fhs.gov.hk/tc_chi/health_info/child/' + file;
+  return { url, bytes, sha256, sourceId: 'pdf-' + createHash('sha256').update(url).digest('hex').slice(0, 24) };
+});
+export function largeFhsPdf(key?: string) {
+  return largeBooklets.find(p => key === p.url || key === p.sha256 || key === p.sourceId);
+}
+export const largestFhsOriginalBytes = Math.max(...largeBooklets.map(p => p.bytes));

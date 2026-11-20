@@ -54,6 +54,7 @@ scripts/**
 !scripts/knowledge-refresh.mjs
 !scripts/fhs-initial-campaign.mjs
 !scripts/fhs-catalog-batch.mjs
+!scripts/fhs-pdf-reads.ts
 !scripts/knowledge-transfer-*.mjs
 !deploy/
 deploy/**
