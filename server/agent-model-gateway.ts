@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { canonical } from "./firestore-session-codec.ts";
 import { KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
 import { setTimeout as delay } from 'node:timers/promises';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
@@ -42,6 +43,32 @@ export class KnowledgeDailyAdmissionRefused extends AgentStopped {
 
 export type AgentKnowledgePdf = Readonly<{ sha256: string; data: string; highDetail: boolean }>;
 const verifiedKnowledgePdfs = new WeakSet<AgentKnowledgePdf>();
+const pdfFingerprintMarker = "\u0000verified PDF attachment\u0000";
+const quotedPdfMarker = JSON.stringify(pdfFingerprintMarker);
+
+/** Hash the same canonical JSON as earlier receipts, without materializing its base64 body again. */
+export function agentModelRequestFingerprint(model: string, request: Pick<LlmRequest, "contents" | "config">, pdf?: AgentKnowledgePdf): string {
+  const payload = { model, contents: request.contents, config: request.config };
+  if (!pdf || !verifiedKnowledgePdfs.has(pdf)) return agentBudgetFingerprint(payload);
+  let matches = 0;
+  const contents = request.contents.map(content => {
+    if (!content.parts) return content;
+    return { ...content, parts: content.parts.map(part => {
+      if (part.inlineData?.mimeType !== "application/pdf" || part.inlineData.data !== pdf.data) return part;
+      matches++;
+      return { ...part, inlineData: { ...part.inlineData, data: pdfFingerprintMarker } };
+    }) };
+  });
+  if (matches !== 1) return agentBudgetFingerprint(payload);
+  const template = canonical({ ...payload, contents });
+  const position = template.indexOf(quotedPdfMarker);
+  if (position < 0 || template.indexOf(quotedPdfMarker, position + quotedPdfMarker.length) !== -1)
+    return agentBudgetFingerprint(payload);
+  // Base64 consists entirely of unescaped JSON string characters. Keep both canonical quotes.
+  return createHash("sha256").update(template.slice(0, position + 1)).update(pdf.data, "ascii")
+    .update(template.slice(position + quotedPdfMarker.length - 1)).digest("hex");
+}
+
 export function originalKnowledgePdf(bytes: Buffer, sha256: string, highDetail = false): AgentKnowledgePdf {
   if (bytes.length > KNOWLEDGE_PDF_MAX_BYTES || bytes.subarray(0, 5).toString() !== "%PDF-"
     || createHash("sha256").update(bytes).digest("hex") !== sha256) throw new AgentStopped("input_limit");
@@ -345,17 +372,17 @@ export class AgentGatewayModel extends BaseLlm {
     let outgoing = base;
     let countedFingerprint: string | undefined;
     let countedTokens: number | undefined;
-    const fingerprint = (value: LlmRequest) => agentBudgetFingerprint({ model: config.model, contents: value.contents, config: value.config });
+    const requestFingerprintFor = (value: LlmRequest) => agentModelRequestFingerprint(config.model, value, this.options.pdf);
     const countInput = async (value: LlmRequest) => {
       if (!provider.countInput) return;
-      const key = fingerprint(value);
+      const key = requestFingerprintFor(value);
       if (key === countedFingerprint) return;
       countedTokens = await budget.wait(() => provider.countInput!(value));
       countedFingerprint = key;
     };
     const inspect = (value: LlmRequest) => {
       try {
-        const count = countedTokens !== undefined && countedFingerprint === fingerprint(value) ? countedTokens : undefined;
+        const count = countedTokens !== undefined && countedFingerprint === requestFingerprintFor(value) ? countedTokens : undefined;
         return provider.preflight?.(value, this.options.audio?.metadata.durationMs, count);
       } catch (error) {
         if (error instanceof PersonalProviderError) throw new AgentStopped(error.diagnostic.reason);
@@ -445,7 +472,7 @@ export class AgentGatewayModel extends BaseLlm {
         if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
         requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
         checkSummaryExpiry();
-        const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
+        const requestFingerprint = requestFingerprintFor(outgoing);
         if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
           bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
           ...(daily.adapter.billingSource === 'personal' && daily.context.binding.trigger.kind === 'knowledge-maintenance'
@@ -543,7 +570,7 @@ export class AgentGatewayModel extends BaseLlm {
             requestCharacters = requestSize(base);
           }
           if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped('input_limit');
-          const fingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
+          const fingerprint = requestFingerprintFor(outgoing);
           if (provider.countInput) await countInput(outgoing);
           if (modelAttempt && fingerprint !== preparedFingerprint) {
             await budget.prepareModelDispatch(modelAttempt, preparedFingerprint!, fingerprint);
