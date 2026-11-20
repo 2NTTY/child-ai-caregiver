@@ -14,6 +14,9 @@ import { platformMaterials } from '../server/platform-materials.ts';
 import { campaign, campaignCredentials } from '../server/knowledge-campaign-budget.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
+import { bindReviewedWindow } from '../server/fhs-reviewed-window.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 
 export function classifyLaneOperation(source, check, saved, active, tickets) {
   if ((!saved && (tickets.length || active)) || tickets.some(t => t.state !== 'settled' && !t.operationFingerprint))
@@ -77,7 +80,26 @@ export function createLaneOperations(persistence, fetchSource, lane) {
       resolveFhsPdfObservation(refresh, job.data, operationFingerprint, source),
       work.inspect(request),
     ]);
-    return { ...classifyLaneOperation(source, check, saved, active, tickets), operationFingerprint,
+    let operation = classifyLaneOperation(source, check, saved, active, tickets);
+    const revision = pin && lane === 'C2' && matchesFhsPdfObservation(source, check)
+      && bindReviewedWindow(manualPublicationPin(id),operationFingerprint,saved);
+    let repair;
+    if (revision && observationHash(check.items[0]) === revision.observationHash) {
+      const deliveryOperation = retainedDraftWorkId(operationFingerprint);
+      const child = await work.inspect({...request,operationFingerprint:deliveryOperation});
+      repair = {deliveryOperation, originalCode:saved.result.code, deliveryModelCalls:child?.budget.modelCalls ?? 0};
+      if (child) {
+        operation = classifyLaneOperation(source,check,child,active,tickets);
+        const provenance = child.prepared?.provenance.retainedDraft;
+        if (child.prepared && (provenance?.priorWork !== operationFingerprint || provenance.revisionHash !== knowledgeReviewHash(revision.registration)))
+          operation = {state:'reconciliation_required',code:'fhs_lane_publication_mismatch'};
+      } else if (!active && tickets.every(t => t.state === 'settled')) {
+        operation = {state:'ready',started:true,observationHash:revision.observationHash};
+      } else {
+        operation = {state:'reconciliation_required',code:'fhs_lane_unbound_or_unsettled_charge'};
+      }
+    }
+    return { ...operation, ...repair, operationFingerprint,
       pinned: Boolean(pin), checkId, revision: job.data.revision, workerGeneration: job.data.workerGeneration, modelCalls: saved?.budget.modelCalls ?? 0, tickets };
   }
 
