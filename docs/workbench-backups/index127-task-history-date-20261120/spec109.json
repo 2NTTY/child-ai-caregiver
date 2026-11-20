@@ -1,0 +1,79 @@
+{
+  "group": {
+    "id": "task-history-last-scheduled-vs-confirmed-day",
+    "title": "週二安排的待辦，週五才回報完成：要從哪一天找？",
+    "index": "external-comparison",
+    "readerNote": "合成例：同一筆待辦最後安排在週二，週五由系統確認完成。這個育伴港原生待辦在現版按香港時間的完成／取消日找，所以在週五；最後安排日不一定是最初約定，確認時間也不證明實際交件日。A 同列並排這兩個日期；B 在歷史月曆明選時間基準，週二和週五都定位同一筆，不雙算。日期未知就標未核對；兩款不重開、改期或更改原記錄。B 是設計提案，不是現版功能。",
+    "choices": [
+      {
+        "name": "按完成／取消日回顧｜同列另看最後安排",
+        "note": "先按系統確認的完成／取消日找結果。例：週二最後安排、週五確認完成的「交手作材料」，在週五那組，旁邊另寫「最後安排：週二」。只記得標題，可先清除日期再搜尋。Locus 原圖只示範按完成日分組與每列完成時刻；最後安排、取消狀態、篩選及未知日期提示是育伴港本案設計。確認日不代表實際交件日。",
+        "source": "https://www.locusgtd.com/images/help/ios/en/14-logbook.png",
+        "sourceNotes": [
+          {
+            "label": "Locus Studio 官方整頁原圖：iPhone 完成日誌",
+            "url": "https://www.locusgtd.com/images/help/ios/en/14-logbook.png"
+          },
+          {
+            "label": "Locus Studio 官方手冊：按完成月／日分組，列出每項完成時刻",
+            "url": "https://www.locusgtd.com/features/review-and-logbook#logbook"
+          },
+          {
+            "label": "育伴港：歷史使用完成／取消時間",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/task-view-model.ts#L112-L130"
+          },
+          {
+            "label": "育伴港：詳情與最後保存的安排",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/tasks/TaskDetail.tsx#L40-L58"
+          },
+          {
+            "label": "育伴港：改期會更新目前安排",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/task-policy.ts#L19-L29"
+          },
+          {
+            "label": "育伴港：選用終態版本的時間",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/task-view-model.ts#L91-L100"
+          },
+          {
+            "label": "育伴港現版：工作區傳入香港時間",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/task-knowledge-tasks.ts#L207-L208"
+          }
+        ],
+        "version": "Locus GTD 官方 iPhone 說明圖，示例 2026 年 10 月；右上匯出功能自 2.4.1 提供，截圖確切組建未標。",
+        "rights": "Locus Studio 官方說明圖；未核實可重刊。只連原圖，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "雙軌歷史月曆｜先選日期的含義，再找同一筆",
+        "note": "頂端先選「最後安排日」或「完成／取消日」，再從月曆找同一事項。Baserow 原示範把同一筆活動由開始日改按結束日定位；不是回報完成的時間。育伴港查閱時不重排或重開事項，週五的回報日期也不代表週五才實際交件。",
+        "source": "https://baserow-backend-production20240528124524339000000001.s3.amazonaws.com/blog_images/baserow_release_1-16.mp4#t=11,25",
+        "sourceNotes": [
+          {
+            "label": "Baserow 1.16 作者原片 0:11–0:25：完整月曆、選日期基準、同一活動改日",
+            "url": "https://baserow-backend-production20240528124524339000000001.s3.amazonaws.com/blog_images/baserow_release_1-16.mp4#t=11,25"
+          },
+          {
+            "label": "Baserow 1.16 發行原文與同一支完整影片",
+            "url": "https://baserow.io/blog/1-16-release-of-baserow#calendar-view"
+          },
+          {
+            "label": "育伴港：目前歷史頁日期篩選",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/tasks/TaskHistoryView.tsx#L37-L79"
+          },
+          {
+            "label": "育伴港：現有待辦月曆只投影未結案",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/tasks/task-calendar.ts#L18-L45"
+          }
+        ],
+        "version": "Baserow 1.16 發行示範，Bram Wiepjes／Baserow B.V.，2023-04-04；影片沒有另外顯示確切網站組建。",
+        "rights": "Baserow 官方網站保留權利；未找到此原片可重刊或內嵌的授權，僅外連。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "3355a65908afeb00a1a77c16785ef1d048ac2363d937b97768f40b154f3b8b8a"
+}
