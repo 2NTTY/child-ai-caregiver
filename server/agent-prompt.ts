@@ -56,10 +56,23 @@ export async function assembleAgentPrompt(options: {
   return { text: parts.join("\n\n"), packVersion: manifest.version, recipeId, moduleIds: ids, moduleCharacters };
 }
 
-export async function loadAgentPrompt(recipeId: string, mode: AgentOutputMode, availableInputs: readonly string[],
-  additionalModuleIds?: readonly string[], deferredRecipeModules?: readonly string[]) {
+async function loadPromptFiles(options: Omit<Parameters<typeof assembleAgentPrompt>[0], "manifest" | "readModule">,
+  moduleLineEnding?: "\n" | "\r\n") {
   // This manifest and the module files are shipped with the server, never supplied by a client.
   const manifest = JSON.parse(await readFile(new URL("../prompts/manifest.json", import.meta.url), "utf8")) as PromptManifest;
-  return assembleAgentPrompt({ manifest, recipeId, mode, availableInputs, additionalModuleIds, deferredRecipeModules,
-    readModule: path => readFile(new URL(`../prompts/${path}`, import.meta.url), "utf8") });
+  return assembleAgentPrompt({ ...options, manifest, async readModule(path) {
+    const document = await readFile(new URL(`../prompts/${path}`, import.meta.url), "utf8");
+    return moduleLineEnding ? document.replace(/\r?\n/gu, moduleLineEnding) : document;
+  } });
+}
+
+export function loadAgentPrompt(recipeId: string, mode: AgentOutputMode, availableInputs: readonly string[],
+  additionalModuleIds?: readonly string[], deferredRecipeModules?: readonly string[]) {
+  return loadPromptFiles({ recipeId, mode, availableInputs, additionalModuleIds, deferredRecipeModules });
+}
+
+/** An archived checkout can have different module bytes. The assembler still joins modules with LF. */
+export function loadRecordedKnowledgePrompt(recipeId: "knowledge-organize" | "knowledge-review",
+  availableInputs: readonly string[], moduleLineEnding: "\n" | "\r\n") {
+  return loadPromptFiles({ recipeId, mode: "structured", availableInputs }, moduleLineEnding);
 }
