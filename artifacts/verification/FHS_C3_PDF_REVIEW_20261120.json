@@ -501,17 +501,19 @@
     "retainedCompatibility": "Six registered PDF organizer and independent reviewer request fingerprint pairs unchanged in a network-disabled worker."
   },
   "sourceDeliverySnapshot": {
-    "checkedAt": "2026-11-20T06:07:17.709Z",
+    "checkedAt": "2026-11-20T06:12:22.780Z",
     "scope": "Original 116 rows; sourceId joins to the official URL, SHA-256 and pages in FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json.",
     "counts": {
-      "no_source_result_in_sequence": 83,
+      "no_source_result_in_sequence": 80,
       "observation_recovered_awaiting_model": 4,
       "candidate_held": 13,
-      "published_and_verified": 16
+      "published_and_verified": 18,
+      "budget_exhausted": 1
     },
     "publishedSourceIds": [
       "pdf-0669ab4cf34bd1b3b598db64",
       "pdf-a8b1017b75ded7e02814cdb2",
+      "pdf-bd15166fe03791ef9ff7c062",
       "pdf-231c869513252fae5e5ce54e",
       "pdf-0c2d0deb2abdeb1d5949e661",
       "pdf-f4804bcf1d97c9f5c624043a",
@@ -519,6 +521,7 @@
       "pdf-28468771ad2490f045bd5d56",
       "pdf-3fca76df105dc64c4e94f76c",
       "pdf-c35022f4755f452c3ab6ca7c",
+      "pdf-b50a158f021811e4c7daafba",
       "pdf-4158ea5c2f138e45a4a7568d",
       "pdf-16ecfbe91853bb20831c4b97",
       "pdf-d6cb530c2cc3605fb28a0241",
@@ -879,6 +882,74 @@
           "excerptSha256": "34f0714e27471664ec7890176751deefbf36d334deb59e4280e6844ee43509f6",
           "completeExcerptMatch": "independent_page_transcriptions"
         }
+      },
+      {
+        "sourceId": "pdf-bd15166fe03791ef9ff7c062",
+        "versionId": "6a81ecbb-2091-5bbe-b492-fc155dffe453",
+        "versionHash": "6b6d72ff65aca931af35ed1f6fe0c6b66352166e44d73d33575fc826bb9a19af",
+        "publishedAt": "2026-11-20T06:09:37.768Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "reviewerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:a773709b643a401afab10335be80692126b08787dfba46a1ac1628e15af7a411",
+          "knowledge-review:18c347b8e50aa6df9a43e06b0425a7f5b704d40bff525d54126840e2614ec29a"
+        ],
+        "citation": {
+          "chunkId": "31d6b819-b804-5316-9bc4-a60e716db18b",
+          "range": [
+            1,
+            4
+          ],
+          "physicalPage": 1,
+          "originalBytes": 959834,
+          "excerptSha256": "4269e165547c4211a0e0efb3a04cfc96c253e2bc9552aaaf88b95cccfddb93cd",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-b50a158f021811e4c7daafba",
+        "versionId": "39b303d4-e61c-5e6d-bc34-d715cf61dfdc",
+        "versionHash": "e33fb389fd9abf50c6355c9856089fc9f064b09305a3c98f9ba32e8b8455ba7f",
+        "publishedAt": "2026-11-20T06:08:49.945Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "reviewerPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:3cbadcef9878e6a932ced3083581cfed4fd7db4f788879c809d51eba9f7c7a32",
+          "knowledge-review:2f86b817e3ebd9932a05b5f9873c96f8d61c89f530523d84d49476016988b654"
+        ],
+        "citation": {
+          "chunkId": "a5f6631c-1a8f-5910-b0fa-46e582bb7ef0",
+          "range": [
+            1,
+            4
+          ],
+          "physicalPage": 1,
+          "originalBytes": 2109714,
+          "excerptSha256": "e6ddd0c1e299cf09f765917ab9c3a865c0954a08f2a82fdfad67bc19c1006844",
+          "completeExcerptMatch": "exact"
+        }
       }
     ],
     "held": [
@@ -958,7 +1029,6 @@
       "pdf-881ea5c99f3479c6d5e67047",
       "pdf-7265fd820fae618428179c2f",
       "pdf-b71d332f80742e47d347f21a",
-      "pdf-c79a394b580ec9e870d63319",
       "pdf-681fb8a2f0ebdf8fba8bd55f",
       "pdf-a4f95c292efe280c21220172",
       "pdf-e4e9735e1a0ba0923750e633",
@@ -990,7 +1060,6 @@
       "pdf-01991cbeb3f85382c992d63a",
       "pdf-4dd05b4a01c8e51c441412fc",
       "pdf-2771b734a7f4ab0e2c4fd4ef",
-      "pdf-bd15166fe03791ef9ff7c062",
       "pdf-e7427b7b969a37e3d8e889a1",
       "pdf-65148c48ab4b294035fb977a",
       "pdf-27dda724b8a16c0794cd0ffe",
@@ -1008,7 +1077,6 @@
       "pdf-902a9652db3c94e03ea54d75",
       "pdf-780e4c1676a794ee6e89c6db",
       "pdf-877466905d56f6616266ffb5",
-      "pdf-b50a158f021811e4c7daafba",
       "pdf-ce75ff9d0a4c5b0ac1410b26",
       "pdf-512682e6652f267b32fb90ce",
       "pdf-26a1e80e0727a8e30c63f634",
@@ -1046,7 +1114,13 @@
         "minimumModelCalls": 14
       }
     ],
-    "otherSourceReceipts": [],
+    "otherSourceReceipts": [
+      {
+        "sourceId": "pdf-c79a394b580ec9e870d63319",
+        "outcome": "budget_exhausted",
+        "reason": "knowledge_model_daily_admission"
+      }
+    ],
     "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The same-campaign 20-page chart belongs to C2 and is counted separately."
   },
   "sharedCampaignLongRead": {
@@ -1127,5 +1201,41 @@
       "formalCode": "knowledge_review_failed",
       "reason": "The original organizer outcome is unknown. The existing operation stays held."
     }
-  ]
+  ],
+  "dailyAdmissionCheckpoint": {
+    "checkedAt": "2026-11-20T06:14:50.803Z",
+    "release": "r44684090457-1",
+    "sourceCount": 116,
+    "physicalPages": 1471,
+    "familyVersions": 18,
+    "documentVectors": 18,
+    "exactOriginalTextPageMatches": 17,
+    "independentlyTranscribedPhysicalPageMatches": 1,
+    "heldSources": 13,
+    "originalAwaitingReviewer": {
+      "sourceId": "pdf-c79a394b580ec9e870d63319",
+      "pages": 4,
+      "paidOrganizerReady": true,
+      "independentReviewerDispatched": false,
+      "documentVectors": 0,
+      "publication": false,
+      "resumeAt": "2026-11-21T00:00:03.000Z",
+      "owner": "The original campaign operator scheduled the same operation on the next UTC day."
+    },
+    "remainingWithoutModelOrEdition": {
+      "sources": 84,
+      "recoveredSourceObservations": 4,
+      "withoutSourceResult": 80,
+      "evidence": "Read the active version pointer and the counts of existing generation/embedding attempts for every listed source in the public campaign. None of these 84 had a provider attempt or an active edition. Six exceed the per-work native reading limit."
+    },
+    "dailyAdmission": {
+      "day": "2026-11-20",
+      "maintenanceAttempts": 300,
+      "maintenanceLimit": 300,
+      "globalAttempts": 300,
+      "globalLimit": 400
+    },
+    "grossLimitUsd": 30,
+    "verification": "The other 20-page PDF verified in this campaign belongs to the earlier C2 list and is excluded. Both 24-page C3 sources still have no provider attempt or published version."
+  }
 }
