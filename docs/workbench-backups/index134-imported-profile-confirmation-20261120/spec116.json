@@ -1,0 +1,84 @@
+{
+  "group": {
+    "id": "imported-child-profile-origin-vs-local-confirmation",
+    "title": "交接帶來的孩子檔案寫着「來源確認」，算是我在這裏核對過嗎？",
+    "index": "external-comparison",
+    "readerNote": "不算。原處確認、匯入獨立副本、本地再確認並保存更正是三件事。看到同名或同 UID 不等於「你已確認」；缺來源證據就寫未能核實。來源確認不等於資料一律禁用，有權且仍有效時，現有業務可按各自規則使用。A 看現版生日旁的來源，B 看該副本的來源經過；不查看無權原件，不採納或更正，不變更權限。兩案只讀設計比較，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "從目前孩子檔案看｜來源確認，不等於我已確認",
+        "note": "在現版生日旁分開寫「此檔案版本：來源確認」與「已匯入目前工作區」。可查看有權讀取的來源及版本；若只能查到包來源、未證實確認方式，就只寫「來源資料」，不從名字或帳號推定已核對。RootsMagic 原圖把出生資料和支持它的來源入口放在同份人物檔案，不是育伴港的匯入確認流程。 同名、甚至同 UID 也不會把明確的來源確認改成本地本人確認。",
+        "source": "https://help.rootsmagic.com/RM12/images/rm_editperson-info.jpg",
+        "sourceNotes": [
+          {
+            "label": "RootsMagic 12 官方完整檔案原圖：現有值及個別來源入口",
+            "url": "https://help.rootsmagic.com/RM12/images/rm_editperson-info.jpg"
+          },
+          {
+            "label": "官方手冊：研究者標記與資料引用是不同欄位",
+            "url": "https://help.rootsmagic.com/RM12/editing-a-fact.html"
+          },
+          {
+            "label": "官方手冊：來源、資訊提供者和證據關係",
+            "url": "https://help.rootsmagic.com/RM12/citation-quality.html"
+          },
+          {
+            "label": "育伴港：來源確認不使用本地本人標籤，即使帳戶識別碼相同",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/frontend/src/production/CareProfileProjections.ts#L8-L19"
+          },
+          {
+            "label": "育伴港：相同帳戶識別碼的來源確認合成斷言",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/frontend/src/production/care-profile-projections.test.mts#L15-L33"
+          }
+        ],
+        "version": "RootsMagic 12 官方手冊；此版於 2026-10-08 發布，原圖同日刊載標記，精確組建及拍攝時間未標。",
+        "rights": "RootsMagic 官方手冊圖，未獲重刊許可；只連官方來源，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "來源經過｜是誰做了哪一步",
+        "note": "分開原處核對、本次匯入的人和時間、後來本地更正三件事。本地照顧者有權且明確保存更正才有新版本；確實讀到才另列；如果目前仍明確是來源確認，不叫「你已確認」。僅列權限內查實的人、時間和版本，不假設上游原件可讀。Wikimedia Commons 原站把原修訂、匯入與後續改版分列，是檔案歷史的參考，不代表照顧者核對。",
+        "source": "https://commons.wikimedia.org/wiki/File:Candi_Plaosan_oleh_Tiwuk_Suwantini.jpg?action=history",
+        "sourceNotes": [
+          {
+            "label": "Wikimedia Commons 原站整頁：一個檔案的原修訂、匯入、異動",
+            "url": "https://commons.wikimedia.org/wiki/File:Candi_Plaosan_oleh_Tiwuk_Suwantini.jpg?action=history"
+          },
+          {
+            "label": "Wikimedia Commons 單項日誌：原上載與匯入分開",
+            "url": "https://commons.wikimedia.org/wiki/Special:Log?page=File%3ACandi_Plaosan_oleh_Tiwuk_Suwantini.jpg"
+          },
+          {
+            "label": "Wikimedia Deutschland 2018 測試 wiki 整頁原圖：另一個早期匯入示例",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/archive/8/8f/20190129141016%21Revision_history_of_a_file_that_was_imported_with_the_FileImporter_extension.png"
+          },
+          {
+            "label": "MediaWiki 官方手冊：匯入標記與另作修改是不同修訂",
+            "url": "https://www.mediawiki.org/w/index.php?title=Help:Extension:FileImporter&oldid=8340068"
+          },
+          {
+            "label": "育伴港：把匯入操作者與原本確認分開，寫入獨立副本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-care.ts#L338-L345"
+          },
+          {
+            "label": "育伴港：後續更正需保存本地版本，原匯入沿革保留",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-care.ts#L159-L192"
+          },
+          {
+            "label": "育伴港：匯入只給接收範圍的獨立副本，不擴原件權限",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/docs/API.md#L1288-L1294"
+          }
+        ],
+        "version": "Wikimedia Commons 原站 2026-11-20 核對，MediaWiki 1.48.0-wmf.5；實例匯入在 2020-07-21。另附 2018-06-07 發布的獨立測試截圖，未標當時軟件版號。",
+        "rights": "另附截圖由 Johanna Strodt (WMDE) 以 CC BY-SA 4.0 發布；只外連原頁與原圖，不嵌入、重刊、改圖或展示檔案內容。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Wikimedia Commons 原站修訂歷史 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "10f2a1a98647be398ff531f21cef9a23725c082420a8996941b5c840c3f62c84"
+}
