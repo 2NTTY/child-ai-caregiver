@@ -1,0 +1,89 @@
+{
+  "group": {
+    "id": "preparation-fixed-revision-resume-reading",
+    "title": "準備單舊版正文未讀完，怎樣接着看同一版？",
+    "index": "external-comparison",
+    "readerNote": "選定第 2 版就續讀同一份文件的同一快照，整版核實後才展示正文，不顯示半版，也不拿目前正文冒充舊版。暫時讀取失敗且範圍未變，可從原讀取位置重試。來源失效或權限改變就清除受影響的正文，不再續讀。不保證關掉頁面或重開仍記住讀取位置。傳輸分段是序列化 JSON，不是正文剩餘字數或閱讀百分比。「載入更多修訂」是找其他版本，不是繼續讀第 2 版。B 的獨立唯讀窗是比較方案，現行返回方式是「回到目前正文」。工作台只讀比較，不改文件、不還原舊版、更不呼叫真實資料。",
+    "choices": [
+      {
+        "name": "留在準備單詳情｜就地續讀第 2 版",
+        "note": "看 Sourcegraph 原片約 0:04.5 和 0:08.5：選定的提交與檔案不變，原正文區顯示更多內容；0:14.5 啟用 Full file。育伴港只借就地讀取的放法。「第 2 版」未讀完整就先顯示狀態，仍有後段才續讀；短暫錯誤仍應重試同一版，不拿現版補上。原片是展開刻意摺疊的程式碼，不是斷線、同版重試或部分下載。",
+        "source": "https://sourcegraph.com/_docssvc-assets/changelog/20261105_diff-context-expansion_demo.mp4",
+        "sourceNotes": [
+          {
+            "label": "Sourcegraph 官方更新：在同一提交工作區展開更多內容",
+            "url": "https://sourcegraph.com/changelog/diff-context-expansion"
+          },
+          {
+            "label": "Sourcegraph Self-hosted 8.2 發行說明，在同一處嵌入官方示範",
+            "url": "https://sourcegraph.com/changelog/releases/8.2#diff-context-expansion"
+          },
+          {
+            "label": "原片選取的確切公開提交，不是 Sourcegraph 產品構建",
+            "url": "https://github.com/sourcegraph/conc/commit/8427ccd11dde5f56ccacfbbd184f42ce865d2f0d"
+          },
+          {
+            "label": "育伴港：原準備單的這一版可續讀、暫時中斷可重試",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/preparations/PreparationWorkspace.tsx#L104-L136"
+          },
+          {
+            "label": "育伴港：續讀位置綁定同一文件及快照",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/useFamilyDocuments.ts#L330-L372"
+          },
+          {
+            "label": "育伴港：切分的是序列化 JSON，不是可見正文字符",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/family-document-reading.ts#L25-L36"
+          }
+        ],
+        "version": "Sourcegraph 官方示範，作者更新 2026-11-09，列入 Cloud／Self-hosted 8.2；未標精確畫面構建或攝錄日。2026-11-20 核對原片 1920×1200 的完整工作區和指定時間點。",
+        "rights": "Sourcegraph 官方影片未確認再刊授權，專案原碼授權不等於影片授權。只外連作者原片和說明，不內嵌、不截錄、不改畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Sourcegraph 官方完整工作區示範 ↗（需連網）"
+      },
+      {
+        "name": "獨立閱讀窗｜只打開選定的第 2 版",
+        "note": "選中「摺紙課材料」第 2 版後另開唯讀閱讀窗，清單留在原位。窗首保留版號和日期；只在仍有後段時寫「繼續載入這一版」，暫時讀取失敗且仍有權時才給「重試讀取這一版」。整版核實後才出正文，不用現版填補。若權限或來源已失效，不再續讀；「返回版本列表」只關窗。MediaWiki 原頁只借用獨立舊版頁和版本標籤，沒有分批或重試示範。",
+        "source": "https://www.mediawiki.org/w/index.php?oldid=8094969&title=Help%3AHistory",
+        "sourceNotes": [
+          {
+            "label": "MediaWiki 第一方原網站：已選取的 Help:History 舊版整頁，頂端有日期及舊／新／最新版本導航",
+            "url": "https://www.mediawiki.org/w/index.php?oldid=8094969&title=Help%3AHistory"
+          },
+          {
+            "label": "同一頁的版本歷史：從 2025 年 12 月 21 日 03:05 的時間連結進入該版",
+            "url": "https://www.mediawiki.org/w/index.php?action=history&title=Help%3AHistory"
+          },
+          {
+            "label": "MediaWiki 官方使用說明：點時間看指定版；比較兩版是另一個動作",
+            "url": "https://www.mediawiki.org/wiki/Help%3AHistory"
+          },
+          {
+            "label": "MediaWiki 公版說明頁的內容授權",
+            "url": "https://www.mediawiki.org/wiki/Project%3APD_help"
+          },
+          {
+            "label": "育伴港：現行版本入口，另開閱讀窗是方案",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/preparations/PreparationWorkspace.tsx#L137-L155"
+          },
+          {
+            "label": "育伴港：未完成的舊版不拿現版代替",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/useFamilyDocuments.ts#L394-L410"
+          },
+          {
+            "label": "育伴港：按同孩子、文件和快照校驗合法來源",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-family-documents.ts#L511-L534"
+          }
+        ],
+        "version": "MediaWiki Help:History 英文正文舊版本 ID 8094969，頁面標示 2025-12-21 03:05；2026-11-20 由官方版本歷史核對整頁。這是正文版本，不是軟件發行版、舊介面快照或截圖日期。",
+        "rights": "該 Help 頁的貢獻文字有 CC0 說明，不以此推定標誌、介面或外部引用素材同權。只連至原網站指定版本及說明，不嵌入、重刊、截圖或使用其標誌。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "開啟 MediaWiki 已選舊版整頁（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "7455df867bfeb35cb79a11a9f3210c91f9d1f6f755890037a437d719d1909a67"
+}
