@@ -276,11 +276,16 @@ test("retained PDF region corrections preserve the original reading and send the
     ageRange: { basis: "actual", minMonths: 12, maxMonths: 60, exclusiveEnd: false }, pageText: {physicalPage1: "Daily amount for the specified ages."} } },
     nativeCoverage: { pages: [{ page: 1, finding: "Age range is conditional." }], unreadablePages: [], layoutAnswer: null } });
   let organizerRequestHash = "", organizerKey = "";
-  await assert.rejects(prepareKnowledgeMaintenance({ ...base, async completeText({system, user, attemptKey}) {
+  const freshReview = new Error('Fresh PDF draft reached independent review');
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, async completeText({role, system, user, attemptKey}) {
+    if (role === 'knowledge_review') {
+      assert.equal(JSON.parse(user).candidate.chunks[0].applicability.region, 'HK');
+      throw freshReview;
+    }
     organizerRequestHash = knowledgeReviewHash({system, user, attemptKey});
     organizerKey = attemptKey;
     return draft;
-  } }), /invalid string/i);
+  } }), error => error === freshReview);
   const revision = { action: 'review_pdf_region' as const, sourceId: source.watchId, observationHash: source.observationHash, sha256,
     organizerRequestHash, operationFingerprint: 'd'.repeat(64), reason: 'Verify conditional ages on physical page one.', sections: ['Physical page 1'],
     regionEdits: [{ range, from: '香港' as const, to: 'HK' as const }] };

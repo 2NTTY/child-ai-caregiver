@@ -27,7 +27,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "第 2 頁載有五歲後的分項。獨立核對整理稿把整段標為 0–60 個月是否遺漏該段。"
+      "reviewNote": "第 2 頁載有五歲後的分項。獨立核對整理稿把整段標為 0–60 個月是否遺漏該段。",
+      "recoveryOperation": "d35cd496870b1bf1565cfca54d8542b93fdf399d84f2be10e266b1d5a4889e43",
+      "offlineIndependentReviewRequestHash": "29a3d3ad18295115ded0a9162c53ec6cc99f2c11cafb1001822953be64ab4efd"
     },
     {
       "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
@@ -44,7 +46,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "核對第 1–2 頁的服務對象、參加條件及跟進安排。"
+      "reviewNote": "核對第 1–2 頁的服務對象、參加條件及跟進安排。",
+      "recoveryOperation": "7ee7d75e483cab8fab4a51730e5415f25962c6a5cd54e5fe2c64ddd6ca0d9be5",
+      "offlineIndependentReviewRequestHash": "11b3b2e9e88479317f861d89b76b8852407b4280645acd702a31262ddfad2194"
     },
     {
       "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
@@ -92,7 +96,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "核對第 1–2 頁不同奶類及年齡小節，保存個別小節的限制。"
+      "reviewNote": "核對第 1–2 頁不同奶類及年齡小節，保存個別小節的限制。",
+      "recoveryOperation": "553b78747145951eaa38c5735b49c66cfa8f702b86c2a250da8fad7d5a063754",
+      "offlineIndependentReviewRequestHash": "f9b1b027455fdf21d304bfbf222144181c933ae051878ee9b02d71704f3d27de"
     },
     {
       "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
@@ -109,7 +115,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "標題列六至二十四個月。核對兩頁的器具、食物及全程成人看管條件。"
+      "reviewNote": "標題列六至二十四個月。核對兩頁的器具、食物及全程成人看管條件。",
+      "recoveryOperation": "6905d637a36c535b24020146199b481b4eb70c42447976dbb04fba67ef8e2f0d",
+      "offlineIndependentReviewRequestHash": "c81d140224b2f09df271cc1443ec8491bdcbdb4dac168c495af351f3dc9c70e8"
     },
     {
       "sourceId": "pdf-6637fb9890bacf75064562bd",
@@ -145,7 +153,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "核對第 1 頁的懷孕及哺乳對象、標籤單位及未能服用時的原文條件。"
+      "reviewNote": "核對第 1 頁的懷孕及哺乳對象、標籤單位及未能服用時的原文條件。",
+      "recoveryOperation": "79b9a81ab4eb08e7feb532c5f94f414f2445a3a3ebcafceff702a60df0e591cf",
+      "offlineIndependentReviewRequestHash": "44f481194d2864bddf79752f8c080d7345dce7f002616a36b6a683f6da6ed72e"
     },
     {
       "sourceId": "pdf-0036bc862846cdd19984930b",
@@ -170,7 +180,9 @@
           "to": "HK"
         }
       ],
-      "reviewNote": "核對第 1 頁本地接種安排、對象及例外，保留刊物修訂日期。"
+      "reviewNote": "核對第 1 頁本地接種安排、對象及例外，保留刊物修訂日期。",
+      "recoveryOperation": "e58481ebbcd9f36937990f682bdefeae767fd55b13a454ee7af3de13074b6a56",
+      "offlineIndependentReviewRequestHash": "9158e00d98c800feb4d5a2da08ecfe9f231c1d020042b8b1505af1115a40127b"
     },
     {
       "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
@@ -196,5 +208,13 @@
       ],
       "reviewNote": "兩次轉錄在同頁多欄圖的次序及所選內容不同；整段無連續相符。原頁可分辨活動、靜態及睡眠欄。"
     }
-  ]
+  ],
+  "retainedRecovery": {
+    "base": "eb2887c96bf49950d1f11fba6f0da9a9e75ac16e",
+    "image": "sha256:a5ee45970e5a98f0f77314d1637b04e99a638b1b631a24474d20e05c10afc1c2",
+    "target": "firebase-server, Node 24.19.0, built locally from Git LF sources; read-only container, network disabled",
+    "originalParents": "Six production parents checked read-only: same registered operation, first observation, original PDF SHA, exactly one settled organizer, candidate held without lease, prepared draft or publication receipt.",
+    "result": "Each explicit ID and original operation selects one packaged recovery. Its original stage was replayed against the same request, and its independent reviewer received the complete hash-checked PDF and the source-specific page notes. Dispatch intercepted before calling a provider. The original default recovery queue retains its 24 held and 15 previously published entries.",
+    "integration": "The first Windows build context had CRLF prompt bytes and correctly failed the original organizer-request guard. The repeat used Git LF source bytes and matched all six reviewer request hashes. The original 504 was refused before opening persistence. The fresh-draft test now observes HK reaching review, and the retained-draft test still checks the unchanged original organizer. Five focused tests and the server TypeScript project passed."
+  }
 }
