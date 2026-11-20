@@ -6932,6 +6932,13 @@ C3 的兩份舊解析失敗均從原操作核回成功的四頁重讀。《奶�
 
 22:29 原 C 驗到家長 API 已恢復。22:34，C3 直接向 Firestore 以同一讀取時點核對全部 28 份的原工作、已保存候選、卡庫指針及票據。《奶瓶餵哺指引》的原生成預留尚未結算，沒有已保存候選。其餘 27 份均未建立付費工作，28 份均未有生效卡。該書保留原單，其餘教材由 C3 在原 C 核定容量後接續。[重啟後的全組收據](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
+<a id="fhs-child-links-20261120"></a>
+### 2026-11-20　C 免費覆核五個未取得的兒童健康教材入口
+
+以 `27b400ac` 為基線，逐一讀取五個指定網址。[學生健康服務](https://www.studenthealth.gov.hk/tc_chi/internet/health_effects.html)回傳含四項導覽的專題目錄。[衞生防護中心原帖](https://www.facebook.com/CentreforHealthProtection/posts/1104338059582110)的公開中繼資料列出《喝多杯》。[單張網址](https://www.healthatwork.gov.hk/files/pdf/drink_tc.pdf)轉往[衞生防護中心存檔](https://www.chp.gov.hk/archive/healthatwork/files/pdf/drink_tc.pdf)，回傳一頁 PDF，277,267 bytes。其 SHA-256 與原有 148 份均有別。[食安中心同題圖表](https://www.cfs.gov.hk/english/multimedia/multimedia_pub/images/fsb_201701/Feature_Article_water.pdf)的標題、版面尺寸及指紋另有不同，清冊只計原帖直接列出的附件。
+
+「白瞳症」、「切勿獨留兒童不顧」及「兒童的預防護理」原網址均回傳 HTTP 404。最後一項有[醫務衞生局現行同名專題](https://www.healthbureau.gov.hk/phcc/rfs/tc_chi/reference_framework/pre_care_for_child.html)，舊版原件仍待核。清冊逐項核對得 201 項、149 份相異 PDF、1,800 頁。原帖、單張與目錄均維持只供連結。離線逐項比對活動來源及平台卡清單，原批次的 251 個來源、設定與次序一致。對外教材入庫授權測試通過 1/1。本次只做公開來源核查及離線驗證，付費生成及向量寫入均為零。[清冊](knowledge/fhs-child-inventory.json) · [外部來源處置](knowledge/fhs-external-rights.json)
+
 ### 2026-11-20　C2 首批正式家長卡及保留收據
 
 21:14 香港核實 #715 的 28 份原件、464 頁、原操作及零付費準備；兩份先前解析失敗的來源已按原觀測接回。正式 worker `54a2a602` 恢復後，22:31 逐一核對 28 個原操作，當時組內尚無付費紀錄。其後透過共用主機工位逐份處理。23:40 核回首 10 份正式收據，1 張生效家長卡及 9 份保留。六頁《寶寶愛活動》的正式版本可匯出 1 個向量，引用逐字命中原 PDF 第 1 頁。當時 C2 已結算 19 次請求，毛額 US$0.733131，未結算 0 筆。
