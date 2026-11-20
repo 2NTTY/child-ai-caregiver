@@ -10,10 +10,21 @@
       58.81
     ],
     "approvedGrossLimitUsd": 30,
+    "organizerGrossUsd": [6.154008, 30.086793],
+    "independentReviewGrossUsd": [5.7602055, 28.496568],
+    "embeddingGrossUsd": [0.027, 0.225],
     "mediaEnabled": false,
     "incrementalMediaUsd": 0
   },
   "route": {
+    "observedAtUtc": "2026-11-20T16:41:40.554Z",
+    "evidence": "Read the active platform policy with the production readPolicy service after website release 883426b6. The running API and worker both reported global and 1024 for the output limit. The first-publication document route explicitly selects its own generation model.",
+    "observedMediaModel": "gemini-3.1-flash-lite",
+    "location": "global",
+    "maxOutputTokens": 1024,
+    "documentCampaignModel": "gemini-3.8-flash",
+    "observedModelUsdPerMillion": {"textImageVideoInput": 0.25, "audioInput": 0.50, "outputIncludingReasoning": 1.50},
+    "observedPriceMethod": "Apply the global video/text price to vision, framing, transcript and timestamp tokens; price the estimated audio-track tokens separately at the audio rate. Actual modality counts require a provider receipt. A later policy change can select a different media model.",
     "code": [
       "server/platform-card-providers.ts",
       "server/platform-media-processing.ts",
@@ -88,6 +99,7 @@
     "introductoryPricingThrough": "2026-12-31"
   },
   "cardScope": {
+    "observedPolicyGrossUsd": [0.51, 0.67],
     "uniqueOriginals": 64,
     "withTranscript": 61,
     "timedCaptions": 0,
@@ -123,6 +135,7 @@
     ]
   },
   "entireInventory": {
+    "observedPolicyGrossUsd": [1.04, 1.34],
     "uniqueOriginals": 86,
     "withTranscript": 61,
     "timedCaptions": 0,
