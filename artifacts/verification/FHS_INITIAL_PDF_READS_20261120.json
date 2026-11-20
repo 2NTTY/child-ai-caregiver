@@ -161,5 +161,15 @@
     "writesByThisPreparation": 0,
     "publishedByThisPreparation": 0,
     "next": "The sole campaign owner uses the existing lock, gross ledger and original continuation. Reconcile by sourceId and original hash after each actual run. A local attachment check is not a publication receipt."
+  },
+  "openingArchive": {
+    "name": "fhs-pdf-opening.tar.gz",
+    "records": 329,
+    "indexSha256": "130c94bcc4c4e37b6b2ea3f7a621ffe9f6108c7c95aeced6aa37e0d83ad23afe",
+    "archiveSha256": "bbdaa56f92327e84b496076dc6de632ba6f79dcd1d19711d1adc97e746a7b9cd",
+    "archiveBytes": 10230850,
+    "expandedBytes": 11413803,
+    "contents": "All prepared text-layer batches and the native attachments for outstanding one- and two-page PDFs and the 36-page comic. Other slices remain in the full private archive; missing keys use the ordinary reader.",
+    "verification": "Private campaign host stage only. The archive and internal index SHA-256 were read back on the existing VM. No active worker files, operations or ledger entries were changed by staging."
   }
 }

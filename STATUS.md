@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-20 香港**　09:19 正式發布收據顯示 Web、API、worker 均為 `c5334be9`。首批有 110 份已發布、24 份保留、1 份等候向量、116 份未處理。11:51 維護身份 200／200，全站 200／400。主線已批准該 UTC 帳日的首批維護上限為 300 次，正式生效及原 PDF 發布以同一批次收據核實。[正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44651458542) · [首批逐份結果](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [續作入口](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)
+
 **2026-11-20 香港**　Web、API、worker 已發布至 `07d6d5c2`，Android 版本 8 的 preview 通道回傳同版 OTA。Edge 已驗從待辦頁向角色提問、在主聊天展開三方討論，並從討論點讀同版教材。C 首批收據為 55 份已發布、31 份保留、1 份等候每日額度、164 份待處理。手機實際操作待驗。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44620294763) · [跨功能收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json) · [首次入庫收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)
 
 **2026-11-19 15:12 香港，正式交付。** 來源庫及聊天均可免費加入已發布平台卡。平台管理五個家庭健康服務來源，私人來源的整理與新查詢向量沿本人密鑰。原站 Web、API、worker 同版，站外健康核對通過。Android preview 已向版本 8 提供同一套產品畫面。付費網站的真實帳戶和本次手機點按留待體驗驗收。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261) · [Android 更新](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/bc937464-28b8-40ea-ade7-a83d1c763966) · [平台卡驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)

@@ -9,6 +9,7 @@ import {
 } from "../src/shared/background-knowledge-maintenance.ts";
 import type { BackgroundKnowledgeCandidate, BackgroundKnowledgeDurableOperation, BackgroundKnowledgePublishReceipt } from "./background-knowledge-maintenance.ts";
 import { KnowledgeDailyAdmissionRefused } from "./agent-model-gateway.ts";
+import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { backgroundKnowledgeReviewMatchesCandidate, KnowledgeModelQuotaPending } from "./background-knowledge-maintenance.ts";
 import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowledgeMaintenance } from "./background-knowledge-model.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
@@ -154,7 +155,8 @@ export function createFirestoreKnowledgeWork(options: Options) {
       }, { readOnly: true });
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
-      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string) {
+      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
+      sameDayCapacity?: (tx: Transaction) => Promise<boolean>) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       if (reusedOrganizationFrom && knowledgeOrganizationRepairId(reusedOrganizationFrom) !== request.operationFingerprint)
         reject("knowledge_work_repair_binding");
@@ -185,8 +187,13 @@ export function createFirestoreKnowledgeWork(options: Options) {
         if (!control.enabled || control.generation !== request.workerGeneration) reject("knowledge_work_disabled");
         if (snapshot.exists) {
           const row = verify(open(workRef, snapshot.data(), workSchema));
-          if (row.waitingForQuotaDay && row.waitingForQuotaDay < new Date().toISOString().slice(0, 10)
+          const day = new Date().toISOString().slice(0, 10);
+          if (row.waitingForQuotaDay && row.waitingForQuotaDay <= day
             && (row.preparedHash || row.quotaPhase === 'model') && !row.receipt && !row.result && (!row.lease || row.lease.untilMs <= Date.now())) {
+            if (row.waitingForQuotaDay === day && !await sameDayCapacity?.(tx)) {
+              if (row.quotaPhase === 'model') throw new KnowledgeModelQuotaPending();
+              throw new EmbeddingAdmissionDeferred();
+            }
             const { waitingForQuotaDay: _, quotaPhase: _phase, ...rest } = row;
             const continued = { ...rest, deadlineAtMs: Date.now() + limits.deadlineMs, lease: null };
             tx.set(workRef, seal(workRef, continued));

@@ -4,11 +4,12 @@ import type { DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { EmbeddingUsage } from "./embedding-gateway.ts";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import { knowledgeHash } from "./knowledge-inputs.ts";
+import type { CampaignDayAdmission } from "./knowledge-campaign-budget.ts";
 
 /** Host-operator gateway adapter, using the exact shared platform daily counters. */
 export function createFirestoreOperatorEmbeddingUsage(options: FirestoreDomainOptions, deadlineAtMs: number,
-  sponsor?: { userId: string; dailyLimit: number; binding: string }): EmbeddingUsage {
-  const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: sponsor ? "personal" : "platform" });
+  sponsor?: { userId: string; dailyLimit: number; binding: string }, campaignAdmission?: CampaignDayAdmission): EmbeddingUsage {
+  const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: sponsor ? "personal" : "platform", campaignAdmission });
   let sequence = 0, current: { key: string; request: DurableAiUsageRequest } | null = null;
   return {
     async reserve(actor, userLimit, globalLimit) {

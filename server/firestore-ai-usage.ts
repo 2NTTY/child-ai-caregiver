@@ -8,6 +8,7 @@ import { dailyFinance, dayFinancialEvidenceSchema, type DayFinancialEvidence } f
 import type { StorageCipher } from './storage-crypto.ts';
 import type { ModelBillingSource, ModelSettingsUsage } from '../src/shared/model-settings.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
+import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-campaign-budget.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
@@ -62,6 +63,7 @@ export interface FirestoreAiUsageOptions {
   /** Trusted constructor choice, never inferred from a model/request body. */
   billingSource: ModelBillingSource;
   serverClock?: () => number;
+  campaignAdmission?: CampaignDayAdmission;
 }
 
 /**
@@ -76,14 +78,19 @@ export class FirestoreAiUsage implements DurableAiUsage {
   readonly #namespace: string;
   readonly #source: ModelBillingSource;
   readonly #clock: () => number;
+  readonly #campaignAdmission?: CampaignDayAdmission;
   get billingSource() { return this.#source; }
-  constructor({ database, cipher, projectId, namespace, billingSource, serverClock = Date.now }: FirestoreAiUsageOptions) {
+  constructor({ database, cipher, projectId, namespace, billingSource, serverClock = Date.now, campaignAdmission }: FirestoreAiUsageOptions) {
     if (typeof database?.collection !== 'function' || typeof database.runTransaction !== 'function'
       || typeof cipher?.encrypt !== 'function' || typeof cipher.decrypt !== 'function'
       || typeof projectId !== 'string' || !projectId || projectId !== projectId.trim() || !projectId.isWellFormed() || Buffer.byteLength(projectId) > 256
       || typeof namespace !== 'string' || !/^[a-z][a-z0-9_]{0,60}$/u.test(namespace) || typeof serverClock !== 'function') reject('invalid_configuration');
     this.#database = database; this.#cipher = cipher; this.#projectId = projectId; this.#namespace = namespace;
     this.#source = parse(sourceSchema, billingSource, 'invalid_configuration'); this.#clock = serverClock;
+    if (campaignAdmission) {
+      if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');
+      this.#campaignAdmission = campaignAdmission;
+    }
   }
   #now() {
     const now = this.#clock();
@@ -91,6 +98,10 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return now;
   }
   #day(now: number) { return new Date(now).toISOString().slice(0, 10); }
+  #ownerLimit(day: string, userId: string, ordinary: number) {
+    return this.#campaignAdmission?.day === day && userId === KNOWLEDGE_MAINTENANCE_PAYER && ordinary === 200
+      ? this.#campaignAdmission.attempts : ordinary;
+  }
   #attemptId(request: Pick<DurableAiUsageRequest, 'rootRunId' | 'attemptKey'>) { return 'attempt_' + hash([request.rootRunId, request.attemptKey]); }
   #counterId(day: string, userId: string | null) { return 'daily_' + hash([this.#source, day, userId]); }
   // Existing workers and rollback images read the strict v1 quota documents.
@@ -179,7 +190,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
     const global = this.#counter(globalId, globalSnapshot, ownerSnapshot.exists);
     const owner = this.#counter(ownerId, ownerSnapshot);
     this.#consistent(global, owner);
-    return global.attempts < globalLimit && owner.attempts < userLimit;
+    return global.attempts < globalLimit && owner.attempts < this.#ownerLimit(day, userId, userLimit);
   }
 
   async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance' | 'private_document_embedding', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
@@ -205,7 +216,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const global = this.#counter(globalId, globalSnapshot, userSnapshot.exists), user = this.#counter(userId, userSnapshot);
       this.#consistent(global, user);
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
-      if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
+      if (global.attempts >= request.globalLimit || user.attempts >= this.#ownerLimit(day, request.userId, request.userLimit)) return { decision: 'quota_exceeded' };
       const detail = await this.#detail(transaction, globalId);
       if (request.budgetPurpose === 'knowledge_maintenance' && this.#source === 'personal') {
         const ownerDetail = await this.#detail(transaction, userId);
