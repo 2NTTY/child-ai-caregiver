@@ -2345,6 +2345,94 @@
         ],
         "checkedAt": "2026-11-20T14:34:34.598319Z"
       }
-    ]
+    ],
+    "originalReadback": {
+      "readTime": "2026-11-20T16:01:41.224627Z",
+      "sourceCount": 28,
+      "totalPages": 468,
+      "campaignGrossLimitMicros": 30000000,
+      "campaignSettledMicros": 9631312,
+      "campaignReservedMicros": 13012992,
+      "laneSettledMicros": 1369911,
+      "laneReservedMicros": 3268608,
+      "openItems": [
+        {
+          "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
+          "title": "交朋友",
+          "sha256": "482c1bb1065637e55e68495ad24cee8c6146b01683d5e15983f2905363c07a5d",
+          "pages": 8,
+          "state": "original_work_open",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": [
+            {
+              "kind": "generation",
+              "state": "settled",
+              "costMicros": 66315
+            }
+          ]
+        },
+        {
+          "sourceId": "pdf-7265fd820fae618428179c2f",
+          "title": "聽聽講講 教孩子學說話之二（兩至四歲）",
+          "sha256": "aef04aa1361faef4823e817bc30b34f860bc3f284ce1a4eef945898db3e5d725",
+          "pages": 10,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        },
+        {
+          "sourceId": "pdf-512682e6652f267b32fb90ce",
+          "title": "連繫．情感 兒童社交情緒發展(7至12個月)",
+          "sha256": "03b9bf5fa6e8d861a3080695d2658f41a64729d3297f3361b191fcf800e4b10d",
+          "pages": 12,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        },
+        {
+          "sourceId": "pdf-25f6d14e786c74f161e631d1",
+          "title": "全方位認識「泵奶器」",
+          "sha256": "b819bad662f6a5cf30944178eb62c15a1efd0503c38110ea476bed6e1b03410a",
+          "pages": 16,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        },
+        {
+          "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+          "title": "共享育兒樂 (五) 學前兒童篇 [三歲至六歲]",
+          "sha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
+          "pages": 80,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        },
+        {
+          "sourceId": "pdf-b061777e96a27e5124285ba5",
+          "title": "共享育兒樂 (二) 新生嬰兒篇[一星期至一個月]",
+          "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+          "pages": 84,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        },
+        {
+          "sourceId": "pdf-82798af3747e7b5fb61b4127",
+          "title": "愛·從母乳開始……",
+          "sha256": "8971dc31be66bdacc393f1ecdce46114bdb86bf0393d2e1abcd07db8d508b308",
+          "pages": 96,
+          "state": "no_paid_work_at_read_time",
+          "prepared": false,
+          "activeVersionId": null,
+          "tickets": []
+        }
+      ]
+    }
   }
 }
