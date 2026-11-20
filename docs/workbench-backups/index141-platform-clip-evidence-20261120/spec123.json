@@ -1,0 +1,85 @@
+{
+  "group": {
+    "id": "platform-material-clip-prior-evidence",
+    "title": "教材卡有新片段，為甚麼另一段仍是先前的？",
+    "index": "external-comparison",
+    "readerNote": "「材料介紹」本次取得新摘錄，不代表「摺法示範」也核過。這次未能核實後者，只沿用同一媒體流先前保存的摘錄與當時起訖；那不是目前原片的時碼或核實日期。網址相同、目前原站可開啟，都不是同一版本的證據，也不能保證舊片可重播。成功核實的來源若已沒有某一段，不以舊摘錄補回。逐段狀態是比較方案，現有平台卡未提供這些欄位。工作台只讀；點選只查閱，不加入草稿、不重做擷取、不提交或發布。",
+    "choices": [
+      {
+        "name": "在同一卡逐段看｜已有核證和本次結果分開",
+        "note": "在平台卡庫逐段分開列出先前保存的文字摘錄、起訖及本次核對結果。「摺法示範」若暫未能核對，仍可查看有證據且可保留的舊摘錄，但不代表原站仍能播出舊內容；已證實消失的一段不可當成未核實而補回。「材料介紹」只按自己的證據標示。Airbyte 原圖三列皆已同步，只借用欄位並列，不當作混合成功、錯誤或舊片段保留的實拍。",
+        "source": "https://docs.airbyte.com/assets/images/cloud-status-page-88407100afc2debe348e30ef21f75959.png",
+        "sourceNotes": [
+          {
+            "label": "Airbyte 官方連線狀態整頁原圖：各資料流各列狀態、最近同步及資料更新時間",
+            "url": "https://docs.airbyte.com/assets/images/cloud-status-page-88407100afc2debe348e30ef21f75959.png"
+          },
+          {
+            "label": "Airbyte 官方說明：逐資料流核對狀態與最後一筆資料載入時間",
+            "url": "https://docs.airbyte.com/platform/cloud/managing-airbyte-cloud/review-connection-status#review-one-streams-status"
+          },
+          {
+            "label": "Airbyte 官方說明：來源限流時可由列表辨認受影響的資料流",
+            "url": "https://docs.airbyte.com/platform/cloud/managing-airbyte-cloud/review-connection-status#rate-limited-syncs"
+          },
+          {
+            "label": "育伴港：按連結與媒體流分開整理，原片段可保留而其他段更新",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/01a53716c18d57ad6ccead7bc63960854c3d41ad/server/platform-media-processing.ts#L16-L89"
+          },
+          {
+            "label": "育伴港：現行平台卡資料未提供逐流最新核實時間或結果",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/01a53716c18d57ad6ccead7bc63960854c3d41ad/src/shared/platform-media.ts#L20-L38"
+          },
+          {
+            "label": "育伴港：測試斷言未確定結果不重送，已消失流不以舊摘錄補回",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/01a53716c18d57ad6ccead7bc63960854c3d41ad/tests/platform-media.test.ts#L75-L115"
+          }
+        ],
+        "version": "Airbyte Cloud Web Connection Status；2026-11-20 核對，原圖資產 Last-Modified 為 2026-10-21，文件及同檔固定於 f5cbf0f。未標 App 版號或實際攝圖日期。",
+        "rights": "Airbyte Cloud 官方介面原圖；未確認重刊授權，只外連作者的原圖和說明，不嵌入、不複製或改畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Airbyte 官方連線狀態整頁原圖 ↗（需連網）"
+      },
+      {
+        "name": "片段核對｜先前摘錄與本次核實並排",
+        "note": "選「摺法示範」只打開核對區，不會加進草稿。左邊保留先前保存的摘錄及當時起訖，右邊寫「本次未能核實這段」並提供「開啟目前原網站」。另一段取得新摘錄，不會改變這段的狀態。網址相同也不保證同一版原片或同一時碼；Google 原圖只示範把先前擷取和即時檢查分開。",
+        "source": "https://lh3.googleusercontent.com/sGYb7oLLpLEr2AjLHNxJ8nTbfOksVb68no8qlucDb34_niSRyZx7q3alQm6rtR80Nw5B=s0",
+        "sourceNotes": [
+          {
+            "label": "Google Search Console 官方整個檢查畫面：分開 Google Index、Live Test 和查看上次擷取",
+            "url": "https://lh3.googleusercontent.com/sGYb7oLLpLEr2AjLHNxJ8nTbfOksVb68no8qlucDb34_niSRyZx7q3alQm6rtR80Nw5B=s0"
+          },
+          {
+            "label": "官方展開詳情：上次擷取日期與結果，不是目前網站的保證",
+            "url": "https://lh3.googleusercontent.com/pWDbrBH-NsEbFTjgz55mKX8JFUgkJvk03eZi6wxCXxJmYTyRzChpn6Xgc0tpfDwN7ts=s0"
+          },
+          {
+            "label": "Google 官方文件：索引結果和即時檢查來自不同時間；原網站其後可能改變或不可讀",
+            "url": "https://support.google.com/webmasters/answer/9012289?hl=en"
+          },
+          {
+            "label": "Google 官方圖源與兩種檢查的說明",
+            "url": "https://support.google.com/webmasters/answer/12482179"
+          },
+          {
+            "label": "育伴港：影音證據指紋來自網址和字幕或文稿，不是原影音",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/01a53716c18d57ad6ccead7bc63960854c3d41ad/server/platform-media-evidence.ts#L40-L59"
+          },
+          {
+            "label": "育伴港：目前只列摘錄及起訖，匯入、核對與同步另做",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/01a53716c18d57ad6ccead7bc63960854c3d41ad/frontend/src/components/admin/AdminPlatformCards.tsx#L43-L111"
+          }
+        ],
+        "version": "Google Search Console 網頁版 URL Inspection 官方教學示例；詳圖示例的擷取日為 2022-08-15，2026-11-20 核對官圖。沒有 UI 發行版號、攝圖日或教學更新日。",
+        "rights": "Google 保留服務介面、品牌及其內容權利；這兩張 Help Center 圖未見明確重刊條款。工作台只外連，不嵌入、重刊、截去頭像或改圖。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Google Search Console 官方網址檢查整頁原圖 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "1506afb489f5b1bdab3e6400c7b219ce167631439fd7936ede071299fd7a26d7"
+}
