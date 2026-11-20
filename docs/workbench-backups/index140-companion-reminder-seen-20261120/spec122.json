@@ -1,0 +1,89 @@
+{
+  "group": {
+    "id": "site-companion-reminder-open-and-seen",
+    "title": "小助手揮手了，怎樣才算打開並看過提醒？",
+    "index": "external-comparison",
+    "readerNote": "揮手、摸頭、移動或收起不算查看。打開小對話也不等於已讀：同一登入身分仍有權查看同一私人孩子，且同一則已載入的提醒在前景顯示、在線；條件維持 250 ms 並重核範圍一致後才送出 /seen。收到同一範圍、同一提醒的成功回應，才更新這一則的查看狀態。沒收到回應不代表服務沒收到；不等於推播送達、其他人已讀回條、待辦完成或本人讀懂。兩案是工作台只讀比較，不寫入已讀，也不是正式站或原生實機驗收。",
+    "choices": [
+      {
+        "name": "原頁文字提示｜「有未讀助手提醒」與「查看助手提醒」分開",
+        "note": "在待辦頁補上可讀的未讀提示，另設「查看助手提醒」打開同頁小對話；不靠揮手或角色能否載入，也不先顯示提醒內容。Slack 官方整頁參考把有名稱的活動入口及未讀角標放在助手旁；沒有展示育伴港的查看回執。",
+        "source": "https://slack.zendesk.com/hc/article_attachments/54893886946451",
+        "sourceNotes": [
+          {
+            "label": "Slack 官方桌面全窗原圖：助手與有名有角標的 Activity 並存",
+            "url": "https://slack.zendesk.com/hc/article_attachments/54893886946451"
+          },
+          {
+            "label": "Slack 2026 年 8 月更新：具名 Slackbot 頁籤及助手整頁",
+            "url": "https://slack.com/help/articles/115004846068-Slack-updates-and-changes"
+          },
+          {
+            "label": "官方 Activity 說明：未讀角標是提示；另按 Activity 打開通知",
+            "url": "https://slack.com/help/articles/19693583638803-Get-your-work-done-from-the-Activity-view"
+          },
+          {
+            "label": "育伴港：揮手、摸頭、移動或收起不算查看；一般頁按角色身體才開小對話",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/frontend/src/components/companion/CharacterDock.tsx#L66-L108"
+          },
+          {
+            "label": "育伴港：只提示目前私人孩子空間中已載入的符合條件的提醒",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/frontend/src/components/companion/SiteCompanion.tsx#L35-L59"
+          }
+        ],
+        "version": "Slack 桌面版 Slackbot big mode，官方 2026 年 8 月更新示例；原 PNG 資產標示 2026-08-26 更新，無精確組建或攝圖日。",
+        "rights": "Slack 官方產品畫面，未確認可轉載授權；只外連原圖及原文，不內嵌、不複製角色或品牌。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Slack 官方桌面整窗原圖 ↗（需連網）"
+      },
+      {
+        "name": "小對話｜原文和查看狀態分開",
+        "note": "待辦頁只顯示未讀小點和「查看助手提醒」入口，不露正文。打開後，小對話才在「助手提醒」下顯示同一孩子的原訊息「別忘了帶摺紙作品」；收到服務確認後，才可顯示「此提醒已標為已查看」。不是已送達、本人已讀懂或待辦已完成。Teams 原圖可參考讓提示與對應內容一眼對上；圖有內容預覽，未展示查看回報。",
+        "source": "https://learn.microsoft.com/en-us/microsoftteams/platform/assets/images/activity-feed/mobile-overview.png",
+        "sourceNotes": [
+          {
+            "label": "Microsoft Teams 官方原圖：左邊活動頁的任務提醒，右邊對應同名任務卡",
+            "url": "https://learn.microsoft.com/en-us/microsoftteams/platform/assets/images/activity-feed/mobile-overview.png"
+          },
+          {
+            "label": "Microsoft 官方通知設計：活動列載明來源和內容預覽，選中提示後通往對應內容",
+            "url": "https://learn.microsoft.com/en-us/graph/teams-activity-feed-notifications-best-practices"
+          },
+          {
+            "label": "Microsoft 官方 Teams 說明：查看橫幅或活動摘要，不算聊天已讀回條",
+            "url": "https://support.microsoft.com/en-us/teams/chat/use-read-receipts-for-messages-in-microsoft-teams"
+          },
+          {
+            "label": "育伴港：同一則提醒排版後才交給查看流程",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/frontend/src/components/companion/SiteCompanion.tsx#L93-L124"
+          },
+          {
+            "label": "育伴港：前景、在線、同範圍與 250 ms 後才回報",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/frontend/src/production/useChatExposure.ts#L15-L45"
+          },
+          {
+            "label": "育伴港：服務回應成功、客戶端重核前後範圍一致才標記原訊息 ID",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/src/client/chat-controller.ts#L337-L354"
+          },
+          {
+            "label": "育伴港：合成資料的 Windows 窄／寬屏 Web 驗收；不是正式站或原生實機",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/883426b658c032e496228b877b0c0b5cee8b24ab/artifacts/verification/ZUNDAMON_INTERACTION_20261120/receipt.json#L2-L50"
+          },
+          {
+            "label": "Microsoft 官方原圖的固定文件版本（700 × 701）",
+            "url": "https://github.com/MicrosoftDocs/msteams-docs/blob/49fdb2a90a5f8ab1195b51435fbaf2f8ee84874a/msteams-platform/assets/images/activity-feed/mobile-overview.png"
+          }
+        ],
+        "version": "Microsoft Teams 行動版雙畫面示例；官方設計文件更新於 2026-07-24，2026-11-20 核對；原圖未列 App 版號／截圖日。 原圖固定於 MicrosoftDocs/msteams-docs 提交 49fdb2a90a5f8ab1195b51435fbaf2f8ee84874a。",
+        "rights": "Microsoft Learn 文件庫標示 CC BY 4.0；不因此假定品牌、頭像或其他圖片權利已授出。工作台只外連官方原圖與文件，不嵌入、重刊或改圖。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Microsoft Teams 官方行動版雙畫面原圖 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "4939fb4a4761bdff2abcde0b78de2eb8ceca1d66d3d2085e2e3907ee0b73f837"
+}
