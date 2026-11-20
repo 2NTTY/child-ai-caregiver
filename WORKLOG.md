@@ -6971,3 +6971,7 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 按 Vertex global Gemini 3.8 Flash 估算，64 段全數首次啟用的增量為抵免前 US$2.37–3.21，全額符合優惠抵免時為 US$1.19–1.60。86 段的比較情景為抵免前 US$4.80–6.31，其中 22 段只在首批卡範圍外發現。兩個情景均以獨立算式核對。現行活動影音關閉，本次沒有生成或向量請求。[片長、路由、估算及官方費率](artifacts/verification/FHS_CHILD_MEDIA_ESTIMATE_20261121.json)
 
 香港 00:41，從正式版 `883426b6` 的管理政策唯讀接口核對，逐卡影音當時選用 Vertex global Gemini 3.1 Flash-Lite，API 及 worker 輸出上限均為 1,024 tokens。按視訊與文字、音軌、輸出三項分別估價，首批卡的 64 段合共 US$0.51–0.67；全目錄 86 段的比較數字為 US$1.04–1.34。首批文件整理及獨立審核使用指定的 3.8 Flash，原抵免前報價連向量仍為 US$11.94–58.81。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44773701383) · [分項報價](artifacts/verification/FHS_CHILD_MEDIA_ESTIMATE_20261121.json)
+
+### 2026-11-21　C2 逐份對回 28 份原單與共用毛額
+
+香港 01:09 從正式 Firestore 核對 28 個原操作綁定與供應商票據。2 份已刊登，15 份有保留收據，1 份原工作中斷，10 份仍未建立付費工作。兩張家長卡均核回生效版本、向量匯出及引用原頁。C2 已結算 28 次、US$1.111861，另有一次生成足額預留。共用上限 US$30，已結算 US$9.918206，預留 US$19.550208，餘 US$0.531586。兩份首次生成在餘額低於預留門檻時回傳 unavailable，各自的供應商票據數為零。C2 已停止派出新生成，繼續處理已有雙份讀稿的教材。[本組逐份收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json) · [保留稿修復](https://github.com/2NTTY/child-ai-caregiver/pull/735)
