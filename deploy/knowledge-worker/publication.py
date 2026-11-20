@@ -47,7 +47,8 @@ def compose_job(host, args, command):
     # Compose reuses the current worker configuration, including its file secret, on the same host.
     # Only this transient container receives the limits. The original worker volume stays read-only.
     service = {"image": state["services"]["worker"]["ref"], "cpus": 0.5, "mem_limit": f"{MEMORY_MIB}m",
-               "memswap_limit": f"{MEMORY_MIB}m", "restart": "no", "volumes": [f"fhs_publication_cache:{CACHE}:ro"]}
+               "memswap_limit": f"{MEMORY_MIB}m", "restart": "no", "healthcheck": {"disable": True},
+               "volumes": [f"fhs_publication_cache:{CACHE}:ro"]}
     if args.reads:
         service["environment"] = {"FHS_CAMPAIGN_PDF_READS": args.reads, "FHS_CAMPAIGN_PDF_READS_SHA256": args.reads_hash}
     if args.action == "accounting":

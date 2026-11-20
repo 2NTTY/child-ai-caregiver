@@ -34,6 +34,7 @@ class PublicationTests(unittest.TestCase):
         worker = overlay["services"]["worker"]
         self.assertEqual((worker["cpus"], worker["mem_limit"], worker["memswap_limit"]), (0.5, "512m", "512m"))
         self.assertEqual(worker["image"], "backend@sha256:fixed")
+        self.assertEqual(worker["healthcheck"], {"disable": True})
         self.assertEqual(worker["volumes"], ["fhs_publication_cache:/var/tmp/yuban-knowledge:ro"])
         self.assertEqual(overlay["volumes"]["fhs_publication_cache"], {"external": True, "name": "existing"})
 
