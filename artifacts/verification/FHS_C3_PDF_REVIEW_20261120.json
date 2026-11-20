@@ -1291,6 +1291,12 @@
     "grossBalanceAtCheck": {"spentMicros":6959583,"heldMicros":11378688},
     "familyEditionVerifiedAtCheck": false,
     "otherAssignedSourcesSubmittedAtCheck": 0,
-    "evidence": "The production lane selected the pinned original. A read-only Firestore query matched its one generation reservation to that operation. No settlement or family delivery was verified at this checkpoint. The public site and IAP stopped responding during the run."
+    "evidence": "The production lane selected the pinned original. A read-only Firestore query matched its one generation reservation to that operation. No settlement or family delivery was verified at this checkpoint. The public site and IAP stopped responding during the run.",
+    "afterVmRestart": {
+      "readTime":"2026-11-20T14:34:34.598319Z","sources":28,"physicalPages":468,"workRecords":1,
+      "preparedCandidates":0,"activeCardVersions":0,"reservedGenerationAttempts":1,"settledAttempts":0,
+      "interruptedWorkLastUpdated":"2026-11-20T14:10:55.994361Z",
+      "method":"At one Firestore read time, matched all 28 assigned operation fingerprints against their original work and candidate records, source heads and campaign attempts. The single generation reservation belongs to the 24-page guide. The disconnected command returned no provider result."
+    }
   }
 }
