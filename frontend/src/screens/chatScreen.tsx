@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexShrink: 0,
-    paddingHorizontal: chatLayout.wideInset },
+    paddingHorizontal: chatLayout.wideInset, minHeight: 88, justifyContent: 'center' },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },

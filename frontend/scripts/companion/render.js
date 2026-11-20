@@ -14,31 +14,45 @@ class Companion extends CubismUserModel {
     super();
     this.loadModel(bytes('model'), true);
     if (!this.getModel()) throw Error('model');
-    const physics = bytes('physics'), wave = bytes('wave');
+    const physics = bytes('physics');
     this.loadPhysics(physics, physics.byteLength);
-    this.wave = this.loadMotion(wave, wave.byteLength, 'wave');
-    this.wave.setEffectIds(new csmVector(), new csmVector());
+    this.motions = Object.fromEntries(['wave', 'nod'].map(name => {
+      const data = bytes(name), motion = this.loadMotion(data, data.byteLength, name);
+      motion.setEffectIds(new csmVector(), new csmVector());
+      motion.setLoop(false);
+      return [name, motion];
+    }));
     this.faces = ['smile', 'laugh'].map(name => {
       const face = bytes(name);
       return this.loadExpression(face, face.byteLength, name);
     });
     this.taps = 0;
+    this.modelIds = Object.fromEntries(['ParamBreath', 'ParamAngleZ', 'ParamEyeLOpen', 'ParamEyeROpen'].map(
+      id => [id, CubismFramework.getIdManager().getId(id)]));
+    this.getModel().saveParameters();
   }
-  greet() {
-    this._motionManager.startMotionPriority(this.wave, false, 3);
-    this._expressionManager.startMotion(this.faces[this.taps++ % this.faces.length], false);
+  play(action) {
+    const motion = action === 'wave' ? this.motions.wave : this.motions.nod;
+    this._motionManager.startMotionPriority(motion, false, 3);
+    if (action !== 'arrive') this._expressionManager.startMotion(this.faces[this.taps++ % 2], false);
   }
-  advance(delta) {
-    const model = this.getModel();
+  advance(delta, idleTime = 0) {
+    const model = this.getModel(), ids = this.modelIds;
     model.loadParameters();
     this._motionManager.updateMotion(model, delta);
-    model.saveParameters();
     this._expressionManager.updateMotion(model, delta);
+    if (idleTime) {
+      const breath = (1 - Math.cos(idleTime * 1.5)) / 2;
+      model.setParameterValueById(ids.ParamBreath, breath * 0.65);
+      model.addParameterValueById(ids.ParamAngleZ, Math.sin(idleTime * .85) * 2);
+      const blink = Math.min(1, Math.abs((idleTime % 4.8) - 3.6) / .15);
+      model.multiplyParameterValueById(ids.ParamEyeLOpen, blink);
+      model.multiplyParameterValueById(ids.ParamEyeROpen, blink);
+    }
     this._physics.evaluate(model, delta);
     model.update();
   }
 }
-
 async function show() {
   const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
   if (!gl) throw Error('webgl');
@@ -67,7 +81,7 @@ async function show() {
   renderer.bindTexture(0, id);
   renderer.setIsPremultipliedAlpha(true);
 
-  // Frame the face and raised hand using the mesh's actual coordinate system.
+  // Fit both axes to the model's bounds. Leave room for the ears and the moving hand.
   avatar.advance(0);
   const model = avatar.getModel();
   let left = Infinity, right = -Infinity, bottom = Infinity, top = -Infinity;
@@ -80,15 +94,15 @@ async function show() {
     }
   }
   const matrix = new CubismMatrix44();
-  function draw(delta) {
+  function draw(delta, idleTime = 0) {
     const ratio = Math.min(devicePixelRatio || 1, 2);
     const width = Math.max(1, Math.round(innerWidth * ratio)), height = Math.max(1, Math.round(innerHeight * ratio));
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
-    const sy = Math.min(2 / ((top - bottom) * 0.62), (2 * width / height) / ((right - left) * 1.04));
+    const sy = Math.min(1.88 / (top - bottom), (1.91 * width / height) / (right - left));
     const sx = sy * height / width;
     matrix.scale(sx, sy);
-    matrix.translate(-(left + right) * sx / 2, 0.94 - top * sy);
-    avatar.advance(delta);
+    matrix.translate(-(left + right) * sx / 2, -(bottom + top) * sy / 2);
+    avatar.advance(delta, idleTime);
     gl.viewport(0, 0, width, height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -96,22 +110,33 @@ async function show() {
     renderer.setMvpMatrix(matrix);
     renderer.drawModel();
   }
-  let frame = 0, previous = 0, until = 0;
-  function tick(now) {
-    frame = 0;
-    draw(Math.min(0.05, (now - previous) / 1000));
-    previous = now;
-    if (now < until && !document.hidden) frame = requestAnimationFrame(tick);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let mode = 'quiet', timer = 0, last = performance.now(), activeUntil = 0;
+  function schedule() {
+    clearTimeout(timer);
+    if (document.hidden || mode === 'hidden') return;
+    const now = performance.now(), playing = now < activeUntil;
+    draw(Math.max(0, Math.min(.1, (now - last) / 1000)), mode === 'idle' && !reduced.matches ? now / 1000 : 0);
+    last = now;
+    if (!reduced.matches && (playing || mode === 'idle')) timer = setTimeout(schedule, playing ? 33 : 80);
   }
   addEventListener('message', event => {
-    if (event.source !== parent || event.data !== 'greet') return;
-    avatar.greet();
-    previous = performance.now();
-    until = previous + (matchMedia('(prefers-reduced-motion: reduce)').matches ? 60 : 4500);
-    if (!frame) frame = requestAnimationFrame(tick);
+    if (event.source !== parent) return;
+    if (event.data === 'status') { notify('ready'); return; }
+    if (['idle', 'quiet', 'hidden'].includes(event.data)) {
+      mode = event.data;
+      if (mode !== 'idle') { activeUntil = 0; avatar._motionManager.stopAllMotions(); }
+    } else if (['nod', 'wave', 'arrive'].includes(event.data) && mode !== 'hidden') {
+      avatar.play(event.data);
+      if (reduced.matches) { avatar.advance(0); avatar.advance(.35); }
+      activeUntil = performance.now() + (event.data === 'wave' ? 4700 : 3900);
+    } else return;
+    schedule();
   });
-  addEventListener('resize', () => draw(0));
-  canvas.addEventListener('webglcontextlost', () => { cancelAnimationFrame(frame); notify('failed'); });
+  addEventListener('resize', schedule);
+  document.addEventListener('visibilitychange', schedule);
+  reduced.addEventListener('change', schedule);
+  canvas.addEventListener('webglcontextlost', () => { clearTimeout(timer); mode = 'hidden'; notify('failed'); });
   draw(1 / 60);
   if (gl.getError() !== gl.NO_ERROR) throw Error('draw');
   notify('ready');

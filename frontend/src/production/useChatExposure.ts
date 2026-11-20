@@ -18,7 +18,7 @@ export function useChatForeground() {
   return active;
 }
 
-/** Only measured rows exposed on the foreground main chat may acknowledge a proactive message. */
+/** Only exposed rows in an open, foreground conversation may acknowledge a proactive message. */
 export function useChatExposure(active: boolean, ids: readonly string[]) {
   const { owner, scopeKey, identityKey, userId, selectedChildId, sharedChild, chatState, online } = useProduction();
   const sent = useRef(new Set<string>());
@@ -31,12 +31,13 @@ export function useChatExposure(active: boolean, ids: readonly string[]) {
       if (snapshot.identityKey !== identityKey || snapshot.sessionGeneration !== generation || snapshot.scopeKey !== scopeKey) return;
       for (const id of ids) {
       const message = chatState.messages.find(item => item.id === id);
-      if (!message || message.role !== "model" || message.proactive !== true || sent.current.has(id)) continue;
+      if (!message || message.role !== "model" || message.proactive !== true || message.proactiveUnread === false || sent.current.has(id)) continue;
       sent.current.add(id);
       const base = owner.apiBaseUrl.replace(/\/$/u, "");
       void owner.fetcher((base.endsWith("/api") ? base : base + "/api") + "/children/" + encodeURIComponent(selectedChildId) + "/chat/messages/" + encodeURIComponent(id) + "/seen", {
         method: "POST", cache: "no-store", signal: abort.signal, headers: { Accept: "application/json", "Content-Type": "application/json", "x-expected-user-id": userId }, body: "{}",
       }).then(response => {
+        if (response.ok && owner.getSnapshot().scopeKey === scopeKey) owner.chatController.confirmProactiveSeen(selectedChildId, id);
         if (!response.ok && owner.getSnapshot().identityKey === identityKey && owner.getSnapshot().sessionGeneration === generation) sent.current.delete(id);
       }).catch(() => { if (owner.getSnapshot().identityKey === identityKey && owner.getSnapshot().sessionGeneration === generation) sent.current.delete(id); });
     } }, 250);
