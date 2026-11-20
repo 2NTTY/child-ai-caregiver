@@ -5,6 +5,7 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER } from '../server/firestore-ai-usage.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { bindReviewedWindow } from '../server/fhs-reviewed-window.ts';
 import { createKnowledgeCampaignBudget, campaign, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
@@ -136,7 +137,9 @@ try {
     if (resuming && !prior) throw Error('knowledge_campaign_resume_binding_changed');
     if (repairing && (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit'
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
-    const operationFingerprint = draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
+    const reviewedWindow = invocation === 'resume-approved' && lane === 'C2' ? bindReviewedWindow(manual,original,prior) : undefined;
+    const operationFingerprint = reviewedWindow ? retainedDraftWorkId(original)
+      : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
     const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', original);
@@ -146,7 +149,7 @@ try {
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
     const runAdmission = !manual && (explicitAgeScope || draftRevision) ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
-      explicitAgeScope, retainedDraft: draftRevision, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual,
+      explicitAgeScope, retainedDraft: draftRevision, reviewedWindow, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
@@ -173,11 +176,11 @@ try {
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
     } else {
       const signal = new AbortController().signal;
-      const saved = resuming ? prior : await work.inspect(request);
+      const saved = resuming && !reviewedWindow ? prior : await work.inspect(request);
       let result = canResumeRetainedPromptFailure(saved, draftRevision) ? null : saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
-        if ((repairing || recovering) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
+        if ((repairing || recovering || reviewedWindow) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
         if (resuming || repairing || recovering || lane) {
           const snapshot = laneObservation ? laneObservation.snapshot : await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
