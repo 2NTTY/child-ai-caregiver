@@ -4,7 +4,8 @@ import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
 import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
-import { damagedPdfText, pdfQuantityLocators, readablePdfQuote } from "./knowledge-pdf-quotes.ts";
+import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
+import { physicalPdfQuote } from "./knowledge-pdf-physical-quote.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION, backgroundKnowledgeReviewBindingSchema,
@@ -244,6 +245,8 @@ export async function prepareKnowledgeMaintenance(input: {
   const priorRanges = baseline?.source.extraction?.contentHash === sha ? baseline.source.chunks : [];
   const priorTopics = [...new Set(priorRanges.flatMap(chunk => chunk.applicability.topics))].slice(0, 12);
   const held = input.heldDraft, priorReading = held?.prepared.provenance.nativePdf;
+  // A registered recovery must reconstruct its historical reviewer payload byte for byte.
+  const citationPages = retained || held ? undefined : candidate.observed.pages;
   if (held && (!pdf || sample || !priorReading || priorReading.contentHash !== sha
     || held.prepared.source.sourceId !== candidate.watchId || held.prepared.source.url !== candidate.observed.url
     || held.prepared.source.extraction?.contentHash !== sha
@@ -352,7 +355,8 @@ export async function prepareKnowledgeMaintenance(input: {
       const draft = byId.get(unit.id)!;
       // The short original preview is deterministic, not model-authored evidence.
       // Full original text remains available to the independent semantic review.
-      const evidence = pdf ? readablePdfQuote(unit.originalText, samePages(unit)[0]?.sourceExcerpt)
+      const evidence = pdf ? physicalPdfQuote(unit.originalText,
+        citationPages?.filter(page => page.page >= unit.page! && page.page <= unit.pageEnd!), samePages(unit)[0]?.sourceExcerpt)
         : { originalText: unit.originalText, sourceExcerpt: [...unit.originalText.trim()].slice(0, 150).join("") };
       const focus = priorVisual?.focus;
       const text = focus && unit.page! <= focus.physicalPage && unit.pageEnd! >= focus.physicalPage

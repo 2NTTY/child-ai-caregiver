@@ -426,5 +426,482 @@
       "decision": "hold_candidate",
       "reason": "第 2 頁有五歲後的奶類分項，但整理稿把整份適用年齡截於 60 個月。獨立審核要求保留，沒有發布版本。"
     }
+  },
+  "physicalCitations": {
+    "scope": "Fresh whole-PDF preparation. Existing retained and held drafts use their recorded excerpt when rebuilding a prior request.",
+    "inputs": "All 48 authenticated whole-PDF originals; synthetic organization only to inspect the real server-generated reviewer payload. No model or embedding calls.",
+    "originalPages": 271,
+    "documents": 48,
+    "excerptRanges": 75,
+    "locatedOnPageOpened": 75,
+    "representativeBooks": {
+      "before": {
+        "foundOnOpeningPage": 4,
+        "ranges": 8
+      },
+      "after": [
+        {
+          "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+          "sha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+          "pages": 24,
+          "rangeAndOpeningPage": [
+            [
+              1,
+              8,
+              2
+            ],
+            [
+              9,
+              16,
+              13
+            ],
+            [
+              17,
+              23,
+              21
+            ],
+            [
+              24,
+              24,
+              24
+            ]
+          ]
+        },
+        {
+          "sourceId": "pdf-f3051ac61ad97b50bf629775",
+          "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+          "pages": 24,
+          "rangeAndOpeningPage": [
+            [
+              1,
+              7,
+              6
+            ],
+            [
+              8,
+              13,
+              8
+            ],
+            [
+              14,
+              20,
+              14
+            ],
+            [
+              21,
+              24,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    "retainedCompatibility": "Six registered PDF organizer and independent reviewer request fingerprint pairs unchanged in a network-disabled worker."
+  },
+  "sourceDeliverySnapshot": {
+    "checkedAt": "2026-11-20T05:44:13.614Z",
+    "scope": "Original 116 rows; sourceId joins to the official URL, SHA-256 and pages in FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json.",
+    "counts": {
+      "no_source_result_in_sequence": 87,
+      "observation_recovered_awaiting_model": 4,
+      "candidate_held": 13,
+      "published_and_verified": 12
+    },
+    "publishedSourceIds": [
+      "pdf-0669ab4cf34bd1b3b598db64",
+      "pdf-231c869513252fae5e5ce54e",
+      "pdf-0c2d0deb2abdeb1d5949e661",
+      "pdf-51a3b0aebacc5c2f6a002561",
+      "pdf-28468771ad2490f045bd5d56",
+      "pdf-c35022f4755f452c3ab6ca7c",
+      "pdf-4158ea5c2f138e45a4a7568d",
+      "pdf-16ecfbe91853bb20831c4b97",
+      "pdf-d6cb530c2cc3605fb28a0241",
+      "pdf-258dbc8a8c69d4f66dd0ab05",
+      "pdf-8d229a086ffa572923ed027f",
+      "pdf-5acb6474a38d19249e4933d6"
+    ],
+    "additionalPublished": [
+      {
+        "sourceId": "pdf-51a3b0aebacc5c2f6a002561",
+        "versionId": "59953c98-8f50-5298-a579-861533b4f5cc",
+        "versionHash": "b5cc832551dd3088f94eaa74f9b412b4e2804a6fef32e559fc63bcdd600ec203",
+        "publishedAt": "2026-11-20T05:33:14.818Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:3bca40687c042406d5e5971dd29ab3a1c3dab2f44d43cbc014828710a218fe13",
+          "knowledge-review:8f704f5a1c09610be387bee2b6743a3b3f605592efff6af5016239b99a651c15"
+        ],
+        "citation": {
+          "chunkId": "4267daa1-27d9-5d93-a8ed-d6a9781ef348",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 377132,
+          "excerptSha256": "db84e2985750976bc9303dd73a33b74a152195eee80e7281e4aa53c8dc6007c5",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-28468771ad2490f045bd5d56",
+        "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+        "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+        "publishedAt": "2026-11-20T05:27:43.275Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:b67bb16cfbe49e7e430e9cfd1cc18284f73c050907bf52408ef118a9c94c3967",
+          "knowledge-review:a32a82ff4d1e80da8456caccdff20906f3ed5a08de71f4366dd8b7d3f44f2683"
+        ],
+        "citation": {
+          "chunkId": "054500e2-cd84-5047-89d4-d1339dc67ce3",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 1087997,
+          "excerptSha256": "ff3ea75c1b4835af85b7c5cd3096441d2f181363913e52419e70fd40368a67e9",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-c35022f4755f452c3ab6ca7c",
+        "versionId": "b2abf3ee-8f95-553f-9b9a-be87fe67c5c8",
+        "versionHash": "adcd441410b261f9dbdcb5d59c5a17cae314b7ebcbc618afc4deebb4a77d875d",
+        "publishedAt": "2026-11-20T05:37:18.623Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:8936d385a015962b6175becf7f6322eeade1aabb45d170df4fb10d230f35db1f",
+          "knowledge-review:c21fd85dbcd62bdd8d586a08a7974d16e8d68f6ad3f1993243c3f8d6ef7bc23d"
+        ],
+        "citation": {
+          "chunkId": "a686013c-6b62-5466-a893-9e68dff781d5",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 316289,
+          "excerptSha256": "3ff1305fd840c6d27e40bbdf367aef6950534f1277c89887e106dc3e15baf9e8",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-16ecfbe91853bb20831c4b97",
+        "versionId": "ed702acb-0f4e-5765-9ae4-15ffafa3a05a",
+        "versionHash": "e91a69e31887a61047650b4858551233489ec74160b7d41f2fc23f2ccef0e214",
+        "publishedAt": "2026-11-20T05:26:13.740Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:ff1d66324bc47210d84e1cf73cdb45622b3129f351c946e70ae94a800612ff4f",
+          "knowledge-review:c407df3871c4dd56cd56a7b95b237a095e9cf70f3a7be31f3478c2114d534e6b"
+        ],
+        "citation": {
+          "chunkId": "2e9f7606-8f9b-5c81-b839-4b894be451b7",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 214078,
+          "excerptSha256": "5473bb9dc244a8cf894d044451c4707fe7dbb8bef2c470481bd7d3016f24eb81",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-258dbc8a8c69d4f66dd0ab05",
+        "versionId": "c8984965-13ee-5add-aa24-ee8e5c0eb70e",
+        "versionHash": "ebeb05bc1555afcf0c3a314cd44ec3f736171bc8ac8a1e3cbfe648b171a80ee7",
+        "publishedAt": "2026-11-20T05:27:03.380Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:d67a51f48373acb42af3c39716322f147de89a3b0288ef204da7c9811f7b1600",
+          "knowledge-review:ba690dd0bf98e6d1599dca4af11c1ec4dd22449bcb82434a66130325681ead41"
+        ],
+        "citation": {
+          "chunkId": "55cacf15-d9d4-52ac-bc0c-ebc407179761",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 299478,
+          "excerptSha256": "62b39bb85862539ef5088a562e8992e9384a22a8c51c149c57639384318c9943",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-8d229a086ffa572923ed027f",
+        "versionId": "c78e7b03-66fc-52d9-8aca-6a634557bbba",
+        "versionHash": "d5529b4029e1bb3a9823418740acb8569ba09535be452c40fcdb170127072b1c",
+        "publishedAt": "2026-11-20T05:34:39.305Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:aa387b11bdc9d4d6c9fa6a96b49d7800d8e3a94b5b331f08c95a2b006092749d",
+          "knowledge-review:84c45a6cad96e3382af4b2f179ac2bbeb56ae309e66eca2d5a5825380930fbd6"
+        ],
+        "citation": {
+          "chunkId": "62b9cf39-8b6d-50d8-9df6-e80fd258dc74",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 290013,
+          "excerptSha256": "8892f78238cf43c681c11ae3cab8cfbaa497d6283562e98408daf2247afd7144",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-5acb6474a38d19249e4933d6",
+        "versionId": "74d94903-fab3-5f2c-91df-5e1a4f980a8b",
+        "versionHash": "182376502e898b3c2fb0416e2d1ac84e9b01917e53652fca3f8025bde2f3b29b",
+        "publishedAt": "2026-11-20T05:33:57.779Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:b936e796688890013914f17a21a67ccffb4cbd498b06fbfbb2943c57664cbe66",
+          "knowledge-review:55da76170120c658aa79d7a3d26fba7153abb2641f560e87795e802f8159a833"
+        ],
+        "citation": {
+          "chunkId": "e795c71e-1cff-5bd0-addb-40844c12491c",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 890364,
+          "excerptSha256": "4a38dd82504a6903323e44d21ceef957ecf26091d0d5d5a9710dff7d06c4d54d",
+          "completeExcerptMatch": "exact"
+        }
+      }
+    ],
+    "held": [
+      {
+        "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+        "reason": "review_hold"
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "reason": "knowledge_window_quote_mismatch"
+      },
+      {
+        "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-96b158a588a4b294cbbd010b",
+        "reason": "knowledge_age_uncertain"
+      },
+      {
+        "sourceId": "pdf-15f80bcfe4c3560a68c19a89",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-6637fb9890bacf75064562bd",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-9aef95ce230e1ad16ec567f0",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-4bdbc1ab6341b2e2f08bf986",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-4fd38b86578fa01ebbd32579",
+        "reason": "knowledge_age_one_sided"
+      },
+      {
+        "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-0036bc862846cdd19984930b",
+        "reason": "knowledge_age_one_sided"
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "reason": "knowledge_window_quote_mismatch"
+      },
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "reason": "knowledge_window_quote_mismatch"
+      }
+    ],
+    "sourceObservationRecoveredAwaitingOriginalQueue": [
+      "pdf-3b3c1043ac8e7aa74b5a7beb",
+      "pdf-3342882b79f7108a67ee08e1",
+      "pdf-f2ed89529922c1ab403f28d2",
+      "pdf-a251b7696c8d6660d7aad77e"
+    ],
+    "withoutSourceResult": [
+      "resource-af8c3e8cc813be",
+      "resource-1ba127a119f802",
+      "pdf-2fcfc6f5232e6a7858a730f2",
+      "pdf-142c907be41886853278155e",
+      "pdf-978f5df8a09640d894087117",
+      "pdf-3af602cff5d00f305e7cc95e",
+      "pdf-b6c2b4fa02c969d6fc39eec3",
+      "pdf-2f68a230d9e7115440b2b241",
+      "pdf-10198577dd00f5dbce4da010",
+      "pdf-b1e19bee54f42ee9de413a78",
+      "pdf-5e65881f402bf4ae0ca22646",
+      "pdf-f1650fc45fbebcf0e6a88b20",
+      "pdf-ada8186dcfa6ee9e23e9f7cb",
+      "pdf-881ea5c99f3479c6d5e67047",
+      "pdf-7265fd820fae618428179c2f",
+      "pdf-b71d332f80742e47d347f21a",
+      "pdf-c79a394b580ec9e870d63319",
+      "pdf-681fb8a2f0ebdf8fba8bd55f",
+      "pdf-a4f95c292efe280c21220172",
+      "pdf-e4e9735e1a0ba0923750e633",
+      "pdf-83ee5bc5318ca28cbbf5598a",
+      "pdf-db6902edaf415c9e24a2438a",
+      "pdf-ade31647bbc60577ac26ecc9",
+      "pdf-7d1aab663a0d1e17c4e6b5d1",
+      "pdf-f3051ac61ad97b50bf629775",
+      "pdf-c212ef9814e180c2794a4aa1",
+      "pdf-26b0e8f671d6ce5d3d2159d1",
+      "pdf-811789c9be36ae025ee7e2a2",
+      "pdf-5b0a73131bf6fc9120d7dd48",
+      "pdf-3428e3d13ed575680a0fa8a5",
+      "pdf-a8b1017b75ded7e02814cdb2",
+      "pdf-75f4948b23d797f1e6883149",
+      "pdf-1de70dac6945f17a3891a257",
+      "pdf-110b0452a51c2bc488fbe7f5",
+      "pdf-0964fd47800bc6931d69b130",
+      "pdf-b23cd70ace657d574bfaa15b",
+      "pdf-66d4917b4892792da0ea028d",
+      "pdf-942362fc743b07c81abe9109",
+      "pdf-72a78af063b2df4ff8d129a3",
+      "pdf-e429ac892c396fb798ad7132",
+      "pdf-6e8e1ad611db9680f7aed43e",
+      "pdf-7592835baac4ee7ce94b5f7a",
+      "pdf-3092d527ec85e55ab2b16b6e",
+      "pdf-1d48962862d76b3ffc07490b",
+      "pdf-b2dd7935c763e5df68d2420e",
+      "pdf-f43b59147093cacef5308dcd",
+      "pdf-01991cbeb3f85382c992d63a",
+      "pdf-4dd05b4a01c8e51c441412fc",
+      "pdf-2771b734a7f4ab0e2c4fd4ef",
+      "pdf-bd15166fe03791ef9ff7c062",
+      "pdf-e7427b7b969a37e3d8e889a1",
+      "pdf-65148c48ab4b294035fb977a",
+      "pdf-27dda724b8a16c0794cd0ffe",
+      "pdf-c14775c9c48ecdeff6f8b0bb",
+      "pdf-6488540e32c5e926ecee6787",
+      "pdf-c7613adf22dbbbbb29fee66c",
+      "pdf-a98acb33a6e913bf871a6b5a",
+      "pdf-f545d1be1fbbbe60d939ccde",
+      "pdf-5855948c00226584d5e57f2c",
+      "pdf-4ace9fb38791edb68e91ac3b",
+      "pdf-88bcbb29830a2b0bf2bda335",
+      "pdf-48e37ddf27a8864e98362fa9",
+      "pdf-a195a3e5ac7644036bdaf073",
+      "pdf-f4804bcf1d97c9f5c624043a",
+      "pdf-25f6d14e786c74f161e631d1",
+      "pdf-40e5eb1a042e9dee765714ef",
+      "pdf-902a9652db3c94e03ea54d75",
+      "pdf-780e4c1676a794ee6e89c6db",
+      "pdf-3fca76df105dc64c4e94f76c",
+      "pdf-877466905d56f6616266ffb5",
+      "pdf-b50a158f021811e4c7daafba",
+      "pdf-ce75ff9d0a4c5b0ac1410b26",
+      "pdf-512682e6652f267b32fb90ce",
+      "pdf-26a1e80e0727a8e30c63f634",
+      "pdf-c2c12e4018ee7099064622d4",
+      "pdf-422bb3fc181398ac29e0f914",
+      "pdf-c39b13bedaeb458f138ffd0b",
+      "pdf-a5681663d0428e3b6cd5f674",
+      "pdf-d6050975ffe38c8275c7c121",
+      "pdf-4babcb808d4f1cc595abef5d",
+      "pdf-3cd2fe462bb00b222ab7a420"
+    ],
+    "withoutSourceResultExceedingPerSourceCallLimit": [
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "minimumModelCalls": 16
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "minimumModelCalls": 32
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "minimumModelCalls": 20
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "minimumModelCalls": 14
+      }
+    ],
+    "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The independent review and publication of the 24-page representative are outstanding at this snapshot."
   }
 }
