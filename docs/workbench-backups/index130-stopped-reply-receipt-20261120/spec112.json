@@ -1,0 +1,80 @@
+{
+  "group": {
+    "id": "stopped-reply-original-save-receipt",
+    "title": "按了「停止回覆」，助手剛才那筆有沒有保存？",
+    "index": "external-comparison",
+    "readerNote": "停止回覆不撤銷已保存的交代，也不等於已保存。從同一次運行查原收據；讀不到或未能核實就按實顯示，不把無權、未載入或查詢錯誤當成未保存。不重送、不開始新回覆，也不新增業務寫入。兩案是唯讀設計比較，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "留在原對話｜回覆停了，交代有沒有保存？",
+        "note": "在原回覆位置分兩行：回覆停了沒有，以及那筆私人交代有沒有保存。讀到原操作的有效收據才寫「當時已保存」；現在仍有權且查到原項才可查看。Microsoft 原圖展示原回覆裏的檔案變更，沒有拍到停止狀態或育伴港收據。",
+        "source": "https://code.visualstudio.com/assets/docs/agents/agents-overview/chat-view-expanded.png",
+        "sourceNotes": [
+          {
+            "label": "Microsoft Visual Studio Code 官方原圖：原回覆內的修改項目與對話全貌",
+            "url": "https://code.visualstudio.com/assets/docs/agents/agents-overview/chat-view-expanded.png"
+          },
+          {
+            "label": "官方 Chat view 圖說：會話、原回覆與可檢視的修改",
+            "url": "https://code.visualstudio.com/docs/agents/run/chat-view"
+          },
+          {
+            "label": "官方停止規則：停止當前請求不撤銷已完成的操作",
+            "url": "https://code.visualstudio.com/docs/chat/chat-overview"
+          },
+          {
+            "label": "育伴港：停止原回覆，不撤銷已完成操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/docs/CHAT_AGENT_INTEGRATION_CONTRACT.md#L106-L116"
+          },
+          {
+            "label": "育伴港：現有查核按鈕不一定唯讀；兩案不沿用這個動作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/src/client/chat-controller.ts#L931-L947"
+          }
+        ],
+        "version": "Microsoft Visual Studio Code 官方文件標記 2026-11-18；原圖與文件庫 6c80d943 同檔，產品組建及拍攝日未標。",
+        "rights": "© Microsoft。文件 CC BY 3.0 US，不授予商標或標誌權；原圖含品牌標誌，本案只連官方來源，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "單次詳情頁｜這次留下了甚麼",
+        "note": "從原訊息開整頁結果，先看回覆終態，再看原操作收據。只有同一次運行確有另一項候選，才按實際類別另列「待確認（未執行）」；它不是這筆私人交代的原生待批狀態。GitHub 原頁展示已取消的流程仍可留有成功步驟及產物；產物不是保存私人交代的收據。",
+        "source": "https://github.com/cli/cli/actions/runs/33798038689",
+        "sourceNotes": [
+          {
+            "label": "GitHub Actions 原站整頁：執行 #781 已取消，仍列出 4 個產物與各工作狀態",
+            "url": "https://github.com/cli/cli/actions/runs/33798038689"
+          },
+          {
+            "label": "GitHub 官方局部原圖：另一個示例用圖示標出各工作的狀態，不是 #781 截圖",
+            "url": "https://docs.github.com/assets/cb-63715/images/help/actions/workflow-graph.png"
+          },
+          {
+            "label": "GitHub 官方圖例說明：工作圖示表示各自狀態",
+            "url": "https://docs.github.com/en/actions/how-tos/monitor-workflows/use-the-visualization-graph"
+          },
+          {
+            "label": "GitHub 官方補充：待審的部署工作須先獲核准；這不是 #781 的略過工作",
+            "url": "https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/review-deployments"
+          },
+          {
+            "label": "育伴港：同範圍讀回實際操作與候選，兩者分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-product-agent-store.ts#L93-L122"
+          },
+          {
+            "label": "育伴港：候選類型不含保存私人交代",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/src/shared/product-agent.ts#L10-L35"
+          }
+        ],
+        "version": "GitHub.com 網頁版，2026-11-20 核對；原執行 2026-09-03 19:42 UTC，#781 第一次執行（run 33798038689，commit 45437bc）。未標示介面版號。",
+        "rights": "GitHub 保留網站介面權利；此處只外連原站及官方參考圖，不重刊、套用原圖或下載產物。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 GitHub Actions 原執行詳情頁 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "dc94014e0279304eebc4050c535566790ff5da6ccb19c99a8e32c3c9fcc1269e"
+}
