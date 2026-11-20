@@ -21,7 +21,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_job_uses_the_published_image_readonly_volume_and_bounded_container(self):
         command, = publication.commands(self.args, None)
-        with patch("publication.Path.read_text", return_value="MemAvailable: 917504 kB\n"), patch("publication.subprocess.Popen") as run:
+        with patch("publication.Path.read_text", return_value=f"MemAvailable: {741 * 1024} kB\n"), patch("publication.subprocess.Popen") as run:
             proc = run.return_value.__enter__.return_value
             proc.wait.return_value = 0
             self.assertEqual(publication.compose_job(self.host, self.args, command), (0, None))
@@ -29,24 +29,39 @@ class PublicationTests(unittest.TestCase):
         self.assertIn("--no-deps", docker)
         self.assertIn("--rm", docker)
         self.assertEqual(docker[docker.index("--name")+1], "yuban-fhs-publication")
-        self.assertEqual(docker[-3:], ["node", *command])
+        self.assertEqual(docker[-3:], ["publication", *command])
+        self.assertIn('node "$@"', docker[docker.index("-c")+1])
         overlay = json.loads(proc.stdin.write.call_args.args[0])
         self.assertEqual(set(overlay["services"]), {"worker"})
         worker = overlay["services"]["worker"]
-        self.assertEqual((worker["cpus"], worker["mem_limit"], worker["memswap_limit"]), (0.5, "512m", "512m"))
+        self.assertEqual((worker["cpus"], worker["mem_limit"], worker["memswap_limit"]), (0.5, "288m", "288m"))
         self.assertEqual(worker["image"], "backend@sha256:fixed")
         self.assertEqual(worker["healthcheck"], {"disable": True})
         self.assertEqual(worker["volumes"], ["fhs_publication_cache:/var/tmp/yuban-knowledge:ro"])
         self.assertEqual(overlay["volumes"]["fhs_publication_cache"], {"external": True, "name": "existing"})
 
     def test_low_headroom_or_unhealthy_site_stops_before_container_creation(self):
-        with patch("publication.Path.read_text", return_value="MemAvailable: 917503 kB\n"), patch("publication.subprocess.Popen") as run:
+        with patch("publication.Path.read_text", return_value=f"MemAvailable: {(384+64+256)*1024-1} kB\n"), patch("publication.subprocess.Popen") as run:
             with self.assertRaisesRegex(RuntimeError, "free memory"):
                 publication.compose_job(self.host, self.args, [])
             self.host.url.return_value = '{"status":"unhealthy"}'
             with self.assertRaisesRegex(RuntimeError, "not healthy"):
                 publication.compose_job(self.host, self.args, [])
             run.assert_not_called()
+
+    def test_large_original_stops_before_dispatch_and_small_original_uses_the_existing_binding(self):
+        args = SimpleNamespace(action="lane", mode="run", lane="C1", reads=None)
+        op = "c"*64
+        command = ["scripts/fhs-initial-campaign.mjs", "publish-approved", "resource-af8c3e8cc813be"]
+        with patch("publication.Path.read_text", return_value=f"MemAvailable: {741*1024} kB\n"), patch("publication.subprocess.Popen") as run:
+            with self.assertRaisesRegex(RuntimeError, "512 MiB job"):
+                publication.compose_job(self.host, args, command, original=op, pdf_bytes=40*1048576)
+            run.assert_not_called()
+            proc = run.return_value.__enter__.return_value
+            proc.wait.return_value = 0
+            publication.compose_job(self.host, args, command, original=op, pdf_bytes=1048576)
+            service = json.loads(proc.stdin.write.call_args.args[0])["services"]["worker"]
+            self.assertEqual(service["environment"], {"FHS_CAMPAIGN_LANE":"C1","FHS_CAMPAIGN_ORIGINAL_OPERATION":op})
 
     def test_each_assigned_source_gets_a_separate_turn_in_page_order(self):
         short, long = ("pdf-" + digit * 24 for digit in ("1", "2"))
@@ -67,7 +82,28 @@ class PublicationTests(unittest.TestCase):
             proc.stdout = [json.dumps({"lane": "C2", "sourceId": source, "state": "source_blocked"})]
             self.assertEqual(publication.compose_job(self.host, args, command), (2, None))
             proc.stdout = [json.dumps({"lane": "C1", "sourceId": source, "state": "source_blocked"})]
-            self.assertEqual(publication.compose_job(self.host, args, command), (2, "source_blocked"))
+            self.assertEqual(publication.compose_job(self.host, args, command), (2, json.loads(proc.stdout[0])))
+
+    def test_one_source_finishes_preparation_before_its_sole_commissioned_process_starts(self):
+        source, op = "resource-af8c3e8cc813be", "a"*64
+        args = SimpleNamespace(action="lane", lane="C1", mode="run")
+        command = ["scripts/fhs-catalog-batch.mjs", "--lane", "C1", "run", source]
+        ready = {"state":"ready", "operationFingerprint":op, "pinned":True, "started":False}
+        terminal = {"state":"published", "operationFingerprint":op}
+        with patch("publication.compose_job", side_effect=[(0,ready), (0,None), (0,terminal)]) as run:
+            self.assertEqual(publication.run_source(self.host, args, command, 1024), (0,"published"))
+            jobs = [call.args[2] for call in run.call_args_list]
+            self.assertEqual(jobs, [[*command[:3],"prepare",source], ["scripts/fhs-initial-campaign.mjs","publish-approved",source],
+                                    [*command[:3],"status",source]])
+            self.assertEqual(run.call_args_list[1].kwargs["original"], op)
+        with patch("publication.compose_job", return_value=(2,{"state":"source_blocked"})) as run:
+            self.assertEqual(publication.run_source(self.host, args, command, 1024), (2,"source_blocked"))
+            self.assertEqual(run.call_count, 1)
+        with patch("publication.compose_job", side_effect=[(0,{**ready,"started":True}), (3,None),
+                                                          (0,{**terminal,"operationFingerprint":"b"*64})]) as run:
+            with self.assertRaisesRegex(RuntimeError, "operation"):
+                publication.run_source(self.host, args, command, 1024)
+            self.assertEqual(run.call_args_list[1].args[2], ["scripts/fhs-initial-campaign.mjs","resume-approved",source,op])
 
     def test_all_deployed_assignments_and_their_original_receipts_are_addressable(self):
         path = Path(__file__).resolve().parents[2] / "knowledge/fhs-initial-publication-lanes.json"
