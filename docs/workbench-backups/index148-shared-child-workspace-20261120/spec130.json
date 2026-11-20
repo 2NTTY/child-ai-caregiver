@@ -1,0 +1,101 @@
+{
+  "group": {
+    "id": "manage-family-vs-enter-shared-child-workspace",
+    "title": "打開「管理家庭」後，怎樣才算進入孩子的共享工作區？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：選「松葉家庭」管理，仍在看本人空間。按「開啟小禾的共享資料」，並核對這個家庭、這位孩子與你的權限相符後，才顯示小禾（松葉家庭）。本人空間亦有一位同稱小禾：看名字和空間，不用名字配對或合併。讀取失敗不顯示舊空間內容，也不是空清單；已可用、這個家庭未共享與功能未接通應分開。B 的按來源分組目的地是擬議整頁，並非現有跨家庭總表。切換只換目前看的空間，不移動、複製或合併資料，不改權限、不公開私人聊天；選回本人孩子離開共享空間。工作台只讀比較，不用真實家庭資料。",
+    "choices": [
+      {
+        "name": "家庭管理先行｜由這一家打開已共享的小禾",
+        "note": "打開「管理家庭」、選到某一家，都還沒有換孩子。兩位都叫小禾時，先看是哪一家，再在該家已共享的小禾那一列選「開啟小禾的共享資料」。核對成功後才顯示家庭名和孩子名，並進入可看的準備單或待辦。未共享、功能尚未接通、核對未完成分開顯示。選回我的空間就離開共享，不改權限或搬資料。Apple 原圖只有家庭及成員列，不展示已切換資料或完成設定。",
+        "source": "https://help.apple.com/assets/69F8EBBDF3B89A4F6E0C704C/69F8EBC43862495245036393/en_US/86309a67cb23199c539e0ab2b0eaf5c7.png",
+        "sourceNotes": [
+          {
+            "label": "Apple iOS 26 使用手冊：Family 整頁先列成員，再列家庭設定",
+            "url": "https://support.apple.com/en-gb/guide/iphone/welcome/26/ios"
+          },
+          {
+            "label": "Apple 官方指引：由設定進 Family，再選指定孩子",
+            "url": "https://support.apple.com/en-us/105121"
+          },
+          {
+            "label": "Apple 網站使用條款：產品介面與圖像的權利",
+            "url": "https://www.apple.com/legal/internet-services/terms/site.html"
+          },
+          {
+            "label": "育伴港：選家庭與由孩子列打開共享資料是兩步",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/familyScreen.tsx#L99-L155"
+          },
+          {
+            "label": "育伴港：以家庭和孩子雙識別核對打開的共享範圍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/shared-child-controller.ts#L9-L56"
+          },
+          {
+            "label": "育伴港：逐功能區分未共享和尚未接通",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/shared-route-access.ts#L5-L26"
+          },
+          {
+            "label": "育伴港：選家庭管理不切孩子，另按指定共享資料才切",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/familyScreen.tsx#L120-L155"
+          },
+          {
+            "label": "育伴港：家庭及孩子一同核對，失敗不沿用舊內容",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/shared-child-controller.ts#L35-L56"
+          }
+        ],
+        "version": "Apple iPhone 家庭共享設定整頁原圖，見官方 iOS 26 版使用手冊。PNG 490 × 1016，2026-11-20 核對；精確構建與拍攝日期未公開。 原圖 SHA-256 f5e6ec790407f282491e70b0a7e158de05cf46dfaa31336330a7afb528985086。",
+        "rights": "Apple 網站保留官方產品介面和圖像等權利；未確認原圖可再刊。只外連完整官方原圖和文件，不內嵌、重刊、裁剪、重畫或聲稱背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Apple 官方 Family 設定整頁原圖（需連網）↗"
+      },
+      {
+        "name": "孩子工作區｜先選要進入的空間，再核對",
+        "note": "同叫「小禾」，也要用「本人孩子」和「已與我共享 · 家庭名稱」分開。這個擬議的整頁只列已知、已獲准的入口；選共享的「小禾」後，核對指定家庭及孩子，成功才顯示該空間。不沿用原空間內容，不搬移、複製或合併記錄。準備單或待辦各自標明「可開啟」「此家庭未共享」或「功能未接通」；選回本人的孩子即離開共享範圍。1Password 原圖只示範把可進入的項目按所屬帳戶分組，不是育伴港現有的跨家庭索引。",
+        "source": "https://images.ctfassets.net/3091ajzcmzlr/4D8SgGh6BQY7MjW449SmHy/e2b65062ce4cef8e1f8f7062d50c8a97/_Users_andrewhill_Projects_blog.1password.com_content_posts_2022_1password-8.6-windows_categories-in-sidebar.png",
+        "sourceNotes": [
+          {
+            "label": "1Password 官方 8.6 Windows 發佈文章：完整應用介面及帳戶分組原圖",
+            "url": "https://1password.com/blog/1password-8-6-windows"
+          },
+          {
+            "label": "1Password 官方使用說明：多帳戶下可直接選單一 vault，查看其項目",
+            "url": "https://support.1password.com/sidebar/"
+          },
+          {
+            "label": "1Password 2022-03-14 正式 8.6.0 Windows 版本紀錄",
+            "url": "https://releases.1password.com/windows/stable/8.6.0/"
+          },
+          {
+            "label": "1Password 網站條款：圖像與商標權利",
+            "url": "https://1password.com/legal/terms-of-service"
+          },
+          {
+            "label": "育伴港：同時核對家庭與孩子；失敗不沿用舊共享資料",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/shared-child-controller.ts#L35-L56"
+          },
+          {
+            "label": "育伴港：目前孩子選單只有本人的孩子和目前共享項目",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/home-projection.ts#L9-L24"
+          },
+          {
+            "label": "育伴港：分開未共享和未接通",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/shared-route-access.ts#L5-L26"
+          },
+          {
+            "label": "育伴港：共享讀取錯誤可以重讀或返回管理家庭",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/SharedScopeGate.tsx#L9-L18"
+          }
+        ],
+        "version": "1Password 8.6 for Windows：2022-03-14 為 8.6.0 正式版本，2022-03-17 官方文章刊登此圖；2026-11-20 核對。畫面未標獨立建置號或拍攝時間。",
+        "rights": "依 1Password 官網條款，圖像屬 AgileBits Inc. 網站內容，商標不因閱讀或外連而獲授權。只外連官方原圖與說明，不下載、不內嵌、不改畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 1Password 官方按帳戶分組原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "2b5348ab13a0bcacf5247f0a83d104f97586201f43912d13eb8534653cbcb81a"
+}
