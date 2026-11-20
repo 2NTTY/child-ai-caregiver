@@ -1699,5 +1699,652 @@
         "checkedAt": "2026-11-20T14:34:34.598319Z"
       }
     ]
+  },
+  "c3CommissionedResults": {
+    "lane": "C3",
+    "assigned": 28,
+    "assignedPages": 468,
+    "latestFamilyOrHoldReceipt": "2026-11-20T15:57:05.443Z",
+    "verifiedFamilyEditions": 5,
+    "confirmedHolds": 14,
+    "reservedUnknown": 2,
+    "outstandingReadbacks": 7,
+    "method": "The bounded production entry used the assigned original operation. Each published row was checked against the active family card, the complete set of required document vectors and the physical opening page in the frozen PDF. A held row pairs the production decision with a separate receipt. Rows marked production_decision_and_firestore_readback matched that decision to the original work, candidate, card head and settled or reserved tickets at one Firestore read time. The interrupted generation keeps its original reservation.",
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "title": "一至三個月大嬰兒的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15650.pdf",
+        "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:49:33.727Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 33131
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34494
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "title": "接種疫苗預防傳染病",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14828.pdf",
+        "sha256": "e8813172e165c25a1d0112334aaaad3e59b40b7873de592c6a8a4fe5fa0afc5b",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:44:09.618Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34151
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "title": "兒童語音發展 知多一點點",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30121.pdf",
+        "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:46:16.731Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 54345
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32228
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-e7427b7b969a37e3d8e889a1",
+        "title": "新生嬰兒健康須知 (出生至三個月)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15667.pdf",
+        "sha256": "fcfb2a9505cc87c653cf5577c22681d5d7d45df78c069da92d8b830f60752801",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:51:39.503Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 31877
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 175
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 26912
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "2e9e06cc-24d6-5ab5-8cc9-d506767a9cab",
+          "versionHash": "f3f3bf7750a77fd2cf74c82d86116190720210de5b04eb913861368a5e5fb81b",
+          "seriesId": "pdf-e7427b7b969a37e3d8e889a1"
+        },
+        "vectors": {
+          "required": 1,
+          "exported": 1,
+          "chunkKeys": [
+            "p1-d1690d91bd5ba21f8f54"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-d1690d91bd5ba21f8f54",
+            "page": 1,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "resource-1ba127a119f802",
+        "title": "兒童健康服務-首次登記表格",
+        "url": "https://www.fhs.gov.hk/tc_chi/doc_br/files/fhs_11b.pdf",
+        "sha256": "175e81f6a4ca2147864df8fc49b26d9d19ef710b5a7267a9c4031e131abd9c9e",
+        "pages": 4,
+        "checkedAt": "2026-11-20T15:45:26.525Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 85
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 26988
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 85
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 30896
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "6c933b79-2ae9-5e2b-8986-8e90af34c79f",
+          "versionHash": "b978fdb50fc1dfee78ca0bae3cd9622d4a1c509fabe103c7ca5b00e31db2db80",
+          "seriesId": "resource-1ba127a119f802"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-3efdfde7c8459df19c34",
+            "p3-7fc5a860c931840d46af"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-3efdfde7c8459df19c34",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p3-7fc5a860c931840d46af",
+            "page": 3,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-7d1aab663a0d1e17c4e6b5d1",
+        "title": "新生嬰兒護理預備篇",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13050.pdf",
+        "sha256": "82fc5465ca77726dcb6efd652d8920679811c0ff5e2d52161a616be899880346",
+        "pages": 6,
+        "checkedAt": "2026-11-20T14:52:51.909Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 30947
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-a5681663d0428e3b6cd5f674",
+        "title": "預防嬰幼兒及孕婦缺乏維他命D的聯合建議",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30190.pdf",
+        "sha256": "24fd7e9f243ae7539f981cda397c08352c97f6be42c357ddc7e9683d0788520a",
+        "pages": 6,
+        "checkedAt": "2026-11-20T14:54:26.612Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32150
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 36923
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 58
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 59
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 68
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "9179e8d9-b8ce-5aca-b4c5-bd71bffce938",
+          "versionHash": "245744e1d7a41e767c2719463b5857cb0a855df3aabd8237e93df901e640372c",
+          "seriesId": "pdf-a5681663d0428e3b6cd5f674"
+        },
+        "vectors": {
+          "required": 3,
+          "exported": 3,
+          "chunkKeys": [
+            "p1-0a95d7c5059757f0fe1c",
+            "p3-60db550f72708f4c5933",
+            "p5-b51818ff75a03b2f27a2"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-0a95d7c5059757f0fe1c",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p3-60db550f72708f4c5933",
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p5-b51818ff75a03b2f27a2",
+            "page": 5,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "title": "培育還是催谷子女",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.pdf",
+        "sha256": "1b7ff10371bc9e8ccdac687f434aae288294cd59da535db29f5ec370a245d4ac",
+        "pages": 7,
+        "checkedAt": "2026-11-20T14:56:31.996Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 37775
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 46551
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-72a78af063b2df4ff8d129a3",
+        "title": "一起乘風破浪-協助孩子克服逆境（學前兒童）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14842.pdf",
+        "sha256": "e9f1a02b50e3fed0af1c8eefb1725f22d4945ca25f17d72e4e5fa0880b8668ac",
+        "pages": 7,
+        "checkedAt": "2026-11-20T14:59:09.433Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 47492
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-110b0452a51c2bc488fbe7f5",
+        "title": "正面親職（三）：應對學前兒童的不當行為",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14837.pdf",
+        "sha256": "80d0ae8ad0b446d46281bde34e93a82e41e6d49824cb05e220e8d8dc2119e9e2",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:02:50.633Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 53832
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "title": "三至四歲大兒童發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.pdf",
+        "sha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:05:44.505Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 65858
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 53834
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-40e5eb1a042e9dee765714ef",
+        "title": "嬰幼兒與維他命D",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30078.pdf",
+        "sha256": "3e81eb4bb1efe1bf0bf1ad0694dbc2eace48145279b9341f70afbcf168de3681",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:08:21.334Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 36678
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34581
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 36
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 90
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "3f868796-d569-51bd-979d-f839c13f10c8",
+          "versionHash": "62f33fbc8e53cb839e944d4c6961ffa7cf3dc4826609e74f774777e7c27ee3bc",
+          "seriesId": "pdf-40e5eb1a042e9dee765714ef"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-ea15052ca12619ad2faf",
+            "p7-c89dc73ea44cbc078c47"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-ea15052ca12619ad2faf",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p7-c89dc73ea44cbc078c47",
+            "page": 7,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "title": "兩至三歲大兒童的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15670.pdf",
+        "sha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:16:47.021885Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 47595
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 59715
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-75f4948b23d797f1e6883149",
+        "title": "兒童的發展知多少-給學前兒童的家長",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.pdf",
+        "sha256": "c62c723285ba62ed7b692edf67b4e1f97ffda6de6885bb9d199436790614b98d",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:27:21.544765Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 65772
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-83ee5bc5318ca28cbbf5598a",
+        "title": "親子溝通: 給一歲前嬰兒的父母",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13046.pdf",
+        "sha256": "28c72ca8a6fe4a840325e274b2b918504035e2b6960997f9f807b889482d13d7",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:28:51.334467Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 59498
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-942362fc743b07c81abe9109",
+        "title": "一起乘風破浪-培育孩子的抗逆力（學前兒童）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14841.pdf",
+        "sha256": "0539ef75708cae9ee99ce7ea196e2eeea0e8a219b0a5f7fd57f14b8d7bc15e58",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:31:21.349263Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 52433
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-b2dd7935c763e5df68d2420e",
+        "title": "一至兩歲大兒童的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.pdf",
+        "sha256": "2089764b2b7d88ceb368aef5a5c562d52d857179863eddacd3fec57edfddbcd3",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:50:05.076469Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 63704
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 46787
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_review_held",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-c2c12e4018ee7099064622d4",
+        "title": "連繫．情感 兒童社交情緒發展 (三歲至五歲)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30158.pdf",
+        "sha256": "ea7a08b27cd12241a9d8cb67f11fe8c729dea137ca0ee60738e216e78cb26b12",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:57:05.443Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 129
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32741
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32486
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 26
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "7e205598-5d7e-5a8e-8ed5-e4d95dd51e68",
+          "versionHash": "9c7d3dbc7e2ef419565a9985191bad07b8a8d09229fb1c5b003c14542796260e",
+          "seriesId": "pdf-c2c12e4018ee7099064622d4"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-3a65c4626ab895406760",
+            "p8-69b3acd8b85f7de2b7c0"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-3a65c4626ab895406760",
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p8-69b3acd8b85f7de2b7c0",
+            "page": 8,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-db6902edaf415c9e24a2438a",
+        "title": "正面親職（一）：從小開始",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13048.pdf",
+        "sha256": "5ec13c649aed1b6f0eb73a84c16389c18392db69aae2949a1cd695abbdbd0b8c",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:46:49.922485Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 60411
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "title": "僱主指引 - 實施「母乳餵哺友善工作間」",
+        "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/30031.pdf",
+        "sha256": "add30a8bef1277b7ec81d5366b3356041098295d8aff370fa36492515bfd2f44",
+        "pages": 12,
+        "checkedAt": "2026-11-20T15:40:35.100779Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+        "sha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+        "pages": 24,
+        "outcome": "reserved_unknown",
+        "code": "fhs_lane_dispatch_reserved",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "ceilingMicros": 1634304,
+            "costMicros": null,
+            "at": "2026-11-20T14:10:56.749Z"
+          }
+        ],
+        "checkedAt": "2026-11-20T14:34:34.598319Z"
+      }
+    ]
   }
 }
