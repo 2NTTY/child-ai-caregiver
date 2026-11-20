@@ -1,0 +1,125 @@
+{
+  "group": {
+    "id": "pause-one-growth-suggestion-topic",
+    "title": "不想再看到這類成長建議，怎樣只停用這個主題？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：同一孩子的「幼兒遊戲與溝通」。A 擬議在建議設定清單選一個主題；B 擬議從一則建議打開獨立詳情，再分辨只處理這一則或持續停用整個主題。兩款整頁均是提案；現在是「關注」內的建議設定對話框。停用不是暫緩單則或關通知，並持續到你明確重新啟用。身分、權限、孩子、主題和版本相符，明確確認後仍須等服務回傳成功，才算已停用；結果不明查原操作，不重送。只關閉同主題的有效建議，包括待採納及已延後。不刪以往紀錄，不改已建立的待辦、家庭事實或其他主題，不召回通知。重新啟用只恢復未來評估，不重開已關閉建議、不保證即時有新建議。工作台只讀比較，不使用真實家庭資料，不提交真實停用或重新啟用。",
+    "choices": [
+      {
+        "name": "設定清單先行｜只停用這個孩子的指定主題",
+        "note": "擬議設定整頁。先在此孩子的成長建議設定看主題清單，選一個主題：「幼兒遊戲與溝通」，核對只會關閉同一孩子同主題的現行建議，再明確確認保存。它會一直停用，直到你重新啟用，不是延後一張卡或關通知。保留以往紀錄、已建立待辦、家庭事實和其他主題，不召回通知。身分、權限、主題與版本須相符，服務有確認才顯示「已停用」；結果不明先查原操作，不重送。TikTok 原圖只參考逐類設定、說明與另行保存；調少推薦並非持續停用。",
+        "source": "https://ads.tiktok.com/business/library/AI_Safety_Essentials_for_TikTok_Advertisers.pdf#page=9",
+        "sourceNotes": [
+          {
+            "label": "TikTok 官方指南封面：AI Safety Essentials",
+            "url": "https://ads.tiktok.com/business/library/AI_Safety_Essentials_for_TikTok_Advertisers.pdf#page=1"
+          },
+          {
+            "label": "TikTok 說明：從設定進入管理主題，再另按保存；只影響推薦動態",
+            "url": "https://support.tiktok.com/en/account-and-privacy/account-privacy-settings/manage-topics"
+          },
+          {
+            "label": "TikTok 2025 年 6 月官方發布：調少主題不等於全部排除",
+            "url": "https://newsroom.tiktok.com/more-ways-to-discover-new-content-and-creators-you-love?lang=en"
+          },
+          {
+            "label": "TikTok 品牌及使用指引：圖像與品牌不作轉載",
+            "url": "https://developers.tiktok.com/docs/en/getting-started-design-guidelines"
+          },
+          {
+            "label": "育伴港：進「關注」查成長建議",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/GrowthScreen.tsx#L40-L49"
+          },
+          {
+            "label": "育伴港：現在是建議設定對話框",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/TaskKnowledgeGrowthCandidates.tsx#L50-L60"
+          },
+          {
+            "label": "育伴港：權限、選中主題、勾選及明確保存",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/TaskKnowledgeGrowthCandidates.tsx#L127-L165"
+          },
+          {
+            "label": "育伴港：編輯同一孩子、權限與版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L612-L620"
+          },
+          {
+            "label": "育伴港主題目錄：幼兒遊戲與溝通",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/growth-rules.ts#L13-L15"
+          }
+        ],
+        "version": "TikTok 官網《AI Safety Essentials》原 PDF 第 9 頁，右側為 Manage topics 整頁與影響提示兩態；內容提及 2026 年 7 月資料，未標獨立版號或 App 構建。2026-11-20 核對原 PDF 25 頁、7,727,225 bytes；SHA-256 8aed7a93d58cfaa4e05680c9e78b46dc76111250760430b4bd1b330f144f561a。",
+        "rights": "未確認 TikTok 官方原圖可另行轉載；其品牌指引亦限制使用。僅外連 TikTok 原版 PDF 第 9 頁、原說明及權利指引，不另取圖、不內嵌、不裁剪、不重刊、不重繪或聲稱背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 TikTok 官方 PDF 第 9 頁右側主題設定整頁畫面（需連網）↗"
+      },
+      {
+        "name": "從這則出發｜只關閉一則，還是停用整個主題？",
+        "note": "擬議整頁。由「幼兒遊戲與溝通」的一則合成建議進入，先分清「只關閉這一則」與「停用這個主題」。停用只會關閉同一孩子同主題的有效建議，並停止日後評估直至明確重新啟用。舊紀錄、已建立待辦、家庭已知資料和其他主題不變，不召回通知。核對範圍後另行確認，以服務回傳為準；結果未明先查原操作。重新啟用不保證立刻出建議，也不重開舊項。只讀樣張不提交。Facebook 原畫面只借同一內容入口展示不同影響；不採用其 30 日或排序規則。",
+        "source": "https://www.oversightboard.com/wp-content/uploads/2025/11/Community-Notes-PAO-Request.pdf#page=7",
+        "sourceNotes": [
+          {
+            "label": "Oversight Board 官方公開紀錄：Meta 提交文件背景；保留權利",
+            "url": "https://www.oversightboard.com/pc/assessing-metas-plans-to-expand-community-notes/"
+          },
+          {
+            "label": "Meta 官方發佈：由貼文選單進入暫停看來源貼文",
+            "url": "https://about.fb.com/news/2017/12/news-feed-fyi-snooze/"
+          },
+          {
+            "label": "Meta 官方說明：隱藏單則和暫停來源對動態的影響不同",
+            "url": "https://about.fb.com/news/2018/08/inside-feed-keyword-snooze-people-turn-down-the-noise/"
+          },
+          {
+            "label": "育伴港：明確確認、按所見依據與版本提交",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/TaskKnowledgeGrowthCandidates.tsx#L149-L165"
+          },
+          {
+            "label": "育伴港：驗證權限和版本，只關閉同主題的有效建議",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L612-L658"
+          },
+          {
+            "label": "育伴港：重啟只恢復未來評估，不重開舊建議或取消任務",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/GROWTH_HANDOFF.md#L47-L49"
+          },
+          {
+            "label": "育伴港：有效建議含待處理與已暫緩",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L66-L66"
+          },
+          {
+            "label": "育伴港：停用只關閉同主題的有效建議",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L641-L658"
+          },
+          {
+            "label": "育伴港：略過已停用主題",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L680-L695"
+          },
+          {
+            "label": "育伴港：不重開相同基礎已關閉項目",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-growth.ts#L737-L751"
+          },
+          {
+            "label": "育伴港：核對更新後版本與狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/growth-api.ts#L171-L184"
+          },
+          {
+            "label": "育伴港：結果未明，核對同一份原操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/growth/GrowthOperationRecovery.tsx#L33-L48"
+          },
+          {
+            "label": "育伴港：重新啟用只恢復未來評估、不取消待辦",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/GROWTH_HANDOFF.md#L49-L49"
+          }
+        ],
+        "version": "Meta 提交 Oversight Board 的 Facebook 手機畫面，官方個案 2025-11-19 公開；原始文件第 7 頁第一張圖。2026-11-20 核對。畫面未列 app build 或擷取日，不當作現行所有手機版本。",
+        "rights": "Meta 原始文件由 Oversight Board 公開託管；該站保留權利，未見這個手機畫面獲開放重製。只連到原始 PDF 頁碼，不另擷取、不內嵌、不改畫，也不使用示例身份、貼文或商標。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Meta 官方 Facebook 貼文選單原畫面（PDF 第 7 頁第一張，需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "c37068348fd8b798d4676ca7655984ed1a432ee06d508e4cc9ecfb9f537f438d"
+}
