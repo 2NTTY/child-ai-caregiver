@@ -8,6 +8,34 @@ import type { PDFPageProxy } from "pdfjs-dist";
 import { OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { repairPdfGlyphs } from "../server/knowledge-pdf-glyphs.ts";
 import { readablePdfQuote } from "../server/knowledge-pdf-quotes.ts";
+import { physicalPdfQuote } from "../server/knowledge-pdf-physical-quote.ts";
+import { checkKnowledgeObservation } from "../server/knowledge-observation.ts";
+import { parseKnowledgeSource } from "../server/knowledge-inputs.ts";
+import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
+
+test("a grouped PDF opens the exact physical quote without discarding the rest of the reviewed range", () => {
+  const pages = [{page:1, text:"Cover", status:"text" as const}, {page:2, text:"Second page presents the complete printed passage.", status:"text" as const}];
+  const joined = pages.map(p => p.text).join("\n\n");
+  const quote = physicalPdfQuote(joined, pages);
+  assert.deepEqual(physicalPdfQuote(joined, undefined), readablePdfQuote(joined));
+  assert.deepEqual(quote, {sourceExcerpt:pages[1]!.text, originalText:joined, excerptPage:2});
+  assert.deepEqual(physicalPdfQuote(joined, pages, 'complete printed passage'), {
+    originalText:joined, sourceExcerpt:'complete printed passage', excerptPage:2
+  });
+  assert.deepEqual(physicalPdfQuote(joined, pages, 'Cover'), {originalText:joined, sourceExcerpt:'Cover'});
+  const definition = SOURCE_WATCHES.find(d => d.leafletPage)!;
+  const extraction = {format:'text_pdf' as const, contentHash:'a'.repeat(64), totalPages:2, pageStart:1, pageEnd:2, complete:true};
+  const header = {sourceId:definition.id, url:definition.url, title:'Fixture', publisher:definition.publisher, classification:definition.classification,
+    termsUrl:definition.termsUrl, fetchedAt:'2026-01-01T00:00:00.000Z', sourceDateText:null, sourcePublishedAt:null, sourceUpdatedAt:null, extraction};
+  const chunk = {key:'range', section:'Example', text:'Reviewed range', keywords:['example'], pageStart:1, pageEnd:2,
+    applicability:{region:'HK', ageBasis:'any', minAgeMonths:null, maxAgeMonths:null, topics:['example'], conditions:[]}, ...quote};
+  const pin = {url:definition.url, content_hash:'b'.repeat(64), unavailable:false, document:{
+    url:definition.url, title:'Fixture', text:joined, sourceDateText:null, sourcePublishedAt:null, sourceUpdatedAt:null, extraction, pages}};
+  const watch = {enabled:true, definition};
+  checkKnowledgeObservation(parseKnowledgeSource({...header, chunks:[chunk]}), watch, pin, pin.content_hash);
+  assert.throws(() => checkKnowledgeObservation(parseKnowledgeSource({...header, chunks:[{...chunk, excerptPage:1}]}),
+    watch, pin, pin.content_hash), /knowledge_pdf_original_page_mismatch/u);
+});
 
 test("official PDF extraction keeps file-bound continuation and refuses page-number-only text", async () => {
   const pdf = await renderToBuffer(React.createElement(Document, {},

@@ -32,7 +32,8 @@ if (recoveryCommand && (!recovery?.campaignArgs || recovery.operationFingerprint
 const draftRevision = recoveryCommand ? retainedDraftRevisionSchema.parse(recovery) : undefined;
 const resuming = command === 'resume' || command === 'resume-age-checked';
 const repairing = command === 'repair-truncated';
-const explicitAgeScope = command === 'process-age-checked' || command === 'resume-age-checked' || draftRevision?.action === 'review_pdf_region';
+const explicitAgeScope = command === 'process-age-checked' || command === 'resume-age-checked'
+  || draftRevision?.action === 'review_pdf_region' || draftRevision?.action === 'retain_pdf_transcription';
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
 const handlesSource = recovering || resuming || repairing || firstPass || inspecting;
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length

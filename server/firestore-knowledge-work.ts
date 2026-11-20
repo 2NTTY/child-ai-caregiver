@@ -95,15 +95,19 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
-    async readHeldOrganizer(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision, attemptKey: string) {
+    async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision, attemptKey: string, requestHash: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
+      const transcription = revision.action === 'retain_pdf_transcription';
+      const expectedHash = transcription && attemptKey.startsWith('knowledge-window-review:') ? revision.reviewerRequestHash : revision.organizerRequestHash;
+      if (requestHash !== expectedHash) reject('knowledge_retained_page_binding');
       return database.runTransaction(async tx => {
         const [work, stage] = await tx.getAll(root, stageRef);
         const old = open(root, work!.data(), workSchema), saved = open(stageRef, stage!.data(), stageSchema);
         if (knowledgeReviewHash(old.request) !== knowledgeReviewHash(priorRequest) || old.lease || old.preparedHash || old.receipt
-          || old.result?.status !== 'candidate_held' || old.result.code !== 'knowledge_review_failed' || old.budget.modelCalls !== 1
-          || old.result.observationHash !== revision.observationHash || saved.requestHash !== revision.organizerRequestHash
+          || old.result?.status !== 'candidate_held' || Boolean(old.windowed) !== transcription
+          || old.result.code !== (transcription ? 'knowledge_window_quote_mismatch' : 'knowledge_review_failed') || old.budget.modelCalls !== (transcription ? 2 : 1)
+          || old.result.observationHash !== revision.observationHash || saved.requestHash !== expectedHash
           || saved.state !== 'ready' || saved.text === null) reject('knowledge_retained_page_binding');
         return saved.text;
       }, { readOnly: true });

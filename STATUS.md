@@ -2,6 +2,8 @@
 
 **2026-11-20 香港 13:49**　早上 09:00 快照內的 24 份待審教材已有十份上架、十二份保留、兩份 504 隔離。十份已從正式卡庫核對生效及匯出版本。13:44 的正式發布收據為 `r44682020469-1`，API 及 worker 均為 `fa1bdecb`。另計的待向量 PDF 已於 12:32 發布。[24 份逐項結果與限制](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [首批原快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469)
 
+**2026-11-20 香港**　13:44 對回 09:00 收據內的 116 份 PDF。正式家長卡庫已有 12 份，每份均可匯出文件向量、重開同版官方原件，並在實頁逐字找到完整摘錄。另有 13 份保留，4 份已恢復來源觀察，87 份未有來源結果。兩本 24 頁小冊子的引用定位已用原件離線核對，代表長檔仍待正式獨立審核及發布。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [09:00 全批收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [同一帳日續作](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)
+
 **2026-11-20 香港**　Web、API、worker 已發布至 `07d6d5c2`，Android 版本 8 的 preview 通道回傳同版 OTA。Edge 已驗從待辦頁向角色提問、在主聊天展開三方討論，並從討論點讀同版教材。C 首批收據為 55 份已發布、31 份保留、1 份等候每日額度、164 份待處理。手機實際操作待驗。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44620294763) · [跨功能收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json) · [首次入庫收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)
 
 **2026-11-19 15:12 香港，正式交付。** 來源庫及聊天均可免費加入已發布平台卡。平台管理五個家庭健康服務來源，私人來源的整理與新查詢向量沿本人密鑰。原站 Web、API、worker 同版，站外健康核對通過。Android preview 已向版本 8 提供同一套產品畫面。付費網站的真實帳戶和本次手機點按留待體驗驗收。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261) · [Android 更新](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/bc937464-28b8-40ea-ade7-a83d1c763966) · [平台卡驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)

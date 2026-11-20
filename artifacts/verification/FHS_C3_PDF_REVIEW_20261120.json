@@ -216,5 +216,692 @@
     "originalParents": "Six production parents checked read-only: same registered operation, first observation, original PDF SHA, exactly one settled organizer, candidate held without lease, prepared draft or publication receipt.",
     "result": "Each explicit ID and original operation selects one packaged recovery. Its original stage was replayed against the same request, and its independent reviewer received the complete hash-checked PDF and the source-specific page notes. Dispatch intercepted before calling a provider. The original default recovery queue retains its 24 held and 15 previously published entries.",
     "integration": "The first Windows build context had CRLF prompt bytes and correctly failed the original organizer-request guard. The repeat used Git LF source bytes and matched all six reviewer request hashes. The original 504 was refused before opening persistence. The fresh-draft test now observes HK reaching review, and the retained-draft test still checks the unchanged original organizer. Five focused tests and the server TypeScript project passed."
+  },
+  "posterFollowup": {
+    "checkedAt": "2026-11-20T05:22:32.605Z",
+    "base": "ab7e5775b0c134312474d40dfdf815ad04919990",
+    "scope": "Three sources held for discrepancies between independent transcriptions. Both original model outputs and their actual sections remain unchanged.",
+    "accepted": {
+      "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+      "originalOperation": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+      "recoveryOperation": "3b81f5717045ca886f194b0678b0a11cabd64696ac6278587e95dbebefcd0405",
+      "originalSha256": "f476d352d00e870616cf90f532421d195d6a12acde335f1f58d1e16c4894211b",
+      "sliceSha256": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+      "organizerRequestHash": "7f3cfce70f2ef2bd267c727ee3d7041dd4ab28af35729cdb7c2c989b4610819f",
+      "reviewerRequestHash": "2e6c0ddd21562b205fee775ee9ed70f01ce41535adeb0ccca72b61d4a3a6025d",
+      "physicalPage": 1,
+      "locator": "第 1 頁左上淺藍區，兩組年齡與對應的屏幕時間",
+      "originalSpanOffsets": [
+        0,
+        16
+      ],
+      "reason": "原審核轉錄包含整理者選取的整段。原頁兩組年齡的文字及右方時間圖示均可重開核對。"
+    },
+    "stillHeld": [
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "reason": "A complete caption in the lower left panel occurs in both transcriptions. The page prints ages 1–2 and 3–4 alongside sleep times; the stored draft and review extend 12–59 months to the whole day. An excerpt-only recovery cannot resolve the whole-unit scope."
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "reason": "The second page has two disjoint independently chosen paragraphs. The original quote mismatch remains."
+      }
+    ],
+    "verification": {
+      "localWorker": "sha256:f5fe026653995c1c5eee50ef60eeee097ba961af3c808f368eeefc48a2a24818",
+      "node": "24.19.0",
+      "source": "The original immutable slice and both settled request hashes were verified before offline replay. Visual review compared the printed age groups, labels and time icon on the public original.",
+      "exercise": "In a network-disabled worker with in-memory Firestore and an isolated registry for its synthetic watch identifiers, the parent held on the original mismatch. The child reread both stages, generated zero model calls, wrote one synthetic vector, listed one edition, and reopened the hash-checked original through a synthetic saved citation. Repetition added zero vectors. The release registry admits the screen poster and rejects the daily-routine poster before opening persistence.",
+      "negative": "Unregistered containment, a changed offset, different wording, different request hash, and an independent hold were rejected. Server TypeScript and five focused tests passed.",
+      "production": "At verification this additional recovery had not run in the live campaign."
+    }
+  },
+  "firstLiveDelivery": {
+    "checkedAt": "2026-11-20T05:26:12.712Z",
+    "worker": "ab7e5775b0c134312474d40dfdf815ad04919990",
+    "release": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44678914521",
+    "counts": {
+      "no_source_result_in_sequence": 97,
+      "observation_recovered_awaiting_model": 4,
+      "candidate_held": 10,
+      "published_and_verified": 5
+    },
+    "verification": "The production card catalogue, reviewed active version, committed receipt, original parent, reviewed PDF hash and distinct native-reading keys were checked. Exported the exact edition and its stored document vector. Reopened each PDF using the production resolver and a synthetic saved-run boundary, verified the original SHA-256, then located the entire displayed excerpt on its physical page in the matching original. The readback used no family session.",
+    "published": [
+      {
+        "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+        "title": "兒童發展監察計劃",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13033.pdf",
+        "sha256": "9dae9888b2f14ba385603e268943541e37c3b901a1de03af2657230d5555dc28",
+        "pages": 2,
+        "priorOperation": "2baa96c156fe185ce969670b937dfd9fc1da09fa021a47c1d674553db643dd34",
+        "operation": "7ee7d75e483cab8fab4a51730e5415f25962c6a5cd54e5fe2c64ddd6ca0d9be5",
+        "publishedAt": "2026-11-20T05:23:00.315Z",
+        "versionId": "04654663-9af2-58d2-b97f-3af935eccf14",
+        "versionHash": "3a00851be007a0f1598e81ed457b34db918a68cba4603115872e8b877ff3b175",
+        "observationHash": "f225de2c7b5fb3c31cdc386dc9eaec3a58317ad1402a8a75e81b3c4963bcd409",
+        "seriesId": "pdf-0669ab4cf34bd1b3b598db64",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:efff3548d4f3536df6e65b0f53a21e7f7ca8476f620c6cb86b451df2dcfb16a3",
+          "knowledge-review:e72b9f2c4d04d86a9d40327ed8355b6464458fc6d4126a8fb2f713a78c85e4e8"
+        ],
+        "citation": {
+          "chunkId": "b5682d77-9c9b-5572-8d73-231f5a8aee34",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 2409739,
+          "originalExcerptDigest": "c76ccfeef399aaef76502f331f60591364a359f8514a92bacfe525623721e7f4",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-231c869513252fae5e5ce54e",
+        "title": "替孩子轉換奶粉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.pdf",
+        "sha256": "0dd054a3e224b63374f9cc37706d7f79f9f4c4742dc9ba83b64e370d1d64e2fc",
+        "pages": 2,
+        "priorOperation": "91c44e86009a9917ddfb74c6ffadbd32b59a6112d868c9264b7669056362dba5",
+        "operation": "553b78747145951eaa38c5735b49c66cfa8f702b86c2a250da8fad7d5a063754",
+        "publishedAt": "2026-11-20T05:23:33.149Z",
+        "versionId": "02bb8559-7f1f-5a29-8a4d-f19f5dfb2721",
+        "versionHash": "dca3c4a737b9ba18a1ff884bc8f3a9889b4b3ae6c843060d6460878c8973d3d8",
+        "observationHash": "e16340c297c483b641e8b1f513bab12ce916bd843e8fc41e16074ca8c1d1bd63",
+        "seriesId": "pdf-231c869513252fae5e5ce54e",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:a533170eb7ab81a33e7171523cb8e9f7d1c6e6338e6440c89d575d061bbe1dd0",
+          "knowledge-review:cc42a7b3ecd5dd33bb1f9b9357eb5d593b003c7716ce222dd01b8f5f4f915c7c"
+        ],
+        "citation": {
+          "chunkId": "221fa0be-7314-57f3-9292-9cda3058c0a9",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 218020,
+          "originalExcerptDigest": "793dcaf1bc88f7a7816634a9fa13109bbf178f9a7c84320b6d41685c69255239",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "title": "怎樣引導孩子掌握自己進食的技能〈六至二十四個月大〉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30010.pdf",
+        "sha256": "d5d0047950a5e887fa106329acb323dbd6fc66129fbf2ed8c04ed5904f50d72c",
+        "pages": 2,
+        "priorOperation": "3acc07e97d22aa4c3e94ede95d64c2ee089b5587ea2b1716fd003f1f4c1dc6e6",
+        "operation": "6905d637a36c535b24020146199b481b4eb70c42447976dbb04fba67ef8e2f0d",
+        "publishedAt": "2026-11-20T05:23:52.913Z",
+        "versionId": "dd8983bc-ca0b-5163-8560-97f3c6aa6cd6",
+        "versionHash": "ff78685c97ee67e555ff5c0ad033adc6fb94cfaefeed25e817e558499feca81a",
+        "observationHash": "0e01665a344c582bc850b5d70df34cfaa157d3d2965571f25e2a18c5348df586",
+        "seriesId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:0437b98ae3a4c627cb8534176c32569362f217848783e097b337fd9127bd16e4",
+          "knowledge-review:e860ac8b220321cf89fac9a54d69407aaf045429a24f5c34ef5fa4ea6d34a73f"
+        ],
+        "citation": {
+          "chunkId": "c559ee11-73a8-5fad-b067-db75792d55f4",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 823335,
+          "originalExcerptDigest": "a44038e8a7281269f56e6270023a25460ed121ed8d2f34b69dae92b06f315824",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+        "title": "哺乳媽媽需要服用含碘補充劑",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30168.pdf",
+        "sha256": "f696c3c3f36839f2953ee209d2a9bb50b3ff7fc4b7b79ef134f021c3efa1abc1",
+        "pages": 1,
+        "priorOperation": "93ab393d2e3f808c0b7765d0297f95343988f329e0e127737030550426524856",
+        "operation": "79b9a81ab4eb08e7feb532c5f94f414f2445a3a3ebcafceff702a60df0e591cf",
+        "publishedAt": "2026-11-20T05:24:12.480Z",
+        "versionId": "62398efd-1815-5746-95c7-9393bd247305",
+        "versionHash": "0d5cd9820151aecef8a49ce8ed00e80fcf4adfb239f797ae2b0610f81079ee55",
+        "observationHash": "e85e185a110d81f3b7c01db8dc008613a0aadc71dc1fd2d73d19ed353b408e85",
+        "seriesId": "pdf-4158ea5c2f138e45a4a7568d",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:7aad6efbec9fe33d6378f254d69ebe441faa04a6d1b14c47704d9a1ae80c1320",
+          "knowledge-review:497204781ae81221045aaaa20904b41c88fc5c47c0b56d3c4cb4932b25ff17f3"
+        ],
+        "citation": {
+          "chunkId": "728c249f-37fb-59d2-9c75-ee4109793ace",
+          "range": [
+            1,
+            1
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 1179763,
+          "originalExcerptDigest": "31013a48879c9a2edaac9e27cf85d6c148e841bce318bf012f4fc99cd11c04aa",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+        "title": "滅活小兒麻痺疫苗",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/484.pdf",
+        "sha256": "5e7099c223e034c4a959434d813578e1fecc46f9263f4095db2a3825da4709ce",
+        "pages": 1,
+        "priorOperation": "28d8376cb41957dbf2ffc58fa221370f248dcdb2f90f3e57199b0c488a329d53",
+        "operation": "e58481ebbcd9f36937990f682bdefeae767fd55b13a454ee7af3de13074b6a56",
+        "publishedAt": "2026-11-20T05:24:31.069Z",
+        "versionId": "dd70e395-9086-5f4e-bed6-dfff16512317",
+        "versionHash": "a60a1237991d54d26daaf5d56315f4e3b053fb905cf273676b8157ebee179ba9",
+        "observationHash": "70e775ba69be9252e4169bf357be459a20d37437c8ea7d47628bcec08f84f1c8",
+        "seriesId": "pdf-d6cb530c2cc3605fb28a0241",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:a520a528f617296ea3ec0765d684f6cdf0fe8ac3cb95191cccf94b8cb7c5e249",
+          "knowledge-review:eb681fce4bea96cc20233618a4b234d76bf97e86c3058cbe78c716a70d466ab2"
+        ],
+        "citation": {
+          "chunkId": "a7fdfc4f-2103-59d5-b17f-e612effda768",
+          "range": [
+            1,
+            1
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 265226,
+          "originalExcerptDigest": "997b8810a3f4d8130435d178898b5ac46dc72a99ae7f4ecf679b880f6ab83836",
+          "originalExcerptMatch": "exact"
+        }
+      }
+    ],
+    "independentHold": {
+      "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+      "operation": "d35cd496870b1bf1565cfca54d8542b93fdf399d84f2be10e266b1d5a4889e43",
+      "priorOperation": "41a3e024a4735187e4cb8ba673bb8f6a7b58bf7a6cfc81bf5fc417ff79ec02d2",
+      "decision": "hold_candidate",
+      "reason": "第 2 頁有五歲後的奶類分項，但整理稿把整份適用年齡截於 60 個月。獨立審核要求保留，沒有發布版本。"
+    }
+  },
+  "physicalCitations": {
+    "scope": "Fresh whole-PDF preparation. Existing retained and held drafts use their recorded excerpt when rebuilding a prior request.",
+    "inputs": "All 48 authenticated whole-PDF originals; synthetic organization only to inspect the real server-generated reviewer payload. No model or embedding calls.",
+    "originalPages": 271,
+    "documents": 48,
+    "excerptRanges": 75,
+    "locatedOnPageOpened": 75,
+    "representativeBooks": {
+      "before": {
+        "foundOnOpeningPage": 4,
+        "ranges": 8
+      },
+      "after": [
+        {
+          "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+          "sha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+          "pages": 24,
+          "rangeAndOpeningPage": [
+            [
+              1,
+              8,
+              2
+            ],
+            [
+              9,
+              16,
+              13
+            ],
+            [
+              17,
+              23,
+              21
+            ],
+            [
+              24,
+              24,
+              24
+            ]
+          ]
+        },
+        {
+          "sourceId": "pdf-f3051ac61ad97b50bf629775",
+          "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+          "pages": 24,
+          "rangeAndOpeningPage": [
+            [
+              1,
+              7,
+              6
+            ],
+            [
+              8,
+              13,
+              8
+            ],
+            [
+              14,
+              20,
+              14
+            ],
+            [
+              21,
+              24,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    "retainedCompatibility": "Six registered PDF organizer and independent reviewer request fingerprint pairs unchanged in a network-disabled worker."
+  },
+  "sourceDeliverySnapshot": {
+    "checkedAt": "2026-11-20T05:44:13.614Z",
+    "scope": "Original 116 rows; sourceId joins to the official URL, SHA-256 and pages in FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json.",
+    "counts": {
+      "no_source_result_in_sequence": 87,
+      "observation_recovered_awaiting_model": 4,
+      "candidate_held": 13,
+      "published_and_verified": 12
+    },
+    "publishedSourceIds": [
+      "pdf-0669ab4cf34bd1b3b598db64",
+      "pdf-231c869513252fae5e5ce54e",
+      "pdf-0c2d0deb2abdeb1d5949e661",
+      "pdf-51a3b0aebacc5c2f6a002561",
+      "pdf-28468771ad2490f045bd5d56",
+      "pdf-c35022f4755f452c3ab6ca7c",
+      "pdf-4158ea5c2f138e45a4a7568d",
+      "pdf-16ecfbe91853bb20831c4b97",
+      "pdf-d6cb530c2cc3605fb28a0241",
+      "pdf-258dbc8a8c69d4f66dd0ab05",
+      "pdf-8d229a086ffa572923ed027f",
+      "pdf-5acb6474a38d19249e4933d6"
+    ],
+    "additionalPublished": [
+      {
+        "sourceId": "pdf-51a3b0aebacc5c2f6a002561",
+        "versionId": "59953c98-8f50-5298-a579-861533b4f5cc",
+        "versionHash": "b5cc832551dd3088f94eaa74f9b412b4e2804a6fef32e559fc63bcdd600ec203",
+        "publishedAt": "2026-11-20T05:33:14.818Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:3bca40687c042406d5e5971dd29ab3a1c3dab2f44d43cbc014828710a218fe13",
+          "knowledge-review:8f704f5a1c09610be387bee2b6743a3b3f605592efff6af5016239b99a651c15"
+        ],
+        "citation": {
+          "chunkId": "4267daa1-27d9-5d93-a8ed-d6a9781ef348",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 377132,
+          "excerptSha256": "db84e2985750976bc9303dd73a33b74a152195eee80e7281e4aa53c8dc6007c5",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-28468771ad2490f045bd5d56",
+        "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+        "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+        "publishedAt": "2026-11-20T05:27:43.275Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:b67bb16cfbe49e7e430e9cfd1cc18284f73c050907bf52408ef118a9c94c3967",
+          "knowledge-review:a32a82ff4d1e80da8456caccdff20906f3ed5a08de71f4366dd8b7d3f44f2683"
+        ],
+        "citation": {
+          "chunkId": "054500e2-cd84-5047-89d4-d1339dc67ce3",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 1087997,
+          "excerptSha256": "ff3ea75c1b4835af85b7c5cd3096441d2f181363913e52419e70fd40368a67e9",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-c35022f4755f452c3ab6ca7c",
+        "versionId": "b2abf3ee-8f95-553f-9b9a-be87fe67c5c8",
+        "versionHash": "adcd441410b261f9dbdcb5d59c5a17cae314b7ebcbc618afc4deebb4a77d875d",
+        "publishedAt": "2026-11-20T05:37:18.623Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:8936d385a015962b6175becf7f6322eeade1aabb45d170df4fb10d230f35db1f",
+          "knowledge-review:c21fd85dbcd62bdd8d586a08a7974d16e8d68f6ad3f1993243c3f8d6ef7bc23d"
+        ],
+        "citation": {
+          "chunkId": "a686013c-6b62-5466-a893-9e68dff781d5",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 316289,
+          "excerptSha256": "3ff1305fd840c6d27e40bbdf367aef6950534f1277c89887e106dc3e15baf9e8",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-16ecfbe91853bb20831c4b97",
+        "versionId": "ed702acb-0f4e-5765-9ae4-15ffafa3a05a",
+        "versionHash": "e91a69e31887a61047650b4858551233489ec74160b7d41f2fc23f2ccef0e214",
+        "publishedAt": "2026-11-20T05:26:13.740Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:ff1d66324bc47210d84e1cf73cdb45622b3129f351c946e70ae94a800612ff4f",
+          "knowledge-review:c407df3871c4dd56cd56a7b95b237a095e9cf70f3a7be31f3478c2114d534e6b"
+        ],
+        "citation": {
+          "chunkId": "2e9f7606-8f9b-5c81-b839-4b894be451b7",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 214078,
+          "excerptSha256": "5473bb9dc244a8cf894d044451c4707fe7dbb8bef2c470481bd7d3016f24eb81",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-258dbc8a8c69d4f66dd0ab05",
+        "versionId": "c8984965-13ee-5add-aa24-ee8e5c0eb70e",
+        "versionHash": "ebeb05bc1555afcf0c3a314cd44ec3f736171bc8ac8a1e3cbfe648b171a80ee7",
+        "publishedAt": "2026-11-20T05:27:03.380Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:d67a51f48373acb42af3c39716322f147de89a3b0288ef204da7c9811f7b1600",
+          "knowledge-review:ba690dd0bf98e6d1599dca4af11c1ec4dd22449bcb82434a66130325681ead41"
+        ],
+        "citation": {
+          "chunkId": "55cacf15-d9d4-52ac-bc0c-ebc407179761",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 299478,
+          "excerptSha256": "62b39bb85862539ef5088a562e8992e9384a22a8c51c149c57639384318c9943",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-8d229a086ffa572923ed027f",
+        "versionId": "c78e7b03-66fc-52d9-8aca-6a634557bbba",
+        "versionHash": "d5529b4029e1bb3a9823418740acb8569ba09535be452c40fcdb170127072b1c",
+        "publishedAt": "2026-11-20T05:34:39.305Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:aa387b11bdc9d4d6c9fa6a96b49d7800d8e3a94b5b331f08c95a2b006092749d",
+          "knowledge-review:84c45a6cad96e3382af4b2f179ac2bbeb56ae309e66eca2d5a5825380930fbd6"
+        ],
+        "citation": {
+          "chunkId": "62b9cf39-8b6d-50d8-9df6-e80fd258dc74",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 290013,
+          "excerptSha256": "8892f78238cf43c681c11ae3cab8cfbaa497d6283562e98408daf2247afd7144",
+          "completeExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-5acb6474a38d19249e4933d6",
+        "versionId": "74d94903-fab3-5f2c-91df-5e1a4f980a8b",
+        "versionHash": "182376502e898b3c2fb0416e2d1ac84e9b01917e53652fca3f8025bde2f3b29b",
+        "publishedAt": "2026-11-20T05:33:57.779Z",
+        "documentVectors": 1,
+        "organizerPages": [
+          1,
+          2
+        ],
+        "reviewerPages": [
+          1,
+          2
+        ],
+        "originalReadingKeys": [
+          "knowledge-organize:b936e796688890013914f17a21a67ccffb4cbd498b06fbfbb2943c57664cbe66",
+          "knowledge-review:55da76170120c658aa79d7a3d26fba7153abb2641f560e87795e802f8159a833"
+        ],
+        "citation": {
+          "chunkId": "e795c71e-1cff-5bd0-addb-40844c12491c",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "originalBytes": 890364,
+          "excerptSha256": "4a38dd82504a6903323e44d21ceef957ecf26091d0d5d5a9710dff7d06c4d54d",
+          "completeExcerptMatch": "exact"
+        }
+      }
+    ],
+    "held": [
+      {
+        "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+        "reason": "review_hold"
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "reason": "knowledge_window_quote_mismatch"
+      },
+      {
+        "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-96b158a588a4b294cbbd010b",
+        "reason": "knowledge_age_uncertain"
+      },
+      {
+        "sourceId": "pdf-15f80bcfe4c3560a68c19a89",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-6637fb9890bacf75064562bd",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-9aef95ce230e1ad16ec567f0",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-4bdbc1ab6341b2e2f08bf986",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-4fd38b86578fa01ebbd32579",
+        "reason": "knowledge_age_one_sided"
+      },
+      {
+        "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-0036bc862846cdd19984930b",
+        "reason": "knowledge_age_one_sided"
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "reason": "knowledge_window_quote_mismatch"
+      },
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "reason": "knowledge_window_quote_mismatch"
+      }
+    ],
+    "sourceObservationRecoveredAwaitingOriginalQueue": [
+      "pdf-3b3c1043ac8e7aa74b5a7beb",
+      "pdf-3342882b79f7108a67ee08e1",
+      "pdf-f2ed89529922c1ab403f28d2",
+      "pdf-a251b7696c8d6660d7aad77e"
+    ],
+    "withoutSourceResult": [
+      "resource-af8c3e8cc813be",
+      "resource-1ba127a119f802",
+      "pdf-2fcfc6f5232e6a7858a730f2",
+      "pdf-142c907be41886853278155e",
+      "pdf-978f5df8a09640d894087117",
+      "pdf-3af602cff5d00f305e7cc95e",
+      "pdf-b6c2b4fa02c969d6fc39eec3",
+      "pdf-2f68a230d9e7115440b2b241",
+      "pdf-10198577dd00f5dbce4da010",
+      "pdf-b1e19bee54f42ee9de413a78",
+      "pdf-5e65881f402bf4ae0ca22646",
+      "pdf-f1650fc45fbebcf0e6a88b20",
+      "pdf-ada8186dcfa6ee9e23e9f7cb",
+      "pdf-881ea5c99f3479c6d5e67047",
+      "pdf-7265fd820fae618428179c2f",
+      "pdf-b71d332f80742e47d347f21a",
+      "pdf-c79a394b580ec9e870d63319",
+      "pdf-681fb8a2f0ebdf8fba8bd55f",
+      "pdf-a4f95c292efe280c21220172",
+      "pdf-e4e9735e1a0ba0923750e633",
+      "pdf-83ee5bc5318ca28cbbf5598a",
+      "pdf-db6902edaf415c9e24a2438a",
+      "pdf-ade31647bbc60577ac26ecc9",
+      "pdf-7d1aab663a0d1e17c4e6b5d1",
+      "pdf-f3051ac61ad97b50bf629775",
+      "pdf-c212ef9814e180c2794a4aa1",
+      "pdf-26b0e8f671d6ce5d3d2159d1",
+      "pdf-811789c9be36ae025ee7e2a2",
+      "pdf-5b0a73131bf6fc9120d7dd48",
+      "pdf-3428e3d13ed575680a0fa8a5",
+      "pdf-a8b1017b75ded7e02814cdb2",
+      "pdf-75f4948b23d797f1e6883149",
+      "pdf-1de70dac6945f17a3891a257",
+      "pdf-110b0452a51c2bc488fbe7f5",
+      "pdf-0964fd47800bc6931d69b130",
+      "pdf-b23cd70ace657d574bfaa15b",
+      "pdf-66d4917b4892792da0ea028d",
+      "pdf-942362fc743b07c81abe9109",
+      "pdf-72a78af063b2df4ff8d129a3",
+      "pdf-e429ac892c396fb798ad7132",
+      "pdf-6e8e1ad611db9680f7aed43e",
+      "pdf-7592835baac4ee7ce94b5f7a",
+      "pdf-3092d527ec85e55ab2b16b6e",
+      "pdf-1d48962862d76b3ffc07490b",
+      "pdf-b2dd7935c763e5df68d2420e",
+      "pdf-f43b59147093cacef5308dcd",
+      "pdf-01991cbeb3f85382c992d63a",
+      "pdf-4dd05b4a01c8e51c441412fc",
+      "pdf-2771b734a7f4ab0e2c4fd4ef",
+      "pdf-bd15166fe03791ef9ff7c062",
+      "pdf-e7427b7b969a37e3d8e889a1",
+      "pdf-65148c48ab4b294035fb977a",
+      "pdf-27dda724b8a16c0794cd0ffe",
+      "pdf-c14775c9c48ecdeff6f8b0bb",
+      "pdf-6488540e32c5e926ecee6787",
+      "pdf-c7613adf22dbbbbb29fee66c",
+      "pdf-a98acb33a6e913bf871a6b5a",
+      "pdf-f545d1be1fbbbe60d939ccde",
+      "pdf-5855948c00226584d5e57f2c",
+      "pdf-4ace9fb38791edb68e91ac3b",
+      "pdf-88bcbb29830a2b0bf2bda335",
+      "pdf-48e37ddf27a8864e98362fa9",
+      "pdf-a195a3e5ac7644036bdaf073",
+      "pdf-f4804bcf1d97c9f5c624043a",
+      "pdf-25f6d14e786c74f161e631d1",
+      "pdf-40e5eb1a042e9dee765714ef",
+      "pdf-902a9652db3c94e03ea54d75",
+      "pdf-780e4c1676a794ee6e89c6db",
+      "pdf-3fca76df105dc64c4e94f76c",
+      "pdf-877466905d56f6616266ffb5",
+      "pdf-b50a158f021811e4c7daafba",
+      "pdf-ce75ff9d0a4c5b0ac1410b26",
+      "pdf-512682e6652f267b32fb90ce",
+      "pdf-26a1e80e0727a8e30c63f634",
+      "pdf-c2c12e4018ee7099064622d4",
+      "pdf-422bb3fc181398ac29e0f914",
+      "pdf-c39b13bedaeb458f138ffd0b",
+      "pdf-a5681663d0428e3b6cd5f674",
+      "pdf-d6050975ffe38c8275c7c121",
+      "pdf-4babcb808d4f1cc595abef5d",
+      "pdf-3cd2fe462bb00b222ab7a420"
+    ],
+    "withoutSourceResultExceedingPerSourceCallLimit": [
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "minimumModelCalls": 16
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "minimumModelCalls": 32
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "minimumModelCalls": 20
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "minimumModelCalls": 14
+      }
+    ],
+    "limits": "Publication checks used the production family catalogue, exact version, stored embeddings and original PDF resolver with a synthetic saved run. The independent review and publication of the 24-page representative are outstanding at this snapshot."
   }
 }
