@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-20 香港 22:20**　C3 的 28 份教材、468 頁已全部接回原操作。正式入口已為 24 頁《奶瓶餵哺指引》預留一次生成，尚待結算及家長卡回執。站外連線逾時，餘下 27 份暫停送審。[C3 逐項工作](PLAN.md#c3-分組交付28-份468-頁) · [正式派送收據](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
 **2026-11-20 香港 13:49**　早上 09:00 快照內的 24 份待審教材已有十份上架、十二份保留、兩份 504 隔離。十份已從正式卡庫核對生效及匯出版本。13:44 的正式發布收據為 `r44682020469-1`，API 及 worker 均為 `fa1bdecb`。另計的待向量 PDF 已於 12:32 發布。[24 份逐項結果與限制](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [首批原快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469)
 
 **2026-11-20 香港 14:15**　09:00 清單的 116 份 PDF 已核實 18 份正式家長卡及 18 個文件向量。17 份完整摘錄逐字命中原頁，另 1 份海報引文在兩份獨立轉錄均命中。13 份保留，1 份已有整理稿、等候獨立審核。其餘 84 份逐份查無模型用量或生效版，當中 4 份已恢復來源觀察。今日維護 300／300 次；原 C 已安排香港 11 月 21 日 08:00:03 沿原操作接續。另已核回同批 C2 二十頁圖表的兩次閱讀、兩個向量及原頁。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44684090457)

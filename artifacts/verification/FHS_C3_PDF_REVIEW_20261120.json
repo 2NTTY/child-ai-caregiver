@@ -1279,5 +1279,18 @@
       }
     },
     "method": "The source fetcher's leaflet reader verified each frozen original and selected whole or windowed input. Every parent range, native PDF attachment and inner text-layer range came from the authenticated parser cache. The production worker opened the installed index after checking both archive digests and all 408 records. No provider was called during staging."
+  },
+  "c3FirstCommissionedDispatch": {
+    "release": "r44746426203-2",
+    "workerRevision": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
+    "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+    "title": "奶瓶餵哺指引",
+    "physicalPages": 24,
+    "admission": {"checkedAt":"2026-11-20T14:10:34.716Z","limitMicros":30000000,"spentMicros":6959583,"legacyReservedMicros":8110080,"boundLegacyReservations":5},
+    "generation": {"reservedAt":"2026-11-20T14:10:56.749Z","checkedAt":"2026-11-20T14:19:51.238Z","ceilingMicros":1634304,"state":"reserved","costMicros":null},
+    "grossBalanceAtCheck": {"spentMicros":6959583,"heldMicros":11378688},
+    "familyEditionVerifiedAtCheck": false,
+    "otherAssignedSourcesSubmittedAtCheck": 0,
+    "evidence": "The production lane selected the pinned original. A read-only Firestore query matched its one generation reservation to that operation. No settlement or family delivery was verified at this checkpoint. The public site and IAP stopped responding during the run."
   }
 }
