@@ -1,0 +1,89 @@
+{
+  "group": {
+    "id": "original-file-library-without-reopening-chat",
+    "title": "不用重翻聊天，怎樣找到這個孩子曾上傳的原檔？",
+    "index": "external-comparison",
+    "readerNote": "在目前孩子的「附件回看 → 影片與文件」核對原檔的名稱、日期、類型和來源。「活動清單.pdf」和「紙船示範.mp4」是合成示例。這頁沒看到而仍有下一頁，可以續看；「沒有更多」和「暫時讀不到」是不同情況，都不等於從未上傳。並非每筆都有原聊天。A 看附件清單；B 的獨立單筆詳情是設計提案，現有的是局部對話框。清單中看得到也不保證仍可下載，須以當下權限與版本為準。前往聊天不是直達原訊息。工作台只讀比較，不用真實家庭資料、不變更權限，不會下載任何檔案，也不承諾播放或分析影片。",
+    "choices": [
+      {
+        "name": "附件庫整頁｜在清單辨認這份原檔",
+        "note": "Google Chat 的 Shared 整頁保留目前空間，Files 每列並排檔種圖示、名稱、分享者和分享日期，另有更多檔案入口；連結和媒體另列。育伴港只借用逐列對照，顯示目前孩子、來源及附件建立日，不把 Google 的分享日期當成建立日。先從清單認清「活動清單.pdf」或「紙船示範.mp4」，還有下一頁便可繼續找。看到名稱不保證現在仍可下載；本頁不播放或分析影片，也不以媒體縮圖暗示原件預覽。",
+        "source": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiNy__s7JPIuOZtMC6iyqa6RGOfTjwJ9FUXvqidS-_EVuZhHC5TqooWEV-hfFuqtR4XSVuDNLIrQR8QtJjnSQLitt9fUh9TR8ipxmkvJdCvbBQFPNofcfyU2eywdcUVw_lUGQZsbT2svsoHw3U-5WDDRbWZOEo_9G7TqOSFmJUJMa3fnnVWi4Jtx3IVGYc/s16000/Shared%20tab%20now%20stores%20files,%20links,%20and%20media.png",
+        "sourceNotes": [
+          {
+            "label": "Google 官方原文：在同一空間以 Shared 查閱已傳送的檔案、連結和媒體",
+            "url": "https://workspaceupdates.googleblog.com/2024/03/access-and-sort-shared-files-in-google-chat-space.html"
+          },
+          {
+            "label": "Google 官方品牌指引：可用超連結連到原內容",
+            "url": "https://about.google/brand-resource-center/guidance/"
+          },
+          {
+            "label": "育伴港：辨認來源與附件建立日；尚有下一頁時可繼續讀取",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/photos/AttachmentLibrary.tsx#L81-L119"
+          },
+          {
+            "label": "育伴港：下載原檔前重核同一附件的存取與版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/ChatFileMessage.tsx#L17-L53"
+          },
+          {
+            "label": "育伴港：附件回看有獨立的影片與文件頁籤",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/photos/PhotosView.tsx#L92-L117"
+          },
+          {
+            "label": "育伴港：依目前孩子、身分及下一頁讀取原檔",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/useAttachmentReview.tsx#L27-L50"
+          }
+        ],
+        "version": "Google Chat Web 官方 Shared 改版原圖（1600 × 1423），刊於 2024-03-27 Google Workspace Updates。2026-11-20 核對完整原圖；未標客戶端版號或攝圖時刻，不是當前版本驗收。",
+        "rights": "Google 品牌指引容許外連原內容。未確認這個比較工作台有原圖再刊許可，只外連原文與完整原圖，不內嵌、轉載、裁切、改畫或另取圖內人物或標誌。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "看 Google Chat 官方附件清單整頁原圖（需連網）↗"
+      },
+      {
+        "name": "單一附件詳情｜先認清檔案，再決定是否下載",
+        "note": "從「影片與文件」打開「紙船示範.mp4」。只看這一件的原檔名、類型、上傳日期和已知來源；來源未提供就說未提供。原檔可讀時才提供「下載原檔」，讀不到時留在這一筆顯示錯誤。返回仍在原附件清單，可再找「活動清單.pdf」。Nuxeo 原圖示範單檔資訊版面；育伴港的獨立詳情是設計樣張，不做播放、下載或精準跳回原訊息。",
+        "source": "https://doc.nuxeo.com/assets/nxdoc/2021/digital-asset-management-dam/video_document_type-webui.png",
+        "sourceNotes": [
+          {
+            "label": "Nuxeo 官方 LTS 2021：一個影片文件有自己的 Web UI 檢視",
+            "url": "https://doc.nuxeo.com/nxdoc/2021/digital-asset-management-dam/#videos"
+          },
+          {
+            "label": "Nuxeo 官方操作說明：從單一文件的檢視進入下載",
+            "url": "https://doc.nuxeo.com/userdoc/share/#downloading"
+          },
+          {
+            "label": "Nuxeo 官方文件庫：LTS 2021 原圖的 Git LFS 指紋",
+            "url": "https://raw.githubusercontent.com/nuxeo/doc.nuxeo.com-content/2021/assets/nxdoc/2021/digital-asset-management-dam/video_document_type-webui.png"
+          },
+          {
+            "label": "Nuxeo 文件授權；連出的條款是 CC BY-NC-SA 4.0",
+            "url": "https://doc.nuxeo.com/nuxeo-documentation-license/"
+          },
+          {
+            "label": "育伴港：附件清單顯示來源與日期；前往聊天是一般入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/photos/AttachmentLibrary.tsx#L81-L119"
+          },
+          {
+            "label": "育伴港：現有附件詳情是對話框；聊天只是入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/photos/AttachmentLibrary.tsx#L93-L119"
+          },
+          {
+            "label": "育伴港：可讀原檔、孩子及版本在下載前仍會核對",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/ChatFileMessage.tsx#L14-L53"
+          }
+        ],
+        "version": "Nuxeo DAM Web UI，LTS 2021 官方產品文件（頁面標示 2026-03-18 更新）；2026-11-20 核對原圖與圖像索引。圖中檔案日期並非拍攝日；確切 Web UI 組建未知。 官方文件庫 LFS 指標：2572746 bytes，SHA-256 082c7a41d39c550b9a4c697566c1401daa617fbab46c5a86ef6e36f7ae23bd22（倉庫宣告，未另做下載驗算）。",
+        "rights": "只外連 Nuxeo 的官方原圖與文件。官方文件授權連往 CC BY-NC-SA 4.0；不據此假定示例素材、標誌或截圖可再刊，不內嵌、重畫或重發。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Nuxeo 官方單檔詳情原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "3a1ac297cecb57c460bef6e55dd035f6870f4bb409d380881a0a792e2108786c"
+}
