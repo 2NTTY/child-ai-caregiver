@@ -1,0 +1,91 @@
+{
+  "group": {
+    "id": "personal-ai-disable-vs-remove-saved-keys",
+    "title": "不再用本人的 AI：怎樣分清「停用」和「移除已存密鑰」？",
+    "index": "embedded-comparison",
+    "readerNote": "這題比較設定頁怎樣說明兩個操作，不是叫你選擇停用還是刪除。停用並儲存後，已存的聊天密鑰與獨立知識搜尋密鑰都保留；移除已存密鑰要另行確認，然後清除育伴港保存的兩種密鑰（如有），同樣停用。兩者都不會自動改用平台 AI；移除不等於在供應商端撤銷，亦不會取消已被供應商接受的請求。這是本人帳戶的設定，不是孩子檔案；不會顯示密鑰內容。兩款都是參考，沒有修改育伴港。",
+    "choices": [
+      {
+        "name": "個人 AI-01｜同一頁分清停用和移除",
+        "note": "在設定頁同時看見「已停用／仍保存密鑰」和獨立的移除入口，毋須進入移除流程才能理解差別。LibreOffice 原圖只作版面對照：兩個控制並列，但在這個內建字典示例中均呈灰色；不是操作實錄。",
+        "source": "https://wiki.documentfoundation.org/images/5/50/CG7014-SettingUpCustomizing.pdf#page=34",
+        "sourceNotes": [
+          {
+            "label": "官方手冊：移除流程",
+            "url": "https://wiki.documentfoundation.org/images/5/50/CG7014-SettingUpCustomizing.pdf#page=33"
+          },
+          {
+            "label": "第 2 頁：版權及章節作者",
+            "url": "https://wiki.documentfoundation.org/images/5/50/CG7014-SettingUpCustomizing.pdf#page=2"
+          },
+          {
+            "label": "CC BY 4.0 授權",
+            "url": "https://creativecommons.org/licenses/by/4.0/"
+          },
+          {
+            "label": "育伴港原碼：關閉後仍保留密鑰",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/model-settings/ModelSettingsView.tsx#L294-L298"
+          }
+        ],
+        "version": "LibreOffice Calc Guide 7.0，2020 年 11 月，第 14 章第 34 頁圖 31；原圖未列構建編號。",
+        "rights": "© 2020 LibreOffice Documentation Team；章節作者 Steve Fanning、Kees Kriek、Felipe Viggiano。選用 CC BY 4.0，原圖無損擷取、像素未改；商標屬各權利人。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "LibreOffice 原圖：完整擴充套件管理視窗",
+            "label": "圖 31 原圖：停用與移除並列，該示例兩者皆無法點擊",
+            "width": 526,
+            "height": 530,
+            "sha256": "8b927c517372f9f71f88fcbac10948785fac7c464687108257e79032ee5fc36d",
+            "sourcePdfSha256": "3b4c08f13398702cb8c2f933c293e9b83f16c8c701335e4a94f16c3b05b86f8c",
+            "sourceFile": "lo-calc70-ch14.pdf",
+            "file": "lo-calc70-fig31-000.png",
+            "mime": "png"
+          }
+        ]
+      },
+      {
+        "name": "個人 AI-02｜先核對要移除甚麼，再看結果",
+        "note": "把可逆的「停用」留在設定頁；想清除已存密鑰時，另開確認，列出會移除甚麼。完成後同頁應看得見「已停用 · 未保存密鑰」。官方影片示範移除一條連線，不是育伴港的 AI 畫面，也不是撤銷供應商的密鑰。",
+        "source": "https://ksefgpt.pl/en/news/instructions/delete-an-integration-in-ksefgpt#video",
+        "sourceNotes": [
+          {
+            "label": "官方原片 4–8.5 秒：整頁連線卡 → 獨立確認 → 同頁空狀態",
+            "url": "https://ksefgpt.pl/wiedza/videos/howto/integrations/09-jak-usunac-integracje-w-ksefgpt-en.mp4#t=4,8.5"
+          },
+          {
+            "label": "設定卡局部：示範連線及垃圾桶",
+            "url": "https://ksefgpt.pl/wiedza/screenshots/howto/integrations/09-jak-usunac-integracje-w-ksefgpt-krok-01-en.webp"
+          },
+          {
+            "label": "獨立確認框局部：列明要移除的連線名稱與不可還原",
+            "url": "https://ksefgpt.pl/wiedza/screenshots/howto/integrations/09-jak-usunac-integracje-w-ksefgpt-krok-02-en.webp"
+          },
+          {
+            "label": "空狀態局部：No integrations、重新新增入口",
+            "url": "https://ksefgpt.pl/wiedza/screenshots/howto/integrations/09-jak-usunac-integracje-w-ksefgpt-krok-03-en.webp"
+          },
+          {
+            "label": "官方教學：刪除自己服務所存設定與憑證，不刪外部資源",
+            "url": "https://ksefgpt.pl/en/news/instructions/delete-an-integration-in-ksefgpt#co-zrobisz"
+          },
+          {
+            "label": "育伴港原碼：移除前核對保存的兩類密鑰及後果",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/model-settings/ModelSettingsView.tsx#L335-L347"
+          },
+          {
+            "label": "育伴港原碼：一般儲存與清除密鑰是不同指令",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/model-settings/model-settings-form.ts#L123-L143"
+          }
+        ],
+        "version": "KSeFGPT 官方英文教學發表／修訂 2026-08-28。示範：Test webhook to delete；未核實 app 拍攝組建。 完整官方影片 1920×1080、12.52 秒；局部 WebP 與完整影片分開。",
+        "rights": "© 2026 KSeFGPT by Flippico；作者 Rafał Zeidler。未核實圖片轉載授權，只提供原頁與原圖外連。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "4ffb3e4b01330afb264749f7aabdd9c4d3437512037e3885296077b27fbecce0"
+}
