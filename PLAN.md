@@ -87,13 +87,9 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
 <a id="fhs-initial-recovery"></a>
-**首批 09:00 的 24 份待審教材。** 從 `c5334be9` 的[逐源快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)接手。另計的待向量 PDF 已由原 C 在香港 12:32 沿原工作發布，版本為 `70db2201-c4bc-5f3a-a011-81fabcad6f66`。兩宗 504 保留原票據。用 `node scripts/fhs-recovery-plan.mjs [SOURCE_ID]` 離線讀取[恢復清單](knowledge/fhs-initial-recovery.json)。有 `campaignArgs` 的項目可由持鎖者在原環境把整個參數陣列交給 `scripts/fhs-initial-campaign.mjs`。每個來源只沿一個固定操作接續。已刊登的截斷修復在清單內標作完成。
+**09:00 快照的 24 份教材已逐份處置。** 香港 13:49 已從正式卡庫核回十份生效教材。另十二份保留，兩份 504 沿原票據隔離。原 C 在 `fa1bdecb` 的持鎖序列復用十二份已保存的整理稿，逐份獨立審核。十張卡的刊登收據、原觀測、卡庫版本、匯出版本與十五組文件向量均已核對。首份網頁及首份 PDF 在舊 worker 的零呼叫失敗，已保存在各自原操作，兩份均已上架。[24 份正式結果、版本及下一步](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [原 09:00 快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)
 
-先完成原件及收據綁定，再逐份修復、獨立審核、發布及讀回。正式交付須為這 24 個來源各留生效版及刊登收據，或保留原操作、原因及仍需處理的證據。原 C 的 US$30 總帳、執行次序及維護配額由原責任線統籌。
-
-八份網頁及四份 PDF 已以正式保存的整理輸出重建送審內容。生長圖表及保護兒童單張保留原來的十八歲端點及包含／排除語義，須在正式 API 與 worker 均支援該來源範圍後刊登。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；遇每日限額用同一命令接續。每份刊登須按原網址查回家長卡、可匯出版本、原觀測及已提交收據。另十份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
-
-正式版本 `ab7e5775` 已上線。首份網頁及首份 PDF 在供應商派送前因整理提示換行差異停下，兩份的模型次數均為零。已用正式 LF 提示及舊稿驗出模組內換行差異，修正後十二份整理和獨立審核指紋在斷網 Linux worker 一致。正式重審及刊登仍待持鎖者沿[同一操作接續](docs/DEPLOYMENT.md)。
+十二份保留中，十份沿原整理和段落證據保留，另兩份在本輪重審後保留。〈培育還是催谷子女〉仍須表達原文學前及嬰幼兒受眾。社署保護兒童單張的第 2 頁審核說明有 249 字，超出 240 字上限，須重新取得符合契約的獨立逐頁證據。上架的《香港2020生長圖表》第一段摘錄跨第 1、2 頁，第二段可在第 12 頁完整找到。兩份單頁 PDF 的摘錄均在各自第 1 頁命中。原始作業及具體限制可從[恢復清單](knowledge/fhs-initial-recovery.json)查回；另計的待向量 PDF 已於 12:32 上架。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
