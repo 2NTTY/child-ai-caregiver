@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { readAiConfig } from '../server/ai-config.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
-import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER } from '../server/firestore-ai-usage.ts';
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER } from '../server/firestore-ai-usage.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { createKnowledgeCampaignBudget, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
@@ -23,7 +24,16 @@ import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/know
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 
-const [command, id, expected, ...extra] = process.argv.slice(2);
+const [invocation, id, expected, ...extra] = process.argv.slice(2);
+// Only the operator CLI selects the commissioned edition. Existing timers retain their own admission.
+const commissioned = invocation === 'publish-approved' || invocation === 'resume-approved';
+const manual = commissioned ? manualPublicationPin(id) : undefined;
+if (commissioned && (!manual || manual.resumeOnly && invocation !== 'resume-approved'))
+  throw Error('knowledge_manual_publication_scope');
+if (manual && !manual.resumeOnly && (manual.lane !== process.env.FHS_CAMPAIGN_LANE
+  || !/^[a-f0-9]{64}$/u.test(process.env.FHS_CAMPAIGN_ORIGINAL_OPERATION ?? '')))
+  throw Error('knowledge_manual_publication_lane');
+const command = invocation === 'publish-approved' ? 'process-age-checked' : invocation === 'resume-approved' ? 'resume-age-checked' : invocation;
 const recovering = command === 'recover';
 const recoveryCommand = recovering || command === 'inspect-recovery';
 const inspecting = command === 'inspect' || command === 'inspect-recovery';
@@ -36,10 +46,10 @@ const explicitAgeScope = command === 'process-age-checked' || command === 'resum
   || draftRevision?.action === 'review_pdf_region' || draftRevision?.action === 'retain_pdf_transcription';
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
 const handlesSource = recovering || resuming || repairing || firstPass || inspecting;
-if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
+if ((!handlesSource && !['status', 'initialize', 'retain-inspected'].includes(command)) || extra.length
   || (resuming || repairing || recoveryCommand ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
-  throw Error('Use status, initialize, inspect|process|process-sized|process-age-checked SOURCE_ID, or resume|resume-age-checked|repair-truncated|recover|inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT');
+  throw Error('Use status, initialize, retain-inspected, inspect|process|process-sized|process-age-checked|publish-approved SOURCE_ID, or resume|resume-age-checked|resume-approved|repair-truncated|recover|inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT');
 const persistence = await openFirebasePersistence(process.env);
 try {
   const { database, cipher, config, authority } = persistence;
@@ -58,16 +68,37 @@ try {
     const policy = await createFirestoreAdmin(domain, readAiConfig(process.env)).readPolicy();
     const usage = new FirestoreAiUsage({ ...domain, namespace: config.namespace + '_ai_usage', billingSource: 'platform' });
     const owner = await usage.getForUser(KNOWLEDGE_MAINTENANCE_PAYER, undefined, day);
+    const publication = await usage.getForUser(KNOWLEDGE_PUBLICATION_PAYER, undefined, day);
     const global = await usage.getGlobal(day);
     const currentGrant = admission?.day === day ? admission : null;
     if (currentGrant && currentGrant.policyVersion !== policy.version) throw Error('knowledge_campaign_policy_changed');
     daily = { day, policyVersion: policy.version, maintenanceAttempts: owner.attempts, maintenanceLimit: currentGrant?.attempts ?? policy.dailyUserAttempts,
-      globalAttempts: global.attempts, globalLimit: policy.dailyGlobalAttempts, grant: currentGrant };
+      manualPublication: publication, globalAttempts: global.attempts, globalLimit: policy.dailyGlobalAttempts,
+      ordinaryGlobalAttempts: global.attempts - publication.attempts,
+      maintenanceRemaining: Math.max(0, Math.min((currentGrant?.attempts ?? policy.dailyUserAttempts) - owner.attempts,
+        policy.dailyGlobalAttempts - global.attempts + publication.attempts)), grant: currentGrant };
   }
   if (command === 'initialize') await gate.initialize();
-  if (handlesSource) {
-    const ledger = await gate.status();
-    if (!ledger || !inspecting && !gate.canAdvance(ledger, id)) throw Error('knowledge_campaign_reconcile_before_next_source');
+  const readControl = tx => authority.readControl(tx);
+  const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
+    originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
+  const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, platformMaterials, observations: refresh.gate });
+  const work = createFirestoreKnowledgeWork({ ...domain, readControl });
+  if (command === 'retain-inspected') {
+    if (!retained.length) throw Error('knowledge_campaign_retained_receipts_required');
+    for (const unknown of retained) {
+      const [registered] = await refresh.jobs(unknown.sourceId);
+      const held = registered && await work.inspect({ watchId: unknown.sourceId, operationFingerprint: unknown.operationFingerprint,
+        workerGeneration: registered.data.workerGeneration, publishMode: 'live' });
+      if (held?.result?.status !== 'candidate_held' || !held.result.observationHash || held.lease || held.prepared || held.receipt
+        || await knowledge.publishedEdition(unknown.sourceId)) throw Error('knowledge_campaign_retained_work_mismatch');
+    }
+    await gate.retainInspected();
+  }
+  if (handlesSource) await handleSource();
+  async function handleSource() {
+    const admissionState = await gate.sourceStatus(id);
+    if (!inspecting && !admissionState.admissible) throw Error('knowledge_campaign_reconcile_before_next_source');
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
@@ -80,23 +111,19 @@ try {
       pdfReader = await openFhsPdfReads(directory, indexHash);
     }
     const fetchSource = pdfReader ? createKnowledgeSourceFetcher({ pdfReader }) : fetchKnowledgeSource;
-    const readControl = tx => authority.readControl(tx);
-    const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
-      originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
-    const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, platformMaterials, observations: refresh.gate });
-    const work = createFirestoreKnowledgeWork({ ...domain, readControl });
-    for (const unknown of retained) {
-      const [registered] = await refresh.jobs(unknown.sourceId);
-      const held = registered && await work.inspect({ watchId: unknown.sourceId, operationFingerprint: unknown.operationFingerprint,
-        workerGeneration: registered.data.workerGeneration, publishMode: 'live' });
-      if (held?.result?.status !== 'candidate_held' || !held.result.observationHash || held.lease || held.prepared || held.receipt
-        || await knowledge.publishedEdition(unknown.sourceId)) throw Error('knowledge_campaign_retained_work_mismatch');
-    }
     const credentials = campaignCredentials;
     if (firstPass) await refresh.register(id, 'fhs-initial-20261120', true);
     const [job] = await refresh.jobs(id);
+    if (!job && inspecting && !draftRevision) {
+      console.log(JSON.stringify({ id, registered: false, started: false, operationFingerprint: null,
+        active: (await knowledge.publishedEdition(id))?.versionId ?? null, reservations: admissionState.reservations,
+        leaseUntilMs: null, quotaDay: null, receipt: null, prepared: false }));
+      return;
+    }
     if (!job) throw Error('knowledge_campaign_watch_unavailable');
     const original = knowledgeReviewHash([credentials, id, job.data.revision, job.data.workerGeneration]);
+    if (manual && !manual.resumeOnly && original !== process.env.FHS_CAMPAIGN_ORIGINAL_OPERATION)
+      throw Error('knowledge_campaign_resume_binding_changed');
     if (expected && original !== (draftRevision?.priorOperationFingerprint ?? expected)) throw Error('knowledge_campaign_resume_binding_changed');
     const originalRequest = { watchId: id, operationFingerprint: original, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
     const prior = repairing || resuming || recoveryCommand ? await work.inspect({ ...originalRequest, operationFingerprint: draftRevision?.operationFingerprint ?? original }) : null;
@@ -108,46 +135,28 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const operationFingerprint = draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
-    const checkId = knowledgeOperationId('knowledge-observation/1', original);
+    let checkId = knowledgeOperationId('knowledge-observation/1', original);
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
-    const reserve = async (kind, limit) => {
-      try { return await gate.reserve(kind, id, limit); }
-      catch (error) {
-        if (/^knowledge_campaign_[a-z_]+$/u.test(error?.message ?? '')) error.code = error.message;
-        throw error;
-      }
-    };
-    const runAdmission = explicitAgeScope || draftRevision ? admission : undefined;
+    const runAdmission = !manual && (explicitAgeScope || draftRevision) ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
-      explicitAgeScope, retainedDraft: draftRevision, campaignAdmission: runAdmission,
+      explicitAgeScope, retainedDraft: draftRevision, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
         const native = createVertexAgentProvider(cfg), vectors = createVertexEmbeddingProvider({ ...cfg, location: 'us-central1' });
-        return { agent: { ...native, async generate(request, signal) {
-          const settle = await reserve('generation', cfg.maxOutputTokens);
-          const response = await native.generate(request, signal);
-          const input = response.usageMetadata?.promptTokenCount, total = response.usageMetadata?.totalTokenCount;
-          await settle(input, typeof input === 'number' && typeof total === 'number' ? total - input : null);
-          return response;
-        } }, embedding: { async embed(input, signal) {
-          if (input.task !== 'RETRIEVAL_DOCUMENT') throw Error('knowledge_campaign_embedding_scope');
-          const settle = await reserve('embedding', 0);
-          const result = await vectors.embed(input, signal);
-          await settle(result.inputTokens, 0);
-          return result;
-        } }, model: { async generate() { throw Error('knowledge_campaign_unexpected_provider'); } } };
+        return { agent: native, embedding: vectors, model: { async generate() { throw Error('knowledge_campaign_unexpected_provider'); } } };
       } });
     if (inspecting) {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
-      console.log(JSON.stringify({ id, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
+      console.log(JSON.stringify({ id, registered: true, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
-        receipt: saved?.receipt?.state, active: active?.versionId ?? null,
+        receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
+        leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations: admissionState.reservations,
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
-          started: Boolean(saved), quotaDay: saved?.waitingForQuotaDay ?? null, activeVersionHash: active?.versionHash ?? null,
+          activeVersionHash: active?.versionHash ?? null,
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
     } else {
       const signal = new AbortController().signal;
@@ -155,6 +164,19 @@ try {
       let result = canResumeRetainedPromptFailure(saved, draftRevision) ? null : saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
+        if (definition.kind === 'pdf' && ['process-age-checked','resume-age-checked'].includes(command)) {
+          const first = await refresh.resumeCheck(job.data,checkId);
+          if (first?.status === 'failed' && first.reason === 'parse') {
+            const repeatId = knowledgeOperationId('knowledge-observation/parser-recovery/1',original);
+            const repeated = await refresh.resumeCheck(job.data,repeatId);
+            const source = repeated?.status === 'ok' && repeated.items.length === 1 ? repeated.items[0] : null;
+            const inventory = JSON.parse(readFileSync(new URL('../knowledge/fhs-child-inventory.json',import.meta.url),'utf8'));
+            const registered = inventory.pdfOriginals.find(pdf => pdf.url === definition.url);
+            if (!registered || source?.url !== definition.url || source.nativeWindowMethod !== 'native-pdf-window/1'
+              || source.extraction?.contentHash !== registered.sha256) throw Error('knowledge_campaign_verified_reread_missing');
+            checkId = repeatId;
+          }
+        }
         if ((repairing || recovering) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
         if (resuming || repairing || recovering) {
           const snapshot = await refresh.resumeCheck(job.data, checkId);
@@ -170,15 +192,16 @@ try {
         do {
           result = await runner.start(request, signal, job.data.revision, checkId);
           if (result.status !== 'in_progress' || result.code !== 'knowledge_window_pending') break;
-          const progress = await work.inspect(request), balance = await gate.status();
+          const progress = await work.inspect(request);
           if (!progress?.windowed || progress.result || progress.receipt || progress.lease || progress.budget.usedUnits <= completedUnits
-            || !gate.canAdvance(balance, id))
+            || !(await gate.sourceStatus(id)).admissible)
             throw Error('knowledge_campaign_window_progress_unconfirmed');
           completedUnits = progress.budget.usedUnits;
         } while (true);
       }
       let readback;
-      if (recovering) {
+      if (recovering || manual) {
+        const sourceUrl = recovering ? recovery.url : definition.url;
         const recorded = await work.inspect(request), active = await knowledge.publishedEdition(id);
         if (result.published && (recorded?.receipt?.state !== 'committed' || recorded.prepared?.review.decision !== 'approve_candidate'
           || !active?.enabled || !active.current || active.versionHash !== recorded.prepared.versionHash
@@ -186,35 +209,36 @@ try {
         let listedCard;
         if (result.published) {
           const reader = randomUUID();
-          const { cards } = await database.runTransaction(tx => knowledge.platformCards(tx, reader, undefined, recovery.url), { readOnly: true });
+          const { cards } = await database.runTransaction(tx => knowledge.platformCards(tx, reader, undefined, sourceUrl), { readOnly: true });
           const card = cards.find(c => c.sourceId === id && c.versionId === active.versionId);
           if (!card?.enabled) throw Error('knowledge_campaign_recovery_card_unlisted');
           const edition = await knowledge.exportPublishedEdition(id, active.versionHash, card.seriesId);
-          if (edition.versionHash !== active.versionHash || edition.source.url !== recovery.url) throw Error('knowledge_campaign_recovery_card_mismatch');
+          if (edition.versionHash !== active.versionHash || edition.source.url !== sourceUrl) throw Error('knowledge_campaign_recovery_card_mismatch');
           listedCard = { seriesId: card.seriesId, versionId: card.versionId, chunks: edition.source.chunks.length, vectors: edition.embeddings.length };
         }
         readback = { ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint } : {}),
           receiptState: recorded?.receipt?.state ?? null, listedCard,
           candidateVersionHash: recorded?.prepared?.versionHash ?? null, activeVersionId: active?.versionId ?? null,
           activeVersionHash: active?.versionHash ?? null, observationHash: recorded?.result?.observationHash ?? recorded?.prepared?.review.observationHash ?? null,
-          reviewDecision: recorded?.prepared?.review.decision ?? null, reviewNotes: recorded?.prepared?.review.notes ?? [] };
+          reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
+        ...(manual ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),
         ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), ...(runAdmission ? { campaignDayAdmission: runAdmission } : {}), maxOutputTokens,
         status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {
         process.exitCode = 2;
         if (result.status === 'budget_exhausted' && ['knowledge_model_daily_admission', 'knowledge_embedding_daily_admission'].includes(result.code)) {
-          const deferred = await work.inspect(request), balance = await gate.status();
+          const deferred = await work.inspect(request);
           if (deferred?.waitingForQuotaDay && !deferred.result && !deferred.receipt && !deferred.lease
-            && gate.canAdvance(balance, id)) process.exitCode = 4;
+            && (await gate.sourceStatus(id)).admissible) process.exitCode = 4;
         }
         if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold',
           'knowledge_age_one_sided', 'knowledge_age_uncertain'].includes(result.code)) {
-          const saved = await work.inspect(request), balance = await gate.status();
+          const saved = await work.inspect(request);
           const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
           const confirmedHold = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;
-          if (confirmedHold && saved.budget.modelCalls > 0 && gate.canAdvance(balance, id)) process.exitCode = 3;
+          if (confirmedHold && saved.budget.modelCalls > 0 && (await gate.sourceStatus(id)).admissible) process.exitCode = 3;
         }
       }
     }

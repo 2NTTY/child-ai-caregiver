@@ -310,6 +310,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
       };
       return {
         ports, deadlineAtMs: initial.deadlineAtMs,
+        async assertLease(tx: Transaction) { await current(tx); },
         async authorize() {
           try { return await database.runTransaction(async tx => { await current(tx); return true; }, { readOnly: true }); }
           catch (error) { if (error instanceof FirestoreKnowledgeWorkError) return false; throw error; }

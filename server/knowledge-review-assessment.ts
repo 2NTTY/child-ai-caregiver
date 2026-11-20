@@ -19,6 +19,10 @@ function canonical(value: unknown): unknown {
   return value;
 }
 export function knowledgeReviewHash(value: unknown): string { return knowledgeHash(canonical(value) ?? null); }
+export function knowledgeOperationId(scope: string, fingerprint: string) {
+  const id = knowledgeReviewHash([scope, fingerprint]);
+  return `${id.slice(0, 8)}-${id.slice(8, 12)}-5${id.slice(13, 16)}-8${id.slice(17, 20)}-${id.slice(20, 32)}`;
+}
 const original = (chunk: KnowledgeChunkInput, quote: string | null) => chunk.originalKind === "visual_page" ? quote === null : quote !== null &&
   [chunk.originalText, chunk.sourceExcerpt].some(text => text?.includes(quote));
 /** Validate recorded meaning against the actual compared editions; this is evidence, not a clinical guarantee. */

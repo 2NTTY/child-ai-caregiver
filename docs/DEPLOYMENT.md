@@ -117,6 +117,14 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 《電子屏幕與幼兒》可按同一逐份入口接回兩次已結算的分窗閱讀。原件、單頁、兩個請求及兩段轉錄各自的引文位置均已固定。重開後應見恢復工作新增生成 0 次，向量及發布結果仍以正式收據核實。《幼兒的一天》須先釐清睡眠年齡能否用於整頁，《臍帶護理》第 2 頁的兩次轉錄分屬不同段落，兩份均繼續保留。[逐頁覆核](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
+### FHS 分組人工製卡與帳本
+
+正式 worker 更新後，原操作者先在容器內以 `FHS_CAMPAIGN_RETAINED_RECEIPTS` 指向已核對的私人收據檔，執行 `node scripts/fhs-initial-campaign.mjs retain-inspected`。此步核對原工作的保留結果及每筆預留，將原操作指紋寫回同一筆帳。中斷後可原樣重行。五筆結果未明的請求仍全額預留。
+
+三組各由本組入口傳入 `FHS_CAMPAIGN_LANE` 及 `FHS_CAMPAIGN_ORIGINAL_OPERATION`，按[固定清單](../knowledge/fhs-initial-publication-lanes.json)呼叫 `publish-approved SOURCE_ID` 或 `resume-approved SOURCE_ID ORIGINAL_OPERATION`。已整理的《貼心照顧》由原操作者用後者接續。伺服器核對官方網址、原件 SHA-256、實頁、登記版本及工作租約，再逐次向共用 US$30 帳本預留。每份只可有一筆未結預留；結果未知時保留原帳，其他教材可獨立繼續。團隊命令沿原 `scripts/fhs-initial-campaign.mjs` 執行。
+
+`status` 的 `globalAttempts` 是全站實際登記次數，`manualPublication` 是當日人工製卡的次數和 token。`ordinaryGlobalAttempts` 及 `maintenanceAttempts` 用於一般全站及排程准入，`maintenanceRemaining` 顯示目前所選維護入口的可用次數。排程及普通 API 沿原身份執行。每次原操作查回用 `inspect SOURCE_ID`，刊登結果另核生效版本與原頁。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
