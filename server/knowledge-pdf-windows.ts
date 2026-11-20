@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { BACKGROUND_KNOWLEDGE_POLICY_VERSION } from "../src/shared/background-knowledge-maintenance.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
@@ -57,6 +58,7 @@ export function planKnowledgePdfWindows(total: number, allowance: number): PdfRe
 }
 const keyOf = (range: Range) => "pages-" + range.first + "-" + range.last;
 export async function readKnowledgePdfWindow(input: {
+  explicitAgeScope?: boolean;
   range: PdfReadingWindow;
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -73,7 +75,7 @@ export async function readKnowledgePdfWindow(input: {
   const pageRecord = z.strictObject(keysFor(physical.map(p => "page" + p), pageFinding.omit({ page: true })));
   const material = z.strictObject({
     section: chunk.shape.section, text: chunk.shape.text, keywords: chunk.shape.keywords,
-    applicability: chunk.shape.applicability, quotePage: location, quote: z.string().max(600),
+    applicability: input.explicitAgeScope ? modelAgeApplicability : chunk.shape.applicability, quotePage: location, quote: z.string().max(600),
     originalKind: z.enum(["text_layer", "page_transcription", "visual_page"])
   });
   const organizeShape = z.strictObject({ pages: pageRecord, ranges: z.strictObject(keysFor(keys, material.nullable())) });
@@ -112,10 +114,12 @@ export async function readKnowledgePdfWindow(input: {
       reject("knowledge_maintenance_output_limit");
     return { raw: JSON.parse(raw), attemptKey };
   }
-  const organized = await call("organize", { ...common, role: "organize", sourceTitle: candidate.observed.title }, organizeShape);
+  const organized = await call("organize", { ...common, role: "organize", sourceTitle: candidate.observed.title,
+    ...(input.explicitAgeScope ? { ageScope: ageScopeInstruction } : {}) }, organizeShape);
   const draft = organizeShape.parse(organized.raw);
   const reviewed = await call("review", {
     ...common, role: "review", baseline: old,
+    ...(input.explicitAgeScope ? { ageScopeCheck: independentAgeCheck } : {}),
     candidate: Object.fromEntries(keys.map(key => {
       const entry = draft.ranges[key];
       if (!entry) return [key, null];

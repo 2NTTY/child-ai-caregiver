@@ -35,3 +35,28 @@ test('missing usage keeps the full reservation across restarts', async () => {
   assert.equal((await ledger.status())?.held, 1580544);
   await assert.rejects(ledger.reserve('embedding', 'a', 0), /reconcile/);
 });
+
+test('an inspected terminal unknown keeps its entire ceiling while one independent source advances', async () => {
+  const { database } = firestoreDomainFixture();
+  const ordinary = createKnowledgeCampaignBudget(database, 'test');
+  await ordinary.initialize();
+  const unknown = await ordinary.reserve('generation', 'a', 4096);
+  await assert.rejects(unknown(42, null), /usage_unknown/);
+  const ref = database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120');
+  const [doc] = (await ref.collection('attempts').get()).docs;
+  const pinned = { ticketId: doc!.id, sourceId: 'a', kind: 'generation' as const, ceiling: 1603584,
+    at: doc!.get('at') as string, operationFingerprint: '1'.repeat(64) };
+  const resumed = createKnowledgeCampaignBudget(database, 'test', [pinned]);
+  await assert.rejects(resumed.reserve('embedding', 'a', 0), /reconcile/);
+  await assert.rejects(createKnowledgeCampaignBudget(database, 'test', [{ ...pinned, sourceId: 'x' }]).reserve('embedding', 'b', 0), /receipt_mismatch/);
+  const admitted = await Promise.allSettled([resumed.reserve('embedding', 'b', 0), resumed.reserve('embedding', 'c', 0)]);
+  assert.equal(admitted.filter(candidate => candidate.status === 'fulfilled').length, 1);
+  await admitted.find(candidate => candidate.status === 'fulfilled')!.value(100, 0);
+  const current = await resumed.status();
+  assert.deepEqual([current?.spent,current?.held,current?.attempts,current?.settled], [15,1603584,2,1]);
+  await assert.rejects(ordinary.reserve('embedding', 'c', 0), /reconcile/);
+  // The unknown ceiling still subtracts from the budget available to all subsequent requests.
+  for (let i = 0; i < 13; i++) await (await resumed.reserve('generation', 'b', 65536))(1048576, 65536);
+  await assert.rejects(resumed.reserve('generation', 'b', 65536), /budget_exhausted/);
+  assert.equal((await resumed.status())?.held, pinned.ceiling);
+});

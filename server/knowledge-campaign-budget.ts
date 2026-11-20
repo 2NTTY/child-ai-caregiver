@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Firestore } from '@google-cloud/firestore';
+import type { Firestore, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 
 export const campaign = 'fhs-child-initial-20261120';
@@ -15,11 +15,40 @@ const attempt = z.strictObject({ kind: z.enum(['generation','embedding']), sourc
 export const campaignRecoverySchemas = { balance, attempt };
 const prices = { input: 1.5, output: 7.5, embedding: 0.15 };
 export type CampaignKind = 'generation' | 'embedding';
+const retainedReceipt = z.strictObject({
+  kind: attempt.shape.kind, sourceId: attempt.shape.sourceId, ceiling: attempt.shape.ceiling, at: attempt.shape.at,
+  ticketId: z.uuid(), operationFingerprint: z.string().regex(/^[a-f0-9]{64}$/u),
+});
+export const retainedCampaignReceipts = z.object({ campaign: z.literal(campaign), retained: z.array(retainedReceipt).min(1).max(251) });
+type RetainedReceipt = z.infer<typeof retainedReceipt>;
 
-export function createKnowledgeCampaignBudget(database: Firestore, namespace: string) {
+export function createKnowledgeCampaignBudget(database: Firestore, namespace: string, inspected: RetainedReceipt[] = []) {
   const ref = database.collection(namespace + '_knowledge_campaigns').doc(campaign);
+  const retained = inspected.map(receipt => retainedReceipt.parse(receipt));
+  const excluded = new Set(retained.map(receipt => receipt.sourceId));
+  if (new Set(retained.map(receipt => receipt.ticketId)).size !== retained.length || excluded.size !== retained.length)
+    throw Error('knowledge_campaign_retained_receipt_mismatch');
+  const retainedCeiling = retained.reduce((sum, receipt) => sum + receipt.ceiling, 0);
+  const tickets = retained.map(receipt => ref.collection('attempts').doc(receipt.ticketId));
+  function canAdvance(row: z.infer<typeof balance> | null, sourceId: string) {
+    return Boolean(row && !row.reconciliationRequired && !excluded.has(sourceId) && row.held === retainedCeiling
+      && row.attempts === row.settled + retained.length);
+  }
+  async function verifyRetained(tx: Transaction) {
+    if (!tickets.length) return;
+    const docs = await tx.getAll(...tickets);
+    for (const [index, receipt] of retained.entries()) {
+      const saved = attempt.safeParse(docs[index]?.data());
+      if (!saved.success || saved.data.state !== 'reserved' || saved.data.sourceId !== receipt.sourceId
+        || saved.data.kind !== receipt.kind || saved.data.at !== receipt.at || saved.data.ceiling !== receipt.ceiling)
+        throw Error('knowledge_campaign_retained_receipt_mismatch');
+    }
+  }
   async function status() {
-    const doc = await database.runTransaction(tx => tx.get(ref));
+    const doc = await database.runTransaction(async tx => {
+      await verifyRetained(tx);
+      return tx.get(ref);
+    });
     return doc.exists ? balance.parse(doc.data()) : null;
   }
   async function initialize() {
@@ -39,7 +68,8 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       : Math.ceil(1_048_576 * prices.input + count.max(65536).parse(maxOutputTokens) * prices.output);
     await database.runTransaction(async tx => {
       const row = balance.parse((await tx.get(ref)).data());
-      if (row.held || row.reconciliationRequired) throw Error('knowledge_campaign_reconcile_before_next_attempt');
+      await verifyRetained(tx);
+      if (!canAdvance(row, sourceId)) throw Error('knowledge_campaign_reconcile_before_next_attempt');
       if (row.held + row.spent + ceiling > row.limit) throw Error('knowledge_campaign_budget_exhausted');
       tx.update(ref, { held: row.held + ceiling, attempts: row.attempts + 1 });
       tx.create(ticket, { kind, sourceId, ceiling, state: 'reserved', at: new Date().toISOString() });
@@ -56,5 +86,5 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       });
     };
   }
-  return { status, initialize, reserve };
+  return { status, initialize, reserve, canAdvance };
 }
