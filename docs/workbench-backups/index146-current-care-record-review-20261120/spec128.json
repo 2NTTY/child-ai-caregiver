@@ -1,0 +1,89 @@
+{
+  "group": {
+    "id": "saved-care-record-requires-current-version-review",
+    "title": "昨天核對過，今天改了日期，為甚麼同一筆記錄又亮黃燈？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：同一筆「下月參觀」記錄已有昨天人工核對的日期，今天改了日期並已保存。已保存不等於這一版已核對；昨天的確認只對原版，不能套到新版。A 在原話與現版旁核對；B 是擬議獨立詳情，只列原本可讀的資訊，不保證有完整歷次確認紀錄。若無法確認版本或結果，不顯示已核對。不改正文、不通知任何人、不等於外部機構已接受預約。工作台只讀比較；正式環境未接通這項核對與持久化。",
+    "choices": [
+      {
+        "name": "留在原回報｜這次改的是哪個日期？",
+        "note": "在「下月參觀」原回報旁展開原話與目前已保存的日期。昨天核對的是改前內容，今天的黃燈只指新日期。看清楚才核對；若日期仍錯，先更正再核對；收起則保留待核對。Crowdin 原圖借的是原句和譯文在同一列、提示緊貼差異的位置，不是日期改動圖。Crowdin 修改已批准譯文只會加註，不會自動撤銷批准；育伴港不沿用這項規則。",
+        "source": "https://support.crowdin.com/_astro/sbs_editor.BS-ZxXRm_Zx14K0.webp",
+        "sourceNotes": [
+          {
+            "label": "Crowdin 官方：同一編輯工作區逐列對照原句和譯文",
+            "url": "https://support.crowdin.com/online-editor/#core-features"
+          },
+          {
+            "label": "Crowdin 官方：編輯已保存譯文，以及如何處理先前批准",
+            "url": "https://support.crowdin.com/online-editor/#editing-translations"
+          },
+          {
+            "label": "Crowdin 官方：對照後可直接核准，或先更正再核准",
+            "url": "https://support.crowdin.com/project-settings/qa-checks/"
+          },
+          {
+            "label": "Crowdin Docs 官方文件庫授權",
+            "url": "https://github.com/crowdin/docs/blob/main/LICENSE"
+          },
+          {
+            "label": "育伴港：核對框分開顯示原話及記錄，目前只在預覽示例",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/ImportantRecordConfirmation.tsx#L18-L41"
+          },
+          {
+            "label": "育伴港：同一孩子、同一筆且來源和記錄版本均相符才沿用確認",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/care-view-model.ts#L137-L147"
+          }
+        ],
+        "version": "Crowdin Web 的 Side-by-Side Editor 官方文件原圖，WebP 2880 × 1868；2026-11-20 核對。圖未標軟件構建號或拍攝日期。",
+        "rights": "Crowdin Docs 官方文件庫採 CC BY 4.0；不推定商標、示例人物或第三方內容另有授權。只外連完整官方原圖和說明，不內嵌、重刊或重畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Crowdin 官方並列編輯工作區原圖（需連網）↗"
+      },
+      {
+        "name": "獨立核對詳情｜昨天確認的，是哪個日期？",
+        "note": "從歷史打開這一筆，頁首先讀「目前記錄：日期已更正｜已保存・待人手核對」。能查到舊資料才並列「上次核對的日期」；查不到就明說沒有可對照的舊日期，不猜是哪一天。可查看原回報再核對，也可「稍後核對」返回，記錄與黃燈都保留。ODK 原圖是已收表單的單筆詳情，不是育伴港或日期對照圖；此獨立頁是設計選項，不是現有功能。",
+        "source": "https://docs.getodk.org/_images/details.png",
+        "sourceNotes": [
+          {
+            "label": "ODK 官方指南：從提交清單打開單筆詳情，看資料及核對活動",
+            "url": "https://docs.getodk.org/central-submissions/#viewing-submission-details"
+          },
+          {
+            "label": "ODK 官方說明：提交已保存，修改後的核對狀態為 Edited",
+            "url": "https://docs.getodk.org/central-submissions/#submission-review-states"
+          },
+          {
+            "label": "ODK Central 版本紀錄：v1.2 加入人手審閱，v1.3 加入逐次差異",
+            "url": "https://docs.getodk.org/central-api-changelog/"
+          },
+          {
+            "label": "ODK 文件庫：這張單筆詳情原圖的檔案指紋",
+            "url": "https://raw.githubusercontent.com/getodk/docs/master/docs/img/central-submissions/details.png"
+          },
+          {
+            "label": "ODK 官方：文件採 CC BY 4.0，名稱與標誌另有品牌規則",
+            "url": "https://docs.getodk.org/legal/"
+          },
+          {
+            "label": "育伴港：合成示例及寫入後待核對的入口，不代表正式彈窗",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/preview/ImportantRecordPreviewTools.tsx#L14-L21"
+          },
+          {
+            "label": "育伴港：目前正式讀取端未開放確認操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L223-L230"
+          }
+        ],
+        "version": "ODK Central v1.2 加入提交審閱，v1.3 加入逐次修改差異；2026-11-20 核對官方原圖及文件。圖中未標程式版本或攝圖日期。 官方文件庫 LFS 指標：133918 bytes，SHA-256 14d85a423a3b094d42e015828cf5ee0f5785b993727950048eb69091f765b65e（倉庫宣告，未另做下載驗算）。",
+        "rights": "Get ODK Inc.：ODK 文件及其製作的非程式素材採 CC BY 4.0；品牌另受規則約束。只外連完整官方原圖，不內嵌、重畫或轉載。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 ODK 官方單筆提交詳情原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "fbbc7e2ee3ee7d426d2893b642b7f42bdd739ead7b870e6b44b26f35018a47bb"
+}
