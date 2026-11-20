@@ -5,14 +5,15 @@
     "sections": 56,
     "listed": 201,
     "statuses": {
-      "directory_link": 15,
+      "directory_link": 16,
+      "external_post": 1,
       "html": 153,
       "pdf": 21,
       "translation_link": 7,
-      "unavailable": 5
+      "unavailable": 3
     },
-    "pdfFiles": 148,
-    "pdfPages": 1799,
+    "pdfFiles": 149,
+    "pdfPages": 1800,
     "distinctMediaLinks": 86,
     "htmlCharacters": 318012
   },
@@ -1563,7 +1564,7 @@
       "id": "resource-d641aa0d19b568",
       "title": "常見飲品糖分大比拼",
       "url": "https://www.facebook.com/CentreforHealthProtection/posts/1104338059582110",
-      "status": "unavailable",
+      "status": "external_post",
       "categories": [
         "https://www.fhs.gov.hk/sc_chi/health_info/class_life/child/child_otm_nutrition.html",
         "https://www.fhs.gov.hk/sc_chi/health_info/class_life/child/child_oty_nutrition.html",
@@ -1573,6 +1574,9 @@
         "https://www.fhs.gov.hk/tc_chi/health_info/class_life/child/child_oty_nutrition.html",
         "https://www.fhs.gov.hk/tc_chi/health_info/class_life/child/child_tsy_nutrition.html",
         "https://www.fhs.gov.hk/tc_chi/health_info/class_topic/ct_child_health/ch_nutrition.html"
+      ],
+      "pdfs": [
+        "58ed0acb9ab2787dc3bac4e15be5e9865d10596fc394312496eaec3bc4f22d63"
       ]
     },
     {
@@ -2714,7 +2718,8 @@
       "categories": [
         "https://www.fhs.gov.hk/sc_chi/health_info/class_topic/ct_child_health/ch_newborn.html",
         "https://www.fhs.gov.hk/tc_chi/health_info/class_topic/ct_child_health/ch_newborn.html"
-      ]
+      ],
+      "error": "HTTP 404"
     },
     {
       "id": "fhs-30092",
@@ -3812,7 +3817,7 @@
       "id": "resource-c7f8affc912a34",
       "title": "健康地使用互聯網及電子屏幕產品",
       "url": "https://www.studenthealth.gov.hk/tc_chi/internet/health_effects.html",
-      "status": "unavailable",
+      "status": "directory_link",
       "categories": [
         "https://www.fhs.gov.hk/sc_chi/health_info/class_life/child/child_otm_parenting.html",
         "https://www.fhs.gov.hk/sc_chi/health_info/class_life/child/child_oty_parenting.html",
@@ -4475,6 +4480,12 @@
       "url": "https://www.change4health.gov.hk/filemanager/common/pdf/Handbook%20on%20Domestic%20Safety.pdf",
       "pages": 55,
       "bytes": 6705182
+    },
+    {
+      "sha256": "58ed0acb9ab2787dc3bac4e15be5e9865d10596fc394312496eaec3bc4f22d63",
+      "url": "https://www.chp.gov.hk/archive/healthatwork/files/pdf/drink_tc.pdf",
+      "pages": 1,
+      "bytes": 277267
     },
     {
       "sha256": "9f0a4426d57911d36176ec17f204a43121a73a4c80ec4a4a772a0ac2bd942f16",
