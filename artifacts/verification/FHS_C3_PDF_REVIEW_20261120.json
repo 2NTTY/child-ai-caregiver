@@ -1303,12 +1303,12 @@
     "lane": "C3",
     "assigned": 28,
     "assignedPages": 468,
-    "latestFamilyOrHoldReceipt": "2026-11-20T16:17:10.822353Z",
+    "latestFamilyOrHoldReceipt": "2026-11-20T16:52:01.162848Z",
     "verifiedFamilyEditions": 5,
-    "confirmedHolds": 15,
-    "reservedUnknown": 2,
-    "outstandingReadbacks": 6,
-    "method": "The bounded production entry used the assigned original operation. Each published row was checked against the active family card, the complete set of required document vectors and the physical opening page in the frozen PDF. A held row pairs the production decision with a separate receipt. Rows marked production_decision_and_firestore_readback matched that decision to the original work, candidate, card head and settled or reserved tickets at one Firestore read time. The interrupted generation keeps its original reservation.",
+    "confirmedHolds": 18,
+    "reservedUnknown": 5,
+    "outstandingReadbacks": 0,
+    "method": "The bounded production entry used each assigned original operation. Published rows match the active family card, every required document vector and the physical opening page in the frozen PDF. A held row pairs the production decision with a separate receipt. Rows marked production_decision_and_firestore_readback match that decision to the original work, candidate, card head and tickets at one Firestore read time. Unsettled provider reservations remain attached to their originals.",
     "entries": [
       {
         "sourceId": "pdf-1d48962862d76b3ffc07490b",
@@ -1796,6 +1796,26 @@
         "holdVerification": "production_decision_and_firestore_readback"
       },
       {
+        "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
+        "title": "交朋友",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13036.pdf",
+        "sha256": "482c1bb1065637e55e68495ad24cee8c6146b01683d5e15983f2905363c07a5d",
+        "pages": 8,
+        "checkedAt": "2026-11-20T16:42:40.719068Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 66315
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_work_model_outcome_unknown",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
         "sourceId": "pdf-b2dd7935c763e5df68d2420e",
         "title": "一至兩歲大兒童的發展",
         "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.pdf",
@@ -1898,12 +1918,93 @@
         "holdVerification": "production_decision_and_firestore_readback"
       },
       {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "title": "聽聽講講 教孩子學說話之二（兩至四歲）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13038.pdf",
+        "sha256": "aef04aa1361faef4823e817bc30b34f860bc3f284ce1a4eef945898db3e5d725",
+        "pages": 10,
+        "checkedAt": "2026-11-20T16:43:41.239053Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
         "sourceId": "pdf-142c907be41886853278155e",
         "title": "僱主指引 - 實施「母乳餵哺友善工作間」",
         "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/30031.pdf",
         "sha256": "add30a8bef1277b7ec81d5366b3356041098295d8aff370fa36492515bfd2f44",
         "pages": 12,
         "checkedAt": "2026-11-20T15:40:35.100779Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "title": "連繫．情感 兒童社交情緒發展(7至12個月)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30156.pdf",
+        "sha256": "03b9bf5fa6e8d861a3080695d2658f41a64729d3297f3361b191fcf800e4b10d",
+        "pages": 12,
+        "checkedAt": "2026-11-20T16:45:35.235963Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "title": "全方位認識「泵奶器」",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.pdf",
+        "sha256": "b819bad662f6a5cf30944178eb62c15a1efd0503c38110ea476bed6e1b03410a",
+        "pages": 16,
+        "checkedAt": "2026-11-20T16:44:36.591525Z",
         "modelCalls": 1,
         "attempts": [
           {
@@ -1945,6 +2046,45 @@
         "checkedAt": "2026-11-20T14:34:34.598319Z"
       },
       {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "title": "共享育兒樂 (五) 學前兒童篇 [三歲至六歲]",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.pdf",
+        "sha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
+        "pages": 80,
+        "checkedAt": "2026-11-20T16:52:01.162848Z",
+        "modelCalls": 1,
+        "attempts": [],
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "title": "共享育兒樂 (二) 新生嬰兒篇[一星期至一個月]",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30033.pdf",
+        "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "pages": 84,
+        "checkedAt": "2026-11-20T16:49:40.086943Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 49089
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 58551
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
         "sourceId": "pdf-82798af3747e7b5fb61b4127",
         "title": "愛·從母乳開始……",
         "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.pdf",
@@ -1966,82 +2106,142 @@
       }
     ],
     "originalReadback": {
-      "readTime": "2026-11-20T16:23:17.833258Z",
+      "readTime": "2026-11-20T16:53:23.019539Z",
       "sourceCount": 28,
       "totalPages": 468,
       "campaignGrossLimitMicros": 30000000,
-      "campaignSettledMicros": 9718702,
-      "campaignReservedMicros": 14647296,
-      "laneSettledMicros": 1423215,
-      "laneReservedMicros": 3268608,
-      "openItems": [
-        {
-          "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
-          "title": "交朋友",
-          "sha256": "482c1bb1065637e55e68495ad24cee8c6146b01683d5e15983f2905363c07a5d",
-          "pages": 8,
-          "state": "original_work_open",
-          "prepared": false,
-          "activeVersionId": null,
-          "tickets": [
-            {
-              "kind": "generation",
-              "state": "settled",
-              "costMicros": 66315
-            }
-          ]
-        },
+      "campaignSettledMicros": 9918206,
+      "campaignReservedMicros": 19550208,
+      "laneSettledMicros": 1530855,
+      "laneReservedMicros": 8171520,
+      "unsettledOriginals": [
         {
           "sourceId": "pdf-7265fd820fae618428179c2f",
-          "title": "聽聽講講 教孩子學說話之二（兩至四歲）",
-          "sha256": "aef04aa1361faef4823e817bc30b34f860bc3f284ce1a4eef945898db3e5d725",
-          "pages": 10,
-          "state": "no_paid_work_at_read_time",
+          "work": true,
           "prepared": false,
           "activeVersionId": null,
-          "tickets": []
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-142c907be41886853278155e",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
         },
         {
           "sourceId": "pdf-512682e6652f267b32fb90ce",
-          "title": "連繫．情感 兒童社交情緒發展(7至12個月)",
-          "sha256": "03b9bf5fa6e8d861a3080695d2658f41a64729d3297f3361b191fcf800e4b10d",
-          "pages": 12,
-          "state": "no_paid_work_at_read_time",
+          "work": true,
           "prepared": false,
           "activeVersionId": null,
-          "tickets": []
+          "reservedMicros": 1634304
         },
         {
           "sourceId": "pdf-25f6d14e786c74f161e631d1",
-          "title": "全方位認識「泵奶器」",
-          "sha256": "b819bad662f6a5cf30944178eb62c15a1efd0503c38110ea476bed6e1b03410a",
-          "pages": 16,
-          "state": "no_paid_work_at_read_time",
+          "work": true,
           "prepared": false,
           "activeVersionId": null,
-          "tickets": []
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        }
+      ],
+      "openItems": []
+    },
+    "firstWindowOrganizerSchemas": {
+      "workerRevision": "883426b658c032e496228b877b0c0b5cee8b24ab",
+      "release": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44773701383",
+      "method": "Captured the native organizer response schema offline before the provider call, using the registered source, original first PDF attachment, production range plan and explicit age setting. The 80-, 84- and 96-page editions have the same four-range first-window schema. HTTP 400 receipts do not specify which input field was rejected.",
+      "rows": [
+        {
+          "sourceId": "pdf-7265fd820fae618428179c2f",
+          "physicalPages": 10,
+          "firstAttachmentBytes": 5320430,
+          "corePages": 10,
+          "ranges": 10,
+          "schemaBytes": 3309,
+          "schemaSha256": "22d241f29d9f0b99723da4773661221b91b8f33dae09891c5cbbdb017877c5ba"
+        },
+        {
+          "sourceId": "pdf-25f6d14e786c74f161e631d1",
+          "physicalPages": 16,
+          "firstAttachmentBytes": 4926570,
+          "corePages": 14,
+          "ranges": 14,
+          "schemaBytes": 3725,
+          "schemaSha256": "d89b7162dad4c58461f05bf1ab4ec5ecfcd62d731b609b2e7bfc6f0d12f2ebc9"
+        },
+        {
+          "sourceId": "pdf-142c907be41886853278155e",
+          "physicalPages": 12,
+          "firstAttachmentBytes": 882159,
+          "corePages": 12,
+          "ranges": 12,
+          "schemaBytes": 3517,
+          "schemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b"
+        },
+        {
+          "sourceId": "pdf-512682e6652f267b32fb90ce",
+          "physicalPages": 12,
+          "firstAttachmentBytes": 7837614,
+          "corePages": 12,
+          "ranges": 12,
+          "schemaBytes": 3517,
+          "schemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b"
+        },
+        {
+          "sourceId": "pdf-82798af3747e7b5fb61b4127",
+          "physicalPages": 96,
+          "firstAttachmentBytes": 3245020,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
         },
         {
           "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
-          "title": "共享育兒樂 (五) 學前兒童篇 [三歲至六歲]",
-          "sha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
-          "pages": 80,
-          "state": "no_paid_work_at_read_time",
-          "prepared": false,
-          "activeVersionId": null,
-          "tickets": []
+          "physicalPages": 80,
+          "firstAttachmentBytes": 6535561,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
         },
         {
           "sourceId": "pdf-b061777e96a27e5124285ba5",
-          "title": "共享育兒樂 (二) 新生嬰兒篇[一星期至一個月]",
-          "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
-          "pages": 84,
-          "state": "no_paid_work_at_read_time",
-          "prepared": false,
-          "activeVersionId": null,
-          "tickets": []
+          "physicalPages": 84,
+          "firstAttachmentBytes": 4370774,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
         }
       ]
+    },
+    "lastSourceAdmission": {
+      "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+      "workCreatedAt": "2026-11-20T16:51:41.553273Z",
+      "workRecordedAt": "2026-11-20T16:51:48.094909Z",
+      "accountUnchangedDuringWork": true,
+      "before": {
+        "held": 19550208,
+        "spent": 9918206,
+        "limit": 30000000
+      },
+      "after": {
+        "held": 19550208,
+        "spent": 9918206,
+        "limit": 30000000
+      },
+      "availableAtOpenMicros": 531586,
+      "availableAtHoldMicros": 531586,
+      "requiredGenerationReservationMicros": 1634304,
+      "sourceProviderTickets": 0
     }
   }
 }
