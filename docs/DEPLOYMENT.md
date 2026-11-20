@@ -131,11 +131,11 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 ### FHS 首批分組的 PDF 讀取資料
 
-三組的 `prepare`、送審及中斷接續可共用已核實的 [PDF 原件與實頁收據](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)。每組使用本組交接的目錄和索引 SHA-256。以下是首批舊索引的格式，實際使用前先核對該索引仍在卷內。
+三組的 `prepare`、送審及中斷接續共用已核實的原件及文字層。容器使用以下索引時，未預載的分窗附件由正式讀取器從同一份原件擷取。[原件與實頁收據](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 ```sh
-export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15
-export FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978
+export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-e25b694bff20
+export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c
 ```
 
 更換 worker 後先核對所選索引的 SHA-256。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。製卡容器會再核對索引、解析器及實際讀取的記錄。
@@ -144,7 +144,14 @@ export FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55dd
 sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
 ```
 
-如需重建，從倉庫根目錄執行 `node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT`。`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對分工清單、每份原件、實頁範圍和分窗附件，並輸出新目錄及索引指紋。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
+從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。
+
+```sh
+node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT --text-only
+node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT SOURCE_ID
+```
+
+`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對官方原件、實頁範圍及分窗附件，輸出目錄和索引指紋。整批原頁封裝保存在操作者本機，VM 可只載入當前一冊。該冊使用自己的目錄及索引，完成後可移走已驗證有本機副本的暫存檔。主機發布前需保留 3 GiB。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
 
 <a id="fhs-publication-lanes"></a>
 ### 受命製卡的分組執行
@@ -168,7 +175,10 @@ sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAM
 
 ```sh
 log=$(mktemp "$HOME/fhs-C1.XXXXXXXX.log")
-nohup sudo -n python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 run >"$log" 2>&1 </dev/null &
+nohup sudo -n python3 -I "$tool" \
+  --reads "${FHS_CAMPAIGN_PDF_READS:?Set the verified PDF reads directory}" \
+  --reads-hash "${FHS_CAMPAIGN_PDF_READS_SHA256:?Set its verified index digest}" \
+  lane C1 run >"$log" 2>&1 </dev/null &
 ```
 
 重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
