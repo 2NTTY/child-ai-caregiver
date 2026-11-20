@@ -1,0 +1,59 @@
+{
+  "group": {
+    "id": "private-pdf-per-turn-page-reading-evidence",
+    "title": "私人 PDF 已可下載，助手這次實際讀了哪一頁？",
+    "index": "external-comparison",
+    "readerNote": "可下載原檔，不代表助手讀過。合成例：工具這輪取得第 2 頁部分文字，其他頁沒證據就寫「未核對」；只有實際請求頁碼能對上回傳結果，才可寫「此頁已試讀，但無法抽取可用文字」。這不證明頁面真的沒有字，也不驗證圖片或版面。兩款只是設計參考：本人私人對話、同一原檔、同一輪，不代表育伴港已有完整逐頁紀錄，也未讀私人附件。",
+    "choices": [
+      {
+        "name": "私人 PDF-01｜在這條答覆旁看閱讀證據",
+        "note": "在原對話的答覆旁，先列這一輪有證據的頁碼與文字片段，原檔下載另放。Open WebUI 作者整頁原圖是答覆指到第 132 頁及原檔預覽，不是讀取紀錄，不代表其他頁已讀。",
+        "source": "https://github.com/open-webui/docs/blob/be66142d8c1fb0ec031ad75ca54ed12665a632bc/static/images/open-terminal-display-file-manual-page.png",
+        "sourceNotes": [
+          {
+            "label": "作者說明：答覆旁定位及下載",
+            "url": "https://docs.openwebui.com/features/open-terminal/file-browser/#files-shown-in-the-chat-message"
+          },
+          {
+            "label": "育伴港：原檔下載按鈕",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/ChatFileMessage.tsx#L17-L55"
+          },
+          {
+            "label": "育伴港：有界頁碼、片段及結果",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/chat-file-reader.ts#L38-L66"
+          }
+        ],
+        "version": "Open WebUI 0.13.0 文件修訂 be66142d8c1fb0ec031ad75ca54ed12665a632bc；原圖未列拍攝組建。",
+        "rights": "Open WebUI 文件作者；未核實圖片重刊授權，只連結完整作者原圖。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "逐頁閱讀紀錄｜先看各頁結果，再看同一頁文字",
+        "note": "左側先辨明哪一頁有本次結果；選到有證據的頁，右側才顯示那一頁的文字。PDF2OCR 原圖展示逐頁完成標記與第 1 頁的結果，沒有畫出另外兩種狀態；原碼另區分「未辨識」和「做過卻沒有文字」。育伴港的構想是查本次讀取，不是再跑 OCR，也不把能下載當作讀過。",
+        "source": "https://github.com/rishabh3354/PDF2OCR/blob/26a3636f5cd58cb9cc0c410b728b9d593e772f3b/share/screenshots/01-scan-to-text.png",
+        "sourceNotes": [
+          {
+            "label": "PDF2OCR 作者整張畫面：逐頁標記和第 1 頁的抽取文字",
+            "url": "https://github.com/rishabh3354/PDF2OCR/blob/26a3636f5cd58cb9cc0c410b728b9d593e772f3b/share/screenshots/01-scan-to-text.png"
+          },
+          {
+            "label": "同一版原碼：沒有找到文字，和還沒辨識，是不同的狀態",
+            "url": "https://github.com/rishabh3354/PDF2OCR/blob/26a3636f5cd58cb9cc0c410b728b9d593e772f3b/src/pdf2ocr/ui/text_panel.py#L145-L161"
+          },
+          {
+            "label": "育伴港：私人對話附件仍需核權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/product-agent-tools.ts#L1115-L1124"
+          }
+        ],
+        "version": "PDF2OCR 原作者 2026-10-14 上架的 2026.10.1 源碼快照；v2026.10.2 仍帶同一張圖。確切截圖組建未標明。",
+        "rights": "Rishabh Bhardwaj / Warlord Softwares；原碼 MIT，未核實 share/screenshots 宣傳圖可重刊。只連原圖，不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "7854b8c2164dd6798473510a1b2fff8f06c5a7982d4c9edeeb9202161cd4b84b"
+}
