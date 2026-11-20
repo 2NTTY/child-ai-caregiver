@@ -85,7 +85,7 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const operationFingerprint = repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
-    const checkId = knowledgeOperationId('knowledge-observation/1', original);
+    let checkId = knowledgeOperationId('knowledge-observation/1', original);
     const sized = repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
@@ -128,6 +128,18 @@ try {
       let result = saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
+        if (explicitAgeScope && definition.kind === 'pdf' && process.env.FHS_CAMPAIGN_RECHECKED_WINDOW === id) {
+          const repeatId = knowledgeOperationId('knowledge-observation/parser-recovery/1', original);
+          const [failed, repeated] = await Promise.all([refresh.resumeCheck(job.data, checkId), refresh.resumeCheck(job.data, repeatId)]);
+          const source = repeated?.status === 'ok' && repeated.items.length === 1 ? repeated.items[0] : null;
+          const inventory = JSON.parse(readFileSync(new URL('../knowledge/fhs-child-inventory.json', import.meta.url), 'utf8'));
+          const registered = inventory.pdfOriginals.find(pdf => pdf.url === definition.url);
+          if (failed?.status !== 'failed' || failed.reason !== 'parse' || !registered || source?.url !== definition.url
+            || source.nativeWindowMethod !== 'native-pdf-window/1' || source.extraction?.contentHash !== registered.sha256)
+            throw Error('knowledge_campaign_verified_reread_missing');
+          // Keep the failed free observation. The paid work keeps the original operation fingerprint.
+          checkId = repeatId;
+        }
         if (repairing && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
         if (resuming || repairing) {
           const snapshot = await refresh.resumeCheck(job.data, checkId);
