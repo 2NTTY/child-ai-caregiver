@@ -1262,7 +1262,8 @@
       "registeredAtTakeover": 2, "unregisteredAtTakeover": 26,
       "confirmedRereadsAt": "2026-11-20T12:59:29.322Z",
       "confirmedRereads": ["pdf-3342882b79f7108a67ee08e1", "pdf-a251b7696c8d6660d7aad77e"],
-      "confirmedRepresentative": {"sourceId":"pdf-3af602cff5d00f305e7cc95e","pages":24,"operationFingerprint":"55052da35fbc02982ab8881d89868cb4342e35183786873d265d9d9b8f16cec9","status":"ready","modelCalls":0},
+      "confirmedRepresentative": {"sourceId":"pdf-3af602cff5d00f305e7cc95e","pages":24,"status":"ready","modelCalls":0},
+      "preparedReadback": {"checkedAt":"2026-11-20T13:13:30Z","loaderCommit":"4be9cf91","readerCommit":"43e22691","ready":28,"uniqueOriginalOperations":28,"verifiedFrozenPages":468,"providerAttempts":0},
       "minimumCallsForLongestBooks": {
         "pdf-82798af3747e7b5fb61b4127": 16,
         "pdf-b061777e96a27e5124285ba5": 14,

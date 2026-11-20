@@ -71,6 +71,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
   joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
   publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
+    chunkIdentities: { key: string; chunkId: string; contentHash: string }[];
     source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
   platformEditions(sourceId: string, candidateId: string, transaction?: Transaction): Promise<{ base: TreatmentEdition | null; selected: TreatmentEdition }>;
@@ -721,6 +722,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const edition = await load(tx, source.activeVersionId, source);
         return { versionId: edition.version.versionId, versionHash: edition.version.versionHash,
           observationHash: edition.version.review?.assessment.observationHash ?? null,
+          chunkIdentities: edition.chunks.map(({ document, chunkId, contentHash }) => ({ key: document.key, chunkId, contentHash })),
           source: edition.document, enabled: source.enabled, current: publication(edition) };
       }, { readOnly: true });
     },

@@ -150,6 +150,8 @@ FHS 首批的 `30034.pdf` 及 `30035.pdf` 有兩份已核對的大原件。只�
 
 首批持鎖者可將[頁段準備收據](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)所列私用壓縮包解到 worker 可讀目錄，核對包的 SHA-256，並在原批次環境設定 `FHS_CAMPAIGN_PDF_READS` 為該目錄及 `FHS_CAMPAIGN_PDF_READS_SHA256` 為收據內的索引指紋。`process-age-checked` 仍會按原觀測流程查官方網址。首次讀取核對解析器版本，逐段核對原件、物理頁及輸出指紋。已記錄的分窗仍優先使用，官方版本變動則沿現有流程解析。每份所需的模型呼叫仍受該次運行的有效政策約束。
 
+在正式 worker 用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION [DELIVERY_OPERATION]` 可唯讀查回首批 PDF。修復發行時可加上由原操作派生的交付操作。輸出 `fhs-publication-receipt/1` 的 `outcome` 取自指定工作；已刊登且 `readback=verified` 代表家長卡、同版匯出所需的全部向量、每段引用及官方原件均已核實。`pdf.pages` 列開啟頁、跨頁摘錄的終頁及核對方法。純圖像按保存的兩次獨立閱讀查證。缺少原頁證據或版本已取代時，查回會交代缺口及回傳狀態碼 2。
+
 觀察的 fetched_at 與 last_successful_check_at、來源發布／修訂日期及既有版本 checked_at（人工核對）分開。hash 未變只更新成功抓取 metadata，沒有向量呼叫；失敗保留最後成功內容與時間。404／410 或停用立即排除，恢復後也需重新批准。feed 不再列某項不自動判斷官方撤回，其成功時間停止前進；超過 24 小時或七日發布窗口便不進近期結果。
 
 SQL 回寫前重查登記／世代／全局暫停，job ID 唯一結果；網絡請求不持有 SQL 交易。每日／每週取回都是有界 GET，沒有模型或私人家庭資料外送。還原保留三張維護表及 pg-boss schedules/jobs，沿用 worker_control 關閉／新世代；核對唯一來源後才重新啟用，操作者可用 check 補查，不能把還原舊抓取時間當最新。
