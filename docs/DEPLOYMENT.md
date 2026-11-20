@@ -170,8 +170,8 @@ node scripts/fhs-catalog-batch.mjs --lane C1 run
 
 ```sh
 sudo docker exec -d -w /app \
-  -e FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15 \
-  -e FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978 \
+  -e FHS_CAMPAIGN_PDF_READS="${FHS_CAMPAIGN_PDF_READS:?Set the verified PDF reads directory}" \
+  -e FHS_CAMPAIGN_PDF_READS_SHA256="${FHS_CAMPAIGN_PDF_READS_SHA256:?Set its verified index digest}" \
   yuban-p1-worker-1 sh -c 'umask 077; exec node scripts/fhs-catalog-batch.mjs --lane C1 run >>/var/tmp/yuban-knowledge/fhs-C1.ndjson 2>&1'
 ```
 
