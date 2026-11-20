@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-11-20 香港 23:57**　C3 的 28 份教材已驗到 5 張正式家長卡、10 個可匯出向量及各自引用的實頁。14 份已核明保留原因，2 份生成費用尚待結算。《交朋友》已結算首筆，容器在獨立審核完成前被終止。餘下 6 份等候正式送審。[C3 分組進度](PLAN.md#active) · [逐份核對](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+**2026-11-21 香港 00:23**　C3 的 28 份教材已有 5 張正式家長卡、10 個向量及各自引用的實頁。15 份已核明保留原因，當中包括 96 頁《愛・從母乳開始》。2 份仍有原生成預留。《交朋友》已結算首筆，正按原單核對。另有 5 份尚待送審。[C3 分組進度](PLAN.md#active) · [逐份核對](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 **2026-11-20 香港 13:49**　早上 09:00 快照內的 24 份待審教材已有十份上架、十二份保留、兩份 504 隔離。十份已從正式卡庫核對生效及匯出版本。13:44 的正式發布收據為 `r44682020469-1`，API 及 worker 均為 `fa1bdecb`。另計的待向量 PDF 已於 12:32 發布。[24 份逐項結果與限制](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [首批原快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469)
 
