@@ -40,7 +40,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "346da2f57bd6a7c5b2202c9e33b4ec736e55a5b659dc87a773e68503fd8d36f8"
     },
     {
       "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
@@ -51,7 +52,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "61badaaa7ab1bca27a02ea0604449d5d61afb955ede4d0ad0a4c4637ecafbdd1"
     },
     {
       "sourceId": "pdf-4babcb808d4f1cc595abef5d",
@@ -62,7 +64,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "4b762d13272972e746fb11787996e41612d4815166f9443bb5ee322c1e8a0283"
     },
     {
       "sourceId": "pdf-c212ef9814e180c2794a4aa1",
@@ -73,7 +76,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "83e1b9e873d63a32d90e5291429e4abd82d0a90b42fc518d6a4d385c0f9f6103"
     },
     {
       "sourceId": "resource-af8c3e8cc813be",
@@ -84,7 +88,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "c1a13dcc3553acc5f8b9f0c15fa081c0feef8e9d87e025a84824e3a8c2b0dc5e"
     },
     {
       "sourceId": "pdf-422bb3fc181398ac29e0f914",
@@ -95,7 +100,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "b421dca14a728b1810e0b39e614c168bc9cf49bdd5b3d38256a84cc998a09cfb"
     },
     {
       "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
@@ -106,7 +112,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "cdde38b2bae0c734d9b2ccd252cd3ad6af37b390d6d193aadbe214550ff5a59e"
     },
     {
       "sourceId": "pdf-0964fd47800bc6931d69b130",
@@ -117,7 +124,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40"
     },
     {
       "sourceId": "pdf-10198577dd00f5dbce4da010",
@@ -128,7 +136,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "d8ce1baaa111efeac792d15e0b6aa8857f2c32a640216b664d126cd7d041dd5b"
     },
     {
       "sourceId": "pdf-26a1e80e0727a8e30c63f634",
@@ -139,7 +148,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40"
     },
     {
       "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
@@ -150,7 +160,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "c62e82e3aff2afc80286a5288f38c03d4be669efc7c054d9949466758f13565a"
     },
     {
       "sourceId": "pdf-6488540e32c5e926ecee6787",
@@ -161,7 +172,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "057b29da1db00e7f3ec0bcfdb7cad5bf7a80dece62b1abdc13c090d689a7da1d"
     },
     {
       "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
@@ -172,7 +184,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "f61800f197aa1dfaffbb47b2e069bfdb720c2056d2f12cbe395d57e15e2dce35"
     },
     {
       "sourceId": "pdf-811789c9be36ae025ee7e2a2",
@@ -183,7 +196,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "02ce36344d75697d00feb7dc85c3868ba8ceb69549a6aac26aabe2009fc118c7"
     },
     {
       "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
@@ -194,7 +208,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "764e5c47062d9c0c7d22202d891d2f9f9311e63abc299599125570a8a5e1b578"
     },
     {
       "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
@@ -205,7 +220,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "c60a4a67afbd756a4ce2c536ed86ee3dcaf292d21ef2024ec3a7a29474459ea7"
     },
     {
       "sourceId": "pdf-b23cd70ace657d574bfaa15b",
@@ -216,7 +232,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40"
     },
     {
       "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
@@ -227,7 +244,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40"
     },
     {
       "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
@@ -238,7 +256,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "c691963eb0a2aededff77f5a2d28726806361d27d69bc33590e8b244ef1357ac"
     },
     {
       "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
@@ -249,7 +268,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "880d742381433aabb690d550b5962492f455599d3ba3fe23a34544b1a67c7aca"
     },
     {
       "sourceId": "pdf-3428e3d13ed575680a0fa8a5",
@@ -260,7 +280,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "2c92dbcd3f62a2dafefd7cf57da45da852b6182a67250a87365e9c4fff7204c1"
     },
     {
       "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
@@ -271,7 +292,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "ead5bba2a8901f6f3112cbdbff32630a94dd7ca511ebda56067b99bf1782ca45"
     },
     {
       "sourceId": "pdf-a195a3e5ac7644036bdaf073",
@@ -282,7 +304,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "fa756735ba118438ba847790ead0d595bb341d50f73bf602c82b76490c9a3a73"
     },
     {
       "sourceId": "pdf-01991cbeb3f85382c992d63a",
@@ -322,7 +345,8 @@
             "settledMicros": 28830
           }
         ]
-      }
+      },
+      "physicalPageMapSha256": "3415e7f2ae9154d63a2c3fbf5cce890db0320e88ff1d86179ea696ded141a4af"
     },
     {
       "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
@@ -333,7 +357,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "2ad86183b6f33fdbd7e9d4bf161711cf4743a19589795c8f96d4798566cb89b4"
     },
     {
       "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
@@ -344,7 +369,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "9a32be8139b1b140439b7a0eb8d44e756af56f489d03543d62d0d471e0c5eee9"
     },
     {
       "sourceId": "pdf-d6050975ffe38c8275c7c121",
@@ -355,7 +381,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "6937242f0c3208e3dddf521c1f62ac1e141b16b913094f2f8c4716a639edc05b"
     },
     {
       "sourceId": "pdf-f43b59147093cacef5308dcd",
@@ -366,7 +393,8 @@
       "production": {
         "outcome": "not_started",
         "tickets": []
-      }
+      },
+      "physicalPageMapSha256": "961660cce1ae5b16a1a8101cf2af05f77aa3577afc3e6e94a6f9c9559a367b38"
     }
   ],
   "productionReadback": {
@@ -416,6 +444,30 @@
           "ceilingMicros": 1634304
         }
       ]
+    }
+  },
+  "physicalPageReadback": {
+    "checkedAt": "2026-11-20T15:44:51.512Z",
+    "parser": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "indexSha256": "150695d0ea140a7b4a91fcbe72465c3c897960e4acef992f4d6ae33ce8149e15",
+    "sources": 28,
+    "pages": 468,
+    "blocks": 64,
+    "reusedBlocks": 33,
+    "pageStatuses": {
+      "text": 310,
+      "empty": 11,
+      "unreadable": 147
+    },
+    "source": "Operator-local copies of the 28 original FHS PDFs pinned in the assignment; no new download or model call.",
+    "range": "Opening-page blocks requested by the production FHS citation verifier, with up to eight physical pages per block.",
+    "method": "Reused 22 exact indexed blocks and 11 final blocks ending at the same last page. The same pinned PDF parser directly read the other 31 blocks from their original files. Reopened all 64 blocks and compared each ordered physical page, parser status and text digest.",
+    "pageMapDigest": "SHA-256 of the UTF-8 JSON array of [physical page number, parser status, SHA-256 of unmodified UTF-8 page text].",
+    "archive": {
+      "location": "Operator workstation",
+      "file": "c1-citation-pages-150695d0ea14.tar.gz",
+      "bytes": 173570,
+      "sha256": "3f2cc25fbb7fa17ae6c22d0be587c5e0f953593ba305709a465859877f773f5b"
     }
   }
 }
