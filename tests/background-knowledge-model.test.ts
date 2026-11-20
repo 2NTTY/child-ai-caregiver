@@ -1,7 +1,11 @@
 import { matchesFhsLayout } from "./helpers/knowledge-pdf-layout-sample.ts";
 import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
+import { createStorageCipher } from "../server/storage-crypto.ts";
+import { EmbeddingAdmissionDeferred } from "../server/embedding-failure.ts";
+import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import test from "node:test";
 import { createModelKnowledgeReviewPort, includePriorRetrieval, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
@@ -111,6 +115,26 @@ test("the initial corpus age grammar couples bounds and holds one-sided evidence
   assert.throws(() => pdf.parse({ ranges: { [page.key]: { section: 'Section', keywords: ['care'], region: 'HK', topics: ['care'],
     conditions: [], pageText: {physicalPage1: 'Text'}, ageRange: {requiresAgeReview: 'uncertain'} } },
     nativeCoverage: {pages: [{page: 1, finding: 'Text'}], unreadablePages: [], layoutAnswer: null} }), {code:'knowledge_age_uncertain'});
+});
+
+test("same-day admission reopens the identical sealed candidate only when capacity is available", async () => {
+  const source = candidate(), generation = randomUUID(), fingerprint = knowledgeHash('synthetic-original-operation');
+  const work = createFirestoreKnowledgeWork({ database: firestoreDomainFixture().database, namespace: 'synthetic',
+    projectId: 'demo-maintenance', cipher: createStorageCipher(Buffer.alloc(32, 1)), readControl: async () => ({ enabled: true, generation }) });
+  const request = { watchId: source.watchId, operationFingerprint: fingerprint, workerGeneration: generation, publishMode: 'live' as const };
+  const config = knowledgeHash('original-config'), limits = { modelCalls: 2, deadlineMs: 60000, publicationConfigHash: config };
+  const token = randomUUID(), session = await work.bind(request, token, config, limits);
+  await session.ports.claimOperation(fingerprint, token, Date.now() + 60000);
+  const prepared = await prepareKnowledgeMaintenance({ candidate: source, baseline: null, fetchedAt, growthRules: [], completeText: provider([]) });
+  await session.savePrepared(source, prepared);
+  await session.waitForQuota();
+  const waiting = await work.inspect(request);
+  await assert.rejects(work.bind(request, randomUUID(), config, limits, undefined, async () => false), EmbeddingAdmissionDeferred);
+  assert.deepEqual(await work.inspect(request), waiting);
+  const resumedToken = randomUUID(), resumed = await work.bind(request, resumedToken, config, limits, undefined, async () => true);
+  await resumed.ports.claimOperation(fingerprint, resumedToken, Date.now() + 60000);
+  assert.deepEqual(await resumed.readPrepared(source), prepared);
+  assert.equal((await work.inspect(request))?.waitingForQuotaDay, undefined);
 });
 
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
