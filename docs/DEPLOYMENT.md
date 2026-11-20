@@ -117,6 +117,23 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 
 《電子屏幕與幼兒》可按同一逐份入口接回兩次已結算的分窗閱讀。原件、單頁、兩個請求及兩段轉錄各自的引文位置均已固定。重開後應見恢復工作新增生成 0 次，向量及發布結果仍以正式收據核實。《幼兒的一天》須先釐清睡眠年齡能否用於整頁，《臍帶護理》第 2 頁的兩次轉錄分屬不同段落，兩份均繼續保留。[逐頁覆核](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
+<a id="fhs-publication-lanes"></a>
+### 受命製卡的分組執行
+
+三位主責在同一個正式 worker 的 `/app` 執行以下命令，把 `C1` 換成自己的組別。可在最後加一個本組 `SOURCE_ID`。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
+
+```sh
+node scripts/fhs-catalog-batch.mjs --lane C1 status
+node scripts/fhs-catalog-batch.mjs --lane C1 prepare
+node scripts/fhs-catalog-batch.mjs --lane C1 run
+```
+
+`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留；已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，既有五張結果未明的票據繼續足額預留。自動維護的每日次數適用於排程及自動查新。
+
+在 VM 可用 `docker exec -d -w /app` 接相同 worker、環境選項與 `node` 命令，SSH 離線後繼續執行。先確認該 worker 的發布收據已包含分組 CLI、受命製卡准入及共享預留。共用的 PDF 讀本可用 `FHS_CAMPAIGN_PDF_READS` 和 `FHS_CAMPAIGN_PDF_READS_SHA256` 指向該 worker 內已驗的目錄和索引。舊單序列交接時停止舊映像的續跑程序，原來那份待審教材由原 C 接回；新目錄命令會略過全部 84 份已分組教材。
+
+重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。
