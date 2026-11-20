@@ -41,6 +41,8 @@ export function NotificationChatTarget() {
       if (snapshot.identityKey !== identityKey || snapshot.sessionGeneration !== generation || snapshot.scopeKey !== scopeKey) return;
       void owner.fetcher(api + "/children/" + encodeURIComponent(childId) + "/chat/messages/" + encodeURIComponent(result.id) + "/seen", {
       method: "POST", cache: "no-store", signal: abort.signal, headers: { Accept: "application/json", "Content-Type": "application/json", "x-expected-user-id": userId }, body: "{}",
+    }).then(response => {
+      if (response.ok && owner.getSnapshot().scopeKey === scopeKey) owner.chatController.confirmProactiveSeen(childId!, result.id);
     }).catch(() => {}); }, 250);
     return () => { clearTimeout(timer); abort.abort(); };
   }, [owner, requested, foreground, exposed, result, identityKey, scopeKey, userId, online, childId, selectedChildId, sharedChild.target]);

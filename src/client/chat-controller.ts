@@ -334,9 +334,15 @@ export class ChatController {
     }
   }
 
+  confirmProactiveSeen(childId: string, messageId: string): void {
+    if (this.state.selectedChildId !== childId || !this.state.messages.some(m => m.id === messageId && m.proactiveUnread)) return;
+    this.update({ messages: this.state.messages.map(m => m.id === messageId ? { ...m, proactiveUnread: false } : m) });
+  }
+
   /** A newer saved row can supersede an SSE stream for the same question. Publish both changes together. */
   private bindSavedRows(messages: ChatMessage[]): Partial<ChatState> & { messages: ChatMessage[] } {
     const latest = new Map<string, ChatMessage>();
+    const seen = new Set(this.state.messages.filter(m => m.proactiveUnread === false).map(m => m.id));
     for (const row of messages) if (row.role === "model" && row.inReplyTo) latest.set(row.inReplyTo, row);
     const mismatched = (target: { messageId: string; runId: string } | null | undefined) => {
       if (!target) return false;
@@ -345,6 +351,7 @@ export class ChatController {
     };
     return {
       messages: messages.map(row => {
+        if (row.proactiveUnread && seen.has(row.id)) return { ...row, proactiveUnread: false };
         const savedRun = row.role === "user" && latest.get(row.id)?.agentRunId;
         return savedRun && savedRun !== row.agentRunId ? { ...row, agentRunId: savedRun } : row;
       }),
