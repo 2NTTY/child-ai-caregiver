@@ -9,4 +9,4 @@
 
 兩圖均為 AtoM 2.9 文件，© 2025 Artefactual Systems Inc. 及 AtoM 文件貢獻者，[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)；[固定授權文件](https://github.com/artefactual/atom-docs/blob/204369378c1303196a6d254350c3428e9c3870b6/LICENCE)。原圖檔未變更；文件版本不等實際擷取的軟件 build。
 
-95 題、193 款（114 款純外連），148 張離線圖。完整預覽 31,321,255 bytes，SHA-256 `635010d7c2d13d301b218097238ad212a3877d46bf2893fd84630d5a6bd0cc25`。靜態及離線 JavaScript 模擬檢查原圖、搜尋、選題、比較和選擇。未做真瀏覽器驗收。只備份文字與版本，不開 PR、不合併、不更新線上預覽。
+95 題、193 款（114 款純外連），148 張離線圖。完整預覽 31,321,265 bytes，SHA-256 `288d9fa802f75514a3341e8c312ec928cf341c457d50fa05b501f7a1d843c9de`。靜態及離線 JavaScript 模擬檢查原圖、搜尋、選題、比較和選擇。未做真瀏覽器驗收。只備份文字與版本，不開 PR、不合併、不更新線上預覽。
