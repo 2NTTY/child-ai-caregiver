@@ -88,6 +88,15 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
+<a id="fhs-c2-publication-lane"></a>
+#### C2 本批 28 份 PDF
+
+C2 由 `573d2982` 承接 28 份、464 頁。20:50 香港已按 [#715 分工](knowledge/fhs-initial-publication-lanes.json)核對全部原件，組內尚無生成、向量請求或生效版本。[本組接手收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json) · [前批 24 份的處置](#fhs-initial-recovery)
+
+1. 按來源、官方 URL 及 SHA-256 對回原件和已有工作。兩份四頁單張已有來源觀測，112 頁及 84 頁各跨多個閱讀窗口，與共用長冊接續核對。共用唯讀收據以來源及原操作起查，連至已提交刊登、家長卡、同版匯出向量及引用實頁。
+2. 在同一付款身份及 US$30 毛額帳本內，以 `scripts/fhs-catalog-batch.mjs --lane C2 prepare|run` 執行本組。受命製卡可即日執行，每日維護次數只限制自動程序。共用交易負責預留與結算；沿原操作接續已保存工作及審核，用量未知保留原票據。
+3. 逐份交回生效版及驗過的引用頁，或附上停在哪個原操作、具體原因和可接續條件。每個版本分別核對刊登收據、家長卡、匯出向量和官方原檔；圖像頁另核獨立逐頁讀本。
+
 <a id="fhs-initial-recovery"></a>
 **09:00 快照的 24 份教材已逐份處置。** 香港 13:49 已從正式卡庫核回十份生效教材。另十二份保留，兩份 504 沿原票據隔離。原 C 在 `fa1bdecb` 的持鎖序列復用十二份已保存的整理稿，逐份獨立審核。十張卡的刊登收據、原觀測、卡庫版本、匯出版本與十五組文件向量均已核對。首份網頁及首份 PDF 在舊 worker 的零呼叫失敗，已保存在各自原操作，兩份均已上架。[24 份正式結果、版本及下一步](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [原 09:00 快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)
 
