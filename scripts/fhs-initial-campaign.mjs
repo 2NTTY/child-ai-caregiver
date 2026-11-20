@@ -1,6 +1,7 @@
 import { openFirebasePersistence } from '../server/firebase-persistence.ts';
+import { readFileSync } from 'node:fs';
 import { readAiConfig } from '../server/ai-config.ts';
-import { createKnowledgeCampaignBudget, campaignModel } from '../server/knowledge-campaign-budget.ts';
+import { createKnowledgeCampaignBudget, campaignModel, retainedCampaignReceipts } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
@@ -30,11 +31,13 @@ try {
   const { database, cipher, config, authority } = persistence;
   if (config.projectId !== 'ai-caregivers-for-children' || process.env.FIRESTORE_EMULATOR_HOST
     || process.env.AI_KNOWLEDGE_MAINTENANCE_PAYER !== 'platform') throw Error('knowledge_campaign_environment_mismatch');
-  const gate = createKnowledgeCampaignBudget(database, config.namespace);
+  const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS;
+  const retained = retainedFile ? retainedCampaignReceipts.parse(JSON.parse(readFileSync(retainedFile, 'utf8'))).retained : [];
+  const gate = createKnowledgeCampaignBudget(database, config.namespace, retained);
   if (command === 'initialize') await gate.initialize();
   if (handlesSource) {
     const ledger = await gate.status();
-    if (!ledger || command !== 'inspect' && (ledger.held > 0 || ledger.reconciliationRequired)) throw Error('knowledge_campaign_reconcile_before_next_source');
+    if (!ledger || command !== 'inspect' && !gate.canAdvance(ledger, id)) throw Error('knowledge_campaign_reconcile_before_next_source');
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
@@ -45,6 +48,14 @@ try {
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
       originalBucket: cloudKnowledgeOriginalBucket(config.projectId, config.photoBucket) });
     const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, platformMaterials, observations: refresh.gate });
+    const work = createFirestoreKnowledgeWork({ ...domain, readControl });
+    for (const unknown of retained) {
+      const [registered] = await refresh.jobs(unknown.sourceId);
+      const held = registered && await work.inspect({ watchId: unknown.sourceId, operationFingerprint: unknown.operationFingerprint,
+        workerGeneration: registered.data.workerGeneration, publishMode: 'live' });
+      if (held?.result?.status !== 'candidate_held' || !held.result.observationHash || held.lease || held.prepared || held.receipt
+        || await knowledge.publishedEdition(unknown.sourceId)) throw Error('knowledge_campaign_retained_work_mismatch');
+    }
     const credentials = knowledgeReviewHash(['platform', 'fhs-initial-20261120', campaignModel, 'global', 'gemini-embedding-001', 'us-central1']);
     if (firstPass) await refresh.register(id, 'fhs-initial-20261120', true);
     const [job] = await refresh.jobs(id);
@@ -52,7 +63,6 @@ try {
     const original = knowledgeReviewHash([credentials, id, job.data.revision, job.data.workerGeneration]);
     if (expected && original !== expected) throw Error('knowledge_campaign_resume_binding_changed');
     const originalRequest = { watchId: id, operationFingerprint: original, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
-    const work = createFirestoreKnowledgeWork({ ...domain, readControl });
     const prior = repairing || resuming ? await work.inspect(originalRequest) : null;
     if (resuming && !prior) throw Error('knowledge_campaign_resume_binding_changed');
     if (repairing && (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit'
@@ -116,7 +126,7 @@ try {
           if (result.status !== 'in_progress' || result.code !== 'knowledge_window_pending') break;
           const progress = await work.inspect(request), balance = await gate.status();
           if (!progress?.windowed || progress.result || progress.receipt || progress.lease || progress.budget.usedUnits <= completedUnits
-            || !balance || balance.held || balance.reconciliationRequired || balance.attempts !== balance.settled)
+            || !gate.canAdvance(balance, id))
             throw Error('knowledge_campaign_window_progress_unconfirmed');
           completedUnits = progress.budget.usedUnits;
         } while (true);
@@ -129,14 +139,14 @@ try {
         if (result.status === 'budget_exhausted' && ['knowledge_model_daily_admission', 'knowledge_embedding_daily_admission'].includes(result.code)) {
           const deferred = await work.inspect(request), balance = await gate.status();
           if (deferred?.waitingForQuotaDay && !deferred.result && !deferred.receipt && !deferred.lease
-            && balance?.held === 0 && balance.attempts === balance.settled && !balance.reconciliationRequired) process.exitCode = 4;
+            && gate.canAdvance(balance, id)) process.exitCode = 4;
         }
         if (['candidate_held', 'already_recorded'].includes(result.status) && ['model_output_limit', 'knowledge_review_failed', 'review_hold',
           'knowledge_age_one_sided', 'knowledge_age_uncertain'].includes(result.code)) {
           const saved = await work.inspect(request), balance = await gate.status();
           const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
-          const retained = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;
-          if (retained && saved.budget.modelCalls > 0 && balance?.held === 0 && balance.attempts === balance.settled && !balance.reconciliationRequired) process.exitCode = 3;
+          const confirmedHold = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;
+          if (confirmedHold && saved.budget.modelCalls > 0 && gate.canAdvance(balance, id)) process.exitCode = 3;
         }
       }
     }

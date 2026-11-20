@@ -1,0 +1,40 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "capturedAt": "2026-11-20T00:07:17.837Z",
+  "retained": [
+    {
+      "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
+      "sourceId": "fhs-14851",
+      "kind": "generation",
+      "ceiling": 1603584,
+      "at": "2026-11-20T00:03:11.096Z",
+      "operationFingerprint": "86c92d9da315819036bc6b86c6e8fe212b7dd6b581db477eea36dbe2287bbcb8"
+    }
+  ],
+  "investigations": [
+    {
+      "sourceId": "fhs-14851",
+      "priorOperationFingerprint": "e2f043b6991c703ef026fe1427233b0812cc29a85b712286125fcaf4c04c1970",
+      "operationFingerprint": "86c92d9da315819036bc6b86c6e8fe212b7dd6b581db477eea36dbe2287bbcb8",
+      "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+      "providerDiagnostic": {
+        "httpStatus": 504,
+        "category": "timeout"
+      },
+      "result": "knowledge_review_failed",
+      "prepared": false,
+      "publicationReceipt": null,
+      "activeEdition": null,
+      "modelStages": 1,
+      "verifiedAuditLog": {
+        "from": "2026-11-20T00:03:10Z",
+        "until": "2026-11-20T00:05:00Z",
+        "method": "GenerateContent",
+        "service": "aiplatform.googleapis.com",
+        "matchingEntries": 0
+      },
+      "actualGenerationUsage": null,
+      "reservationDisposition": "Keep the full amount reserved in the original ticket. Exclude this source and operation from subsequent processing."
+    }
+  ]
+}
