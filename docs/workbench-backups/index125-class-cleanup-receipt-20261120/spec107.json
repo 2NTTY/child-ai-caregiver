@@ -1,0 +1,63 @@
+{
+  "group": {
+    "id": "class-closure-cleanup-receipt",
+    "title": "班級已解散，資料清理完成了嗎？",
+    "index": "external-comparison",
+    "readerNote": "班級已關閉，不代表資料清理完成；仍待清理及已確認完成分開顯示。若提交結果未能核實，就不說關閉成功。只讀原操作的收據，不會重新提交解散。只讓同一會話內的原操作者在仍有權限時核對，不保證重開、跨裝置或換帳戶仍可見。清理限於班級範圍，不刪個人原檔。兩款是版面參考，未操作正式班級。",
+    "choices": [
+      {
+        "name": "班級解散-01｜在班級總覽保留清理收據",
+        "note": "從班級管理頁切到清理收據區；班級已關閉但清理待完成時仍看得到原收據，不把班級放回現行名單。GitLab 原圖是混合群組列表，標明待刪除或刪除中；獨立分區是本方案，不是原圖的做法。",
+        "source": "https://gitlab.com/-/project/278964/uploads/3af0d88c58167ea868233049e8052497/after-admin-groups.png",
+        "sourceNotes": [
+          {
+            "label": "GitLab 作者提交與完整管理總覽原圖",
+            "url": "https://gitlab.com/gitlab-org/gitlab/-/merge_requests/191459#screenshots-or-screen-recordings"
+          },
+          {
+            "label": "GitLab 原提交",
+            "url": "https://gitlab.com/gitlab-org/gitlab/-/commit/390d67e8586d24f3337a5e635302ea3c538619ab"
+          },
+          {
+            "label": "育伴港：確認關閉與清理結果分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-sharing.ts#L669-L684"
+          }
+        ],
+        "version": "GitLab 18.2 開發示例，Rémy Coutable 的 !191459；合併版本 390d67e8586d24f3337a5e635302ea3c538619ab。非本方案實機畫面。",
+        "rights": "GitLab 作者文件中的管理總覽原圖。未核實重刊權，只提供上游原圖連結。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "班級解散-02｜打開這次結果，分開看關閉與清理",
+        "note": "一張收據只回答這次操作：班級關閉已確認了嗎？清理有沒有真正完成？查核只讀原操作，不再解散。CalPrivacy 的原圖把本次刪除請求已提交與資料還要另行處理分開；未示範班級關閉或完工狀態。",
+        "source": "https://cppa.ca.gov/meetings/materials/20260806_07_08.pdf#page=4",
+        "sourceNotes": [
+          {
+            "label": "CalPrivacy 原版簡報第 4 頁右側：同一筆「已提交」和後續處理",
+            "url": "https://cppa.ca.gov/meetings/materials/20260806_07_08.pdf#page=4"
+          },
+          {
+            "label": "CalPrivacy 董事會資料：第 08 項 DROP Update",
+            "url": "https://www.cppa.ca.gov/meetings/materials/20260806_07.html"
+          },
+          {
+            "label": "育伴港：只讀同一筆清理收據",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-sharing.ts#L383-L406"
+          },
+          {
+            "label": "育伴港：換身分後不沿用舊收據",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/SharingController.ts#L77-L89"
+          }
+        ],
+        "version": "CalPrivacy 2026-08-07 董事會 DROP Update 原版 PDF 第 4 頁。為當日簡報所收示範，不是 app 組建號。",
+        "rights": "California Privacy Protection Agency（CalPrivacy）。未核實圖檔的重刊授權；只連結官方出版原頁，不附圖。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "b2dfea34d35970a4768ed97a6587e37faf4c13042377bd1b6db09d101b6bd506"
+}
