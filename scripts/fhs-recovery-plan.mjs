@@ -4,7 +4,10 @@ const manifest = new URL('../knowledge/fhs-initial-recovery.json', import.meta.u
 export function campaignRecoveryPlan(sourceId) {
   const plan = JSON.parse(readFileSync(manifest, 'utf8'));
   if (plan.campaign !== 'fhs-child-initial-20261120') throw Error('knowledge_campaign_recovery_manifest');
-  const entries = plan.entries.filter(e => !sourceId || e.sourceId === sourceId).map(e => ({
+  // The unattended queue covers its original checkpoint. Later held drafts are selected by ID.
+  const selected = sourceId ? plan.entries.filter(e => e.sourceId === sourceId)
+    : plan.entries.filter(e => (e.checkpoint ?? plan.checkpoint) === plan.checkpoint);
+  const entries = selected.map(e => ({
     ...e, ...(['review_age_draft','review_pdf_region','review_pdf_source_age'].includes(e.action)
       ? { campaignArgs: ['recover', e.sourceId, e.operationFingerprint] } : {}),
   }));

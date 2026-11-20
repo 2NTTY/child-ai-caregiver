@@ -985,6 +985,154 @@
           "to": "HK"
         }
       ]
+    },
+    {
+      "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+      "title": "嬰幼兒健康飲食 - 飲奶知多少",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf",
+      "sha256": "247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355",
+      "pages": 2,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "41a3e024a4735187e4cb8ba673bb8f6a7b58bf7a6cfc81bf5fc417ff79ec02d2",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜不同年齡的餵哺模式",
+        "第 2 頁｜牛奶種類、奶量及戒奶瓶；留意五歲後的分項"
+      ],
+      "reason": "第 2 頁載有五歲後的分項。獨立核對整理稿把整段標為 0–60 個月是否遺漏該段。",
+      "observationHash": "67c823170c72f2965d48e3fd5eb2bbf74ad277ef08bc66b263e66fd785feed08",
+      "organizerRequestHash": "72526eb42da7a42b3c04d550b35df521621145fcb65521d90b676b653b42fea8",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through2Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+      "title": "兒童發展監察計劃",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13033.pdf",
+      "sha256": "9dae9888b2f14ba385603e268943541e37c3b901a1de03af2657230d5555dc28",
+      "pages": 2,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "2baa96c156fe185ce969670b937dfd9fc1da09fa021a47c1d674553db643dd34",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜計劃對象及發展監察面談",
+        "第 2 頁｜參加資格、結果及跟進"
+      ],
+      "reason": "核對第 1–2 頁的服務對象、參加條件及跟進安排。",
+      "observationHash": "f225de2c7b5fb3c31cdc386dc9eaec3a58317ad1402a8a75e81b3c4963bcd409",
+      "organizerRequestHash": "e28e2879b44d5ff0b4e87d0a28f219c309344ba788622f96c9ff5cdf6214a5a0",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through2Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-231c869513252fae5e5ce54e",
+      "title": "替孩子轉換奶粉",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.pdf",
+      "sha256": "0dd054a3e224b63374f9cc37706d7f79f9f4c4742dc9ba83b64e370d1d64e2fc",
+      "pages": 2,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "91c44e86009a9917ddfb74c6ffadbd32b59a6112d868c9264b7669056362dba5",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜不同年齡的奶類選擇",
+        "第 2 頁｜特殊配方及轉換注意事項"
+      ],
+      "reason": "核對第 1–2 頁不同奶類及年齡小節，保存個別小節的限制。",
+      "observationHash": "e16340c297c483b641e8b1f513bab12ce916bd843e8fc41e16074ca8c1d1bd63",
+      "organizerRequestHash": "8eaea7496f20e4643407f58c6392408dc3951a8340d1a52bf641eac32de25bc3",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through2Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+      "title": "怎樣引導孩子掌握自己進食的技能〈六至二十四個月大〉",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30010.pdf",
+      "sha256": "d5d0047950a5e887fa106329acb323dbd6fc66129fbf2ed8c04ed5904f50d72c",
+      "pages": 2,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "3acc07e97d22aa4c3e94ede95d64c2ee089b5587ea2b1716fd003f1f4c1dc6e6",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜學習自己進食的階段及準備",
+        "第 2 頁｜餐具、食物及成人在場看管"
+      ],
+      "reason": "標題列六至二十四個月。核對兩頁的器具、食物及全程成人看管條件。",
+      "observationHash": "0e01665a344c582bc850b5d70df34cfaa157d3d2965571f25e2a18c5348df586",
+      "organizerRequestHash": "01e481540aeb79a21f56de4a3883e8273448e05bc0cab17e6d91dbf073d792b6",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through2Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+      "title": "哺乳媽媽需要服用含碘補充劑",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30168.pdf",
+      "sha256": "f696c3c3f36839f2953ee209d2a9bb50b3ff7fc4b7b79ef134f021c3efa1abc1",
+      "pages": 1,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "93ab393d2e3f808c0b7765d0297f95343988f329e0e127737030550426524856",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜懷孕及哺乳對象、補充劑標籤及飲食條件"
+      ],
+      "reason": "核對第 1 頁的懷孕及哺乳對象、標籤單位及未能服用時的原文條件。",
+      "observationHash": "e85e185a110d81f3b7c01db8dc008613a0aadc71dc1fd2d73d19ed353b408e85",
+      "organizerRequestHash": "daee1ce4c3e0a4a853bbf9fc9d2b652075b84d6aaf611813bdf03d0a1f1e4ee6",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+      "title": "滅活小兒麻痺疫苗",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/484.pdf",
+      "sha256": "5e7099c223e034c4a959434d813578e1fecc46f9263f4095db2a3825da4709ce",
+      "pages": 1,
+      "checkpoint": "2026-11-20T04:43:33.757Z",
+      "operationFingerprint": "28d8376cb41957dbf2ffc58fa221370f248dcdb2f90f3e57199b0c488a329d53",
+      "code": "knowledge_review_failed",
+      "action": "review_pdf_region",
+      "sections": [
+        "第 1 頁｜本地接種時間表、禁忌及副作用"
+      ],
+      "reason": "核對第 1 頁本地接種安排、對象及例外，保留刊物修訂日期。",
+      "observationHash": "70e775ba69be9252e4169bf357be459a20d37437c8ea7d47628bcec08f84f1c8",
+      "organizerRequestHash": "13f4eb160169a7206228419db28e633551125588b337fecc634569fd9d793a5b",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
     }
   ]
 }

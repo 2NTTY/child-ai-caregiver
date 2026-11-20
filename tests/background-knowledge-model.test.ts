@@ -276,11 +276,16 @@ test("retained PDF region corrections preserve the original reading and send the
     ageRange: { basis: "actual", minMonths: 12, maxMonths: 60, exclusiveEnd: false }, pageText: {physicalPage1: "Daily amount for the specified ages."} } },
     nativeCoverage: { pages: [{ page: 1, finding: "Age range is conditional." }], unreadablePages: [], layoutAnswer: null } });
   let organizerRequestHash = "", organizerKey = "";
-  await assert.rejects(prepareKnowledgeMaintenance({ ...base, async completeText({system, user, attemptKey}) {
+  const freshReview = new Error('Fresh PDF draft reached independent review');
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, async completeText({role, system, user, attemptKey}) {
+    if (role === 'knowledge_review') {
+      assert.equal(JSON.parse(user).candidate.chunks[0].applicability.region, 'HK');
+      throw freshReview;
+    }
     organizerRequestHash = knowledgeReviewHash({system, user, attemptKey});
     organizerKey = attemptKey;
     return draft;
-  } }), /invalid string/i);
+  } }), error => error === freshReview);
   const revision = { action: 'review_pdf_region' as const, sourceId: source.watchId, observationHash: source.observationHash, sha256,
     organizerRequestHash, operationFingerprint: 'd'.repeat(64), reason: 'Verify conditional ages on physical page one.', sections: ['Physical page 1'],
     regionEdits: [{ range, from: '香港' as const, to: 'HK' as const }] };
@@ -339,8 +344,9 @@ test("grouped PDF sections require one keyed summary for each physical page in i
   const group = {section:"Fruit",keywords:["fruit"],region:"HK",topics:["care"],conditions:[],ageRange:null};
   const nativeCoverage = {pages:[{page:5,finding:"Table introduction"},{page:6,finding:"Fruit row"}],unreadablePages:[],layoutAnswer:null};
   const parse = (pageText:Record<string,string>) => contract.parse({ranges:{[range.key]:{...group,pageText}},nativeCoverage});
-  const spelling = contract.parse({ranges:{[range.key]:{...group,region:"Hong Kong",pageText:{physicalPage5:"Opening",physicalPage6:"Fruit"}}},nativeCoverage});
-  assert.equal(spelling.units[0]!.applicability.region,"HK");
+  const withRegion = (region: string) => contract.parse({ranges:{[range.key]:{...group,region,pageText:{physicalPage5:"Opening",physicalPage6:"Fruit"}}},nativeCoverage});
+  for (const spelling of ["Hong Kong", "香港", "hk"]) assert.equal(withRegion(spelling).units[0]!.applicability.region, "HK");
+  assert.throws(() => withRegion("未註明"));
   assert.deepEqual(range.pages,["physicalPage5","physicalPage6"]);
   assert.throws(() => parse({physicalPage1:"Wrong physical page",physicalPage6:"Figure"}));
   assert.throws(() => parse({physicalPage6:"Figure"}));

@@ -47,3 +47,35 @@ test('the held recovery queue dispatches only bound checkpoint drafts and stops 
   assert.equal(quarantined.length, 2);
   assert.ok(quarantined.every((r: {campaignArgs?: string[]}) => !r.campaignArgs));
 });
+
+test('later PDF holds are recoverable only by explicit ID and original receipt', () => {
+  const root = new URL('../', import.meta.url);
+  const plan = (...ids: string[]) => spawnSync(process.execPath, ['scripts/fhs-recovery-plan.mjs', ...ids], {cwd: root, encoding: 'utf8'});
+  const evidence = JSON.parse(readFileSync(new URL('../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json', import.meta.url), 'utf8'));
+  const initial = new Set(JSON.parse(plan().stdout).entries.map((row: {sourceId: string}) => row.sourceId));
+  let eligible = 0;
+  for (const row of evidence.entries) {
+    assert.ok(!initial.has(row.sourceId));
+    const result = plan(row.sourceId);
+    if (row.disposition !== 'independent_review_ready') {
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /knowledge_campaign_recovery_source/u);
+      continue;
+    }
+    assert.equal(result.status, 0, result.stderr);
+    const [entry] = JSON.parse(result.stdout).entries;
+    assert.equal(entry.checkpoint, evidence.checkpointAt);
+    assert.deepEqual(entry.campaignArgs, ['recover', row.sourceId, row.operation]);
+    const revision = retainedDraftRevisionSchema.parse(entry);
+    assert.equal(revision.action, 'review_pdf_region');
+    assert.equal(revision.sha256, row.originalSha256);
+    assert.equal(revision.organizerRequestHash, row.organizerRequestHash);
+    assert.equal(revision.observationHash, row.observationHash);
+    assert.deepEqual(revision.regionEdits, row.regionEdits);
+    const child = retainedDraftWorkId(row.operation);
+    assert.ok(matchesRegisteredRetainedDraft(revision, row.operation, child));
+    assert.equal(matchesRegisteredRetainedDraft({...revision, sections:['Other page']}, row.operation, child), false);
+    eligible++;
+  }
+  assert.equal(eligible, 6);
+});

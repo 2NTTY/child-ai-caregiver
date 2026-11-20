@@ -40,12 +40,12 @@ export function pdfOrganizationContract(units: readonly { id: string; page: numb
     ...(priorTopics.length ? { priorTopicMatches: z.strictObject(Object.fromEntries(priorTopics.map(key => [key, z.boolean()]))) } : {}),
   })]))), nativeCoverage: factKeys.length ? nativeCoverageSchema.extend({ layoutFacts: layoutFactContract(factKeys) }) : nativeCoverageSchema });
   return { ranges, schema: nativeResponseSchema(inheritedCoverage ? shape.omit({nativeCoverage:true}) : shape), parse(raw: unknown) {
-    // The English FHS publication can spell its jurisdiction in full. Normalize that
-    // exact display name to its ISO code before applying the unchanged storage schema.
+    // Preserve the same jurisdiction when the organizer uses a display name or the lowercase ISO code.
     const envelope = z.object({ ranges: z.record(z.string(), z.unknown()) }).passthrough().parse(raw);
     if (inheritedCoverage && Object.hasOwn(envelope, "nativeCoverage")) throw Error("knowledge_pdf_revision_unbound_coverage");
     const normalized = Object.fromEntries(Object.entries(envelope.ranges).map(([key, value]) =>
-      [key, value && typeof value === "object" && "region" in value && value.region === "Hong Kong"
+      [key, value && typeof value === "object" && "region" in value
+        && (value.region === "Hong Kong" || value.region === "香港" || value.region === "hk")
         ? { ...value, region: "HK" } : value]));
     const value = shape.parse({ ...envelope, ranges: normalized, ...(inheritedCoverage ? {nativeCoverage:inheritedCoverage} : {}) });
     return { nativeCoverage: value.nativeCoverage, units: ranges.map(({ key, unitId, first, pages }) => {
