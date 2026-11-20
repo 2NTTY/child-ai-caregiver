@@ -1,0 +1,63 @@
+{
+  "group": {
+    "id": "growth-advice-expired-follow-up",
+    "title": "成長建議已不再適用，原先的跟進還在嗎？",
+    "index": "external-comparison",
+    "readerNote": "當時接受的建議仍是歷史，現在不再適用或來源無法核實，不代表原待辦取消、完成或背景提醒已派送。原待辦狀態須另讀；只有仍有權且讀到它才提供查看入口，未能核實就如實標示，不猜狀態。這是兩款比較的較嚴格入口，現有育伴港可能在狀態未知時仍顯示連結。兩款是全頁設計參考，沒有改動待辦、觸發提醒或更改育伴港。",
+    "choices": [
+      {
+        "name": "關注鏈跟進-01｜先看舊建議為何不能照做",
+        "note": "把歷史建議和目前的適用性分開；適用來源無法核對時，不沿用舊動作。原跟進仍可獨立核對。Kubernetes 原公告先說文章可能過時，再標註問卷截止；原議題另開，兩者的狀態不是一回事。",
+        "source": "https://kubernetes.io/blog/2021/11/12/are-you-ready-for-dockershim-removal/",
+        "sourceNotes": [
+          {
+            "label": "開啟原跟進議題：另頁獨立狀態",
+            "url": "https://github.com/kubernetes/kubernetes/issues/106917"
+          },
+          {
+            "label": "公告固定原碼",
+            "url": "https://github.com/kubernetes/website/blob/b95e65a0dd00453d6cca66c909464a30f35d1010/content/en/blog/_posts/2021/are-you-ready-for-dockershim-removal/index.md"
+          },
+          {
+            "label": "育伴港：適用性和原待辦各自讀取",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-growth.ts#L267-L305"
+          }
+        ],
+        "version": "Sergey Kanzhelev，2021-11-12 官方歷史公告；原文固定 b95e65a0dd00453d6cca66c909464a30f35d1010。",
+        "rights": "Kubernetes Authors，站點內容 CC BY 4.0。只外連官方原公告，未擷取或轉載頁面。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "關注鏈跟進-02｜先讀原待辦，沿時間線回看",
+        "note": "頂部先答原待辦是不是還要處理，再往下看接受、建立跟進、讀取時發現適用性變動。Taskwondo 作者公布的完整手機例把現在狀態獨立置頂、下方另列狀態變更；它不示範建議失效，關聯也在另一分頁。",
+        "source": "https://github.com/marcoshack/taskwondo/blob/d1ba40fee4194134a2a9dc4eddb79eeaf365d880/docs/screenshots/taskwondo-mobile-item-activities.png",
+        "sourceNotes": [
+          {
+            "label": "Taskwondo 作者文件：原圖是完整手機詳情的 Activity 視圖",
+            "url": "https://github.com/marcoshack/taskwondo/blob/f1a8da3c47f1fe19a522f88c9ac5f822345dc0ce/docs/overview.md#L84-L99"
+          },
+          {
+            "label": "OpenProject 補充詳情區：Activity 記下連結子工作包的變更",
+            "url": "https://github.com/opf/openproject/blob/d1b12f100f59d9dad384e19791833ec18b4f0b0f/docs/getting-started/work-packages-introduction/openproject_getting_started_work_packages_activity_tab.png"
+          },
+          {
+            "label": "Taskwondo MIT 文件庫條款；本比較不轉載圖中的頭像",
+            "url": "https://github.com/marcoshack/taskwondo/blob/d1ba40fee4194134a2a9dc4eddb79eeaf365d880/LICENSE#L1-L13"
+          },
+          {
+            "label": "育伴港：獨立呈現原待辦狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/growth/GrowthConcernTimeline.tsx#L27-L60"
+          }
+        ],
+        "version": "Taskwondo 文件原圖收載於 v0.4.0，與 2026-03-08 上游加入版本同一 blob。原圖未列拍攝組建。",
+        "rights": "© 2026 Marcos Hack / Taskwondo；文件庫為 MIT。原圖包含可識別人物頭像，只連結未修改的作者原圖。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "fea4b5527319bc1b67d20f737731f854d151288b3338260e80081718c65c967f"
+}
