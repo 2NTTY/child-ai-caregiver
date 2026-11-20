@@ -97,6 +97,10 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 ### FHS 首批同一帳日續作
 
+**人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
+
+**舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。
+
 2026-11-20 UTC 的一次營運批准只供 `fhs-child-initial-20261120` 的兒童健康目錄首批。當日政策 v3 的平台維護身份由 200 次增至最多 300 次，全站仍為 400 次，家長每人 200 次。每次整理、審核及文件向量都佔一次。首批仍逐次在原 US$30 毛額帳本預留，兩張 504 共 US$3.207168 繼續全額扣起。其他日子及其他維護入口沿日常政策。香港時間 11 月 21 日 08:00 批准自動到期。
 
 由持有原批次鎖的操作者接手。先核實新 worker 的發布收據，在同一容器用已核對的兩張票據檔設定 `FHS_CAMPAIGN_RETAINED_RECEIPTS`（容器內的絕對路徑），只向本次首批命令傳入 `FHS_CAMPAIGN_DAY_ADMISSION=2026-11-20`。以下命令在該 worker 的 `/app` 內執行。首行讀回同一付款身份、當日兩個計數及毛額帳本，第二行核對原版本與指紋，第三行只接續這份教材。
@@ -124,6 +128,49 @@ node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16e
 三組各由本組入口傳入 `FHS_CAMPAIGN_LANE` 及 `FHS_CAMPAIGN_ORIGINAL_OPERATION`，按[固定清單](../knowledge/fhs-initial-publication-lanes.json)呼叫 `publish-approved SOURCE_ID` 或 `resume-approved SOURCE_ID ORIGINAL_OPERATION`。已整理的《貼心照顧》由原操作者用後者接續。伺服器核對官方網址、原件 SHA-256、實頁、登記版本及工作租約，再逐次向共用 US$30 帳本預留。每份只可有一筆未結預留；結果未知時保留原帳，其他教材可獨立繼續。團隊命令沿原 `scripts/fhs-initial-campaign.mjs` 執行。
 
 `status` 的 `globalAttempts` 是全站實際登記次數，`manualPublication` 是當日人工製卡的次數和 token。`ordinaryGlobalAttempts` 及 `maintenanceAttempts` 用於一般全站及排程准入，`maintenanceRemaining` 顯示目前所選維護入口的可用次數。排程及普通 API 沿原身份執行。每次原操作查回用 `inspect SOURCE_ID`，刊登結果另核生效版本與原頁。
+
+### FHS 首批分組的 PDF 讀取資料
+
+三組的 `prepare`、送審及中斷接續可共用同一份 [PDF 原件與實頁收據](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)。本次 worker 的讀取目錄及索引 SHA-256 如下。在容器內執行分組入口時，將兩項環境變數一併傳入該命令。
+
+```sh
+export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15
+export FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978
+```
+
+更換 worker 後先在新容器的 `/app` 核對讀取資料。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。
+
+```sh
+node --input-type=module -e 'import {openFhsPdfReads} from "./scripts/fhs-pdf-reads.ts"; await openFhsPdfReads(process.env.FHS_CAMPAIGN_PDF_READS,process.env.FHS_CAMPAIGN_PDF_READS_SHA256)'
+```
+
+如需重建，從倉庫根目錄執行 `node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT`。`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對分工清單、每份原件、實頁範圍和分窗附件，並輸出新目錄及索引指紋。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
+
+<a id="fhs-publication-lanes"></a>
+### 受命製卡的分組執行
+
+三位主責在同一個正式 worker 的 `/app` 執行以下命令，把 `C1` 換成自己的組別。可在最後加一個本組 `SOURCE_ID`。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
+
+```sh
+node scripts/fhs-catalog-batch.mjs --lane C1 status
+node scripts/fhs-catalog-batch.mjs --lane C1 prepare
+node scripts/fhs-catalog-batch.mjs --lane C1 run
+```
+
+`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留；已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，既有五張結果未明的票據繼續足額預留。自動維護的每日次數適用於排程及自動查新。
+
+先確認正式發布收據已包含分組 CLI、受命製卡准入及共享預留。原 C 在交接時接回原有的待審教材，並停妥舊映像的續跑程序。新目錄命令會略過全部 84 份已分組教材。以下 VM 命令使用首批已驗的 PDF 讀本，SSH 離線後仍會執行；換組時一併替換命令和日誌內的組名。
+
+```sh
+sudo docker exec -d -w /app \
+  -e FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-17c8bbb58a15 \
+  -e FHS_CAMPAIGN_PDF_READS_SHA256=17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978 \
+  yuban-p1-worker-1 sh -c 'umask 077; exec node scripts/fhs-catalog-batch.mjs --lane C1 run >>/var/tmp/yuban-knowledge/fhs-C1.ndjson 2>&1'
+```
+
+重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
+
+逐份驗收用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可將該工作指紋加作第三個參數；原操作仍是第二個參數。
 
 ### 公共知識 ZIP 暫存
 

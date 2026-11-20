@@ -118,7 +118,10 @@ export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptio
           // Native ADK protocol state has a fixed hierarchy. Count every encrypted event, not just the app header.
           const childCollection = nativeDepth === undefined ? undefined : ['users', 'sessions', 'events'][nativeDepth];
           if (childCollection) await collect(row.ref.collection(childCollection), nativeDepth! + 1);
-          if (collection.path === options.namespace + '_knowledge_campaigns') await collect(row.ref.collection('attempts'));
+          if (collection.path === options.namespace + '_knowledge_campaigns') {
+            await collect(row.ref.collection('attempts'));
+            await collect(row.ref.collection('publicationBindings'));
+          }
         }
         if (page.size < 100) break; cursor = page.docs.at(-1)!.id;
       }

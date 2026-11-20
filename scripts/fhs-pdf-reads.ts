@@ -4,9 +4,37 @@ import { join } from 'node:path';
 import { deserialize } from 'node:v8';
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES, type KnowledgePdfOptions, type KnowledgePdfResult } from '../server/knowledge-pdf.ts';
 import { largeFhsPdf } from '../server/platform-materials.ts';
+import type { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
+import { knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
+import type { RefreshJob } from '../server/knowledge-refresh-types.ts';
 
 const sha256 = (data: Uint8Array) => createHash('sha256').update(data).digest('hex');
 const digest = /^[a-f0-9]{64}$/u;
+
+type PdfPin = {sourceId: string; url: string; sha256: string; pages: number};
+type Observations = Pick<ReturnType<typeof createFirestoreKnowledgeRefresh>, 'resumeCheck'>;
+type Snapshot = Awaited<ReturnType<Observations['resumeCheck']>>;
+
+export function matchesFhsPdfObservation(source: PdfPin, snapshot: Snapshot) {
+  if (snapshot?.status !== 'ok' || snapshot.items.length !== 1) return false;
+  const [item] = snapshot.items;
+  return item?.url === source.url && item.extraction?.format === 'text_pdf'
+    && item.extraction.contentHash === source.sha256 && item.extraction.totalPages === source.pages;
+}
+
+/** A parser reread has a separate free check, with the same original paid work. */
+export async function resolveFhsPdfObservation(refresh: Observations, job: RefreshJob, operation: string, source: PdfPin) {
+  if (job.watchId !== source.sourceId) throw Error('knowledge_campaign_source_binding_changed');
+  const checkId = knowledgeOperationId('knowledge-observation/1', operation);
+  const snapshot = await refresh.resumeCheck(job, checkId);
+  if (snapshot?.status === 'failed' && snapshot.reason === 'parse') {
+    const rereadId = knowledgeOperationId('knowledge-observation/parser-recovery/1', operation);
+    const reread = await refresh.resumeCheck(job, rereadId);
+    if (reread?.status === 'ok' && reread.items[0]?.nativeWindowMethod === 'native-pdf-window/1' && matchesFhsPdfObservation(source, reread))
+      return {checkId:rereadId, snapshot:reread};
+  }
+  return {checkId, snapshot};
+}
 
 export async function fhsPdfParserBinding() {
   const pkg = JSON.parse(await readFile(new URL(import.meta.resolve('pdfjs-dist/package.json')), 'utf8'));
@@ -17,6 +45,14 @@ export async function fhsPdfParserBinding() {
 
 export function fhsPdfReadKey(hash: string, { startPage = 1, pageLimit = 8, includePagePdf = false }: KnowledgePdfOptions) {
   return [hash, startPage, pageLimit, includePagePdf ? 'slice' : 'text'].join('.');
+}
+
+export async function openFhsCampaignPdfReads(command: string, kind: string, env: NodeJS.ProcessEnv) {
+  if (kind !== 'pdf' || !['process-age-checked', 'resume-age-checked'].includes(command)) return undefined;
+  const directory = env.FHS_CAMPAIGN_PDF_READS, indexHash = env.FHS_CAMPAIGN_PDF_READS_SHA256;
+  if (!directory && !indexHash) return undefined;
+  if (!directory || !indexHash) throw Error('fhs_pdf_reads_configuration');
+  return openFhsPdfReads(directory, indexHash);
 }
 
 async function pinnedFile(path: string, expected: string, maxBytes: number, error: string) {

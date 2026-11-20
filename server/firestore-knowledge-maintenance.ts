@@ -4,7 +4,7 @@ import { AGE_OUTPUT_VERSION } from './knowledge-age-output.ts';
 import { matchesRegisteredRetainedDraft, retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
-import { campaignCredentials, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
+import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
 import { campaignMaterialWatches } from "./platform-materials.ts";
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
@@ -175,6 +175,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           if (!current?.watch.enabled || !current.watch.manualOnly || !current.catalogMatches || current.watch.revision !== expectedRevision
             || current.observation?.contentHash !== expectedObservation || current.observation.unavailable)
             reject('knowledge_manual_publication_binding');
+          if (!manual.resumeOnly) {
+            const ref = options.database.collection(options.namespace + '_knowledge_campaigns').doc(campaign).collection('publicationBindings').doc(manual.sourceId);
+            if (!matchesCampaignPublicationBinding((await tx.get(ref)).data(), manual, request.operationFingerprint, current.watch.revision, request.workerGeneration))
+              reject('knowledge_manual_publication_binding');
+          }
         };
         await options.database.runTransaction(verifyCommission, { readOnly: true });
       }

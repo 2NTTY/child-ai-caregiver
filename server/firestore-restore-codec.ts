@@ -2,7 +2,8 @@ import { sourceCardDocumentRecord, sourceDocumentRecordId, sourceDocumentMetadat
 import { PRIVATE_INDEX_COLLECTION, privateIndexId, privateIndexRecord, privateIndexMetadata } from './private-source-index-record.ts';
 import { PRIVATE_QUERY_COLLECTION, privateQueryId, privateQueryRecord } from './private-source-search.ts';
 import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
-import { campaign, campaignRecoverySchemas, campaignTicketId } from './knowledge-campaign-budget.ts';
+import { campaign, campaignCredentials, campaignRecoverySchemas, campaignTicketId, matchesCampaignPublicationBinding } from './knowledge-campaign-budget.ts';
+import { manualPublicationPin } from './fhs-manual-publication.ts';
 import { platformCardMedia } from '../src/shared/platform-media.ts';
 import { mediaEditionRecord } from './platform-media-processing.ts';
 import { privateSummaryRestoreSchemas, isPrivateSummaryRestoreKind, privateSummaryRestoreMetadata, transformPrivateSummaryRestore } from './firestore-restore-private-summary.ts';
@@ -104,11 +105,13 @@ const domainSchemas = {
   'agent-budget-alert': { suffix: 'agent_budget_alerts', schema: budgetAlertSchema },
 } as const;
 const knowledgeSchemas = { 'campaign-balance': campaignRecoverySchemas.balance, 'campaign-attempt': campaignRecoverySchemas.attempt,
+  'campaign-publication': campaignRecoverySchemas.publicationBinding,
   'card-media': platformCardMedia, 'media-edition': mediaEditionRecord,
   'knowledge-original': knowledgeOriginalManifest, 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
   'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
   'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
 const knowledgeSuffixes = { 'campaign-balance': 'knowledge_campaigns', 'campaign-attempt': 'knowledge_campaigns/' + campaign + '/attempts',
+  'campaign-publication': 'knowledge_campaigns/' + campaign + '/publicationBindings',
   'card-media': 'platform_card_media', 'media-edition': 'platform_media_editions',
   'knowledge-original': 'knowledge_original_manifests', 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
   'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
@@ -378,7 +381,11 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       requireBinding(z.uuid().safeParse(id).success && (!entry.stageHash || !!entry.operationFingerprint
         && id === campaignTicketId(entry.kind, entry.sourceId, entry.operationFingerprint, entry.stageHash)));
     }
-    else if (kind === 'campaign-balance') requireBinding(id === campaign);
+    else if (kind === 'campaign-publication') {
+      const entry = parse(campaignRecoverySchemas.publicationBinding, raw), pin = manualPublicationPin(id);
+      const operation = knowledgeReviewHash([campaignCredentials, id, entry.revision, entry.workerGeneration]);
+      requireBinding(!!pin && matchesCampaignPublicationBinding(entry, pin, operation, entry.revision, entry.workerGeneration));
+    } else if (kind === 'campaign-balance') requireBinding(id === campaign);
     else if (kind === 'card-media') requireBinding(/^[a-z0-9-]{1,80}$/u.test(id));
     else if (kind === 'media-edition') requireBinding(/^[a-f0-9]{64}$/u.test(id));
     else if (kind === 'knowledge-source') {
@@ -436,11 +443,13 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function decode(record: { path: string; data: unknown }): FirestoreRestoreDecoded {
-    const attemptPrefix = namespace + '_knowledge_campaigns/' + campaign + '/attempts/';
-    if (record.path.startsWith(attemptPrefix)) {
-      const id = record.path.slice(attemptPrefix.length), value = parse(campaignRecoverySchemas.attempt, record.data);
-      knowledgeBinding('campaign-attempt', id, value);
-      return { path: record.path, context: { family: 'knowledge', kind: 'campaign-attempt', id }, value };
+    for (const kind of ['campaign-attempt', 'campaign-publication'] as const) {
+      const prefix = namespace + '_' + knowledgeSuffixes[kind] + '/';
+      if (typeof record.path === 'string' && record.path.startsWith(prefix)) {
+        const id = record.path.slice(prefix.length), value = parse<FirestoreRestoreValue>(knowledgeSchemas[kind], record.data);
+        knowledgeBinding(kind, id, value);
+        return { path: record.path, context: { family: 'knowledge', kind, id }, value };
+      }
     }
     if (typeof record.path !== 'string' || record.path.length > 300 || !/^[A-Za-z][A-Za-z0-9_]*\/[A-Za-z0-9-]+$/u.test(record.path)) reject('restore_path_invalid');
     const raw = object(record.data); size(raw, 900 * 1024);

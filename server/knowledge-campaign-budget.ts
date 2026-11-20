@@ -4,6 +4,7 @@ import type { AgentModelProvider } from './agent-model-gateway.ts';
 import type { EmbeddingProvider } from './embedding-gateway.ts';
 import { z } from 'zod';
 import { knowledgeOperationId, knowledgeReviewHash } from './knowledge-review-assessment.ts';
+import type { ManualPublicationPin } from './fhs-manual-publication.ts';
 
 export const campaign = 'fhs-child-initial-20261120';
 export const campaignModel = 'gemini-3.8-flash';
@@ -27,7 +28,16 @@ const attempt = z.strictObject({ kind: z.enum(['generation','embedding']), sourc
   operationFingerprint: hash.optional(), stageHash: hash.optional(),
 }).refine(row => (!row.stageHash || !!row.operationFingerprint) && (row.state === 'settled'
   ? row.cost !== undefined && row.cost <= row.ceiling && row.inputTokens !== undefined && row.outputTokens !== undefined : row.cost === undefined));
-export const campaignRecoverySchemas = { balance, attempt };
+const publicationBinding = z.strictObject({ sourceId: attempt.shape.sourceId, lane: z.enum(['C1', 'C2', 'C3']), sha256: hash,
+  pages: z.int().positive(), operationFingerprint: hash, revision: z.uuid(), workerGeneration: z.uuid() });
+export const campaignRecoverySchemas = { balance, attempt, publicationBinding };
+export function matchesCampaignPublicationBinding(raw: unknown, pin: ManualPublicationPin, operation: string, revision: string, generation: string) {
+  const parsed = publicationBinding.safeParse(raw);
+  if (!parsed.success) return false;
+  const row = parsed.data;
+  return row.sourceId === pin.sourceId && row.lane === pin.lane && row.sha256 === pin.sha256 && row.pages === pin.pages
+    && row.operationFingerprint === operation && row.revision === revision && row.workerGeneration === generation;
+}
 const prices = { input: 1.5, output: 7.5, embedding: 0.15 };
 export type CampaignKind = 'generation' | 'embedding';
 const retainedReceipt = z.strictObject({
