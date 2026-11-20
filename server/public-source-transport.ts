@@ -11,7 +11,7 @@ export function publicSourceAddress(address: string): boolean { return isIP(addr
 type SourceResponse = {status:number;location?:string;url?:string;contentType:string;body:Buffer};
 interface SourceTransportOptions {
   maxBytes?: number;
-  onBodyLimit?: (status: number) => void;
+  onBodyLimit?: (status: number, contentType?: string) => void;
   /** Discovery can defer attachment bytes for a separately authorized GET. */
   omitBody?: (contentType: string) => boolean;
   /** Called after DNS pinning, immediately before each GET, including redirect hops. */
@@ -83,11 +83,11 @@ async function transfer(initialUrl:string,validate:(value:string)=>URL,outerSign
           const chunks: Buffer[] = []; let bytes = 0;
           const responseLimit = isGate ? Math.min(maxBytes, 512 * 1024) : maxBytes;
           if (Number(response.headers['content-length']) > responseLimit) {
-            options.onBodyLimit?.(status); response.destroy(); reject(Error('source_body_too_large')); return;
+            options.onBodyLimit?.(status, contentType); response.destroy(); reject(Error('source_body_too_large')); return;
           }
           response.on("data", (chunk: Buffer) => {
             bytes += chunk.length;
-            if (bytes > responseLimit) { options.onBodyLimit?.(status); response.destroy(new Error("source_body_too_large")); }
+            if (bytes > responseLimit) { options.onBodyLimit?.(status, contentType); response.destroy(new Error("source_body_too_large")); }
             else chunks.push(chunk);
           });
           response.on("error", reject);

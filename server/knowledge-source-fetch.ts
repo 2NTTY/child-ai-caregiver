@@ -40,8 +40,12 @@ export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition,
   revision: string | null, readMethod: string, signal: AbortSignal, reader = extractKnowledgePdf): Promise<Awaited<ReturnType<SourceFetcher>>> {
   if (!definition.leafletPage || definition.kind !== "pdf") throw Error("knowledge_pdf_source_mismatch");
   const large = original.length > KNOWLEDGE_PDF_MAX_BYTES ? largeFhsPdf(definition.url) : undefined;
-  if (original.length > KNOWLEDGE_PDF_MAX_BYTES && (!large || large.sourceId !== definition.id || large.bytes !== original.length))
-    return { status: 'failed', reason: 'response' };
+  if (original.length > KNOWLEDGE_PDF_MAX_BYTES) {
+    if (!large || large.sourceId !== definition.id) return { status: 'failed', reason: 'response' };
+    const sha256 = createHash('sha256').update(original).digest('hex');
+    if (large.bytes !== original.length || large.sha256 !== sha256)
+      return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'new_fingerprint', sha256, bytes: original.length } };
+  }
   let batch = await reader(original, { startPage: 1, pageLimit: 8, ...(large ? { expectedHash: large.sha256 } : {}), signal });
   const { fileHash, totalPages } = batch;
   const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
@@ -115,9 +119,15 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       revision = $("#content-rev-date").text().trim() || null;
       mediaLinks = mediaLinksFromPage($, '#content', definition.leafletPage);
     }
+    const large = pdf && definition.leafletPage ? largeFhsPdf(definition.url) : undefined;
+    let oversizedOfficialPdf = false;
     const fetched = await transport(definition.url, definition.leafletPage || definition.id === "chp-recent" ? exact(definition.url) : value => sourceFetchUrl(value, definition), signal,
       pdf ? "application/pdf" : definition.kind === "rss" ? "application/rss+xml, application/xml, text/xml" : "text/html",
-      pdf ? { maxBytes: largeFhsPdf(definition.url)?.bytes ?? KNOWLEDGE_PDF_MAX_BYTES } : {});
+      large && large.sourceId === definition.id ? { maxBytes: large.bytes, onBodyLimit(status, contentType) {
+        oversizedOfficialPdf = status === 200 && /^application\/pdf(?:\s*;|$)/iu.test(contentType ?? '');
+      } } : pdf ? { maxBytes: KNOWLEDGE_PDF_MAX_BYTES } : {});
+    if (fetched.status === 'failed' && large && oversizedOfficialPdf)
+      return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'download_limit', limitBytes: large.bytes } };
     if (fetched.status !== "response") return fetched;
     const result = fetched.response;
     if (result.status === 404 || result.status === 410) return { status: "unavailable", httpStatus: result.status };

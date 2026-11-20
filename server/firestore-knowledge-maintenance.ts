@@ -121,7 +121,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         if (fetcher) {
           const checkId = knowledgeOperationId("knowledge-observation/1", request.operationFingerprint);
           const checked = await options.refresh.process(registration.data, checkId, fetcher, signal);
-          if (!["changed", "unchanged", "already_recorded", "failed", "unavailable"].includes(checked.status))
+          if (!["changed", "unchanged", "already_recorded", "failed", "needs_review", "unavailable"].includes(checked.status))
             return { status: "rejected" as const, code: checked.status, published: false };
           recordedCheckId = checkId;
         }
@@ -192,7 +192,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           if (!pinned) reject("knowledge_observation_outcome_unknown");
           return pinned;
         }
-        if (!fetched || !["changed", "unchanged", "failed", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
+        if (!fetched || !["changed", "unchanged", "failed", "needs_review", "unavailable"].includes(result.status)) reject("knowledge_observation_incomplete");
         return fetched;
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({

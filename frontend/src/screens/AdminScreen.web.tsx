@@ -7,7 +7,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AGENT_HIGH_WATERMARK_DEFAULTS, AGENT_RUN_LIMITS, DEFAULT_SOFT_BUDGET_RATIO, deriveSoftBudgetTargets } from '../../../src/shared/agent-run-limits';
-import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt, type AdminUsage } from '../../../src/shared/admin';
+import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt, type AdminUsage, type PdfEditionReview } from '../../../src/shared/admin';
 import { parseAdminSoftBudgetRatioInput } from '../components/model-settings/model-settings-form';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TabToolbar, UnderlineTabs } from '../components/ui';
@@ -99,7 +99,12 @@ const stateLabel = (item: AdminInvitation) => item.state === 'consumed' ? '已�
   : Date.parse(item.expiresAt) <= Date.now() ? '已過期' : '待使用';
 const knowledgeRegistration: Record<string, string> = { not_registered: '未註冊監測', enabled: '監測已啟用', disabled: '監測已停用', definition_changed: '來源定義已變更，註冊待核對' };
 const knowledgeResult = (status: string | null) => status === null ? '未查到結果'
-  : ({ changed: '發現變更', unchanged: '未發現變更', failed: '檢查失敗', unavailable: '來源不可用', superseded: '已由其他檢查取代' } as Record<string, string>)[status] ?? status;
+  : ({ changed: '發現變更', unchanged: '未發現變更', failed: '檢查失敗', needs_review: 'PDF 原件待核對', unavailable: '來源不可用', superseded: '已由其他檢查取代' } as Record<string, string>)[status] ?? status;
+function pdfEditionNotice(review: PdfEditionReview) {
+  return review.reason === 'new_fingerprint'
+    ? `官方網址的 PDF 已換版（${review.bytes.toLocaleString('zh-HK')} bytes）。請核對新原件並安排內容審核。SHA-256 ${review.sha256}`
+    : `官方網址回傳的 PDF 超過本冊下載上限（${review.limitBytes.toLocaleString('zh-HK')} bytes）。請先核對檔案大小及版本。`;
+}
 const knowledgeCheckState: Record<string, string> = { running: '檢查中', recorded: '結果已記錄', unknown: '結果未明' };
 const knowledgeTime = (value: string | null) => value === null ? '未查到' : when(value);
 const indexBatchState = { running: '處理中', paused: '已暫停', interrupted: '處理中斷', completed: '全部完成', failed: '已結束，部分項目失敗' };
@@ -324,6 +329,7 @@ export default function AdminScreen() {
               <Text selectable style={styles.note}>{watch.url}</Text>
               <Text style={styles.note}>最近嘗試：{knowledgeTime(watch.lastAttemptAt)}；最近成功檢查：{knowledgeTime(watch.lastSuccessfulCheckAt)}</Text>
               <Text style={styles.note}>最近結果：{knowledgeResult(watch.lastStatus)}</Text>
+              {watch.pdfEditionReview ? <Text selectable style={styles.note}>{pdfEditionNotice(watch.pdfEditionReview)}</Text> : null}
             </View>)}
             <Text accessibilityRole="header">檢查紀錄</Text>
             <Text style={styles.note}>目前已取得 {state.knowledge.page.checks.length} 項；沒有紀錄不代表已完成檢查。</Text>
@@ -332,6 +338,7 @@ export default function AdminScreen() {
               <Text>{when(check.checkedAt)} · {knowledgeCheckState[check.state] ?? check.state} · {knowledgeResult(check.status)}</Text>
               <Text selectable style={styles.note}>來源：{check.watchId} · 檢查：{check.jobId}</Text>
               <Text style={styles.note}>嘗試 {check.attempts} 次；項目 {check.itemCount} 項，變更 {check.changedCount} 項。</Text>
+              {check.pdfEditionReview ? <Text selectable style={styles.note}>{pdfEditionNotice(check.pdfEditionReview)}</Text> : null}
               {check.failureCode !== null || check.httpStatus !== null ? <Text style={styles.note}>失敗代碼：{check.failureCode ?? '未提供'}；HTTP：{check.httpStatus ?? '未提供'}</Text> : null}
             </View>)}
             {state.knowledge.page.nextCursor ? <AppButton label={state.knowledge.status === 'error' ? '重試載入更多檢查紀錄' : '載入更多檢查紀錄'} variant="secondary"
