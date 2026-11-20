@@ -1,0 +1,113 @@
+{
+  "group": {
+    "id": "one-next-chat-message-after-current-reply",
+    "title": "助手還在回覆，下一個問題要留作草稿，還是等它答完再送？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：在同一孩子的主聊天，助手正在回答「週末手作要帶甚麼？」。輸入「如果下雨，可改玩甚麼？」先是草稿，要明確選「等它答完再送」才排入一則文字，並標為待傳送而非已送。編輯或撤回都會解除排程並保留草稿；只撤回下一則不會停掉原回覆，停止原回覆則清掉待傳排程。須同一孩子、原回覆已完整、在線且沒有錯誤才傳送。離線、失敗或結果不明時，不標為已送。A 留在原對話與輸入框；B 另分「正在回答」和「接下來」是擬議整頁，不是現有佇列頁。不插隊、不排多則或附件、不做永久排程。工作台只讀比較，不發送真實訊息、不用真實家庭資料或模型。",
+    "choices": [
+      {
+        "name": "留在對話｜下一句先寫在輸入框",
+        "note": "助手仍在回答「週末手作要帶甚麼？」時，可以在本對話輸入「如果下雨，可改玩甚麼？」。只輸入是草稿；按「等這則答完再送」才把一則文字標為「待傳」，不先畫成已送訊息。可按「取回草稿」修改，原回覆繼續。停止原回覆則會清除待傳安排，並非只取回下一句。只有原回覆完整、連線正常、沒有錯誤且仍在原聊天範圍，待傳才會送出。官方整頁圖示範原對話與追問輸入框同頁；未顯示在生成或已排隊。",
+        "source": "https://code.visualstudio.com/assets/updates/1_105/agent-sessions-codex.png",
+        "sourceNotes": [
+          {
+            "label": "Microsoft 1.105 原圖來源：同一會話保留可見回覆及追問輸入框",
+            "url": "https://code.visualstudio.com/updates/v1_105#_integration-with-openai-codex"
+          },
+          {
+            "label": "Microsoft 1.109.3 發行說明：可選等當前回覆完成再送",
+            "url": "https://code.visualstudio.com/updates/v1_109#_message-steering-and-queueing-experimental"
+          },
+          {
+            "label": "Microsoft 1.109.3 官方排隊選單局部圖（非整頁）",
+            "url": "https://code.visualstudio.com/assets/updates/1_109/send-dropdown.png"
+          },
+          {
+            "label": "Microsoft 現行官方圖：未送文字仍在輸入框，選單另開（局部）",
+            "url": "https://code.visualstudio.com/assets/docs/chat/chat-sessions/send-dropdown.png"
+          },
+          {
+            "label": "Microsoft 文件授權：不授予商標及標誌權利",
+            "url": "https://github.com/microsoft/vscode-docs/blob/main/LICENSE.md"
+          },
+          {
+            "label": "Microsoft 產品截圖與著作權政策",
+            "url": "https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions"
+          },
+          {
+            "label": "育伴港：同一孩子的主聊天只排一則文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/chatScreen.tsx#L337-L347"
+          },
+          {
+            "label": "育伴港：回覆中仍可打字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/AgentComposer.tsx#L155-L157"
+          },
+          {
+            "label": "育伴港：停止回覆不等於取消下一則",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/AgentComposer.tsx#L165-L176"
+          },
+          {
+            "label": "育伴港：改字或撤回回到草稿",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/chat-controller.ts#L322-L334"
+          }
+        ],
+        "version": "Microsoft Visual Studio Code 1.105 發行說明中的官方整頁原圖。PNG 1802 × 1019，2026-11-20 核對原檔，SHA-256 c51d38646257df2fa238a3e4a7bfe2368e3d49b6f331cb4c1d7d37d6218f288f。1.109.3 局部另作行為參照，不是同一次擷取；兩張皆未標實際拍攝構建。",
+        "rights": "Microsoft VS Code 文件採 CC BY 3.0 US，未授予 Microsoft 標誌或商標權利。工作台只外連官方原圖、發行說明及取用條款，不內嵌、不重刊、不裁切或仿畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Microsoft 官方聊天全視窗原圖（需連網）↗"
+      },
+      {
+        "name": "雙區聊天工作台｜正在回答、接下來",
+        "note": "擬議整頁：左看助手回答「週末手作要帶甚麼？」，右看下一問「如果下雨，可改玩甚麼？」；窄版上下排。下一問先是草稿，明確按「回覆完成後傳送」才標待傳送，最多一則同一孩子聊天內的文字；未送不顯示為已送氣泡。編輯或撤回待傳保留為草稿，不停止當前回答；若停原回覆，也清除待傳。只在原回覆完整、在線、無錯且同一範圍時才可接着傳送；預覽不實際發送。不借用 Spotify 的多項播放、插隊或連播。",
+        "source": "https://storage.googleapis.com/pr-newsroom-wp/1/2023/11/Playback-queue.png",
+        "sourceNotes": [
+          {
+            "label": "Spotify 官方 2023 TV 版改版文章：正在播放與接下來",
+            "url": "https://newsroom.spotify.com/2023-11-09/find-your-favorite-audio-more-easily-with-the-reDesigned-spotify-on-tv-experience/"
+          },
+          {
+            "label": "Spotify 官方佇列說明：查閱與移除接下來的項目",
+            "url": "https://support.spotify.com/pg/article/play-queue/"
+          },
+          {
+            "label": "Spotify 官方使用條款：內容與品牌權利",
+            "url": "https://www.spotify.com/us/legal/end-user-agreement/"
+          },
+          {
+            "label": "育伴港：主聊天只為當前回覆保留一則文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/chatScreen.tsx#L337-L347"
+          },
+          {
+            "label": "育伴港：編輯待傳文字即回到草稿",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/chat-controller.ts#L322-L334"
+          },
+          {
+            "label": "育伴港：明確排入、完成後核對、停止清除待傳",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/chat-controller.ts#L580-L609"
+          },
+          {
+            "label": "育伴港：明確排入，回覆完整在線無錯才續發",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/chat-controller.ts#L580-L600"
+          },
+          {
+            "label": "育伴港：停止原回覆會清掉待傳",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/client/chat-controller.ts#L603-L609"
+          },
+          {
+            "label": "育伴港測試程式：重複排入只送一次，撤回保留草稿",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/tests/chat-client.test.ts#L51-L67"
+          }
+        ],
+        "version": "Spotify on TV 改版，2023-11-09 新聞稿刊登 Playback-queue.png，2026-11-20 核對。官方沒有提供此圖的獨立建置號，並非現行各版本實測。",
+        "rights": "Spotify 新聞室發布的產品示意原圖；未見本圖的開放重製授權。只外連官方原圖和說明，不下載到工作台、不嵌入、不改畫，不重用 Spotify 品牌或封面。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Spotify 官方電視版播放佇列全畫面（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "cf5e91c86d333850d817b64f71770dfbd86d40df67cb56765617747bb2b1b36a"
+}
