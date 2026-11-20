@@ -1298,5 +1298,151 @@
       "interruptedWorkLastUpdated":"2026-11-20T14:10:55.994361Z",
       "method":"At one Firestore read time, matched all 28 assigned operation fingerprints against their original work and candidate records, source heads and campaign attempts. The single generation reservation belongs to the 24-page guide. The disconnected command returned no provider result."
     }
+  },
+  "c3CommissionedResults": {
+    "lane": "C3",
+    "assigned": 28,
+    "assignedPages": 468,
+    "latestFamilyOrHoldReceipt": "2026-11-20T14:51:39.503Z",
+    "verifiedFamilyEditions": 1,
+    "confirmedHolds": 3,
+    "reservedUnknown": 1,
+    "outstandingReadbacks": 23,
+    "method": "The bounded production entry used the assigned original operation. Each published row was checked against the active family card, the complete set of required document vectors and the physical opening page in the frozen PDF. Held rows pair the lane decision with a separate production readback. The interrupted generation keeps its original reservation.",
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "title": "一至三個月大嬰兒的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15650.pdf",
+        "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:49:33.727Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 33131
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34494
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "title": "接種疫苗預防傳染病",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14828.pdf",
+        "sha256": "e8813172e165c25a1d0112334aaaad3e59b40b7873de592c6a8a4fe5fa0afc5b",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:44:09.618Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34151
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "title": "兒童語音發展 知多一點點",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30121.pdf",
+        "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:46:16.731Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 54345
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32228
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-e7427b7b969a37e3d8e889a1",
+        "title": "新生嬰兒健康須知 (出生至三個月)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15667.pdf",
+        "sha256": "fcfb2a9505cc87c653cf5577c22681d5d7d45df78c069da92d8b830f60752801",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:51:39.503Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 31877
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 175
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 26912
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "2e9e06cc-24d6-5ab5-8cc9-d506767a9cab",
+          "versionHash": "f3f3bf7750a77fd2cf74c82d86116190720210de5b04eb913861368a5e5fb81b",
+          "seriesId": "pdf-e7427b7b969a37e3d8e889a1"
+        },
+        "vectors": {
+          "required": 1,
+          "exported": 1,
+          "chunkKeys": [
+            "p1-d1690d91bd5ba21f8f54"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-d1690d91bd5ba21f8f54",
+            "page": 1,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+        "sha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+        "pages": 24,
+        "outcome": "reserved_unknown",
+        "code": "fhs_lane_dispatch_reserved",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "ceilingMicros": 1634304,
+            "costMicros": null,
+            "at": "2026-11-20T14:10:56.749Z"
+          }
+        ],
+        "checkedAt": "2026-11-20T14:34:34.598319Z"
+      }
+    ]
   }
 }
