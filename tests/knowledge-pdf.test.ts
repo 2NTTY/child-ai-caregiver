@@ -17,6 +17,7 @@ test("a grouped PDF opens the exact physical quote without discarding the rest o
   const pages = [{page:1, text:"Cover", status:"text" as const}, {page:2, text:"Second page presents the complete printed passage.", status:"text" as const}];
   const joined = pages.map(p => p.text).join("\n\n");
   const quote = physicalPdfQuote(joined, pages);
+  assert.deepEqual(physicalPdfQuote(joined, undefined), readablePdfQuote(joined));
   assert.deepEqual(quote, {sourceExcerpt:pages[1]!.text, originalText:joined, excerptPage:2});
   assert.deepEqual(physicalPdfQuote(joined, pages, 'complete printed passage'), {
     originalText:joined, sourceExcerpt:'complete printed passage', excerptPage:2

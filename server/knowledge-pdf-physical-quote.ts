@@ -1,9 +1,9 @@
 import { readablePdfQuote } from './knowledge-pdf-quotes.ts';
 
 /** Bind the preview to one physical page while retaining all reviewed original text in the range. */
-export function physicalPdfQuote(text: string, pages: readonly {page: number; text: string}[], priorExcerpt?: string) {
+export function physicalPdfQuote(text: string, pages: readonly {page: number; text: string}[] | undefined, priorExcerpt?: string) {
   const evidence = readablePdfQuote(text, priorExcerpt);
-  if (pages.length <= 1 || pages[0]!.text.includes(evidence.sourceExcerpt)) return evidence;
+  if (!pages || pages.length <= 1 || pages[0]!.text.includes(evidence.sourceExcerpt)) return evidence;
 
   const joined = pages.map(page => page.text).join('\n\n');
   const start = joined.indexOf(evidence.originalText);
