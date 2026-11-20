@@ -16,6 +16,7 @@ import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
+import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -95,18 +96,24 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
-    async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision, attemptKey: string, requestHash: string) {
+    async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision | BoundReviewedWindow, attemptKey: string, requestHash: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
-      const transcription = revision.action === 'retain_pdf_transcription';
-      const expectedHash = transcription && attemptKey.startsWith('knowledge-window-review:') ? revision.reviewerRequestHash : revision.organizerRequestHash;
+      const registered = revision.action === 'commissioned_window';
+      const transcription = revision.action === 'retain_pdf_transcription' || registered && revision.registration.action === 'retain_window_quotes';
+      const windowed = transcription || registered;
+      if (registered && !attemptKey.startsWith('knowledge-window-organize:') && !(transcription && attemptKey.startsWith('knowledge-window-review:')))
+        reject('knowledge_retained_page_binding');
+      const expectedHash = registered ? requestHash : revision.action === 'retain_pdf_transcription' && attemptKey.startsWith('knowledge-window-review:')
+        ? revision.reviewerRequestHash : revision.organizerRequestHash;
       if (requestHash !== expectedHash) reject('knowledge_retained_page_binding');
       return database.runTransaction(async tx => {
         const [work, stage] = await tx.getAll(root, stageRef);
         const old = open(root, work!.data(), workSchema), saved = open(stageRef, stage!.data(), stageSchema);
         if (knowledgeReviewHash(old.request) !== knowledgeReviewHash(priorRequest) || old.lease || old.preparedHash || old.receipt
-          || old.result?.status !== 'candidate_held' || Boolean(old.windowed) !== transcription
-          || old.result.code !== (transcription ? 'knowledge_window_quote_mismatch' : 'knowledge_review_failed') || old.budget.modelCalls !== (transcription ? 2 : 1)
+          || old.result?.status !== 'candidate_held' || Boolean(old.windowed) !== windowed
+          || old.result.code !== (registered ? reviewedParentCode(revision.registration) : transcription ? 'knowledge_window_quote_mismatch' : 'knowledge_review_failed')
+          || old.budget.modelCalls !== (transcription ? 2 : 1)
           || old.result.observationHash !== revision.observationHash || saved.requestHash !== expectedHash
           || saved.state !== 'ready' || saved.text === null) reject('knowledge_retained_page_binding');
         return saved.text;
