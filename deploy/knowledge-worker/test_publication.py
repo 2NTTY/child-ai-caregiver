@@ -40,14 +40,46 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(worker["volumes"], ["fhs_publication_cache:/var/tmp/yuban-knowledge:ro"])
         self.assertEqual(overlay["volumes"]["fhs_publication_cache"], {"external": True, "name": "existing"})
 
-    def test_low_headroom_or_unhealthy_site_stops_before_container_creation(self):
-        with patch("publication.Path.read_text", return_value=f"MemAvailable: {(384+64+256)*1024-1} kB\n"), patch("publication.subprocess.Popen") as run:
-            with self.assertRaisesRegex(RuntimeError, "free memory"):
-                publication.compose_job(self.host, self.args, [])
-            self.host.url.return_value = '{"status":"unhealthy"}'
+    def test_unhealthy_site_stops_before_container_creation(self):
+        self.host.url.return_value = '{"status":"unhealthy"}'
+        with patch("publication.subprocess.Popen") as run:
             with self.assertRaisesRegex(RuntimeError, "not healthy"):
                 publication.compose_job(self.host, self.args, [])
             run.assert_not_called()
+
+    def test_701_mib_waits_then_dispatches_once_with_the_prepared_original(self):
+        args = SimpleNamespace(action="lane", lane="C1", reads=None)
+        op = "a"*64
+        command = ["scripts/fhs-initial-campaign.mjs", "publish-approved", "resource-af8c3e8cc813be"]
+        readings = iter([701, 698, 704, 702, 712, 710])
+        with patch("publication.Path.read_text", side_effect=lambda: f"MemAvailable: {next(readings)*1024} kB\n"), \
+                patch("time.sleep") as sleep, patch("publication.subprocess.Popen") as create:
+            sleep.side_effect = lambda seconds: create.assert_not_called()
+            proc = create.return_value.__enter__.return_value
+            proc.wait.return_value = 0
+            self.assertEqual(publication.compose_job(self.host, args, command, original=op), (0,None))
+            self.assertEqual(sleep.call_count, 3)
+            self.assertEqual(self.host.url.call_count, 3)
+            create.assert_called_once()
+            worker = json.loads(proc.stdin.write.call_args.args[0])["services"]["worker"]
+            self.assertEqual(worker["mem_limit"], "256m")
+            self.assertEqual(worker["environment"]["FHS_CAMPAIGN_ORIGINAL_OPERATION"], op)
+
+    def test_release_started_while_waiting_leaves_the_original_undispatched(self):
+        with patch("publication.Path.read_text", return_value="MemAvailable: 717824 kB\n"), \
+                patch("time.sleep") as sleep, patch("publication.subprocess.Popen") as create:
+            sleep.side_effect = lambda seconds: setattr(self.host.JOURNAL.exists, "return_value", True)
+            with self.assertRaisesRegex(RuntimeError, "release"):
+                publication.compose_job(self.host, self.args, ["scripts/fhs-initial-campaign.mjs","status"])
+            create.assert_not_called()
+
+    def test_a_larger_original_yields_when_only_smaller_jobs_still_fit(self):
+        state = self.host.read.return_value
+        with patch("publication.Path.read_text", return_value=f"MemAvailable: {717*1024} kB\n"), \
+                patch("time.monotonic", side_effect=[0, 10, 20, 30]), patch("time.sleep") as sleep:
+            with self.assertRaisesRegex(publication.OriginalCapacityError, "272 MiB job"):
+                publication.capacity_for_phase(self.host, state, 12*1048576)
+            self.assertEqual(sleep.call_count, 3)
 
     def test_large_original_stops_before_dispatch_and_small_original_uses_the_existing_binding(self):
         args = SimpleNamespace(action="lane", mode="run", lane="C1", reads=None)

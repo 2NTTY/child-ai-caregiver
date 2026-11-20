@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 
 CACHE = "/var/tmp/yuban-knowledge"
@@ -45,24 +46,59 @@ def commands(args, manifest):
         yield ["scripts/fhs-initial-campaign.mjs", "inspect", args.source]
 
 
-def compose_job(host, args, command, *, original=None, pdf_bytes=0):
+def checked_site(host):
     state = host.read(host.STATE)
     if host.JOURNAL.exists() or host.layout() != state["layout"]:
         raise RuntimeError("Site release or configuration change in progress")
     host.check_live(state["services"])
     if json.loads(host.url("/api/health")).get("status") != "ok":
         raise RuntimeError("Family site is not healthy")
-    available_kib = int(re.search(r"^MemAvailable:\s+(\d+) kB$", Path("/proc/meminfo").read_text(), re.M)[1])
-    available = available_kib // 1024
-    room = available - FAMILY_HEADROOM_MIB - LAUNCHER_HEADROOM_MIB
-    memory = min(MAX_MEMORY_MIB, room // 16 * 16)
+    return state
+
+
+def capacity_for_phase(host, state, pdf_bytes):
     # The native request can hold PDF bytes, base64 and its serialized JSON concurrently.
     # Keep the existing maximum for exceptionally large originals, before any paid dispatch.
     minimum = MAX_MEMORY_MIB if pdf_bytes >= 32 * 1048576 else max(256, 224 + (4 * pdf_bytes + 1048575) // 1048576)
-    if memory < minimum:
-        error = OriginalCapacityError if memory >= 256 and pdf_bytes else RuntimeError
-        raise error(f"Insufficient free memory: {available} MiB available, {minimum} MiB job, "
-                    f"{FAMILY_HEADROOM_MIB} MiB family and {LAUNCHER_HEADROOM_MIB} MiB launcher required")
+    reserve = FAMILY_HEADROOM_MIB + LAUNCHER_HEADROOM_MIB
+    required = reserve + (minimum + 15) // 16 * 16
+    waiting_since = None
+    large_wait_since = None
+    recheck_site = False
+    while True:
+        if host.JOURNAL.exists():
+            raise RuntimeError("Site release in progress")
+        available = int(re.search(r"^MemAvailable:\s+(\d+) kB$", Path("/proc/meminfo").read_text(), re.M)[1]) // 1024
+        if available >= required:
+            if recheck_site:
+                live = checked_site(host)
+                if live["layout"] != state["layout"] or live["services"]["worker"]["ref"] != state["services"]["worker"]["ref"]:
+                    raise RuntimeError("Site release or worker configuration changed while waiting")
+                recheck_site = False
+                continue  # Read memory again after the health checks.
+            if waiting_since is not None:
+                print(f"publication_resumed_after_seconds={time.monotonic() - waiting_since:.1f}", file=sys.stderr, flush=True)
+            return available, min(MAX_MEMORY_MIB, (available - reserve) // 16 * 16)
+        now = time.monotonic()
+        if available >= reserve + 256:
+            # Other originals fit. Allow a brief fluctuation of one allocation quantum, then give them the slot.
+            if large_wait_since is None:
+                large_wait_since = now
+            if required - available > 16 or now - large_wait_since >= 30:
+                raise OriginalCapacityError(f"Insufficient free memory: {available} MiB available, {minimum} MiB job, "
+                                            f"{FAMILY_HEADROOM_MIB} MiB family and {LAUNCHER_HEADROOM_MIB} MiB launcher required")
+        else:
+            large_wait_since = None
+        if waiting_since is None:
+            waiting_since = now
+            print(f"publication_wait_available_mib={available} publication_required_mib={required}", file=sys.stderr, flush=True)
+        recheck_site = True
+        time.sleep(5)
+
+
+def compose_job(host, args, command, *, original=None, pdf_bytes=0):
+    state = checked_site(host)
+    available, memory = capacity_for_phase(host, state, pdf_bytes)
     volume, = [mount for mount in host.container("worker")["Mounts"] if mount["Destination"] == CACHE and mount["Type"] == "volume"]
     # Compose reuses the current worker configuration, including its file secret, on the same host.
     # Only this transient container receives the limits. The original worker volume stays read-only.
