@@ -45,7 +45,8 @@ export function checkKnowledgeObservation(document: KnowledgeSourceInput,
       if (chunk.mediaClip) continue;
       const pages = observed.document.pages?.filter(page => page.page >= (chunk.pageStart ?? Infinity) && page.page <= (chunk.pageEnd ?? -Infinity));
       const original = pages?.map(page => page.text).join("\n\n");
-      if (!chunk.originalText || !original?.includes(chunk.originalText) || !original.includes(chunk.sourceExcerpt))
+      if (!chunk.originalText || !original?.includes(chunk.originalText) || !original.includes(chunk.sourceExcerpt)
+        || chunk.excerptPage !== undefined && !pages?.some(page => page.page === chunk.excerptPage && page.text.includes(chunk.sourceExcerpt)))
         throw new Error("knowledge_pdf_original_page_mismatch");
     }
   }

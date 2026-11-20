@@ -76,7 +76,7 @@ const sourceSchema = z.strictObject({
     }
     if (chunk.originalKind && value.extraction?.format !== "text_pdf")
       ctx.addIssue({ code: "custom", message: "Invalid original representation" });
-    if (chunk.excerptPage !== undefined && (!chunk.originalKind || !chunk.pageStart || !chunk.pageEnd ||
+    if (chunk.excerptPage !== undefined && (value.extraction?.format !== 'text_pdf' || !chunk.pageStart || !chunk.pageEnd ||
       chunk.excerptPage < chunk.pageStart || chunk.excerptPage > chunk.pageEnd))
       ctx.addIssue({ code: "custom", message: "The physical evidence page must belong to the reviewed PDF section" });
     if (value.extraction?.format === "text_pdf" && ((!chunk.originalText && chunk.originalKind !== "visual_page") || !chunk.pageStart || !chunk.pageEnd))
