@@ -1,0 +1,94 @@
+{
+  "group": {
+    "id": "followed-source-scope-change",
+    "title": "已跟隨的教材擴大收錄範圍，還要重新選嗎？",
+    "index": "embedded-comparison",
+    "readerNote": "同範圍的已審新版可繼續跟隨。範圍擴大後，跟隨設定保留，但不自動採用新版，也不會自動退回舊版；該來源暫不供新問答使用。要用可採用的新版，到「設定與匯出」選「固定目前版本」，會改為固定。下列是 Open edX 同一流程的兩種閱讀重點，不是育伴港現有畫面。",
+    "choices": [
+      {
+        "name": "收錄範圍-01｜先在清單找到待選項目",
+        "note": "「Review Content Updates」用數字標出待處理更新，與一般資料庫清單分頁。原圖是完整待更新主區，不含全站導覽。",
+        "source": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/source/_images/educator_how_tos/library_review_content_updates.png",
+        "sourceNotes": [
+          {
+            "label": "原作者手冊",
+            "url": "https://docs.openedx.org/en/latest/educators/how-tos/course_development/sync_a_library_update_to_your_course.html#sync-library-subsections-or-sections"
+          },
+          {
+            "label": "固定版本的畫面及用法",
+            "url": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/source/educators/how-tos/course_development/sync_a_library_update_to_your_course.rst#L57-L65"
+          },
+          {
+            "label": "原版 CC BY-SA 4.0 與署名",
+            "url": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/LICENSE"
+          },
+          {
+            "label": "育伴港：待選版本及實際固定入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/memory/MemoryReferenceView.tsx#L214-L250"
+          }
+        ],
+        "version": "Open edX Ulmo 文件快照 a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797（2025-12-18）；截圖未列產品 build。",
+        "rights": "Open edX Documentation Working Group／Axim Collaborative，CC BY-SA 4.0；原圖未改，保留原作者標註。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "Open edX 原圖：課程資料庫的待更新主區",
+            "label": "Open edX 原圖：課程資料庫的待更新主區",
+            "width": 2632,
+            "height": 632,
+            "sha256": "925c44a3bf6b34015f979567b959a5dc7d7d186822f07b13e8d63547f9432136",
+            "gitBlob": "6892bce7ff4e52218c0fc8ae487e23cd8ce9a70c",
+            "file": "b-edx0.png",
+            "mime": "png"
+          }
+        ]
+      },
+      {
+        "name": "收錄範圍-02｜先並排看更新前後",
+        "note": "完整預覽對話框把修改、移除和移動放在前後兩欄。這是課程內容更新示例，不是教材範圍擴大的實例；其忽略按鈕不是育伴港現有功能。",
+        "source": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/source/_images/educator_how_tos/library_review_content_updates_2.png",
+        "sourceNotes": [
+          {
+            "label": "原作者手冊",
+            "url": "https://docs.openedx.org/en/latest/educators/how-tos/course_development/sync_a_library_update_to_your_course.html#sync-library-subsections-or-sections"
+          },
+          {
+            "label": "固定版本的畫面及用法",
+            "url": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/source/educators/how-tos/course_development/sync_a_library_update_to_your_course.rst#L67-L78"
+          },
+          {
+            "label": "原版 CC BY-SA 4.0 與署名",
+            "url": "https://github.com/openedx/docs.openedx.org/blob/a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797/LICENSE"
+          },
+          {
+            "label": "育伴港：擴大範圍後跟隨與固定的差別",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/tests/firestore-knowledge.test.ts#L299-L312"
+          }
+        ],
+        "version": "Open edX Ulmo 文件快照 a87d6db6f7bd7a352b84eb5a60dfc8fa11e4b797（2025-12-18）；截圖未列產品 build。",
+        "rights": "Open edX Documentation Working Group／Axim Collaborative，CC BY-SA 4.0；原圖未改，保留原作者標註。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "Open edX 原圖：一份課程資料更新的完整前後比較對話框",
+            "label": "Open edX 原圖：一份課程資料更新的完整前後比較對話框",
+            "width": 2252,
+            "height": 1010,
+            "sha256": "112593254e8ca26b0100d6c0f822b4c991e6b3466a92fe7afda191027128c869",
+            "gitBlob": "7af1bc5b47f3926c34348747b14c56ae34aad854",
+            "file": "b-edx1.png",
+            "mime": "png"
+          }
+        ]
+      }
+    ],
+    "notices": []
+  },
+  "notices": [
+    {
+      "name": "102A／102B｜Open edX 原版 CC BY-SA 4.0",
+      "file": "openedx-CC-BY-SA-4.0.txt",
+      "gitBlob": "bbc9c81f597e9b2fb860c6c5815a024b77a9253c"
+    }
+  ]
+}
