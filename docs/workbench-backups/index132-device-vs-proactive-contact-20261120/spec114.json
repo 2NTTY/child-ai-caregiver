@@ -1,0 +1,79 @@
+{
+  "group": {
+    "id": "device-chat-notifications-or-child-proactive-contact",
+    "title": "只關這部手機的聊天通知，還是讓助手不再主動聯絡？",
+    "index": "external-comparison",
+    "readerNote": "手機開關只控制這部已綁定 Android 的聊天推播；不改其他裝置或這位孩子的站內主動聯絡，條件允許仍可留在聊天。孩子開關控制本人×這位孩子的普通主動聯絡；自己發問的回覆及原待辦不會刪除。兩邊都不能保證撤回已送出或在途推播；沒有讀到狀態就顯示未能核對。A 同頁看範圍，B 先預覽影響；選卡不會保存。兩案只讀設計比較，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "同頁看清範圍｜這位孩子的主動助手／這部手機的聊天通知",
+        "note": "同頁列出孩子及手機的目前狀態、影響和各自的設定入口。只停這部手機的助手聊天通知，其他裝置和孩子的主動聯絡設定不改。Aionda Mail 原圖將帳戶偏好、本機 Android 權限與實際背景投遞分開；它沒有育伴港的家長與孩子設定。 手機設定涵蓋這個 Android 綁定的聊天推播，不只一位孩子；不改其他裝置、班級通知或系統權限。關聊天亦關內容預覽，重開聊天預設同開預覽，可再獨立調整。",
+        "source": "https://mail.aionda.com/docs/handbook/en/images/native-android-push.png?v=6d141ea55111e784",
+        "sourceNotes": [
+          {
+            "label": "Aionda Mail 官方完整 Android 原圖：帳戶與本機通知分開",
+            "url": "https://mail.aionda.com/docs/handbook/en/images/native-android-push.png?v=6d141ea55111e784"
+          },
+          {
+            "label": "官方手冊：同帳戶偏好、本機權限、背景投遞各自獨立",
+            "url": "https://mail.aionda.com/docs/handbook/en/native-apps.html#native-notifications"
+          },
+          {
+            "label": "育伴港：這部手機的聊天通知與內容預覽",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/frontend/src/production/useProductionPushSettings.native.ts#L119-L142"
+          },
+          {
+            "label": "育伴港：綁定、聊天同意與班級待辦分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/firestore-native-push.ts#L119-L132"
+          }
+        ],
+        "version": "Aionda Mail 英文手冊 2026-11-17，原圖版本 6d141ea55111e784；app 組建及拍攝日未標。",
+        "rights": "Aionda GmbH 官方手冊圖，未獲重刊許可；只連官方原圖與文件，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "目的導引｜先知道只改哪一處",
+        "note": "先選「只停這部手機的聊天通知」或「不再主動聯絡我談這位孩子」，看清站內聯絡、自己發問的回覆、其他裝置和原待辦的影響，才去對應設定。選卡不會保存。Apple 原屏先解釋開車時如何減少通知干擾，再進入設定；它沒有育伴港的兩層開關。 停孩子的主動助手是本人×目前孩子，不阻止自己發問或改裝置偏好；一般回覆在其餘條件成立時仍可推播。原待辦仍在，但不承諾原本的主動聊天提醒仍出現。",
+        "source": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-17-pro-settings-focus-driving-setup.png",
+        "sourceNotes": [
+          {
+            "label": "Apple Support 整屏原圖：先說明 Driving Focus 的目的，才進入設定",
+            "url": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-17-pro-settings-focus-driving-setup.png"
+          },
+          {
+            "label": "Apple Support 整屏原圖：通知設定內說清允許與靜音的範圍",
+            "url": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-17-pro-settings-focus-allowed-notifications.png"
+          },
+          {
+            "label": "Apple 官方說明：Driving Focus 的初始引導與通知設定",
+            "url": "https://support.apple.com/en-la/108384"
+          },
+          {
+            "label": "Apple iOS 15 較早的整屏原圖：先按開車、健身等目的選擇",
+            "url": "https://www.apple.com/newsroom/images/product/os/ios/standard/Apple_iOS15-avail_focus_09202021_inline.jpg.large.jpg"
+          },
+          {
+            "label": "育伴港：主動助手按本人與孩子保存",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/firestore-proactive-wakes.ts#L27-L35"
+          },
+          {
+            "label": "育伴港：新推播分開核裝置及普通主動聯絡資格",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/firestore-chat-notification-policy.ts#L38-L65"
+          },
+          {
+            "label": "育伴港：合資格時站內主動聯絡可保存，並非已送推播",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/400b159d221e8d30875494806dd24eb81eada73a/server/proactive-chat.ts#L37-L52"
+          }
+        ],
+        "version": "主圖及設定圖為 Apple Support iOS 26／iPhone 17 Pro 原屏；說明 2026-03-30 發布、2026-11-20 核對，未標精確次版本。最後一張為 iOS 15 於 2021-09-20 發布的獨立例子。",
+        "rights": "Apple 網站圖像與介面版權保留；工作台只外連原圖與公開說明，不嵌、不改、不重刊。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "decdd379b84934f9b56586a8519e470e64d2a01e281512de7e91b740106c072f"
+}
