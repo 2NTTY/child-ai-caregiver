@@ -1,0 +1,90 @@
+{
+  "group": {
+    "id": "self-notification-quiet-hours-restore",
+    "title": "還原本人通知偏好前：時區一換，哪段時間會靜音？",
+    "index": "embedded-comparison",
+    "readerNote": "只比較本人簽署備份與目前設定，查看不會寫入。例：目前是香港 21:30–翌日 07:15，預約仍提醒；備份是 UTC 23:00–翌日 06:00，安靜時段內預約也暫緩。B 若用香港時間輔助顯示，備份相當於香港 07:00–14:00；換算只是設計參考，不會把儲存時區改為香港，也不承諾到點派送。可保留目前，或明確還原整組，不逐欄合併。相同則略過；設定已變就保留目前、重新比較；未有結果不顯示成功。兩款是參考，不會真還原或發送通知。",
+    "choices": [
+      {
+        "name": "還原通知偏好-01｜目前和備份逐欄比",
+        "note": "把目前與備份的時區、跨午夜安靜時段和預約例外並排；窄屏按同一欄位成對顯示。兩欄只供核對；可保留現況，也可另按「以備份還原整組」。WordPress 原圖是兩份文章修訂，不是通知設定或本人備份。",
+        "source": "https://wordpress.org/documentation/article/revisions/#classic-revisions",
+        "sourceNotes": [
+          {
+            "label": "官方全尺寸原圖",
+            "url": "https://wordpress.org/documentation/files/2019/02/revisions-2-7.0.jpg"
+          },
+          {
+            "label": "文件圖片授權：CC0",
+            "url": "https://make.wordpress.org/docs/licensing/"
+          },
+          {
+            "label": "WordPress 7.0 原碼：比較與獨立還原入口",
+            "url": "https://github.com/WordPress/WordPress/blob/b16cd68ea199838d8f9daf0ff7e3f35042ba0ad0/wp-admin/includes/revision.php#L390-L463"
+          },
+          {
+            "label": "育伴港現有比較與整組還原入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/account/HandoverImportControls.tsx#L455-L473"
+          },
+          {
+            "label": "育伴港本人備份核對和只讀比較",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/handover-original-backup.ts#L38-L75"
+          }
+        ],
+        "version": "WordPress End User Documentation「Classic Revisions」；圖檔標示 7.0，未列拍攝組建。原碼參照 b16cd68ea199838d8f9daf0ff7e3f35042ba0ad0。",
+        "rights": "WordPress Documentation Team，CC0 1.0，完整原圖未改；不包含商標使用授權。",
+        "externalOnly": false,
+        "images": [
+          {
+            "short": "WordPress 官方原圖：完整 Classic Revisions 頁",
+            "label": "完整原圖：兩份文章修訂逐欄比較，另有還原按鈕",
+            "width": 1998,
+            "height": 1126,
+            "sha256": "87507ffc482de21e1922a9251874dcb0bf2398b1aa7d3f954644ac88d9aea33f",
+            "officialImageUrl": "https://wordpress.org/documentation/files/2019/02/revisions-2-7.0.jpg",
+            "file": "a-wordpress-classic.jpg",
+            "mime": "jpeg"
+          }
+        ]
+      },
+      {
+        "name": "還原通知偏好-02｜先看日夜影響，再核對原值",
+        "note": "還原後會在哪段時間靜音、預約是否照常提醒，先用時區加跨夜時間線說清楚；想查原因再展開目前與備份值。作者示例以東京 22:00–翌日 07:00 及例外展示整頁分層，不是育伴港的還原畫面，也不照搬它的早上批量送達。",
+        "source": "https://envydesign.jp/patterns/en/settings-notification-matrix/",
+        "sourceNotes": [
+          {
+            "label": "作者案例 5 原版桌面：整頁時段條、時區與例外",
+            "url": "https://envydesign.jp/new/wp-content/themes/envydesign/assets/img/SET-008-settings-notification-matrix-design-figmae-pc.webp?v=1794723335"
+          },
+          {
+            "label": "同案原版手機首屏：把時段條及影響說明垂直排",
+            "url": "https://envydesign.jp/new/wp-content/themes/envydesign/assets/img/SET-008-settings-notification-matrix-design-figmae-sp.webp?v=1794723335"
+          },
+          {
+            "label": "圖片使用條款：署名並連結原頁；商業用途另洽",
+            "url": "https://envydesign.jp/patterns/about/"
+          },
+          {
+            "label": "育伴港：安靜時段以設定時區判定，涵蓋跨午夜",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-chat-notification-policy.ts#L74-L89"
+          },
+          {
+            "label": "育伴港：舊比較版本不覆蓋、相同則略過",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-handover-import-batches.ts#L294-L321"
+          },
+          {
+            "label": "育伴港的四種結果文案",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/components/account/HandoverImportControls.tsx#L399-L403"
+          }
+        ],
+        "version": "UI PATTERNS SET-008 設計例 5，2026-11-18 發表；岡野優太／Yuta Okano。日文原設計，非已部署產品。",
+        "rights": "出典：UI PATTERNS（株式会社ENVY DESIGN）。本比較只連結原文與原圖，不附圖檔。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "6ee6a45eb9743e5cd4f2dfa887e82e5cc828304b5c5a6e3b2f68ef866a697481"
+}
