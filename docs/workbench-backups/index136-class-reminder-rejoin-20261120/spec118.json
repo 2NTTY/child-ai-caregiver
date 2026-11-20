@@ -1,0 +1,79 @@
+{
+  "group": {
+    "id": "class-rejoined-teacher-old-due-reminder",
+    "title": "老師退出班級又加入，舊待辦的到期提醒會恢復嗎？",
+    "index": "external-comparison",
+    "readerNote": "不會。同一帳戶重新入班會取得新會籍；舊提醒不會因此恢復，待辦仍在。只有有權的人才能重新指派；再次核對目前資格和到期安排後，保存的是原待辦的新版本，不保證送達，也不能撤回已送出的通知。兩案為只讀設計比較，不改班級、待辦或提醒。",
+    "choices": [
+      {
+        "name": "從原待辦核對｜可以重新指派，不代表舊提醒恢復",
+        "note": "同頁分開看待辦仍待處理、離班前原指派、目前可否重新指派與舊提醒。重新加入不會恢復舊提醒；排程狀態未核實就不稱已停止。Jira 整頁可看原工單與改派入口；另一張官方圖補證原工單仍待處理時負責人可顯示停用，不是育伴港的重加入規則。",
+        "source": "https://confluence.atlassian.com/jirasoftwareserver0820/files/1299911649/1299911650/1/1688733278786/Full%2Bissue%2Bview%2Bin%2BJira%2BSoftware.png",
+        "sourceNotes": [
+          {
+            "label": "Atlassian 官方整頁原圖：原工單、負責人、編輯及指派",
+            "url": "https://confluence.atlassian.com/jirasoftwareserver0820/files/1299911649/1299911650/1/1688733278786/Full%2Bissue%2Bview%2Bin%2BJira%2BSoftware.png"
+          },
+          {
+            "label": "官方另一工單局部：待辦未完，原負責人已停用",
+            "url": "https://images.ctfassets.net/zsv3d0ugroxu/nKdQAUbO-K5F7qOyutLd5/a2f2ef94fd9edd6fd78376df18709831/image-2024-5-3_13-59-47.png"
+          },
+          {
+            "label": "官方知識庫：目錄停用及原圖情境",
+            "url": "https://support.atlassian.com/jira/kb/how-to-identify-issues-assigned-to-deleted-users-in-jira/"
+          },
+          {
+            "label": "育伴港：重新接受邀請會建立新會籍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-sharing.ts#L559-L576"
+          },
+          {
+            "label": "育伴港：有權改期或轉派須核對原版本及目前資格",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/server/firestore-online.ts#L168-L198"
+          }
+        ],
+        "version": "Jira Software Data Center and Server 8.20 官方手冊 2023-07-07；停用補圖另見 2025-09-25 更新的 Data Center 8+ 知識庫。精確拍攝日、組建未標。",
+        "rights": "Atlassian 官方手冊圖，未獲重刊許可；只連原作者，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "復班後的班級工作清單｜逐項看舊指派",
+        "note": "先看老師現在是否可被指派，再分開列舊指派未承接、現可用的指派和未能核對的事項；每列回到有權查看的原待辦。舊提醒不因復班復活，也不代表原待辦已取消。Asana 原圖另列離開成員先前的未完工作，但不證明育伴港的會籍或到期提醒規則。 這是清單構想；現在出現在名冊並不能證明舊指派有效，權限或舊排程未核實就不推斷。",
+        "source": "https://assets.asana.biz/transform/31e2396a-6c6b-4497-8dbf-d9dfda60a044/previously-assigned-tasks-final-1?format=webp&io=transform%3Afill%2Cwidth%3A2560",
+        "sourceNotes": [
+          {
+            "label": "Asana 官方整頁原圖：成員離開後集中覆核先前未完工作",
+            "url": "https://assets.asana.biz/transform/31e2396a-6c6b-4497-8dbf-d9dfda60a044/previously-assigned-tasks-final-1?format=webp&io=transform%3Afill%2Cwidth%3A2560"
+          },
+          {
+            "label": "Asana 官方局部原圖：另一位成員離開時先交代原工作另列",
+            "url": "https://assets.asana.biz/transform/7e660a1a-152e-4355-8a43-950fc699b3e8/organization-settings_remove-access_final?format=webp&io=transform%3Afill%2Cwidth%3A2560"
+          },
+          {
+            "label": "Asana 官方文章：為已離開成員的原工作另立檢視及轉派入口",
+            "url": "https://asana.com/inside-asana/new-admin-functionality"
+          },
+          {
+            "label": "Asana 現行官方說明：舊工作接手與成員復權分開說明",
+            "url": "https://help.asana.com/s/article/managing-members-in-an-organization?language=en_US"
+          },
+          {
+            "label": "育伴港：合成測試：舊提醒退休，原待辦仍可完成",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/tests/class-task-worker.test.ts#L93-L110"
+          },
+          {
+            "label": "育伴港：現有頁的名冊顯示不是舊指派證明",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/54a2a602339a8cab5ec894418497d8b4bbff2d59/frontend/src/components/tasks/TaskContent.tsx#L15-L35"
+          }
+        ],
+        "version": "Asana Web 管理員官方畫面，原文章 2016-03-11 發布、2026-11-20 核對；未標軟件版號，非現行畫面的實測。",
+        "rights": "Asana 保留服務介面和網站素材權利；工作台只外連官方原圖與說明，不重刊、加工或嵌入。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "aa206ad8d3db5cd3199c6fec0e035e00f255adc8f06cd87aeb5a606dc6b55bee"
+}
