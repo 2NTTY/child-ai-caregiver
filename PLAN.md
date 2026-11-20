@@ -101,7 +101,7 @@ C3 自行負責分工清單內 28 份 PDF 的正式送審、刊登及逐份驗�
 <a id="fhs-c2-publication-lane"></a>
 #### C2 本批 28 份 PDF
 
-C2 由 `573d2982` 承接 28 份、464 頁。20:50 香港已按 [#715 分工](knowledge/fhs-initial-publication-lanes.json)核對全部原件，組內尚無生成、向量請求或生效版本。[本組接手收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json) · [前批 24 份的處置](#fhs-initial-recovery)
+C2 由 `573d2982` 承接 [#715 分工](knowledge/fhs-initial-publication-lanes.json)的 28 份、464 頁。原件及原操作已全部核對。香港 23:40 已取得 10 份正式收據。《寶寶愛活動》已從家長卡庫核回版本、1 個向量及第 1 頁逐字引文；9 份因引文、頁面覆蓋、年齡、審核或輸出格式保留。另 1 份在 256 MiB 容器上限中斷，已核實原帳本有 1 次生成結算。餘下原單在既有工位接續；封存引文及格式查核由 [#725](https://github.com/2NTTY/child-ai-caregiver/pull/725) 交付。[逐份結果及毛額](artifacts/verification/FHS_C2_PUBLICATION_20261120.json) · [前批 24 份的處置](#fhs-initial-recovery)
 
 1. 按來源、官方 URL 及 SHA-256 對回原件和已有工作。兩份四頁單張已有來源觀測，112 頁及 84 頁各跨多個閱讀窗口，與共用長冊接續核對。共用唯讀收據以來源及原操作起查，連至已提交刊登、家長卡、同版匯出向量及引用實頁。
 2. 在同一付款身份及 US$30 毛額帳本內，以 `scripts/fhs-catalog-batch.mjs --lane C2 prepare|run` 執行本組。受命製卡可即日執行，每日維護次數只限制自動程序。共用交易負責預留與結算；沿原操作接續已保存工作及審核，用量未知保留原票據。
