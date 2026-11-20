@@ -138,10 +138,10 @@ export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-e25b694bff2
 export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c
 ```
 
-更換 worker 後先在新容器的 `/app` 核對讀取資料。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。
+更換 worker 後先核對所選索引的 SHA-256。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。製卡容器會再核對索引、解析器及實際讀取的記錄。
 
 ```sh
-node --input-type=module -e 'import {openFhsPdfReads} from "./scripts/fhs-pdf-reads.ts"; await openFhsPdfReads(process.env.FHS_CAMPAIGN_PDF_READS,process.env.FHS_CAMPAIGN_PDF_READS_SHA256)'
+sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
 ```
 
 從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。
@@ -156,28 +156,38 @@ node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT SOUR
 <a id="fhs-publication-lanes"></a>
 ### 受命製卡的分組執行
 
-三位主責在同一個正式 worker 的 `/app` 執行以下命令，把 `C1` 換成自己的組別。可在最後加一個本組 `SOURCE_ID`。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
+在正式 VM 主機執行[製卡工具](../deploy/knowledge-worker/publication.py)，把 `C1` 換成本組。省略 `SOURCE_ID` 會按實頁數處理全組，每份完成後交回共用名額。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
 
 ```sh
-node scripts/fhs-catalog-batch.mjs --lane C1 status
-node scripts/fhs-catalog-batch.mjs --lane C1 prepare
-node scripts/fhs-catalog-batch.mjs --lane C1 run
+tool=/usr/local/lib/yuyoufang-fhs/publication.py
+sudo python3 -I "$tool" lane C1 status SOURCE_ID
+sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 prepare SOURCE_ID
+sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 run SOURCE_ID
 ```
 
-`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留；已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，既有五張結果未明的票據繼續足額預留。自動維護的每日次數適用於排程及自動查新。
+`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留。已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，結果未明的票據逐張足額預留。自動維護的每日次數適用於排程及自動查新。
 
-先確認正式發布收據已包含分組 CLI、受命製卡准入及共享預留。原 C 在交接時接回原有的待審教材，並停妥舊映像的續跑程序。新目錄命令會略過全部 84 份已分組教材。以下 VM 命令使用首批已驗的 PDF 讀本，SSH 離線後仍會執行；換組時一併替換命令和日誌內的組名。
+三組共用一個主機檔案鎖。鎖涵蓋同一份原件的準備、送審及終態核對，各階段的 Node 程序會先後退出。工具逐次驗證 Compose 版本和家長 API 健康，從可用記憶體預留 384 MiB 給家長服務、64 MiB 給主機啟動工具，餘下按 16 MiB 向下取整。製卡容器以 0.5 CPU、256 至 512 MiB 硬上限、零額外 swap 運行。送審另按原檔大小檢查可用空間，32 MiB 或以上原件保留原有的 512 MiB 上限。可用記憶體短暫跌穿共同門檻 704 MiB 時，主機程序持有原工位及原操作，每五秒重讀記憶體。回升後再驗正式版本、家長 API 及當下餘量，才啟動該階段一次。等候期間不建立新容器或預留模型費用。若其他原件仍能運行，大原件只差一級容量時最多再等 30 秒，之後列出 `capacity_wait` 給同組其他教材繼續。容器沿用已發布的 worker 映像及唯讀 PDF 卷。每次結束會輸出核心記錄的記憶體峰值。SSH 中斷後先查原單。
+
+安裝或更新主機工具時，從已核對的提交取出 `deploy/knowledge-worker/publication.py`，核對檔案 SHA-256，再以 root 擁有、0644 安裝至上述位置。日常查帳用 `sudo python3 -I "$tool" accounting`。在同一張四頁原單等候供應商結果期間，用 `sudo python3 -I "$tool" inspect SOURCE_ID` 查租約、預留及生效版。
+
+C2 原單因 `knowledge_window_quote_mismatch` 保留時，可用 `--reads DIR --reads-hash SHA256 inspect SOURCE_ID` 核對引文。讀本須含原 PDF 的引用頁段，每段由第 1、9、17 等頁起，最後一段取實際餘頁。工具讀回原操作最後失敗窗口內的兩份封存回應，核對整理及審核請求指紋，分別比對整理稿所指實頁。操作員可在本機檢視兩段摘錄；公開收據只記核對結果。圖像頁須另開官方原頁核實。這個查核不會送出模型請求或刊登教材。
+
+同一入口亦可核查分窗原單的 `knowledge_review_failed`。它用封存回應重現原來的輸出驗證，報告出錯的欄位、長度或地區代碼。若只能重現其他邊界，沿用原保留結果。
+
+需要離開 SSH 時，可把本組命令和收據留在 VM 上本人可讀的檔案。
 
 ```sh
-sudo docker exec -d -w /app \
-  -e FHS_CAMPAIGN_PDF_READS="${FHS_CAMPAIGN_PDF_READS:?Set the verified PDF reads directory}" \
-  -e FHS_CAMPAIGN_PDF_READS_SHA256="${FHS_CAMPAIGN_PDF_READS_SHA256:?Set its verified index digest}" \
-  yuban-p1-worker-1 sh -c 'umask 077; exec node scripts/fhs-catalog-batch.mjs --lane C1 run >>/var/tmp/yuban-knowledge/fhs-C1.ndjson 2>&1'
+log=$(mktemp "$HOME/fhs-C1.XXXXXXXX.log")
+nohup sudo -n python3 -I "$tool" \
+  --reads "${FHS_CAMPAIGN_PDF_READS:?Set the verified PDF reads directory}" \
+  --reads-hash "${FHS_CAMPAIGN_PDF_READS_SHA256:?Set its verified index digest}" \
+  lane C1 run >"$log" 2>&1 </dev/null &
 ```
 
 重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
 
-逐份驗收用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可將該工作指紋加作第三個參數；原操作仍是第二個參數。
+逐份驗收用 `sudo python3 -I "$tool" receipt SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可在原操作後加上該修復工作的指紋；已核實的讀本可沿用同一組 `--reads` 參數。
 
 ### 公共知識 ZIP 暫存
 
