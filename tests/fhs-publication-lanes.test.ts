@@ -33,6 +33,7 @@ test('a paid lane can reuse only the recorded observation for the frozen PDF and
 
 test('a lane accepts only its frozen originals and rejects overlapping ownership before selecting one source', () => {
   assert.deepEqual(selectPublicationLane(manifest, originals, 'C1').map((s: typeof a) => s.sourceId), [a.sourceId, b.sourceId]);
+  assert.throws(() => selectPublicationLane(manifest, originals, 'C1', ''), /lane_source/);
   assert.throws(() => selectPublicationLane(manifest, originals, 'C1', c.sourceId), /lane_source/);
   assert.throws(() => selectPublicationLane({ ...manifest, lanes: [...manifest.lanes.slice(0, 2), { id: 'C3', sources: [b] }] }, originals, 'C1'), /lane_manifest/);
   assert.throws(() => selectPublicationLane(manifest, new Map([...originals, [b.sourceId, { ...b, pages: 4 }]]), 'C1'), /lane_manifest/);
@@ -85,9 +86,11 @@ test('status and preparation never dispatch, and an unknown receipt stops a paid
 
 test('the installed batch rejects a foreign source and the original catalogue skips every frozen lane', () => {
   const root = new URL('../', import.meta.url);
-  const foreign = spawnSync(process.execPath, ['scripts/fhs-catalog-batch.mjs', '--lane', 'C1', 'run', 'pdf-836e9d989e83046a43059df7'], { cwd: root, encoding: 'utf8' });
-  assert.notEqual(foreign.status, 0);
-  assert.match(foreign.stderr, /fhs_lane_source/u);
+  for (const id of ['', 'pdf-836e9d989e83046a43059df7']) {
+    const invalid = spawnSync(process.execPath, ['scripts/fhs-catalog-batch.mjs', '--lane', 'C1', 'run', id], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(invalid.status, 0);
+    assert.match(invalid.stderr, /fhs_lane_source/u);
+  }
   const stub = `import cp from 'node:child_process'; import {syncBuiltinESMExports} from 'node:module';
     cp.spawnSync = (_node, [script, ...args]) => { if (!script.endsWith('fhs-initial-campaign.mjs')) throw Error('Unexpected child');
       console.log(JSON.stringify(args)); return {status:0}; }; syncBuiltinESMExports();`;

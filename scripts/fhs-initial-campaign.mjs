@@ -10,7 +10,7 @@ import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-r
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
 import { createFirestoreKnowledgeMaintenance, knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
 import { createKnowledgeSourceFetcher, fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
-import { openFhsPdfReads } from './fhs-pdf-reads.ts';
+import { matchesFhsPdfObservation, openFhsCampaignPdfReads, resolveFhsPdfObservation } from './fhs-pdf-reads.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
 import { platformMaterials, campaignMaterialWatches } from '../server/platform-materials.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
@@ -40,6 +40,7 @@ const handlesSource = recovering || resuming || repairing || firstPass || inspec
 const lane = process.env.FHS_CAMPAIGN_LANE;
 const originalPin = process.env.FHS_CAMPAIGN_ORIGINAL_OPERATION;
 const assigned = handlesSource && !inspecting ? [...publicationAssignments()].find(([, rows]) => rows.some(row => row.sourceId === id)) : undefined;
+const laneSource = assigned?.[1].find(row => row.sourceId === id);
 if (assigned && (!lane || lane !== assigned[0]) || lane && (!assigned || !['resume-approved', 'publish-approved'].includes(process.argv[2])
   || !/^[a-f0-9]{64}$/u.test(originalPin ?? '')) || originalPin && !lane) throw Error('fhs_lane_source_owned');
 if ((!handlesSource && !['status', 'initialize'].includes(command)) || extra.length
@@ -79,12 +80,7 @@ try {
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
     const definition = campaignMaterialWatches.find(w => w.id === id);
     if (!definition) throw Error('knowledge_campaign_source_not_approved');
-    const directory = process.env.FHS_CAMPAIGN_PDF_READS, indexHash = process.env.FHS_CAMPAIGN_PDF_READS_SHA256;
-    let pdfReader;
-    if (command === 'process-age-checked' && definition.kind === 'pdf' && (directory || indexHash)) {
-      if (!directory || !indexHash) throw Error('fhs_pdf_reads_configuration');
-      pdfReader = await openFhsPdfReads(directory, indexHash);
-    }
+    const pdfReader = await openFhsCampaignPdfReads(command, definition.kind, process.env);
     const fetchSource = pdfReader ? createKnowledgeSourceFetcher({ pdfReader }) : fetchKnowledgeSource;
     const readControl = tx => authority.readControl(tx);
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches, readControl,
@@ -104,10 +100,9 @@ try {
     if (!job) throw Error('knowledge_campaign_watch_unavailable');
     const original = knowledgeReviewHash([credentials, id, job.data.revision, job.data.workerGeneration]);
     if (lane) {
-      const pin = assigned[1].find(row => row.sourceId === id);
       const bound = (await database.collection(config.namespace + '_knowledge_campaigns').doc(campaign).collection('publicationBindings').doc(id).get()).data();
       if (original !== originalPin || bound?.operationFingerprint !== original || bound.sourceId !== id || bound.lane !== lane
-        || bound.sha256 !== pin.sha256 || bound.pages !== pin.pages) throw Error('fhs_lane_operation_changed');
+        || bound.sha256 !== laneSource.sha256 || bound.pages !== laneSource.pages) throw Error('fhs_lane_operation_changed');
     }
     if (expected && original !== (draftRevision?.priorOperationFingerprint ?? expected)) throw Error('knowledge_campaign_resume_binding_changed');
     const originalRequest = { watchId: id, operationFingerprint: original, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
@@ -120,7 +115,8 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const operationFingerprint = draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
-    const checkId = knowledgeOperationId('knowledge-observation/1', original);
+    const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
+    const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', original);
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
@@ -169,14 +165,9 @@ try {
       if (!result) {
         if ((repairing || recovering) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
         if (resuming || repairing || recovering || lane) {
-          const snapshot = await refresh.resumeCheck(job.data, checkId);
+          const snapshot = laneObservation ? laneObservation.snapshot : await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
-          if (lane) {
-            const pin = assigned[1].find(row => row.sourceId === id);
-            const [item] = snapshot.items;
-            if (snapshot.items.length !== 1 || item.url !== pin.url || item.extraction?.contentHash !== pin.sha256
-              || item.extraction.totalPages !== pin.pages) throw Error('fhs_lane_original_check_changed');
-          }
+          if (laneSource && !matchesFhsPdfObservation(laneSource, snapshot)) throw Error('fhs_lane_original_check_changed');
           if (recovering && (snapshot.items.length !== 1 || snapshot.items[0].url !== recovery.url
             || observationHash(snapshot.items[0]) !== draftRevision.observationHash))
             throw Error('knowledge_campaign_original_observation_changed');

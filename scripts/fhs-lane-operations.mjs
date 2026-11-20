@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openFirebasePersistence } from '../server/firebase-persistence.ts';
 import { createKnowledgeSourceFetcher } from '../server/knowledge-source-fetch.ts';
-import * as pdfReads from './fhs-pdf-reads.ts';
+import { matchesFhsPdfObservation, openFhsPdfReads, resolveFhsPdfObservation } from './fhs-pdf-reads.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
@@ -15,17 +15,11 @@ import { campaign, campaignCredentials } from '../server/knowledge-campaign-budg
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 
-function frozenObservation(source, check) {
-  const item = check?.items?.[0];
-  return check?.status === 'ok' && check.items.length === 1 && item.url === source.url
-    && item.extraction?.format === 'text_pdf' && item.extraction.contentHash === source.sha256 && item.extraction.totalPages === source.pages;
-}
-
 export function classifyLaneOperation(source, check, saved, active, tickets) {
   if ((!saved && (tickets.length || active)) || tickets.some(t => t.state !== 'settled' && !t.operationFingerprint))
     return { state: 'reconciliation_required', code: 'fhs_lane_unbound_or_unsettled_charge' };
   if (!check) return saved ? { state: 'reconciliation_required', code: 'fhs_lane_original_check_missing' } : { state: 'awaiting_observation' };
-  if (!frozenObservation(source, check)) {
+  if (!matchesFhsPdfObservation(source, check)) {
     if (saved || active) return { state: 'reconciliation_required', code: 'fhs_lane_original_check_changed' };
     if (check.status === 'ok' || check.pdfEditionReview || check.status === 'unavailable')
       return { state: 'held', code: 'fhs_lane_frozen_original_unavailable', observedSha256: check.items?.[0]?.extraction?.contentHash
@@ -79,10 +73,8 @@ export function createLaneOperations(persistence, fetchSource, lane) {
     if (pin && !sameBinding(pin, source, operationFingerprint) || tickets.some(t => t.operationFingerprint && t.operationFingerprint !== operationFingerprint))
       return { state: 'reconciliation_required', code: 'fhs_lane_operation_changed', operationFingerprint: pin?.operationFingerprint ?? null, tickets };
     const request = { watchId: id, operationFingerprint, workerGeneration: job.data.workerGeneration, publishMode: 'live' };
-    const defaultCheck = knowledgeOperationId('knowledge-observation/1', operationFingerprint);
     const [{ checkId, snapshot: check }, saved] = await Promise.all([
-      pdfReads.resolveFhsPdfObservation ? pdfReads.resolveFhsPdfObservation(refresh, job.data, operationFingerprint, source)
-        : refresh.resumeCheck(job.data, defaultCheck).then(snapshot => ({ checkId: defaultCheck, snapshot })),
+      resolveFhsPdfObservation(refresh, job.data, operationFingerprint, source),
       work.inspect(request),
     ]);
     return { ...classifyLaneOperation(source, check, saved, active, tickets), operationFingerprint,
@@ -113,7 +105,7 @@ export function createLaneOperations(persistence, fetchSource, lane) {
     const checked = await refresh.process(job.data, checkId, async (definition, signal) => {
       const fetched = await fetchSource(definition, signal);
       if (fetched.status !== 'ok') return fetched;
-      if (!fetched.original || !frozenObservation(source, fetched)
+      if (!fetched.original || !matchesFhsPdfObservation(source, fetched)
         || createHash('sha256').update(fetched.original.bytes).digest('hex') !== source.sha256)
         return { status: 'failed', reason: 'response' };
       return fetched;
@@ -132,7 +124,7 @@ export async function openLaneRuntime(lane, action) {
     if (p.config.projectId !== 'ai-caregivers-for-children') throw Error('knowledge_campaign_environment_mismatch');
     const dir = process.env.FHS_CAMPAIGN_PDF_READS, index = process.env.FHS_CAMPAIGN_PDF_READS_SHA256;
     if (Boolean(dir) !== Boolean(index)) throw Error('fhs_pdf_reads_configuration');
-    const fetch = createKnowledgeSourceFetcher({ ...(dir && action !== 'status' ? { pdfReader: await pdfReads.openFhsPdfReads(dir, index) } : {}) });
+    const fetch = createKnowledgeSourceFetcher({ ...(dir && action !== 'status' ? { pdfReader: await openFhsPdfReads(dir, index) } : {}) });
     const child = fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url));
     return {
       ...createLaneOperations(p, fetch, lane),

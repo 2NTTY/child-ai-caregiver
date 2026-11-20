@@ -23,7 +23,7 @@ export function selectPublicationLane(manifest, originals, lane, sourceId) {
     }
     if (group.id === lane) selected = group.sources.map(pin => originals.get(pin.sourceId));
   }
-  if (!sourceId) return selected;
+  if (sourceId === undefined) return selected;
   const source = selected.find(row => row.sourceId === sourceId);
   if (!source) throw Error('fhs_lane_source');
   return [source];
@@ -69,7 +69,7 @@ export async function runLaneCommand(args) {
   if (!laneIDs.includes(lane) || !['status', 'prepare', 'run'].includes(action) || extra.length)
     throw Error('Use --lane C1|C2|C3 status|prepare|run [SOURCE_ID]');
   const rows = publicationAssignments().get(lane);
-  const sources = sourceId ? rows.filter(s => s.sourceId === sourceId) : rows.sort((a, b) => a.pages - b.pages);
+  const sources = sourceId === undefined ? rows.sort((a, b) => a.pages - b.pages) : rows.filter(s => s.sourceId === sourceId);
   if (!sources.length) throw Error('fhs_lane_source');
   if (process.env.FIRESTORE_EMULATOR_HOST || process.env.AI_KNOWLEDGE_MAINTENANCE_PAYER !== 'platform')
     throw Error('knowledge_campaign_environment_mismatch');
