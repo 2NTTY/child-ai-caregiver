@@ -1,0 +1,75 @@
+{
+  "group": {
+    "id": "resolved-memory-topic-linked-follow-up",
+    "title": "記憶裏的話題已解決，又有新情況：怎樣繼續而不改掉舊結論？",
+    "index": "external-comparison",
+    "readerNote": "例如校外手作活動的集合點可能改了：填新原因並確認後，才另建一筆關聯的待處理話題；舊題、原狀態及可見範圍保留。每個舊題只可直接另建一次，不會當場送出追問或通知。若結果不明先查原操作，不重送。A 從舊話題清單開始，B 從單題詳情開始；兩者為設計比較，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "已結束話題總覽｜先找原題，再另建跟進",
+        "note": "先在已回答／已解決的清單用原標題、狀態與日期找到舊題，再在同頁核對並填新原因。確認才另建待處理話題，舊題不改；有已核實後續就查看，不重建。Zendesk 原圖只展示如何從列表辨認已解決項；另建關聯單由同產品文件說明，原圖中的 Solved 不等於 Closed；同頁原因區是選配方案。",
+        "source": "https://support.zendesk.com/hc/article_attachments/7856502791194",
+        "sourceNotes": [
+          {
+            "label": "Zendesk 官方整頁原圖：我的請求、搜尋、狀態與已解決列",
+            "url": "https://support.zendesk.com/hc/article_attachments/7856502791194"
+          },
+          {
+            "label": "Zendesk 官方規則：已關閉原單不變，另建關聯後續",
+            "url": "https://support.zendesk.com/hc/en-us/articles/4408883882522-Creating-a-follow-up-for-a-closed-ticket"
+          },
+          {
+            "label": "育伴港：已回答或已解決才可按原因新增待處理話題",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/src/production/TaskKnowledgeMemoryManagement.tsx#L165-L208"
+          }
+        ],
+        "version": "Zendesk 客戶入口歷史官方附件 7856502791194，伺服器標示 2023-02-23；確切組建未標。",
+        "rights": "Zendesk 官方說明圖，未獲重刊許可；只連來源，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "單題前後關係頁｜原結論保留，有新情況另開",
+        "note": "先讀原來已解決的話題，再填新原因；確認建立成功後才顯示另一筆相關的待處理話題，舊題不改，不等於已發出追問或通知。Qiscus 原圖示範舊單維持 Closed、另建 New，並在新單頂部放回舊單連結；它分開兩頁，原單沒有向前跳轉，不是此處構想的同頁雙區。",
+        "source": "https://uploads.developerhub.io/prod/joxo/h83iupm49nwhgke81qa3n2e5vmk9l6ctvasa1ree0np4gpag1neu623puax5rm2e.png",
+        "sourceNotes": [
+          {
+            "label": "Qiscus 官方完整視窗原圖：新單 #12 仍為 New，頂部連回舊單 #11",
+            "url": "https://uploads.developerhub.io/prod/joxo/h83iupm49nwhgke81qa3n2e5vmk9l6ctvasa1ree0np4gpag1neu623puax5rm2e.png"
+          },
+          {
+            "label": "Qiscus 官方完整視窗原圖：舊單 #11 保持 Closed，有另建後續入口",
+            "url": "https://uploads.developerhub.io/prod/joxo/82i2n9yu2wj5zo60omhmfgtdcvdoaiyycg7c273rnshm2ed08ow8x95qr1xhoflv.png"
+          },
+          {
+            "label": "Qiscus 官方確認畫面：明示另建並保留舊狀態（覆蓋層）",
+            "url": "https://uploads.developerhub.io/prod/joxo/c2kbv5zg2iukny0xhdvt984nza4cw044fzxbhh3m56f87t6s5ra6fjc2qfub3ggb.png"
+          },
+          {
+            "label": "Qiscus 官方操作說明：舊單保留、新單帶回原單連結",
+            "url": "https://documentation.qiscus.com/helpdesk/closed-ticket-behavior---follow-up-flow"
+          },
+          {
+            "label": "Qiscus Helpdesk 版本記錄：Closed／Follow-up 功能於 v1.20.0 推出",
+            "url": "https://documentation.qiscus.com/helpdesk/changelog"
+          },
+          {
+            "label": "育伴港：交易另建關聯的待處理話題，保留原題",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-memory.ts#L349-L369"
+          },
+          {
+            "label": "育伴港：合成測試程式檢查舊題不變及禁止再開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/frontend/scripts/memory-preview.test.mjs#L132-L150"
+          }
+        ],
+        "version": "Qiscus Helpdesk 官方文件原圖，畫面日期及 CDN asset Last-Modified 同為 2026-02-03。功能首見當日 v1.20.0，當日另有 v1.20.1，原圖未顯示確切版號。",
+        "rights": "官方文件未提供該組原圖的可重刊授權，官方服務條款保留相關智慧財產權；作者標注和示例角色名稱依原圖，工作台只外連，不嵌圖或改圖。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "42b2315b45d7700bedf55a90428fa7edde2de3bcd9e9b9ee4a4e2504a308f4ca"
+}
