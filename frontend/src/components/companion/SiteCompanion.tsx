@@ -11,6 +11,20 @@ import { CharacterDock } from './CharacterDock';
 import { AppButton } from '../ui';
 import { VoiceCapture } from '../agent/VoiceCapture';
 import { useCompanionSelection } from './CompanionSelection';
+function characterSource(apiBaseUrl: string) {
+  return Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
+}
+
+export function ChatToolbarCompanion({ compact }: { compact: boolean }) {
+  const { identityKey, apiBaseUrl } = useProduction();
+  const foreground = useChatForeground(), pathname = usePathname();
+  const height = compact ? 50 : 62;
+  if (!identityKey || pathname !== '/chat') return null;
+  return <View style={{ width: Math.ceil(height * .71), height, flexShrink: 0 }}>
+    <CharacterDock key={identityKey} src={characterSource(apiBaseUrl)} page="/chat" foreground={foreground} inToolbar />
+  </View>;
+}
+
 export function SiteCompanion() {
   const { identityKey } = useProduction();
   return identityKey ? <Companion key={identityKey} /> : null;
@@ -37,9 +51,8 @@ function Companion() {
       return null;
     });
   }, [pathname, scope, selectedChildId, sharedChild.target]);
-  const src = Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
   return <>
-    <CharacterDock src={src} page={pathname} unread={unread || undefined} foreground={foreground} panelOpen={open}
+    <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground} panelOpen={open}
       onChat={() => setPanel({ page: pathname, scope, includeItem: !!childId, reminderId: unread || undefined })} />
     {open && (childId
       ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} reminderId={panel.reminderId} height={height} close={() => setPanel(null)} />

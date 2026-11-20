@@ -14,22 +14,23 @@ class RenderBoundary extends Component<{ children: ReactNode }, { failed: boolea
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 
-export function CharacterDock({ src, page, unread, foreground, panelOpen, onChat }: {
-  src: string; page: string; unread?: string; foreground: boolean; panelOpen: boolean; onChat(): void;
+export function CharacterDock({ src, page, unread, foreground, panelOpen = false, inToolbar = false, onChat }: {
+  src: string; page: string; unread?: string; foreground: boolean; panelOpen?: boolean; inToolbar?: boolean; onChat?(): void;
 }) {
   const quiet = page === '/chat', small = useWindowDimensions().width < mobileLayout.breakpoint;
   const insets = useSafeAreaInsets();
   const [bounds, setBounds] = useState({ width: 0, height: 0 });
   const [placement, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const position = placement ?? (small ? { x: .89, y: .92 } : { x: .32, y: .85 });
+  const position = placement ?? { x: small ? .89 : .32, y: 1 };
   const [minimized, setMinimized] = useState(false), [ready, setReady] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
   const [gesture, setGesture] = useState<{ action: CharacterAction; serial: number }>({ action: 'nod', serial: 0 });
   const play = useCallback((action: CharacterAction) => setGesture(last => ({ action, serial: last.serial + 1 })), []);
   const collapsed = !quiet && minimized;
-  const safeBottom = Platform.OS === 'web' ? 0 : mobileLayout.tabMinHeight + insets.bottom;
+  const safeBottom = inToolbar || Platform.OS === 'web' ? 0 : mobileLayout.tabMinHeight + insets.bottom;
   const room = Math.max(0, bounds.height - safeBottom);
-  const height = quiet ? Math.min(86, room) : Math.min(small ? 186 : 232, room * .46);
+  const figureHeight = page === '/tasks' ? (small ? 160 : 214) : (small ? 186 : 232);
+  const height = inToolbar ? room : Math.min(figureHeight, room * .46);
   const width = Math.round(height * .71), trayHeight = quiet ? 0 : 44;
   const dockWidth = collapsed ? 46 : width, dockHeight = collapsed ? 46 : height + trayHeight;
   const margin = small ? 9 : 18;
@@ -60,7 +61,9 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen, onChat
     const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(false));
     return () => { show.remove(); hide.remove(); };
   }, []);
-  const paused = !foreground || panelOpen || keyboard || collapsed;
+  const displayed = !quiet || inToolbar;
+  useEffect(() => { if (!displayed) setReady(false); }, [displayed]);
+  const paused = !foreground || panelOpen || keyboard || collapsed || !displayed;
   const previousPage = useRef(page);
   useEffect(() => {
     if (previousPage.current !== page && !quiet && !paused && ready && !unread) play('arrive');
@@ -72,11 +75,12 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen, onChat
     const repeat = setInterval(() => play('wave'), 18000);
     return () => clearInterval(repeat);
   }, [unread, ready, paused, quiet, play]);
-  const openChat = () => { if (!moving.current) onChat(); };
+  if (!displayed) return null;
+  const openChat = () => { if (!moving.current) onChat?.(); };
   return <View pointerEvents="box-none" style={StyleSheet.absoluteFill} onLayout={({ nativeEvent: { layout } }) =>
     setBounds(b => b.width === layout.width && b.height === layout.height ? b : { width: layout.width, height: layout.height })}>
     <View testID="companion-dock" pointerEvents={keyboard ? 'none' : 'box-none'} style={[s.dock, {
-      width: dockWidth, height: dockHeight, left: quiet ? margin : margin + position.x * travelX,
+      width: dockWidth, height: dockHeight, left: quiet ? 0 : margin + position.x * travelX,
       top: quiet ? 0 : margin + position.y * travelY, opacity: keyboard || !bounds.width ? 0 : 1,
     }]} {...(!quiet ? responder.panHandlers : {})}>
       <View pointerEvents="none" style={[s.ground, { width: width * .42, height: width * .42, transform: [{ scaleY: .12 }], bottom: trayHeight + height * .027 - width * .21 }, collapsed && s.invisible]} />

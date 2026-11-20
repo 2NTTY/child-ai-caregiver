@@ -22,6 +22,7 @@ import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
 import { ChatAction } from "../components/chat/ChatAction";
+import { ChatToolbarCompanion } from "../components/companion/SiteCompanion";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
@@ -236,6 +237,7 @@ function ChatContents({ compact, onPaneLayout }: {
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
       <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
+      <ChatToolbarCompanion compact={compact} />
       <View style={styles.toolbarActions}>
         <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? "對話活動 · 待查核" : needsDecision ? "對話活動 · 待確認" : "對話活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"}
@@ -365,7 +367,7 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexShrink: 0,
-    paddingHorizontal: chatLayout.wideInset, minHeight: 88, justifyContent: 'center' },
+    paddingHorizontal: chatLayout.wideInset, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
