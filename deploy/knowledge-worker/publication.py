@@ -10,27 +10,34 @@ import sys
 CACHE = "/var/tmp/yuban-knowledge"
 MEMORY_MIB = 512
 FAMILY_HEADROOM_MIB = 384
-SOURCE = re.compile(r"pdf-[a-f0-9]{24}")
 HASH = re.compile(r"[a-f0-9]{64}")
 SLOT = "/run/lock/yuyoufang-fhs-publication.lock"
+# The release owner has one original deferred review outside the three assigned lanes.
+CONTINUATION_SOURCE = "pdf-c79a394b580ec9e870d63319"
 
 
 def commands(args, manifest):
+    if args.action == "accounting":
+        yield ["scripts/fhs-initial-campaign.mjs", "status"]
+        return
+    groups = {group["id"]: group["sources"] for group in manifest["lanes"]}
     if args.action == "lane":
-        groups = {group["id"]: group["sources"] for group in manifest["lanes"]}
         sources = sorted(groups[args.lane], key=lambda source: source["pages"])
         if args.source:
             sources = [source for source in sources if source["sourceId"] == args.source]
-        if not sources or any(not SOURCE.fullmatch(row["sourceId"]) for row in sources):
+        if not sources:
             raise ValueError("Invalid publication lane source")
         for row in sources:
             yield ["scripts/fhs-catalog-batch.mjs", "--lane", args.lane, args.mode, row["sourceId"]]
-    elif args.action == "receipt":
+        return
+    if args.source != CONTINUATION_SOURCE and not any(
+        row["sourceId"] == args.source for sources in groups.values() for row in sources
+    ):
+        raise ValueError("Unassigned publication source")
+    if args.action == "receipt":
         yield ["scripts/fhs-publication-receipt.mjs", args.source, args.original, *([args.delivery] if args.delivery else [])]
-    elif args.action == "inspect":
-        yield ["scripts/fhs-initial-campaign.mjs", "inspect", args.source]
     else:
-        yield ["scripts/fhs-initial-campaign.mjs", "status"]
+        yield ["scripts/fhs-initial-campaign.mjs", "inspect", args.source]
 
 
 def compose_job(host, args, command):
@@ -95,8 +102,6 @@ def main():
     receipt.add_argument("original")
     receipt.add_argument("delivery", nargs="?")
     args = parser.parse_args()
-    if getattr(args, "source", None) and not SOURCE.fullmatch(args.source):
-        parser.error("Invalid PDF source")
     if any(value and not HASH.fullmatch(value) for value in (getattr(args, "original", None), getattr(args, "delivery", None))):
         parser.error("Invalid original or delivery operation")
     if bool(args.reads) != bool(args.reads_hash) or args.reads and (
@@ -106,7 +111,7 @@ def main():
     sys.path.insert(0, "/usr/local/lib/yuyoufang-site-release")
     import host
     manifest = None
-    if args.action == "lane":
+    if args.action != "accounting":
         manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-initial-publication-lanes.json"]))
     exit_code = 0
     for command in commands(args, manifest):

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -67,6 +68,31 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual(publication.compose_job(self.host, args, command), (2, None))
             proc.stdout = [json.dumps({"lane": "C1", "sourceId": source, "state": "source_blocked"})]
             self.assertEqual(publication.compose_job(self.host, args, command), (2, "source_blocked"))
+
+    def test_all_deployed_assignments_and_their_original_receipts_are_addressable(self):
+        path = Path(__file__).resolve().parents[2] / "knowledge/fhs-initial-publication-lanes.json"
+        manifest = json.loads(path.read_text(encoding="utf8"))
+        resource_sources = {"C1": "resource-af8c3e8cc813be", "C3": "resource-1ba127a119f802"}
+        for group in manifest["lanes"]:
+            args = SimpleNamespace(action="lane", lane=group["id"], mode="run", source=None)
+            expected = [row["sourceId"] for row in sorted(group["sources"], key=lambda row: row["pages"])]
+            self.assertEqual(len(expected), 28)
+            self.assertEqual([cmd[-1] for cmd in publication.commands(args, manifest)], expected)
+            if args.lane in resource_sources:
+                args.source = resource_sources[args.lane]
+                self.assertEqual([cmd[-1] for cmd in publication.commands(args, manifest)], [args.source])
+                args.lane = "C2"
+                with self.assertRaisesRegex(ValueError, "lane source"):
+                    list(publication.commands(args, manifest))
+        for action in ("inspect", "receipt"):
+            for source in [*resource_sources.values(), publication.CONTINUATION_SOURCE]:
+                args = SimpleNamespace(action=action, source=source, original="a"*64, delivery=None)
+                cmd, = publication.commands(args, manifest)
+                self.assertIn(source, cmd)
+            for source in ("resource-00000000000000", "pdf-" + "0"*24):
+                args.source = source
+                with self.assertRaisesRegex(ValueError, "Unassigned"):
+                    list(publication.commands(args, manifest))
 
 
 if __name__ == "__main__":
