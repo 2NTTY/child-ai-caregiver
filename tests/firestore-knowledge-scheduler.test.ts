@@ -91,7 +91,7 @@ comparedVersionId: null, comparedHash: null, observationHash: observationHash(it
     await knowledge.publish(version.versionId, version.hash, [{ chunkKey: key, inputHash: embeddingDocument(item.title, chunk.section, chunk.text).hash, ...KNOWLEDGE_EMBEDDING, values: vector }]);
     return { version, entry };
   }
-  const { entry: watch } = await seed(watchId, "unrelated-notice");
+  const { entry: watch, version: previous } = await seed(watchId, "unrelated-notice");
   let body = "First synthetic source notice.", fetches = 0, embeddings = 0;
   const roles: string[] = [];
   const agent = createScheduledKnowledgeAgent({
@@ -154,19 +154,33 @@ comparedVersionId: null, comparedHash: null, observationHash: observationHash(it
   const resumed = await queue.process({ ...delivery, dispatchRevision: 2, scheduledAt: nextAdmission });
   const obs = (await refresh.inspect(watchId)).observation!;
   const fingerprint = firestoreDomainHash(["knowledge-scheduled-edition/2", watchId, watch!.data.revision, agent.binding, "live", obs.contentHash, obs.fetchedAt]);
-  const saved = await createFirestoreKnowledgeWork({ ...domain, readControl }).inspect({ watchId, workerGeneration: generation, publishMode: "live", operationFingerprint: fingerprint });
-  assert.deepEqual(resumed, { state: "completed" }, JSON.stringify({ roles, result: saved?.result, budget: saved?.budget }));
+  const work = createFirestoreKnowledgeWork({ ...domain, readControl });
+  const originalRequest = { watchId, workerGeneration: generation, publishMode: "live" as const, operationFingerprint: fingerprint };
+  const saved = await work.inspect(originalRequest);
+  const embeddingAdmission = "2026-04-08T00:00:00.000Z";
+  assert.deepEqual(resumed, { state: "pending" });
+  assert.deepEqual(await run(first), { state: "deferred", nextAt: embeddingAdmission });
+  assert.equal(saved?.prepared?.review.decision, "approve_candidate");
   assert.equal(saved?.budget.modelCalls, 2);
+  assert.deepEqual([fetches, roles.length, embeddings], [1, 2, 0]);
+  assert.equal((await knowledge.publishedEdition(watchId))?.versionId, previous.versionId);
+  t.mock.timers.tick(day);
+  assert.deepEqual(await queue.process({ ...delivery, dispatchRevision: 3, scheduledAt: embeddingAdmission }), { state: "completed" });
+  assert.equal((await work.inspect(originalRequest))?.receipt?.state, "committed");
   const initial = await knowledge.publishedEdition(watchId);
   assert.equal(initial?.source.chunks[0]?.text, body);
   assert.deepEqual([fetches, roles.length, embeddings], [1, 2, 1]);
-  t.mock.timers.tick(6 * day);
+  t.mock.timers.tick(5 * day);
   assert.deepEqual(await run(new Date().toISOString()), { state: "completed" });
   assert.deepEqual([fetches, roles.length, embeddings], [2, 2, 1]);
   t.mock.timers.tick(7 * day);
   const next = new Date().toISOString(); body = "Revised synthetic source notice.";
   assert.equal((await run(next)).state, "deferred");
   assert.equal((await knowledge.publishedEdition(watchId))?.versionId, initial?.versionId);
+  t.mock.timers.tick(day);
+  assert.equal((await run(next)).state, "deferred");
+  assert.equal((await knowledge.publishedEdition(watchId))?.versionId, initial?.versionId);
+  assert.deepEqual([fetches, roles.length, embeddings], [3, 4, 1]);
   t.mock.timers.tick(day);
   assert.equal((await run(next)).state, "completed");
   const revised = await knowledge.publishedEdition(watchId);
