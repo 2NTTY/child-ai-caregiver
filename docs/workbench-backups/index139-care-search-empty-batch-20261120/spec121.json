@@ -1,0 +1,77 @@
+{
+  "group": {
+    "id": "care-saved-search-empty-batch-has-more",
+    "title": "照顧記錄搜尋這頁沒有結果，還能往下找嗎？",
+    "index": "external-comparison",
+    "readerNote": "有下一頁就可以用相同條件繼續搜尋。本頁零筆不等於整次搜尋完畢，更不代表記錄已刪或沒保存。若記錄已有變更、舊分頁位置失效，就用原條件從第一頁重新搜尋，不合計前後兩次的數目。末頁零筆不會抹掉前頁命中；離線、失權和讀取失敗也不是零筆。兩案是只讀設計比較，不執行產品查詢，不改資料。",
+    "choices": [
+      {
+        "name": "在原列表繼續找｜空頁旁保留搜尋條件和下一步",
+        "note": "搜尋「摺紙火箭」的這一頁沒有符合記錄，但還有較早的記錄未查。家長可在原處按「繼續搜尋」，不用重打字詞，也不保證下一批有結果。AWS 原圖展示本批已完成仍可繼續，圖上有命中，不是零結果畫面。",
+        "source": "https://d2908q01vomqb2.cloudfront.net/887309d048beef83ad3eabf2a79a64a389ab1c9f/2023/01/17/dbblog-1981-image007.png",
+        "sourceNotes": [
+          {
+            "label": "AWS 官方原圖：本批已完成，結果列表上方仍有「取下一批」",
+            "url": "https://d2908q01vomqb2.cloudfront.net/887309d048beef83ad3eabf2a79a64a389ab1c9f/2023/01/17/dbblog-1981-image007.png"
+          },
+          {
+            "label": "AWS Database Blog 圖 7：DynamoDB 查閱模擬電表資料",
+            "url": "https://aws.amazon.com/blogs/database/writing-results-from-an-athena-query-to-amazon-dynamodb/"
+          },
+          {
+            "label": "AWS Scan 官方說明：本批命中可為零；是否查完要另看續頁位置",
+            "url": "https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html"
+          },
+          {
+            "label": "育伴港：零匹配仍可回傳續頁位置",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0ac10560e61a9f7d251175686cfd9c1f5db08782/server/firestore-care.ts#L251-L273"
+          },
+          {
+            "label": "育伴港：現行空態與下一頁可能同時顯示",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0ac10560e61a9f7d251175686cfd9c1f5db08782/frontend/src/components/care/CareSavedRecordsView.tsx#L33-L61"
+          }
+        ],
+        "version": "DynamoDB 網頁主控台 Explore items，AWS Database Blog 圖 7（2023-01-20 刊登）；未標軟件版號或攝圖日。",
+        "rights": "AWS 官方文章示例圖，未確認可轉載授權；只外連原圖及原文，不內嵌或收錄圖片。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 AWS 官方 DynamoDB 結果頁原圖 ↗（需連網）"
+      },
+      {
+        "name": "查到哪裏｜分開顯示搜尋範圍",
+        "note": "把合成示例的「這批查過 200 筆，符合 0 筆」放在結果列表上方；還有較早記錄時才讓家長查下一批。如果記錄在翻頁前變動，改說「記錄已變更，這次不能接着查」，改為提供「用相同條件重新搜尋」，不把兩次的數目加起來。Elastic 原圖可參考搜尋條件、結果和分頁的位置，沒有呈現失效提示。",
+        "source": "https://www.elastic.co/docs/explore-analyze/images/kibana-discover-try-esql-from.png",
+        "sourceNotes": [
+          {
+            "label": "Elastic 官方 Discover 搜尋整頁原圖：原查詢、Search、結果表及頁碼在同一畫面",
+            "url": "https://www.elastic.co/docs/explore-analyze/images/kibana-discover-try-esql-from.png"
+          },
+          {
+            "label": "Kibana 官方教學：重新開啟已保存的查詢，以重新開啟時的資料再搜尋，不是回放舊結果",
+            "url": "https://www.elastic.co/docs/explore-analyze/discover/try-esql#try-esql-save"
+          },
+          {
+            "label": "Elasticsearch 官方分頁說明：兩頁之間若索引刷新，排序及跨頁結果可能改變",
+            "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/paginate-search-results"
+          },
+          {
+            "label": "育伴港：目前資料版本已變，原續頁位置失效",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0ac10560e61a9f7d251175686cfd9c1f5db08782/server/firestore-care.ts#L369-L376"
+          },
+          {
+            "label": "育伴港：保留已套用條件，第一頁重新讀取而不復用舊位置",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/0ac10560e61a9f7d251175686cfd9c1f5db08782/frontend/src/production/CareReadCoordinator.ts#L107-L149"
+          }
+        ],
+        "version": "Kibana Discover Web／ES|QL；2026-11-20 核對 Elastic 官方文件及原圖，docs-content 版本 28b336f。畫面未標出 Kibana 版號或攝圖日期。",
+        "rights": "Elastic 官方 docs-content 文件庫標示 CC BY-NC-ND 4.0；工作台只外連官方原圖與文件，不重刊、嵌圖或改圖，不視為產品商標授權。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Elastic 官方 Discover 搜尋頁原圖 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "7eb1b0a36ba11c474b821bfcbcc201b4b55bb72f127db54c9d661dcaa63e87c1"
+}
