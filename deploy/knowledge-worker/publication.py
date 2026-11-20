@@ -17,6 +17,10 @@ SLOT = "/run/lock/yuyoufang-fhs-publication.lock"
 CONTINUATION_SOURCE = "pdf-c79a394b580ec9e870d63319"
 
 
+class OriginalCapacityError(RuntimeError):
+    """The slot has room for ordinary work but not this PDF's native request."""
+
+
 def commands(args, manifest):
     if args.action == "accounting":
         yield ["scripts/fhs-initial-campaign.mjs", "status"]
@@ -56,8 +60,9 @@ def compose_job(host, args, command, *, original=None, pdf_bytes=0):
     # Keep the existing maximum for exceptionally large originals, before any paid dispatch.
     minimum = MAX_MEMORY_MIB if pdf_bytes >= 32 * 1048576 else max(256, 224 + (4 * pdf_bytes + 1048575) // 1048576)
     if memory < minimum:
-        raise RuntimeError(f"Insufficient free memory: {available} MiB available, {minimum} MiB job, "
-                           f"{FAMILY_HEADROOM_MIB} MiB family and {LAUNCHER_HEADROOM_MIB} MiB launcher required")
+        error = OriginalCapacityError if memory >= 256 and pdf_bytes else RuntimeError
+        raise error(f"Insufficient free memory: {available} MiB available, {minimum} MiB job, "
+                    f"{FAMILY_HEADROOM_MIB} MiB family and {LAUNCHER_HEADROOM_MIB} MiB launcher required")
     volume, = [mount for mount in host.container("worker")["Mounts"] if mount["Destination"] == CACHE and mount["Type"] == "volume"]
     # Compose reuses the current worker configuration, including its file secret, on the same host.
     # Only this transient container receives the limits. The original worker volume stays read-only.
@@ -118,7 +123,11 @@ def run_source(host, args, command, pdf_bytes):
         publish = ["publish-approved", source]
     else:
         raise RuntimeError("Unknown start state for the prepared operation")
-    code, _ = compose_job(host, args, ["scripts/fhs-initial-campaign.mjs", *publish], original=op, pdf_bytes=pdf_bytes)
+    try:
+        code, _ = compose_job(host, args, ["scripts/fhs-initial-campaign.mjs", *publish], original=op, pdf_bytes=pdf_bytes)
+    except OriginalCapacityError as error:
+        print(json.dumps({"lane": args.lane, "sourceId": source, "state": "capacity_wait", "reason": str(error)}), flush=True)
+        return 2, "capacity_wait"
     checked, after = compose_job(host, args, [*prefix, "status", source])
     if checked or not after or after.get("operationFingerprint") != op:
         raise RuntimeError("Unable to confirm the original operation after dispatch")
@@ -173,7 +182,7 @@ def main():
         with open(SLOT, "a") as slot:
             fcntl.flock(slot, fcntl.LOCK_EX)
             result, state = run_source(host, args, command, byte_sizes[command[-1]] if byte_sizes else 0)
-        if result == 2 and state == "source_blocked":
+        if result == 2 and state in ("source_blocked", "capacity_wait"):
             exit_code = result
             continue
         if result:

@@ -99,6 +99,9 @@ class PublicationTests(unittest.TestCase):
         with patch("publication.compose_job", return_value=(2,{"state":"source_blocked"})) as run:
             self.assertEqual(publication.run_source(self.host, args, command, 1024), (2,"source_blocked"))
             self.assertEqual(run.call_count, 1)
+        with patch("publication.compose_job", side_effect=[(0,ready), publication.OriginalCapacityError("512 MiB job")]) as run:
+            self.assertEqual(publication.run_source(self.host, args, command, 64*1048576), (2,"capacity_wait"))
+            self.assertEqual(run.call_count, 2)
         with patch("publication.compose_job", side_effect=[(0,{**ready,"started":True}), (3,None),
                                                           (0,{**terminal,"operationFingerprint":"b"*64})]) as run:
             with self.assertRaisesRegex(RuntimeError, "operation"):
