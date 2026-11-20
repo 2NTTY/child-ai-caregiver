@@ -1,0 +1,93 @@
+{
+  "group": {
+    "id": "verified-email-awaits-current-data-use-notice",
+    "title": "電郵已驗證，為甚麼還要確認資料使用說明？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：已啟用帳戶服務門檻，電郵已驗證，但今版資料使用說明尚未確認。未啟用這個門檻或舊試用模式不套用此流程。A 同頁先讀完整說明；B 擬議先看開通進度，再進獨立完整說明。兩案使用同一權威版本，只設一個「已閱讀」勾選，不預勾，勾選後仍須明確按確認。身分或版本變動會清除舊勾選；離線或版本不符不能確認。以服務回傳成功才開通；結果不明不當成完成。可以登出，不必確認才能退出。確認說明不等於授權通知或分享，不新增分項設定或保留導覽進度。工作台只讀比較，不使用真實帳戶或家庭資料、不代為接受協議、不更改帳戶狀態。",
+    "choices": [
+      {
+        "name": "先讀完整說明｜讀完才明確確認",
+        "note": "電郵已驗證不等於已確認資料使用說明。留在同一頁，先看目前版本的標題、版本和完整正文，再自行勾選「我已閱讀」並另按「確認並開通」；也可以直接登出。身分或版本一變，就清掉原勾選。離線或版本不符不能送出，服務確認成功才開通；結果不明仍停在這頁。確認說明不授權通知或分享。緬因州官方手冊第 14 頁左上原圖展示的是商戶隱私政策，不是育伴港電郵驗證或開通結果。",
+        "source": "https://www1.maine.gov/dhhs/mecdc/sites/maine.gov.dhhs.mecdc/files/S3%20Merchant%20Link%20Mobile%20App%20Farmers%E2%80%99%20User%20Guide%20.pdf#page=14",
+        "sourceNotes": [
+          {
+            "label": "緬因州 DHHS 官方發布頁：S3 Merchant Link Farmers’ User Guide",
+            "url": "https://www.maine.gov/dhhs/mecdc/healthy-living/wic/vendors-and-farmers/become-a-wic-farmer#s3-merchant-link"
+          },
+          {
+            "label": "官方手冊封面：文件版本 V0.09 與日期（不是產品構建）",
+            "url": "https://www1.maine.gov/dhhs/mecdc/sites/maine.gov.dhhs.mecdc/files/S3%20Merchant%20Link%20Mobile%20App%20Farmers%E2%80%99%20User%20Guide%20.pdf#page=1"
+          },
+          {
+            "label": "官方手冊：登入及驗證先於政策步驟",
+            "url": "https://www1.maine.gov/dhhs/mecdc/sites/maine.gov.dhhs.mecdc/files/S3%20Merchant%20Link%20Mobile%20App%20Farmers%E2%80%99%20User%20Guide%20.pdf#page=7"
+          },
+          {
+            "label": "Maine.gov 網站政策（不等同授權轉載本手冊中的產品截圖）",
+            "url": "https://www1.maine.gov/portal/policies/index.html"
+          },
+          {
+            "label": "育伴港：資料使用說明版本，通知及分享須另行授權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/account-service.ts#L3-L5"
+          },
+          {
+            "label": "育伴港：身分或政策版本變更會清勾選",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L19-L22"
+          },
+          {
+            "label": "育伴港：分開勾選、確認與退出；離線或版本不符先不開通",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L30-L45"
+          }
+        ],
+        "version": "Solutran／Maine DHHS《eWIC CVB Farmers’ Market Mobile Application – Farmers’ User Guide》V0.09，2023-10-17，第 14 頁左上原畫面。圖中隱私政策修訂日 2021-01-05，應用程式構建未標。2026-11-20 取得 40 頁原 PDF（2,301,337 bytes），SHA-256 3c3b5183d9a4700c4d35f6fb8f3af5b52d5dff32aae0a3b76a115a7720928c07。",
+        "rights": "由緬因州 DHHS 官方發布，文件署名 Solutran, LLC 與 State of Maine；未確認圖、品牌或條文可轉刊。不取出原圖，只外連官方 PDF 第 14 頁；不內嵌、裁圖、重刊、改畫或聲稱背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看官方手冊第 14 頁左上隱私政策整個畫面（需連網）↗"
+      },
+      {
+        "name": "首次進入｜先看已完成與下一步，再閱讀及確認",
+        "note": "擬議整頁。先顯示「電郵已驗證」及「仍需確認目前的資料使用說明」，讓人知道帳戶已驗證但尚不能進入。按「閱讀資料使用說明」才進獨立的完整說明；開啟或閱讀不算同意。勾選預設為空，另按「同意並繼續」，以服務回傳為準。身分或版本變動清除舊勾選；離線、版本不符或結果未明均不宣稱已開通。可登出，未確認不進入，也不保存導覽進度。DfE 原圖只借已完成與仍不能進入的分開呈現，不借資格審核。",
+        "source": "https://cloud-cube-eu2.s3.eu-west-1.amazonaws.com/pkwmignaq6f6/public/no_dqt_4d1c7f1b56.png",
+        "sourceNotes": [
+          {
+            "label": "英國教育部官方設計紀錄：帳戶建立了，但服務仍有下一步",
+            "url": "https://design-histories.education.gov.uk/dfe-identity-account/account-created-scenarios"
+          },
+          {
+            "label": "英國國家檔案館：開放政府許可 v3.0 與排除項目",
+            "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+          },
+          {
+            "label": "育伴港：資料使用權威版本，通知與分享另需授權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/account-service.ts#L3-L5"
+          },
+          {
+            "label": "育伴港：個別勾選與明確確認；版本、離線與退出",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L19-L45"
+          },
+          {
+            "label": "育伴港：啟用門檻時，驗證電郵不等於完成本版確認",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AccountServiceOwner.ts#L49-L54"
+          },
+          {
+            "label": "育伴港：確認結果以服務回傳及門檻重判為準",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AccountServiceOwner.ts#L194-L201"
+          },
+          {
+            "label": "育伴港：尚未確認時不開放原功能頁",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L96-L105"
+          }
+        ],
+        "version": "DfE Identity／Access your teaching qualifications 官方設計樣本；設計紀錄最後更新 2023-03-24。圖未標獨立 build 或擷取日，2026-11-20 核對。",
+        "rights": "英國教育部設計紀錄標示 Crown copyright 及 Open Government Licence v3.0（另有標示者除外）；不將其解作品牌、標誌或第三方資產授權。只外連原圖與來源，不內嵌、不下載入成品、不改畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 DfE 官方已建立帳戶但未能進入服務整頁原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "34fbe59753ed011342b0be1e1529a4d9698f2ee474b59353336f20fe5ba2c01d"
+}
