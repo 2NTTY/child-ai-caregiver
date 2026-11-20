@@ -1,0 +1,105 @@
+{
+  "group": {
+    "id": "withdraw-one-concern-followup-keep-history",
+    "title": "想撤回週六的站內跟進，之前的觀察和已分派待辦還在嗎？",
+    "index": "external-comparison",
+    "readerNote": "只撤回同一孩子和關注下、仍待處理或排隊中的這一次站內跟進。權限、原安排及版本仍相符，明確確認並讀回成功後，才可標成取消。原關注繼續、原觀察及已連結待辦保留；待辦狀態以原待辦為準。若結果待核對，先核對原操作，不重發，也不能說已撤回。已完成或已送出的結果不會倒帶，沒有撤回舊通知的承諾。B 的獨立確認頁是設計提案，不是育伴港現有功能。工作台只讀比較，用合成示例，不執行任何撤回或更改。",
+    "choices": [
+      {
+        "name": "留在原關注時間線｜只撤回週六的站內跟進",
+        "note": "Todoist Web 整個工作區在同一筆工作的右欄分開日期與 Reminders，左欄仍保留子任務和留言。原圖的 Reminders 欄沒有已安排項目，不是移除前後的示範；另讀 Todoist 手機指引才有從一筆任務移除個別提醒的步驟。育伴港只借同頁並存：清空週六 16:00 的跟進時間還不是撤回，要核對並確認後、讀回成功才在原時間線標「已取消」。原觀察和「星期六歸還繪本」待辦保留，關注仍繼續；不撤回已發生的結果。",
+        "source": "https://images.ctfassets.net/dm4oa8qtogq0/31cc87c2aeeeef024aa7ddad02d24e3dc4786396/1cd74ebc96ab42950b89eec331cff993/The_new_Task_view_on_Web_showing_a_task_with_sub-tasks__comments_and_the_new_sidebar.",
+        "sourceNotes": [
+          {
+            "label": "Todoist 官方改版原文：任務內容、子任務及留言與獨立提醒欄留在同一畫面",
+            "url": "https://www.todoist.com/inspiration/todoist-new-task-view"
+          },
+          {
+            "label": "Todoist 官方 Web 任務詳情：在同一頁分別管理日期、提醒和原工作",
+            "url": "https://www.todoist.com/help/todoist/features/use-the-task-view-to-manage-tasks-in-todoist-eDeRDO0C"
+          },
+          {
+            "label": "Todoist 手機官方指引：從指定任務移除個別緊急提醒，不是原圖的 Web 操作",
+            "url": "https://www.todoist.com/help/todoist/features/add-an-urgent-reminder-in-todoist-WeBYdY5ra"
+          },
+          {
+            "label": "Todoist 官方素材權利條款",
+            "url": "https://www.todoist.com/terms-of-service#8-ownership-proprietary-rights"
+          },
+          {
+            "label": "育伴港：關注、站內跟進、原觀察和待辦入口分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/growth/GrowthConcernTimeline.tsx#L18-L60"
+          },
+          {
+            "label": "育伴港：現行手動入口留空後仍須確認，才撤回這次安排",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/growth/GrowthConcernManualFallback.tsx#L95-L110"
+          }
+        ],
+        "version": "Todoist Web 官方 Task view 改版原圖（1472 × 1000），2026-11-20 核對完整畫面。兩份官方輔助指引分別標示 2026-08-28、2026-11-05 更新；非原圖的攝圖日或軟件版號。原圖未標精確構建或攝錄日期。",
+        "rights": "Todoist 官方素材權利條款涵蓋產品介面、圖形與宣傳內容；未確認這張圖可再刊。只外連完整原圖和官方說明，不內嵌、重刊、截取或改畫，不轉載圖中人物或標誌。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "看 Todoist 官方任務詳情整頁原圖（需連網）↗"
+      },
+      {
+        "name": "獨立確認樣張｜只撤回這次站內跟進",
+        "note": "先列「這次撤回：星期六 16:00 的站內跟進」，再列「保留：持續關注、上週借了繪本、星期六歸還繪本待辦」。先核對原日期、關注及家庭共享範圍，再選「只撤回這次」；返回不更改。未知結果寫「待核對」，不能先說已撤回；連結待辦狀態以原待辦為準。AWS 原圖示範選一筆並在確認之前說明影響，不是照顧跟進。此獨立確認頁是設計方案，不是現有功能。",
+        "source": "https://docs.aws.amazon.com/images/codepipeline/latest/userguide/images/stop-execution.png",
+        "sourceNotes": [
+          {
+            "label": "AWS 官方 Stop execution 操作：只選仍在進行的一次執行，再確認",
+            "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines-stop.html"
+          },
+          {
+            "label": "AWS：停止中的狀態與已停止的執行歷史分開",
+            "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/executions-view.html"
+          },
+          {
+            "label": "AWS 2020 年 1 月 21 日功能發佈公告",
+            "url": "https://aws.amazon.com/about-aws/whats-new/2020/01/aws-codepipeline-enables-stopping-pipeline-executions/"
+          },
+          {
+            "label": "AWS 文件固定提交（2021-01-11），記載同名原圖的舊站內路徑",
+            "url": "https://github.com/awsdocs/aws-codepipeline-user-guide/blob/9d7d44073b06d8800d8a5a6f0213f69e49616bb6/doc_source/pipelines-stop.md"
+          },
+          {
+            "label": "AWS 網站內容和商標權條款",
+            "url": "https://aws.amazon.com/terms/"
+          },
+          {
+            "label": "育伴港：現行撤回與保留項目的說明",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/growth/GrowthConcernManualFallback.tsx#L95-L110"
+          },
+          {
+            "label": "育伴港：只可取消未完成且仍待處理的跟進",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-concerns.ts#L160-L168"
+          },
+          {
+            "label": "育伴港：原授權及關注版本相符才可處理",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-concerns.ts#L328-L335"
+          },
+          {
+            "label": "育伴港：仍待處理只限 pending／queued",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-concerns.ts#L87-L92"
+          },
+          {
+            "label": "育伴港：結束關注與撤回站內跟進是不同操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-concerns.ts#L343-L359"
+          },
+          {
+            "label": "育伴港：結果不明先核對原操作",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/growth/GrowthOperationRecovery.tsx#L39-L47"
+          }
+        ],
+        "version": "AWS CodePipeline 官方 Stop execution 確認原圖；功能發佈於 2020-01-21，2021-01-11 固定文件記載同名素材；2026-11-20 核對現行官方說明與原圖連結。未標示控制台構建版本或攝圖日期。",
+        "rights": "AWS 或內容權利人持有網站圖像權利；只外連官方原圖及說明，不內嵌、截錄或改畫，不以文件庫授權推定原圖或標誌可再刊。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 AWS 官方單次停止執行確認原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "d5fac2a2025ae8eb5c03d10ae685db008644374be8dd25c5eeb60e65267ba148"
+}
