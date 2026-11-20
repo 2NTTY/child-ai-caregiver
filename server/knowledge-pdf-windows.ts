@@ -10,6 +10,7 @@ import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicabilit
 import type { KnowledgePdfPage } from "./knowledge-pdf.ts";
 import { nativeResponseSchema } from "./knowledge-pdf-output.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment } from "./knowledge-review-assessment.ts";
+import type { RetainedTranscription } from './knowledge-retained-draft.ts';
 export const PDF_WINDOW_METHOD = "native-pdf-window/1";
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const location = z.number().int().positive();
@@ -65,10 +66,16 @@ export async function readKnowledgePdfWindow(input: {
   sliceHash: string;
   bytes: Buffer;
   textLayers: KnowledgePdfPage[];
+  retainedTranscription?: RetainedTranscription;
   completeText: AgentGatewayModel["completeText"];
   signal?: AbortSignal;
 }) {
   const { range, candidate, bytes, sliceHash, baseline } = input, parentHash = candidate.observed.extraction!.contentHash;
+  const retained = input.retainedTranscription;
+  if (retained && (baseline || !input.explicitAgeScope || retained.sourceId !== candidate.watchId
+    || retained.observationHash !== candidate.observationHash || retained.sha256 !== parentHash || retained.sliceHash !== sliceHash
+    || candidate.observed.extraction?.totalPages !== 1 || range.first !== 1 || range.last !== 1 || range.firstRead !== 1 || range.lastRead !== 1))
+    reject("knowledge_retained_transcription_binding");
   const pdf = originalKnowledgePdf(bytes, sliceHash, true), keys = range.ranges.map(keyOf);
   const physical = Array.from({ length: range.last - range.first + 1 }, (_, i) => range.first + i);
   const keysFor = (list: readonly string[], value: z.ZodType) => Object.fromEntries(list.map(k => [k, value]));
@@ -104,6 +111,8 @@ export async function readKnowledgePdfWindow(input: {
     if (user.length + prompt.text.length > 64000)
       reject("knowledge_maintenance_input_limit");
     const attemptKey = "knowledge-window-" + role + ":" + knowledgeReviewHash([PDF_WINDOW_METHOD, prompt.text, user, responseJsonSchema, sliceHash, "HIGH"]);
+    if (retained && knowledgeReviewHash({system:prompt.text, user, attemptKey}) !==
+      (role === 'organize' ? retained.organizerRequestHash : retained.reviewerRequestHash)) reject("knowledge_retained_transcription_binding");
     const raw = await input.completeText({
       system: prompt.text, user, attemptKey, pdf, responseJsonSchema,
       role: role === "review" ? "knowledge_review" : "knowledge_organize",
@@ -155,7 +164,15 @@ export async function readKnowledgePdfWindow(input: {
     const layer = input.textLayers.find(p => p.page === m.quotePage);
     if (!layer)
       reject("knowledge_window_range_invalid");
-    const quote = m.quote.trim(), checked = verdict.originalQuote.trim();
+    let quote = m.quote.trim(), checked = verdict.originalQuote.trim();
+    if (retained) {
+      if (m.originalKind !== 'page_transcription' || layer.status === 'text' || m.quotePage !== 1)
+        reject("knowledge_retained_transcription_binding");
+      // Each unchanged transcript must contain the entire registered printed passage at its own recorded offset.
+      quote = quote.slice(retained.organizerStart, retained.organizerStart + retained.excerpt.length);
+      checked = checked.slice(retained.reviewerStart, retained.reviewerStart + retained.excerpt.length);
+      if (quote !== retained.excerpt || checked !== retained.excerpt) reject("knowledge_window_quote_mismatch");
+    }
     if (m.originalKind === "visual_page") {
       if (quote || checked || layer.status === "text")
         reject("knowledge_window_quote_mismatch");

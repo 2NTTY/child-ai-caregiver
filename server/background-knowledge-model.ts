@@ -2,7 +2,7 @@ import { amendedPdfChunks, pdfAmendmentSchema, type PdfAmendment } from "./knowl
 import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
-import { reviseRetainedDraft, type RetainedDraftRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
+import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
 import { physicalPdfQuote } from "./knowledge-pdf-physical-quote.ts";
@@ -186,7 +186,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
  */
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
-  retainedDraft?: { revision: RetainedDraftRevision; readOrganizer(attemptKey: string): Promise<string> };
+  retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
   growthRules: readonly KnowledgeGrowthRuleBinding[];

@@ -216,5 +216,215 @@
     "originalParents": "Six production parents checked read-only: same registered operation, first observation, original PDF SHA, exactly one settled organizer, candidate held without lease, prepared draft or publication receipt.",
     "result": "Each explicit ID and original operation selects one packaged recovery. Its original stage was replayed against the same request, and its independent reviewer received the complete hash-checked PDF and the source-specific page notes. Dispatch intercepted before calling a provider. The original default recovery queue retains its 24 held and 15 previously published entries.",
     "integration": "The first Windows build context had CRLF prompt bytes and correctly failed the original organizer-request guard. The repeat used Git LF source bytes and matched all six reviewer request hashes. The original 504 was refused before opening persistence. The fresh-draft test now observes HK reaching review, and the retained-draft test still checks the unchanged original organizer. Five focused tests and the server TypeScript project passed."
+  },
+  "posterFollowup": {
+    "checkedAt": "2026-11-20T05:22:32.605Z",
+    "base": "ab7e5775b0c134312474d40dfdf815ad04919990",
+    "scope": "Three sources held for discrepancies between independent transcriptions. Both original model outputs and their actual sections remain unchanged.",
+    "accepted": {
+      "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+      "originalOperation": "6e574860e90f3c9e686fe84e567199ab83d4cba6b5ee0c7ebc48c0421a468b85",
+      "recoveryOperation": "3b81f5717045ca886f194b0678b0a11cabd64696ac6278587e95dbebefcd0405",
+      "originalSha256": "f476d352d00e870616cf90f532421d195d6a12acde335f1f58d1e16c4894211b",
+      "sliceSha256": "de47fb9b9c0b033943fa94216df6218569033e47e748782fb250ef80ef4a2dac",
+      "organizerRequestHash": "7f3cfce70f2ef2bd267c727ee3d7041dd4ab28af35729cdb7c2c989b4610819f",
+      "reviewerRequestHash": "2e6c0ddd21562b205fee775ee9ed70f01ce41535adeb0ccca72b61d4a3a6025d",
+      "physicalPage": 1,
+      "locator": "第 1 頁左上淺藍區，兩組年齡與對應的屏幕時間",
+      "originalSpanOffsets": [
+        0,
+        16
+      ],
+      "reason": "原審核轉錄包含整理者選取的整段。原頁兩組年齡的文字及右方時間圖示均可重開核對。"
+    },
+    "stillHeld": [
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "reason": "A complete caption in the lower left panel occurs in both transcriptions. The page prints ages 1–2 and 3–4 alongside sleep times; the stored draft and review extend 12–59 months to the whole day. An excerpt-only recovery cannot resolve the whole-unit scope."
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "reason": "The second page has two disjoint independently chosen paragraphs. The original quote mismatch remains."
+      }
+    ],
+    "verification": {
+      "localWorker": "sha256:f5fe026653995c1c5eee50ef60eeee097ba961af3c808f368eeefc48a2a24818",
+      "node": "24.19.0",
+      "source": "The original immutable slice and both settled request hashes were verified before offline replay. Visual review compared the printed age groups, labels and time icon on the public original.",
+      "exercise": "In a network-disabled worker with in-memory Firestore and an isolated registry for its synthetic watch identifiers, the parent held on the original mismatch. The child reread both stages, generated zero model calls, wrote one synthetic vector, listed one edition, and reopened the hash-checked original through a synthetic saved citation. Repetition added zero vectors. The release registry admits the screen poster and rejects the daily-routine poster before opening persistence.",
+      "negative": "Unregistered containment, a changed offset, different wording, different request hash, and an independent hold were rejected. Server TypeScript and five focused tests passed.",
+      "production": "At verification this additional recovery had not run in the live campaign."
+    }
+  },
+  "firstLiveDelivery": {
+    "checkedAt": "2026-11-20T05:26:12.712Z",
+    "worker": "ab7e5775b0c134312474d40dfdf815ad04919990",
+    "release": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44678914521",
+    "counts": {
+      "no_source_result_in_sequence": 97,
+      "observation_recovered_awaiting_model": 4,
+      "candidate_held": 10,
+      "published_and_verified": 5
+    },
+    "verification": "The production card catalogue, reviewed active version, committed receipt, original parent, reviewed PDF hash and distinct native-reading keys were checked. Exported the exact edition and its stored document vector. Reopened each PDF using the production resolver and a synthetic saved-run boundary, verified the original SHA-256, then located the entire displayed excerpt on its physical page in the matching original. The readback used no family session.",
+    "published": [
+      {
+        "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+        "title": "兒童發展監察計劃",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13033.pdf",
+        "sha256": "9dae9888b2f14ba385603e268943541e37c3b901a1de03af2657230d5555dc28",
+        "pages": 2,
+        "priorOperation": "2baa96c156fe185ce969670b937dfd9fc1da09fa021a47c1d674553db643dd34",
+        "operation": "7ee7d75e483cab8fab4a51730e5415f25962c6a5cd54e5fe2c64ddd6ca0d9be5",
+        "publishedAt": "2026-11-20T05:23:00.315Z",
+        "versionId": "04654663-9af2-58d2-b97f-3af935eccf14",
+        "versionHash": "3a00851be007a0f1598e81ed457b34db918a68cba4603115872e8b877ff3b175",
+        "observationHash": "f225de2c7b5fb3c31cdc386dc9eaec3a58317ad1402a8a75e81b3c4963bcd409",
+        "seriesId": "pdf-0669ab4cf34bd1b3b598db64",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:efff3548d4f3536df6e65b0f53a21e7f7ca8476f620c6cb86b451df2dcfb16a3",
+          "knowledge-review:e72b9f2c4d04d86a9d40327ed8355b6464458fc6d4126a8fb2f713a78c85e4e8"
+        ],
+        "citation": {
+          "chunkId": "b5682d77-9c9b-5572-8d73-231f5a8aee34",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 2409739,
+          "originalExcerptDigest": "c76ccfeef399aaef76502f331f60591364a359f8514a92bacfe525623721e7f4",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-231c869513252fae5e5ce54e",
+        "title": "替孩子轉換奶粉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.pdf",
+        "sha256": "0dd054a3e224b63374f9cc37706d7f79f9f4c4742dc9ba83b64e370d1d64e2fc",
+        "pages": 2,
+        "priorOperation": "91c44e86009a9917ddfb74c6ffadbd32b59a6112d868c9264b7669056362dba5",
+        "operation": "553b78747145951eaa38c5735b49c66cfa8f702b86c2a250da8fad7d5a063754",
+        "publishedAt": "2026-11-20T05:23:33.149Z",
+        "versionId": "02bb8559-7f1f-5a29-8a4d-f19f5dfb2721",
+        "versionHash": "dca3c4a737b9ba18a1ff884bc8f3a9889b4b3ae6c843060d6460878c8973d3d8",
+        "observationHash": "e16340c297c483b641e8b1f513bab12ce916bd843e8fc41e16074ca8c1d1bd63",
+        "seriesId": "pdf-231c869513252fae5e5ce54e",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:a533170eb7ab81a33e7171523cb8e9f7d1c6e6338e6440c89d575d061bbe1dd0",
+          "knowledge-review:cc42a7b3ecd5dd33bb1f9b9357eb5d593b003c7716ce222dd01b8f5f4f915c7c"
+        ],
+        "citation": {
+          "chunkId": "221fa0be-7314-57f3-9292-9cda3058c0a9",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 218020,
+          "originalExcerptDigest": "793dcaf1bc88f7a7816634a9fa13109bbf178f9a7c84320b6d41685c69255239",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "title": "怎樣引導孩子掌握自己進食的技能〈六至二十四個月大〉",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30010.pdf",
+        "sha256": "d5d0047950a5e887fa106329acb323dbd6fc66129fbf2ed8c04ed5904f50d72c",
+        "pages": 2,
+        "priorOperation": "3acc07e97d22aa4c3e94ede95d64c2ee089b5587ea2b1716fd003f1f4c1dc6e6",
+        "operation": "6905d637a36c535b24020146199b481b4eb70c42447976dbb04fba67ef8e2f0d",
+        "publishedAt": "2026-11-20T05:23:52.913Z",
+        "versionId": "dd8983bc-ca0b-5163-8560-97f3c6aa6cd6",
+        "versionHash": "ff78685c97ee67e555ff5c0ad033adc6fb94cfaefeed25e817e558499feca81a",
+        "observationHash": "0e01665a344c582bc850b5d70df34cfaa157d3d2965571f25e2a18c5348df586",
+        "seriesId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:0437b98ae3a4c627cb8534176c32569362f217848783e097b337fd9127bd16e4",
+          "knowledge-review:e860ac8b220321cf89fac9a54d69407aaf045429a24f5c34ef5fa4ea6d34a73f"
+        ],
+        "citation": {
+          "chunkId": "c559ee11-73a8-5fad-b067-db75792d55f4",
+          "range": [
+            1,
+            2
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 823335,
+          "originalExcerptDigest": "a44038e8a7281269f56e6270023a25460ed121ed8d2f34b69dae92b06f315824",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+        "title": "哺乳媽媽需要服用含碘補充劑",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30168.pdf",
+        "sha256": "f696c3c3f36839f2953ee209d2a9bb50b3ff7fc4b7b79ef134f021c3efa1abc1",
+        "pages": 1,
+        "priorOperation": "93ab393d2e3f808c0b7765d0297f95343988f329e0e127737030550426524856",
+        "operation": "79b9a81ab4eb08e7feb532c5f94f414f2445a3a3ebcafceff702a60df0e591cf",
+        "publishedAt": "2026-11-20T05:24:12.480Z",
+        "versionId": "62398efd-1815-5746-95c7-9393bd247305",
+        "versionHash": "0d5cd9820151aecef8a49ce8ed00e80fcf4adfb239f797ae2b0610f81079ee55",
+        "observationHash": "e85e185a110d81f3b7c01db8dc008613a0aadc71dc1fd2d73d19ed353b408e85",
+        "seriesId": "pdf-4158ea5c2f138e45a4a7568d",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:7aad6efbec9fe33d6378f254d69ebe441faa04a6d1b14c47704d9a1ae80c1320",
+          "knowledge-review:497204781ae81221045aaaa20904b41c88fc5c47c0b56d3c4cb4932b25ff17f3"
+        ],
+        "citation": {
+          "chunkId": "728c249f-37fb-59d2-9c75-ee4109793ace",
+          "range": [
+            1,
+            1
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 1179763,
+          "originalExcerptDigest": "31013a48879c9a2edaac9e27cf85d6c148e841bce318bf012f4fc99cd11c04aa",
+          "originalExcerptMatch": "exact"
+        }
+      },
+      {
+        "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+        "title": "滅活小兒麻痺疫苗",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/484.pdf",
+        "sha256": "5e7099c223e034c4a959434d813578e1fecc46f9263f4095db2a3825da4709ce",
+        "pages": 1,
+        "priorOperation": "28d8376cb41957dbf2ffc58fa221370f248dcdb2f90f3e57199b0c488a329d53",
+        "operation": "e58481ebbcd9f36937990f682bdefeae767fd55b13a454ee7af3de13074b6a56",
+        "publishedAt": "2026-11-20T05:24:31.069Z",
+        "versionId": "dd70e395-9086-5f4e-bed6-dfff16512317",
+        "versionHash": "a60a1237991d54d26daaf5d56315f4e3b053fb905cf273676b8157ebee179ba9",
+        "observationHash": "70e775ba69be9252e4169bf357be459a20d37437c8ea7d47628bcec08f84f1c8",
+        "seriesId": "pdf-d6cb530c2cc3605fb28a0241",
+        "documentVectors": 1,
+        "originalGenerationKeys": [
+          "knowledge-organize:a520a528f617296ea3ec0765d684f6cdf0fe8ac3cb95191cccf94b8cb7c5e249",
+          "knowledge-review:eb681fce4bea96cc20233618a4b234d76bf97e86c3058cbe78c716a70d466ab2"
+        ],
+        "citation": {
+          "chunkId": "a7fdfc4f-2103-59d5-b17f-e612effda768",
+          "range": [
+            1,
+            1
+          ],
+          "physicalPage": 1,
+          "fullOriginalBytes": 265226,
+          "originalExcerptDigest": "997b8810a3f4d8130435d178898b5ac46dc72a99ae7f4ecf679b880f6ab83836",
+          "originalExcerptMatch": "exact"
+        }
+      }
+    ],
+    "independentHold": {
+      "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+      "operation": "d35cd496870b1bf1565cfca54d8542b93fdf399d84f2be10e266b1d5a4889e43",
+      "priorOperation": "41a3e024a4735187e4cb8ba673bb8f6a7b58bf7a6cfc81bf5fc417ff79ec02d2",
+      "decision": "hold_candidate",
+      "reason": "第 2 頁有五歲後的奶類分項，但整理稿把整份適用年齡截於 60 個月。獨立審核要求保留，沒有發布版本。"
+    }
   }
 }

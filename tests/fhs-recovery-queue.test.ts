@@ -57,6 +57,19 @@ test('later PDF holds are recoverable only by explicit ID and original receipt',
   for (const row of evidence.entries) {
     assert.ok(!initial.has(row.sourceId));
     const result = plan(row.sourceId);
+    if (row.sourceId === 'pdf-5a08a58cc4bef28ff2dc3c0d') {
+      assert.equal(result.status, 0, result.stderr);
+      const [entry] = JSON.parse(result.stdout).entries;
+      assert.deepEqual(entry.campaignArgs, ['recover', row.sourceId, row.operation]);
+      const revision = retainedDraftRevisionSchema.parse(entry);
+      assert.equal(revision.action, 'retain_pdf_transcription');
+      assert.equal(revision.sha256, row.originalSha256);
+      assert.deepEqual([revision.organizerRequestHash, revision.reviewerRequestHash], row.stageRequests);
+      const child = retainedDraftWorkId(row.operation);
+      assert.ok(matchesRegisteredRetainedDraft(revision, row.operation, child));
+      assert.equal(matchesRegisteredRetainedDraft({...revision, reviewerStart:0}, row.operation, child), false);
+      continue;
+    }
     if (row.disposition !== 'independent_review_ready') {
       assert.equal(result.status, 1);
       assert.match(result.stderr, /knowledge_campaign_recovery_source/u);
