@@ -6957,3 +6957,11 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 在獨立無頭 Edge 檢視 390 × 844、1440 × 900 原畫面，核對角色由耳尖至鞋底、移動、收起、待辦項目、原提醒曝光及助手頁點按。另比較靜止與動作畫格，前後端 TypeScript 及提醒收據定向測試通過。沿用上次聊天驗收，iOS／Android 真機及正式發布待驗。[截圖、動作片段及驗收收據](artifacts/verification/ZUNDAMON_INTERACTION_20261120/receipt.json)
 
 2026-11-21　B 按 #731 畫面 review 修正停靠位置，助手頁角色改用工具列內的固定空間。以原合成待辦重驗，390 × 844 及 1440 × 900 的待辦列與角色觸控區分別相隔 10.9 及 15.1 像素。兩個尺寸均點開右側列入口及助手的對話活動，首行可見文字完整。其他互動沿用原收據。[四張新畫面及量度](artifacts/verification/ZUNDAMON_INTERACTION_20261120/layout-20261121/receipt.json)
+
+### 2026-11-20　REQ-001 收束與 B 類一般新聞免擾守衛（`codex/req001-acceptance-closeout`）
+
+完成 REQ-001 跨 A／B／C 三類搜尋之 Stage 5 離線收束與逐項驗收對照：
+
+1. **B 類一般滾動新聞免打擾守衛（`server/knowledge-timely-policy.ts`、`server/proactive-event-sources.ts`）**：新增 `shouldAutoNotifyTimelyEvent` 並接入 `createProactiveEventSources().prepareGlobal`，使標記為 `timelyEvent.kind === "news"` 的時效新聞繼續保留於 7 日對話檢索視窗（`within_recent_window`），但不再自動產生主動推送候選，僅保留召回／安全警報與運維顯式選取之重要公告，並維持 `fingerprint` 未更新重用及 `semanticId`/`assessmentId` 去重。
+2. **跨類離線綜合驗收與門檻（`tests/req001-acceptance-closeout.test.ts`、`.github/workflows/req001-acceptance-closeout-offline.yml`、`scripts/ci/verify-req001-acceptance-closeout-offline.sh`）**：10 項零外網綜合測試逐項對應 REQ-001 §7 全部 15 項情境（`R001-S01`–`R001-S15`）及 §8 全數 8 項待決事項（`R001-D01`–`R001-D08`），連同既有 A／B／C 離線測試清單及 3 份嚴格 TypeScript 檢查通過。
+3. **文件同步與誠實邊界（`PLAN.md#req001-closeout01`、`docs/REQUIREMENTS_BACKLOG.md`）**：明確記錄 C 類線上外部搜尋連接器、REQ-003 待合併 PR（`#690`–`#701`）、真實付費 Gemini `--live` 基準與 Web／Android／iOS 實體機無障礙驗收均仍未在本次離線 PR 宣稱完成。

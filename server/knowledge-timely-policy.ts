@@ -158,6 +158,13 @@ export function evaluateTimelyEligibility(
   return { eligible: false, reason: "recent_window_elapsed", retentionClass, retainProvenanceOnly: true };
 }
 
+export function shouldAutoNotifyTimelyEvent(
+  classification: KnowledgeClass,
+  timelyEvent?: TimelyEventLifecycle | null,
+): boolean {
+  return classification !== "recent_information" || timelyEvent?.kind !== "news";
+}
+
 export function proactiveKindForTimelyEvent(
   classification: KnowledgeClass,
   timelyEvent?: TimelyEventLifecycle | null,

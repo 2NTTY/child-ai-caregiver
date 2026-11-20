@@ -14,7 +14,7 @@ import { firestoreTopicStorageSchema } from './firestore-memory.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { topicMayAsk } from './memory-policy.ts';
 import { isTimelyEventActive } from '../src/shared/knowledge-timely.ts';
-import { proactiveKindForTimelyEvent } from './knowledge-timely-policy.ts';
+import { proactiveKindForTimelyEvent, shouldAutoNotifyTimelyEvent } from './knowledge-timely-policy.ts';
 
 const selectionSchema = proactiveManagedPublicDaySchema.shape.events.element.omit({ versionHash: true, contentHash: true });
 /** Operator deployment configuration, never model arguments or a family request. */
@@ -119,6 +119,10 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
         const recent = edition.source.classification === 'recent_information';
         if (recent && !edition.source.sourcePublishedAt) { coverage.push('publication_date_unconfirmed:' + sourceId); continue; }
         if (edition.source.chunks.length > 8) coverage.push('bounded_projection_truncated');
+        // General rolling news remains searchable in 7-day chat without generating proactive push noise.
+        if (recent && !shouldAutoNotifyTimelyEvent(edition.source.classification, edition.source.timelyEvent)) {
+          continue;
+        }
         // Reviewed recent editions can generate ordinary notices; importance comes only from an explicit selection.
         for (const chunk of edition.source.chunks.slice(0, 8)) {
           const kind = proactiveKindForTimelyEvent(edition.source.classification, edition.source.timelyEvent);
