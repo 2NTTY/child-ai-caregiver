@@ -1,0 +1,105 @@
+{
+  "group": {
+    "id": "rescheduled-task-old-contact-grant",
+    "title": "借書改到週五，原本的到期聯絡授權還算嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：同一筆「借書」由本人負責，到期從週三改到週五並保存。舊授權即使尚未到期，也只適用於原任務版本，不會自動套用；不是已撤回或已逾期。A 擬議在待辦詳情對照時間，再進聯絡設定；B 的聯絡條件整頁也是提案，分別核對新版本的任務授權、本人同意和有效渠道，另外才是實際發送及結果。重新同意或保存授權不等於已發送、已送達或對方已讀。不涉及其他家人或替補，不發送、不重播或召回舊訊息。工作台只讀比較，不用真實家庭資料、不更改授權。",
+    "choices": [
+      {
+        "name": "待辦詳情先行｜先看借書從週三改到週五",
+        "note": "打開同一筆「借書」，先看現在到期是週五、仍由本人負責，再看上一版是週三。只有保存後才算改期；原授權即使尚未到期，也只對應舊版。要為週五安排到期聯絡，再進「核對這筆待辦的聯絡設定」。看到或保存新日期，都不會通知任何人。OpenProject 原圖示範同一任務的開始日期有何變動，不是育伴港的到期授權畫面。",
+        "source": "https://raw.githubusercontent.com/opf/openproject/acbb059c8820da8236cee1f43dc0796d83836259/docs/user-guide/activity/openproject_user_guide_work_package_comment_highlighted.png",
+        "sourceNotes": [
+          {
+            "label": "OpenProject 官方工作包指引：任務的 Activity 保留欄位變動和討論",
+            "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/docs/user-guide/activity/README.md#L13-L19"
+          },
+          {
+            "label": "v17.0.0 原圖所在段落：深連結選中留言，不表示執行了改期",
+            "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/docs/user-guide/activity/README.md#L51-L57"
+          },
+          {
+            "label": "OpenProject 日期指引：保存日期與查閱該任務的變動記錄",
+            "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/docs/user-guide/work-packages/set-change-dates/README.md#L169-L179"
+          },
+          {
+            "label": "OpenProject 官方版本與程式著作權聲明",
+            "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/COPYRIGHT#L1-L18"
+          },
+          {
+            "label": "育伴港：改期增加任務版本，保留同一項待辦",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/task-policy.ts#L19-L29"
+          },
+          {
+            "label": "育伴港：本人待辦的版本記錄",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-online.ts#L175-L199"
+          },
+          {
+            "label": "育伴港：待辦詳情與編輯入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TaskDetail.tsx#L31-L42"
+          },
+          {
+            "label": "育伴港：表單核對日期、時間及保存",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TaskForm.tsx#L79-L105"
+          }
+        ],
+        "version": "OpenProject v17.0.0 發行文件內的官方工作包詳情原圖；固定提交 acbb059c8820da8236cee1f43dc0796d83836259。PNG 1933 × 760，2026-11-20 核對原檔，SHA-256 f9524c2e207ae7757c13ab43b64dcd3c7c39afb808dc127511f3fb7a83cc48b6。文件版本不等於實際拍攝構建。",
+        "rights": "OpenProject 程式採 GPLv3；不據此推定截圖內頭像、品牌或其他素材可另行使用。只外連固定官方原圖與文件，不內嵌、重刊、裁剪或仿畫。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 OpenProject 官方工作包詳情與日期變動整頁原圖（需連網）↗"
+      },
+      {
+        "name": "聯絡條件｜分開看這版授權、本人渠道和結果",
+        "note": "合成例：「借書」已改到週五，負責人仍是我。擬議整頁先顯示任務和接收者，再分三行：① 這版未獲授權，原授權只對應改期前的版本；② 我已同意的渠道目前可用，但這不等於同意這次聯絡；③ 新版本沒有投遞紀錄，不能寫成已通知。要保留到期提示，須重新核對本版任務及期限，另行確認保存；只改日期或查看頁面不會發送。Brevo 原圖把同一人的偏好、待辦與已發生的活動分開；不借用它的發送按鈕或營銷規則。",
+        "source": "https://help.brevo.com/hc/article_attachments/23917957739794",
+        "sourceNotes": [
+          {
+            "label": "Brevo 官方聯絡人詳情指南：整頁原圖、偏好與活動紀錄",
+            "url": "https://help.brevo.com/hc/en-us/articles/360021862279-Overview-of-the-contact-details-page"
+          },
+          {
+            "label": "Brevo 官方說明：本人訂閱狀態依聯絡渠道分開",
+            "url": "https://help.brevo.com/hc/en-us/articles/5317448358034-Blocklist-unblock-or-resubscribe-contacts"
+          },
+          {
+            "label": "Brevo 官方法律聲明；說明中心頁尾保留權利",
+            "url": "https://www.brevo.com/legal/notice/"
+          },
+          {
+            "label": "育伴港：舊版、逾期、撤回及從未授權不可混為一談",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/contact/contact-status.ts#L10-L16"
+          },
+          {
+            "label": "育伴港：同頁顯示目前任務版本、接收者、渠道與授權所據任務版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/contact/ContactTaskCard.tsx#L24-L31"
+          },
+          {
+            "label": "育伴港：當前安排、本人同意與可用渠道的條件",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/contact/ContactTaskCard.tsx#L42-L54"
+          },
+          {
+            "label": "育伴港：以新版本及範圍另行確認",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/contact/ContactTaskCard.tsx#L59-L65"
+          },
+          {
+            "label": "育伴港：核對本人同意、可用渠道、當前任務與授權版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-contact.ts#L139-L153"
+          },
+          {
+            "label": "育伴港：建立新授權時檢查任務版本，不替他人授權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-contact.ts#L167-L181"
+          }
+        ],
+        "version": "Brevo 網頁版「Contact details / Overview」官方說明頁 360021862279，英文示例圖附件 23917957739794；2026-11-20 核對。未標應用版本號或攝圖日期。",
+        "rights": "Brevo 說明中心保留所有權利，未見該截圖獲授權轉載。僅外連官方說明與原圖，不內嵌、複製或改畫；不使用圖中示例人物或內容。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Brevo 官方聯絡人總覽整頁原圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "9068de7995b7d94983201b839f6dfdcf7fcf062a4eb93a4b1aa18dd978470e00"
+}
