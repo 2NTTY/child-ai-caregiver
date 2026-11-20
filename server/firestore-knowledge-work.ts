@@ -14,7 +14,7 @@ import { destinationReviewSchema, nativePdfProvenanceSchema, type PreparedKnowle
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
-import { retainedPageProvenanceSchema, type RetainedPageRevision } from './knowledge-retained-page.ts';
+import { retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -38,7 +38,7 @@ const preparedSchema = z.strictObject({
   prepared: z.strictObject({
     source: z.unknown().transform(parseKnowledgeSource), versionHash: hash,
     assessment: knowledgeReviewAssessmentSchema, review: backgroundKnowledgeReviewBindingSchema,
-    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), retainedPage: retainedPageProvenanceSchema.optional(), nativePdf: nativePdfProvenanceSchema.optional(), destinationReview: destinationReviewSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
+    provenance: z.strictObject({ packVersion: z.string().min(1).max(30), organizeAttemptKey: z.string().max(150), reviewAttemptKey: z.string().max(150), retainedDraft: retainedDraftProvenanceSchema.optional(), nativePdf: nativePdfProvenanceSchema.optional(), destinationReview: destinationReviewSchema.optional(), windows: z.array(windowReadingSchema).min(1).max(32).optional() }),
   }),
 });
 /** Restore keeps immutable evidence, binding and spent allowance across the snapshot boundary. */
@@ -84,7 +84,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
-    async readHeldOrganizer(request: BackgroundKnowledgeRunRequest, revision: RetainedPageRevision, attemptKey: string) {
+    async readHeldOrganizer(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision, attemptKey: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
       return database.runTransaction(async tx => {

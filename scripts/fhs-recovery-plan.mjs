@@ -5,7 +5,7 @@ export function campaignRecoveryPlan(sourceId) {
   const plan = JSON.parse(readFileSync(manifest, 'utf8'));
   if (plan.campaign !== 'fhs-child-initial-20261120') throw Error('knowledge_campaign_recovery_manifest');
   const entries = plan.entries.filter(e => !sourceId || e.sourceId === sourceId).map(e => ({
-    ...e, ...(e.action === 'review_age_draft' || e.action === 'resume_prepared'
+    ...e, ...(['review_age_draft','review_pdf_region','resume_prepared'].includes(e.action)
       ? { campaignArgs: ['recover', e.sourceId, e.operationFingerprint] } : {}),
   }));
   if (sourceId && entries.length !== 1) throw Error('knowledge_campaign_recovery_source');

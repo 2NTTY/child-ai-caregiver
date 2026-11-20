@@ -49,17 +49,58 @@
       "code": "knowledge_review_failed",
       "observationHash": "cee7157afb4a60000ef74cafc45bf603e40c82266ddbd5b0e766c49911e6bf27",
       "priorOperationFingerprint": "cfefa008c690b44298be7ad2c13f5017cfb55712a31ccc44b928a1c85be7aed8",
-      "action": "inspect_saved_stage",
+      "action": "review_age_draft",
       "sections": [
         "母乳餵哺的疑慮與可能遇到的挑戰",
         "餵哺嬰兒配方奶的問題"
       ],
-      "reason": "已用唯一一次截斷修復。從修復操作讀回整理階段及欄位錯誤；釐清前保留。餵養決定、母乳與配方奶的限制須分段核對。",
+      "reason": "原修復已完成整理。第一段是準父母的餵養決定，第二段保留產後餵哺、乙肝與其他個別情況，兩段各自的 12、24 個月上限均非全段限制。疫苗及免疫球蛋白的條件須連同乙肝段核對。",
       "validation": [
         "units.0.applicability/custom",
         "units.1.applicability/custom"
       ],
-      "organizerRequestHash": "d058d5e38a05708ed7d3d54ba075df2b357903e3590875659dbe1accf47a8747"
+      "organizerRequestHash": "d058d5e38a05708ed7d3d54ba075df2b357903e3590875659dbe1accf47a8747",
+      "units": [
+        {
+          "unitId": "p0-a1a663eba156d80086c0",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "適用於準備迎接新生兒的準父母及初生嬰兒家長"
+          ],
+          "passages": [
+            {
+              "start": 85,
+              "quote": "作為準爸媽"
+            },
+            {
+              "start": 968,
+              "quote": "如你有以上或其他的疑慮"
+            }
+          ]
+        },
+        {
+          "unitId": "p0-e47392233c82b780893e",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 24,
+          "conditions": [
+            "適用於初生至兩歲以上嬰幼兒之餵哺管理",
+            "媽媽患傷風感冒或為乙肝帶菌者時的餵哺指引"
+          ],
+          "passages": [
+            {
+              "start": 5,
+              "quote": "帶乙型肝炎病毒"
+            },
+            {
+              "start": 13,
+              "quote": "寶寶於出生後不久會接種乙型肝炎免疫球蛋白和疫苗"
+            }
+          ]
+        }
+      ]
     },
     {
       "sourceId": "fhs-20000",
@@ -76,7 +117,7 @@
         "第六章 哺乳期間的營養",
         "第八章 母乳餵哺診症室"
       ],
-      "reason": "第二次輸出仍然截斷。各章涵蓋孕婦、哺乳母親及不同階段的嬰兒；沒有完整候選可交審。"
+      "reason": "原整理及其一次修復均在輸出上限截斷，沒有完整候選可交審。須按同版八章分段整理，核齊各章孕婦、哺乳母親及嬰兒對象後，再作獨立審核。"
     },
     {
       "sourceId": "fhs-30073",
@@ -152,18 +193,54 @@
       "code": "knowledge_review_failed",
       "observationHash": "d85e75a25fd2f1df2ff5fdda31885b4f3e330c7043c7cbf76f04b20e5ee160f2",
       "priorOperationFingerprint": "43e9b57d6cc05b1b95c6f53c16b497851b3ac46735a80236305d0bdd0c9188c5",
-      "action": "inspect_saved_stage",
+      "action": "review_age_draft",
       "sections": [
         "第13頁／母乳的生產",
         "第16頁／埋身同全泵",
         "第28頁／注意"
       ],
-      "reason": "查修復後已保存的階段。區分漫畫角色經驗和醫護條件，保留原漫畫頁次。",
+      "reason": "原修復已完成整理。第一段交代一位授乳母親的漫畫經驗，第二段接續餵哺經歷和支援。兩段均沒有全段 12 個月上限。審核時要區分個人經驗和醫護指引。",
       "validation": [
         "units.0.applicability/custom",
         "units.1.applicability/custom"
       ],
-      "organizerRequestHash": "b503f74e7273ba578543682ce33a95953f69e72239e801d5290fc4072e5cabb3"
+      "organizerRequestHash": "b503f74e7273ba578543682ce33a95953f69e72239e801d5290fc4072e5cabb3",
+      "units": [
+        {
+          "unitId": "p0-de744498efd3228f83af",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "漫畫內容屬個別授乳母親經驗分享，不代表每對母嬰必然經歷"
+          ],
+          "passages": [
+            {
+              "start": 66,
+              "quote": "一位授乳母親的親身體驗"
+            }
+          ]
+        },
+        {
+          "unitId": "p0-698f7ff8b6cf0a703a7b",
+          "ageBasis": "any",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "conditions": [
+            "若出現持續乳管阻塞、奶量顯著不足或餵哺痛楚，應尋求醫護或專業哺乳顧問協助"
+          ],
+          "passages": [
+            {
+              "start": 0,
+              "quote": "奶的方法"
+            },
+            {
+              "start": 1101,
+              "quote": "第28頁"
+            }
+          ]
+        }
+      ]
     },
     {
       "sourceId": "fhs-12146",
@@ -573,7 +650,7 @@
         "認識你的孩子",
         "獎勵計劃"
       ],
-      "reason": "學前階段的親職教材。先讀原獨立審核的 notes、assessment 及待解問題，再針對原意修訂。",
+      "reason": "原獨立審核退回切斷的獎勵計劃末句。首段在第 3000 字「避免」結束，餘下十字自成一段。兩段也套用原文未界定的 24–72 個月。須接回完整末句，按幼稚園階段保留適用條件後再獨立審核。",
       "heldVersionHash": "2fd6e0d09b73b73ef21bafbf158b6e60d7a6309e965d50021c3bb6d78bd841ae",
       "reviewNotes": [
         "候選片段 p0-4e1f4c27cc372560001e 的 originalText 和 sourceExcerpt 僅有未完整句子「孩子長期依賴物質獎勵」，其整理正文內容實際源自 p0-d51716f3ae06d6074e52 結尾被截斷的文字，屬於切分錯誤與內容殘缺，須重新分段整合後再行收錄。"
@@ -630,7 +707,7 @@
         "新生嬰兒護理預備篇／預備嬰兒用品／揹帶",
         "嬰兒護理／常見嬰兒餵哺問題"
       ],
-      "reason": "保留新生嬰兒及新任父母的對象。揹帶的三個月或以上條件屬一般揹帶；原獨立審核已扣起。逐項讀回其理由。",
+      "reason": "原獨立審核指整理把新生嬰兒擴至幼兒。原頁沒有為整篇列出月齡上下限，三個月或以上只屬一般揹帶。須可分別保存新生嬰兒這個對象和揹帶條件，再把修訂交獨立審核。",
       "observationHash": "f917732a5d7b983f99a05fad97b9351afae4268636f526be78fd77de0082a894",
       "heldVersionHash": "fed9a5ed2e6ea2b20ce9f0f63fd7a70953fb24489e98cd6c13a53481f4a2e267",
       "reviewNotes": [
@@ -729,17 +806,25 @@
       "pages": 1,
       "operationFingerprint": "fbc4d7a0419a2348cb483e7965628b86bb3180dca00fd12b65d76dbf9e0baf96",
       "code": "knowledge_review_failed",
-      "action": "inspect_saved_stage",
+      "action": "review_pdf_region",
       "sections": [
         "1｜頁首十四個月個案",
         "1｜轉杯過渡及一歲至五歲幼童的奶量段"
       ],
-      "reason": "先讀原整理輸出及失敗欄位。十四個月屬個案，一歲、一歲半及一至五歲的說明各有對象。已刊登的網頁 fhs-30017 可用其本身版本查閱。",
+      "reason": "唯一欄位錯誤為香港地區名稱。第 1 頁的十四個月是個案，飲奶建議的一至五歲只屬該段。核對原整理設定的整段 12–60 個月有否錯套，並保留轉杯的發展階段。",
       "observationHash": "2758c927f4f7490c37a792dba5f23aa3351fa1fad2aa6821155ce0b8488d31be",
       "validation": [
         "ranges.fromPage1Through1Unit1.region/invalid_format"
       ],
-      "organizerRequestHash": "9cdd6311c1098f9471bfd048c8e811f1bae7cd5bcb628cd17d74507a40fbfd6d"
+      "organizerRequestHash": "9cdd6311c1098f9471bfd048c8e811f1bae7cd5bcb628cd17d74507a40fbfd6d",
+      "ageOutput": "source-unit-age/1",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "香港",
+          "to": "HK"
+        }
+      ]
     },
     {
       "sourceId": "pdf-17a3f9316300dcf81b376854",
@@ -749,17 +834,25 @@
       "pages": 1,
       "operationFingerprint": "b9d298025cad5878b8804b825f7124bd2d272816f7feb7c07325f6b404319934",
       "code": "knowledge_review_failed",
-      "action": "inspect_saved_stage",
+      "action": "review_pdf_region",
       "sections": [
         "1｜左欄動態篇、右欄靜態篇",
         "1｜下方家務／自理篇及留意事項"
       ],
-      "reason": "以圖像逐欄核對；這張海報與同題全文的文字不同。海報只有連結指向全文，不把全文的三歲條件補作海報原文。",
+      "reason": "唯一欄位錯誤為香港地區代碼的小寫寫法。重新以整張海報核對動態、靜態、家務及注意事項；同題網頁的三歲條件不能移植。",
       "observationHash": "b00d4387ca178b9f436568fa098f4b28844242f4dc8c4b46e91f670cd59f3994",
       "validation": [
         "ranges.fromPage1Through1Unit1.region/invalid_format"
       ],
-      "organizerRequestHash": "6392e602c065e1797b6c769d69a58d79a0ec5b91062c6d6c76363941b706c202"
+      "organizerRequestHash": "6392e602c065e1797b6c769d69a58d79a0ec5b91062c6d6c76363941b706c202",
+      "ageOutput": "source-unit-age/1",
+      "regionEdits": [
+        {
+          "range": "fromPage1Through1Unit1",
+          "from": "hk",
+          "to": "HK"
+        }
+      ]
     },
     {
       "sourceId": "pdf-a036f537a86308ec16eb7d21",
@@ -784,13 +877,13 @@
       "code": "knowledge_review_failed",
       "observationHash": "e62e782f958eb72b0d43131cdb984309432f9208dbd6cb14d0e5ea34e8cb6eca",
       "priorOperationFingerprint": "4b2d77191f63fc7c2f5e0b56f279b37ecae1cf708415416e73cced5da5c08de3",
-      "action": "inspect_saved_stage",
+      "action": "scope_unresolved",
       "sections": [
         "2–10｜男孩頭圍、體重、身長／身高、BMI",
         "12–20｜女孩相應圖表",
         "9、19｜2 至 5 歲 BMI；10、20｜5 至 18 歲 BMI"
       ],
-      "reason": "查修復後的原輸出。逐圖保留性別、指標、單位、年齡區間及曲線標示；不得把 18 歲端點截短為 120 個月或從圖表自動改動生長規則。",
+      "reason": "已保存的兩個男女圖表組上限均為 216 個月，現行來源欄位最多 120 個月。要保留原圖的 18 歲端點並逐圖核對性別、量度單位、年齡區間和曲線標示，再交獨立審核。",
       "validation": [
         "ranges.fromPage1Through11Unit1.ageRange.maxMonths/too_big",
         "ranges.fromPage12Through20Unit2.ageRange.maxMonths/too_big"
@@ -807,12 +900,12 @@
       "code": "knowledge_review_failed",
       "observationHash": "4a64e53682e87d00c77c98d02f097279dbbb2ec6b0a5d7a947f55c189c985231",
       "priorOperationFingerprint": "281ee8c2103e167081524f29b5e8ff8588243d28db96a4173cb2db6a725eb490",
-      "action": "inspect_saved_stage",
+      "action": "scope_unresolved",
       "sections": [
         "1｜中文左欄「何謂虐待兒童」、中欄行為類別及右欄協助",
         "2｜英文相應段落"
       ],
-      "reason": "中文文字層失真。以原圖核回十八歲以下、照顧者責任及支援途徑。修復收據沒有釐清失敗欄位，保留待核。",
+      "reason": "已保存的五組上限均為 216 個月且不包括端點，現行來源欄位最多 120 個月；中文兩組另有地域格式錯誤。須保留十八歲以下的原定義，並從中文原圖和英文對頁核回照顧者責任及支援途徑，再交獨立審核。",
       "validation": [
         "ranges.fromPage1Through1Unit1.region/invalid_format",
         "ranges.fromPage1Through1Unit1.ageRange.maxMonths/too_big",

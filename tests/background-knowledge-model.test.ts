@@ -121,27 +121,27 @@ test("retained page proposals reuse the original request, preserve conditions an
   const { system, user, attemptKey } = calls[0]!;
   const unitId = JSON.parse(user).originalUnits[0].id;
   const scope = { ageBasis: 'any' as const, minAgeMonths: 0, maxAgeMonths: 12, conditions: ['Only for the registered audience'] };
-  const revision = { sourceId: source.watchId, observationHash: source.observationHash, organizerRequestHash: knowledgeReviewHash({system, user, attemptKey}),
+  const revision = { action: 'review_age_draft' as const, sourceId: source.watchId, observationHash: source.observationHash, organizerRequestHash: knowledgeReviewHash({system, user, attemptKey}),
     operationFingerprint: 'a'.repeat(64), reason: 'The example has no whole-unit upper bound.',
     units: [{ unitId, ...scope, passages: [{ start: 0, quote: source.observed.text.slice(0, 5) }] }] };
-  const retainedPage = { revision, async readOrganizer(key: string) {
+  const retainedDraft = { revision, async readOrganizer(key: string) {
     assert.equal(key, attemptKey);
     return JSON.stringify({ units: [{ unitId, section: 'Fixture', text: source.observed.text, keywords: ['fixture'],
       applicability: { region: 'HK', topics: ['care'], ...scope } }] });
   } };
   const reviews: Parameters<Completion>[0][] = [];
-  const prepared = await prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews, 'hold') });
+  const prepared = await prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText: provider(reviews, 'hold') });
   assert.equal(reviews.length, 1);
   const payload = JSON.parse(reviews[0]!.user);
   assert.equal(payload.role, 'knowledge-semantic-review');
   assert.deepEqual(payload.editorialAgeProposal.originalScopes, revision.units);
   assert.deepEqual(payload.candidate.chunks[0].applicability, { region: 'HK', topics: ['care'], ...scope, minAgeMonths: null, maxAgeMonths: null });
   assert.equal(prepared.review.decision, 'hold_candidate');
-  assert.equal(prepared.provenance.retainedPage?.revisionHash, knowledgeReviewHash(revision));
+  assert.equal(prepared.provenance.retainedDraft?.revisionHash, knowledgeReviewHash(revision));
   revision.units[0]!.passages[0]!.start++;
-  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews) }), /scope_changed/);
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText: provider(reviews) }), /scope_changed/);
   revision.organizerRequestHash = 'b'.repeat(64);
-  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedPage, completeText: provider(reviews) }), /request_changed/);
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText: provider(reviews) }), /request_changed/);
   assert.equal(reviews.length, 1);
 });
 
@@ -236,6 +236,48 @@ test("a destination comparison keeps its baseline while an empty local store val
   await assert.rejects(createModelKnowledgeReviewPort({ ...options, baseline: async () => baseline }).review(next, new AbortController().signal),
     /knowledge_destination_baseline_conflict/u);
   assert.equal(calls.length, 2);
+});
+
+test("retained PDF region corrections preserve the original reading and send the same physical page to an independent reviewer", async () => {
+  const definition = SOURCE_WATCHES.find(w => w.leafletPage)!;
+  const pdf = Buffer.from("%PDF-1.7 test fixture");
+  const sha256 = createHash("sha256").update(pdf).digest("hex");
+  const observed = { ...candidate().observed, url: definition.url, pages: [{page: 1, text: "Physical page one.", status: "text" as const}],
+    extraction: {format: "text_pdf" as const, contentHash: sha256, totalPages: 1, pageStart: 1, pageEnd: 1, complete: true} };
+  const source = { watchId: definition.id, definition, observed, observationHash: observationHash(observed), previousObservationHash: null };
+  const base = { candidate: source, explicitAgeScope: true, baseline: null, fetchedAt, growthRules: [], readPdf: async () => pdf };
+  const range = "fromPage1Through1Unit1", conditions = ["Only the stated daily amount has the stated age range."];
+  const draft = JSON.stringify({ ranges: { [range]: { region: "香港", section: "Intake", keywords: ["cup"], topics: ["care"], conditions,
+    ageRange: { basis: "actual", minMonths: 12, maxMonths: 60, exclusiveEnd: false }, pageText: {physicalPage1: "Daily amount for the specified ages."} } },
+    nativeCoverage: { pages: [{ page: 1, finding: "Age range is conditional." }], unreadablePages: [], layoutAnswer: null } });
+  let organizerRequestHash = "", organizerKey = "";
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, async completeText({system, user, attemptKey}) {
+    organizerRequestHash = knowledgeReviewHash({system, user, attemptKey});
+    organizerKey = attemptKey;
+    return draft;
+  } }), /invalid string/i);
+  const revision = { action: 'review_pdf_region' as const, sourceId: source.watchId, observationHash: source.observationHash, sha256,
+    organizerRequestHash, operationFingerprint: 'd'.repeat(64), reason: 'Verify conditional ages on physical page one.', sections: ['Physical page 1'],
+    regionEdits: [{ range, from: '香港' as const, to: 'HK' as const }] };
+  const retainedDraft = { revision, async readOrganizer(key: string) { assert.equal(key, organizerKey); return draft; } };
+  let reviews = 0;
+  const completeText: Completion = async input => {
+    ++reviews;
+    assert.equal(input.role, 'knowledge_review');
+    assert.equal(input.pdf?.sha256, sha256);
+    const payload = JSON.parse(input.user);
+    assert.deepEqual(payload.editorialRegionProposal.edits, revision.regionEdits);
+    assert.deepEqual(payload.candidate.chunks[0].applicability, {region: 'HK', ageBasis: 'actual', minAgeMonths: 12, maxAgeMonths: 60, topics: ['care'], conditions});
+    const response = JSON.parse((await provider([], 'hold')(input)).split('\n')[1]!);
+    response.changes = Object.fromEntries(response.changes.map(({key, ...rest}: {key: string}) => [key, rest]));
+    return JSON.stringify({...response, nativeCoverage: { pageFindings: {page1: "Conditional ages"}, unreadablePages: [], layoutAnswer: null }});
+  };
+  const result = await prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText });
+  assert.equal(result.review.decision, 'hold_candidate');
+  assert.equal(result.provenance.retainedDraft?.priorWork, revision.operationFingerprint);
+  revision.regionEdits[0]!.range = 'fromPage2Through2Unit1';
+  await assert.rejects(prepareKnowledgeMaintenance({ ...base, retainedDraft, completeText }), /pdf_region_changed/u);
+  assert.equal(reviews, 1);
 });
 
 test("grouped PDF sections require one keyed summary for each physical page in its range", () => {

@@ -78,6 +78,8 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 先完成原件及收據綁定，再逐份修復、獨立審核、發布及讀回。正式交付須為這 24 個來源各留生效版及刊登收據，或保留原操作、原因及仍需處理的證據。原 C 的 US$30 總帳、執行次序及維護配額由原責任線統籌。
 
+目前八份網頁及兩份 PDF 已用正式保存的整理輸出重建送審內容。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；需要換日時用同一恢復命令接續，已完成操作會查回原結果。每份刊登須讀回生效版本、原觀測及已提交收據。另十二份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
+
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
 
