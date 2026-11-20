@@ -155,10 +155,19 @@ try {
       } });
     if (inspecting) {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
+      const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
+      let recordedWindow;
+      if (command === 'inspect' && reads && pin?.lane === 'C2' && saved?.windowed
+        && ['knowledge_review_failed', 'knowledge_window_quote_mismatch'].includes(saved.result?.code)
+        && !active && !reservations.length) {
+        const { inspectHeldWindowEvidence } = await import('./fhs-held-window-evidence.mjs');
+        recordedWindow = await inspectHeldWindowEvidence({ domain, refresh, job: job.data, pin, definition, original, saved,
+          reads, indexHash: process.env.FHS_CAMPAIGN_PDF_READS_SHA256 });
+      }
       console.log(JSON.stringify({ id, registered: true, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
-        leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations,
+        leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations, recordedWindow,
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
           activeVersionHash: active?.versionHash ?? null,
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
