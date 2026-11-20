@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { agentBudgetFingerprint } from '../server/agent-budget.ts';
-import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
@@ -38,6 +39,33 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('commissioned receipts report actual platform use and leave the ordinary daily allowance intact', async () => {
+  const f = firestoreUsageFixture(now), ordinary = f.service;
+  const pin = manualPublicationPin('pdf-63e7d5463521682636a066e5')!;
+  const manual = new FirestoreAiUsage({ ...f.options, manualPublication: pin });
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: { ...pin } }), code('invalid_configuration'));
+  const limits = { userLimit: 1, globalLimit: 2 };
+  const scheduled = request({ ...limits, userId: KNOWLEDGE_MAINTENANCE_PAYER });
+  const published = request({ ...limits, userId: KNOWLEDGE_PUBLICATION_PAYER, attemptKey: 'review' });
+  assert.equal((await ordinary.reserve(scheduled)).decision, 'execute');
+  assert.equal((await ordinary.reserve({ ...scheduled, attemptKey: 'next' })).decision, 'quota_exceeded');
+  await assert.rejects(ordinary.reserve(published), code('invalid_request'));
+  await assert.rejects(manual.reserve(scheduled), code('invalid_request'));
+  assert.equal((await manual.reserve(published)).decision, 'execute');
+  await manual.record(published, known);
+  assert.equal((await manual.reserve(published)).decision, 'lookup');
+  const doc = { ...published, attemptKey: 'embed', kind: 'embedding' as const };
+  await assert.rejects(manual.reserve(doc, 'query_embedding'), code('invalid_request'));
+  assert.equal((await manual.reserve(doc, 'corpus_maintenance')).decision, 'execute');
+  assert.equal((await ordinary.getForUser(KNOWLEDGE_PUBLICATION_PAYER)).attempts, 2);
+  assert.equal((await ordinary.getForUser(KNOWLEDGE_MAINTENANCE_PAYER)).attempts, 1);
+  assert.equal((await ordinary.reserve({ ...scheduled, attemptKey: 'next' })).decision, 'quota_exceeded');
+  assert.equal((await ordinary.reserve(request({ ...limits, attemptKey: 'family' }))).decision, 'execute');
+  assert.equal((await ordinary.reserve(request({ ...limits, userId: 'second-family', attemptKey: 'another' }))).decision, 'quota_exceeded');
+  const total = await ordinary.getGlobal('2026-10-09');
+  assert.deepEqual([total.attempts, total.inputTokens, total.breakdown.model, total.breakdown.documentEmbedding], [4, 12, 3, 1]);
+});
 
 test('FHS day admission resumes a deferred document with the same payer and expires at UTC midnight', async t => {
   const beforeMidnight = Date.parse('2026-11-20T23:59:59Z');

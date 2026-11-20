@@ -1,7 +1,91 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { Firestore } from '@google-cloud/firestore';
+import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
+import { createStorageCipher } from '../server/storage-crypto.ts';
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createKnowledgeCampaignBudget, campaignLimitMicros } from '../server/knowledge-campaign-budget.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+
+test('three original work leases compete for the last affordable dispatch', async t => {
+  const host = process.env.FIRESTORE_EMULATOR_HOST;
+  if (host) assert.match(host, /^127\.0\.0\.1:[1-9]\d{0,4}$/u);
+  const projectId = 'demo-fhs-lanes';
+  const emulator = host ? new Firestore({ projectId, host, ssl: false }) : undefined;
+  if (emulator) t.after(() => emulator.terminate());
+  const database = emulator ?? firestoreDomainFixture().database;
+  const namespace = 'lanes_' + randomBytes(5).toString('hex');
+  const generation = randomUUID(), cipher = createStorageCipher(randomBytes(32));
+  const work = createFirestoreKnowledgeWork({ database, cipher, namespace, projectId,
+    readControl: async () => ({ enabled: true, generation }) });
+  const ledger = createKnowledgeCampaignBudget(database, namespace);
+  await ledger.initialize();
+  for (let i = 0; i < 13; i++) await (await ledger.reserve('generation', 'earlier', 65536))(1048576, 65536);
+  const bindings = await Promise.all(['lane-one', 'lane-two', 'lane-three'].map(async sourceId => {
+    const operationFingerprint = knowledgeReviewHash(sourceId), token = randomUUID();
+    const session = await work.bind({ watchId: sourceId, operationFingerprint, workerGeneration: generation, publishMode: 'live' },
+      token, knowledgeReviewHash('configuration'), { deadlineMs: 120000, modelCalls: 2 });
+    const claim = await session.ports.claimOperation(operationFingerprint, token, Date.now() + 90000);
+    assert.equal(claim.status, 'claimed');
+    return { sourceId, operationFingerprint, stageKey: 'organizer', assertLease: session.assertLease };
+  }));
+  const results = await Promise.allSettled(bindings.map(binding => ledger.reserveShared('generation', binding, 8192)));
+  const admitted = results.filter(result => result.status === 'fulfilled');
+  assert.equal(admitted.length, 1);
+  for (const result of results) if (result.status === 'rejected') assert.match(String(result.reason), /budget_exhausted/);
+  const restarted = createKnowledgeCampaignBudget(database, namespace);
+  const held = await restarted.status();
+  assert.equal(held?.held, 1634304);
+  assert.ok(held && held.held + held.spent <= campaignLimitMicros);
+  await admitted[0]!.value(12, 8);
+  assert.equal((await restarted.status())?.held, 0);
+});
+
+test('independent leased sources share one cap and unknown or replayed stages remain lookup-only', async () => {
+  const { database, loseReply } = firestoreDomainFixture();
+  const ledger = createKnowledgeCampaignBudget(database, 'test');
+  await ledger.initialize();
+  const bound = (sourceId: string) => ({ sourceId, operationFingerprint: sourceId.padEnd(64, '0'), stageKey: 'organize',
+    assertLease: async () => {} });
+  const a = bound('a'), b = bound('b');
+  const [finishA, finishB] = await Promise.all([ledger.reserveShared('generation', a, 8192), ledger.reserveShared('generation', b, 8192)]);
+  const active = await ledger.sourceStatus('a');
+  assert.equal(active.admissible, false);
+  assert.equal(active.reservations[0]?.operationFingerprint, a.operationFingerprint);
+  assert.equal((await ledger.sourceStatus('c')).admissible, true);
+  await assert.rejects(ledger.reserveShared('generation', {...a, stageKey:'review'},8192), /source_reserved/);
+  await assert.rejects(finishA(30,null),/usage_unknown/);
+  await finishB(10,20);
+  await finishB(10,20);
+  await assert.rejects(finishB(11,20),/attempt_changed/);
+  await assert.rejects(ledger.reserveShared('generation',b,8192),/attempt_recorded/);
+  await assert.rejects(ledger.reserveShared('generation',{...bound('c'),assertLease:async()=>{throw Error('lease lost');}},8192),/lease lost/);
+  loseReply();
+  await assert.rejects(ledger.reserveShared('embedding',bound('c'),0),/lost commit acknowledgement/);
+  const restarted = createKnowledgeCampaignBudget(database, 'test');
+  assert.equal((await restarted.sourceStatus('c')).reservations.length,1);
+  assert.equal((await restarted.sourceStatus('d')).admissible,true);
+  assert.deepEqual([(await restarted.status())?.attempts,(await restarted.status())?.held], [3,1634304+308]);
+});
+
+test('legacy unknowns must match before handoff and stay reserved for every independent worker', async () => {
+  const {database}=firestoreDomainFixture();
+  const old=createKnowledgeCampaignBudget(database,'test');
+  await old.initialize();
+  await old.reserve('generation','old',4096);
+  const root=database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120');
+  const [ticket]=(await root.collection('attempts').get()).docs;
+  const pin={sourceId:'old',operationFingerprint:'1'.repeat(64),ticketId:ticket!.id,at:ticket!.get('at') as string,kind:'generation' as const,ceiling:1603584};
+  assert.equal((await old.sourceStatus('new')).admissible,false);
+  await assert.rejects(createKnowledgeCampaignBudget(database,'test',[{...pin,ceiling:1}]).retainInspected(),/receipt_mismatch/);
+  const owner=createKnowledgeCampaignBudget(database,'test',[pin]);
+  await owner.retainInspected();
+  await owner.retainInspected();
+  assert.equal((await old.sourceStatus('new')).admissible,true);
+  assert.equal((await old.sourceStatus('old')).admissible,false);
+  assert.equal((await old.status())?.held,1603584);
+});
 
 test('campaign admission serializes attempts, survives lost acknowledgement, and enforces the gross cap', async () => {
   const { database, loseReply } = firestoreDomainFixture();
