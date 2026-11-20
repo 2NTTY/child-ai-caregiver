@@ -1,0 +1,85 @@
+{
+  "group": {
+    "id": "personal-backup-expired-original-and-local-copy",
+    "title": "本人備份過期後，原資料和已下載副本還在嗎？",
+    "index": "external-comparison",
+    "readerNote": "到期的是伺服器暫存備份的下載資格。以伺服器記錄的到期時間為準：建立匯出時起算 24 小時，不因完成整理或下載而延長。到期便不能再次下載，不必等清理，也不代表暫存包已刪。原資料不受影響，已完整下載的裝置副本不會被撤回，但這裏無法查到它是否仍在，也不保證可以還原。兩案只讀，不下載、重做、清理或還原。",
+    "choices": [
+      {
+        "name": "先找原備份｜整頁匯出歷史",
+        "note": "按用途、建立及到期時間定位原工作；已過期的紀錄可留在清單，但不能再下載同一伺服器備份，亦不等於已清除。MyHealthPEI 官方整頁工作區把可下載與已過期排在同一表，生成中另有標記；參考列表，不套用它的期限或刪除按鈕。",
+        "source": "https://www.princeedwardisland.ca/sites/default/files/eb73/MyHealthPEI%20Communications%20Centre%20Navigation.pdf#page=8",
+        "sourceNotes": [
+          {
+            "label": "PEI 政府手冊第 8 頁兩張原圖：生成中、可下載和已過期",
+            "url": "https://www.princeedwardisland.ca/sites/default/files/eb73/MyHealthPEI%20Communications%20Centre%20Navigation.pdf#page=8"
+          },
+          {
+            "label": "同手冊第 4 頁：逾期後另開新匯出",
+            "url": "https://www.princeedwardisland.ca/sites/default/files/eb73/MyHealthPEI%20Communications%20Centre%20Navigation.pdf#page=4"
+          },
+          {
+            "label": "同手冊第 9 頁：另行儲存至自己的裝置",
+            "url": "https://www.princeedwardisland.ca/sites/default/files/eb73/MyHealthPEI%20Communications%20Centre%20Navigation.pdf#page=9"
+          },
+          {
+            "label": "育伴港：建立匯出工作即固定到期時間",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/27b400aca0b0af25eaa26e867adbc460e03cf0f4/server/firestore-handover-jobs.ts#L244-L268"
+          },
+          {
+            "label": "育伴港：到期狀態先於實體清理",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/27b400aca0b0af25eaa26e867adbc460e03cf0f4/server/firestore-handover-jobs.ts#L131-L138"
+          }
+        ],
+        "version": "MyHealthPEI《How-To Guide: Communication Centre》；原 PDF 內嵌日期 2026-09-15，伺服器標示 2026-09-17 更新。產品組建與截圖拍攝日未標。",
+        "rights": "PEI 政府官方公開手冊；未確認畫面是否含第三方權利或可重刊。只外連原 PDF，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 MyHealthPEI 官方手冊第 8 頁原圖 ↗（需連網）"
+      },
+      {
+        "name": "單次備份｜過期的是哪一份",
+        "note": "這份伺服器暫存包已過期，不能再下載；若先前已完整下載，到期不會刪你裝置上的副本，但此處不能核實本機檔。原資料不因到期改動。GitHub 官方匯出區塊示一份有期限的包，文件另說可保留離線副本；沒有三欄詳情或本機查證。 裝置上有檔也不代表現在一定能還原，權限和原匯出憑證另核。",
+        "source": "https://github.blog/wp-content/uploads/2018/12/50226471-44162300-0371-11e9-8386-85f43f976508.png",
+        "sourceNotes": [
+          {
+            "label": "GitHub 官方局部原圖：單筆匯出與可取期限，不是已過期詳情頁",
+            "url": "https://github.blog/wp-content/uploads/2018/12/50226471-44162300-0371-11e9-8386-85f43f976508.png"
+          },
+          {
+            "label": "GitHub 官方文章：匯出的包有期限，另可作離線備份",
+            "url": "https://github.blog/developer-skills/github/download-your-data/"
+          },
+          {
+            "label": "GitHub 官方說明：到期或停用的是該次匯出的下載連結",
+            "url": "https://docs.github.com/en/get-started/archiving-your-github-personal-account-and-public-repositories/requesting-an-archive-of-your-personal-accounts-data"
+          },
+          {
+            "label": "GitHub 官方說明：刪除原帳戶是另一個操作",
+            "url": "https://docs.github.com/en/account-and-profile/how-tos/account-management/deleting-your-personal-account"
+          },
+          {
+            "label": "育伴港：下載須核對當前權限、版本和伺服器期限",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/27b400aca0b0af25eaa26e867adbc460e03cf0f4/server/firestore-handover-jobs.ts#L349-L372"
+          },
+          {
+            "label": "育伴港：清理針對暫存備份，不改動原件",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/27b400aca0b0af25eaa26e867adbc460e03cf0f4/server/handover-service.ts#L64-L77"
+          },
+          {
+            "label": "育伴港：可否還原須另核原匯出的憑證",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/27b400aca0b0af25eaa26e867adbc460e03cf0f4/server/firestore-handover-jobs.ts#L205-L214"
+          }
+        ],
+        "version": "GitHub.com 2018-12-19 發布的 Web 設定區塊原圖；2026-11-20 核對，未標精確 UI 版號或攝圖日。",
+        "rights": "GitHub 保留介面與圖片權利；只外連官方原圖和說明，沒有嵌入、重刊或加工。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 GitHub 官方局部原圖 ↗（需連網）"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "9b7a99e4c2e883832f2246f85edf7d87cbc78a69ae7b7b34747a020fe05f4171"
+}
