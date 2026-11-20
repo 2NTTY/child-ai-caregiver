@@ -1,0 +1,71 @@
+{
+  "group": {
+    "id": "preparation-checklist-quantity-recheck",
+    "title": "準備單改成「帶兩盒彩筆」，昨天打的勾還算嗎？",
+    "index": "external-comparison",
+    "readerNote": "同一張已存準備單只把一盒彩筆改成兩盒：彩筆需重新核對，未改的水樽保留原勾；只在同章內調次序不重設。只比較同一文件中核實有權的版本；舊版讀不到，不猜舊勾。勾選是家長確認，不表示系統查過實物。A 直接看現版，B 先看變了甚麼；兩案是只讀設計比較，不是現網功能驗收。",
+    "choices": [
+      {
+        "name": "現版整張準備單｜只重核數量改了的那一項",
+        "note": "照原次序看現版：兩盒彩筆顯示「數量已改，請重新核對」；水樽仍是「已核對」。只有核實舊版才說舊勾沒有沿用。Bitbucket 原圖顯示同頁已勾與未勾，官方文件另說明只有被改的檔案重設；原圖不是一次準備單修改的前後對照。 若只讀到現版，就只顯示當前勾選，不猜是哪一項曾勾過。",
+        "source": "https://atlassianblog.wpengine.com/wp-content/uploads/2024/11/mark-files-as-viewed.png",
+        "sourceNotes": [
+          {
+            "label": "Atlassian 官方整頁原圖：同頁已查看和未查看項",
+            "url": "https://atlassianblog.wpengine.com/wp-content/uploads/2024/11/mark-files-as-viewed.png"
+          },
+          {
+            "label": "Bitbucket Cloud 功能公告及原圖出處",
+            "url": "https://www.atlassian.com/blog/bitbucket/stay-focused-by-marking-pr-files-as-reviewed"
+          },
+          {
+            "label": "Bitbucket 官方規則：只重設有改動的已查看項",
+            "url": "https://support.atlassian.com/bitbucket-cloud/docs/review-code-in-a-pull-request/"
+          },
+          {
+            "label": "育伴港：保留移動項，文字或來源身份序列變動才重設原勾",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/family-document-edits.ts#L58-L86"
+          }
+        ],
+        "version": "Bitbucket Cloud 功能公告標示 2023-10-06；原圖服務端標示 2024-11-06，拍攝日期及產品組建未標。",
+        "rights": "Atlassian 官方產品圖，未獲重刊許可；只連官方原圖與文件，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "版本對照頁｜只重核改過的項",
+        "note": "先看「一盒彩筆，已核對 → 兩盒彩筆，未核對」；水樽放在「沿用原核對」，可返回現版打包。任一版讀不到就不推斷舊勾或改動。Microsoft Spreadsheet Compare 原圖將兩版放在一起，再另列前後值和差異；它沒有「沿用原核對」區，不證明勾選如何保留。 「沿用」需要同一份文件、同一章和項目，以及有權查看的相鄰版本；不能用同名或兩端狀態推定中間未改。",
+        "source": "https://support.microsoft.com/en-gb/excel/media/o15-ssc-results.jpg",
+        "sourceNotes": [
+          {
+            "label": "Microsoft Spreadsheet Compare 官方整窗原圖：兩版並列，獨立列差異",
+            "url": "https://support.microsoft.com/en-gb/excel/media/o15-ssc-results.jpg"
+          },
+          {
+            "label": "Microsoft 官方局部原圖：兩端數值變動與變更類型",
+            "url": "https://support.microsoft.com/en-us/excel/media/o15-ssc-basics-1.png"
+          },
+          {
+            "label": "Microsoft 官方說明：如何比較兩份工作簿及讀取結果",
+            "url": "https://support.microsoft.com/en-gb/excel/compare-two-versions-of-a-workbook-by-using-spreadsheet-compare"
+          },
+          {
+            "label": "Microsoft 截圖使用說明",
+            "url": "https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions"
+          },
+          {
+            "label": "育伴港：同文件版本及內容讀取仍須驗權與來源",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/573d29821035e74dc90be6d968788f48cedd6937/server/firestore-family-documents.ts#L511-L536"
+          }
+        ],
+        "version": "Microsoft Spreadsheet Compare Windows 官方整窗原圖，2026-11-20 核對；圖片伺服器標示 2026-05-15 更新，未顯示軟體版號或攝圖日。2011Q1／2010Q4 是示例檔名。",
+        "rights": "Microsoft 的官方截圖使用另有條件；此處只作明文外連，不嵌圖、不重刊或改圖。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "10d7b4f77053c046bcf890adc189dd7709ec3785766e22537e9c77560a9178be"
+}
