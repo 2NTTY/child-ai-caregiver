@@ -88,6 +88,7 @@ function message(value: unknown): value is ChatMessage {
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
     && (value.proactive === undefined || value.proactive === true)
+    && (value.proactiveUnread === undefined || value.proactive === true && typeof value.proactiveUnread === 'boolean')
     && (value.role === "user" ? value.authorUserId !== null && value.inReplyTo === null && !value.proactive
       : value.authorUserId === null && (value.inReplyTo === null) === (value.proactive === true));
 }

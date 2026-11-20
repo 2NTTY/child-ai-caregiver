@@ -1,0 +1,52 @@
+{
+  "package": "Zundamon 全身呈現與互動",
+  "observed": "2026-11-20 深夜至 2026-11-21 凌晨（香港時間）",
+  "baseline": "0c59be95c74f3d4292cb0b8eb9a5eeddf501be49",
+  "integrationBase": "85c8f50455153da16719a0381484785efbb81b33",
+  "environment": "Windows 獨立無頭 Edge 157、WebGL SwiftShader、正式 Web 及本機 Auth／Firestore 模擬器、合成家庭、模型停用",
+  "evidence": {
+    "mobile": {
+      "viewport": [
+        390,
+        844
+      ],
+      "file": "mobile.png",
+      "dockBottom": 724.6,
+      "navigationTop": 766.2
+    },
+    "desktop": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "file": "desktop.png"
+    },
+    "assistant": {
+      "viewport": [
+        390,
+        844
+      ],
+      "file": "assistant.png"
+    },
+    "gestures": {
+      "file": "interaction.gif",
+      "seconds": 8.32,
+      "sourceFrames": 64,
+      "captions": "字幕列在原畫面下方，順序為待機、摸頭、待辦對話、未讀提醒、閱讀原文、助手頁揮手。"
+    }
+  },
+  "checked": [
+    "在兩個尺寸檢視原模型的雙耳、臉、軀幹和鞋。手機角色及兩個角色控件位於底部導航上方。",
+    "點頭部收到點頭動作，對話維持關閉。拖動後位置由 (197.7,448.6) 移至 (100.5,382.6)，可收起及重新展開。",
+    "打開合成待辦後點身體，同頁的小對話顯示「連同目前待辦發問」。",
+    "透過 contactParent 保存一則合成提醒。點身體前頁面沒有提醒正文，揮手及摸頭後原收據的 seenAt 均為 null。點身體後顯示原文，原收據才出現 seenAt。",
+    "助手頁角色定點靜止，點擊後畫格有變化，聊天繼續在原頁。普通頁待機畫格有變化，減少動態效果啟用後待機畫格穩定。",
+    "前端及伺服器 TypeScript 檢查通過。proactive-chat 定向測試通過，涵蓋未讀、已讀及展示投影範圍。"
+  ],
+  "firstRun": "首次拖動刻意把角色放在測試待辦的中央，測試按中央時被角色接收；改按同一行仍可見的標題後完成驗收。",
+  "reused": "../ZUNDAMON_SITE_ASSISTANT_20261120.json",
+  "boundaries": [
+    "角色讀取已載入的當前孩子私人聊天提醒。",
+    "窄屏證據來自桌面無頭瀏覽器。iOS／Android 實機、實體鍵盤與正式站發布另驗。"
+  ]
+}

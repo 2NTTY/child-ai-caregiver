@@ -52,6 +52,10 @@ export function createParentContact(data: FirestoreDomainData, read: ReadMessage
       }};
   }
   return { getContact,prepareParentContact,
+    async isContactUnread(b: Binding, messageId: string) {
+      const { receipt } = await original(b, messageId);
+      return receipt?.seenAt === null;
+    },
     async contactParent(b:Binding,input:Contact) {
       const prepared = await prepareParentContact(b,input);
       prepared.commit();

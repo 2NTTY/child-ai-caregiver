@@ -4,6 +4,40 @@
   "lane": "C2",
   "manifest": "knowledge/fhs-initial-publication-lanes.json",
   "manifestCommit": "ff43e917",
+  "productionRelease": {
+    "commit": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
+    "run": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44746426203/attempts/2",
+    "firstAttempt": "The staging guard stopped the original release before switching services because the VM had less than 3 GiB free.",
+    "secondAttempt": "The same commit reached the production worker and the release succeeded."
+  },
+  "firstDispatchCheckpoint": {
+    "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+    "earlyExit": "The new container did not contain the previous PDF read index. The lane exited before dispatch, and status confirmed zero model calls and zero tickets.",
+    "resumption": "Submitted the same operation with the standard PDF parser after the five legacy reservations were bound.",
+    "checkedAt": "2026-11-20T14:20:39.614717Z",
+    "providerTicketsForSourceAtCheck": 0,
+    "operationalObservation": "A separate production health request timed out after 12 seconds. The out-of-band Firestore query succeeded. No further C2 source was submitted at this checkpoint.",
+    "afterHostRecovery": {
+      "bindingReadAt": "2026-11-20T14:31:48.134160Z",
+      "frozenBindingsMatchingOriginalOperations": 28,
+      "existingWorkRecords": 0,
+      "ledgerReadAt": "2026-11-20T14:30:53.362923Z",
+      "laneProviderTickets": 0,
+      "firstProcessStillRunning": false
+    }
+  },
+  "preparation": {
+    "checkedAt": "2026-11-20T13:14:32Z",
+    "command": "node scripts/fhs-catalog-batch.mjs --lane C2 prepare",
+    "ready": 28,
+    "pages": 464,
+    "uniqueOriginalOperations": 28,
+    "unsettledOrSettledProviderTicketsForLane": 0,
+    "modelCalls": 0,
+    "previousParserFailuresRecoveredOnSameOperation": 2,
+    "pdfReadsIndexSha256": "4c205559755ee545bf4c128e803b9ba24418572dd45a7bd48fdfa53a1ea065c6",
+    "method": "Read back the source, observation, frozen PDF digest and page count on each original operation. All 28 bindings were present. The first pass prepared 26. The remaining two used their recorded successful parser recovery with the shared read resolver from PR 719."
+  },
   "receiptVerification": {
     "checkedAt": "2026-11-20T13:10:39Z",
     "candidateCommit": "263a556d",
@@ -36,5 +70,209 @@
       "pdf-3b3c1043ac8e7aa74b5a7beb",
       "pdf-f2ed89529922c1ab403f28d2"
     ]
+  },
+  "delivery": {
+    "terminalReceipts": 10,
+    "totalSources": 28,
+    "outcomes": {
+      "candidate_held": 9,
+      "published": 1
+    },
+    "settledAndReservedGrossMicros": {
+      "readAt": "2026-11-20T15:40:49.934863Z",
+      "laneSettledRequests": 19,
+      "laneSettled": 733131,
+      "lanePendingRequests": 0,
+      "laneReserved": 0,
+      "sharedCap": 30000000,
+      "sharedSettled": 8830053,
+      "sharedReserved": 13012992
+    },
+    "sources": [
+      {
+        "sourceId": "pdf-1de70dac6945f17a3891a257",
+        "title": "正面親職（二）：學前階段的實踐",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.pdf",
+        "sha256": "696e01a58dc83a2a824128ddbcf7efefaebdb528b7b301c541b28b04c728c3d6",
+        "pages": 8,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:32:06.126Z",
+        "modelCalls": 1,
+        "code": "knowledge_age_uncertain",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-978f5df8a09640d894087117",
+        "title": "實施「母乳餵哺友善場所」指引",
+        "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/30037.pdf",
+        "sha256": "ae3ad8a9467cd96518ed59636fa9e0a9a4164e5818b706331c288270c3e986c1",
+        "pages": 8,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:40:21.434Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_review_held",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
+        "title": "樂於學習之二",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14846.pdf",
+        "sha256": "d3e8175601a1a92c6f884cadaff53a8c3a80eaa8b5b13ec7b5c3b7a4eff625c5",
+        "pages": 7,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:26:01.234Z",
+        "modelCalls": 1,
+        "code": "knowledge_age_one_sided",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "title": "母乳餵哺 - 新生嬰兒篇",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12172.pdf",
+        "sha256": "acce0101a098b38b14a30886bcdc07ace79589e26aa80d042f8f55c7bb8f50dc",
+        "pages": 7,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:29:23.608Z",
+        "modelCalls": 1,
+        "code": "knowledge_review_failed",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-902a9652db3c94e03ea54d75",
+        "title": "寶寶愛活動",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30109.pdf",
+        "sha256": "0d65d3ca99c7d6fce332f89525310bda27ce62b5f2f6f1900aa89491664b36a0",
+        "pages": 6,
+        "outcome": "published",
+        "checkedAt": "2026-11-20T15:06:00.362Z",
+        "modelCalls": 2,
+        "versionId": "815fe89c-e7c3-58d2-81c0-c9fdfa0a9e6a",
+        "versionHash": "99acdfe4ebc75380146b6cbd074cc5f59a98de4af0581931637b00693ed4c2ac",
+        "requiredVectors": 1,
+        "exportedVectors": 1,
+        "citations": [
+          {
+            "page": 1,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-e4e9735e1a0ba0923750e633",
+        "title": "搖籃曲之二:寶寶不肯睡怎辦？",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13044.pdf",
+        "sha256": "3df9044c03672714ed3d8ed87c4b42fd97710c3bcd44fc8d98c8976e40e86d95",
+        "pages": 6,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:08:32.909Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_review_held",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+        "title": "愛護兒童慎防意外 (三歲至五歲)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15664.pdf",
+        "sha256": "c16d35c3521dcf957f8cf78ecb7018d16214f12e42cbc885204267854f95e28f",
+        "pages": 4,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T14:41:27.441Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_quote_mismatch",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "title": "幼童的飲食 (二至五歲)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12185.pdf",
+        "sha256": "49c4776296833211ff45090d723facc3ec6d29f235abd537ace1e74596e99c70",
+        "pages": 4,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:00:42.475Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_coverage_disputed",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-b1e19bee54f42ee9de413a78",
+        "title": "基本原則",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13032.pdf",
+        "sha256": "431fbf81d87aa6c834eafa7dc5e45db23044c71772df144d04a7341ad3c7ad7c",
+        "pages": 4,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:01:49.526Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_quote_mismatch",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "title": "你的寶寶視力正常嗎?",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15694.pdf",
+        "sha256": "6d8d05a4e554f8ea04f8bc664ddb13f62147a6cb04eeacf8df236543271f6925",
+        "pages": 4,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T15:03:01.812Z",
+        "modelCalls": 2,
+        "code": "knowledge_window_quote_mismatch",
+        "published": false,
+        "prepared": false,
+        "review": null
+      }
+    ]
+  },
+  "protectedInputReads": {
+    "nativeSourcePackets": 23,
+    "allSources": 28,
+    "verifiedOpeningPageBlocks": 64,
+    "openingPageIndexSha256": "ecefb234370df04f3acf6740cc00896051a01d350244bee1e52837381ed06e50",
+    "method": "Verified each public PDF digest and its official PDF.js parser binding. Native runs stage one verified source at a time in the existing read-only publication volume."
+  },
+  "sourceInterruption": {
+    "sourceId": "pdf-2fcfc6f5232e6a7858a730f2",
+    "title": "僱員指引 - 母乳餵哺與工作相容",
+    "peakBytes": 268435456,
+    "at": "2026-11-20T15:34:07.442338Z",
+    "lastLaneState": "source_blocked",
+    "code": "fhs_lane_work_leased",
+    "recordedModelUnits": 2,
+    "settledGenerationTickets": 1,
+    "settledGrossMicros": 50993,
+    "reservedProviderTickets": 0,
+    "followup": "The process hit its container memory limit. The same work has two recorded model units, with only one settled provider generation in the original ledger. Reconcile its saved stage before continuing; it has no verified publication.",
+    "readbackAfterLease": {
+      "operatorReceiptSavedAt": "2026-11-20T15:42:10.116Z",
+      "leaseExpiredAt": "2026-11-20T15:35:07.163Z",
+      "modelUnits": 2,
+      "prepared": false,
+      "terminalResult": null,
+      "publicationReceipt": null,
+      "activeEdition": null,
+      "unsettledTickets": 0
+    }
+  },
+  "holdEvidence": {
+    "knowledge_window_quote_mismatch": "The submitted opening-page excerpt failed the native text or independent transcription check. The operator must verify the two sealed excerpts against the frozen page.",
+    "knowledge_window_coverage_disputed": "A page was unreadable or the two readings disagreed on its classification. Publication requires consistent independent page evidence.",
+    "knowledge_window_review_held": "The independent window approval or range-support requirement failed. Publication requires a supported review for the affected content.",
+    "knowledge_age_one_sided": "The source was classified as having only one endpoint for the proposed age scope. Preserve the qualification and obtain a representable, reviewed scope.",
+    "knowledge_age_uncertain": "The proposed age scope was uncertain. Recheck the scope against the source before publication.",
+    "knowledge_review_failed": "The candidate failed validation. The recorded stage must be inspected before deciding whether a format-only repair is possible."
   }
 }

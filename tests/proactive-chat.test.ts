@@ -35,6 +35,10 @@ test('a lost acknowledgement preserves one original proactive message and one ou
   const page = await chat.listForUser(user, childId);
   assert.deepEqual(page!.messages.map(m => [m.id, m.text, m.inReplyTo, m.proactive]), [[receipt.messageId, text, null, true]]);
   assert.equal(JSON.stringify(page).includes(delivery), false);
+  assert.equal(page!.messages[0].proactiveUnread, undefined);
+  assert.equal((await chat.listForUser(user, childId, null, 'display'))!.messages[0].proactiveUnread, true);
+  await chat.markSeenForUser(user, childId, receipt.messageId);
+  assert.equal((await chat.listForUser(user, childId, null, 'display'))!.messages[0].proactiveUnread, false);
   await assert.rejects(publish('different content'), /./);
   await assert.rejects(chat.listForUser('another-parent', childId));
 });
