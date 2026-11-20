@@ -86,6 +86,13 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
+<a id="fhs-initial-recovery"></a>
+**首批 09:00 的 24 份待審教材。** 從 `c5334be9` 的[逐源快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)接手。另計的待向量 PDF 已由原 C 在香港 12:32 沿原工作發布，版本為 `70db2201-c4bc-5f3a-a011-81fabcad6f66`。兩宗 504 保留原票據。用 `node scripts/fhs-recovery-plan.mjs [SOURCE_ID]` 離線讀取[恢復清單](knowledge/fhs-initial-recovery.json)。有 `campaignArgs` 的項目可由持鎖者在原環境把整個參數陣列交給 `scripts/fhs-initial-campaign.mjs`。每個來源只沿一個固定操作接續。已刊登的截斷修復在清單內標作完成。
+
+先完成原件及收據綁定，再逐份修復、獨立審核、發布及讀回。正式交付須為這 24 個來源各留生效版及刊登收據，或保留原操作、原因及仍需處理的證據。原 C 的 US$30 總帳、執行次序及維護配額由原責任線統籌。
+
+八份網頁及四份 PDF 已以正式保存的整理輸出重建送審內容。生長圖表及保護兒童單張保留原來的十八歲端點及包含／排除語義，須在正式 API 與 worker 均支援該來源範圍後刊登。持鎖者可在原序列呼叫 `node scripts/fhs-catalog-batch.mjs --recover-held`，依原來源逐份執行；遇每日限額用同一命令接續。每份刊登須按原網址查回家長卡、可匯出版本、原觀測及已提交收據。另十份的具體限制和兩份 504 原票據見[逐源清單](knowledge/fhs-initial-recovery.json)。
+
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
 

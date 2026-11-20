@@ -55,6 +55,12 @@ scripts/**
 !scripts/fhs-initial-campaign.mjs
 !scripts/fhs-catalog-batch.mjs
 !scripts/fhs-pdf-reads.ts
+!scripts/fhs-recovery-plan.mjs
+!artifacts/
+artifacts/**
+!artifacts/verification/
+artifacts/verification/**
+!artifacts/verification/FHS_INITIAL_RETAINED_UNKNOWN_20261120.json
 !scripts/knowledge-transfer-*.mjs
 !deploy/
 deploy/**

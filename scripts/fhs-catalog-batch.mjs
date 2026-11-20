@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { campaignMaterialWatches, externalMaterialWatches, fhsMaterialWatches } from '../server/platform-materials.ts';
 import { campaign, campaignLimitMicros } from '../server/knowledge-campaign-budget.ts';
+import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 
 // Each step reopens the same gross ledger and the durable work for the registered source.
 const inventory = JSON.parse(readFileSync(new URL('../knowledge/fhs-child-inventory.json', import.meta.url), 'utf8'));
@@ -17,8 +18,14 @@ const waitForDaily = args[0] === '--wait-for-daily';
 if (waitForDaily) args.shift();
 const onlyExternal = args[0] === '--only-external';
 if (onlyExternal) args.shift();
+const recoverHeld = args[0] === '--recover-held';
+if (recoverHeld) args.shift();
+const recoveries = new Map(recoverHeld ? campaignRecoveryPlan().entries
+  .filter(entry => entry.campaignArgs)
+  .map(entry => [entry.sourceId, entry.campaignArgs]) : []);
 const repairs = new Map();
 const repairOnly = args[0] === '--repair-truncated';
+if (recoverHeld && (onlyExternal || repairOnly || !recoveries.size)) throw Error('Use --recover-held on the checkpoint recovery queue');
 if (repairOnly) {
   args.shift();
   const checkpoint = JSON.parse(readFileSync(args.shift(), 'utf8'));
@@ -33,7 +40,7 @@ if (repairOnly) {
 const [resumeFlag, resumeId, fingerprint, ...extra] = args;
 const fromDeferred = resumeFlag === '--from-deferred';
 if (resumeFlag !== undefined && ((!fromDeferred && resumeFlag !== '--after') || !campaignMaterialWatches.some(source => source.id === resumeId)
-  || (fromDeferred ? repairOnly || !/^[a-f0-9]{64}$/u.test(fingerprint ?? '') : fingerprint !== undefined) || extra.length)) {
+  || (fromDeferred ? recoverHeld || repairOnly || !/^[a-f0-9]{64}$/u.test(fingerprint ?? '') : fingerprint !== undefined) || extra.length)) {
   throw Error('Use --from-deferred SOURCE_ID ORIGINAL_FINGERPRINT or --after SOURCE_ID after a terminal receipt');
 }
 let resumed = resumeFlag === undefined;
@@ -46,6 +53,7 @@ const familyHealth = [...fhsMaterialWatches].sort((a, b) => {
 const external = [...externalMaterialWatches].sort((a, b) => pdfs.get(a.url).pages - pdfs.get(b.url).pages);
 const sources = onlyExternal ? external : [...external, ...familyHealth];
 for (const source of sources) {
+  if (recoverHeld && !recoveries.has(source.id)) continue;
   if (repairOnly && !repairs.has(source.id)) continue;
   const hash = items.get(source.id)?.textHash ?? pdfs.get(source.url)?.sha256 ?? source.url;
   if (seen.has(hash)) continue;
@@ -56,7 +64,7 @@ for (const source of sources) {
     if (!fromDeferred) continue;
   }
   const action = fromDeferred && source.id === resumeId ? ['resume-age-checked', source.id, fingerprint]
-    : repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-age-checked', source.id];
+    : recoverHeld ? recoveries.get(source.id) : repairOnly ? ['repair-truncated', source.id, repairs.get(source.id)] : ['process-age-checked', source.id];
   let status;
   do {
     const nextDay = new Date();
