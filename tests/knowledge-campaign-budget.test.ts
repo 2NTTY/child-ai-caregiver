@@ -121,6 +121,41 @@ test('legacy unknowns must match before handoff and stay reserved for every inde
   assert.equal((await old.status())?.held,1603584);
 });
 
+test('only the inspected original can release a legacy rejection and its historic profile remains usable', async () => {
+  const { database, loseReply } = firestoreDomainFixture();
+  const ordinary = createKnowledgeCampaignBudget(database, 'test');
+  await ordinary.initialize();
+  await ordinary.reserve('generation', 'archived', 4096);
+  const collection = database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120').collection('attempts');
+  const [ticket] = (await collection.get()).docs;
+  const pin = { ticketId: ticket!.id, sourceId: 'archived', operationFingerprint: 'a'.repeat(64),
+    kind: 'generation' as const, at: ticket!.get('at') as string, ceiling: 1603584 };
+  const { kind, ...original } = pin;
+  const proof = { ...original, rejection: { httpStatus: 504, evidenceSha256: 'e'.repeat(64) } };
+  const owner = createKnowledgeCampaignBudget(database, 'test', [pin]);
+  await assert.rejects(owner.settleRejectedGeneration(proof));
+  await owner.retainInspected();
+  await assert.rejects(ordinary.settleRejectedGeneration(proof));
+  await assert.rejects(owner.settleRejectedGeneration({ ...proof, at: '2026-01-01T00:00:00.000Z' }));
+  loseReply();
+  await assert.rejects(owner.settleRejectedGeneration(proof), /lost commit acknowledgement/);
+  await owner.settleRejectedGeneration(proof);
+  await assert.rejects(owner.settleRejectedGeneration({ ...proof, rejection: { ...proof.rejection, httpStatus: 503 } }));
+  await owner.retainInspected();
+  assert.equal((await owner.sourceStatus('archived')).admissible, false);
+  assert.equal((await owner.sourceStatus('new')).admissible, true);
+  await assert.rejects(owner.reserveShared(kind, { sourceId: pin.sourceId, operationFingerprint: pin.operationFingerprint,
+    stageKey: 'review', assertLease: async () => {} }, 4096));
+  const settle = await owner.reserve('embedding', 'new', 0);
+  await settle(100, 0);
+  const final = await owner.status();
+  assert.deepEqual([final?.held, final?.spent, final?.attempts, final?.settled], [0, 15, 2, 2]);
+  const entry = (await collection.get()).docs.find(doc => doc.id === pin.ticketId)!.data();
+  assert.equal(entry.stageHash, undefined);
+  assert.equal(entry.inputTokens, undefined);
+  assert.equal(entry.cost, 0);
+});
+
 test('campaign admission serializes attempts, survives lost acknowledgement, and enforces the gross cap', async () => {
   const { database, loseReply } = firestoreDomainFixture();
   const first = createKnowledgeCampaignBudget(database, 'test');
