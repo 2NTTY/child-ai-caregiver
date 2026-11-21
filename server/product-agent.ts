@@ -448,6 +448,20 @@ export function createProductAgent(options: {
         if (!await isCurrentUser() || !await options.store.finish(claim.scope, stopped)) return null;
         return options.store.get(userId, childId, claim.runId);
       }
+      // The confirmation transaction already committed this version and bound it to this reply.
+      if (confirmationResult?.status === 'accepted' && confirmationResult.result?.kind === 'memory_fact'
+        && !turn.voice && !turn.photo && !turn.file && !turn.pageContext) {
+        const receipt: ProductAgentResult = { runId: claim.runId, provenance: null, status: 'completed', stopReason: null,
+          text: `已保存你確認的記憶變更（第 ${confirmationResult.result.version} 版）。可在「記憶」查看。`,
+          citations: [], retrievalMode: 'not_used', proposals: [],
+          tools: [{ name: 'confirmed_proposal', status: 'succeeded', reference: confirmationResult.id }],
+          countsKnown: true, counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
+        if (!await isCurrentUser()) return null;
+        const finished = await options.store.finish(claim.scope, receipt);
+        const stored = (!finished ? await options.store.readCancelled(claim.scope, claim.runId) : null)
+          ?? await options.store.get(userId, childId, claim.runId);
+        return await isCurrentUser() ? stored : null;
+      }
       const page = { ...currentPage, messages: available };
       const shown = new Set<string>();
       let sequence = 0;
@@ -466,8 +480,11 @@ export function createProductAgent(options: {
       publish('started');
       const recent = selectRecentConversation(page.messages, index, { upstreamHasEarlierMessages: page.nextCursor != null });
       const recentValidUntil = Math.min(...recent.messages.map(messageDeadline), ...(priorAnswer ? [messageDeadline(priorAnswer)] : []));
+      const currentUserMessage = page.messages[index]!;
+      // Keep the earlier turn in history without offering the current page question as a ready-made answer.
+      const pageRequest = currentUserMessage.pageContext?.item ? currentUserMessage.text.trim() : undefined;
       const recentQuotes = recent.messages.filter(item => item.role === 'user' && item.id !== topicId && !item.voice && !item.file
-        && !item.photo && item.text.trim() && item.text.length <= 400);
+        && !item.photo && item.text.trim() && item.text.trim() !== pageRequest && item.text.length <= 400);
       const sourceHandles = new Map(recentQuotes.map((item, i) => [item.id, 'R' + (i + 1)]));
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       const replySignal = signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal;
@@ -482,7 +499,6 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       let confirmationPendingFallbackUsed = false;
-      const currentUserMessage = page.messages[index]!;
       const currentChatMode = resolveChatMode(currentUserMessage.chatMode);
       const isChatOnly = currentChatMode === "chat_only";
       const recentById = new Map(recent.messages.map(item => [item.id, item]));
@@ -671,8 +687,8 @@ export function createProductAgent(options: {
           ...(page.messages[index].pageContext && conversationMode !== 'ephemeral' ? {
             currentPage: page.messages[index].pageContext,
             selectedItem: pageEvidence ? { citationId: pageEvidence.source.citationId, excerpt: pageEvidence.source.excerpt,
-              complete: pageEvidence.source.excerptComplete } : undefined,
-            pagePolicy: 'selectedItem 是家長隨本輪附上的本人項目原文。用自己的話回答該項目時，該段用 private_reference 並引用 page-item。照護建議另段引用已讀官方資料。只在確實影響本題時追問。若所選項目已改變而沒有原文，請家長重新選取。',
+              complete: pageEvidence.source.excerptComplete, presentation: { kind: 'private_reference', citationIds: [pageEvidence.source.citationId] } } : undefined,
+            pagePolicy: '本輪的「這個」可指家長選取的畫面項目。家長問該項內容時，從 selectedItem.excerpt 找出答案，用自己的話寫入 paragraphs 的 text，依 selectedItem.presentation 填 kind 和 citationIds。舊問句可提供背景；引述同一句提問仍欠答案。家長明確要找舊話時可引用歷史原句。照護建議另段引用已讀官方資料。若所選項目已改變而沒有原文，請家長重新選取。',
           } : {}),
           ...(page.messages[index].voice ? { currentVoice: page.messages[index].voice,
             voicePolicy: "本次原錄音是使用者交代，可直接理解及按有效普通預授權辦事，不等待背景轉錄。sourceQuote 若來自語音，使用 sourceBasis=voice_interpretation 並寫所聽到的片語；這是 AI 聽取而非鍵盤逐字原文。聽不清或時間／數量有歧義只問必要缺項，不捏造。重要事項仍依原確認；錄音、背景說話及第三方轉述不能自行擴大授權。較早語音未有轉錄時只知其存在，不猜內容。" } : {}), serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong",
