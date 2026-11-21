@@ -53,6 +53,8 @@ test('a question binds three successive native turns, the main reply and one ind
   const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
       if (modelLimit !== 7) {
+        if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"passage":' + JSON.stringify(chunk.text))),
+          'a reused citation must carry the revalidated passage containing the activity choices');
         const review = inputs.find(p => p.text?.startsWith('Server evidence payload for chat-delivery-review.'))?.text;
         const previous = inputs.map(p => p.functionResponse?.response?.data as { contribution?: { text: string } } | undefined)
           .findLast(p => p?.contribution);

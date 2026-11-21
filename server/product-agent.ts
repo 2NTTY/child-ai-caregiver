@@ -15,7 +15,7 @@ import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } 
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentBudget, AgentStopped } from "./agent-budget.ts";
 import { ACCOUNT_DIRECTORY_ANSWER, CHILD_PROFILES_CHAT_TEXT } from "../src/shared/chat-workspace-view.ts";
-import { chatDeliveryContentHash, chatDeliveryReviewSourceExcerpt, enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import { baseAgentKnowledgeFilter } from "./knowledge-query-context.ts";
 import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
 import type { AgentRunContext, AgentRunResult, AgentContextCategoryMetadata, AgentTraceSink } from "./agent-runtime.ts";
@@ -669,6 +669,7 @@ export function createProductAgent(options: {
             reusedOfficialEvidence: seededOfficialEvidence.map(({ chunk }) => ({
               chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId,
               title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt,
+              passage: chatDeliveryExcerpt(chunk.text).excerpt,
               sourceDateText: chunk.sourceDateText ?? null,
             })),
           } : {}),
