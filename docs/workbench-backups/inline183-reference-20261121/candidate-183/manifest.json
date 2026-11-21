@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-183-image-count",
+  "base": {
+    "artifact": "candidate-181/out",
+    "htmlSha256": "0d66bb9f45ae9c2e1056945e2b58932b4f1dbd4a753637b7844a2a8411570a60",
+    "rawRecordsSha256": "0de6232eda2f26341b0c0f327d9a7cd795746e311439a0b4d5e5cfc1a7e9810b",
+    "rawArtworkSha256": "5965b8e1a2d346e005384940fa782da5363ece1374b128ce31fb30b841c517df",
+    "topics": 89,
+    "choices": 181,
+    "images": 181
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-summary-period/assets.json",
+      "sha256": "08167bee6d1fc510a50b839233b6c20ec879990aecd210cbcedfa5e94ae37c14"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "6d105d7c8199bef91084effa66cac93ca42867577fcbc4a75960926c7d4c7566",
+    "PROVENANCE.md": "a721e3dcc9e9af2cbd071e12ac6a49bbcba2f0fbef88bc6c6a806046459c6ffd"
+  },
+  "topics": [
+    {
+      "number": 90,
+      "title": "概況的完整回顧：查一日或連續七日的已確認記錄",
+      "choices": [
+        {
+          "name": "選定日期範圍後，在原頁查看明細",
+          "note": "TimeTagger 在時間軸上疊開報告，頂部保留起訖日期，下面列出所選範圍的記錄。育伴港同樣可讓期間與結果一併可見，但期間只可選由開始日起計的一日或連續七日，並須按「套用期間」。",
+          "links": [
+            {
+              "label": "TimeTagger v26.1.3：時間軸與概覽並排",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/front.py#L248-L259"
+            },
+            {
+              "label": "同版：在原頁開啟報告",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/front.py#L1581-L1582"
+            },
+            {
+              "label": "同版：報告疊加於主畫面的樣式",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/app.scss#L126-L168"
+            },
+            {
+              "label": "同版：報告的日期範圍與明細選項",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/dialogs.py#L2826-L2893"
+            },
+            {
+              "label": "同版：由報告開啟日期選擇，再返回報告",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/dialogs.py#L2913-L2950"
+            },
+            {
+              "label": "同版：選擇包含起訖日的日期範圍",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/dialogs.py#L563-L588"
+            },
+            {
+              "label": "同版：依日期範圍列出記錄明細",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/timetagger/app/dialogs.py#L3185-L3228"
+            },
+            {
+              "label": "TimeTagger 程式碼授權：GPL-3.0",
+              "url": "https://github.com/almarklein/timetagger/blob/681720d84c94be660f30947db4b23e52d36cbe32/LICENSE#L1-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-summary-period/summary-period-a.png",
+            "sha256": "8d4290cbe50614a643ed15fee55783c100c36674160e6f584e0e8b1d7256ae8f",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "TimeTagger 桌面非官方重繪：時間軸及概覽上方開着報告，日期範圍為 2026 年 8 月 10 至 16 日；下方按標籤列出虛構紙藝活動、日期及時長，複製及儲存按鈕均未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "用同一段期間看整個總覽",
+          "note": "Home Assistant 的能源總覽用底部同一個期間選擇器，讓分佈、來源、電力和用水圖表都對照同一段日子。育伴港只參考讓結果的期間清晰一致；仍由家長選擇開始日及「一日／連續七日」，再按「套用期間」。",
+          "links": [
+            {
+              "label": "Home Assistant Frontend 20261028.5：能源儀表板的完整介面",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/energy/ha-panel-energy.ts#L154-L168"
+            },
+            {
+              "label": "共用期間選擇器置於底部",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/energy/strategies/energy-overview-view-strategy.ts#L22-L38"
+            },
+            {
+              "label": "分佈和來源採用同一個期間",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/energy/strategies/energy-overview-view-strategy.ts#L75-L104"
+            },
+            {
+              "label": "電力與用水圖表採用同一個期間",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/energy/strategies/energy-overview-view-strategy.ts#L124-L154"
+            },
+            {
+              "label": "日、週等期間預設",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/lovelace/components/hui-energy-period-selector.ts#L83-L97"
+            },
+            {
+              "label": "變更期間後更新共用資料",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/src/panels/lovelace/components/hui-energy-period-selector.ts#L537-L560"
+            },
+            {
+              "label": "程式來源授權：Apache-2.0",
+              "url": "https://github.com/home-assistant/frontend/blob/e32bc0696ebefde323f5b791269ad0c57f3f99d9/LICENSE.md#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-summary-period/summary-period-b.png",
+            "sha256": "84c7452e0840405bd5bbdde2a74365a3abdfa7c18eeebd5c19a37b2df3ad57e9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Home Assistant 桌面能源總覽重繪。上方是能源分佈和來源總計，下方是紙藝展覽室的模擬電力及用水圖表；底部選定 11 月 9 日至 15 日，四張卡共用這段期間。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 90 題 · 按期間查看記錄的兩幅自製示意",
+      "input": "draft-summary-period/DECLARATION.txt",
+      "sha256": "6d105d7c8199bef91084effa66cac93ca42867577fcbc4a75960926c7d4c7566"
+    }
+  ]
+}
