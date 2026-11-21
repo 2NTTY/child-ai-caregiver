@@ -34,6 +34,11 @@ export function ProductionFirstScreenGate({ width, launch, children }: { width: 
   const state = pathname === "/share" ? "ready" : pathname === "/admin" ? (recordsState.auth === "checking" ? "loading" : "ready")
     : sharedChild.target && account.gate==='ready' ? readiness?.key===key?readiness.state:'loading'
     : productionStartupReadiness(recordsState, scopeKey, readiness?.key === key && (!settingsActive || activeSection) ? readiness.state : "loading");
+  // The dashboard's account panel mounts before domain providers. It cannot report a route read.
+  const accountPanel = !!identityKey && account.gate !== "ready" && !["/login", "/admin", "/share"].includes(pathname);
+  const personalHome = !!identityKey && account.gate === "ready" && pathname === "/" && !sharedChild.target;
+  // Home panels already expose their individual loading states. Child switches still use the full report above.
+  const launchState = accountPanel ? "ready" : personalHome ? productionStartupReadiness(recordsState, scopeKey, "ready") : state;
   const retryRef = useRef<{ key: string; retry(additional?: readonly string[]): void } | null>(null);
   const [retryKey, setRetryKey] = useState<string | null>(null);
   const registerRetry = useCallback((key: string, retry: (additional?: readonly string[]) => void) => {
@@ -50,7 +55,8 @@ export function ProductionFirstScreenGate({ width, launch, children }: { width: 
   const context = useMemo(() => ({ key, state, report, registerRetry, retry: retryKey === key ? retry : undefined,
     visibilityKey, settingsActive, section: activeSection, registerSection }), [key, state, report, registerRetry, retry, retryKey, visibilityKey, settingsActive, activeSection, registerSection]);
   return <StartupContext.Provider value={context}>
-    <FirstScreenGate pathname={pathname} width={width} launch={launch} dataState={state} startupKey={identityKey ?? "anonymous"}>
+    <FirstScreenGate pathname={pathname} width={width} launch={launch} dataState={launchState}
+      waitForArtwork={!personalHome && !accountPanel} startupKey={accountPanel ? `account:${identityKey}` : identityKey ?? "anonymous"}>
       {children}
     </FirstScreenGate>
   </StartupContext.Provider>;
