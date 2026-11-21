@@ -4,6 +4,7 @@ import test from "node:test";
 import React from "react";
 import { Document, Page, Text, renderToBuffer } from "@react-pdf/renderer";
 import { extractKnowledgePdf } from "../server/knowledge-pdf.ts";
+import { PDFDocument, PDFName, PDFString } from "pdf-lib";
 import type { PDFPageProxy } from "pdfjs-dist";
 import { OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { repairPdfGlyphs } from "../server/knowledge-pdf-glyphs.ts";
@@ -12,6 +13,28 @@ import { physicalPdfQuote } from "../server/knowledge-pdf-physical-quote.ts";
 import { checkKnowledgeObservation } from "../server/knowledge-observation.ts";
 import { parseKnowledgeSource } from "../server/knowledge-inputs.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
+
+test("composite glyph IDs need a Unicode map before they can be quoted as printed letters", async () => {
+  const document = await PDFDocument.create(), context = document.context;
+  const descendant = context.register(context.obj({
+    Type: "Font", Subtype: "CIDFontType2", BaseFont: "Example",
+    CIDSystemInfo: { Registry: PDFString.of("Adobe"), Ordering: PDFString.of("Identity"), Supplement: 0 },
+    CIDToGIDMap: "Identity",
+  }));
+  const pageText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const encoded = [...pageText].map((_, i) => (0x4e01 + i).toString(16)).join("");
+  const mapping = [...pageText].map((ch,i) => "<" + (0x4e01+i).toString(16) + "> <00" + ch.charCodeAt(0).toString(16) + ">").join("\n");
+  const cmap = context.register(context.stream("begincmap\n1 begincodespacerange\n<0000> <ffff>\nendcodespacerange\n26 beginbfchar\n" + mapping + "\nendbfchar\nendcmap"));
+  for (const mapped of [false,true]) {
+    const page = document.addPage(), font = context.obj({Type:"Font",Subtype:"Type0",BaseFont:"Example",Encoding:"Identity-H",DescendantFonts:[descendant]});
+    if (mapped) font.set(PDFName.of("ToUnicode"),cmap);
+    page.node.set(PDFName.of("Resources"),context.obj({Font:{F1:context.register(font)}}));
+    page.node.set(PDFName.of("Contents"),context.register(context.stream("BT /F1 10 Tf 50 700 Td <" + encoded + "> Tj ET")));
+  }
+  const extracted = await extractKnowledgePdf(await document.save());
+  assert.deepEqual(extracted.pages.map(page => page.status), ["unreadable","text"]);
+  assert.deepEqual(extracted.pages.map(page => page.text), ["",pageText]);
+});
 
 test("a grouped PDF opens the exact physical quote without discarding the rest of the reviewed range", () => {
   const pages = [{page:1, text:"Cover", status:"text" as const}, {page:2, text:"Second page presents the complete printed passage.", status:"text" as const}];

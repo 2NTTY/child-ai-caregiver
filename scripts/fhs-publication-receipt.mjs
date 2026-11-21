@@ -6,6 +6,7 @@ import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage }
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { damagedPdfText } from '../server/knowledge-pdf-quotes.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -14,6 +15,7 @@ const confirmedPages = new Set(['text_exact', 'text_layout_whitespace', 'text_ac
 
 function pageEvidence(chunk, physical, windows, pin) {
   const excerpt = chunk.sourceExcerpt;
+  if (excerpt && damagedPdfText.test(excerpt)) return 'unreadable_excerpt';
   if (chunk.originalKind === 'page_transcription' || chunk.originalKind === 'visual_page') {
     const window = windows.find(reading => reading.parentHash === pin.sha256
       && reading.first <= physical.page && reading.last >= physical.page

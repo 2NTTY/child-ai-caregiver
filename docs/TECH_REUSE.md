@@ -147,6 +147,8 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 文字型 PDF 採固定 `pdfjs-dist 6.4.299`（Apache-2.0，官方宣告 Node >=22.13.0 或 >=24），已有 react-pdf 是報告輸出工具，不提供正文抽取，故不重用為解析器。主模型核對 [官方 Node 範例](https://github.com/mozilla/pdf.js/blob/v6.4.299/examples/node/getinfo.mjs)、[固定 API](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/display/api.js) 及套件 metadata；本機 Node24.11 的標準 build 缺 toHex，沿官方 legacy build 解決，不自建polyfill。頁批次、hash、取消、local CMap／font resources及抽取品質分開驗。PDF頁有文字不等於完整正文，只有頁碼亦不能合格；不新增OCR或外部文件服務。
 
 
+2026-11-21 核對字型對照時，另用 PDF-LIB 1.17.1（MIT）讀取頁面及內嵌表單的字型字典。PDF.js 的文字輸出會將缺少 Unicode 對照的複合字型編號當成字元。抽取及發布驗證須排除該字型的未解碼字串，同頁有對照的文字仍可核實。已以有、無映射的同碼 PDF 及官方印本核對。[PDF-LIB 文件物件](https://pdf-lib.js.org/docs/api/classes/pdfdocument) · [PDF.js 6.4.299 字碼映射](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/core/evaluator.js)
+
 ### P2-A05 成長整理（2026-10-08）
 
 沿用 pg-boss、PostgreSQL 交易、現有領域來源解碼及 FamilyDocument；每批有界掃描、加密進度與完整統計是本項目資料／權限語義，沒有引入通用報表或新 workflow 框架。PDF 沿用上方 INT-W06 的 @react-pdf/renderer 4.9.0／靜態繁中文字體，不重做研究或改版。既有文件相容性證據復用；本包必要實測與未驗範圍另記 verification。
