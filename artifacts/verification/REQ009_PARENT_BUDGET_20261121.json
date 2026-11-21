@@ -1,0 +1,57 @@
+{
+  "candidate": "6997564f3fbf031eeeba89cb6e44a0adc469d38f",
+  "observedHongKong": "2026-11-21T15:29:00+08:00",
+  "production": {
+    "display": "家長截圖顯示「這次處理的 AI 調用次數已達上限」，沒有可讀發言。當時版本的共享文案對應 model_limit。",
+    "lastSiteReceiptBeforeCapture": {
+      "observedAt": "2026-11-21T04:17:56+08:00",
+      "releaseId": "r44782348928-1",
+      "webApiWorkerSha": "6e91757e5f66fded6dc3f8bfe58602f2d26daf7a",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44809957883"
+    },
+    "nextReleaseStartedHongKong": "2026-11-21T14:15:20+08:00",
+    "originalReceipt": null,
+    "unverified": ["原家庭的 run、操作、當時模型次數上限、已預留和已用次數、已保存的發言"],
+    "lookup": "正式站內置瀏覽器停在登入頁。Cloud Logging 在香港 13:54 至 14:09:05 的 GCE 結構化三個角色工具診斷欄位查詢沒有命中；截圖沒有 run ID。"
+  },
+  "priorAcceptance": {
+    "source": "THREE_LINE_INTEGRATION_20261120.json",
+    "environment": "本機 Firebase 合成家庭，該次討論使用真 Vertex，單次運行上限八次，每次請求重試上限零。先前測試曾提高隔離日額。",
+    "oldProtocol": "三次角色生成、另一次主回答與一次獨立核對最少需五次模型呼叫。額外檢索、格式重交及壓縮亦會佔用同一個 run。這能解釋四次上限的重現，原家庭的實際停點仍待查。"
+  },
+  "isolatedBrowser": {
+    "stack": "Windows、Edge、正式 Web／API、Firebase Emulator、Vertex gemini-3.1-flash-lite。全程使用同一個合成家庭，平台政策 version 0，每 run 八次，重試上限三次，每人每日二十次，全平台每日一百次。",
+    "initialCandidate": {
+      "main": "e8ed86fe-bc80-4959-aa8d-16394b381ea2",
+      "discussion": "c8a66f2d-591f-43c5-ab34-36615ea02996",
+      "result": "已按原回答的討論按鈕。兩個觀點工具成功，一次家長觀點參數被拒；第四次模型呼叫因 model_output_limit 停止。讀回原失敗結果新增用量零。"
+    },
+    "afterTruncationFixBeforeServerBoundTurnOrder": {
+      "main": "b6df822a-6622-4ae4-8957-09fe128d33bc",
+      "discussion": "2cfd1036-d9d2-406d-96b1-8a3805aecd22",
+      "result": "六次模型呼叫、五次工具呼叫、零查詢向量。一個知識觀點及主答通過獨立核對。家長及方法工具有三次執行拒絕，當時診斷只記 unknown。收合重開讀回同一份內容，平台用量 20 → 20。",
+      "image": "REQ009_PARENT_BUDGET_PARTIAL_20261121.png",
+      "nextOrdinaryRun": "e9b96805-230a-4719-8000-bba0c30be751",
+      "nextOrdinaryResult": "送出前本人日用量 19/20。普通問題沒有開討論，以 quota_exceeded 停止。"
+    },
+    "finalCandidateAtDailyLimit": {
+      "run": "d9401a80-0951-47d5-8293-b9524434757f",
+      "stopReason": "discussion_daily_budget",
+      "modelCalls": 0,
+      "toolCalls": 0,
+      "queryEmbeddings": 0,
+      "personalDailyBefore": 20,
+      "personalDailyAfter": 20,
+      "visibleAction": "重看原回答，日額更新後再開新問題。"
+    }
+  },
+  "offline": {
+    "node": "24.22.1",
+    "scope": ["tests/chat-discussion.test.ts", "tests/chat-stop-feedback.test.ts", "tests/agent-observer.test.ts", "tests/firestore-ai-usage.test.ts"],
+    "passed": 36,
+    "serverTypecheck": "passed",
+    "coverage": "真 ADK Runner 配腳本供應商。四次呼叫取得三席、主答、獨立核對及同 run 重讀。三次保留兩席，無效末席引用與截斷均只交付已核對部分；使用者日額只餘三次時提前收尾。一個原生回合不能提交兩席。單次上限一時零派送，普通問句不帶討論。",
+    "baselineFailure": "另跑 agent-presentation-repair 的 primary max-tokens，原基線 cc766108 及候選均回傳 model_output_limit；舊斷言要求 invalid_response。"
+  },
+  "pending": "取得原家庭的已登入驗收入口或已遮蔽的原收據；在有餘額的同一授權帳戶驗最終版完整三席、主答、收合重開及後續普通問題。"
+}
