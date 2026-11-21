@@ -5921,6 +5921,275 @@
         "sourceId": "fhs-feeding-booklet-en",
         "versionId": "c57ddf18-aec6-5e21-a4af-0fdd95a860b8"
       }
-    ]
+    ],
+    "productionAcceptance": {
+      "catalogueReadAt": "2026-11-21T22:46:00.323Z",
+      "cataloguePages": 19,
+      "lookupSnapshotAt": "2026-11-21T22:44:35.581843Z",
+      "siteRelease": {
+        "commit": "c59f0611c9319003691b294a24f7d4a3e9be5acc",
+        "id": "r44956809698-1",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44956809698"
+      },
+      "method": "Read the production family catalogue and download path. Compared every original and vector input; exercised released search and context tools with an isolated family preference on the active public catalogue. The persisted lexical index hashes were checked. No query embeddings or changes to real family preferences.",
+      "commissionedWebSources": 129,
+      "directFamilyWebEditions": 127,
+      "equivalentFamilyPdf": 1,
+      "publisherOriginalOnly": 1,
+      "independentReviewCalls": 6,
+      "embeddingCalls": 29,
+      "settledTickets": 35,
+      "newFamilyWebEditions": 5,
+      "newOriginalSections": 29,
+      "newOriginalCharacters": 8132,
+      "rows": [
+        {
+          "sourceId": "fhs-30006",
+          "title": "培育還是催谷子女",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
+          "versionId": "26bca963-6f3b-510e-878c-82abdd86c566",
+          "versionHash": "0629d86caad9c9cfc0f1e4518c7ba05f434bea80d4f29259802225aafe4dfc9e",
+          "observationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+          "review": "approve_candidate",
+          "publishedAt": "2026-11-21T22:38:51.308Z",
+          "sections": 5,
+          "originalLength": 2290,
+          "originalSha256": "3e047b72bf3cf32fc2d0431607b6376166e7d1b5f255e702b17ff577ca2d5c27",
+          "audiences": [
+            "嬰幼兒",
+            "學前兒童"
+          ],
+          "reviewCalls": 1,
+          "embeddingCalls": 5,
+          "originalOperation": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+          "publicationOperation": "0dfb33bfdd0af1df18b2eb3973e70fd80dcd820e518fb8657aa4e48c98bb5cdf",
+          "disposition": "family_reference_edition",
+          "receipt": "committed",
+          "queries": [
+            {
+              "query": "培育還是催谷子女",
+              "rank": 1,
+              "chunkId": "2971b26a-02c9-5583-98bc-49c4e6b36fe0",
+              "windows": 1,
+              "quoted": null
+            },
+            {
+              "query": "培育子女就要先知道他們的IQ嗎？",
+              "rank": 1,
+              "chunkId": "79362e22-ac0c-5c10-9963-87e470c739a6",
+              "windows": 1,
+              "quoted": "並不能全面反映個人在其他方面的才能"
+            }
+          ]
+        },
+        {
+          "sourceId": "fhs-14838",
+          "title": "親職系列 19 —— 品德培育之一",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+          "versionId": "e01f6566-b6e9-53ed-bb4a-e764eb90449f",
+          "versionHash": "68f136968295f335e8b2b14d6619072c48e20b2a77bad093f29b74381b988f28",
+          "observationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+          "review": "approve_candidate",
+          "publishedAt": "2026-11-21T22:40:02.110Z",
+          "sections": 8,
+          "originalLength": 2176,
+          "originalSha256": "06012235992942eac5f86b2a06ab9e93e2c4f6fd8cad548f28bc0d184e7cd360",
+          "audiences": [
+            "學前兒童"
+          ],
+          "reviewCalls": 1,
+          "embeddingCalls": 8,
+          "originalOperation": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+          "publicationOperation": "5f19de6c19b0e9d2e4ba074ceb6a26bf837461c5db236d42aed8e7c38f5dc027",
+          "disposition": "family_reference_edition",
+          "receipt": "committed",
+          "queries": [
+            {
+              "query": "親職系列 19 —— 品德培育之一",
+              "rank": 1,
+              "chunkId": "43bc83a9-c2c7-5d3b-b387-99f09b8f1860",
+              "windows": 1,
+              "quoted": null
+            },
+            {
+              "query": "品德培育之一：怎樣跟孩子作開放式討論？",
+              "rank": 2,
+              "chunkId": "2274d236-9d3c-5837-98b8-df0315c18a39",
+              "windows": 1,
+              "quoted": "也可以跟他作開放式討論"
+            }
+          ]
+        },
+        {
+          "sourceId": "fhs-20033",
+          "title": "孩子「偏食」怎麼辦?",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
+          "versionId": "bebea52a-5305-5079-9c0a-7df3643c2bb8",
+          "versionHash": "92bc4eb0fe61c22c7e59e8bf8bc8e5d58c134b7e2287a7236da0290c5470add1",
+          "observationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+          "review": "approve_candidate",
+          "publishedAt": "2026-11-21T22:41:11.690Z",
+          "sections": 6,
+          "originalLength": 1757,
+          "originalSha256": "af389c72154ccfed29cc6ca46f201b73dd7f08ed258ff0f347d3f2b24dbad0bd",
+          "audiences": [
+            "幼兒和學前階段"
+          ],
+          "reviewCalls": 1,
+          "embeddingCalls": 6,
+          "originalOperation": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+          "publicationOperation": "83629ed4f35f32312b7bc6fa8910d0ad1f5e84d5ca23eedac35fa3ea1c5d5cba",
+          "disposition": "family_reference_edition",
+          "receipt": "committed",
+          "queries": [
+            {
+              "query": "孩子「偏食」怎麼辦?",
+              "rank": 1,
+              "chunkId": "018e0998-164d-5711-843b-2d3e68a8e651",
+              "windows": 1,
+              "quoted": null
+            },
+            {
+              "query": "孩子偏食，把孩子抗拒的菜蔬混入他的飯裏有幫助嗎？",
+              "rank": 1,
+              "chunkId": "90bb38e3-00aa-5266-8d57-804b767f2827",
+              "windows": 1,
+              "quoted": "讓孩子逐漸熟悉和接受"
+            }
+          ]
+        },
+        {
+          "sourceId": "fhs-30012",
+          "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
+          "versionId": "d6e5730c-9621-5444-a81b-5a47d3dcb171",
+          "versionHash": "91ba6eb14156997a10e4a08caa2d18603d26cab64a425009f6bc892815e03d7c",
+          "observationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+          "review": "approve_candidate",
+          "publishedAt": "2026-11-21T22:42:06.529Z",
+          "sections": 2,
+          "originalLength": 373,
+          "originalSha256": "32f50b4c27e9135a079baad6208c6932dc57cf1821bb321dc64771e18b4d722e",
+          "audiences": [
+            "寶寶"
+          ],
+          "reviewCalls": 1,
+          "embeddingCalls": 2,
+          "originalOperation": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+          "publicationOperation": "bd5a1ed0aa09e8361f87bf3292777a674f737a45fd4c34b32eae08eefa9a7d95",
+          "disposition": "family_reference_edition",
+          "receipt": "committed",
+          "queries": [
+            {
+              "query": "可以讓寶寶用吸管杯子喝飲料嗎？",
+              "rank": 1,
+              "chunkId": "a9621b91-9dd4-5bed-a81e-7f3fb6adbae3",
+              "windows": 1,
+              "quoted": null
+            },
+            {
+              "query": "7至9個月的寶寶何時開始學用有杯嘴的訓練杯及吸管？",
+              "rank": 1,
+              "chunkId": "a9621b91-9dd4-5bed-a81e-7f3fb6adbae3",
+              "windows": 1,
+              "quoted": "當他習慣後，再引入用吸管"
+            }
+          ]
+        },
+        {
+          "sourceId": "fhs-30143",
+          "title": "足不出戶的「親子遊樂團」",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
+          "versionId": "36523c84-bc2e-5a89-a134-f7d818b762db",
+          "versionHash": "07a7904979ce7f1fb178d1de285ec6867c16bb8818c2e534fd9f9fe5ab24376c",
+          "observationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+          "review": "approve_candidate",
+          "publishedAt": "2026-11-21T22:43:19.008Z",
+          "sections": 8,
+          "originalLength": 1536,
+          "originalSha256": "9478a93ebff00899925595f18e303b688bbb2a59948933a4c3aa92c2980d8917",
+          "audiences": [
+            "幼兒和學前孩子"
+          ],
+          "reviewCalls": 1,
+          "embeddingCalls": 8,
+          "originalOperation": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+          "publicationOperation": "d5f8380b3e5fbf01cda400b42bc0969f66fbae2adebc9586c51e3685236b9214",
+          "disposition": "family_reference_edition",
+          "receipt": "committed",
+          "queries": [
+            {
+              "query": "足不出戶的「親子遊樂團」",
+              "rank": 1,
+              "chunkId": "21f76ddf-ea03-55d2-8e37-ff234772db8a",
+              "windows": 1,
+              "quoted": null
+            },
+            {
+              "query": "親子遊樂團提到三歲以上的孩子可以嘗試哪些更高難度的動作？",
+              "rank": 3,
+              "chunkId": "c7799523-1d21-5341-9ce9-b95459c2aea2",
+              "windows": 1,
+              "quoted": "三歲以上的孩子可以嘗試一些更高難度的動作或更複雜的活動"
+            }
+          ]
+        },
+        {
+          "sourceId": "fhs-481",
+          "title": "卡介苗",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
+          "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+          "decision": null,
+          "code": "knowledge_review_failed",
+          "notes": [],
+          "familyStatus": "publisher_original",
+          "reviewCalls": 1,
+          "embeddingCalls": 0,
+          "originalOperation": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+          "publicationOperation": "7acf97ab245e93bb44cc7784b2afb403d312abb4405a6d8072244bb1c669e943",
+          "disposition": "publisher_original_only",
+          "result": "candidate_held",
+          "prepared": false,
+          "activeVersionId": null,
+          "reviewRequestHash": "8ca0ab0f9f1bbae0e00f629b5486e1d286e1f9cc588192744b9fa09d419dd387",
+          "reviewStageHash": "7bffe8bb2503a351f6811b37487da8f6dc5cc61c4a7888eaf52419753f59bed5",
+          "generationSettled": true,
+          "receipt": null,
+          "openReservations": 0,
+          "reason": "The independent review consumed one generation and returned no validated decision or review notes. The operator found no prepared version or publication receipt. No embedding was dispatched. The original groups and exceptions must stay together. The operator does not expose a field-specific cause."
+        }
+      ],
+      "existingQuestionnaire": {
+        "id": "fhs-30108",
+        "sourceId": "pdf-28468771ad2490f045bd5d56",
+        "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+        "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+        "questions": 24,
+        "answers": 24,
+        "skipToQuestion": 6,
+        "inapplicableChoiceCount": 24,
+        "pages": [
+          1,
+          2
+        ],
+        "disposition": "equivalent_family_pdf",
+        "queries": [
+          {
+            "query": "你的初生寶寶安全嗎？",
+            "rank": 1,
+            "chunkId": "054500e2-cd84-5047-89d4-d1339dc67ce3",
+            "windows": 1,
+            "quoted": "如你沒有與嬰兒同牀睡，請跳到第6條"
+          },
+          {
+            "query": "你有否把奶瓶墊高讓寶寶獨自吃奶？",
+            "rank": 1,
+            "chunkId": "054500e2-cd84-5047-89d4-d1339dc67ce3",
+            "windows": 1,
+            "quoted": "你有否把奶瓶墊高讓寶寶獨自吃奶？"
+          }
+        ]
+      }
+    }
   }
 }
