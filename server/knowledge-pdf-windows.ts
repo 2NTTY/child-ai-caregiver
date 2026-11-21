@@ -12,6 +12,7 @@ import type { KnowledgePdfPage } from "./knowledge-pdf.ts";
 import { nativeResponseSchema } from "./knowledge-pdf-output.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment } from "./knowledge-review-assessment.ts";
 import type { RetainedTranscription } from './knowledge-retained-draft.ts';
+import { retainWindowPassage, reviseWindowRegion, type ReviewedWindow } from './fhs-reviewed-window.ts';
 export const PDF_WINDOW_METHOD = "native-pdf-window/1";
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const location = z.number().int().positive();
@@ -23,6 +24,7 @@ const chunk = knowledgeChunkInputSchema;
 export const windowReadingSchema = z.strictObject({
   parentHash: digest, sliceHash: digest, first: location, last: location, firstRead: location, lastRead: location,
   method: z.literal(PDF_WINDOW_METHOD), organizeKey: z.string().max(150), reviewKey: z.string().max(150),
+  registeredRequests: z.strictObject({organizerRequestHash:digest, reviewerRequestHash:digest}).optional(),
   pages: z.array(pageFinding).min(1).max(14), organizePages: z.array(pageFinding).min(1).max(14),
   originalLocations: z.record(z.string(), z.strictObject({ physicalPage: location, kind: z.enum(["text_layer", "page_transcription", "visual_page"]) })), chunks: z.array(chunk).max(14),
   previousChanges: z.record(z.string(), z.strictObject({ meaning: z.enum(["changed", "unchanged", "removed"]), reason: z.string().trim().min(1).max(600) })),
@@ -76,11 +78,16 @@ export async function readKnowledgePdfWindow(input: {
   bytes: Buffer;
   textLayers: KnowledgePdfPage[];
   retainedTranscription?: RetainedTranscription;
+  reviewedWindow?: ReviewedWindow;
   completeText: AgentGatewayModel["completeText"];
   signal?: AbortSignal;
 }) {
   const { range, candidate, bytes, sliceHash, baseline } = input, parentHash = candidate.observed.extraction!.contentHash;
   const retained = input.retainedTranscription;
+  const revision = input.reviewedWindow;
+  if (revision && (retained || baseline || !input.explicitAgeScope || revision.sourceId !== candidate.watchId || revision.sha256 !== parentHash
+    || revision.pages !== candidate.observed.extraction?.totalPages || range.first !== 1 || range.last !== revision.pages
+    || range.firstRead !== 1 || range.lastRead !== revision.pages)) reject('knowledge_retained_transcription_binding');
   if (retained && (baseline || !input.explicitAgeScope || retained.sourceId !== candidate.watchId
     || retained.observationHash !== candidate.observationHash || retained.sha256 !== parentHash || retained.sliceHash !== sliceHash
     || candidate.observed.extraction?.totalPages !== 1 || range.first !== 1 || range.last !== 1 || range.firstRead !== 1 || range.lastRead !== 1))
@@ -130,11 +137,11 @@ export async function readKnowledgePdfWindow(input: {
     input.signal?.throwIfAborted();
     if (raw.length > 128000)
       reject("knowledge_maintenance_output_limit");
-    return { raw: JSON.parse(raw), attemptKey };
+    return { raw: JSON.parse(raw), attemptKey, requestHash:revision ? knowledgeReviewHash({system:prompt.text,user,attemptKey}) : undefined };
   }
   const organized = await call("organize", { ...common, role: "organize", sourceTitle: candidate.observed.title,
     ...(input.explicitAgeScope ? { ageScope: ageScopeInstruction } : {}) }, organizeShape);
-  const draft = organizeShape.parse(organized.raw);
+  const draft = organizeShape.parse(revision?.action === 'review_window_region' ? reviseWindowRegion(organized.raw,revision.regionPages) : organized.raw);
   const reviewed = await call("review", {
     ...common, role: "review", baseline: old,
     ...(input.explicitAgeScope ? { ageScopeCheck: independentAgeCheck } : {}),
@@ -156,6 +163,9 @@ export async function readKnowledgePdfWindow(input: {
     return { page, ...finding };
   });
   const chunks: KnowledgeSourceInput["chunks"] = [], explanations: Record<string, string> = {};
+  const registeredPassages = revision?.action === 'retain_window_quotes' ? revision.passages : undefined;
+  if (registeredPassages && registeredPassages.length !== keys.filter(key => draft.ranges[key] != null).length)
+    reject('knowledge_retained_transcription_binding');
   const originalLocations: Record<string, {
     physicalPage: number;
     kind: string;
@@ -173,7 +183,7 @@ export async function readKnowledgePdfWindow(input: {
     const layer = input.textLayers.find(p => p.page === m.quotePage);
     if (!layer)
       reject("knowledge_window_range_invalid");
-    let quote = m.quote.trim(), checked = verdict.originalQuote.trim();
+    let quote = m.quote.trim(), checked = verdict.originalQuote.trim(), kind = m.originalKind;
     if (retained) {
       if (m.originalKind !== 'page_transcription' || layer.status === 'text' || m.quotePage !== 1)
         reject("knowledge_retained_transcription_binding");
@@ -182,7 +192,11 @@ export async function readKnowledgePdfWindow(input: {
       checked = checked.slice(retained.reviewerStart, retained.reviewerStart + retained.excerpt.length);
       if (quote !== retained.excerpt || checked !== retained.excerpt) reject("knowledge_window_quote_mismatch");
     }
-    if (m.originalKind === "visual_page") {
+    if (registeredPassages) {
+      const entry = registeredPassages.find(p => p.page === m.quotePage);
+      if (!entry || rangePart.first !== rangePart.last) reject('knowledge_retained_transcription_binding');
+      ({quote,kind} = retainWindowPassage(entry,m.originalKind,quote,checked,layer));
+    } else if (m.originalKind === "visual_page") {
       if (quote || checked || layer.status === "text")
         reject("knowledge_window_quote_mismatch");
     } else {
@@ -194,15 +208,17 @@ export async function readKnowledgePdfWindow(input: {
     }
     chunks.push(chunk.parse({
       key, section: m.section, text: m.text, sourceExcerpt: [...quote].slice(0, 150).join(""),
-      ...(quote ? { originalText: quote } : {}), originalKind: m.originalKind === "text_layer" ? "page_excerpt" : m.originalKind,
+      ...(quote ? { originalText: quote } : {}), originalKind: kind === "text_layer" ? "page_excerpt" : kind,
       pageStart: rangePart.first, pageEnd: rangePart.last, keywords: m.keywords, applicability: m.applicability
     }));
-    originalLocations[key] = { physicalPage: m.quotePage, kind: m.originalKind };
+    originalLocations[key] = { physicalPage: m.quotePage, kind };
     explanations[key] = verdict.reason;
   }
   return windowReadingSchema.parse({
     parentHash, sliceHash, first: range.first, last: range.last, firstRead: range.firstRead, lastRead: range.lastRead,
-    method: PDF_WINDOW_METHOD, previousChanges: review.previousChanges ?? {}, organizeKey: organized.attemptKey, reviewKey: reviewed.attemptKey, pages, organizePages, originalLocations, chunks, checks: review.checks, explanations
+    method: PDF_WINDOW_METHOD, previousChanges: review.previousChanges ?? {}, organizeKey: organized.attemptKey, reviewKey: reviewed.attemptKey,
+    ...(revision ? {registeredRequests:{organizerRequestHash:organized.requestHash,reviewerRequestHash:reviewed.requestHash}} : {}),
+    pages, organizePages, originalLocations, chunks, checks: review.checks, explanations
   });
 }
 export function assembleKnowledgePdfWindows(input: {

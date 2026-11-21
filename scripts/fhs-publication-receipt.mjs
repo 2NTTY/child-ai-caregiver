@@ -2,6 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
+import { bindReviewedWindow, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -17,7 +19,9 @@ function pageEvidence(chunk, physical, windows, pin) {
       && reading.originalLocations[chunk.key].kind === chunk.originalKind);
     const hasContent = pages => pages.some(page => page.page === physical.page && page.status === 'content');
     if (!window?.organizeKey || !window.reviewKey || window.organizeKey === window.reviewKey
-      || physical.status === 'text' || !hasContent(window.pages) || !hasContent(window.organizePages)
+      || physical.status === 'text' && !(chunk.originalKind === 'page_transcription' && window.registeredRequests
+        && registeredPrintedPassage(pin.sha256,physical.page,excerpt))
+      || !hasContent(window.pages) || !hasContent(window.organizePages)
       || !window.chunks.some(saved => saved.key === chunk.key && saved.sourceExcerpt === excerpt && saved.originalKind === chunk.originalKind))
       return 'independent_page_evidence_missing';
     if (chunk.originalKind === 'visual_page' && excerpt === '') return 'reviewed_visual_page';
@@ -119,8 +123,8 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
 }
 
 async function main() {
-  const [sourceId, originalOperation, deliveryOperation = originalOperation, ...extra] = process.argv.slice(2);
-  if (!sourceId || !digest.test(originalOperation ?? '') || !digest.test(deliveryOperation) || extra.length)
+  const [sourceId, originalOperation, requestedDelivery, ...extra] = process.argv.slice(2);
+  if (!sourceId || !digest.test(originalOperation ?? '') || requestedDelivery !== undefined && !digest.test(requestedDelivery) || extra.length)
     throw Error('Use fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION [DELIVERY_OPERATION]');
   const { openFirebasePersistence } = await import('../server/firebase-persistence.ts');
   const { createFirestoreKnowledgeRefresh } = await import('../server/firestore-knowledge-refresh.ts');
@@ -160,6 +164,13 @@ async function main() {
       else if (![truncated, retainedDraftWorkId(original), knowledgeOrganizationRepairId(original)].includes(delivery)) return false;
       const prior = await inspect(parent), child = await inspect(delivery);
       if (!prior?.result?.observationHash || prior.result.status !== 'candidate_held' || prior.receipt || !child) return false;
+      const revision = delivery === retainedDraftWorkId(original) && bindReviewedWindow(manualPublicationPin(sourceId),original,prior);
+      if (revision) {
+        if (!child.windowed || child.result && child.result.observationHash !== revision.observationHash) return false;
+        const proof = child.prepared?.provenance.retainedDraft;
+        return child.prepared ? proof?.priorWork === original && proof.revisionHash === knowledgeReviewHash(revision.registration)
+          : !child.receipt && (!child.result || child.result.status === 'candidate_held');
+      }
       if (parent !== original || delivery === truncated) {
         const first = parent === original ? prior : await inspect(original);
         if (first?.result?.code !== 'model_output_limit' || first.result.observationHash !== prior.result.observationHash) return false;
@@ -174,6 +185,12 @@ async function main() {
         return result.cards.find(card => card.sourceId === id && card.versionId === version);
       }, { readOnly: true }), exportEdition: (...args) => store.exportPublishedEdition(...args),
       resolve: citation => store.citedPdf(citation), readOriginal: (id, hash) => refresh.originals.readPdf(id, hash), extract };
+    let deliveryOperation = requestedDelivery ?? originalOperation;
+    if (!requestedDelivery && ports.originalOperation === originalOperation && manualPublicationPin(sourceId)?.lane === 'C2'
+      && bindReviewedWindow(manualPublicationPin(sourceId),originalOperation,await inspect(originalOperation))) {
+      const child = retainedDraftWorkId(originalOperation);
+      if (await inspect(child)) deliveryOperation = child;
+    }
     const row = await readFhsDelivery({ sourceId, originalOperation, deliveryOperation }, ports);
     console.log(JSON.stringify({ ...row, checkedAt: new Date().toISOString() }));
     if (row.readback && row.readback !== 'verified') process.exitCode = 2;
