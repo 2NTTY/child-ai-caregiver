@@ -15,7 +15,7 @@ import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } 
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentBudget, AgentStopped } from "./agent-budget.ts";
 import { ACCOUNT_DIRECTORY_ANSWER, CHILD_PROFILES_CHAT_TEXT } from "../src/shared/chat-workspace-view.ts";
-import { chatDeliveryContentHash, chatDeliveryReviewSourceExcerpt, enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, enforceChatDeliveryReview, isPureGreetingOrSmallTalk, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import { baseAgentKnowledgeFilter } from "./knowledge-query-context.ts";
 import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
 import type { AgentRunContext, AgentRunResult, AgentContextCategoryMetadata, AgentTraceSink } from "./agent-runtime.ts";
@@ -35,17 +35,17 @@ import {
   type TurnConversationMode,
 } from "./agent-context-assembly.ts";
 import { discoverDailyNeeds } from "./daily-needs-discovery.ts";
-import { discussionInstruction, discussionToolNames } from './chat-discussion.ts';
+import { discussionInstruction, discussionToolNames, isDiscussionDraftRejection } from './chat-discussion.ts';
 
 const EPHEMERAL_ALLOWED_TOOL_NAMES = new Set([
-  "search_knowledge",
+  "search_knowledge", "find_official_material",
   "read_knowledge_context",
   "show_official_help",
   "present_answer",
 ]);
 
 const CHAT_ONLY_ALLOWED_TOOL_NAMES = new Set([
-  "search_knowledge",
+  "search_knowledge", "find_official_material",
   "read_knowledge_context",
   "show_official_help",
   "present_answer",
@@ -499,7 +499,8 @@ export function createProductAgent(options: {
       let seededOfficialEvidence: { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[] = [];
       let reusedEvidenceInvalidated = false;
       if (!pureGreetingTurn && conversationMode !== "ephemeral") {
-        const priorRunIds = [...new Set([...recent.messages, ...(priorAnswer ? [priorAnswer] : [])]
+        const evidenceMessages = discussion && priorAnswer ? [priorAnswer] : recent.messages;
+        const priorRunIds = [...new Set(evidenceMessages
           .filter((item): item is typeof item & { agentRunId: string } => item.role === "model" && typeof item.agentRunId === "string" && item.agentRunId !== claim.runId)
           .map(item => item.agentRunId))].slice(-3);
         if (priorRunIds.length && typeof options.knowledge?.createRun === "function") {
@@ -635,7 +636,17 @@ export function createProductAgent(options: {
           return { image: await options.photos.agentImage(userId, childId, reference),
             authorize: () => options.photos!.authorizeImage(userId, childId, reference) };
         } } : {}),
-        ...(discussion ? { discussionInstruction: () => tools?.discussionInstruction?.() ?? discussionInstruction } : {}),
+        ...(discussion ? { discussion: {
+          groundedFollowup: !!priorAnswer && seededOfficialEvidence.length > 0,
+          beginTurn: stage => tools?.beginDiscussionTurn?.(stage),
+          endedEarly: () => tools?.discussionEndedEarly() ?? false,
+          instruction: (finishing: boolean) => tools?.discussionInstruction?.(finishing) ?? discussionInstruction,
+          remainingSpeakers: () => tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length,
+          readyToClose: () => seededOfficialEvidence.length > 0 && (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) <= 1,
+          hasContributions: () => (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) < discussionToolNames.length,
+          toolAvailable: name => !discussionToolNames.some(tool => tool === name) || name === tools?.nextDiscussionTool?.(),
+          isDraftRejection: isDiscussionDraftRejection,
+        } } : {}),
         context: { ...(priorAnswer && !reusedEvidenceInvalidated ? { originalAnswer: priorAnswer.text } : {}), recentConversationCoverage: { ...recent.coverage,
           ...(available.length !== currentPage.messages.length ? { complete: false, retiredSourcesOmitted: true } : {}),
           messageTopology: recent.coverage.messageTopology.map(item =>
@@ -658,13 +669,14 @@ export function createProductAgent(options: {
             reusedOfficialEvidence: seededOfficialEvidence.map(({ chunk }) => ({
               chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId,
               title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt,
+              passage: chatDeliveryExcerpt(chunk.text).excerpt,
               sourceDateText: chunk.sourceDateText ?? null,
             })),
           } : {}),
           ...(reusedEvidenceInvalidated ? { reusedEvidenceInvalidated: true } : {}),
           instructionPolicy: "直接回應目前這句。第一人稱指發話的使用者，與目前選取的孩子分開。問身份時根據已知身份回答，稱呼或意思不明可直接問。舊回答中的頁面入口只屬當時的問題。交辦若缺對象、欄位或內容，先用 present_answer 的 clarification 和一個不帶斷言的問題問齊缺項，citationIds 可留空，等家長補充再寫入。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若目前對話已有答案，直接回答；引用短原句可用 messageTopology 的 quoteHistory。問某件事最後定下甚麼安排，即使同時要求引用舊話，先核對目前孩子的有效事實。未知記憶鍵名時用 read_memory_facts({})；若工具未載入，先載入 memory_facts。按意思選相關項，需要原句時按 factId 讀回。已有主題詞也可用 search_history(kind=memory_fact)。若目標是找某次對話，或事實未有答案，才查對話原文。search_history 的 followingMessages 是當時緊接的原話，currentFactTopics 是可按 factId 續讀的主題。引用原句用 present_answer，kind=private_reference，paragraphs=[{quoteHistory: 所選原句的識別}]。另寫回答時，每段引用支持該段的原話。需要按訊息 ID 續讀才載入 history，再用 read_history。"
             + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
-          outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions",
+          outputPolicy: "用 present_answer 直接回應本句。若只問可用的聊天語言或怎樣向助手提問，以 operation 回答操作問題，citationIds 留空。家長可用廣東話提問。實際照護建議逐段引用適用官方來源。回答文字不能執行操作。",
           conversationMode,
           turnBackground: formatTurnBackgroundForPrompt(turnBackground),
           ...(dailyNeeds.suppressedForUrgency || dailyNeeds.signals.length > 0 || dailyNeeds.suggestOptionalDiscussion ? { dailyNeedsDiscovery: dailyNeeds } : {}),
@@ -675,9 +687,10 @@ export function createProductAgent(options: {
           : ({ role: item.role, text: (item.text || (item.voice ? item.id === topicId ? "[本次使用者語音，原音訊隨本輪提供]" : "[較早語音；本輪未載入原音訊，勿猜內容]" : "")) + (item.file ? "\n[私人附件 " + JSON.stringify(item.file) + "; 使用 read_chat_file 讀取，不能由檔名猜內容]" : "") + (item.photo ? "\n[私人照片 " + JSON.stringify(item.photo) + (item.id === topicId ? "; 原圖隨本輪提供]" : "; 用 read_chat_photo 讀原圖，不猜內容]") : "") })),
         ...(discussion ? { requireDeliveryReview: true } : {}),
         toolCatalog: discussion ? { ...PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames] } : PRODUCT_AGENT_TOOL_CATALOG,
-        compactToolCatalog: discussion ? { ...COMPACT_PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...COMPACT_PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames, 'search_knowledge', 'read_knowledge_context'],
+        compactToolCatalog: discussion ? { ...COMPACT_PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...COMPACT_PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames, 'search_knowledge', 'find_official_material', 'read_knowledge_context'],
           groups: COMPACT_PRODUCT_AGENT_TOOL_CATALOG.groups.filter(group => group.id !== 'knowledge') } : COMPACT_PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
+          if (discussion && run.budget.remainingModelCalls < 2) throw new AgentStopped('discussion_budget');
           const modeToolOptions = conversationMode === "ephemeral"
             ? {
                 memory: {
@@ -752,6 +765,8 @@ export function createProductAgent(options: {
           return tools.tools;
         }, authorize, signal: replySignal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {
+          if (discussion && reason !== 'normal' && _context.budget.remainingModelCalls > 0)
+            await tools!.preparePartialDiscussion();
           rendered.value = await tools!.presentation();
           // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
           // Server finishes confirmation text on model_limit without a fifth present_answer call.
@@ -781,7 +796,7 @@ export function createProductAgent(options: {
             }
           }
           if (!rendered.value && reason === "model_limit" && _context.deliveryReview?.required && _context.budget.remainingModelCalls <= 1) {
-            throw new AgentStopped("delivery_review_budget");
+            throw new AgentStopped(discussion ? 'discussion_budget' : 'delivery_review_budget');
           }
           try {
             const revalidatedBackground = revalidateTurnBackground(turnBackground, { ..._context.scope, mode: conversationMode });

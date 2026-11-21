@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,12 +8,14 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { registeredSourceSettingsSchema, registeredSourceUrlSchema, sourceCardDefaultFrequencyMinutes, type RegisteredSourceCard } from '../../../src/shared/registered-source-card';
 import { AppDialog } from '../components/AppDialog';
 import { FormErrorSummary, FormFieldMessage } from '../components/FormErrorSummary';
-import { useContainerWidth } from '../components/useContainerWidth';
-import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from '../components/ui';
+import { LibraryAction, LibraryRow, LibrarySheet, SourceLibrary, type PersonalCardRows } from '../components/memory/SourceLibrary';
+import { AppRadioItem } from '../components/AppRadioItem';
+import { AppButton, AppTextField } from '../components/ui';
 import { chineseFont, colors, readingType, spacing } from '../theme';
 import { useProduction } from './ProductionProvider';
 import { useDomainEnvironment, useDomainWriteGuard } from './useDomainEnvironment';
 import { useSettingsRequests } from './SettingsDomainSupport';
+import { RegisteredSourceDirectory } from './RegisteredSourceDirectory';
 import { createRegisteredSourceCardsApi, RegisteredSourceCardsError, type SourceCardMutation, type SourceCardSettings } from './registered-source-cards-api';
 
 const kinds = [{ value: 'document', label: '單份文件' }, { value: 'directory', label: '文件目錄' }, { value: 'bulletin', label: '公告' }] as const;
@@ -31,25 +33,27 @@ type Pending = { kind: 'card'; input: SourceCardMutation } | { kind: 'credential
 const dateLabel = (value: string | null) => value ? new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false }) : '尚未有紀錄';
 export function sourceCardResultLabel(card: RegisteredSourceCard) {
   if (card.checking || card.nextCheckAt && Date.parse(card.nextCheckAt) <= Date.now()) return '巡查已排入，正在等候結果';
-  const labels = { changed: '已發現更新', unchanged: '未有更新', failed: '巡查未成功，請稍後重試', needs_login: '需要本人登入授權', payment_required: '需要本人先到網站付款', mfa_required: '需要本人先到網站完成雙重驗證', captcha_required: '需要本人先到網站完成人機驗證' };
+  const labels = { changed: '已發現更新', unchanged: '未有更新', failed: '上次巡查未能完成', needs_login: '需要本人登入授權', payment_required: '需要本人先到網站付款', mfa_required: '需要本人先到網站完成雙重驗證', captcha_required: '需要本人先到網站完成人機驗證' };
   return card.lastResult ? labels[card.lastResult.status] + (card.lastResult.documentCount === undefined ? '' : ` · ${card.lastResult.documentCount} 份文件`) : '尚未巡查';
 }
 
-export function RegisteredSourceCards({ active = true }: { active?: boolean }) {
+type RenderLibrary = (personal?: PersonalCardRows) => ReactNode;
+export function RegisteredSourceCards({ active = true, renderLibrary }: { active?: boolean; renderLibrary?: RenderLibrary }) {
   const { identityKey, userId, sessionGeneration, auth, account } = useProduction();
-  if (auth !== 'signedIn' || !identityKey || !userId || account.gate !== 'ready') return null;
-  return <SourceCards key={`${identityKey}:${sessionGeneration}`} active={active} />;
+  if (auth !== 'signedIn' || !identityKey || !userId || account.gate !== 'ready') return renderLibrary?.();
+  return <SourceCards key={`${identityKey}:${sessionGeneration}`} active={active} renderLibrary={renderLibrary} />;
 }
 
-function SourceCards({ active }: { active: boolean }) {
+function SourceCards({ active, renderLibrary }: { active: boolean; renderLibrary?: RenderLibrary }) {
   const env = useDomainEnvironment(), requests = useSettingsRequests(env, true);
+  const { actions } = useProduction();
   const api = useMemo(() => createRegisteredSourceCardsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const { sourceCard, sourceAction } = useLocalSearchParams<{ sourceCard?: string; sourceAction?: string }>();
-  const [items, setItems] = useState<RegisteredSourceCard[]>([]), [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [items, setItems] = useState<RegisteredSourceCard[]>([]);
   const [loaded, setLoaded] = useState(false), [notice, setNotice] = useState(''), [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState<RegisteredSourceCard | 'new' | null>(null), [authorizing, setAuthorizing] = useState<RegisteredSourceCard | null>(null);
   const [removing, setRemoving] = useState<RegisteredSourceCard | null>(null), [pending, setPending] = useState<Pending | null>(null);
-  const [opened, setOpened] = useState<string | null>(null), container = useContainerWidth();
+  const [opened, setOpened] = useState<string | null>(null), [management, setManagement] = useState(false);
   const [pendingCardMissing, setPendingCardMissing] = useState(false), frequencyEdited = useRef(false);
   const pendingRef = useRef(pending); pendingRef.current = pending;
   const deepLinkRead = useRef('');
@@ -69,17 +73,24 @@ function SourceCards({ active }: { active: boolean }) {
     if (error.status === 401 || error.code === 'identity_changed') env.accessError({ status: 401 });
     setNotice('本人登入或來源卡存取已失效，請重新登入及讀取。'); return true;
   };
-  const refresh = async (more = false, cardId?: string, openAuthorization = false) => {
+  const refresh = async (cardId?: string, openAuthorization = false) => {
     if (!env.userId) return;
     const request = requests.start(); if (!request) return;
     try {
       if (cardId) { const result = await api.get(env.userId, request.signal, cardId); if (!request.current()) return; upsert(result.card); if (openAuthorization && !pendingRef.current) { setOpened(result.card.cardId); setAuthorizing(result.card); credential.reset({ ...emptyCredential, loginUrl: result.card.url }); } }
       else {
-        const page = await api.list(env.userId, request.signal, more ? nextCursor ?? undefined : undefined);
-        if (!request.current()) return;
-        setItems(current => more ? [...current.filter(item => !page.items.some(next => next.cardId === item.cardId)), ...page.items] : page.items);
-        setNextCursor(page.nextCursor); setLoaded(true);
-        if (!more && sourceCard && !pendingRef.current && deepLinkRead.current !== deepLinkKey && z.uuid().safeParse(sourceCard).success) {
+        const cards = new Map<string, RegisteredSourceCard>(), seen = new Set<string>();
+        let cursor: string | undefined;
+        do {
+          const page = await api.list(env.userId, request.signal, cursor);
+          if (!request.current()) return;
+          for (const card of page.items) cards.set(card.cardId, card);
+          cursor = page.nextCursor ?? undefined;
+          if (cursor && seen.has(cursor)) throw Error('Repeated source card cursor');
+          if (cursor) seen.add(cursor);
+        } while (cursor);
+        setItems([...cards.values()]); setLoaded(true);
+        if (sourceCard && !pendingRef.current && deepLinkRead.current !== deepLinkKey && z.uuid().safeParse(sourceCard).success) {
           deepLinkRead.current = deepLinkKey;
           const result = await api.get(env.userId, request.signal, sourceCard); if (!request.current()) return;
           upsert(result.card); setOpened(result.card.cardId);
@@ -123,7 +134,7 @@ function SourceCards({ active }: { active: boolean }) {
     const scheduled = items.filter(item => item.checking || item.nextCheckAt).sort((a, b) => (a.checking ? 0 : Date.parse(a.nextCheckAt!)) - (b.checking ? 0 : Date.parse(b.nextCheckAt!)));
     const checking = scheduled[0]; if (!checking) return;
     const delay = checking.checking ? 5_000 : Math.min(2147483647, Math.max(5_000, Date.parse(checking.nextCheckAt!) - Date.now() + 1000));
-    const timer = setTimeout(() => { void refresh(false, checking.cardId); }, delay);
+    const timer = setTimeout(() => { void refresh(checking.cardId); }, delay);
     return () => clearTimeout(timer);
   }, [active, env.online, requests.busy, pending, items, failed]);
 
@@ -139,6 +150,7 @@ function SourceCards({ active }: { active: boolean }) {
       if (!request.current()) return;
       if (result.card) upsert(result.card);
       else if (operation.kind === 'card') setItems(current => current.filter(item => item.cardId !== operation.input.cardId));
+      if (operation.kind === 'card' && ['set_enabled', 'remove', 'create'].includes(operation.input.action)) setOpened(null);
       pendingRef.current = null; setPending(null); setEditing(null); setAuthorizing(null); setRemoving(null); settings.reset(emptySettings);
       setFailed(false); setNotice(operation.kind === 'credential' ? (operation.input.action === 'replace' ? '本人登入授權已保存。' : '本人登入授權已移除。')
         : operation.input.action === 'check_now' ? '已排入即時巡查，結果會在來源卡更新。' : operation.input.action === 'remove' ? '來源卡已移除。' : '來源卡設定已保存。');
@@ -188,19 +200,37 @@ function SourceCards({ active }: { active: boolean }) {
   const authCard = authorizing ?? (pending?.kind === 'credential' ? items.find(item => item.cardId === pending.cardId) : null);
   const authStale = authCard && items.some(item => item.cardId === authCard.cardId && item.revision !== authCard.revision);
   const settingsFields = [{ field: 'name' as const, label: '名稱' }, { field: 'kind' as const, label: '類型' }, { field: 'url' as const, label: '網址' }, ...(settings.watch('kind') !== 'document' ? [{ field: 'allowedPath' as const, label: '允許擷取的路徑（選填）' }] : []), { field: 'frequencyMinutes' as const, label: '巡查頻率（分鐘）' }];
-  const cardWidth = container.width >= 650 ? '32%' : container.width >= 340 ? '49%' : '100%';
-  return <View ref={container.ref} onLayout={container.onLayout} style={[styles.root, !active && styles.hidden]} aria-hidden={!active} pointerEvents={active ? 'auto' : 'none'}>
-    <SectionCard><SectionHeader title="本人來源卡" density="compact" action={!editing ? <AppButton label="新增來源" density="compact" disabled={!listWritable} onPress={() => openSettings('new')} /> : undefined} />
-      {(failed || items.length > 0 || (!loaded && !env.online)) && !editing ? <AppButton label="重新讀取來源卡" variant="quiet" density="compact" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} /> : null}
-      {sourceCard && z.uuid().safeParse(sourceCard).success ? <AppButton label="重新開啟指定來源" variant="quiet" disabled={!env.online || requests.busy || !!pending} onPress={() => { void refresh(false, sourceCard, sourceAction === 'authorize'); }} /> : null}
+  const selected = items.find(card => card.cardId === opened);
+  const row = (card: RegisteredSourceCard) => <LibraryRow key={card.cardId} title={card.name}
+    subtitle={kinds.find(kind => kind.value === card.kind)!.label + ' · ' + new URL(card.url).hostname} art={card.kind}
+    label={`開啟來源「${card.name}」`} onOpen={() => { setManagement(false); setOpened(card.cardId); }} disabled={!!pending}
+    action={card.enabled ? <LibraryAction icon="dots-horizontal" name={card.name + '的操作'} disabled={!!pending} onPress={() => { setManagement(true); setOpened(card.cardId); }} />
+      : <LibraryAction label="啟用" name={'啟用' + card.name} disabled={!listWritable} onPress={() => mutate(card, 'set_enabled')} />} />;
+  const status = <>
+    {!env.online ? <Text style={styles.meta}>目前離線，個人卡設定需連線後核對。</Text> : null}
+    {failed || !loaded && !env.online ? <AppButton label="重新讀取來源卡" variant="quiet" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} /> : null}
+    {sourceCard && z.uuid().safeParse(sourceCard).success ? <LibraryAction label="重新開啟指定來源" disabled={!env.online || requests.busy || !!pending} onPress={() => { void refresh(sourceCard, sourceAction === 'authorize'); }} /> : null}
+    {notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{notice}</Text> : null}
+    {!loaded && requests.busy ? <Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取個人卡…</Text> : null}
+  </>;
+  const personal: PersonalCardRows = { current: items.filter(card => card.enabled).map(row), inactive: items.filter(card => !card.enabled).map(row),
+    add: <LibraryAction label="新增個人卡" icon="plus" disabled={!listWritable} onPress={() => openSettings('new')} />, status, ready: loaded && env.online && !failed };
+  const close = () => {
+    if (pending || requests.writing) return;
+    setOpened(null); setManagement(false); setEditing(null); setAuthorizing(null); settings.reset(emptySettings); credential.reset(emptyCredential);
+  };
+  const title = editing === 'new' ? '新增個人卡' : editing ? '修改來源設定' : authCard ? '本人登入授權' : selected?.name ?? '來源卡操作';
+  return <>{renderLibrary ? renderLibrary(personal) : active ? <SourceLibrary personal={personal} ready /> : null}
+    {active && !removing && (editing || authCard || selected || pending) ? <LibrarySheet title={title} close={close} wide={!!editing || !!authCard} closeDisabled={!!pending || requests.writing}>
       {notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{notice}</Text> : null}
-      {!loaded && requests.busy && !requests.writing ? <Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取來源…</Text> : null}
       {editing ? <View style={styles.form}>
-        <Text accessibilityRole="header" style={styles.title}>{editing === 'new' ? '新增來源' : `修改「${editing.name}」`}</Text>
         {editing === 'new' ? <Text style={styles.meta}>這個來源的模型整理費用由你負擔。</Text> : null}
         <FormErrorSummary entries={settingsFields.flatMap(item => settings.formState.errors[item.field]?.message ? [{ ...item, message: String(settings.formState.errors[item.field]?.message) }] : [])} onFocus={field => settings.setFocus(field as keyof SettingsDraft)} />
         {settingsFields.map(item => <View key={item.field}><Controller control={settings.control} name={item.field} render={({ field, fieldState }) => item.field === 'kind'
-          ? <AppSelect label={item.label} value={field.value as SourceCardSettings['kind']} options={kinds} disabled={locked} invalid={!!fieldState.error} describedBy={fieldState.error ? `source-card-${item.field}-help` : undefined} onChange={kind => { if (editing === 'new' && !frequencyEdited.current) settings.setValue('frequencyMinutes', String(sourceCardDefaultFrequencyMinutes(kind))); field.onChange(kind); }} ref={field.ref} />
+          ? <View accessibilityRole="radiogroup" accessibilityLabel={item.label}>{kinds.map(kind => <AppRadioItem key={kind.value} {...kind} checked={field.value === kind.value} disabled={locked} onPress={() => {
+            if (editing === 'new' && !frequencyEdited.current) settings.setValue('frequencyMinutes', String(sourceCardDefaultFrequencyMinutes(kind.value)));
+            field.onChange(kind.value);
+          }} />)}</View>
           : <AppTextField label={item.label} accessibilityLabel={item.label} value={String(field.value)} onChangeText={value => { if (item.field === 'frequencyMinutes') frequencyEdited.current = true; field.onChange(value); }} onBlur={field.onBlur} ref={field.ref} disabled={locked} error={!!fieldState.error} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `source-card-${item.field}-help` : undefined}
             autoCapitalize={item.field === 'url' ? 'none' : undefined} autoCorrect={item.field === 'url' ? false : undefined} keyboardType={item.field === 'frequencyMinutes' ? 'number-pad' : item.field === 'url' ? 'url' : 'default'} /> } />
           <FormFieldMessage id={`source-card-${item.field}-help`} error={settings.formState.errors[item.field]?.message} /></View>)}
@@ -208,12 +238,10 @@ function SourceCards({ active }: { active: boolean }) {
         {settingsStale ? <Text style={styles.meta}>設定已有新版本；請先取消修改，再重新開啟目前設定。</Text> : null}
         <View style={styles.actions}><AppButton label="保存來源" disabled={!canWrite || !!settingsStale} onPress={() => { void saveSettings(); }} /><AppButton label="取消修改" variant="quiet" disabled={!!pending || requests.busy} onPress={() => { setEditing(null); settings.reset(emptySettings); }} /></View>
       </View> : null}
-      <View style={styles.deck}>{items.map(card => <Pressable key={card.cardId} style={({ pressed }) => [styles.cover, { width: cardWidth }, pressed && styles.coverPressed]} accessibilityRole="button" accessibilityLabel={`開啟來源「${card.name}」`} accessibilityState={{ expanded: opened === card.cardId, disabled: !!pending || requests.busy || !!editing || !!authorizing }} aria-expanded={opened === card.cardId} disabled={!!pending || requests.busy || !!editing || !!authorizing} onPress={() => setOpened(current => current === card.cardId ? null : card.cardId)}>
-        <Text style={styles.title}>{card.name}</Text><Text style={styles.meta}>{kinds.find(kind => kind.value === card.kind)?.label} · {card.enabled ? '已開啟' : '已關閉'}</Text>
-        <Text style={styles.body}>{sourceCardResultLabel(card)}</Text><Text style={styles.meta}>下次：{card.nextCheckAt ? dateLabel(card.nextCheckAt) : '未排期'}</Text>
-      </Pressable>)}</View>
-      {items.filter(card => card.cardId === opened).map(card => <View key={card.cardId} style={styles.card}>
-        <View style={styles.actions}><Text accessibilityRole="header" style={styles.title}>{card.name}</Text><AppButton label="收起來源" variant="quiet" density="compact" disabled={!!editing || !!authorizing || !!pending || requests.busy} onPress={() => setOpened(null)} /></View>
+      {!editing && !authCard && items.filter(card => card.cardId === opened).map(card => <View key={card.cardId} style={styles.card}>
+        {!management && card.enabled && env.userId && env.online && !env.sharedMode && <RegisteredSourceDirectory
+          key={JSON.stringify([env.identityKey, env.scopeKey, card.cardId, card.revision])} card={card} />}
+        {(!card.gap || card.gap.skipped || card.checking) && <Text style={styles.body}>{sourceCardResultLabel(card)}</Text>}
         <Text selectable style={styles.meta}>{card.url}</Text>
         <Text style={styles.meta}>{kinds.find(kind => kind.value === card.kind)?.label} · 每 {card.frequencyMinutes} 分鐘 · {card.enabled ? '巡查已開啟' : '巡查已關閉'} · {card.credentialRef ? '已提供本人登入授權' : '未提供登入授權'}</Text>
         {card.kind !== 'document' ? <Text style={styles.meta}>允許路徑：{card.allowedPath ?? '按來源入口限定'}</Text> : null}
@@ -222,17 +250,40 @@ function SourceCards({ active }: { active: boolean }) {
           ...(card.lastResult?.savedDocumentCount !== undefined ? [`已保存 ${card.lastResult.savedDocumentCount} 份`] : []),
           ...(card.lastResult?.indexedDocumentCount !== undefined ? [`可檢索 ${card.lastResult.indexedDocumentCount} 份`] : []),
         ].join(' · ')}</Text> : null}
-        <View style={styles.actions}>
-          <AppButton label="修改設定" variant="quiet" density="compact" disabled={!listWritable} onPress={() => openSettings(card)} />
-          <AppButton label={card.enabled ? '關閉巡查' : '開啟巡查'} variant="quiet" density="compact" disabled={!listWritable} onPress={() => mutate(card, 'set_enabled')} />
-          <AppButton label="即時巡查" variant="secondary" density="compact" disabled={!listWritable || !card.enabled || card.checking} onPress={() => mutate(card, 'check_now')} />
-          <AppButton label="本人登入授權" variant="quiet" density="compact" disabled={!listWritable} onPress={() => openAuthorization(card)} />
-          <AppButton label="移除來源" variant="quiet" density="compact" disabled={!listWritable} onPress={() => setRemoving(card)} />
-        </View>
+        {card.enabled && card.gap && !card.gap.skipped ? <View style={styles.form}>
+          <Text style={styles.body}>{{
+            unreadable: '巡查未能從這個位置讀到可引用的原文。', listing_changed: '目錄在讀取期間改變，尚欠這一段。',
+            file_too_large: '這份原件超出單檔讀取上限。', unavailable: '多次巡查仍未能讀取這個位置。',
+            limit: '這個位置超出一次巡查的讀取上限。',
+            needs_login: '這個位置需要本人登入。', mfa_required: '這個位置需要本人完成雙重驗證。',
+            captcha_required: '這個位置需要本人人機驗證。', payment_required: '網站要求先取得付費閱覽權。',
+          }[card.gap.reason]}</Text>
+          {card.gap.url !== card.url && <Text selectable style={styles.meta}>{card.gap.url}</Text>}
+          <View style={styles.actions}>
+            {!!env.childId && !env.sharedMode && <LibraryAction label="在助手對話跟進" disabled={locked} onPress={() => {
+              setOpened(null);
+              actions.prepareQuestion('請幫我跟進本人來源卡「' + card.name + '」（' + card.url + '）未能讀取的位置。');
+            }} />}
+            {card.gap.reason === 'needs_login' && <LibraryAction label="提供登入授權" disabled={!listWritable} onPress={() => openAuthorization(card)} />}
+            <LibraryAction label="跳過這次求助" disabled={!listWritable} onPress={() => {
+              if (card.gap) void execute({ kind: 'card', input: { action: 'skip_gap', cardId: card.cardId,
+                expectedRevision: card.revision, operationId: crypto.randomUUID(), checkId: card.gap.checkId } });
+            }} />
+          </View>
+        </View> : null}
+        {card.hint && <Text style={styles.meta}>{{ pending: '已收到位置，等候站內原文核實。', verified: '已在該位置找到可查的原文。', rejected: '未能從站內原文核實這個位置。' }[card.hint.status]}</Text>}
+        {management ? <View style={styles.actions}>
+          <LibraryAction label={card.enabled ? '停用個人卡' : '啟用個人卡'} disabled={!listWritable} onPress={() => mutate(card, 'set_enabled')} />
+          <LibraryAction label="修改設定" disabled={!listWritable} onPress={() => openSettings(card)} />
+          <LibraryAction label="即時巡查" disabled={!listWritable || !card.enabled || card.checking} onPress={() => mutate(card, 'check_now')} />
+          <LibraryAction label="本人登入授權" disabled={!listWritable} onPress={() => openAuthorization(card)} />
+          <LibraryAction label="重新讀取來源卡" disabled={!env.online || requests.busy} onPress={() => { void refresh(); }} />
+          <LibraryAction label="移除來源" disabled={!listWritable} onPress={() => setRemoving(card)} />
+        </View> : <LibraryAction label="管理個人卡" onPress={() => setManagement(true)} />}
       </View>)}
-      {nextCursor ? <AppButton label="載入更多本人來源" variant="quiet" disabled={locked} onPress={() => { void refresh(true); }} /> : null}
       {authCard ? <View style={styles.form}>
         <Text accessibilityRole="header" style={styles.title}>「{authCard.name}」本人登入授權</Text>
+        {selected ? <Text style={styles.meta}>{sourceCardResultLabel(selected)}</Text> : null}
         <Text selectable style={styles.body}>授權網域：{new URL(authCard.url).host}</Text>
         <Text style={styles.meta}>帳號及密碼只供這張來源卡登入，不會交給模型；送出後即清空，不回顯已保存密碼。付款、雙重驗證及人機驗證須由本人完成。</Text>
         <Controller control={credential.control} name="loginUrl" render={({ field, fieldState }) => <AppTextField label="登入頁網址" accessibilityLabel="登入頁網址" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} error={!!fieldState.error} aria-invalid={!!fieldState.error} aria-describedby="source-credential-login-url-help" disabled={!env.online || requests.busy || !!pending} autoCapitalize="none" autoCorrect={false} keyboardType="url" />} />
@@ -247,20 +298,17 @@ function SourceCards({ active }: { active: boolean }) {
           <AppButton label="關閉授權表單" variant="quiet" disabled={!!pending || requests.busy} onPress={() => { setAuthorizing(null); credential.reset(emptyCredential); }} /></View>
       </View> : null}
       {pending && !requests.writing ? <View style={styles.form}><Text style={styles.body}>原操作仍待確認。{pending.kind === 'credential' && pending.input.action === 'replace' ? '重試前，請在授權表單重新輸入同一帳號及密碼。' : ''}</Text>
-        <View style={styles.actions}><AppButton label="先讀回這張來源卡" variant="quiet" disabled={!env.online || requests.busy} onPress={() => { void refresh(false, pendingCardId); }} />
+        <View style={styles.actions}><AppButton label="先讀回這張來源卡" variant="quiet" disabled={!env.online || requests.busy} onPress={() => { void refresh(pendingCardId); }} />
           {!pendingCardMissing && (pending.kind !== 'credential' || pending.input.action === 'clear') ? <AppButton label="明確重試原操作" variant="secondary" disabled={!env.online || requests.busy} onPress={() => { void execute(pending, undefined, true); }} /> : null}
           {pendingCardMissing ? <AppButton label="清除本機等待狀態" variant="secondary" disabled={requests.busy} onPress={() => { pendingRef.current = null; setPending(null); setPendingCardMissing(false); setAuthorizing(null); credential.reset(emptyCredential); setNotice('已清除已移除來源的本機等待狀態。'); }} /> : null}</View></View> : null}
-    </SectionCard>
-    <AppDialog visible={!!removing} onDismiss={() => { if (!pending && !requests.busy) setRemoving(null); }}>
+    </LibrarySheet> : null}
+    <AppDialog visible={active && !!removing} onDismiss={() => { if (!pending && !requests.busy) setRemoving(null); }}>
       <AppDialog.Title>移除這張來源卡？</AppDialog.Title><AppDialog.Content><Text>移除「{removing?.name}」及其登入授權，並停止之後的巡查。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="保留來源" variant="quiet" disabled={!!pending || requests.busy} onPress={() => setRemoving(null)} /><AppButton label="確認移除來源" variant="danger" disabled={!canWrite || !removing} onPress={() => { if (removing) mutate(removing, 'remove'); }} /></AppDialog.Actions>
     </AppDialog>
-  </View>;
+  </>;
 }
-const styles = StyleSheet.create({ root: { minWidth: 0, gap: spacing.md }, hidden: { display: 'none' },
-  deck: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '2%', rowGap: spacing.md },
-  cover: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 12, backgroundColor: colors.paper },
-  coverPressed: { opacity: 0.82, borderColor: colors.ink },
+const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center' },
   card: { minWidth: 0, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.md, gap: spacing.sm },
   form: { minWidth: 0, gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },

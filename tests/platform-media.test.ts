@@ -2,14 +2,77 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPlatformMediaStore } from '../server/firestore-platform-media.ts';
 import { createPlatformMediaProcessor } from '../server/platform-media-processing.ts';
-import { readWebVtt } from '../server/platform-media-evidence.ts';
+import { loadMediaOriginals, readWebVtt } from '../server/platform-media-evidence.ts';
 import { createKnowledgeSourceFetcher } from '../server/knowledge-source-fetch.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { fhsMaterialWatches } from '../server/platform-materials.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { randomUUID } from 'node:crypto';
 import { knowledgeHash } from '../server/knowledge-inputs.ts';
-import { mediaPlaybackUrl } from '../src/shared/platform-media.ts';
+import { mediaPlaybackUrl, platformMediaLink } from '../src/shared/platform-media.ts';
+import { readLinkedOfficialPages, readOfficialMediaPage } from '../server/fhs-source-forms.ts';
+import { librarySeriesV3Page, librarySeriesV4Page, type PersonalLibraryPage } from '../src/shared/personal-library.ts';
+
+test('verified script pages are readable with analysis off and older catalogue clients receive the original links', async () => {
+  const url = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html';
+  const html = '<div id="content"><h2 class="title">Official title</h2><iframe src="https://www.youtube.com/embed/J9dAb6KPN2w"></iframe><div id="transcript"><h3>劇本</h3><h4 id="wcag-audio-toggle">Listen</h4><p>Speaker: first paragraph.</p><p>Second paragraph.</p></div></div>';
+  const read = readOfficialMediaPage(url, html)!;
+  assert.deepEqual(read.script?.paragraphs, ['Speaker: first paragraph.', 'Second paragraph.']);
+  assert.equal(read.page.transcriptUrl, url + '#transcript');
+  assert.equal(readOfficialMediaPage(url, html.replace(/<p>.*<\/p>/, ''))?.page.transcriptUrl, undefined);
+  const { database } = firestoreDomainFixture(), store = createPlatformMediaStore(database, 'test');
+  const id = 'fhs-12146';
+  await database.runTransaction(tx => store.reconcile(tx, id, [url], [read.page]));
+  let card = await database.runTransaction(tx => store.read(tx, id));
+  assert.equal(card.enabled, false);
+  assert.deepEqual(card.pages, [read.page]);
+  const view = { items: [{ media: card, sourceDateText: '04/2025' }], nextCursor: null, complete: true } as PersonalLibraryPage;
+  for (const legacy of [librarySeriesV3Page(view), librarySeriesV4Page(view)]) {
+    assert.deepEqual(legacy.items[0]?.media?.links, [url]);
+    assert.ok(!('pages' in legacy.items[0]!.media!) && !('sourceDateText' in legacy.items[0]!));
+  }
+  await database.runTransaction(tx => store.toggle(tx, id, true, card.revision));
+  await createPlatformMediaProcessor(store, 'test', async () => assert.fail('Untimed script must not dispatch video analysis'),
+    async () => [{ url, hash: knowledgeHash(html), transcript: 'Speaker: first paragraph.', captions: [] }])(id, new AbortController().signal);
+  card = await database.runTransaction(tx => store.read(tx, id));
+  assert.equal(card.clips?.length ?? 0, 0);
+  await database.runTransaction(tx => store.reconcile(tx, id, []));
+  assert.equal((await database.runTransaction(tx => store.read(tx, id))).pages, undefined);
+});
+
+test('direct links share one official page fetch and only inherit the verified player script', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html';
+  const direct = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
+  const html = '<div id="content"><h2 class="title">Official title</h2><iframe src="' + direct
+    + '"></iframe><div id="transcript"><p>Original paragraph.</p></div></div>';
+  let requests = 0;
+  const read = await readLinkedOfficialPages([direct, page], async url => {
+    assert.equal(url, page);
+    requests++;
+    return { status: 'response', response: { status: 200, contentType: 'text/html', body: Buffer.from(html) } };
+  }, new AbortController().signal);
+  assert.equal(requests, 1);
+  assert.deepEqual(read.pages.map(p => [p.url, p.transcriptUrl]), [[direct, page + '#transcript'], [page, page + '#transcript']]);
+  assert.equal(read.scripts.length, 1);
+  const changed = html.replace('zKcYlmle4gI', 'J9dAb6KPN2w');
+  assert.equal(readOfficialMediaPage(page, changed, direct), null);
+  assert.equal(readOfficialMediaPage(page, changed.replace('id="transcript"', ''), direct), null);
+});
+
+test('an official video directory is not a film and old publisher shortcuts keep their HTTPS player link', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/index.html';
+  const shortcut = 'http://youtu.be/0dnvyCJEGyE';
+  const direct = 'https://www.youtube.com/watch?v=0dnvyCJEGyE';
+  assert.equal(platformMediaLink(shortcut, page), direct);
+  assert.equal(platformMediaLink(shortcut), null);
+  assert.equal(platformMediaLink('http://somewhere.invalid/0dnvyCJEGyE', page), null);
+  const html = '<div id="content"><h2 class="title">Index</h2><a href="bf_vid_c4.html">First video</a></div>';
+  const read = await readLinkedOfficialPages([page, direct], async target => {
+    assert.equal(target, page);
+    return { status: 'response', response: { status: 200, contentType: 'text/html', body: Buffer.from(html) } };
+  }, new AbortController().signal);
+  assert.deepEqual(read, { links: [direct], pages: [], scripts: [] });
+});
 
 test('a fresh source check alone replaces discovered links and never starts media when disabled', async () => {
   const id = 'fhs-14799', definition = fhsMaterialWatches.find(w => w.id === id)!;
@@ -40,7 +103,7 @@ test('only enabled platform cards process media and both cards reuse one timed o
   let fetches = 0, calls = 0;
   const measured = [{ start: 1.25, end: 3.1, text: 'Example quote' }];
   const process = createPlatformMediaProcessor(store, 'test', async () => { calls++; return measured; }, async () => {
-    fetches++; return [{ url, transcript: 'Example quote', captions: [], hash: knowledgeHash(url), duration: 4 }];
+    fetches++; return [{ url, transcript: '', captions: [], hash: knowledgeHash(url), duration: 4 }];
   });
   for (const id of ids) {
     await database.runTransaction(tx => store.reconcile(tx, id, [url]));
@@ -70,6 +133,32 @@ test('published WebVTT timecodes outrank audio analysis and malformed times are 
   await createPlatformMediaProcessor(store,'test',async () => assert.fail('Captions should not use a model'),
     async () => [{url, hash: knowledgeHash(captions), captions, transcript:''}])(id,new AbortController().signal);
   assert.equal((await database.runTransaction(tx => store.read(tx,id))).clips?.[0]?.end, 3.5);
+});
+
+test('an official page and its direct video link bind captions to the same player after a second video is added', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html';
+  const first = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
+  const second = 'https://www.fhs.gov.hk/tc_chi/mulit_med/second.mp4';
+  const track = new URL('second.vtt', page).href;
+  const signal = new AbortController().signal;
+  let html = '<iframe src="https://www.youtube.com/embed/zKcYlmle4gI"></iframe><div id="transcript">Official script</div>';
+  const fetcher: NonNullable<Parameters<typeof loadMediaOriginals>[2]> = async url => {
+    assert.ok(url === page || url === track);
+    const body = url === page ? html : 'WEBVTT\n\n00:01.000 --> 00:02.000\nSecond video only\n';
+    return { status: 'response', response: { status: 200, contentType: url === page ? 'text/html' : 'text/vtt', body: Buffer.from(body) } };
+  };
+  const read = (url: string) => loadMediaOriginals(url, signal, fetcher);
+  const single = await read(first);
+  assert.equal(single[0]?.transcript, 'Official script');
+  assert.deepEqual(await read(page), single);
+
+  html += '<video><source src="' + second + '"><track kind="captions" srclang="zh" src="second.vtt"></video>';
+  const byPage = await read(page), byDirect = await read(first);
+  assert.deepEqual(byDirect, byPage.filter(original => original.url === first));
+  assert.equal(byDirect[0]?.transcript, '');
+  assert.deepEqual(byDirect[0]?.captions, []);
+  assert.deepEqual(byPage.find(original => original.url === second)?.captions,
+    [{ start: 1, end: 2, text: 'Second video only' }]);
 });
 
 test('an unresolved shared original keeps its previous clip while sibling streams and later links update', async () => {

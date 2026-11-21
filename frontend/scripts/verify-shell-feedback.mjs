@@ -32,7 +32,8 @@ try {
     assert.equal(await actions.getByRole("button").count(), 2);
     assert.equal(await actions.getByRole("link").count(), 0);
     assert.equal(await actions.getByLabel("已連接", { exact: true }).count(), 0);
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
+    const chatLink = page.getByRole("link", { name: width >= 900 ? "與 Agent 對話" : "助手", exact: true });
+    await chatLink.click();
     await page.getByRole("textbox", { name: "撰寫對話問題", exact: true }).waitFor();
     await page.evaluate(() => {
       window.homeFrames = []; const start = performance.now();
@@ -53,7 +54,7 @@ try {
     assert.equal(new Set(frames.map(frame => JSON.stringify(frame))).size, 1, "Returning home keeps its first-frame geometry at " + width);
     await assertFits(page, "returned home " + width);
     if (width === 390) await page.screenshot({ path: resolve(directory, "home-stable-390.png") });
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
+    await chatLink.click();
     const tabs = page.getByTestId("chat-answer").getByTestId("answer-source-tabs");
     await tabs.waitFor(); await tabs.scrollIntoViewIfNeeded();
     assert.equal((await tabs.boundingBox()).height, 48, "The horizontal wrapper keeps the source strip height");

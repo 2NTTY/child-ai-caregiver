@@ -77,6 +77,7 @@ Firestore `embed` 只處理本次獲准上限內的缺失片段，回報剩餘�
 
 - [KnowledgeFilter／KnowledgeResult](../src/shared/knowledge.ts) 由 Server 核定地域、分類及範圍。精確年齡用包含篩選；有來源的約數／查詢假設可找相交範圍，未知年齡亦可發現相關資料，但必須回傳 conditional／requires_clarification 語義。數字約數須連同原 asOf 推移為仍屬約數的當前檢索提示，不造生日；日期無效或未來便保留未知。原話及數值解讀不是已確認事實；檢索假設不改孩子檔案或精確任務資格。
 - 家庭查詢的上下限為 0–120 個月。官方教材如覆蓋更大年齡範圍，來源片段可保留高至 216 個月的原上限及是否包括端點，例如 0–18 歲生長圖表及十八歲以下兒童的定義。獨立審核仍須按每段的原頁核對。
+- 社署《保護兒童 你我有責》沿用同一張卡。現行原件取自社署程序指引頁所連的 2026 年 3 月雙語印本，新舊檔案分別按各自的網址及 SHA-256 核對。新版須按兩頁實物獨立整理及審核；舊版的審核紀錄繼續對應舊原件。[社署單張目錄](https://www.swd.gov.hk/tc/pubsvc/family/fcw_info/fcwprocedure/fcwp_mdco/index.html)
 - [KnowledgeRetriever](../server/knowledge-retriever.ts) 每個 Agent run 建立一次，重用現有 `AgentBudget`；兩次查詢 embedding／90 秒與生成及工具共用同一運行期限。同 query 只重用向量，來源狀態每次重新查 DB；引用在交付前再以 chunk／版本／hash 核對。這項 metadata 檢查不證明語義支持。
 - PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。P2-A04 在 SQL 內分別排名及限量取回，不因全庫候選超过 1,000 便失敗；引用重驗按確切 ID，與排名前綴分開。
 - 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。不提高現行平台／本人用量配置；本文件的舊驗收數字不作運行上限。

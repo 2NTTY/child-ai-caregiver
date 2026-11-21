@@ -1,11 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { retainWindowPassage, reviseWindowRegion } from '../server/fhs-reviewed-window.ts';
+import { hasReviewedWindowSource, registeredReviewedWindow, retainWindowPassage, reviseWindowRegion } from '../server/fhs-reviewed-window.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { planKnowledgePdfWindows, readKnowledgePdfWindow } from '../server/knowledge-pdf-windows.ts';
 import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
 
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+test('a C3 citation registration is bound to the assigned original and its held observation', () => {
+  const sourceId = 'pdf-65148c48ab4b294035fb977a';
+  const original = '0e53006aae167996589f71ee76fdec69efd5235e0f2a2d41b903c40e2100c580';
+  const observation = 'd7293e06acc48fe60fbdfdc1cc1b699fbfc77da75ca1fd8f7ea401d06fb77d5a';
+  const pin = manualPublicationPin(sourceId)!;
+  const registration = registeredReviewedWindow(pin, original, observation);
+  assert(hasReviewedWindowSource(sourceId));
+  assert(registration?.action === 'retain_window_quotes');
+  assert.deepEqual(registration.passages.map(p => p.page), [2,3,4,5,6,7,8]);
+  assert.equal(registeredReviewedWindow({...pin, lane:'C2'}, original, observation), undefined);
+  assert.equal(registeredReviewedWindow(pin, original, sha('other observation')), undefined);
+  assert.equal(registeredReviewedWindow(pin, sha('other operation'), observation), undefined);
+  assert.equal(hasReviewedWindowSource('pdf-b061777e96a27e5124285ba5'), false);
+});
+
 test('published passages require the complete registered selection in each original reading and its physical page', () => {
   const excerpt = 'Read the label.';
   const selection = {page:2, organizerStart:4, reviewerStart:6, length:excerpt.length, sha256:sha(excerpt), proof:'text_layer' as const,

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
-import { campaign } from '../server/knowledge-campaign-budget.ts';
+import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
 import { planKnowledgePdfWindows, readKnowledgePdfWindow } from '../server/knowledge-pdf-windows.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { fhsPdfReadKey, matchesFhsPdfObservation, openFhsPdfReads, resolveFhsPdfObservation } from './fhs-pdf-reads.ts';
@@ -63,17 +63,36 @@ export async function readRecordedWindowQuotes(range, replay, load) {
   });
 }
 
+export function canInspectHeldWindow(pin, saved) {
+  if (!saved?.windowed || saved.result?.status !== 'candidate_held') return false;
+  const code = saved.result.code;
+  if (pin?.lane === 'C2') return code === 'knowledge_window_quote_mismatch' || code === 'knowledge_review_failed';
+  return pin?.lane === 'C3' && code === 'knowledge_window_quote_mismatch' && saved.budget?.modelCalls === 2;
+}
+
+export function hasSettledGenerationOutput(row, sourceId, original, stageHash) {
+  return row?.kind === 'generation' && row.state === 'settled' && row.sourceId === sourceId
+    && row.operationFingerprint === original && row.stageHash === stageHash && !row.rejection
+    && Number.isSafeInteger(row.outputTokens) && row.outputTokens > 0;
+}
+
+export async function verifySettledWindowStage(attempts, sourceId, original, attemptKey) {
+  const stageHash = knowledgeReviewHash(attemptKey);
+  const ticket = await attempts.doc(campaignTicketId('generation', sourceId, original, stageHash)).get();
+  if (!hasSettledGenerationOutput(ticket.data(), sourceId, original, stageHash))
+    throw Error('fhs_evidence_generation_unconfirmed');
+}
+
 /** The operator supplies verified opening-page reads. The failed work, stages and slice remain read-only. */
 export async function inspectHeldWindowEvidence({ domain, refresh, job, pin, definition, original, saved, reads, indexHash }) {
   const { database, cipher, projectId, namespace } = domain;
-  if (pin?.lane !== 'C2' || pin.sourceId !== definition.id || pin.sourceId !== job.watchId || saved?.request?.operationFingerprint !== original
+  if (!canInspectHeldWindow(pin, saved) || pin.sourceId !== definition.id || pin.sourceId !== job.watchId || saved?.request?.operationFingerprint !== original
     || saved.request.watchId !== pin.sourceId || saved.request.publishMode !== 'live' || definition.audience !== 'public_noncommercial' || definition.kind !== 'pdf'
-    || new URL(definition.url).hostname !== 'www.fhs.gov.hk' || !saved?.windowed || saved.lease || saved.prepared || saved.receipt
-    || saved.result?.status !== 'candidate_held' || !['knowledge_window_quote_mismatch', 'knowledge_review_failed'].includes(saved.result.code))
+    || new URL(definition.url).hostname !== 'www.fhs.gov.hk' || saved.lease || saved.prepared || saved.receipt)
     throw Error('fhs_evidence_scope');
   const sourceId = pin.sourceId, parentHash = pin.sha256;
-  const binding = (await database.collection(namespace + '_knowledge_campaigns').doc(campaign)
-    .collection('publicationBindings').doc(sourceId).get()).data();
+  const ledger = database.collection(namespace + '_knowledge_campaigns').doc(campaign);
+  const binding = (await ledger.collection('publicationBindings').doc(sourceId).get()).data();
   if (binding?.operationFingerprint !== original || binding.lane !== pin.lane || binding.sourceId !== sourceId
     || binding.sha256 !== parentHash || binding.pages !== pin.pages || binding.workerGeneration !== job.workerGeneration || binding.revision !== job.revision)
     throw Error('fhs_evidence_operation_changed');
@@ -82,7 +101,7 @@ export async function inspectHeldWindowEvidence({ domain, refresh, job, pin, def
   if (!matchesFhsPdfObservation(source, snapshot) || observationHash(snapshot.items[0]) !== saved.result.observationHash)
     throw Error('fhs_evidence_observation_changed');
   const index = Math.ceil(saved.budget.modelCalls / 2) - 1;
-  const range = planKnowledgePdfWindows(pin.pages, saved.budget.maxModelCalls)[index];
+  const range = planKnowledgePdfWindows(pin.pages, saved.budget.maxModelCalls, saved.windowRangeLimit ?? 14)[index];
   if (!Number.isInteger(index) || !range) throw Error('fhs_evidence_failed_window');
   const collection = database.collection(namespace + '_knowledge_work');
   const ref = (...parts) => collection.doc(knowledgeReviewHash(parts));
@@ -100,6 +119,7 @@ export async function inspectHeldWindowEvidence({ domain, refresh, job, pin, def
   const replay = completeText => readKnowledgePdfWindow({ candidate, range, bytes, baseline: null, explicitAgeScope: true,
     sliceHash: descriptor.contentHash, textLayers: [], signal: new AbortController().signal, completeText });
   const load = async ({ system, user, attemptKey }) => {
+    if (pin.lane === 'C3') await verifySettledWindowStage(ledger.collection('attempts'), sourceId, original, attemptKey);
     const stage = await opened(ref('model', original, attemptKey));
     if (stage.state !== 'ready' || typeof stage.text !== 'string' || stage.requestHash !== knowledgeReviewHash({ system, user, attemptKey }))
       throw Error('fhs_evidence_stage_changed');

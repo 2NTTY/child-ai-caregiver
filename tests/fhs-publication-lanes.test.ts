@@ -97,6 +97,7 @@ test('the installed batch rejects a foreign source and the original catalogue sk
   const sequence = spawnSync(process.execPath, ['--import', 'data:text/javascript,' + encodeURIComponent(stub), 'scripts/fhs-catalog-batch.mjs'], { cwd: root, encoding: 'utf8' });
   assert.equal(sequence.status, 0, sequence.stderr);
   const dispatched = sequence.stdout.trim().split(/\r?\n/u).map(line => JSON.parse(line)[1]);
+  assert.deepEqual(dispatched.slice(0, 2), ['resource-6c18c8d7a17495', 'resource-d8149af7847e38']);
   const { lanes } = JSON.parse(readFileSync(new URL('knowledge/fhs-initial-publication-lanes.json', root), 'utf8'));
   assert.ok(dispatched.includes('pdf-c79a394b580ec9e870d63319'));
   for (const { sources } of lanes) for (const { sourceId } of sources) assert.ok(!dispatched.includes(sourceId), sourceId);

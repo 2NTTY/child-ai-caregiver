@@ -17,7 +17,7 @@ import { readAgentWorkSchema, type AgentHistoryMessage } from "../src/shared/age
 import type { ChatMessage } from "../src/shared/chat.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema, MAX_ANSWER_PARAGRAPHS } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
-import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
+import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor, KnowledgeQueryAge } from "../src/shared/knowledge.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
 import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
@@ -31,7 +31,7 @@ import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
-import { createQuestionDiscussion } from './chat-discussion.ts';
+import { createQuestionDiscussion, DiscussionMainTooLong, viewpointParameters } from './chat-discussion.ts';
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
@@ -55,6 +55,9 @@ const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kin
     originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
       .describe('Optional. Omit for a paraphrase. To quote a library original, copy a contiguous span exactly as returned, including its conditions and units.'),
     paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(MAX_ANSWER_PARAGRAPHS) });
+const discussionPresentationInput = chatPresentationInput.extend({
+  closingView: viewpointParameters.optional().describe('Submit the current speaker’s short contribution here alongside the separate main answer. The server assigns the speaker.'),
+});
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -537,11 +540,15 @@ export function createProductAgentTools(options: {
   async function guard<T>(operation: () => Promise<T>): Promise<import("./agent-runtime.ts").AgentToolResult> {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
-      if (error instanceof FamilyError && error.code === 'discussion_main_too_long' && discussion) return { status: 'rejected', data: {
-        code: error.code, maxParagraphs: discussion.maxMainParagraphs(),
-        nextAction: '先前的角色發言已保留。請把主回答整合至 ' + discussion.maxMainParagraphs() + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
+      if (error instanceof DiscussionMainTooLong) return { status: 'rejected', data: {
+        code: error.code, maxParagraphs: error.maxParagraphs,
+        nextAction: '先前的角色發言已保留。請把主回答整合至 ' + error.maxParagraphs + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
       } };
-      if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input",
+        ...(error.issues.some(issue => issue.message === 'Mixed paragraphs require individual kinds') && {
+          nextAction: 'kind=mixed 時，主答 paragraphs 的每一段均須填 kind。育兒建議段用 caregiving，保留該段適用的官方 citationIds，再提交。',
+        }),
+      } };
       if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId, ...(error.originalExcerpt && { originalExcerpt: error.originalExcerpt }),
         nextAction: '這個片段 ID 有效，但所填引句與已讀原文不符。若主回答是改述，省略 originalQuotes，保留各段的 citationIds。若要逐字引用，只選已讀原句。請刪去原件未支持的推論，再單獨呼叫 present_answer。',
@@ -632,7 +639,15 @@ export function createProductAgentTools(options: {
       })) throw new FamilyError(400, "citation_required");
       if (kind === 'public_information') {
         const quantitative = /\p{Decimal_Number}|[零〇一二兩三四五六七八九十百千萬半]+(?:個月|小時|分鐘|毫升|毫克|公斤|克|歲|日|次|度|年|月)/u.test(paragraph.text);
-        if (!paragraph.citationIds.some(id => liveEvidence.has(id) || evidence.has(id) && (!quantitative || evidence.get(id)!.chunk.treatment?.kind !== 'overview')))
+        if (!paragraph.citationIds.some(id => {
+          if (liveEvidence.has(id)) return true;
+          const source = evidence.get(id)?.chunk;
+          if (!source) return false;
+          if (!quantitative) return true;
+          if (source.applicability?.use !== 'original_lookup') return source.treatment?.kind !== 'overview';
+          const quote = quotes.get(id);
+          return Boolean(quote && paragraph.text === `《${source.scriptPassage?.title ?? source.title}》原文：「${quote}」`);
+        }))
           throw new FamilyError(400, 'citation_required');
       }
       if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id) && !liveEvidence.has(id)) && !run.images?.references().length && !run.voice) {
@@ -651,7 +666,8 @@ export function createProductAgentTools(options: {
         if (selectedEvidence.has(id) && !official) continue;
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
         const item = evidence.get(id);
-        if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
+        if (!item || official && (item.chunk.classification !== "official_guidance" || item.chunk.applicability?.use === 'original_lookup'))
+          throw new FamilyError(400, "invalid_citation");
       }
     }
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
@@ -710,6 +726,33 @@ export function createProductAgentTools(options: {
       presentation: { kind: 'private_reference', citationIds: [id] } };
   }
   const discussion = options.discussion ? createQuestionDiscussion(permitted, acceptPresentedAnswer) : undefined;
+  async function searchLibrary(query: string, classification: KnowledgeFilter['classification'], queryAge: KnowledgeQueryAge | undefined,
+    attemptKey: string | undefined, purpose?: KnowledgeFilter['purpose']) {
+    const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), queryAge,
+      { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
+        budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
+    const filter: KnowledgeFilter = { ...resolved.filter, classification, ...(purpose ? { purpose } : {}) };
+    const result = { complete: true, omittedChunks: 0, returned: 0, hasMore: false,
+      ...await retrieval.search(query, filter, attemptKey), queryContext: resolved.queryContext };
+    result.returned = result.chunks.length;
+    if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
+    const allowance = Math.max(0, budget.toolResponseCharacters - 512);
+    while (result.chunks.length && JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) {
+      result.chunks.pop(); result.omittedChunks++; result.complete = false; result.hasMore = true; result.returned = result.chunks.length;
+    }
+    if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
+    for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+    if (result.chunks.length > 0) {
+      deliveryReview.require("review");
+      if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
+    }
+    const progressSources = result.chunks
+      .map(chunk => toAgentProgressSource(chunk, "found"))
+      .filter((item): item is AgentProgressSource => item !== null)
+      .slice(0, 6);
+    if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
+    return result;
+  }
   const tools: AgentTool[] = [...discussion?.tools ?? []];
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;
@@ -903,30 +946,13 @@ export function createProductAgentTools(options: {
           if (run.trace && usable && !budget.signal.aborted) run.trace.markUsableSource(usable);
           return { acquisition: 'live', classification, sources, ...(limitations.length ? { limitations } : {}) };
         }
-        const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
-          { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
-            budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
-        const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
-        const result = { ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
-        result.returned = result.chunks.length;
-        if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
-        const allowance = Math.max(0, budget.toolResponseCharacters - 512);
-        while (result.chunks.length && JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) {
-          result.chunks.pop(); result.omittedChunks++; result.complete = false; result.hasMore = true; result.returned = result.chunks.length;
-        }
-        if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
-        for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
-        if (result.chunks.length > 0) {
-          deliveryReview.require("review");
-          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
-        }
-        const progressSources = result.chunks
-          .map(chunk => toAgentProgressSource(chunk, "found"))
-          .filter((item): item is AgentProgressSource => item !== null)
-          .slice(0, 6);
-        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
-        return result;
+        return searchLibrary(query, args.classification as KnowledgeFilter['classification'], args.queryAge as KnowledgeQueryAge | undefined,
+          context.queryEmbeddingAttemptKey);
       }) },
+    ...(options.background ? [] : [{ name: 'find_official_material', effect: 'read', description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.find_official_material,
+      parameters: z.strictObject({ query: shortText(300), queryAge: knowledgeQueryAgeSchema.optional() }), authorize: permitted,
+      execute: (args, context) => guard(async () => searchLibrary(assertPublicKnowledgeQuery(args.query as string, [...knownPrivateIdentifiers]),
+        'official_guidance', args.queryAge as KnowledgeQueryAge | undefined, context.queryEmbeddingAttemptKey, 'read_originals')) } satisfies AgentTool]),
     { name: "read_knowledge_context", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
       parameters: z.object({ anchorChunkId: z.uuid(), cursor: z.object({ versionId: z.uuid(), anchorChunkId: z.uuid(),
         afterKey: z.string().max(80).nullable(), chunkId: z.uuid().nullable(), offset: z.number().int().min(0).max(4000) }).strict().nullable().optional() }).strict(),
@@ -997,18 +1023,21 @@ export function createProductAgentTools(options: {
       }) },
 { name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；帳戶名冊或對話範圍的讀取結果會帶 presentation.kind 和 citationIds，用它們配上你自己撰寫的正文。回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
-      parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
-      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
+      parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs.' + (discussion ? ' Optional closingView takes {text,citationIds,kind?} for the current speaker.' : '') }],
+      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : discussion ? discussionPresentationInput : chatPresentationInput, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
         // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
         // and generator fields such as approved or skipReview are not in this schema.
         let raw = args;
+        let closing: AgentAnswer['paragraphs'][number] | undefined;
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
-          const wire = chatPresentationInput.parse(args);
+          const wire = discussion ? discussionPresentationInput.parse(args) : { ...chatPresentationInput.parse(args), closingView: undefined };
+          discussion?.checkPresentation(!!wire.closingView);
+          if (wire.closingView) closing = discussion!.closingParagraph(wire.closingView);
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
-            if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId)))
+            if (!source || quotes.has(quote.chunkId) || !(closing?.citationIds.includes(quote.chunkId) || wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId))))
               throw new FamilyError(400, 'invalid_citation');
             const spans = citedOriginalSpans(source);
             if (!spans.some(span => span.includes(quote.text)))
@@ -1044,7 +1073,7 @@ export function createProductAgentTools(options: {
         }
         const main = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
         const parsedRaw = discussion && main.kind !== 'no_action'
-          ? discussion.assemble({ ...main, kind: main.kind }) : main;
+          ? discussion.assemble({ ...main, kind: main.kind }, closing) : main;
         const parsed = parsedRaw.kind === "no_action" ? parsedRaw : {
           ...parsedRaw,
           paragraphs: parsedRaw.paragraphs.map(paragraph => ({
@@ -1077,6 +1106,7 @@ export function createProductAgentTools(options: {
         }
         if (parsed.kind !== "no_action") {
           acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
+          if (closing) discussion!.acceptClosing(closing);
           originalQuotes = quotes;
         }
         answer = parsed;
@@ -1344,10 +1374,24 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    discussionInstruction: discussion?.instruction,
+    discussionInstruction: discussion && ((finishing: boolean) => selectedOfficialHelp.size
+      ? '已選取正式求助入口，現在用 present_answer 直接提交所需的求助回覆。'
+      : discussion.instruction(finishing)),
+    beginDiscussionTurn: discussion?.beginNativeTurn,
+    discussionEndedEarly: () => !!discussion?.noTradeoff() || selectedOfficialHelp.size > 0,
+    nextDiscussionTool: discussion?.nextTool,
+    remainingDiscussionSpeakers: discussion?.remainingSpeakers,
+    async preparePartialDiscussion() {
+      const opening = discussion?.openingAnswer();
+      if (!discussion || !opening || answer) return;
+      const partial = discussion.assemble(opening);
+      await ensureConfirmedMemoryGrounding();
+      acceptPresentedAnswer(partial);
+      answer = partial;
+    },
     recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
-      : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','find_official_material','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+      : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "find_official_material", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
@@ -1440,8 +1484,22 @@ export function createProductAgentTools(options: {
         // Only labels appended from reviewed IDs should become interactive care links.
         const text=paragraph.text.replace(/\[(照護記錄|孩子資料) (\d+)\]/gu,(mark,kind,ordinal)=>
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
-        const labels = paragraph.citationIds.map(citationLabel).join('');
-        return labels ? text + ' ' + labels : text;
+        let body = text;
+        const labels: string[] = [];
+        for (const id of paragraph.citationIds) {
+          const label = citationLabel(id);
+          if (discussion && evidence.has(id)) {
+            const raw = '[' + id + ']';
+            if (body.includes(raw)) {
+              body = body.replaceAll(raw, label);
+              continue;
+            }
+            if (body.trimEnd().endsWith(label)) continue;
+          }
+          labels.push(label);
+        }
+        const suffix = labels.join('');
+        return suffix ? body + ' ' + suffix : body;
       });
       // Some private readers (chat history, selected records) expose a citation only
       // during presentation. Count revalidated selected originals, never inventory labels.

@@ -3,6 +3,24 @@ import { Pressable, type View } from "react-native";
 import type { DirectionalPressableProps } from "./DirectionalPressable";
 import { createPointerClickGate } from "./pointer-click-gate";
 
+// An action on pointerup can replace the pressed element before the browser
+// dispatches its click. Consume only this pointer's trailing click, even if
+// it lands on a newly exposed control.
+function suppressActivationClick(release: PointerEvent) {
+  const controller = new AbortController();
+  const options = { capture: true, signal: controller.signal };
+  const clear = () => controller.abort();
+  const timer = window.setTimeout(clear, 1000);
+  controller.signal.addEventListener("abort", () => window.clearTimeout(timer), { once: true });
+  document.addEventListener("pointerdown", clear, options);
+  document.addEventListener("keydown", clear, options);
+  document.addEventListener("click", event => {
+    clear();
+    if (event.detail === 0 || Math.hypot(event.clientX - release.clientX, event.clientY - release.clientY) > 4) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, options);
+}
+
 export function DirectionalPressable(props: DirectionalPressableProps) {
   const node = useRef<View>(null), latest = useRef(props); latest.current = props;
   // Navigation can replace listeners between pointerup and its compatibility click.
@@ -44,11 +62,17 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
       const gesture = pointer; pointer = null;
       const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
       const dragged = gesture.moved || Math.hypot(dx, dy) > 8;
-      if (dragged || gesture.held) clickGate.suppressNextClick();
+      // A touch can end without a compatibility click after the control was dragged.
+      const activate = latest.current.activateOnPointerUp && !latest.current.disabled && !dragged && !gesture.held;
+      if (dragged || gesture.held || activate) clickGate.suppressNextClick();
       if (element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId);
       // A stationary long press leaves the choices open for a separate tap.
       if (gesture.held && !dragged) return;
       latest.current.onGestureEnd(dx, dy, dragged);
+      if (activate) {
+        suppressActivationClick(event);
+        latest.current.onPress();
+      }
     };
     const click = (event: MouseEvent) => {
       // Keyboard and assistive activation do not belong to the cancelled pointer.

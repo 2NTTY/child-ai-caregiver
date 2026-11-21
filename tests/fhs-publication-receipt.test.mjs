@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
-import { verifyFhsPdfPages, readFhsDelivery } from '../scripts/fhs-publication-receipt.mjs';
+import { confirmOriginalGenerations, verifyFhsPdfPages, readFhsDelivery } from '../scripts/fhs-publication-receipt.mjs';
+import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { campaignTicketId } from '../server/knowledge-campaign-budget.ts';
+import { firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const blob = Buffer.from('official test file');
@@ -10,6 +14,13 @@ const chunk = { key: 'part', sourceExcerpt: 'the complete quote', pageStart: 1, 
 const metadata = { sourceId: 'pdf-test', versionId: 'version', versionHash: 'version-hash', url: 'https://example.test/file.pdf' };
 const identities = [{ key: 'part', chunkId: 'chunk', contentHash: 'chunk-hash' }];
 const source = { ...metadata, extraction: { contentHash: digest, totalPages: 2 }, chunks: [chunk] };
+
+test('the same undecoded glyph marker in a stored quote and its page cannot verify a citation', async () => {
+  const quote = 'printed \ufffd passage';
+  const result = await verifyFhsPdfPages(metadata, {...source, chunks:[{...chunk,sourceExcerpt:quote}]},
+    identities, [], {sha256:digest, pages:2, bytes:blob.length}, pagePorts(quote));
+  assert.equal(result.pages[0].proof, 'unreadable_excerpt');
+});
 
 function pagePorts(secondPage = 'the complete quote') {
   return {
@@ -71,7 +82,7 @@ test('a separate active edition cannot turn a held operation into a publication'
   }),/operation_binding/);
 });
 
-test('a published receipt binds the committed observation, family edition and every required vector', async () => {
+test('a published receipt binds the committed observation, family edition and every required vector', async t => {
   const input = { sourceId: metadata.sourceId, originalOperation: sha('operation') };
   const observationHash = sha('observation');
   const work = { budget: { modelCalls: 2 }, receipt: { state: 'committed', observationHash },
@@ -87,6 +98,99 @@ test('a published receipt binds the committed observation, family edition and ev
   assert.equal(result.readback, 'verified');
   assert.equal(result.vectors.exported, 1);
   assert.equal(result.pdf.pages[0].proof, 'text_exact');
+  await t.test('a 36-page edition binds every window to two settled original readings', async () => {
+    const totalPages = 36;
+    const windows = planKnowledgePdfWindows(totalPages, 6).map(({ first, last, firstRead, lastRead }) => {
+      const pages = Array.from({ length: last - first + 1 }, (_, i) => ({ page: first + i, status: 'content', reason: 'review on original page' }));
+      return { parentHash: digest, method: PDF_WINDOW_METHOD, first, last, firstRead, lastRead, sliceHash: sha('slice ' + first),
+        pages, organizePages: pages.map(p => ({...p, reason:'organizer on original page'})),
+        organizeKey:'knowledge-window-organize:' + sha('organize ' + first), reviewKey:'knowledge-window-review:' + sha('review ' + first) };
+    });
+    const provenance = { windows, organizeAttemptKey: 'window-set:' + knowledgeReviewHash(windows.map(w => w.organizeKey)),
+      reviewAttemptKey: 'window-set:' + knowledgeReviewHash(windows.map(w => w.reviewKey)) };
+    const longSource = { ...source, extraction: { ...source.extraction, totalPages } };
+    const expectedKeys = windows.flatMap(w => [w.organizeKey, w.reviewKey]);
+    const tickets = new Map(expectedKeys.map(key => {
+      const stageHash = knowledgeReviewHash(key), sourceId = input.sourceId, operationFingerprint = input.originalOperation;
+      return [campaignTicketId('generation',sourceId,operationFingerprint,stageHash),
+        {kind:'generation',state:'settled',sourceId,operationFingerprint,stageHash,outputTokens:300}];
+    }));
+    const attempts = {doc: id => ({id}), firestore: {getAll: async (...refs) => {
+      const options = refs.pop();
+      assert(options.fieldMask.includes('outputTokens'));
+      return refs.map(({id}) => ({id, data:() => tickets.get(id)}));
+    }}};
+    const read = (proof = provenance, delivery = input, firstDispatchFrom) => readFhsDelivery(delivery,
+      { ...ports, pin: { ...ports.pin, pages: totalPages }, active: async () => ({ ...edition, source: longSource }),
+        extract: async (...args) => ({ ...await ports.extract(...args), totalPages }),
+        exportEdition: async () => ({ ...archive, source: longSource }), verifyRepair: async () => true,
+        inspect: async () => ({ ...work, windowed: true, firstDispatchFrom, prepared: { ...work.prepared, provenance: proof } }),
+        confirmOriginalGenerations: (id, original, stages) => confirmOriginalGenerations(attempts, id, original, stages) });
+    const { pdf } = await read();
+    assert.deepEqual(pdf.recordedWindowReadings.map(w => [w.first, w.last, w.firstRead, w.lastRead]), [[1,14,1,15],[15,28,14,29],[29,36,28,36]]);
+    assert.deepEqual(pdf.recordedWindowReadings.flatMap(w => w.physicalPages), Array.from({length:36}, (_,i) => i+1));
+    for (const [i, w] of pdf.recordedWindowReadings.entries()) {
+      assert.equal(w.sliceHash, windows[i].sliceHash);
+      assert.deepEqual(w.organize, {stageHash: knowledgeReviewHash(windows[i].organizeKey), pageFindingsSha256: knowledgeReviewHash(windows[i].organizePages)});
+      assert.deepEqual(w.review, {stageHash: knowledgeReviewHash(windows[i].reviewKey), pageFindingsSha256: knowledgeReviewHash(windows[i].pages)});
+    }
+    assert(!JSON.stringify(pdf.recordedWindowReadings).includes('on original page'));
+    for (const changed of [
+      {...provenance, windows: windows.slice(0,2)},
+      {...provenance, windows: windows.map((w,i) => i === 1 ? {...w, firstRead: 15} : w)},
+      {...provenance, windows: windows.map((w,i) => i === 2 ? {...w, parentHash:sha('other')} : w)},
+      {...provenance, windows: windows.map((w,i) => i === 0 ? {...w, pages:w.pages.slice(1)} : w)},
+      {...provenance, windows: windows.map((w,i) => i === 1 ? {...w, organizePages:w.organizePages.map(p => ({...p,status:'unreadable'}))} : w)},
+      {...provenance, organizeAttemptKey:provenance.reviewAttemptKey},
+      {...provenance, retainedDraft:{priorWork:'earlier'}},
+    ]) assert.equal((await read(changed)).pdf.recordedWindowReadings, undefined);
+    assert.equal((await read(provenance,{...input,deliveryOperation:sha('repair')})).pdf.recordedWindowReadings, undefined);
+    const firstDispatch = {...input, deliveryOperation:firstDispatchWorkId(input.originalOperation)};
+    assert.deepEqual((await read(provenance, firstDispatch, input.originalOperation)).pdf.recordedWindowReadings, pdf.recordedWindowReadings);
+    assert.equal((await read(provenance, firstDispatch, sha('other parent'))).pdf.recordedWindowReadings, undefined);
+    assert.equal((await read(provenance, {...input, deliveryOperation:sha('repair')}, input.originalOperation)).pdf.recordedWindowReadings, undefined);
+    const [lastId, lastTicket] = [...tickets].at(-1);
+    for (const replacement of [{...lastTicket,state:'reserved'}, {...lastTicket,outputTokens:0}, {...lastTicket,sourceId:'another-source'},
+      {...lastTicket,operationFingerprint:sha('other operation')}, {...lastTicket,rejection:{httpStatus:504}}, undefined]) {
+      tickets.set(lastId,replacement);
+      const receipt = await read();
+      assert.equal(receipt.readback, 'verified');
+      assert.equal(receipt.pdf.recordedWindowReadings, undefined);
+      assert.equal((await read(provenance, firstDispatch, input.originalOperation)).pdf.recordedWindowReadings, undefined);
+    }
+  });
+  await t.test('long whole-PDF receipts identify the original organizer and reviewer and every physical page', async () => {
+    const totalPages = 24;
+    const findings = Array.from({length: totalPages}, (_, i) => ({page: i + 1, finding: 'Checked page ' + (i + 1)}));
+    const coverage = { pages: findings, unreadablePages: [] };
+    const provenance = { organizeAttemptKey: 'knowledge-organize:' + sha('organizer'), reviewAttemptKey: 'knowledge-review:' + sha('reviewer'),
+      nativePdf: { contentHash: digest, organize: coverage, review: { ...coverage, pages: findings.map(f => ({ ...f, finding: `Independent check ${f.page}` })) } } };
+    const longSource = { ...source, extraction: { ...source.extraction, totalPages } };
+    const longPorts = { ...ports, pin: { ...ports.pin, pages: totalPages },
+      active: async () => ({ ...edition, source: longSource }), exportEdition: async () => ({ ...archive, source: longSource }),
+      extract: async (...args) => ({ ...await ports.extract(...args), totalPages }),
+      inspect: async () => ({ ...work, prepared: { ...work.prepared, provenance } }) };
+    const longReceipt = await readFhsDelivery(input, longPorts);
+    assert.deepEqual(longReceipt.pdf.recordedReadings.organize.physicalPages, findings.map(f => f.page));
+    assert.deepEqual(longReceipt.pdf.recordedReadings.review.physicalPages, findings.map(f => f.page));
+    assert.equal(longReceipt.pdf.recordedReadings.organize.stageHash, sha(JSON.stringify(provenance.organizeAttemptKey)));
+    assert.equal(longReceipt.pdf.recordedReadings.review.stageHash, sha(JSON.stringify(provenance.reviewAttemptKey)));
+    assert.notEqual(longReceipt.pdf.recordedReadings.organize.pageFindingsSha256, longReceipt.pdf.recordedReadings.review.pageFindingsSha256);
+    assert(!JSON.stringify(longReceipt.pdf.recordedReadings).includes('Checked page'));
+    for (const change of [
+      { reviewAttemptKey: provenance.organizeAttemptKey },
+      { retainedDraft: { priorWork: 'other' } },
+      { nativePdf: { ...provenance.nativePdf, contentHash: sha('another original') } },
+      { nativePdf: { ...provenance.nativePdf, review: { ...coverage, pages: [...findings.slice(0,-1),findings[0]] } } },
+      { nativePdf: { ...provenance.nativePdf, review: { ...coverage, unreadablePages: [3] } } },
+    ]) {
+      const partial = await readFhsDelivery(input, { ...longPorts, inspect: async () =>
+        ({ ...work, prepared: { ...work.prepared, provenance: { ...provenance, ...change } } }) });
+      assert.equal(partial.pdf.recordedReadings, undefined);
+    }
+    const repaired = await readFhsDelivery({ ...input, deliveryOperation: sha('repair') }, { ...longPorts, verifyRepair: async () => true });
+    assert.equal(repaired.pdf.recordedReadings, undefined);
+  });
   await assert.rejects(readFhsDelivery(input, { ...ports, inspect: async () => ({ ...work, receipt: null }) }), /publication_mismatch/);
   await assert.rejects(readFhsDelivery(input, { ...ports, exportEdition: async () => ({ ...archive, embeddings: [] }) }), /export_mismatch/);
   assert.equal((await readFhsDelivery(input, { ...ports, active: async () => ({ ...edition, current: false }) })).readback, 'edition_not_current');

@@ -162,7 +162,8 @@ export function shouldAutoNotifyTimelyEvent(
   classification: KnowledgeClass,
   timelyEvent?: TimelyEventLifecycle | null,
 ): boolean {
-  return classification !== "recent_information" || timelyEvent?.kind !== "news";
+  // Legacy timely editions lack kind metadata; retrieval already treats them as ordinary news.
+  return classification !== "recent_information" || (timelyEvent?.kind ?? "news") !== "news";
 }
 
 export function proactiveKindForTimelyEvent(

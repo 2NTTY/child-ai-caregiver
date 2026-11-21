@@ -92,7 +92,11 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
     case 'registered-source-card': {
       const row = sourceCardRecord.parse(raw);
       check(scope.childId === SYSTEM.childId && id === sourceRecordId(scope.ownerUserId, sourceCardId(row)) && version === sourceRevision(row));
-      const next = target && !row.removed ? { ...row, lease: null, finished: null, card: { ...row.card, enabled: false, credentialRef: null, nextCheckAt: null } } : row;
+      let next = row;
+      if (target && !row.removed) {
+        const { methods, gap, hint, ...settings } = row.card;
+        next = { ...row, lease: null, finished: null, card: { ...settings, enabled: false, credentialRef: null, nextCheckAt: null } };
+      }
       value = next; Object.assign(metadata, sourceCardMetadata(outputScope, next)); break;
     }
     case 'registered-source-operation': {

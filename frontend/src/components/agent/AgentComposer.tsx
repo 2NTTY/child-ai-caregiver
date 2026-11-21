@@ -11,7 +11,7 @@ import { AppDialog } from "../AppDialog";
 import { AppButton } from "../ui";
 import { AssistantAttachmentPreview } from "./AssistantAttachmentPreview";
 import { AssistantInputDialog } from "./AssistantInputDialog";
-import { AgentInputToolbar, AgentVoiceControl } from "./AgentInputToolbar";
+import { AgentVoiceControl, InputControl } from "./AgentInputToolbar";
 import { ChatComposerInput, type ChatComposerInputHandle } from "./ChatComposerInput";
 import { MotionDisclosure } from "../../motion";
 import { useInteractionDensity } from "../useInteractionDensity";
@@ -23,8 +23,8 @@ type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focu
 type SendFocusTicket = { serial: number; document: Document; dispose(): void };
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabled = false, stopTarget, queueAction, discussionControl, compact, draft, attachments, onChangeDraft, onPreview, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
-  discussionControl?: ReactNode;
+export function AgentComposer({ embedded = false, centered = false, enabled, allowTyping = false, onStop, stopDisabled = false, stopTarget, queueAction, discussionControl, compact, draft, attachments, onChangeDraft, onPreview, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+  centered?: boolean; embedded?: boolean; discussionControl?: ReactNode;
   queueAction?: { queued: boolean; press(): void };
   allowTyping?: boolean; onStop?(): void; stopDisabled?: boolean; stopTarget?: string;
   enabled: boolean; compact: boolean; draft: string; attachments: readonly AssistantAttachment[]; onChangeDraft: (value: string) => void; onPreview: () => void | Promise<void>;
@@ -146,17 +146,17 @@ export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabl
     setSuggestionsExpanded(false);
     requestAnimationFrame(() => input.current?.focus());
   }
-  return <View ref={composer} testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer]}>
-    <View pointerEvents="box-none" style={[styles.composerContent, compact && styles.mobileComposerContent]}>
+  return <View ref={composer} testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer, centered && styles.centered, embedded && styles.embedded]}>
+    <View pointerEvents="box-none" style={[styles.composerContent, compact && styles.mobileComposerContent, embedded && styles.embeddedContent]}>
     <View testID="chat-composer-panel" style={[styles.panel, inputFocused && styles.panelFocused]}>
     <AssistantAttachmentPreview attachments={attachments} enabled={enabled && !voiceOpen} onRemove={onRemoveAttachment} onReplace={replaceAttachment} />
     {enabled ? <VoiceCapture ref={voiceCapture} visible={voiceOpen} onDismiss={() => { setVoiceOpen(false); setReplacement(null); }} onPick={addAttachment} /> : null}
     {photoError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
-    <ChatComposerInput onAttachment={enabled && !voiceOpen && !filesUnavailableReason ? addAttachment : undefined} onAttachmentError={setPhotoError} onStop={stopDisabled ? undefined : onStop} stopTarget={stopTarget} ref={input} onSubmit={() => queueAction ? (!queueAction.queued && queueAction.press()) : preview(true)} canSubmit={canPreview || !!queueAction && !queueAction.queued}
+    <ChatComposerInput autoFocus={embedded} onAttachment={enabled && !voiceOpen && !filesUnavailableReason ? addAttachment : undefined} onAttachmentError={setPhotoError} onStop={stopDisabled ? undefined : onStop} stopTarget={stopTarget} ref={input} onSubmit={() => queueAction ? (!queueAction.queued && queueAction.press()) : preview(true)} canSubmit={canPreview || !!queueAction && !queueAction.queued}
       value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
       disabled={!enabled && !allowTyping} />
-    <View style={styles.composerActions}><View testID="composer-attachment-actions" style={styles.leftActions}><AgentInputToolbar disabled={!enabled || voiceOpen} compact={touchControls} includeVoice={false} onFiles={() => { setReplacement(null); setInputDialog("file"); }} onVoice={() => beginVoice()}
-      onPickPhoto={original => addAttachment(photoAttachment(original))} onPhotoError={setPhotoError} captureOriginal={captureOriginal} filesUnavailableReason={filesUnavailableReason} voiceUnavailableReason={voiceUnavailableReason} />
+    <View style={styles.composerActions}><View testID="composer-attachment-actions" style={styles.leftActions}><InputControl label="加入附件" icon="plus" disabled={!enabled || voiceOpen || !!filesUnavailableReason} hint={filesUnavailableReason}
+      compact={touchControls} onPress={() => { setReplacement(null); setInputDialog("file"); }} />
       {suggestionsAvailable && !hasDraft ? <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
@@ -188,7 +188,7 @@ export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabl
     </ScrollView></MotionDisclosure>
     </View>
     </View>
-    <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
+    <AssistantInputDialog captureOriginal={captureOriginal} kind={inputDialog} enabled={enabled} onPick={addAttachment}
       onDismiss={() => { setInputDialog(null); setReplacement(null); }} />
     <Portal><AppDialog visible={replacement?.kind === "photo" && enabled} onDismiss={() => setReplacement(null)}>
       <AppDialog.Title>更換未送出照片</AppDialog.Title><AppDialog.Content>
@@ -200,6 +200,8 @@ export function AgentComposer({ enabled, allowTyping = false, onStop, stopDisabl
 
 const styles = StyleSheet.create({
   composer: { flexShrink: 0, zIndex: 1, marginTop: -chatLayout.composerOverlap, backgroundColor: "transparent", paddingTop: 12, paddingBottom: 12 },
+  centered: { marginTop: 0 },
+  embedded: { marginTop: 0, paddingVertical: 0 }, embeddedContent: { paddingHorizontal: 0 },
   mobileComposer: { paddingTop: 8, paddingBottom: 8 },
   composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
   mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
   queuedLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   stopCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: chatColors.ink, alignItems: "center", justifyContent: "center" },
   stopSquare: { width: 13, height: 13, borderRadius: 2, backgroundColor: chatColors.surface },
-  sendCircle: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
+  sendCircle: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
   photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },

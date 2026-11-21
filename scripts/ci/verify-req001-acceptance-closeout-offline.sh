@@ -42,7 +42,7 @@ TEST_FILES=(
   tests/knowledge-source-parser.test.ts
   tests/library-citation-roundtrip.test.mjs
 )
-TEST_CASES=(10 8 2 9 7 8 3 6 13 4 15 4)
+TEST_CASES=(10 8 2 9 7 8 3 10 13 4 15 5)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

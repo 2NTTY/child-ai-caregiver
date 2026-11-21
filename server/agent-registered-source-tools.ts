@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { RegisteredSourceCard, RegisteredSourceCommand } from '../src/shared/registered-source-card.ts';
-import { sourceCardDefaultFrequencyMinutes } from '../src/shared/registered-source-card.ts';
+import { registeredSourceUrlSchema, sourceCardDefaultFrequencyMinutes } from '../src/shared/registered-source-card.ts';
 import type { AgentTool, AgentToolResult } from './agent-runtime.ts';
 import type { ChatDeliveryVerifiedOperation } from './chat-delivery-review.ts';
 import { FirestoreDomainError, firestoreDomainUuid } from './firestore-domain-data.ts';
@@ -26,10 +26,16 @@ const registration = z.strictObject({
 });
 const management = z.strictObject({
   cardId: z.uuid(), expectedRevision: z.int().min(1),
-  action: z.enum(['pause', 'resume', 'check_now', 'change_frequency', 'rename']),
+  action: z.enum(['pause', 'resume', 'check_now', 'change_frequency', 'rename', 'suggest_location', 'skip_gap']),
+  url: registeredSourceUrlSchema.optional(), checkId: z.uuid().optional(),
   frequencyMinutes: frequency.optional(), name: z.string().trim().min(1).max(160).optional(),
 });
 const rejected = (reason: string): AgentToolResult => ({ status: 'rejected', data: { reason } });
+function ownerSupplied(url: string, messages: readonly string[]) {
+  return messages.some(message => (message.match(/https:\/\/[^\s<>"“”「」『』（）。，、！？]+/giu) ?? []).some(value => {
+    try { return new URL(value).href === url || new URL(value.replace(/[.,;!?)]+$/u, '')).href === url; } catch { return false; }
+  }));
+}
 function view(card: RegisteredSourceCard) {
   const { credentialRef, ...settings } = card;
   return { ...settings, hasLogin: !!credentialRef };
@@ -70,7 +76,7 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
       tool, summary: describe(card) });
     return { status: 'succeeded', reference: card.cardId, data: { card: view(card), operationId: command.operationId } };
   }
-  add('read_source_cards', '查看本人在「記憶與參考」設定的來源卡、版本、檢查頻率、最近結果及下次檢查時間。', z.strictObject({
+  add('read_source_cards', '查看本人的來源卡、巡查結果、已驗讀法及原文版本、仍欠的位置和線索核實結果。', z.strictObject({
     cardId: z.uuid().optional(), cursor: z.string().max(512).optional(),
   }), true, async ({ cardId, cursor }) => {
     if (typeof cardId === 'string') {
@@ -96,7 +102,7 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
         seen.add(card.seriesId);
         listed.set(card.seriesId, card);
         const { seriesId, name, publisher, mode, enabled } = card;
-        return [{ seriesId, name, publisher, mode, enabled }];
+        return [{ seriesId, name, publisher, mode, enabled, ...(card.childHealth ? { adopted: card.childHealth.adopted, documents: card.childHealth.total } : {}) }];
       });
       const nextCursor = page.next ? identity('platform-page', page.next, url ?? '') : null;
       if (nextCursor && page.next) cursors.set(nextCursor, { after: page.next, url, seen });
@@ -116,13 +122,9 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
   }
   add('register_source_card', '家長交代定期追蹤自備網址時，將它存為本人來源卡。平台已發布的卡用 read_platform_source_cards 及 join_platform_source_card 免費加入。只讀一次的問題無須訂閱。頻率以分鐘表示。', registration, false, async args => {
     const settings = registration.parse(args);
-    const supplied = [userMessage, ...previousOwnerMessages].flatMap(message =>
-      message.match(/https:\/\/[^\s<>"“”「」『』（）。，、！？]+/giu) ?? []);
     let url: string;
     try { url = new URL(settings.url).href; } catch { return rejected('invalid_source_url'); }
-    if (!supplied.some(value => {
-      try { return new URL(value).href === url || new URL(value.replace(/[.,;!?)]+$/u, '')).href === url; } catch { return false; }
-    })) return rejected('source_url_required_from_user');
+    if (!ownerSupplied(url, [userMessage, ...previousOwnerMessages])) return rejected('source_url_required_from_user');
     if (platform && personalLibraryItemSchema.shape.url.safeParse(url).success) {
       const match = await platform.library.platformCards(owner, platform.childId, undefined, url);
       if (match.cards.length) return rejected('use_published_platform_card');
@@ -133,9 +135,18 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
       settings: { ...settings, url, frequencyMinutes: settings.frequencyMinutes ?? sourceCardDefaultFrequencyMinutes(settings.kind) } },
       'register_source_card', card => '已新增來源卡，' + interval(card.frequencyMinutes) + '檢查一次。');
   });
-  add('manage_source_card', '按家長交代修改本人來源卡的名稱、檢查間隔、暫停、恢復，或排入一次立即檢查。請沿用卡片目前版本；排入不代表已下載或入庫。', management, false, async args => {
-    const { action, cardId, expectedRevision, name, frequencyMinutes } = management.parse(args);
+  add('manage_source_card', '按家長交代修改本人卡、巡查或跳過具體缺口。家長指出漏收目錄或新版位置時，先讀該卡，再用 suggest_location 登記家長提供的網址；有缺口須帶 gap.checkId。查結果用 read_source_cards。', management, false, async args => {
+    const { action, cardId, expectedRevision, name, frequencyMinutes, url, checkId } = management.parse(args);
     const base = { cardId, expectedRevision, operationId: identity(action, cardId, expectedRevision) };
+    if (action === 'suggest_location') {
+      if (!url || !ownerSupplied(url, [userMessage, ...previousOwnerMessages])) return rejected('source_url_required_from_user');
+      return commit({ ...base, action, url, ...(checkId ? { checkId } : {}) },
+        'manage_source_card', () => '已收到位置，巡查會用站內原文核實。');
+    }
+    if (action === 'skip_gap') {
+      if (!checkId) return rejected('read_source_card_first');
+      return commit({ ...base, action, checkId }, 'manage_source_card', () => '已跳過這個缺口。');
+    }
     let command: RegisteredSourceCommand;
     if (action === 'change_frequency' || action === 'rename') {
       if (action === 'change_frequency' ? !frequencyMinutes : !name) return rejected('missing_changed_setting');

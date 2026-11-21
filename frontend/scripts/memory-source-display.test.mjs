@@ -104,7 +104,7 @@ function setPage() {
     { id: 'family-a', members: display.members }];
   family = { model: { families, family: families[0], selfUserId: self, loadState: 'ready' } };
 }
-const pageDisplay = () => nodes(render(MemoryPage).tree).find(item => item.type === 'MemoryReferenceView')?.props.confirmerDisplay;
+const pageDisplay = () => nodes(nodes(render(MemoryPage).tree).find(item => item.type === 'RegisteredSourceCards').props.renderLibrary()).find(item => item.type === 'MemoryReferenceView')?.props.confirmerDisplay;
 
 test('confirmation labels use authenticated identity and named members, with concise missing-name and null fallbacks', () => {
   assert.equal(references.memoryConfirmerLabel(self, display), '你');
@@ -323,6 +323,9 @@ test('reference links use the exact existing URL and reveal the real URL after o
   const link = button(view.tree, '閱讀來源'); assert.ok(link); link.props.onPress(); await Promise.resolve(); rerender(view);
   assert.deepEqual(openedURLs, [source.url]); assert.match(content(view.tree), /暫未能開啟來源/);
   assert.deepEqual(metadata(view.tree, '原文網址'), [source.url]);
+  const scoped=referenceCard({...source,applicability:{...source.applicability,ageBasis:'publisher',publisherAudiences:['學前兒童'],use:'original_lookup'}});
+  button(scoped.tree,'查看來源資料').props.onPress();rerender(scoped);
+  assert.deepEqual(metadata(scoped.tree,'原文對象'),['學前兒童']);
   assert.match(content(view.tree), /限內部非商業參考/); assert.match(content(view.tree), /Exact applicability condition/);
   linkReject = false;
   const absent = referenceCard({ ...source, url: '' });

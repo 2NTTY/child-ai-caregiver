@@ -18,7 +18,7 @@ export async function verifyMobileDensity(browser, failures, directory) {
     for (const name of ["選擇孩子，目前小昕", "開啟訊息提示", "開啟資訊側欄"]) {
       await target(page.getByRole("button", { name, exact: true }), name);
     }
-    await target(page.getByRole("link", { name: "與 Agent 對話", exact: true }), "對話導覽");
+    await target(page.getByRole("link", { name: "助手", exact: true }), "對話導覽");
     assert.equal(await page.getByText("問我關於孩子的問題…", { exact: true }).count(), 0);
     assert.equal(await page.getByRole("button", { name: /^準備問題：/ }).count(), 0);
     assert.equal(await page.getByTestId("header-actions").getByRole("link").count(), 0);
@@ -46,7 +46,7 @@ export async function verifyMobileDensity(browser, failures, directory) {
     await childCard.getByText("約 8 歲", { exact: true }).waitFor();
     await page.getByRole("button", { name: "選擇孩子，目前阿樂", exact: true }).click();
     await page.getByRole("radio", { name: "小昕 · 約 3 歲 2 個月 · 截至 2026 年 9 月", exact: true }).click();
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
+    await page.getByRole("link", { name: "助手", exact: true }).click();
     const draft = page.getByRole("textbox", { name: "撰寫對話問題", exact: true });
     await draft.waitFor();
     assert.equal(await draft.inputValue(), "");
@@ -59,7 +59,7 @@ export async function verifyMobileDensity(browser, failures, directory) {
     await assertFits(page, `compact composer ${width}`);
     await page.screenshot({ path: resolve(directory, `chat-${width}.png`) });
     await page.getByRole("link", { name: "主頁", exact: true }).click();
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
+    await page.getByRole("link", { name: "助手", exact: true }).click();
     assert.equal(await draft.inputValue(), raw, "Chat navigation must retain the original child draft");
     await draft.fill("");
     const inspiration = page.getByRole("button", { name: "先列出想問的問題", exact: true });

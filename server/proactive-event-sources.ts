@@ -63,7 +63,7 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
       return [row.sourceId, row.activeVersionId, row.enabled, row.revision];
     });
   };
-  const fingerprint = (rows: unknown) => firestoreDomainHash(['proactive-public-discovery-v1', sources, configured, managed, rows]);
+  const fingerprint = (rows: unknown) => firestoreDomainHash(['proactive-public-discovery-v2', sources, configured, managed, rows]);
   const unavailable = (reason: ProactiveEventCandidates['reason'], at: string, coverage: string[] = []): ProactiveEventCandidates => ({
     state: 'unavailable', reason, day: hkDay(at), preparedAt: null, complete: false, candidates: [], excluded: [], coverage,
   });
@@ -96,9 +96,10 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
       const before = await options.database.runTransaction(async transaction => {
         if (!(await authority.readControl(transaction)).enabled) return null;
         const row = await transaction.get(stateRef), prior = row.exists ? checkpointSchema.parse(row.data()) : null;
-        if (!input.force && prior?.day === day && prior.nextCheckAt && prior.nextCheckAt > asOf) return { reuse: prior };
         const currentFingerprint = fingerprint(await pointers(transaction));
         if (!input.force && prior?.day === day && prior.fingerprint === currentFingerprint) {
+          // Check the policy-bearing fingerprint even inside the persisted reuse window after a restart.
+          if (prior.nextCheckAt && prior.nextCheckAt > asOf) return { reuse: prior };
           transaction.set(stateRef, { ...prior, nextCheckAt });
           return { reuse: { ...prior, nextCheckAt } };
         }

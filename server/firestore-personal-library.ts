@@ -12,7 +12,7 @@ import { canonical } from './firestore-session-codec.ts';
 import { FamilyError } from './family-access.ts';
 import type { ListedPlatformCard } from './knowledge-library-selection.ts';
 
-import type { LibraryArchiveSelection, LibrarySelectionCommand } from '../src/shared/source-series.ts';
+import { childHealthSeries, type LibraryArchiveSelection, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeSchema,
   authorizationVersion: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u),
@@ -46,12 +46,12 @@ export function createFirestorePersonalLibrary(options: {
         do {
           signal.throwIfAborted();
           const page = await catalogForUser(userId, cursor);
-          items.push(...page.items.filter(item => item.series?.id === selection.seriesId));
+          items.push(...page.items.filter(item => selection.seriesId === childHealthSeries.id ? !!item.childHealth : item.series?.id === selection.seriesId));
           cursor = page.nextSourceId;
         } while (cursor);
         const expected = selectedLibraryEditions(items);
-        if (!expected.length || expected.length !== selection.editions.length
-          || expected.some(row => !selection.editions.some(item => item.sourceId === row.sourceId && item.versionHash === row.versionHash)))
+        if (!expected.length || (selection.seriesId !== childHealthSeries.id && expected.length !== selection.editions.length)
+          || selection.editions.some(row => !expected.some(item => item.sourceId === row.sourceId && item.versionHash === row.versionHash)))
           throw new FamilyError(409, 'library_selection_changed');
         if (canonical(await options.authority.readScope(userId, childId)) !== canonical(scope)) changed();
       };
@@ -80,7 +80,7 @@ export function createFirestorePersonalLibrary(options: {
         throw error;
       }
     },
-    async page(userId: string, childId: string, rawCursor: string | null = null): Promise<PersonalLibraryPage> {
+    async page(userId: string, childId: string, rawCursor: string | null = null, includeOriginals = false): Promise<PersonalLibraryPage> {
       const initial = await options.authority.readScope(userId, childId);
       let after: string | null = null;
       if (rawCursor !== null) {
@@ -94,13 +94,15 @@ export function createFirestorePersonalLibrary(options: {
         if (canonical(cursor.scope) !== canonical(initial.scope) || cursor.authorizationVersion !== initial.authorizationVersion) changed();
         after = cursor.afterSourceId;
       }
-      const page: { items: PersonalLibraryPage['items']; nextSourceId: string | null; registered?: PersonalLibraryPage['registered'] } = options.knowledge.catalogForUser ? await options.knowledge.catalogForUser(userId, after) : await options.knowledge.catalog(after);
+      const page: Pick<PersonalLibraryPage, 'items' | 'registered' | 'publisherOriginals'> & { nextSourceId: string | null } =
+        options.knowledge.catalogForUser ? await options.knowledge.catalogForUser(userId, after, includeOriginals) : await options.knowledge.catalog(after);
       const current = await options.authority.readScope(userId, childId);
       if (canonical(current) !== canonical(initial)) changed();
       const nextCursor = page.nextSourceId === null ? null : Buffer.from(options.cipher.encrypt(JSON.stringify(
         cursorSchema.parse({ version: 1, scope: current.scope, authorizationVersion: current.authorizationVersion, afterSourceId: page.nextSourceId })
       ), aad(userId))).toString('base64url');
-      return { items: page.items, ...(page.registered ? { registered: page.registered } : {}), nextCursor, complete: nextCursor === null };
+      const {nextSourceId: _after, ...contents} = page;
+      return { ...contents, nextCursor, complete: nextCursor === null };
     },
   };
 }

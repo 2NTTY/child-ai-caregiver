@@ -10,6 +10,7 @@ import type { ModelBillingSource, ModelSettingsUsage } from '../src/shared/model
 import { canonical, isRecord } from './firestore-session-codec.ts';
 import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-campaign-budget.ts';
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
+import { approvedScriptEdition, type ScriptEdition } from './fhs-script-edition.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
@@ -66,7 +67,7 @@ export interface FirestoreAiUsageOptions {
   billingSource: ModelBillingSource;
   serverClock?: () => number;
   campaignAdmission?: CampaignDayAdmission;
-  manualPublication?: ManualPublicationPin;
+  manualPublication?: ManualPublicationPin | ScriptEdition;
 }
 
 /**
@@ -92,7 +93,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
     this.#database = database; this.#cipher = cipher; this.#projectId = projectId; this.#namespace = namespace;
     this.#source = parse(sourceSchema, billingSource, 'invalid_configuration'); this.#clock = serverClock;
     this.#publication = manualPublication !== undefined;
-    if (manualPublication && (billingSource !== 'platform' || campaignAdmission || manualPublicationPin(manualPublication.sourceId) !== manualPublication))
+    if (manualPublication && (billingSource !== 'platform' || campaignAdmission
+      || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication))
       reject('invalid_configuration');
     if (campaignAdmission) {
       if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');
@@ -109,18 +111,18 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return this.#campaignAdmission?.day === day && userId === KNOWLEDGE_MAINTENANCE_PAYER && ordinary === 200
       ? this.#campaignAdmission.attempts : ordinary;
   }
-  async #hasCapacity(tx: Transaction, global: Counter, owner: Counter, day: string, userId: string, userLimit: number, globalLimit: number) {
+  async #availableAttempts(tx: Transaction, global: Counter, owner: Counter, day: string, userId: string, userLimit: number, globalLimit: number, maximum: number) {
     if (this.#publication !== (userId === KNOWLEDGE_PUBLICATION_PAYER)) reject('invalid_request');
-    if (this.#publication) return true;
-    if (owner.attempts >= this.#ownerLimit(day, userId, userLimit)) return false;
-    if (global.attempts < globalLimit) return true;
-    if (this.#source !== 'platform') return false;
+    if (this.#publication) return maximum;
+    const available = Math.max(0, Math.min(maximum, this.#ownerLimit(day, userId, userLimit) - owner.attempts));
+    if (!available || global.attempts + available <= globalLimit) return available;
+    if (this.#source !== 'platform') return Math.max(0, Math.min(available, globalLimit - global.attempts));
     // Total consumption is shared. Only server-commissioned publication receipts are
     // excluded from the ordinary admission count, including after a worker restart.
     const publicationId = this.#counterId(day, KNOWLEDGE_PUBLICATION_PAYER);
     const publication = this.#counter(publicationId, await tx.get(this.#ref(publicationId)));
     this.#consistent(global, publication);
-    return global.attempts - publication.attempts < globalLimit;
+    return Math.max(0, Math.min(available, globalLimit - (global.attempts - publication.attempts)));
   }
   #attemptId(request: Pick<DurableAiUsageRequest, 'rootRunId' | 'attemptKey'>) { return 'attempt_' + hash([request.rootRunId, request.attemptKey]); }
   #counterId(day: string, userId: string | null) { return 'daily_' + hash([this.#source, day, userId]); }
@@ -202,15 +204,18 @@ export class FirestoreAiUsage implements DurableAiUsage {
     activities.tool = (activities.tool ?? 0) + integer.min(1).parse(units);
     detail.save();
   }
-  /** Peek before starting a native PDF stage. The usual reserve remains authoritative at dispatch. */
-  async modelCapacity(tx: Transaction, userId: string, userLimit: number, globalLimit: number) {
+  /** Read current daily headroom. Every subsequent provider attempt still reserves atomically. */
+  async availableModelAttempts(tx: Transaction, userId: string, userLimit: number, globalLimit: number, maximum: number) {
     const day = this.#day(this.#now());
     const globalId = this.#counterId(day, null), ownerId = this.#counterId(day, userId);
     const [globalSnapshot, ownerSnapshot] = await tx.getAll(this.#ref(globalId), this.#ref(ownerId));
     const global = this.#counter(globalId, globalSnapshot, ownerSnapshot.exists);
     const owner = this.#counter(ownerId, ownerSnapshot);
     this.#consistent(global, owner);
-    return this.#hasCapacity(tx, global, owner, day, userId, userLimit, globalLimit);
+    return this.#availableAttempts(tx, global, owner, day, userId, userLimit, globalLimit, maximum);
+  }
+  async modelCapacity(tx: Transaction, userId: string, userLimit: number, globalLimit: number) {
+    return (await this.availableModelAttempts(tx, userId, userLimit, globalLimit, 1)) > 0;
   }
 
   async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance' | 'private_document_embedding', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
@@ -239,7 +244,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const global = this.#counter(globalId, globalSnapshot, userSnapshot.exists), user = this.#counter(userId, userSnapshot);
       this.#consistent(global, user);
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
-      if (!await this.#hasCapacity(transaction, global, user, day, request.userId, request.userLimit, request.globalLimit))
+      if (!await this.#availableAttempts(transaction, global, user, day, request.userId, request.userLimit, request.globalLimit, 1))
         return { decision: 'quota_exceeded' };
       const detail = await this.#detail(transaction, globalId);
       if (request.budgetPurpose === 'knowledge_maintenance' && this.#source === 'personal') {

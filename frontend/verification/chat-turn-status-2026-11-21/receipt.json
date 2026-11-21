@@ -1,0 +1,32 @@
+{
+  "baseline": "46fca556bccabfd6199e824235e6e2cbc58cda2d",
+  "browser": "Windows Edge 158.0.4370.33",
+  "environment": "Local Firebase emulator account, --no-model, actual signed-in Web and API. The emulator-only Auth footer was hidden for the screenshots.",
+  "path": "Tasks > Live2D > send 你是誰 > open full chat while waiting > read the saved outcome",
+  "messageSaves": 1,
+  "replyPosts": 1,
+  "modelCalls": 0,
+  "questionId": "1a5543f2-ae4f-4ddc-bf3e-67773c34beed",
+  "savedReplyId": "54e48054-33f4-499d-8a63-2636c31786d1",
+  "savedRunId": "7ae927d9-7128-48d7-aec5-4eff6533acda",
+  "waiting": {
+    "method": "Held delivery of the actual local reply response in Playwright while keeping the same signed-in page and original request. No response body or progress event was fabricated.",
+    "line": "正在回覆…",
+    "occurrencesPerVisibleEntry": 1,
+    "childContext": "The test account had multiple children. Both headings identified the selected child. Neither entry repeated the private-conversation footer.",
+    "desktop": { "viewport": [1280, 800], "companion": "desktop-companion.png", "fullChat": "checked on the same pending request" },
+    "compact": { "viewport": [390, 844], "companion": "compact-companion.png", "fullChat": "compact-chat.png" }
+  },
+  "outcome": {
+    "transportStatus": 200,
+    "reason": "服務暫時未能使用",
+    "method": "Read the stopped reply from the account API and matched inReplyTo to the original question. The message rendered one visible reason. The transient status row was absent. No further message or reply was posted.",
+    "screenshot": "desktop-chat-result.png"
+  },
+  "targetedTests": "4 passed, covering progress matching, save/stop/unknown, saved failure and recovery, mounted single-child companion, and multi-child or explicitly chosen context. Frontend TypeScript passed.",
+  "limits": [
+    "The initial browser assertion continued to look for a transient status after the stopped reply was persisted. Read-only verification targeted the original saved message row.",
+    "Specific streamed progress and the single-child small-window failure were exercised with component and presentation tests. Native device and live-model execution were outside this frontend run.",
+    "Emulator shutdown export returned HTTP 500 and retained its previous snapshot. The saved result was verified before shutdown."
+  ]
+}

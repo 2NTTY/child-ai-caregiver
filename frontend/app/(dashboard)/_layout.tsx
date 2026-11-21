@@ -1,4 +1,3 @@
-import { CompanionSelectionProvider } from '../../src/components/companion/CompanionSelection';
 import { usePathname, Slot, Tabs } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform, Pressable } from "react-native";
@@ -27,7 +26,7 @@ export default function DashboardLayout() {
   const { identityKey, user, owner } = useProduction();
   const backgroundScope = identityKey && user ? JSON.stringify([owner.apiBaseUrl, user.id]) : null;
   return <ProductionGate><BackgroundProvider key={identityKey} scope={backgroundScope}><ProductionDomains>
-    <CompanionSelectionProvider><AppBackdrop>{Platform.OS === "web" ? <AppShell><ConnectedRoute><Slot /></ConnectedRoute></AppShell> : <NativeAppShell><NativeDashboardTabs /></NativeAppShell>}</AppBackdrop></CompanionSelectionProvider>
+    <AppBackdrop>{Platform.OS === "web" ? <AppShell><ConnectedRoute><Slot /></ConnectedRoute></AppShell> : <NativeAppShell><NativeDashboardTabs /></NativeAppShell>}</AppBackdrop>
   </ProductionDomains></BackgroundProvider></ProductionGate>;
 }
 

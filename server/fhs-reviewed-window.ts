@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import type { KnowledgePdfPage } from './knowledge-pdf.ts';
-import type { ManualPublicationPin } from './fhs-manual-publication.ts';
+import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
 import type { createFirestoreKnowledgeWork } from './firestore-knowledge-work.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 
@@ -32,9 +32,14 @@ const sha = (text: string) => createHash('sha256').update(text).digest('hex');
 const failure = (code: string): never => { throw Object.assign(new Error(code), {code}); };
 
 export function registeredReviewedWindow(pin: ManualPublicationPin | undefined, original: string, observation: string | null | undefined) {
-  if (pin?.lane !== 'C2' || pin.resumeOnly || !observation) return undefined;
+  if (!pin || pin.resumeOnly || !observation || manualPublicationPin(pin.sourceId)?.lane !== pin.lane) return undefined;
   return registered.find(row => row.sourceId === pin.sourceId && row.sha256 === pin.sha256 && row.pages === pin.pages
+    && (pin.lane === 'C2' || (pin.lane === 'C1' || pin.lane === 'C3') && row.action === 'retain_window_quotes')
     && row.bindingHash === knowledgeReviewHash(['fhs-reviewed-window/1',pin.sourceId,original,observation]));
+}
+
+export function hasReviewedWindowSource(sourceId: string) {
+  return registered.some(row => row.sourceId === sourceId);
 }
 
 export function reviewedParentCode(row: ReviewedWindow) {

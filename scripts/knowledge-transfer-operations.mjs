@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parseKnowledgeSource, sourceVersionHash, embeddingDocument, internalKnowledgeSource } from '../server/knowledge-inputs.ts';
+import { parseKnowledgeSource, sourceVersionHash, embeddingForChunk, internalKnowledgeSource } from '../server/knowledge-inputs.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 
 import { checkPortableSource, checkPortableSeries, portableSeriesSchema } from '../server/knowledge-portable-series.ts';
@@ -26,7 +26,7 @@ export function readPortableEdition(raw, entry) {
     if (!chunk || seen.has(row.chunkKey)) reject('knowledge_transfer_vector_invalid');
     seen.add(row.chunkKey);
     if (library && library.vectorSpace !== 'vertex-retrieval-document-cosine' || row.model !== KNOWLEDGE_EMBEDDING.model || row.dimensions !== KNOWLEDGE_EMBEDDING.dimensions || row.pipeline !== KNOWLEDGE_EMBEDDING.pipeline) continue;
-    if (row.inputHash !== embeddingDocument(source.title, chunk.section, chunk.text).hash) reject('knowledge_transfer_vector_invalid');
+    if (row.inputHash !== embeddingForChunk(source.title, chunk).hash) reject('knowledge_transfer_vector_invalid');
     checked.push(row);
   }
   return { source, embeddings: checked, ...(library ? { library } : {}) };

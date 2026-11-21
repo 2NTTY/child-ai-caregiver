@@ -1,4 +1,4 @@
-import { checkKnowledgeObservation } from "./knowledge-observation.ts";
+import { checkKnowledgeObservation, observedPassageText } from "./knowledge-observation.ts";
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
@@ -58,7 +58,8 @@ export async function reviewKnowledgeVersion(client: PoolClient, versionId: stri
     && (previous.watch_revision !== (watch?.revision ?? null) || watch !== undefined && observation?.approved_hash === null);
   if (fullReview && row.document.chunks.some(chunk => !assessment.changes.some(change => change.key === chunk.key)))
     throw new Error("knowledge_withdrawn_full_review_required");
-  if (observation && assessment.changes.some(change => change.newQuote !== null && !observation.document.text.includes(change.newQuote)))
+  if (observation && assessment.changes.some(change => change.newQuote !== null && !observedPassageText(
+    observation.document, row.document.chunks.find(chunk => chunk.key === change.key)?.scriptPassage)?.includes(change.newQuote)))
     throw new Error("knowledge_review_observation_quote_mismatch");
   const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
   await client.query(`INSERT INTO knowledge_version_reviews(id,version_id,version_hash,assessment,assessment_hash,operator_alias,watch_revision,observation_hash)

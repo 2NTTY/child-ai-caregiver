@@ -95,7 +95,37 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 若主機已有具名贊助者或另一組知識維護設定，程式會指出衝突。若中途斷線，以同一版本和同一命令接續。設定已套用後，查實際排程的 `lastCheckedAt`、該時段的工作結果及知識版本。來源未變時沿用既有版本與處理結果。帳戶自行登記的來源由該帳戶的來源卡、授權及私有資料服務處理。
 
+<a id="fhs-ingestion"></a>
+### 衞生署兒童健康教材如何入庫
+
+| 步驟 | 做法與查核位置 |
+|---|---|
+| 1．列出教材 | 從[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)依年齡、主題和小冊子展開，為同份教材保留各分類入口。對照[逐項清單](../knowledge/fhs-child-inventory.json)區分網頁、原件、譯本、影音、站外教材和純入口。 |
+| 2．判斷今次該讀甚麼 | 先查出版者的版本聲明及其指向的單張。《[飲奶知多少？](https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html)》指定網頁為現行文字，重複印本文字可略過。《[奶瓶餵哺指引](https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html)》同頁另有獨立附件，須分辨其原件及用途。記錄 PDF 獨有圖表；影片的[官方劇本](https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript)可用於文字問答。 |
+| 3．固定原文及整理範圍 | 保存原址、觀察版本、原件指紋和可點讀的位置。HTML 定位正文段落，PDF 綁實頁，劇本綁段落或官方提供的時間碼。確需閱讀的 PDF 使用原頁多模態；長冊按原頁分窗，留下已讀與待補的範圍。 |
+| 4．核對說法 | 整理與獨立審核讀同版原件，逐條核實引文及適用條件。有新說法才處理受影響的部分。兩份教材表面不同時先對照適用對象、期間和具體情況；同條件下仍有分歧，記下兩處引文及待核部分。 |
+| 5．讓家長查得到 | 確認審核結果、補缺少的向量，再切換已核准版本。以家長已採用的「衛生署 兒童健康」卡查一條問題，點回本次使用的原文、版本及頁段。舊回答仍指原版。發布收據、卡內可見及實際問答分別記錄。[逐份 PDF 引文查回](../scripts/fhs-publication-receipt.mjs) |
+| 6．下次接續 | 目錄用來發現新增條目；已知原件另外核對修訂和撤回。方法及原文未變且已完成便復用。解析失敗、網站暫停或派送結果不明時查原工作，只接續欠項。首批操作依下節逐份執行。 |
+
+**11 月 21 日的實際邊界。** 已核實上述兩張單張的網頁版入庫及官方影片頁提供劇本。首批影音關閉；在清單看到劇本指紋只證明曾發現文字，仍要用可點讀的劇本引文驗其入庫。出版者的版本聲明已用於首批人工去重。新站自動辨認、網站改版後修正讀法及跨教材衝突的正式問答，分別沿 [REQ-004](REQUIREMENTS_BACKLOG.md#req-004) 與 [REQ-006](REQUIREMENTS_BACKLOG.md#req-006)驗收。
+
+**新網站的交付門檻。** 以兩種結構不同的來源，各從登記網址走到家長可點回原文的回答。再改動其中一個目錄，觀察維護助手發現變化、用樣本驗證另一個讀法並更新；上述步驟均無人介入。最後才用一個確實超出能力的案例驗求助。只就該私人卡的缺口詢問擁有人，回答後沿原工作接續，其他教材繼續更新。平台卡的同類問題由平台接手。
+
 ### FHS 首批同一帳日續作
+
+11 月 21 日獲委託的[22 份官方劇本教材](../knowledge/fhs-script-editions.json)按網頁觀測版本接續。在[分組製卡工具](#fhs-publication-lanes)用 `script inspect SOURCE_ID OBSERVATION_SHA256` 查原單，再用 `script run SOURCE_ID OBSERVATION_SHA256` 整理、獨立審核及補缺少的向量。重開用同一命令。入口沿用同一主機工位、記憶體限制及帳本，核對前一生效版本、完整文字指紋及已登記的片段數。舊單未明、版本變更或預留不足時保留原紀錄。發布後的 `listedCard.scripts` 按劇本列出完整段數、各段範圍、短引長度及原文向量查回結果。
+
+對[12 份已登記的保留原單](../knowledge/fhs-held-script-editions.json)，用 `script inspect` 查原來的保留原因及審核意見。`script revise SOURCE_ID OBSERVATION_SHA256` 從原先已保存的文字開始，沿同一帳本逐筆預留，用精簡欄位整理原文適用條件，並把原意見交獨立審核。`script inspect-revision SOURCE_ID OBSERVATION_SHA256` 查修訂收據。重開相同修訂沿用已完成的步驟。原單不明、觀測或基線改變時停止。[首次上架及覆蓋](../artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)
+
+已登記[出版者受眾修訂](../knowledge/fhs-publisher-script-editions.json)的教材沿用上述兩個修訂入口。worker 核實原單，以及前次修訂的終態和候選指紋；尚未派修訂的教材須查無前次工作。Server 從已核的段落建立純原文片段，直接送獨立審核，保留先前的保留意見。審核通過才沿原帳本建向量及上架。
+
+五份已有獨立保留決定的教材另登記了[候選版本及原文查閱條件](../knowledge/fhs-script-lookup-reviews.json)。上述入口會核對該次保留及之前各份收據，把新閱讀入口的實際用途連同原意見送審。母乳教材已有審核決定，向量費用仍待原票據確認，維持該工作指紋。
+
+親子溝通及新生嬰兒用品的審核未有有效決定時，用同一 `script inspect-revision` 查 `reviewStage`。兩份[已結算的原審核請求](../knowledge/fhs-script-review-stages.json)已按原工作、原觀測及完整請求指紋登記。若有保存回應，worker 用原候選重驗，只輸出欄位、驗證結果及指紋。沒有已保存回應時，收據會列明原階段狀態。查回過程不會派送模型、改寫工作或發布教材。
+
+睡眠教材的[分齡原句](../knowledge/fhs-script-age-examples.json)沿原修訂入口處理。worker 先核對前次保留決定及候選版本，按原表格行或劇本段落綁定年齡、單位及引句，再連同原意見交獨立審核。任何登記字眼找不到對應原文時即停。
+
+親子溝通、嬰兒用品及母乳教材沿同一 `script revise` 入口接續。前兩份的[修訂登記](../knowledge/fhs-script-review-repairs.json)綁定原審核階段。親子溝通把原回應的判斷和疑點交新審核，並核對單張和影片的受眾；嬰兒用品補上兩段原句中的四個年齡條件。母乳教材先讀同一文件、操作者及日額操作的原收據。在交易內完全吻合[已核對的向量拒絕紀錄](../server/fhs-script-embedding-receipt.ts)才可按零費用結算該票。修訂只縮短非影片片段的搜尋文字，保留完整原文及所有劇本，再交獨立審核。
 
 **人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
 
@@ -144,7 +174,7 @@ export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0
 sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
 ```
 
-從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。
+從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。指定單冊時亦封存正式收據讀取原 PDF 各實頁所需的記錄，包括末段不足八頁的部分。
 
 ```sh
 node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT --text-only

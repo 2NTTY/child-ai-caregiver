@@ -21,7 +21,7 @@ import { FamilyError } from "../server/family-access.ts";
 import { createFirestoreAuthority } from "../server/firestore-authority.ts";
 import { createFirestoreCareStore } from "../server/firestore-care.ts";
 import { createFirestoreChatStore } from "../server/firestore-chat.ts";
-import { FirestoreDomainData } from "../server/firestore-domain-data.ts";
+import { FirestoreDomainData, firestoreDomainHash } from "../server/firestore-domain-data.ts";
 import { createFirestoreKnowledgeStore, type FirestoreKnowledgeEmbedding } from "../server/firestore-knowledge.ts";
 import { createFirestoreMemoryStore } from "../server/firestore-memory.ts";
 import { createFirestoreOnlineStore } from "../server/firestore-online.ts";
@@ -464,6 +464,9 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
 
   // Verify shouldAutoNotifyTimelyEvent allows rolling news in 7-day chat search while suppressing auto push.
   assert.equal(shouldAutoNotifyTimelyEvent("recent_information", { kind: "news", status: "active" }), false);
+  assert.equal(shouldAutoNotifyTimelyEvent("recent_information"), false);
+  assert.equal(shouldAutoNotifyTimelyEvent("recent_information", { kind: "safety_alert", status: "active" }), true);
+  assert.equal(shouldAutoNotifyTimelyEvent("recent_information", { kind: "recall", status: "lifted" }), true);
   assert.equal(shouldAutoNotifyTimelyEvent("recent_information", { kind: "recall", status: "active" }), true);
   assert.equal(
     evaluateTimelyEligibility({
@@ -482,6 +485,23 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
   f.records.set(`${options.namespace}_knowledge_sources/src-news`, {
     schemaVersion: 1, projectId: options.projectId, namespace: options.namespace,
     sourceId: "src-news", activeVersionId: "22222222-bbbb-4bbb-8bbb-bbbbbbbbbbbb", enabled: true, revision: "1",
+  });
+
+  f.records.set(`${options.namespace}_knowledge_sources/src-legacy-news`, {
+    schemaVersion: 1, projectId: options.projectId, namespace: options.namespace,
+    sourceId: "src-legacy-news", activeVersionId: "33333333-cccc-4ccc-8ccc-cccccccccccc", enabled: true, revision: "1",
+  });
+  const checkpointKey = `${options.namespace}_proactive_public_source_state/current`;
+  f.records.set(checkpointKey, {
+    schemaVersion: 1, projectId: options.projectId, namespace: options.namespace,
+    day: "2026-11-20",
+    fingerprint: firestoreDomainHash(["proactive-public-discovery-v1",
+      ["src-recall", "src-news", "src-legacy-news"], ["src-legacy-news", "src-news", "src-recall"], [], [
+        ["src-legacy-news", "33333333-cccc-4ccc-8ccc-cccccccccccc", true, "1"],
+        ["src-news", "22222222-bbbb-4bbb-8bbb-bbbbbbbbbbbb", true, "1"],
+        ["src-recall", "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaaa", true, "1"],
+      ]]),
+    preparedAt: "2026-11-20T07:55:00Z", nextCheckAt: "2026-11-20T08:10:00Z", coverage: [],
   });
 
   let recallStatus: "active" | "lifted" = "active";
@@ -518,9 +538,16 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
     distance: null,
   });
 
+  const recall = () => makeCandidate("src-recall", "recall", watchRecall.url, watchRecall.termsUrl, watchRecall.publisher);
+  const news = () => makeCandidate("src-news", "news", watchNews.url, watchNews.termsUrl, watchNews.publisher);
+  const legacyNews = () => {
+    const { timelyEvent: _timelyEvent, ...row } = makeCandidate("src-legacy-news", "news", watchNews.url, watchNews.termsUrl, watchNews.publisher);
+    return { ...row, key: "legacy-news-k", versionId: "33333333-cccc-4ccc-8ccc-cccccccccccc",
+      chunkId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" };
+  };
   const sources = createProactiveEventSources({
     ...options,
-    sourceIds: ["src-recall", "src-news"],
+    sourceIds: ["src-recall", "src-news", "src-legacy-news"],
     care: {
       async readProfile() {
         return {
@@ -532,13 +559,11 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
     knowledge: {
       async publishedEdition(id: string) {
         editionReads += 1;
-        const ev = id === "src-recall"
-          ? makeCandidate("src-recall", "recall", watchRecall.url, watchRecall.termsUrl, watchRecall.publisher)
-          : makeCandidate("src-news", "news", watchNews.url, watchNews.termsUrl, watchNews.publisher);
+        const ev: KnowledgeCandidate & { termsUrl: string } = id === "src-recall" ? recall() : id === "src-news" ? news() : legacyNews();
         return {
           versionId: ev.versionId, versionHash: ev.versionHash, observationHash: null,
           chunkIdentities: [{ key: ev.key, chunkId: ev.chunkId, contentHash: ev.contentHash }],
-          enabled: true, current: id === "src-news" || recallStatus === "active",
+          enabled: true, current: id !== "src-recall" || recallStatus === "active",
           source: {
             sourceId: ev.sourceId, url: ev.url, title: ev.title, publisher: ev.publisher,
             classification: ev.classification, sourcePublishedAt: ev.sourcePublishedAt, sourceUpdatedAt: null,
@@ -547,10 +572,9 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
           },
         };
       },
-      async ruleCandidates() {
-        return recallStatus === "active"
-          ? [makeCandidate("src-recall", "recall", watchRecall.url, watchRecall.termsUrl, watchRecall.publisher)]
-          : [];
+      async ruleCandidates(_tx, rules) {
+        return [...(recallStatus === "active" ? [recall()] : []), news(), legacyNews()]
+          .filter(row => rules.some(rule => rule.sourceId === row.sourceId && rule.key === row.key));
       },
     },
   });
@@ -566,9 +590,13 @@ test("4. [R001-S10, R001-S11 & R001-S12] B-class checkpoint reuse when unchanged
     }),
   });
 
-  await sources.prepareGlobal({ force: true });
+  // The preceding deployment's same-day checkpoint is still inside its reuse window.
+  // A normal post-deploy worker tick must rebuild rather than reusing the old selection.
+  const refreshed = await sources.prepareGlobal();
+  assert.equal(refreshed.state, "ready");
+  assert.equal("preparedAt" in refreshed ? refreshed.preparedAt : null, new Date(at).toISOString());
   const readsAfterFirst = editionReads;
-  assert.equal(readsAfterFirst, 2);
+  assert.equal(readsAfterFirst, 3);
 
   // R001-S10: Unchanged source pointers reuse checkpoint without redundant rebuild/notification.
   await sources.prepareGlobal({ force: false });

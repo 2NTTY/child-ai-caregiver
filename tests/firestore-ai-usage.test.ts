@@ -3,6 +3,7 @@ import test from 'node:test';
 import { agentBudgetFingerprint } from '../server/agent-budget.ts';
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { approvedScriptEdition } from '../server/fhs-script-edition.ts';
 import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
@@ -39,6 +40,18 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('a registered script edition uses the platform publication account and cannot authorize a personal request', async () => {
+  const f = firestoreUsageFixture(now), pin = approvedScriptEdition('fhs-30119')!;
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: { ...pin } }), code('invalid_configuration'));
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: pin, billingSource: 'personal' }), code('invalid_configuration'));
+  const usage = new FirestoreAiUsage({ ...f.options, manualPublication: pin });
+  await assert.rejects(usage.reserve(request({ userId: KNOWLEDGE_MAINTENANCE_PAYER })), code('invalid_request'));
+  const paid = request({ userId: KNOWLEDGE_PUBLICATION_PAYER });
+  assert.equal((await usage.reserve(paid)).decision, 'execute');
+  await usage.record(paid, known);
+  assert.equal((await usage.reserve(paid)).decision, 'lookup');
+});
 
 test('commissioned receipts report actual platform use and leave the ordinary daily allowance intact', async () => {
   const f = firestoreUsageFixture(now), ordinary = f.service;
