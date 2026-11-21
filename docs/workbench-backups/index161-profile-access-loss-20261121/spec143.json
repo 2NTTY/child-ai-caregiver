@@ -1,0 +1,77 @@
+{
+  "group": {
+    "id": "profile-edit-access-lost-no-draft-carryover",
+    "title": "正在改孩子檔案，權限失效後舊草稿會跟過去嗎？",
+    "index": "external-comparison",
+    "readerNote": "用合成例比較孩子檔案整頁。現有失權頁不再顯示舊檔案、歷史或編輯器；合成預覽會清掉頁面草稿。這不是普通離線，也不是刪除後端資料或保證取消已送出的請求。A 先說清楚狀況，再由家長切換；B 是提案，讓家長在安全的整頁清單直接選仍可查看的孩子，無選項時不顯示孩子。兩款都不帶走原草稿、不自動切換，也不申請或改動權限。",
+    "choices": [
+      {
+        "name": "A｜先解釋，再手動切換",
+        "note": "用整頁提示交代權限已失效及本頁內容已收起，再留下手動切換入口，不顯示舊檔案資料。WordPress.com 原圖只參考把受限內容整頁換成清楚提示；不加它的登入或申請權限動作。",
+        "source": "https://en.support.wordpress.com/wp-content/uploads/2024/10/private-site-request-access.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://wordpress.com/support/privacy-settings/make-your-website-private/#view-a-private-site"
+          },
+          {
+            "label": "育伴港：失去權限的整頁狀態，與普通離線區分",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/profile/ProfileView.tsx#L37-L60"
+          },
+          {
+            "label": "育伴港：合成預覽清理頁內檔案、歷史及編輯狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/preview/useProfilePreview.ts#L44-L55"
+          },
+          {
+            "label": "育伴港：合成預覽僅接受當前範圍的完成回覆",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/preview/useProfilePreview.ts#L91-L100"
+          },
+          {
+            "label": "育伴港：不把範圍不符的真實工作區值交給畫面",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/workspaces/ProfileWorkspace.tsx#L13-L23"
+          }
+        ],
+        "linkLabel": "查看 WordPress.com 整頁受限原圖（需連網）",
+        "version": "WordPress.com 官方支援原圖 1328×370，原圖路徑為 2024/10；未公開對應產品版號或拍攝日。2026-11-21 目視核對。",
+        "rights": "WordPress.com 官方圖片，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜直接選仍有權查看的孩子",
+        "note": "未實作提案。把權限說明和仍可查看的孩子放在同一選擇畫面；由家長選擇，舊草稿不會帶去新檔案。沒有可選孩子時只說明現況。Firefox 原圖只參考清楚區分可選項，並非育伴港原畫面；不沿用它的新增、編輯或刪除檔案功能。",
+        "source": "https://blog.mozilla.org/wp-content/blogs.dir/278/files/2025/05/profiles-screenshot-1024x882.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://blog.mozilla.org/en/firefox/shifting-left-for-better-accessibility/"
+          },
+          {
+            "label": "育伴港：失去權限的整頁狀態，與普通離線區分",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/profile/ProfileView.tsx#L37-L60"
+          },
+          {
+            "label": "育伴港：合成預覽清理頁內檔案、歷史及編輯狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/preview/useProfilePreview.ts#L44-L55"
+          },
+          {
+            "label": "育伴港：合成預覽僅接受當前範圍的完成回覆",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/preview/useProfilePreview.ts#L91-L100"
+          },
+          {
+            "label": "育伴港：不把範圍不符的真實工作區值交給畫面",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/workspaces/ProfileWorkspace.tsx#L13-L23"
+          }
+        ],
+        "linkLabel": "查看 Firefox 完整選擇視窗（需連網）",
+        "version": "Mozilla 官方博客 Kim Bryant 2025-05-13 文中原圖 1024×882，是完整選擇視窗，不是整個瀏覽器；未標圖中軟件版號。2026-11-21 目視核對。",
+        "rights": "Mozilla 官方圖片，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "e6c3b8f75513e71ee7a39bfa7795a7dad413cb09fa5b3f0d39a0338bf48d5850"
+}
