@@ -19,7 +19,8 @@ import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledg
 import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
 import { firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
-import { campaign } from './knowledge-campaign-budget.ts';
+import { campaign, campaignRecoverySchemas, campaignTicketId } from './knowledge-campaign-budget.ts';
+import { recordedWebReviewStage } from './fhs-web-reading.ts';
 import { recordedScriptReviewStage } from './fhs-script-edition.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
@@ -107,12 +108,13 @@ export function createFirestoreKnowledgeWork(options: Options) {
   }
   async function readFailedScriptStage(raw: BackgroundKnowledgeRunRequest, pin: {
     sourceId:string;operationFingerprint:string;observationHash:string;code:string;attemptKey:string;requestHash:string;
-  }) {
+  }, verifyTicket?: (tx: Transaction) => Promise<void>) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       if (request.watchId !== pin.sourceId || request.operationFingerprint !== pin.operationFingerprint || request.publishMode !== 'live')
         reject('knowledge_script_review_stage_binding');
       const root = ref('work', pin.operationFingerprint), stage = ref('model', pin.operationFingerprint, pin.attemptKey);
       return database.runTransaction(async tx => {
+        if (verifyTicket) await verifyTicket(tx);
         const [work, model] = await tx.getAll(root, stage);
         if (!work.exists || !model.exists) reject('knowledge_script_review_stage_missing');
         const old = open(root, work.data(), workSchema), saved = open(stage, model.data(), stageSchema);
@@ -128,6 +130,18 @@ export function createFirestoreKnowledgeWork(options: Options) {
       const pin = recordedScriptReviewStage(raw.watchId);
       if (!pin) reject('knowledge_script_review_stage_binding');
       return readFailedScriptStage(raw,pin);
+    },
+    async inspectWebChapterReview(raw: BackgroundKnowledgeRunRequest) {
+      const pin = recordedWebReviewStage(raw.watchId, raw.operationFingerprint);
+      if (!pin) reject('knowledge_web_chapter_review_binding');
+      const id = campaignTicketId('generation', pin.sourceId, pin.originalOperation, pin.stageHash);
+      const ticket = database.collection(namespace + '_knowledge_campaigns').doc(campaign).collection('attempts').doc(id);
+      return readFailedScriptStage(raw, pin, async tx => {
+        const row = campaignRecoverySchemas.attempt.parse((await tx.get(ticket)).data());
+        if (row.kind !== 'generation' || row.sourceId !== pin.sourceId || row.operationFingerprint !== pin.originalOperation
+          || row.stageHash !== pin.stageHash || row.state !== 'settled' || row.rejection)
+          reject('knowledge_web_chapter_review_ticket');
+      });
     },
     async inspectCommunicationComparison(raw:BackgroundKnowledgeRunRequest,input:{system:string;user:string;attemptKey:string}) {
       const pin=recordedCommunicationComparison;

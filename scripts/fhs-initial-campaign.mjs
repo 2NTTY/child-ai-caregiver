@@ -198,7 +198,9 @@ try {
       const comparison = failedStage && id === recordedCommunicationComparison.sourceId;
       const validationWork = comparison ? recordedCommunicationComparison.work : failedStage?.operationFingerprint;
       const inspection = {script:scriptEdition,request:{...request,operationFingerprint:validationWork},job,definition,checkId,refresh,work,knowledge};
-      const reviewStage = validationWork && !saved?.receipt ? await inspectFailedScriptReview(inspection) : undefined;
+      const reviewStage = chapter && saved?.result?.code === 'knowledge_review_failed' && !saved.receipt
+        ? await inspectFailedScriptReview({...inspection, chapter, request})
+        : validationWork && !saved?.receipt ? await inspectFailedScriptReview(inspection) : undefined;
       const comparisonReplay = comparison && reviewStage?.retainedText && reviewStage.validation === 'invalid'
         ? await inspectFailedScriptReview({...inspection,normalize:true}) : undefined;
       const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
