@@ -1,0 +1,81 @@
+{
+  "group": {
+    "id": "care-record-unavailable-retain-authorized-list",
+    "title": "這筆照顧記錄打不開，其他記錄還能看嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：家長由歷史開啟同一孩子的一筆手作記錄。單筆不可讀不等於已被刪除，也不等於失去整個孩子的權限。若清單仍可讀，保留其他可讀項目，但不顯示失效項目的舊標題及正文。新開連結暫時核對不到時，不拿舊版本或其他孩子資料代替；已開詳情若重新核對失敗，原版可能明示那是上次讀取的內容。整個孩子的權限失去時，不顯示清單、詳情及草稿。不重建、不還原、不提交。A 直接回原清單，B 先顯示獨立說明頁再返回。這是全頁呈現比較，不是實際帳戶或資料操作。",
+    "choices": [
+      {
+        "name": "A｜回到同一份清單，說清只有這筆打不開",
+        "note": "確認同一孩子的清單仍可讀後，回原清單，在清單上方說「這筆記錄目前無法顯示」，保留其餘可讀項目。不保留這筆舊標題、摘要或正文。VA 參考圖是完整手機首頁，用來對照提示及清單的相對位置；同一官方指南另示範部分來源失敗時保留已載入項目。兩個來源狀態都不是育伴港的一筆記錄失效。",
+        "source": "https://design.va.gov/images/templates/homepage/VAHB-home-3.1.png",
+        "sourceNotes": [
+          {
+            "label": "VA.gov 官方：首頁整屏（Mobile app）及部分來源讀取失敗（Error states）",
+            "url": "https://design.va.gov/templates/home-pages/authenticated"
+          },
+          {
+            "label": "VA.gov 官方：一個來源失敗，其他項目仍顯示的獨立範例",
+            "url": "https://design.va.gov/templates/home-pages/authenticated#2-one-source-fails-and-other-items-loaded"
+          },
+          {
+            "label": "育伴港：單筆不可讀不等於孩子失去存取權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L57-L64"
+          },
+          {
+            "label": "育伴港：單筆不可讀時移除該筆，保留清單其餘可讀內容",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L168-L179"
+          },
+          {
+            "label": "育伴港：新開連結查核不到不補舊資料或其他孩子資料",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L201-L213"
+          },
+          {
+            "label": "育伴港：失去孩子範圍權限時隱藏記錄與詳情",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordsView.tsx#L14-L20"
+          }
+        ],
+        "linkLabel": "查看 VA 官方整屏原圖（需連網）",
+        "version": "VA.gov Design System「Authenticated home page」手機首頁原圖 VAHB-home-3.1.png；3.1 為資產檔名，不當作 App 版號。未標明拍攝日及 App 版號，2026-11-21 核對。",
+        "rights": "VA.gov 官方教學原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜先說明這筆不可讀，再讓你返回",
+        "note": "獨立頁只顯示「這筆記錄目前無法顯示」，不猜是誰刪除，不顯示任何舊正文。只有還有權限時才給「返回這位孩子的記錄」；已失去該孩子權限時，改指向安全入口，不帶原資料。Miro 原圖是白板不可用的整頁，右上提供 Go to Miro；這不是原清單連結。只參考說明和出口分開，不搬登入、分享或 Cookie 按鈕。",
+        "source": "https://help.miro.com/hc/article_attachments/21016057938450",
+        "sourceNotes": [
+          {
+            "label": "Miro 官方支援：單一白板不再分享或已移除的案例",
+            "url": "https://help.miro.com/hc/en-us/articles/5225385943954-I-can-t-access-or-edit-a-Miro-board"
+          },
+          {
+            "label": "育伴港：單筆不可讀不等於孩子失去存取權",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L57-L64"
+          },
+          {
+            "label": "育伴港：單筆不可讀時移除該筆，保留清單其餘可讀內容",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L168-L179"
+          },
+          {
+            "label": "育伴港：新開連結查核不到不補舊資料或其他孩子資料",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/CareReadCoordinator.ts#L201-L213"
+          },
+          {
+            "label": "育伴港：失去孩子範圍權限時隱藏記錄與詳情",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/care/CareRecordsView.tsx#L14-L20"
+          }
+        ],
+        "linkLabel": "查看 Miro 單一白板不可用原圖（需連網）",
+        "version": "Miro Help Center「I can’t access or edit a Miro board」圖檔 21016057938450（1600×900）；頁尾標示 © 2026，不等於圖的發表日或版本。未標明拍攝日及版號，2026-11-21 核對。",
+        "rights": "Miro 官方原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "7444b46be91ce8a4d5cbe2a3486f7573eeea074409e27c24c2dbb5aede981606"
+}
