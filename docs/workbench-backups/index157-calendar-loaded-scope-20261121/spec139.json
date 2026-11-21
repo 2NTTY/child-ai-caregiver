@@ -1,0 +1,81 @@
+{
+  "group": {
+    "id": "task-calendar-loaded-day-vs-unconfirmed",
+    "title": "待辦月曆沒有標記，就代表那天沒有待辦嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：月曆格子空白，只能說已載入的待辦中沒有可排入該天的項目，不表示伺服器上一定沒有待辦。日期無法判定的待辦留在「時間待核對」，不會自動排到今天。按日期只篩選清單；取消日期篩選保留搜尋與原有範圍。不放寬新增和改期需要有效時間資料的規則；不新增無日期待辦、不拖曳改期、不寫資料。兩款只比較完整頁的呈現。",
+    "choices": [
+      {
+        "name": "A｜先看整月，旁邊保留「時間待核對」",
+        "note": "月份格佔主畫面，格內只示意已載入、能排到那天的待辦；沒有標記只代表已載入的資料沒有可排入該日的項目。日期無法判定的事項另外列出，不放入今天。GNOME Calendar 原圖供整頁月份與每日格對照；旁邊的待核對區是本頁比較提案，不是原圖自帶功能。Todoist 的側欄只作局部結構佐證，不是第二張整頁。",
+        "source": "https://static.gnome.org/catalog/app-screenshot/org.gnome.Calendar/image-1_orig.png",
+        "sourceNotes": [
+          {
+            "label": "GNOME 官方 Calendar：「Explore the interface」的 Month view",
+            "url": "https://apps.gnome.org/en-GB/Calendar/"
+          },
+          {
+            "label": "Todoist 官方：無日期側欄（局部參考，非整頁）",
+            "url": "https://www.todoist.com/help/todoist/features/use-the-calendar-layout-in-todoist-lPHRQTu0o"
+          },
+          {
+            "label": "育伴港：只把已載入且日期可判定的待辦放入月格",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/task-calendar.ts#L32-L60"
+          },
+          {
+            "label": "育伴港：清單可選「時間待核對」",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/task-calendar.ts#L70-L84"
+          },
+          {
+            "label": "育伴港：取消日期篩選保留搜尋及原範圍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksCalendar.tsx#L48-L62"
+          },
+          {
+            "label": "育伴港：新增與改期待辦仍要時間資料",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/tasks.ts#L5-L20"
+          }
+        ],
+        "linkLabel": "查看 GNOME Calendar 月份原圖（需連網）",
+        "version": "GNOME Calendar 官方圖集 Month view，圖中為 2026 年 3 月；圖集頁生成於 2026-11-17，頁面列出軟件 51.0，但未標示截圖版號或拍攝日期。2026-11-21 核對。",
+        "rights": "GNOME Calendar 官方原圖，僅外連，不內嵌、不轉載。應用程式授權不當作已同意移植圖像。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜先核對不能排入日期格的待辦，再看行程",
+        "note": "第一區顯示「時間待核對」的已載入待辦，其後用日期清單查看已排入的事項。若當日沒有格子標記，仍可查已載入範圍；不把它說成那天沒事。Things 的 Someday 原圖只參考獨立清單及旁邊的 Upcoming 入口，不把時間待核對等同沒有計劃或延期，也不代你改期。",
+        "source": "https://culturedcode.com/frozen/2025/10/dates-someday.jpg",
+        "sourceNotes": [
+          {
+            "label": "Cultured Code 官方 Things Support：Someday 與 Upcoming 分開",
+            "url": "https://culturedcode.com/things/support/articles/4001304/"
+          },
+          {
+            "label": "育伴港：只把已載入且日期可判定的待辦放入月格",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/task-calendar.ts#L32-L60"
+          },
+          {
+            "label": "育伴港：清單可選「時間待核對」",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/task-calendar.ts#L70-L84"
+          },
+          {
+            "label": "育伴港：取消日期篩選保留搜尋及原範圍",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksCalendar.tsx#L48-L62"
+          },
+          {
+            "label": "育伴港：新增與改期待辦仍要時間資料",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/tasks.ts#L5-L20"
+          }
+        ],
+        "linkLabel": "查看 Things Someday 原圖（需連網）",
+        "version": "Things 官方支援文件「An In-Depth Look at Today, Upcoming, Anytime, and Someday」的 Someday 原圖，發布者資產路徑 /frozen/2025/10/dates-someday.jpg；這不是應用程式版號，拍攝日期未公布。2026-11-21 核對。",
+        "rights": "Cultured Code 官方原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "e2d079ab30c4dd895ae76db05b047aec1b18db3b5d04460b07b7c6b24f9f0ac0"
+}
