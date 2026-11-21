@@ -5644,6 +5644,71 @@
         },
         "chapterStatus": "Existing plain HTML review held. The current official observation also includes the video transcript."
       }
-    ]
+    ],
+    "productionAcceptance": {
+      "observedAt": "2026-11-21T20:54:24.245Z",
+      "release": {
+        "commit": "49e5b97bff4fe1e3b432a796591d11182726bbe8",
+        "receipt": "r44946270341-2",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44946270341/attempts/2"
+      },
+      "method": "Read-only fresh reader, production family library catalogue with pending originals included. Followed actual pagination, exported both visible versions using the family series path, and compared the complete text with the live publisher. No family preferences changed.",
+      "rows": [
+        {
+          "sourceId": "fhs-14851",
+          "title": "常見嬰兒皮膚問題",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+          "book": "fhs-30033",
+          "pageNumber": 5,
+          "activeVersionId": "60f0810e-ffff-57ab-9079-b09ceda4ec1b",
+          "versionHash": "41aeceab79d9dbc2ce69002ab5d346215c8b0abfd7b95907fc6affc4d18d3ada",
+          "seriesId": "fhs-child-health",
+          "publishedAt": "2026-11-21T20:51:15.554Z",
+          "reviewDecision": "approve_candidate",
+          "receiptState": "committed",
+          "publisherAudience": "嬰兒",
+          "use": "original_lookup",
+          "minAgeMonths": null,
+          "maxAgeMonths": null,
+          "normalizedTextSha256": "a1707fc1a2ec76e13e4695f6ba30c53d1b49cd4ef0fd94d9aef06fcb05f42a64",
+          "utf16Length": 2618,
+          "sourceExcerptCodePoints": 150,
+          "chunk": "p0-2e0f7386618c05dc25cb",
+          "vectorDimensions": 1024,
+          "vectorCount": 1,
+          "vectorInputHash": "fcd9049298592e5504dd98b66e4236aeaeb6b75dda62012dab19b3a67d7bcc15",
+          "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+          "independentReviewCalls": 1,
+          "organizerCalls": 0
+        },
+        {
+          "sourceId": "fhs-15672",
+          "title": "兒童發展8（上）—— 三至四歲大兒童的發展",
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.html",
+          "book": "fhs-30036",
+          "pageNumber": 6,
+          "activeVersionId": "fbc1dd7a-99aa-5792-94cb-c4a2f8d53130",
+          "versionHash": "7d111747a220bbe90c063d990a0f45696a665cebca9296238d52489d77ed171f",
+          "seriesId": "fhs-child-health",
+          "publishedAt": "2026-11-21T20:52:35.245Z",
+          "reviewDecision": "approve_candidate",
+          "receiptState": "committed",
+          "publisherAudience": "三至四歲大兒童",
+          "use": "original_lookup",
+          "minAgeMonths": null,
+          "maxAgeMonths": null,
+          "normalizedTextSha256": "f26c0beea1f7b590b37c80eedb9d5608ad92a848dc1cb10b1dc52de16965d411",
+          "utf16Length": 2275,
+          "sourceExcerptCodePoints": 150,
+          "chunk": "p0-45fecbce7fe535102dfa",
+          "vectorDimensions": 1024,
+          "vectorCount": 1,
+          "vectorInputHash": "9b42cf771b1ccb7421d31246e9813c52bdcef80a7d17f7dbee7fd19f02cc0a93",
+          "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+          "independentReviewCalls": 1,
+          "organizerCalls": 0
+        }
+      ]
+    }
   }
 }
