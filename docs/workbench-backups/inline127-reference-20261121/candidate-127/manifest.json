@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-127-image-count",
+  "base": {
+    "artifact": "candidate-125/out",
+    "htmlSha256": "655e810e5f19ca0b7532781b0a02e9265a708157e5c002d677c7a4893b9bd88a",
+    "rawRecordsSha256": "5a24e2dbd168096cf04accaa2508f042daba14d948b849d10eae07ce1923c0b5",
+    "rawArtworkSha256": "1cf573cbf54e83d94bf24f84c371415a1dbee65d38d44f956241182e5582aa22",
+    "topics": 61,
+    "choices": 125,
+    "images": 125
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-mixed-chat-scope/assets.json",
+      "sha256": "e7fd563a474e880e3bc9d413106c92367fee4d45a98d9191a3887d4fdc85e741"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "e7b0ff01b27d601734d8731ae85b83ef4bd24d35648ec2c2006c0742b02e25f9",
+    "PROVENANCE.md": "03a850ca2d003fe014ee172027e2d5d16ed0e22fb6d32fdd7431b15f608b1209"
+  },
+  "topics": [
+    {
+      "number": 62,
+      "title": "多孩對話範圍：建立前選擇與重開核對",
+      "choices": [
+        {
+          "name": "建立前先選專案範圍",
+          "note": "新會話在建立前先選專案所含的兩個虛構程式碼庫；「使用專案」後另進核對，此圖不是既有會話。首項「主要」只指上游程式碼庫，不代表主要孩子或照顧者。",
+          "links": [
+            {
+              "label": "固定版本原始碼：新會話的專案步驟",
+              "url": "https://github.com/BrokkAi/mjolnir/blob/da3872415cedb4b3838ac70c12b2350905be30f1/mj-server/src/web/viewer.html#L104-L116"
+            },
+            {
+              "label": "同一版本：來源選項",
+              "url": "https://github.com/BrokkAi/mjolnir/blob/da3872415cedb4b3838ac70c12b2350905be30f1/mj-server/src/web/viewer.js#L3747-L3764"
+            },
+            {
+              "label": "同一版本：所選程式碼庫排序",
+              "url": "https://github.com/BrokkAi/mjolnir/blob/da3872415cedb4b3838ac70c12b2350905be30f1/mj-server/src/web/viewer.js#L3792-L3832"
+            },
+            {
+              "label": "同一版本：先保存組合，再進核對",
+              "url": "https://github.com/BrokkAi/mjolnir/blob/da3872415cedb4b3838ac70c12b2350905be30f1/mj-server/src/web/viewer.js#L4064-L4087"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/BrokkAi/mjolnir/blob/da3872415cedb4b3838ac70c12b2350905be30f1/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-mixed-chat-scope/mixed-a-scope-first.png",
+            "sha256": "336f0d2b4029c18364445242b5967971be82670766bbb1c030092ed69136e152",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "虛構新會話的專案步驟。所選兩個程式碼庫按順序列出，第一個標作主要程式碼庫；使用專案後才會進入核對。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "重開對話時顯示已保存關聯",
+          "note": "重開既有的虛構對話時，在原內容上方顯示已保存的專案關聯。徽章不是範圍選擇器，也不表示鎖定對話或變更授權。",
+          "links": [
+            {
+              "label": "固定提交原始碼：已存專案徽章",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/4700c44eb77c142b4f9f8b87476924f22890eb39/client/src/components/Projects/ProjectBadge.tsx#L7-L21"
+            },
+            {
+              "label": "同一提交：取回既有對話關聯",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/4700c44eb77c142b4f9f8b87476924f22890eb39/packages/chat/src/components/pane/chrome.ts#L50-L64"
+            },
+            {
+              "label": "同一提交：既有對話的畫面",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/4700c44eb77c142b4f9f8b87476924f22890eb39/packages/chat/src/components/pane/Screen.tsx#L100-L141"
+            },
+            {
+              "label": "同一提交：重開及重載的模擬測試",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/4700c44eb77c142b4f9f8b87476924f22890eb39/e2e/specs/mock/projects.spec.ts#L219-L248"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/4700c44eb77c142b4f9f8b87476924f22890eb39/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-mixed-chat-scope/mixed-b-reopened-scope.png",
+            "sha256": "c8690e266981242715985b07b9770c1a904323924bb9be5e423d93d69997d84c",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "已重新開啟的虛構既有對話，上方顯示已保存的專案名稱，下面保留原提問及回覆；徽章不是新範圍挑選器。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 62 題 · 多孩對話範圍兩幅自製合成示意",
+      "text": "兩幅均為自製合成示意（非官方原圖），沒有使用原方畫素、品牌、原有訊息、實際帳戶或私人程式碼庫。Mjolnir v2.73.0（GPL-3.0-only）和 LibreChat v0.8.9 原碼套件版（MIT）是兩個獨立的外部版式參考，不是同一帳戶的連續狀態。程式碼庫或專案只用於比較範圍選擇和關聯提示，並非孩子、家庭、共用房間或取用權。首項「主要」不代表主要孩子或照顧者，徽章不是範圍選擇器或權限聲明。所有案例均虛構，不會建立、重開、切換對話或讀取外部項目。"
+    }
+  ]
+}
