@@ -5,7 +5,7 @@ import { Firestore } from '@google-cloud/firestore';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
-import { createKnowledgeCampaignBudget, campaignLimitMicros } from '../server/knowledge-campaign-budget.ts';
+import { createKnowledgeCampaignBudget, campaignLimitMicros, campaignRecoverySchemas } from '../server/knowledge-campaign-budget.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 
 test('three original work leases compete for the last affordable dispatch', async t => {
@@ -67,6 +67,40 @@ test('independent leased sources share one cap and unknown or replayed stages re
   assert.equal((await restarted.sourceStatus('c')).reservations.length,1);
   assert.equal((await restarted.sourceStatus('d')).admissible,true);
   assert.deepEqual([(await restarted.status())?.attempts,(await restarted.status())?.held], [3,1634304+308]);
+});
+
+test('an evidenced native rejection releases its original reservation once without inventing usage or replaying it', async () => {
+  const { database, loseReply } = firestoreDomainFixture();
+  const ledger = createKnowledgeCampaignBudget(database, 'test');
+  await ledger.initialize();
+  const binding = { sourceId: 'original', operationFingerprint: 'a'.repeat(64), stageKey: 'organize', assertLease: async () => {} };
+  const settle = await ledger.reserveShared('generation', binding, 8192);
+  const [ticket] = (await database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120').collection('attempts').get()).docs;
+  const proof = { ticketId: ticket!.id, sourceId: binding.sourceId, operationFingerprint: binding.operationFingerprint,
+    stageHash: ticket!.get('stageHash'), at: ticket!.get('at'), ceiling: ticket!.get('ceiling'),
+    rejection: { httpStatus: 400, evidenceSha256: 'f'.repeat(64) } };
+  await assert.rejects(ledger.settleRejectedGeneration({ ...proof, stageHash: 'b'.repeat(64) }));
+  await assert.rejects(ledger.settleRejectedGeneration({ ...proof, at: '2026-01-01T00:00:00.000Z' }));
+  await assert.rejects(ledger.settleRejectedGeneration({ ...proof, rejection: { ...proof.rejection, httpStatus: 200 } }));
+  assert.equal((await ledger.status())?.held, proof.ceiling);
+  loseReply();
+  await assert.rejects(ledger.settleRejectedGeneration(proof), /lost commit acknowledgement/);
+  await ledger.settleRejectedGeneration(proof);
+  const row = await database.runTransaction(async tx => (await tx.get(ticket!.ref)).data()!);
+  assert.equal(row.state, 'settled');
+  assert.equal(row.cost, 0);
+  assert.equal(row.inputTokens, undefined);
+  assert.equal(row.outputTokens, undefined);
+  assert.deepEqual(row.rejection, proof.rejection);
+  assert.deepEqual(campaignRecoverySchemas.attempt.parse(row), row);
+  for (const invalid of [{...row, inputTokens: 0}, {...row, cost: 1}, {...row, kind: 'embedding'}, {...row, state: 'reserved'}]) {
+    assert.equal(campaignRecoverySchemas.attempt.safeParse(invalid).success, false);
+  }
+  await assert.rejects(ledger.settleRejectedGeneration({ ...proof, rejection: { ...proof.rejection, evidenceSha256: 'e'.repeat(64) } }));
+  await assert.rejects(settle(0,0), /attempt_changed/);
+  const final = await ledger.status();
+  assert.deepEqual([final?.held, final?.spent, final?.attempts, final?.settled], [0,0,1,1]);
+  await assert.rejects(ledger.reserveShared('generation', binding, 8192), /attempt_recorded/);
 });
 
 test('legacy unknowns must match before handoff and stay reserved for every independent worker', async () => {
