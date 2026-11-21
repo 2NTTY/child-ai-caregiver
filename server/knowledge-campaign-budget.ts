@@ -20,14 +20,20 @@ export function selectCampaignDayAdmission(selector: string | undefined) {
 }
 const count = z.int().nonnegative();
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
+const nativeRejection = z.strictObject({ httpStatus: z.int().min(400).max(599), evidenceSha256: hash });
 const balance = z.strictObject({ campaign: z.literal(campaign), limit: z.literal(campaignLimitMicros),
   model: z.literal(campaignModel), location: z.literal('global'), held: count, spent: count, attempts: count, settled: count,
   reconciliationRequired: z.literal(true).optional() }).refine(row => row.held + row.spent <= row.limit && row.settled <= row.attempts);
 const attempt = z.strictObject({ kind: z.enum(['generation','embedding']), sourceId: z.string().regex(/^[a-z0-9-]{1,80}$/u),
   ceiling: count, state: z.enum(['reserved','settled']), at: z.iso.datetime(), inputTokens: count.optional(), outputTokens: count.optional(), cost: count.optional(),
-  operationFingerprint: hash.optional(), stageHash: hash.optional(),
-}).refine(row => (!row.stageHash || !!row.operationFingerprint) && (row.state === 'settled'
+  operationFingerprint: hash.optional(), stageHash: hash.optional(), rejection: nativeRejection.optional(),
+}).refine(row => row.rejection
+  ? row.kind === 'generation' && !!row.operationFingerprint && !!row.stageHash && row.state === 'settled'
+    && row.cost === 0 && row.inputTokens === undefined && row.outputTokens === undefined
+  : (!row.stageHash || !!row.operationFingerprint) && (row.state === 'settled'
   ? row.cost !== undefined && row.cost <= row.ceiling && row.inputTokens !== undefined && row.outputTokens !== undefined : row.cost === undefined));
+const rejectedGeneration = z.strictObject({ ticketId: z.uuid(), sourceId: attempt.shape.sourceId,
+  operationFingerprint: hash, stageHash: hash, at: attempt.shape.at, ceiling: count.positive(), rejection: nativeRejection });
 const publicationBinding = z.strictObject({ sourceId: attempt.shape.sourceId, lane: z.enum(['C1', 'C2', 'C3']), sha256: hash,
   pages: z.int().positive(), operationFingerprint: hash, revision: z.uuid(), workerGeneration: z.uuid() });
 export const campaignRecoverySchemas = { balance, attempt, publicationBinding };
@@ -187,6 +193,30 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       });
     };
   }
+  // Operator reconciliation of reviewed, attributable native HTTP evidence. No provider call or work lease is started.
+  async function settleRejectedGeneration(raw: unknown) {
+    const proof = rejectedGeneration.parse(raw);
+    if (proof.ticketId !== campaignTicketId('generation', proof.sourceId, proof.operationFingerprint, proof.stageHash))
+      throw Error('knowledge_campaign_attempt_changed');
+    const ticket = ref.collection('attempts').doc(proof.ticketId);
+    await database.runTransaction(async tx => {
+      const { row, open } = await openReservations(tx);
+      const entry = attempt.parse((await tx.get(ticket)).data());
+      if (entry.kind !== 'generation' || entry.sourceId !== proof.sourceId || entry.operationFingerprint !== proof.operationFingerprint
+        || entry.stageHash !== proof.stageHash || entry.at !== proof.at || entry.ceiling !== proof.ceiling)
+        throw Error('knowledge_campaign_attempt_changed');
+      if (entry.state === 'settled') {
+        if (entry.rejection?.httpStatus === proof.rejection.httpStatus && entry.rejection.evidenceSha256 === proof.rejection.evidenceSha256) return;
+        throw Error('knowledge_campaign_attempt_changed');
+      }
+      if (row.reconciliationRequired || entry.inputTokens !== undefined || entry.outputTokens !== undefined)
+        throw Error('knowledge_campaign_reconcile_before_settlement');
+      if (open.some(item => item.sourceId === proof.sourceId && item.ticketId !== proof.ticketId))
+        throw Error('knowledge_campaign_source_reserved');
+      tx.update(ref, { held: row.held - entry.ceiling, settled: row.settled + 1 });
+      tx.update(ticket, { state: 'settled', cost: 0, rejection: proof.rejection });
+    });
+  }
   function meter(binding: Omit<CampaignDispatch, 'stageKey'>, maxOutputTokens: number) {
     async function before(kind: CampaignKind, stageKey: string) {
       try { return await reserveShared(kind, { ...binding, stageKey }, kind === 'generation' ? maxOutputTokens : 0); }
@@ -216,5 +246,5 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       },
     };
   }
-  return { status, initialize, reserve, canAdvance, sourceStatus, retainInspected, reserveShared, meter };
+  return { status, initialize, reserve, canAdvance, sourceStatus, retainInspected, reserveShared, settleRejectedGeneration, meter };
 }
