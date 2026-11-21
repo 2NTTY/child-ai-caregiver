@@ -144,7 +144,7 @@ export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0
 sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
 ```
 
-從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。
+從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。指定單冊時亦封存正式收據讀取原 PDF 各實頁所需的記錄，包括末段不足八頁的部分。
 
 ```sh
 node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT --text-only
