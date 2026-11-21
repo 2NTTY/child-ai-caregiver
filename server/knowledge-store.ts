@@ -190,7 +190,9 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
            AND c.document->'treatment'->>'kind' IS DISTINCT FROM 'excluded'
            AND (e.input_hash IS NOT NULL OR c.document->'treatment'->>'kind' = 'structured')
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
-           AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
+           AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown'
+             OR (c.document->'applicability'->>'use' = 'original_lookup' AND c.document->'applicability'->>'ageBasis' IN ('publisher','unconfirmed'))
+             OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
              AND (c.document->'applicability'->>'minAgeMonths')::numeric <= CASE WHEN $12='overlap' THEN $9::numeric ELSE $8::numeric END
              AND CASE WHEN COALESCE((c.document->'applicability'->>'maxAgeMonthsExclusive')::boolean, false)

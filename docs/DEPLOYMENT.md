@@ -117,6 +117,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 對[12 份已登記的保留原單](../knowledge/fhs-held-script-editions.json)，用 `script inspect` 查原來的保留原因及審核意見。`script revise SOURCE_ID OBSERVATION_SHA256` 從原先已保存的文字開始，沿同一帳本逐筆預留，用精簡欄位整理原文適用條件，並把原意見交獨立審核。`script inspect-revision SOURCE_ID OBSERVATION_SHA256` 查修訂收據。重開相同修訂沿用已完成的步驟。原單不明、觀測或基線改變時停止。[首次上架及覆蓋](../artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)
 
+已登記[出版者受眾修訂](../knowledge/fhs-publisher-script-editions.json)的教材沿用上述兩個修訂入口。worker 核實原單，以及前次修訂的終態和候選指紋；尚未派修訂的教材須查無前次工作。Server 從已核的段落建立純原文片段，直接送獨立審核，保留先前的保留意見。審核通過才沿原帳本建向量及上架。
+
 **人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
 
 **舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。

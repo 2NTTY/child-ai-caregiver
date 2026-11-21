@@ -7,7 +7,8 @@ export type KnowledgeClass = "official_guidance" | "recent_information";
 export interface KnowledgeApplicability {
   use?: 'original_lookup';
   region: string;
-  ageBasis: "actual" | "corrected" | "any";
+  ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed";
+  publisherAudience?: string;
   minAgeMonths: number | null;
   maxAgeMonths: number | null;
   maxAgeMonthsExclusive?: boolean;

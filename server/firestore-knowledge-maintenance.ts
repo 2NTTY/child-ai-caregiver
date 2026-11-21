@@ -6,7 +6,7 @@ import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
 import { campaignMaterialWatches } from "./platform-materials.ts";
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, scriptRevisionWorkId, verifyHeldScript, type ScriptEdition } from './fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, verifiedScriptReading, type ScriptEdition } from './fhs-script-edition.ts';
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import type { Transaction } from "@google-cloud/firestore";
@@ -125,7 +125,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       if (options.campaignBudget) {
         const original = knowledgeReviewHash([campaignCredentials, request.watchId, registration.data.revision, request.workerGeneration]);
         const bound = script ? script.sourceId === request.watchId && definition.kind === 'page' && !reusedOrganizationFrom
-          && request.operationFingerprint === (options.reviseHeldScript ? scriptRevisionWorkId(script) : scriptEditionWorkId(script))
+          && request.operationFingerprint === (options.reviseHeldScript ? currentScriptReadingWork(script) : scriptEditionWorkId(script))
           && recordedCheckId === knowledgeOperationId('knowledge-observation/1', scriptEditionWorkId(script))
           : firstDispatch ? firstDispatch.original === original && request.operationFingerprint === firstDispatchWorkId(original)
           && !reusedOrganizationFrom && bindFirstDispatch(manual,original,await work.inspect({...request,operationFingerprint:original}))?.observation === firstDispatch.observation
@@ -158,8 +158,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const credentialBinding = sponsor && personal
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
-      const scriptRevision = options.reviseHeldScript && script ? verifyHeldScript(script, await work.inspect({
-        ...request, operationFingerprint:scriptEditionWorkId(script) })) : undefined;
+      const scriptRevision = options.reviseHeldScript && script ? await verifiedScriptReading(script,operationFingerprint=>work.inspect({...request,operationFingerprint})) : undefined;
       const recovery = options.truncatedOutput;
       if (retained && (sponsor || recovery || reusedOrganizationFrom || !expectedRevision
         || request.publishMode !== 'live' || definition.kind !== (retained.action === 'review_age_draft' ? 'page' : 'pdf') || request.watchId !== retained.sourceId
