@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-147-image-count",
+  "base": {
+    "artifact": "candidate-145/out",
+    "htmlSha256": "8a94bea6a0a95606a90241f8f539649307db2afbc1618ac3998b2995b1ba736f",
+    "rawRecordsSha256": "e4a05e41780607ce0b7a3f62f243ac8b5043effdb47a9ad41522c8248c13ab0b",
+    "rawArtworkSha256": "79b2a095d540be62d0029fa9265bfa233904eea1128d4ae6b187bdac3c47db45",
+    "topics": 71,
+    "choices": 145,
+    "images": 145
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-queued-message-recovered/assets.json",
+      "sha256": "3f7405b43757fd37640f90f9f795bdf7643e83c38aeb252694366a96a733f2f9"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "022c67f12dcae1f449b29a0a3583fc7248346d3c68725709b22f06c3d8a7e665",
+    "PROVENANCE.md": "98a3bcb26f7ffd70e8358c7bcf1e15474ba57c82d7510cee132fc2d63159df49"
+  },
+  "topics": [
+    {
+      "number": 72,
+      "title": "等上一則回覆時，怎樣顯示排隊中的下一句？",
+      "choices": [
+        {
+          "name": "輸入框上方的待送列",
+          "note": "上一個回答仍在生成時，下一條訊息單獨列在輸入框上方，不會混入已送出的對話。這個網頁範例把編輯、移除及改為即時引導的操作放在同一列。",
+          "links": [
+            {
+              "label": "DeepSeek Harness 0.2.2-rc.5：排隊訊息的網頁快照",
+              "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2e39e70496aa02986ca6a820c5d497e816b69d7e/snapshots/web/queue-actions/ui.expected.md"
+            },
+            {
+              "label": "單項佇列及操作",
+              "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2e39e70496aa02986ca6a820c5d497e816b69d7e/packages/client/ui-conversation/src/client/queue/QueueDock.tsx#L192-L300"
+            },
+            {
+              "label": "佇列列的佈局",
+              "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2e39e70496aa02986ca6a820c5d497e816b69d7e/packages/client/ui-conversation/src/client/queue/QueueDock.module.css"
+            },
+            {
+              "label": "DeepSeek Harness 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2e39e70496aa02986ca6a820c5d497e816b69d7e/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-queued-message-recovered/queued-a.png",
+            "sha256": "fdff6acc7402d7856a55794350bf513531f1bf76f77f0fd6237105b3070922c6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "DeepSeek Harness 網頁聊天的合成重繪：上方是已送出的活動單張要求和仍在生成的回答；下方另一句「再提議一個較短的單張標題」單獨列在輸入框上方，右側有編輯、移除、即時引導三個圖示。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在輸入框上方保留待送追問",
+          "note": "上一則要求仍在處理，追問先以斜體列在輸入框上方，與已送出的內容分開。圖中的 Mac 快捷鍵可編輯最後一則待送訊息，不代表已排程發送。",
+          "links": [
+            {
+              "label": "Codex CLI 0.149.0：執行中狀態與待送追問快照",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/bottom_pane/snapshots/codex_tui__bottom_pane__tests__status_with_details_and_queued_messages_snapshot.snap"
+            },
+            {
+              "label": "同一版本：工作狀態、待送區與輸入框的次序",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/bottom_pane/mod.rs#L1799-L1832"
+            },
+            {
+              "label": "同一版本：待送文字預覽及編輯最後一則",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/bottom_pane/pending_input_preview.rs#L133-L164"
+            },
+            {
+              "label": "同一版本：已送出訊息的外觀",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/history_cell/messages.rs#L249-L271"
+            },
+            {
+              "label": "同一版本：macOS 與其他平台的快捷鍵標示",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/key_hint.rs#L24-L29"
+            },
+            {
+              "label": "同一版本：48 欄執行中測試設定",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/tui/src/bottom_pane/mod.rs#L2553-L2587"
+            },
+            {
+              "label": "同一版本：發行版本號",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/codex-rs/Cargo.toml#L138-L142"
+            },
+            {
+              "label": "原作者與第三方聲明",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/NOTICE"
+            },
+            {
+              "label": "Codex CLI 程式授權：Apache-2.0（非圖像授權）",
+              "url": "https://github.com/openai/codex/blob/758ef40f50c1a458425c7cfbf1eb12cbc07af0b0/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-queued-message-recovered/queued-b.png",
+            "sha256": "815f88f9d1448c9c32d9e6878aca3ebd1527d26d78eff0f0c47faec5ba5adc6e",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：深色終端頂部是已送出的場刊開首草擬要求。Working 狀態下方另列一則待送的短標題追問，旁邊提示可按 ⌥ 加上箭嘴編輯最後一則；底部輸入框仍是空白。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 72 題 · 訊息佇列的兩幅自製合成示意",
+      "input": "draft-queued-message-recovered/DECLARATION.txt",
+      "sha256": "022c67f12dcae1f449b29a0a3583fc7248346d3c68725709b22f06c3d8a7e665"
+    }
+  ]
+}
