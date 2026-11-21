@@ -4374,5 +4374,154 @@
     ],
     "inspectionPatch": "38364da96c3fd6be1be4a8f8143dee3ecbba042f",
     "method": "Prepared seven original page-text blocks under the registered parser and verified every record after archive readback. Each of the six failed original first windows has two distinct, settled generation tickets with output. The organizer stage hash matches the normally reconstructed PDF request. The paired excerpts and any publication outcome await the released read-only inspector."
+  },
+  "wholePdfReleaseCompatibility": {
+    "revisions": [
+      "c6af936a8ff5509f890b65c29017dd1564b6664d",
+      "cc76610870ac8d21370d0a98b2dec7dbd1c67ce3"
+    ],
+    "sources": [
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "pages": 24,
+        "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+        "observationHash": "b7182b6f185ad4742b7a20b58530682c16f3bb4b8c718e60e26edf4a76e2820a",
+        "bytes": 7210655,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "a7795b96865b688b1325f6fc86f8ace89e00530807c239c9b7c1c3205325bd77",
+            "schemaSha256": "1176c1b89ff8d0f821871fd5f02d9596022bf944f406838f391737c5a610569d",
+            "ranges": [
+              [
+                1,
+                7
+              ],
+              [
+                8,
+                13
+              ],
+              [
+                14,
+                20
+              ],
+              [
+                21,
+                24
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "4cee3d7c99180a26426d2ad8fb1083d082c511fcc9e6c8448e5cb027c5917ff3",
+            "schemaSha256": "d6b038f7882420e8ce9ae77460a282c41d591de6519fa4622e3f088032b19ccf"
+          }
+        ],
+        "originalOperationSha256": "830f8e6c5d64500653c51a20983eaab5917c548e46434a130644384b1c3230f7",
+        "priorStatusReceiptSha256": "3623f8e9db4b93d5293713a4d95ea3bdddf86b85b2e2c5d7781d2d93ee9de98d",
+        "stateAtStatus": "unstarted_zero_tickets"
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "pages": 16,
+        "sha256": "ef440bafe855f988c1403611bb862360c900b44e40b64727362ff52fcb06b641",
+        "observationHash": "c07f82de37f9e29d1afa02908dd303dee01286cee27d47a569f3c4b775f8b18b",
+        "bytes": 20060504,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "938dd5f1ece20197687d995fbaac0c74f6121d2338c2a3479e9c64f254c0115e",
+            "schemaSha256": "988a170892963e69cc29da31a835e822186ff67d998e48344bf7e6aa581d0db6",
+            "ranges": [
+              [
+                1,
+                5
+              ],
+              [
+                6,
+                10
+              ],
+              [
+                11,
+                15
+              ],
+              [
+                16,
+                16
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "1e21c0ce8d8be47a5a759ef86eddad24209f73b490a0b11f78d4b3764870d62b",
+            "schemaSha256": "b3d6bb3655461589f79f5974a838f7014b8cdd383aac06d1013c7348657d80ee"
+          }
+        ],
+        "originalOperationSha256": "1fb88ecaa438d48f5490962ada2585db2650536d95f8c9f5de6a4bcd4e97f242",
+        "priorStatusReceiptSha256": "a8320edf1a0495b3aab5c5433fb055aeecc6e12482a18e2d8abaab8e7208b46d",
+        "stateAtStatus": "unstarted_zero_tickets"
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "pages": 12,
+        "sha256": "b3f5f159c6c195f0f05d41d25974bda4f70ea7b2ac56431db9b8612ec18a8345",
+        "observationHash": "1640c298a2cc6899434ec2e0d9925f7933ee5ba352073d26da56d0d76d2c931a",
+        "bytes": 4014688,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "2c0db6199a32724fa519e575b8a165bb02c2dcbe630c765331b0e6f0416b414d",
+            "schemaSha256": "e5545eb13b30beb030dda4da582711ac0e48fc784008592049190338eca573c2",
+            "ranges": [
+              [
+                1,
+                10
+              ],
+              [
+                11,
+                12
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "76c6502f4948615dba2670e52f967d98dc505c8a5a5557d42c2d7f47998c308c",
+            "schemaSha256": "b51442c05092e96fd6cf7bffad4e6990027d31b88cae71f81edb92e416973c06"
+          }
+        ],
+        "originalOperationSha256": "b1232e2cb83b0a87701c4573481bd925d1a14236c4e22bad2a3f74118151be61",
+        "priorStatusReceiptSha256": "c43fff707b7938e56ce2b1f562aed925598cf7432f99d60db6b9d9597b15a7c1",
+        "stateAtStatus": "unstarted_zero_tickets"
+      }
+    ],
+    "reviewInput": "Same synthetic organizer fixture for the independent request comparison only; no provider dispatch or content acceptance.",
+    "checkedAt": "2026-11-21T06:47:18.610Z",
+    "selection": "These three C2 originals were deferred pending a dense-window worker release. Each matching production status receipt at 14:41–14:42 HKT showed an unstarted source. Their registered observations use the whole-PDF route in both revisions.",
+    "method": "Unpacked the two Git revisions separately. Each revision reconstructed both request envelopes with the complete frozen attachment. The normal organizer request and the independent request using the same synthetic organizer output have the same bytes and schemas across revisions. The real provider read, verdict and edition remain unverified until original production dispatch."
+  },
+  "interruptedOrganizerReadback": {
+    "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+    "sourceSha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+    "pages": 24,
+    "originalBytes": 5193998,
+    "observationHash": "54467b86404f518bcbeca66207ce5f84aacd8832e4a694723e58cbde66b1cdfc",
+    "organizerStageHash": "71d9377fb7c9778faea2e73a41455a0bbec17f51560d683806c45a78dfefc5fb",
+    "originalOperationSha256": "136e481f888de3689cbc5e566d23503e44973c55b169f9051b8dae4fdd387562",
+    "originalTicketAt": "2026-11-20T14:10:56.749Z",
+    "originalWorkerRevision": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
+    "readTime": "2026-11-21T06:42:59.797500Z",
+    "stageCreatedAt": "2026-11-20T14:10:55.994361Z",
+    "stageLastWrittenAt": "2026-11-20T14:10:55.994361Z",
+    "preparedCandidate": false,
+    "sourceProof": "The complete 24-page organizer input was reconstructed locally from the frozen bytes and original observation. The historical prompt bytes match the original generation stage hash and ticket. The stage was created pending and never updated. Its last write predates the dispatch reservation, and no prepared candidate exists.",
+    "metricStart": "2026-11-20T14:08:00Z",
+    "metricEnd": "2026-11-20T14:32:00Z",
+    "projectGeminiGenerateContent200": 2,
+    "concurrentReservedSources": [
+      "pdf-3af602cff5d00f305e7cc95e",
+      "pdf-c79a394b580ec9e870d63319"
+    ],
+    "sourceIdentifiableDataAccessEvents": 0,
+    "resolution": "The two successful project-level calls have neither source nor operation keys. Their token counts cannot be assigned to the original source, and neither response body is available here. Retain the reservation and do not redispatch this operation."
   }
 }
