@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-121-image-count",
+  "base": {
+    "artifact": "candidate-119/out",
+    "htmlSha256": "415aaab84aa6f2baaa497d052c48639e3f2c44243e59cf4918dd2eb5e47c45c9",
+    "rawRecordsSha256": "e21bee5dbad80aeb077f6a550b1a5f99002a3241ecef20d8da09d22e5f930e3a",
+    "rawArtworkSha256": "c6b4cbf3af9746f145f6d029b1fc0c0e75c934e6a2ae9aaaecf1fe0904f40aa5",
+    "topics": 58,
+    "choices": 119,
+    "images": 119
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-registration/assets.json",
+      "sha256": "06036144aacb11403a5e665cb6e390316127e261ebf92c434f2911b394231de1"
+    }
+  ],
+  "productBoundary": {
+    "pin": "0708bab4a4b385d4575d7156df8898d4dcdc8723",
+    "links": [
+      "https://github.com/2NTTY/child-ai-caregiver/blob/0708bab4a4b385d4575d7156df8898d4dcdc8723/frontend/app/login.tsx#L1",
+      "https://github.com/2NTTY/child-ai-caregiver/blob/0708bab4a4b385d4575d7156df8898d4dcdc8723/frontend/src/screens/loginScreen.tsx#L93-L112",
+      "https://github.com/2NTTY/child-ai-caregiver/blob/0708bab4a4b385d4575d7156df8898d4dcdc8723/frontend/src/screens/loginScreen.tsx#L113-L131",
+      "https://github.com/2NTTY/child-ai-caregiver/blob/0708bab4a4b385d4575d7156df8898d4dcdc8723/src/client/records-controller.ts#L310-L341"
+    ]
+  },
+  "topics": [
+    {
+      "number": 59,
+      "title": "受邀電郵註冊：資格提示與不能繼續時的指引",
+      "choices": [
+        {
+          "name": "受邀電郵註冊 A｜先說明誰可以註冊",
+          "note": "先向未開始註冊的訪客說明受邀資格，以及沒有邀請或已有帳戶時的去向。不開放註冊、不展示供應商跳轉。",
+          "links": [
+            {
+              "label": "固定版本原始碼：受邀資格前置頁",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/frontend/discourse/app/templates/discovery/login-required.gjs#L11-L61"
+            },
+            {
+              "label": "同一提交：邀請門檻提示",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/frontend/discourse/app/components/invitation-gate.gjs#L4-L15"
+            },
+            {
+              "label": "同一提交：現有帳戶登入提示",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/frontend/discourse/app/templates/login.gjs#L17-L44"
+            },
+            {
+              "label": "同一提交：登入分支",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/frontend/discourse/app/services/login.js#L12-L25"
+            },
+            {
+              "label": "同一提交：資格文字",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/config/locales/client.en.yml#L3255-L3258"
+            },
+            {
+              "label": "同一提交：原碼版本字串",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/lib/version.rb#L3-L10"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/discourse/discourse/blob/6c98a3d199a986d848b0c0bd8631775e4143d30d/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-registration/registration-a-invitation-preflight.png",
+            "sha256": "18048846fbd55d0fa2d2b9433781562f7691c51d5a9da02628977ac3fe2abfe9",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "虛構新訪客的註冊前整頁合成示意。置中提示寫明建立帳戶僅限受邀；沒有邀請先向邀請方詢問，已有帳戶沿用原有登入。畫面沒有公開註冊表單、登入按鈕或外部跳轉。這是外部設計對照，不是育伴港實際頁面。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "工作台自製合成，參考 Discourse 固定提交的受邀資格說明；非官方原圖，省略外部登入跳轉。上游程式隨附 GNU GPL v2 文本。"
+          }
+        },
+        {
+          "name": "受邀電郵註冊 B｜不能繼續時知道下一步",
+          "note": "用同一虛構情境示意外部邀請連結不能使用時的指引：向原邀請方詢問，已有帳戶循一般登入。不披露失效原因或帳戶狀態；不表示實際服務採用邀請連結。",
+          "links": [
+            {
+              "label": "固定版本原始碼：邀請不可用的復原頁",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/src/pages/Auth.tsx#L202-L221"
+            },
+            {
+              "label": "同一提交：註冊與登入路由",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/src/App.tsx#L65-L80"
+            },
+            {
+              "label": "同一提交：邀請狀態分流",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/src/pages/Auth.tsx#L8-L53"
+            },
+            {
+              "label": "同一提交：整頁版式",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/src/styles/app.css#L237-L277"
+            },
+            {
+              "label": "同一提交：無效邀請處理",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/server/invites.mjs#L50-L55"
+            },
+            {
+              "label": "同一提交：套件版本",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/package.json#L1-L6"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/authorTom/formflow/blob/099ec50aaf7ad038bad2a7b42e0e82dc3ecf6a2b/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-registration/registration-b-invitation-recovery.png",
+            "sha256": "16dfc5947fe3140c5866bb9cefbf18939ed4d0f4c9c18626466fe60b6b44c621",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "同一虛構新訪客的復原整頁合成示意。左右雙欄注明邀請連結未能使用，應向原邀請方詢問可用的新邀請；已有帳戶可返回一般登入。畫面不判定失效原因，不顯示關聯地址、憑證或驗證結果，亦非育伴港實際頁面。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "工作台自製合成，參考 FormFlow 0.1.0 固定提交的無效邀請整頁；非官方原圖，不重畫其有效邀請分支。上游程式 © 2026 Thomas Wright，MIT。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 59 題 · 受邀電郵註冊兩幅自製合成示意",
+      "text": "兩幅為從空白畫布自製合成示意（非官方原圖）。Discourse 固定提交供參照受邀資格前置頁；FormFlow 固定提交供參照不可用邀請的整頁復原。沒有複製官方截圖、程式、樣式、品牌或資料；兩圖均不操作或顯示帳戶、地址、憑證、郵件與驗證結果。育伴港既有登入頁按服務條件提示使用獲邀電郵，這兩款不是產品現行頁面，不表示實際服務採用邀請連結、郵址預填、市民公開註冊或可從圖中直接發送新邀請。"
+    }
+  ]
+}
