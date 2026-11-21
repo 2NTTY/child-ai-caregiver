@@ -8042,5 +8042,113 @@
     "disposition": "實頁 7 可供正式兩次讀頁後核對。實頁 9 雖有文字層，當中混入未映射字碼；已登記的選書句在補表後仍未能逐字命中。七個短篇原有印本選段只供對頁。合訂本仍欠自身的模型讀頁、獨立審核、向量、家長版本及原頁引用。",
     "productionWrites": 0,
     "chargedUsd": 0
+  },
+  "representativeEditionComparison": {
+    "campaignReadTime": "2026-11-21T15:47:10.590812Z",
+    "unchangedComparedWith": "2026-11-21T13:59:59.678699Z",
+    "matchingOriginalRows": 116,
+    "activePdfEditions": 35,
+    "activeLongPdfEditions": 0,
+    "observedGrossMicros": {
+      "held": 3268608,
+      "spent": 12366273,
+      "limit": 30000000,
+      "available": 14365119
+    },
+    "sources": [
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "originalOperation": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+        "physicalPages": 36,
+        "originalWorkPresent": true,
+        "prepared": false,
+        "providerTickets": 0,
+        "enabledVersion": null,
+        "archiveSha256": "79df945f0990de72c404b72dc34b9d73505ee5ef09ebaf9c99425a2ce83d4160",
+        "indexSha256": "fe620e276feb0d91daa92aa7cf019f744465c0a984a443a5eccf23dd287bf240",
+        "windows": 3,
+        "plannedGenerations": 6
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+        "physicalPages": 112,
+        "originalWorkPresent": false,
+        "prepared": false,
+        "providerTickets": 0,
+        "enabledVersion": null,
+        "archiveSha256": "3fd66c73cb7e41591d74d845c1f04c8b19627a177d7fe52ccc738fb89a219887",
+        "indexSha256": "bec34ea42d8b2d8d227d385a7dff6e798768ca7a4d90a2815f614ade5b57703e",
+        "windows": 10,
+        "plannedGenerations": 20
+      }
+    ],
+    "comic": {
+      "priorFormalReceiptAt": "2026-11-21T10:27:27.576Z",
+      "priorFormalOutcome": "candidate_held",
+      "priorFormalReason": "unavailable",
+      "registeredForFirstDispatch": false,
+      "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+      "printUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.pdf",
+      "parentSha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+      "webUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.html",
+      "htmlSha256": "995840cd5450d7cb93a70b88ac5a8b28c10075bcc562812dea5dda1ad641af66",
+      "webHeading": "第14頁",
+      "physicalPage": 16,
+      "printedPage": 14,
+      "webElements": [
+        "h4"
+      ],
+      "webTextSha256": "c6760871e84351df0177b92e7e09daf5ee3214497e529edab902c4fd7b78f34e",
+      "webFiguresInSection": 0,
+      "localPixelWitness": "上格有綠色剔號，中格有紅色交叉。下格有人拿擴音器，右下角有三名人物。",
+      "reader": "4e5d2d51168172b6567198645cadbde6016d77bce1985662fb76871106a1194e",
+      "index": "fe620e276feb0d91daa92aa7cf019f744465c0a984a443a5eccf23dd287bf240",
+      "window": {
+        "core": [
+          15,
+          28
+        ],
+        "attachment": [
+          14,
+          29
+        ],
+        "sliceHash": "0f6a73e91336e4cd2dd37125ef08e0171d21dd691df3dfe34c4c58311f27763d",
+        "localPage": 3,
+        "layerStatus": "unreadable"
+      },
+      "windows": 3,
+      "plannedGenerations": 6,
+      "renderComparison": {
+        "tool": "pdftoppm -scale-to 800 -png",
+        "width": 564,
+        "height": 800,
+        "rgbSha256": "09060a285b2a439e1e96060ea92dfc873b510bd96682d9794129c11722c00182",
+        "equalOnOriginalAndWindow": true
+      }
+    },
+    "worker": {
+      "releaseReceipt": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44917772478/attempts/2",
+      "releaseSource": "bc9edcd699d1d542c0728764ca5018c7da88cd30",
+      "releaseObservedAt": "2026-11-21T15:30:07Z",
+      "statusMinimumAvailableMiB": 704,
+      "minimumAvailableMiBFor112PageDispatch": 960,
+      "statusCheck": {
+        "utc": "2026-11-21T16:08:30Z",
+        "availableKiB": 632688,
+        "elapsedSeconds": 335,
+        "containerStarted": false,
+        "operatorStatusResult": null,
+        "ownWaitingProcessReleased": true
+      },
+      "laterCapacityCheck": {
+        "utc": "2026-11-21T16:12:25Z",
+        "availableKiB": 520036,
+        "secondStatusLaunched": false
+      }
+    },
+    "nextAction": "36 頁漫畫有可從印本核對的圖像細節。其原單有終態，現行首次派送登記沒有這冊。112 頁合訂本已有原綁定而未有整理工作。原 C 可在工位恢復容量後查回其正式 lane 狀態，依原單及 C1 共用額度決定派送。兩冊均未有自身的 Gemini 閱讀、獨立審核或家長版本。",
+    "additionalProviderCalls": 0,
+    "productionDataWrites": 0
   }
 }
