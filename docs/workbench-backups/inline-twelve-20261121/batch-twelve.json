@@ -1,0 +1,146 @@
+[
+  {
+    "link": "https://github.com/assistant-ui/assistant-ui/blob/3e04e44f33f8313356305f0b01e2321133228632/.github/assets/generative-ui-light.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/PC01/reference/generative-ui-light.pinned.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/PC01/reference/LICENSE",
+    "sha256": "5eec1d863f074a18cb19776b5db85833dc9a734b0519a2e5eb6576b445087efd",
+    "alt": "assistant-ui 官方示意：天氣工具卡在對話內",
+    "credit": "assistant-ui · © 2026 AgentbaseAI Inc. · MIT"
+  },
+  {
+    "link": "https://github.com/hbtabi/ai-chat-ui/blob/ea31b09ee3eb8eaeb156911e180c47309093d1db/docs/screenshot.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/PC03/PC03-original.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/PC03/LICENSE.upstream-MIT.txt",
+    "sha256": "999b863af70f68c27558171c3890a87c951938cb7272bf040271debd17a974c6",
+    "alt": "AI Chat UI 的深色對話，展示程式碼和回覆",
+    "credit": "AI Chat UI · © 2026 Mohammed Hassan bin Tayyeb · MIT"
+  },
+  {
+    "link": "https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/app/examples/forms/appearance/appearance-form.tsx",
+    "original": "https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/public/examples/forms-light.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/S-01/reference/forms-light.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/S-01/reference/LICENSE.md",
+    "sha256": "15450ff7b8d5904d6c801acc6d7f2e33e267dcdc8ea2e101f9a18ffc65b3b3cd",
+    "alt": "shadcn/ui 範例：獨立外觀設定頁可選淺色與深色",
+    "credit": "shadcn/ui · © 2023 shadcn · MIT"
+  },
+  {
+    "link": "https://github.com/itsDNNS/tribu/blob/d10c0aff47ccda3b7060aaaef85461b75efd97de/frontend/components/settings/index.js",
+    "original": "https://github.com/itsDNNS/tribu/blob/d10c0aff47ccda3b7060aaaef85461b75efd97de/docs/assets/settings-1440-light.png",
+    "file": "next-appearance/settings-1440-light.png",
+    "license": "next-appearance/LICENSE-Tribu-MIT.txt",
+    "sha256": "c9220b86e1eacc1681bc16b6f3ac0bd659895285dff0b9b2dc48a662d328a2ea",
+    "alt": "Tribu 合成示例：外觀和其他選項同列在設定總覽",
+    "credit": "Tribu · © 2026 Dennis Braun · MIT",
+    "additionalNotices": [
+      {
+        "name": "Tribu 圖示：Lucide 1.44.0 及 Feather",
+        "file": "next-appearance/LICENSE-Lucide-1.44.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/super-productivity/super-productivity/blob/108534af2939cb93660f9ab6cdc0463e40a3a682/fastlane/metadata/android/en-US/images/phoneScreenshots/2_task-list-light.png",
+    "file": "next-todo/super-productivity.png",
+    "license": "next-todo/super-productivity-MIT.txt",
+    "sha256": "e545d2bd5f527b3fb9ce0d6e3b7d7c3bade00b2f013209a31c3beb6c81377609",
+    "alt": "Super Productivity 手機版「Today」：上方是今日待辦，下方另有「Completed Tasks」，此例顯示尚無已完成事項。",
+    "credit": "Super Productivity · Johannes Millan · MIT"
+  },
+  {
+    "link": "https://github.com/MushiSenpai/komorebi/blob/154d27cb0f3ff961d4c269efcfb1b796642c8ed5/docs/screenshots/phase1-tasks-today.png",
+    "file": "next-todo/komorebi.png",
+    "license": "next-todo/komorebi-MIT.txt",
+    "sha256": "4e79dd6ec2809e9a5f732d4eb414532be196096264a6a8dd20389e7dd5cec5af",
+    "alt": "Komorebi Phase 1 桌面版「Today」：上方有新增和篩選，清單列出晨跑及澆花兩項待辦。",
+    "credit": "Komorebi · Madhan Kumar Reddy (Mushi) · MIT"
+  },
+  {
+    "link": "https://github.com/theakhinabraham/doable-todo-list-app/blob/1dbd62ca3bb5c5021ea375c2850470127152eb48/img/home-preview.png",
+    "file": "next-todo/doable.png",
+    "license": "next-todo/doable-MIT.txt",
+    "sha256": "c16ed691a734abccf9d91ebe732858e8054a49042d01a44c87151b4d309bbf8c",
+    "alt": "Doable 官方手機宣傳圖：藍色背景配「Today」清單，兩項未完成待辦和兩項已勾選的待辦分開顯示。",
+    "credit": "Doable · Akhin Abraham · MIT"
+  },
+  {
+    "link": "https://github.com/alex-shpak/hugo-book/blob/d7742624e734836fc2a93f90b30a34c38b6ec174/images/screenshot.png",
+    "file": "next-guide/hugo-book-introduction.png",
+    "license": "next-guide/LICENSE-Hugo-Book-MIT.txt",
+    "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00",
+    "alt": "Hugo Book 的 Introduction 頁，左邊有文件導覽，右邊有本文目錄，下方有下一節連結。",
+    "credit": "Hugo Book · © 2018 Alex Shpak · MIT；示例內容 CC BY 4.0",
+    "additionalNotices": [
+      {
+        "name": "閱讀指南圖中文字：Creative Commons 姓名標示 4.0 國際",
+        "file": "next-guide/LICENSE-Creative-Commons-BY-4.0.txt",
+        "sha256": "6f9997b6f85f473f853aeef19b5f16504dd228ba99cee70e5a19211df947a2b3"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/images/screenshot.png",
+    "file": "next-guide/docsy-welcome.png",
+    "license": "next-guide/LICENSE-Docsy-Apache-2.0.txt",
+    "sha256": "28cff1426196ff2a7814ad4fed2d4396e37350a25a847208a3ba3023af7db144",
+    "alt": "Docsy 的 Welcome to Docsy 文件首屏，左邊有文件導覽，中間是歡迎文字和 What is Docsy?，右邊是本頁目錄。",
+    "credit": "Docsy Authors · Apache-2.0；文件內容 CC BY 4.0",
+    "additionalNotices": [
+      {
+        "name": "閱讀指南圖中文字：Creative Commons 姓名標示 4.0 國際",
+        "file": "next-guide/LICENSE-Creative-Commons-BY-4.0.txt",
+        "sha256": "6f9997b6f85f473f853aeef19b5f16504dd228ba99cee70e5a19211df947a2b3"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/nextcloud/documentation/blob/4290071b5ee1addf6ee9e563dbf7f2b3e307eda5/user_manual/images/activity-stream-all.png",
+    "file": "next-history/nextcloud-all-activities.png",
+    "license": "next-history/LICENSE-Nextcloud-CC-BY-3.0.txt",
+    "sha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97",
+    "alt": "Nextcloud「所有活動」：左側是活動分類，右側按時間排列今日新增和修改的示例事件。",
+    "credit": "Nextcloud developers · Nextcloud User Manual · Activity stream showing all recent activities · CC BY 3.0 · 原圖未修改"
+  },
+  {
+    "link": "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/docs/screenshots/activity.webp",
+    "file": "next-history/mailflow-activity.webp",
+    "mime": "image/webp",
+    "license": "next-history/LICENSE-Mailflow-MIT.txt",
+    "sha256": "20d9602f6d14383388bc170971e5154d5303a8522902d0b708117bcd7fa44ccb",
+    "alt": "iCloud Mailflow「活動記錄」：搜尋和篩選列下方，以緊密表格排列時間、主旨、規則、動作和狀態。圖中的郵件資料為測試示例。",
+    "credit": "iCloud Mailflow · Activity Log · © 2026 Morten Johansen · MIT · 原圖未修改；圖中郵件資料為測試示例，不作聯絡用途",
+    "additionalNotices": [
+      {
+        "name": "iCloud Mailflow 圖示：Lucide 0.469.0",
+        "file": "next-history/LICENSE-Lucide-0.469.0.txt",
+        "sha256": "1e7290b35280a048667bbf0ebabac1c7fd52a75300e8b2946ac165715997f2bc"
+      },
+      {
+        "name": "iCloud Mailflow 圖示：Lucide 沿用的 Feather",
+        "file": "next-history/LICENSE-Feather-MIT.txt",
+        "sha256": "308028e93fcf84972523cdf6e616f73168546b4953895f516d01287f16fe7bee"
+      },
+      {
+        "name": "iCloud Mailflow 所列可選字型：JetBrains Mono（不附字型檔）",
+        "file": "next-history/OFL-JetBrains-Mono.txt",
+        "sha256": "30f0c136e3c88e422d0791acd97238870f9054a9729bc34cf2ff0d4ed8cac4ad"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/FankChen/tracecrate/blob/534da067199b519725ed1387db8d23d3b4dca78b/docs/screenshots/tracecrate-v0.2-desktop.png",
+    "file": "next-history/tracecrate-timeline.png",
+    "license": "next-history/LICENSE-TraceCrate-MIT.txt",
+    "sha256": "92b45aa7cd647009328804b5bf3d5a5921b7462301ca6951c9b65b3650413c40",
+    "alt": "TraceCrate「時間線」整頁：上方是合成流程摘要，下方串起十四個事件和一項示例錯誤，右側顯示所選工具事件的詳情。",
+    "credit": "TraceCrate · Timeline · © 2026 TraceCrate contributors · MIT · 原圖未修改；合成示例，非效能測試",
+    "additionalNotices": [
+      {
+        "name": "TraceCrate 圖示：Lucide 1.44.0 及 Feather",
+        "file": "next-history/LICENSE-Lucide-1.44.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      }
+    ]
+  }
+]
