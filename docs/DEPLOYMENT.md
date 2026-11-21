@@ -119,6 +119,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 已登記[出版者受眾修訂](../knowledge/fhs-publisher-script-editions.json)的教材沿用上述兩個修訂入口。worker 核實原單，以及前次修訂的終態和候選指紋；尚未派修訂的教材須查無前次工作。Server 從已核的段落建立純原文片段，直接送獨立審核，保留先前的保留意見。審核通過才沿原帳本建向量及上架。
 
+五份已有獨立保留決定的教材另登記了[候選版本及原文查閱條件](../knowledge/fhs-script-lookup-reviews.json)。上述入口會核對該次保留及之前各份收據，把新閱讀入口的實際用途連同原意見送審。母乳教材已有審核決定，向量費用仍待原票據確認，維持該工作指紋。
+
 **人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
 
 **舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。
@@ -166,7 +168,7 @@ export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0
 sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
 ```
 
-從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。
+從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。指定單冊時亦封存正式收據讀取原 PDF 各實頁所需的記錄，包括末段不足八頁的部分。
 
 ```sh
 node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT --text-only

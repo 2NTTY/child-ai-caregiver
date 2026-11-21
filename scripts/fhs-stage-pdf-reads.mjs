@@ -23,10 +23,10 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
   const directory = await mkdtemp(join(outputParent, 'fhs-pdf-reads-'));
   const generated = new Set();
   const signal = new AbortController().signal;
-  const capture = async (bytes, options = {}, newWindow = false) => {
+  const capture = async (bytes, options = {}, allowNewRead = false) => {
     const key = fhsPdfReadKey(options.expectedHash ?? sha(bytes), options);
     const existing = Object.hasOwn(index.records, key);
-    if (!existing && !newWindow) throw Error('fhs_pdf_prepared_read_missing');
+    if (!existing && !allowNewRead) throw Error('fhs_pdf_prepared_read_missing');
     const result = await read(bytes, options);
     if (!textOnly || !options.includePagePdf) {
       if (existing) records[key] = index.records[key];
@@ -48,6 +48,15 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
     const result = await observeKnowledgeLeaflet(definition, original, definition.title, null, 'catalogue-pdf-original/1', signal, capture);
     const item = result.status === 'ok' && result.items.length === 1 ? result.items[0] : null;
     if (item?.extraction?.totalPages !== pages || item.extraction.contentHash !== sha256) throw Error('fhs_pdf_observation_changed');
+    // The family receipt opens the parent PDF at any cited page, including the final partial block.
+    if (sources.length === 1 && !textOnly) {
+      for (let startPage = 1; startPage <= pages; startPage += 8) {
+        const options = {expectedHash:sha256, startPage, pageLimit:Math.min(8, pages - startPage + 1)};
+        if (Object.hasOwn(records, fhsPdfReadKey(sha256, options))) continue;
+        const block = await capture(original, options, true);
+        if (block.totalPages !== pages || block.pages.length !== options.pageLimit) throw Error('fhs_pdf_window_source_mismatch');
+      }
+    }
     const budget = item.nativeWindowMethod ? manualPdfWindowBudget(pages) : null;
     const windows = budget ? planKnowledgePdfWindows(pages, budget.modelCalls) : [];
     const modelCalls = Math.max(1, windows.length) * 2;

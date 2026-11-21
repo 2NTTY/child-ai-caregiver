@@ -169,11 +169,15 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
 <a id="platform-source-follow"></a>
-家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v5+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v6+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+
+v6 的 `publisherOriginals` 與已發布文件 `items` 共用目錄游標，每頁合共最多 10 份。每項原文有 `sourceId`、官方題名 `title`、原文 `url` 及官方 `categories`。屬於兒童健康卡、符合公開分享條件的網頁，登記及觀測有效後便可點讀。當頁若只有未觀測或已撤回的來源，客戶端按 `nextCursor` 繼續。發布生效後，同一來源移入 `items`；停用及撤回會移除原文入口。採用、固定、助手引用及 ZIP 匯出繼續使用已發布版本。
 
 v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項對應同一筆 `media.links` 網址。題名取自已讀官方頁，該頁有可定位劇本才提供 `transcriptUrl`。文件的 `sourceDateText?` 沿用發布版所載的官方修訂字樣及精度。v4 保留分類及原連結，v1 至 v3 沿用各自欄位。回應以 `Vary: Accept` 區分版本。
 
 助手搜尋影片清單時，`videoListScope` 會標明本次是跨教材命中，還是指名教材的已審劇本。清單的 `complete: false` 表示未能確認包含來源的所有影片。`omittedChunks` 只計已知但未放入回應的項目。普通問題沿原有檢索及同版擴讀流程。
+
+家長想找教材、讀原文或核對引用時，助手可按本輪意思以片名、內容描述或同義問法呼叫 `find_official_material`。結果沿用本人卡庫選擇、版本和引用位置。`search_knowledge` 的一般照護結果及其同版擴讀會排除標記為 `original_lookup` 的片段。主動提醒沒有原文查找工具。
 
 整卡操作向同一個人目錄端點提交 `{action:"manage", seriesId:"fhs-child-health", operation, expectedState}`。Server 在本人及孩子授權交易內核對成員、已發布版本及個人選擇。首次 `join` 跟隨已展示範圍，再次明確採用只加入缺少的教材；全數已選時回傳現況。`fixed` 明確選取已採用教材的目前版本，`follow` 跟隨已選範圍，`enable`、`disable` 和 `remove` 操作已選教材。選擇衝突回傳 `409 library_selection_changed`。版本參照及合法分享 ZIP 繼續逐份核查原件、版本與權利，每包最多 100 份。
 

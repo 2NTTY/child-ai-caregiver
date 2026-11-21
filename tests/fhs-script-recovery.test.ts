@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compactPublisherReview, publisherScriptReading, scriptReadingContract } from '../server/knowledge-script-reading.ts';
-import { approvedScriptEdition, currentScriptReadingWork, heldScriptRevision, scriptEditionWorkId, scriptRevisionWorkId, verifiedScriptReading, verifyHeldScript } from '../server/fhs-script-edition.ts';
+import { approvedScriptEdition, currentScriptReadingWork, heldScriptRevision, publisherScriptWork, scriptEditionWorkId, scriptRevisionWorkId, verifiedScriptReading, verifyHeldScript } from '../server/fhs-script-edition.ts';
 
 test('a publisher audience remains visible without creating age endpoints or advice eligibility', () => {
   const unit = {id:'p0-12345678901234567890',originalText:'家長可參考原文。',scriptPassage:{title:'情緒導航（學前兒童篇）'}};
@@ -20,12 +20,22 @@ test('the previous reading and its review stay bound to the new publisher editio
   const first={receipt:null,lease:null,prepared:null,result:{status:'candidate_held',code:parent.reason,observationHash:pin.observationHash}};
   const prior={...first,result:{...first.result,code:'review_hold'},prepared:{versionHash:'35fabd9fc0ca870ad83dc2c876a83efe066cd756356d5a54f4b53e67b7dc94d4',
     review:{decision:'hold_candidate',notes:['Original audience was lost.']}}};
-  const read=(id:string)=>Promise.resolve(id===scriptEditionWorkId(pin)?first:prior);
+  const earlierPublisher={...prior,prepared:{versionHash:'6dabeeb2530c16751befbb7f66437da0f45f463f494356e70913d7bba71dd27e',
+    review:{decision:'hold_candidate',notes:['Ordinary care search still returned these words.']}}};
+  const read=(id:string)=>Promise.resolve(id===scriptEditionWorkId(pin)?first:id===publisherScriptWork(pin)?earlierPublisher:prior);
   assert.notEqual(currentScriptReadingWork(pin),scriptRevisionWorkId(pin));
   const scope=await verifiedScriptReading(pin,read);
-  assert.deepEqual(scope.notes,prior.prepared.review.notes);
+  assert.deepEqual(scope.notes,[...prior.prepared.review.notes,...earlierPublisher.prepared.review.notes]);
   assert.ok('publisherScope' in scope && scope.publisherScope.audiences[0]?.audience==='學前兒童');
   await assert.rejects(verifiedScriptReading(pin,id=>id===scriptEditionWorkId(pin)?read(id):Promise.resolve({...prior,receipt:{state:'unknown'}})),/predecessor_changed/u);
+  await assert.rejects(verifiedScriptReading(pin,id=>id===publisherScriptWork(pin)?Promise.resolve(null):read(id)),/lookup_predecessor_changed/u);
+});
+
+test('an explicit upper age bound retains the source wording and leaves the lower bound unknown',()=>{
+  const [reading]=publisherScriptReading([{id:'part',originalText:'給兩歲前幼兒的父母'}],'親子溝通',
+    [{audience:'給兩歲前幼兒的父母',beforeMonths:24}],'給兩歲前幼兒的父母',true);
+  assert.equal(reading!.applicability.maxAgeMonths,24);assert.equal(reading!.applicability.maxAgeMonthsExclusive,true);
+  assert.equal(reading!.applicability.minAgeMonths,null);
 });
 
 test('the independent reader can reconstruct complete originals and quotations from compact references', () => {
