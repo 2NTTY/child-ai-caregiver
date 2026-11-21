@@ -98,7 +98,7 @@ export async function inspectHeldWindowEvidence({ domain, refresh, job, pin, def
   if (!matchesFhsPdfObservation(source, snapshot) || observationHash(snapshot.items[0]) !== saved.result.observationHash)
     throw Error('fhs_evidence_observation_changed');
   const index = Math.ceil(saved.budget.modelCalls / 2) - 1;
-  const range = planKnowledgePdfWindows(pin.pages, saved.budget.maxModelCalls)[index];
+  const range = planKnowledgePdfWindows(pin.pages, saved.budget.maxModelCalls, saved.windowRangeLimit ?? 14)[index];
   if (!Number.isInteger(index) || !range) throw Error('fhs_evidence_failed_window');
   const collection = database.collection(namespace + '_knowledge_work');
   const ref = (...parts) => collection.doc(knowledgeReviewHash(parts));

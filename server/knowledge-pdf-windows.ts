@@ -14,6 +14,8 @@ import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledge
 import type { RetainedTranscription } from './knowledge-retained-draft.ts';
 import { retainWindowPassage, reviseWindowRegion, type ReviewedWindow } from './fhs-reviewed-window.ts';
 export const PDF_WINDOW_METHOD = "native-pdf-window/1";
+export const PDF_WINDOW_RANGE_LIMIT = 8;
+export type PdfWindowRangeLimit = typeof PDF_WINDOW_RANGE_LIMIT | 14;
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const location = z.number().int().positive();
 const pageFinding = z.strictObject({
@@ -43,11 +45,11 @@ export type PdfReadingWindow = Range & {
 };
 function reject(code: string): never { throw new KnowledgeMaintenanceModelError(code); }
 /** At most 32 searchable ranges per edition. Neighbour pages carry continuation headings and footnotes. */
-export function planKnowledgePdfWindows(total: number, allowance: number): PdfReadingWindow[] {
+export function planKnowledgePdfWindows(total: number, allowance: number, rangeLimit: PdfWindowRangeLimit = PDF_WINDOW_RANGE_LIMIT): PdfReadingWindow[] {
   if (!Number.isSafeInteger(total) || total < 1)
     reject("knowledge_window_range_invalid");
   const width = Math.ceil(total / 32);
-  const perWindow = Math.floor(14 / width);
+  const perWindow = Math.min(rangeLimit, Math.floor(14 / width));
   if (perWindow < 1 || 2 * Math.ceil(Math.ceil(total / width) / perWindow) > allowance)
     reject("knowledge_window_model_budget_required");
   const windows: PdfReadingWindow[] = [];
@@ -62,8 +64,8 @@ export function planKnowledgePdfWindows(total: number, allowance: number): PdfRe
 }
 
 /** Size the commissioned work from its verified physical pages. Each range yields at most one embedding. */
-export function manualPdfWindowBudget(totalPages: number) {
-  const windows = planKnowledgePdfWindows(totalPages, AGENT_RUN_LIMITS.modelCalls.max);
+export function manualPdfWindowBudget(totalPages: number, rangeLimit: PdfWindowRangeLimit = PDF_WINDOW_RANGE_LIMIT) {
+  const windows = planKnowledgePdfWindows(totalPages, AGENT_RUN_LIMITS.modelCalls.max, rangeLimit);
   const ranges = windows.reduce((total, window) => total + window.ranges.length, 0);
   return { modelCalls: 2 * windows.length, maxUnits: BACKGROUND_KNOWLEDGE_RESERVED_UNITS + windows.length + ranges };
 }
@@ -222,6 +224,7 @@ export async function readKnowledgePdfWindow(input: {
   });
 }
 export function assembleKnowledgePdfWindows(input: {
+  windowRangeLimit?: PdfWindowRangeLimit;
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
   windows: WindowReading[];
@@ -233,7 +236,7 @@ export function assembleKnowledgePdfWindows(input: {
   }[];
 }): PreparedKnowledgeMaintenance {
   const { candidate, baseline, windows } = input, doc = candidate.observed, extraction = doc.extraction!;
-  const expected = planKnowledgePdfWindows(extraction.totalPages!, windows.length * 2);
+  const expected = planKnowledgePdfWindows(extraction.totalPages!, windows.length * 2, input.windowRangeLimit);
   if (windows.length !== expected.length || windows.some((w, i) => w.parentHash !== extraction.contentHash || w.first !== expected[i]!.first || w.last !== expected[i]!.last
     || w.firstRead !== expected[i]!.firstRead || w.lastRead !== expected[i]!.lastRead || w.pages.length !== w.last - w.first + 1 || w.pages.some((p, j) => p.page !== w.first + j || p.status === "unreadable")))
     reject("knowledge_window_coverage_disputed");

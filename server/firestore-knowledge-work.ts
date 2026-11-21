@@ -25,6 +25,7 @@ const receiptSchema = z.strictObject({ observationHash: hash, state: z.literal("
 const workSchema = z.strictObject({
   request: backgroundKnowledgeRunRequestSchema, configHash: hash, publicationConfigHash:hash.optional(), reusedOrganizationFrom: hash.optional(), deadlineAtMs: time,
   windowed: z.literal(true).optional(),
+  windowRangeLimit: z.literal(8).optional(),
   quotaPhase:z.literal('model').optional(), waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
   lease: z.strictObject({ token: z.uuid(), untilMs: time }).nullable(),
   budget: backgroundKnowledgeWorkBudgetSchema, result: backgroundKnowledgeRunResultSchema.nullable(),
@@ -189,17 +190,19 @@ export function createFirestoreKnowledgeWork(options: Options) {
       }, { readOnly: true });
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
-      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
+      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; windowRangeLimit?: 8; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
       sameDayCapacity?: (tx: Transaction) => Promise<boolean>, retained?: RetainedDraftRevision) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
       if (reusedOrganizationFrom && knowledgeOrganizationRepairId(reusedOrganizationFrom) !== request.operationFingerprint)
         reject("knowledge_work_repair_binding");
       z.uuid().parse(leaseToken); hash.parse(configHash);
-      z.object({ modelCalls: z.number().int().min(1).max(limits.windowed ? 64 : 2), windowed: z.literal(true).optional(), publicationConfigHash:hash.optional(), deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
+      z.object({ modelCalls: z.number().int().min(1).max(limits.windowed ? 64 : 2), windowed: z.literal(true).optional(),
+        windowRangeLimit: limits.windowed ? workSchema.shape.windowRangeLimit : z.never().optional(), publicationConfigHash:hash.optional(),
+        deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
       function verify(row: Work) {
         if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom || row.windowed !== limits.windowed
-          || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
+          || row.windowRangeLimit !== limits.windowRangeLimit || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
           reject("knowledge_work_binding_changed");
         return row;
       }
@@ -258,7 +261,9 @@ export function createFirestoreKnowledgeWork(options: Options) {
             reject("knowledge_work_repair_binding");
           priorBudget = old.budget;
         }
-        const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}), ...(limits.windowed ? { windowed:true as const } : {}), ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
+        const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}),
+          ...(limits.windowed ? {windowed:true as const} : {}), ...(limits.windowRangeLimit ? {windowRangeLimit:limits.windowRangeLimit} : {}),
+          ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
           budget: priorBudget ?? { usedUnits: 0, maxUnits: limits.maxUnits ?? 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
         tx.create(workRef, seal(workRef, row)); return row;
       });
