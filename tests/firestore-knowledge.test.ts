@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestorePersonalLibrary } from '../server/firestore-personal-library.ts';
+import { personalLibraryPageSchema } from '../src/shared/personal-library.ts';
 import { handlePersonalLibraryRequest } from '../server/personal-library-api.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
@@ -111,6 +112,79 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
   }
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
+test('pending publisher links require a current observation and never become a selectable edition', async () => {
+  const id = 'fhs-30012', definition = publicMaintenanceWatch(id)!;
+  const f = fixture(['fhs-child-vision'], undefined, new Map([[id, platformMaterials.get(id)!]]));
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+    async readControl() { return {enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd'}; } });
+  const store = createFirestoreKnowledgeStore({...f.options, observations: refresh.gate});
+  const list = () => store.catalogForUser('reader', null, true);
+  await refresh.register(id, 'fixture', true);
+  assert.equal((await list()).publisherOriginals, undefined);
+  const job = (await refresh.jobs(id))[0]!.data;
+  await refresh.process(job, crypto.randomUUID(), async () => ({status: 'ok', items: [{url: definition.url, title: definition.title!,
+    text: 'Synthetic cup article for testing the catalogue.', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null}]}), new AbortController().signal);
+  const page = await list();
+  assert.deepEqual(page.publisherOriginals, [{sourceId: id, title: definition.title, url: definition.url, categories: childHealthCategories({sourceId:id, url:definition.url})}]);
+  assert.equal(page.items.length, 0);
+  assert.equal((await store.catalogForUser('reader', null)).publisherOriginals, undefined);
+  assert.equal((await store.catalogForUser('reader', id, true)).publisherOriginals, undefined);
+  assert.equal(await store.mayReadLivePage('reader', id), false);
+  await refresh.disable(id);
+  assert.equal((await list()).publisherOriginals, undefined);
+});
+test('the tenth discovered publisher original moves into the published list on the same family catalogue cursor', async () => {
+  const members = [...platformMaterials.values()].filter(row => /^fhs-13\d+$/u.test(row.id))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en')).slice(0, 11);
+  assert.equal(members.length, 11);
+  const definitions = members.map(row => publicMaintenanceWatch(row.id)!);
+  const f = fixture([members[0]!.id], undefined, new Map(members.map(row => [row.id, row])));
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions,
+    async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+  const reads = new Set<string>();
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: { ...refresh.gate,
+    read(tx, id) { reads.add(id); return refresh.gate.read(tx, id); } } });
+  const entries = members.map((row, index) => ({ url: row.url, title: row.title, text: 'Synthetic observed article ' + index,
+    sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null }));
+  async function observe(index: number) {
+    const id = members[index]!.id;
+    await refresh.register(id, 'fixture', true);
+    await refresh.process((await refresh.jobs(id))[0]!.data, crypto.randomUUID(), async () =>
+      ({ status: 'ok', items: [entries[index]!] }), new AbortController().signal);
+  }
+  const first = () => store.catalogForUser('reader', null, true);
+  for (let i = 0; i < 9; i++) await observe(i);
+  assert.equal((await first()).publisherOriginals?.length, 9);
+  await observe(9);
+  await observe(10);
+  reads.clear();
+  const ten = await first(), tenth = members[9]!, next = members[10]!;
+  assert.deepEqual(ten.publisherOriginals?.map(link => link.sourceId), members.slice(0, 10).map(row => row.id));
+  assert.equal(ten.nextSourceId, tenth.id);
+  assert.equal(reads.has(next.id), false);
+  assert.ok(personalLibraryPageSchema.safeParse({ items: ten.items, publisherOriginals: ten.publisherOriginals, nextCursor: 'cursor', complete: false }).success);
+  const last = await store.catalogForUser('reader', ten.nextSourceId, true);
+  assert.deepEqual(last.publisherOriginals?.map(link => link.sourceId), [next.id]);
+  assert.equal(last.nextSourceId, null);
+
+  const original = entries[9]!, watch = definitions[9]!;
+  const document = { ...source(tenth.id, [chunk('article', { sourceExcerpt: original.text, originalText: original.text })]),
+    title: original.title, url: original.url, publisher: watch.publisher, termsUrl: watch.termsUrl };
+  const imported = await store.importSource(document);
+  for (let offset = 0; offset < KNOWLEDGE_LEXICAL_BUCKETS; offset += KNOWLEDGE_LEXICAL_BATCH)
+    await store.prepareSearch(imported.versionId, imported.hash);
+  await store.review(imported.versionId, imported.hash, 'fixture-reviewer', { ...assessment(document), observationHash: observationHash(original) });
+  await store.publish(imported.versionId, imported.hash, embeddings(document));
+  const published = await first();
+  assert.equal(published.nextSourceId, ten.nextSourceId);
+  assert.deepEqual(published.publisherOriginals?.map(link => link.sourceId), members.slice(0, 9).map(row => row.id));
+  assert.deepEqual(published.items.map(item => [item.sourceId, item.versionId, item.childHealth?.categories]),
+    [[tenth.id, imported.versionId, childHealthCategories({ sourceId: tenth.id, url: tenth.url })]]);
+  await store.disable(tenth.id, 'Synthetic publisher withdrawal');
+  const withdrawn = await first();
+  assert.equal(withdrawn.items.some(row => row.sourceId === tenth.id), false);
+  assert.equal(withdrawn.publisherOriginals?.some(row => row.sourceId === tenth.id), false);
+});
 test('one group command handles more than one archive of editions and fixes a previously moved document explicitly', () => {
   const members = [...platformMaterials.values()].filter(m => childHealthCategories({ sourceId: m.id, url: m.url })).slice(0, 110)
     .map(m => ({ sourceId: m.id, versionId: crypto.randomUUID(), seriesId: 'native-series', scopeHash: '1'.repeat(64) }));
