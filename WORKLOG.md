@@ -7336,3 +7336,32 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 香港 03:09，正式版 `8f94b86f` 已將 `fhs-20000` 原票按已記錄的向量拒絕結算 US$0，解除 US$0.000308 預留。十套母乳劇本共 26 段、11 個索引範圍獲獨立批准並上架。隔離家長用正式公開庫快照按片名查回 52 套、1,312 段，六個內容問題命中五個；57 個命中已對回正式查找索引。六次一般照護查詢均無純原文片段。查詢向量不可用，這次採用關鍵詞，模型呼叫及正式家庭寫入均為零。[逐套及逐票結果](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json)
 
 嬰兒用品的新審核保留了具體疑慮。原稿第 6 段的兩個月齡事件及第 2 段以一歲為界的兩組操作已綁回原句。本機查找會依已確認年齡篩選操作，保留共用文字；剛好一歲或未知時顯示兩組。親子溝通的修訂原單已付費，尚欠有效決定；已加入重建原請求及零模型校驗舊回應的入口。檢索、引用顯示及原票回放四檔 36 項通過。兩份教材的新決定和換尿片查找仍待正式工位核實。
+
+### 2026-11-19　REQ-003 助手預設確認模式與草稿編輯綁定
+
+- 在分支 `codex/req003-auth-mode-and-draft-binding` 落地助手執行授權模式（預設 `confirm_first` 先草稿確認後寫入，或明確切換為 `auto_authorized` 自動寫入），並補齊普通照護紀錄與私人筆記的建立／修訂草稿提案型別（`care_record_create`、`care_record_revise`、`private_note_create`、`private_note_revise`）、確認綁定與預先編輯接口 `editProposal`，同時於 `src/shared/operation-undo.ts` 建立操作撤銷能力目錄與未落庫草稿取消提示語意。
+- 離線驗證通過 `tests/req003-auth-mode-and-draft-binding.test.ts`（10 項）在內的 11 份測試共 99 項案例、`scripts/ci/verify-req003-auth-mode-and-draft-binding-offline.sh` 離線檢查規範，以及 Server、Shared、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
+
+### 2026-11-19　REQ-003 右上角統一待確認快捷入口與草稿編輯／差異確認介面
+
+- 在 `codex/req003-unified-pending-shortcut-ui` 交付右上角統一待確認快捷入口 `PendingReviewShortcut`（同時接線 Web `AppShell` 與 Native `NativeAppShell`），與 `/care`「記錄與核對」共用同一個 `ProductAgentOwner` 待確認佇列、`pending-review-model.ts` 計數摘要與 `PendingReviewList` 清單元件，確保數量與確認／略過狀態兩處即時同步、不另建第二套收件匣。
+- 補齊確認前草稿行內編輯與前後差異呈現（`proposal-draft-edit.ts`、`ProposalDraftEditor.tsx`、`ProductAgentOwner.editProposal`、`AgentRunView.tsx`），編輯期間鎖定確認並於升級草稿版本後重設家庭同意勾選；同時於待確認卡片明示 `DRAFT_CANCEL_NOT_HISTORY_UNDO_COPY`（放棄草稿不等於撤銷歷史操作），於已接受詳情及自動執行收據（`AgentConversation.tsx`）展示 `describeOperationUndoCapability` 實際可撤銷範圍，並於 `AgentAuthorization.tsx` 加入 `confirm_first`／`auto_authorized` 執行模式選擇。
+- 離線驗證通過 `frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs`（10 項）在內的 8 份測試共 107 項案例、`scripts/ci/verify-req003-unified-pending-shortcut-ui-offline.sh` 離線檢查規範，以及 Server、Root、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
+
+### 2026-11-19　REQ-003 單一主聊天「助手／只是聊天」手動切換
+
+- 在 `codex/req003-main-chat-mode-switch`（基於 `codex/req003-unified-pending-shortcut-ui`）交付單一主聊天手動模式切換：`src/shared/chat.ts`、`server/chat-message-schema.ts`、`server/chat.ts`、`server/chat-api.ts`、`server/firestore-chat.ts` 與 `src/client/chat-api.ts` 記錄每則訊息的產生模式（`assistant`／`chat_only`）並延續至模型回覆；`src/client/chat-controller.ts` 按孩子隔離保存模式且保留原聊天記錄、分頁游標及草稿。
+- 後端同步透過 Prompt 與工具／寫入邊界強制隔離（無額外意圖分類模型回合）：`server/product-agent-capabilities.ts`（`CHAT_ONLY_TOOL_CATALOG`、`COMPACT_CHAT_ONLY_TOOL_CATALOG`、`CHAT_ONLY_ALLOWED_TOOL_NAMES`）、`server/product-agent-tools.ts`、`server/product-agent.ts` 及 `server/chat-delivery-review.ts`（`isPureChatOnlyModeBoundaryNotice`）在 `chat_only` 模式保留主聊天上下文與公共檢索問答、不消耗既有確認亦不寫入提案或正式操作，並在切回 `assistant` 時於 `agent-context-window.ts`／`messageTopology` 標記原產生模式且禁止自動補存，僅在明確新要求（例如「把剛才那份記下來」）時依授權模式引用前文辦理；同步於 `src/shared/memory.ts`、`server/memory-summary.ts`、`server/summary-projection.ts`、`server/firestore-memory.ts` 保留技術摘要的 `sourceMessages` 來源版本與產生模式。
+- 前端於 `frontend/src/components/chat/ChatModeSwitch.tsx`、`frontend/src/production/ProductionProvider.tsx` 與 `frontend/src/screens/chatScreen.tsx` 提供清晰分段切換與一鍵切換回助手入口，「只是聊天」期間隱藏助手自動授權提示，並在已有回覆運行中切換時以 `modeSwitchedDuringReply` 區分原操作與後續新訊息；離線驗證通過 `tests/req003-main-chat-mode-switch.test.ts`（10 項）與 `frontend/scripts/req003-main-chat-mode-switch.test.mjs`（5 項）在內的 13 份測試共 144 項案例、`scripts/ci/verify-req003-main-chat-mode-switch-offline.sh` 與三份嚴格 `tsc --noEmit` 檢查。
+
+### 2026-11-20　REQ-003 頂欄左上隔離臨時聊天（純公共檢索、無持久化與即時／TTL 清理）
+
+- 在 `codex/req003-ephemeral-temporary-chat`（基於 `codex/req003-main-chat-mode-switch`）交付隔離臨時聊天功能：於 `AppShell` 與 `NativeAppShell` 頂欄最左側掛載 `TemporaryChatEntry`（不影響右上 `PendingReviewShortcut` 入口），搭配 `TemporaryChatModal`、`TemporaryChatOwner`（僅同步登入身份 `userId` 與連線狀態，不讀寫 `childId` 或任何瀏覽器持久化儲存）及 `src/client/temporary-chat-api.ts` 提供空白獨立會話、多輪對話與強制邊界披露。
+- 後端由 `src/shared/temporary-chat.ts`、`server/temporary-chat-store.ts`、`server/temporary-chat-agent.ts` 與 `server/temporary-chat-api.ts`（接線 `server/app.ts`、`server/firebase-app.ts`、`server/firebase-runtime.ts`、`server/index.ts`）實施零寫入隔離：禁止帶入孩子／家庭範圍欄位，透過 `server/knowledge-retriever.ts`（`publicOnly: true`）與 `server/firestore-knowledge.ts`（`mayReadPublicLivePage`）僅讀取公開官方知識與香港緊急求助卡片，工具邊界與 `server/chat-delivery-review.ts`（`temporaryChat: true`）禁止記錄／記憶／確認寫入，不落盤對話內容與原文日誌並納入使用者每日 AI 配額計算；正常退出同步清空本地狀態、取消在途 `AbortSignal` 並丟棄遲來回覆、物理清除伺服器記憶體並建立只含元數據的 revoked 墓碑（並於 Firebase 與 PostgreSQL 停機時呼叫 `dispose()` 釋放清理計時器）；斷線／異常離開時設本地暫清與遠端確認分狀態（`local_cleared_remote_pending`／`remote_confirmed`）於重連後自動補清，伺服器端則設 15 分鐘閒置與 60 分鐘硬上限 TTL 自動收回；同時於介面明確告知第三方模型及搜尋供應商側之處理與留存受供應商政策約束。
+- 本次驗證全部以離線腳本化模型與記憶體替身執行（未連接線上 Gemini/Vertex 或外部網路）：通過 `tests/req003-ephemeral-temporary-chat.test.ts`（12 項）與 `frontend/scripts/req003-ephemeral-temporary-chat.test.mjs`（6 項）在內的 16 份測試共 171 項案例、`scripts/ci/verify-req003-ephemeral-temporary-chat-offline.sh` 離線檢查規範，以及 Server、Root、Frontend 三份嚴格 `tsc --noEmit` 型別檢查。
+
+### 2026-11-20　REQ-003 Stage 5 跨 PR 合成驗收與收束（PR 5）
+
+- 在分支 `codex/req003-acceptance-closeout`（基於 PR 4 最新同步版本 `5013853b`）新增跨 PR 合成驗收測試 `tests/req003-acceptance-closeout.test.ts`（6 項案例：PR 1＋PR 2 草稿確認編輯與七類操作撤銷邊界、PR 3 純聊天與 REQ-009 三角色討論正交性、切換回助手引用「把剛才那份記下來」、PR 4 臨時聊天隔離與 `server/firebase-runtime.ts`／`server/index.ts` 雙運行環境接線、`PLAN.md#req003-closeout01` 二十一項場景與七項待決結構檢查，以及 `docs/REQUIREMENTS_BACKLOG.md` 同步與清潔度檢查）。
+- 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
+- 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。

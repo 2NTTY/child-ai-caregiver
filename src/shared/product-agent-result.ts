@@ -16,11 +16,14 @@ export const agentSavedProposalSchema = z.object({
   id: uuid, runId: uuid, childId: uuid, version, status: z.enum(['pending', 'accepted', 'dismissed', 'expired']),
   createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(),
   targetVisibility: z.enum(['private', 'family']).optional(), contentState: z.enum(['ready', 'invalidated']).optional(),
-  result: z.object({ kind: z.enum(['task', 'memory_fact', 'private_source', 'concern', 'family_document']), id: uuid, version }).nullable(),
+  result: z.object({ kind: z.enum(['task', 'memory_fact', 'private_source', 'concern', 'family_document', 'care_record', 'private_note']), id: uuid, version }).nullable(),
 }).refine(value => value.status === 'accepted'
   ? value.result !== null && value.result.kind === (value.value.kind === 'family_document_change' ? 'family_document'
-    : value.value.kind.startsWith('concern_') ? 'concern' : value.value.kind.startsWith('private_source_') ? 'private_source'
-      : value.value.kind.startsWith('memory_fact') ? 'memory_fact' : 'task') : value.result === null);
+    : value.value.kind.startsWith('care_record_') ? 'care_record'
+      : value.value.kind.startsWith('private_note_') ? 'private_note'
+        : value.value.kind.startsWith('concern_') ? 'concern'
+          : value.value.kind.startsWith('private_source_') ? 'private_source'
+            : value.value.kind.startsWith('memory_fact') ? 'memory_fact' : 'task') : value.result === null);
 
 const range = z.object({ start: count, end: count });
 export const agentCitationSchema = z.object({

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+stage=preflight
+trap 'status=$?; printf "FAIL stage=%s exit=%s\n" "$stage" "$status" >&2; exit "$status"' ERR
+
+test "$(id -u)" -ne 0
+test -n "${EXPECTED_SHA:-}"
+[[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+test -n "${PARENT_NETNS:-}"
+test "$(readlink /proc/self/ns/net)" != "$PARENT_NETNS"
+test "$(ip -o link show | wc -l)" -eq 1
+ip -o link show lo | grep -Eq '^[0-9]+: lo:.*state DOWN'
+test -z "$(ip -4 route show table all)"
+test -z "$(ip -6 route show table all)"
+grep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status
+awk '
+  /^Cap(Inh|Prm|Eff|Bnd|Amb):/ {
+    if ($2 != "0000000000000000") bad=1
+    count++
+  }
+  END { exit (bad || count != 5) }
+' /proc/self/status
+test "${NODE_BIN:0:1}" = "/"
+test "$("$NODE_BIN" --version)" = "v24.22.1"
+
+GUARD=frontend/scripts/family-cleanup-network-guard.mjs
+CONTRACT=scripts/ci/summary-progress-contract.mjs
+TEST_FILES=(
+  tests/req003-acceptance-closeout.test.ts
+  tests/chat-discussion.test.ts
+  tests/req003-ephemeral-temporary-chat.test.ts
+  frontend/scripts/req003-ephemeral-temporary-chat.test.mjs
+  tests/req003-main-chat-mode-switch.test.ts
+  tests/req003-legacy-chat-mode.test.ts
+  tests/req003-composer-mode-integration.test.ts
+  frontend/scripts/req003-main-chat-mode-switch.test.mjs
+  tests/req003-auth-mode-and-draft-binding.test.ts
+  frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs
+  tests/chat-delivery-review.test.ts
+  tests/search-query-minimization.test.ts
+  tests/chat-api.test.ts
+  tests/chat-api-client.test.ts
+  tests/chat-client.test.ts
+  tests/summary-projection-delivery.test.ts
+  tests/memory-summary-projection.test.ts
+  tests/req008-context-and-blindspot-discovery.test.ts
+  tests/summary-progress.test.ts
+  tests/summary-prompt-contract.test.ts
+)
+TEST_CASES=(6 5 13 11 10 2 2 5 10 10 44 9 7 2 19 11 3 9 18 1)
+
+for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
+  tsconfig.json tsconfig.server.json frontend/tsconfig.json \
+  PLAN.md WORKLOG.md docs/REQUIREMENTS_BACKLOG.md \
+  src/shared/agent-actions.ts \
+  src/shared/operation-undo.ts \
+  src/shared/chat.ts \
+  src/shared/temporary-chat.ts \
+  server/product-agent.ts \
+  server/product-agent-tools.ts \
+  server/firestore-chat.ts \
+  server/temporary-chat-store.ts \
+  server/temporary-chat-agent.ts \
+  server/firebase-runtime.ts \
+  server/index.ts; do
+  test -f "$source" && test ! -L "$source"
+  git ls-files --error-unmatch -- "$source" >/dev/null
+done
+git diff --exit-code HEAD
+
+stage=locked-toolchain
+"$NODE_BIN" --input-type=commonjs - <<'NODE'
+const assert = require('node:assert/strict');
+const lock = require('./package-lock.json');
+for (const name of ['typescript', '@google/genai', '@google/adk', 'zod', 'patch-package']) {
+  assert.equal(require('./node_modules/' + name + '/package.json').version,
+    lock.packages['node_modules/' + name].version, name);
+}
+NODE
+
+stage=existing-dependency-patches
+"$NODE_BIN" node_modules/patch-package/index.js --patch-dir frontend/patches --error-on-fail
+
+stage=req003-acceptance-closeout-tests
+total_cases=0
+for index in "${!TEST_FILES[@]}"; do
+  source="${TEST_FILES[$index]}"
+  expected="${TEST_CASES[$index]}"
+  TAP_FILE="$TMPDIR/req003-acceptance-closeout-$index.tap"
+  printf 'complete-test-file=%s expected-cases=%s\n' "$source" "$expected"
+  "$NODE_BIN" --import "./$GUARD" --experimental-test-module-mocks --test --test-timeout=30000 \
+    --test-concurrency=1 --test-reporter=tap "$source" | tee "$TAP_FILE"
+  "$NODE_BIN" "$CONTRACT" check "$TAP_FILE" "$expected"
+  total_cases=$((total_cases + expected))
+done
+
+stage=full-server-root-and-frontend-types
+timeout 240s "$NODE_BIN" --max-old-space-size=3072 node_modules/typescript/bin/tsc \
+  --project tsconfig.server.json --noEmit --pretty false
+timeout 240s "$NODE_BIN" --max-old-space-size=3072 node_modules/typescript/bin/tsc \
+  --noEmit --pretty false
+timeout 240s "$NODE_BIN" --max-old-space-size=3072 node_modules/typescript/bin/tsc \
+  --project frontend/tsconfig.json --noEmit --pretty false
+
+stage=final-source-integrity
+git diff --exit-code HEAD
+test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+printf 'PASS candidate=%s complete-test-files=%s cases=%s strict-type-configs=tsconfig.server.json,tsconfig.json,frontend/tsconfig.json\n' \
+  "$EXPECTED_SHA" "${#TEST_FILES[@]}" "$total_cases"
