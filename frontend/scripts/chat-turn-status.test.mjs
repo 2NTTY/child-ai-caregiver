@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CHAT_REPLY_ERROR_COPY } from '../../src/client/chat-controller.ts';
+import { CHAT_REPLY_ERROR_COPY, chatDraftIsSubmitted } from '../../src/client/chat-controller.ts';
 import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../src/components/chat/chat-turn-status.ts';
 import { harness } from './scope-transition-harness.mjs';
 
@@ -42,7 +42,7 @@ test('child names disambiguate multiple or explicitly chosen private conversatio
   assert.equal(privateChatChildName([child], 'other', true), undefined);
 });
 
-test('the single-child companion replaces the waiting line with the saved failure and one original-message action', () => {
+function companionHarness(overrides = {}) {
   const h = harness({
     'react-native': { View: 'View', ScrollView: 'ScrollView', Platform: { OS: 'web' },
       StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 390 }) },
@@ -50,10 +50,12 @@ test('the single-child companion replaces the waiting line with the saved failur
     '../../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../chat/chat-turn-status': { chatReplyActivity, chatTurnStatus, privateChatChildName },
     '../chat/ChatTurnStatusLine': { ChatTurnStatusLine: 'TurnStatus' },
-    '../chat/ChatAction': { ChatAction: 'Action' }, '../chat/AssistantByline': { AssistantByline: 'Byline' },
-    '../AppIcon': { AppIcon: 'Icon' }, '../agent/AgentComposer': { AgentComposer: 'Composer' },
+    '../chat/ChatAction': { ChatAction: 'Action' }, '../agent/VoiceCapture': { VoiceCapture: 'Voice' },
+    '../agent/ChatComposerInput': { ChatComposerInput: 'Input' },
     './CompanionSelection': { useCompanionSelection: () => undefined },
-    './CompanionPopover': { CompanionPopover: 'Popover' }, './CharacterDock': { CharacterDock: 'Dock' },
+    './CharacterDock': { CharacterDock: 'Dock' },
+    '../../../../src/client/chat-controller': { chatDraftIsSubmitted },
+    ...overrides,
   });
   const { SiteCompanion } = h.load('src/components/companion/SiteCompanion.tsx');
   const chat = { selectedChildId: 'child', drafts: {}, messages: [], online: true };
@@ -61,6 +63,11 @@ test('the single-child companion replaces the waiting line with the saved failur
     chatDraft: '', agentAttachments: [], agentRuns: {}, recordsState: { children: [{ id: 'child', displayName: '小晴' }] },
     chatWritesAllowed: true, voiceUpload: {}, photoUpload: {}, fileUpload: {} });
   h.route('/tasks'); h.render(h.jsx(SiteCompanion, {authorised:true,visible:true}));
+  return { h, chat };
+}
+
+test('the single-child companion replaces the waiting line with the saved failure and one original-message action', () => {
+  const { h, chat } = companionHarness();
   h.hosts().find(node => node.type === 'Dock').props.onChat(); h.render();
   const ask = { id: question, childId: 'child', role: 'user', text: '你是誰' };
   Object.assign(chat, replying, { messages: [ask], drafts: { child: savedDraft } });
@@ -76,5 +83,49 @@ test('the single-child companion replaces the waiting line with the saved failur
   assert.deepEqual(statuses(), []);
   assert.equal(copy().split('服務暫時未能使用').length - 1, 1);
   assert.doesNotMatch(copy(), /這次回覆未完成，請查核原結果/);
-  assert.deepEqual(h.hosts().filter(node => node.type === 'Action').map(node => node.props.label), ['查核原訊息', '收起小助手對話']);
+  assert.deepEqual(h.hosts().filter(node => node.type === 'Action').map(node => node.props.label), ['查核原訊息', '送出']);
+});
+
+test('the outgoing echo leaves the field editable for the next text before the first save is confirmed', () => {
+  const { h, chat } = companionHarness();
+  h.hosts().find(n => n.type === 'Dock').props.onChat(); h.render();
+  chat.busy = 'save'; chat.outgoing = { childId: 'child', text: '第一題' };
+  chat.drafts.child = { phase: 'saving', text: '第一題' }; h.render();
+  const input = () => h.hosts().find(n => n.type === 'Input').props;
+  assert.equal(h.node('companion-outgoing').props.children, '第一題');
+  assert.equal(input().value, ''); assert.equal(input().disabled, false);
+  chat.drafts.child.nextText = '下一題'; h.render();
+  assert.equal(input().value, '下一題');
+  chat.outgoing = { childId: 'other', text: '另一個孩子' }; h.render();
+  assert.equal(h.node('companion-outgoing'), undefined);
+});
+
+test('refreshing the selected detail preserves a local voice preview and its original item until explicit send', () => {
+  const original = { kind: 'task', id: 'saved-task', version: 3 };
+  let selected = { page: '/tasks', childId: 'child', item: original, label: '公園觀察小袋' };
+  const sends = [];
+  let starts = 0, cancels = 0, adopted = 0;
+  const { h, chat } = companionHarness({
+    './CompanionSelection': { useCompanionSelection: () => selected },
+    '../agent/VoiceCapture': { VoiceCapture: props => {
+      props.ref.current = { start() { starts++; }, cancel() { cancels++; } };
+      return { type: 'Capture', props };
+    } },
+  });
+  chat.loadedAt = 'ready';
+  h.production({ chatState: chat, selectedChildId: 'child', scopeKey: 'private', sharedChild: {}, chatWritesAllowed: true,
+    chatDraft: '', agentAttachments: [], agentRuns: {}, recordsState: { children: [] }, voiceUpload: {}, photoUpload: {}, fileUpload: {},
+    addAgentAttachment() { adopted++; return true; }, sendChat: async options => { sends.push(options); } });
+  h.render();
+  const control = name => h.hosts().find(node => node.type === name).props;
+  control('Dock').onVoice(); h.render();
+  assert.equal(starts, 1); assert.equal(control('Capture').visible, true);
+  chat.loading = true; selected = null; h.render();
+  assert.equal(control('Capture').visible, true); assert.equal(control('Capture').confirmDisabled, true);
+  chat.loading = false; h.render();
+  const pick = control('Capture').onPick;
+  pick({ kind: 'voice', id: 'local' }); pick({ kind: 'voice', id: 'local' });
+  assert.equal(adopted, 1); assert.deepEqual(sends, [{ pageContext: { page: '/tasks', item: original } }]);
+  selected = { page: '/tasks', childId: 'child', item: { ...original, version: 4 } }; h.render();
+  assert.equal(cancels, 1); assert.equal(control('Capture').visible, false);
 });
