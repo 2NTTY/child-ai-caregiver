@@ -1,0 +1,70 @@
+{
+  "baseline": "6bd0095f",
+  "verificationDate": "2026-11-21",
+  "environment": "Windows, Node 24.22.3. 本人來源排程、加密卡片、文件索引、助手引用及固定版讀回使用正式程式。網站 HTTP 回應和 Firestore 交易以隔離測例提供。另以本機 Firebase Auth、Firestore 模擬器和 390 × 844 Edge 核對求助入口。",
+  "parentMessagesForInitialAndScheduledChecks": 0,
+  "parentConfirmationsForInitialAndScheduledChecks": 0,
+  "paidModelOrEmbeddingCalls": 0,
+  "flow": [
+    {
+      "site": "圖書館通告",
+      "first": "HTML 主文連結。入口首次回傳 503，原工作自動重試後查得星期一開放。",
+      "update": "目錄改為正文區外的表格。讀法版本一轉為二，重讀原公告後查得星期四開放。",
+      "recheck": "內容未改，保留同一文件版本。目錄其後只剩標題，巡查呈報缺口，仍可重開星期四的原文。"
+    },
+    {
+      "site": "博物館通告",
+      "first": "Atom 項目的站內連結重新導向實際公告。以該公告的固定版本讀得展覽場地。",
+      "update": "原網址轉為 HTML 首頁，由首頁宣告 Atom 網址。讀法版本一轉為二，實際公告更新為石橋館。",
+      "recheck": "未改重跑回報 unchanged。其後有一個項目三次未能取得，另一個項目的白石館更新仍可引用。"
+    }
+  ],
+  "help": {
+    "skip": "相同網址、相同原因下，原缺口及跳過狀態跨巡查保留。",
+    "wrong": "家長在原助手提供另一個站內目錄。網站和已驗樣本均未證實關係，線索列為 rejected；該目錄連向的文件沒有下載。",
+    "verified": "另一個目錄列出已驗的同站原件。助手位置線索回到原 checkId，巡查重新讀到可查版本後才採用。後續巡查可沿已驗入口更新。"
+  },
+  "citations": [
+    {
+      "original": "https://library.example.org/books/room",
+      "quote": "青松閱覽室星期一開放。",
+      "version": "c7903b6b73e5cd78906c878db7e67def403243aa0f3974911200d562e8dabd63",
+      "citation": "source-card:b530c797d0a0f12fcab2274ac3092dc7a89f2e38ea001073b671d23cd88d2c16"
+    },
+    {
+      "original": "https://museum.example.org/notices/summer",
+      "quote": "夏季展覽在松木館舉行。",
+      "version": "b9465623ed8a68e3f85d168398662f0b84071cd166db1eaa14cb967f1581a26d",
+      "citation": "source-card:b4434c4139796598d2cee26f0a04f45e41d900a31d55a80e5bb065ad9734a280"
+    },
+    {
+      "original": "https://library.example.org/books/room",
+      "quote": "青松閱覽室星期四開放。",
+      "version": "eb3ffa46acb15c189b8e533035b64b7807d685f72bb9cef7c71e9283ed1b233c",
+      "citation": "source-card:8c5646e6f0c8da46f312dd211c3f52207a059044ce7f67be86c8e84632f53fc4"
+    },
+    {
+      "original": "https://museum.example.org/notices/summer",
+      "quote": "夏季展覽移至石橋館。",
+      "version": "f8b6b6de42199d5ee55f21d0b61800b6e6aa674f2e8e19f53ebd2b58e849f1ea",
+      "citation": "source-card:a8433735e3095cec3600f1eed16d98ea17569440c0c8086dd2329f09992c33a3"
+    },
+    {
+      "original": "https://museum.example.org/notices/summer",
+      "quote": "秋季展覽移至白石館。",
+      "version": "7f4bcf825c01b06cf015405e2e15441413691081720f1a1898dba8462e7db1b4",
+      "citation": "source-card:0aab7fdef4e6ec4fef08d4da6e003ad274eb9488875c8c9482410cdef30e13dc"
+    }
+  ],
+  "checks": {
+    "serverAndAssistant": "5 個檔案，11 項通過。",
+    "cardUiAndAcquisition": "15 項通過，既有 Unix socket 瀏覽器下載測例未在本次 Windows 檢查執行。",
+    "types": "Server 與 frontend TypeScript 通過。",
+    "browser": "browser.json",
+    "screen": "private-gap-390.png"
+  },
+  "limits": [
+    "兩個網站及所有引文均為合成資料。正式家長帳戶、外站登入、原生手機和付費語意／圖像審核未在本輪驗收。",
+    "本輪驗證文字原件的固定版本引用。限站內已授權範圍、既有檔案和瀏覽器能力。任意 JavaScript 應用、跨網域目錄和須人工驗證的頁面未證實可自動修復。"
+  ]
+}

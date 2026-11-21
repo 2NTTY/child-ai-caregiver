@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
+
 **2026-11-21 香港 19:21 查庫**　整張衞生署卡已對帳 86 個影音連結，61 份官方劇本分布在 22 份教材。26 個相關正式生效版本的 42 個片段均未帶劇本段號。普通家長問題已從正式片段取回玩具茶壺的原句，逐字對上《加入新玩法》第 2 段。新劇本待正式審核及上架。影音分析維持關閉，本輪付費呼叫為零。[逐項清單、正式查回與入庫差額](artifacts/verification/FHS_SCRIPT_COVERAGE_20261121.json) · [版本及驗收](PLAN.md#fhs-official-source-forms)
 
 **2026-11-21 香港 16:54**　回答後討論已在本機 Edge 以同一合成家庭、普通政策及真 Vertex 驗通。家長從已保存的原答開討論，四次模型呼叫取得三席、主答及獨立核對。收合重開後本人及平台用量同為 4 → 4；下一條廣東話普通問題正常回覆，兩邊用量均為 5。正式舊截圖仍未能配對原單，發布由主對話處理。[分項收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [家長畫面](artifacts/verification/REQ009_PARENT_BUDGET_THREE_20261121.png)

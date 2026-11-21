@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
-import { registeredSourceCommandSchema, registeredSourceResultSchema,
+import { registeredSourceCommandSchema, registeredSourceResultSchema, sourceAccessGate,
   type RegisteredSourceCard, type RegisteredSourceResult } from '../src/shared/registered-source-card.ts';
 import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthority, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
+import { sourceCardScope } from './source-card-page.ts';
+import { applyReadingReport, type SourceReadingReport } from './source-reading-evidence.ts';
 import { sourceCardRecord, sourceCredentialCommand, sourceCredentialRecord, sourceOperationRecord,
   sourceRecordId, sourceCardId, sourceRevision, sourceCardMetadata, sourceListTag, type SourceRecord, type LiveSource } from './registered-source-records.ts';
 
@@ -91,6 +93,21 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
         cardId, revision, enabled: true, credentialRef: null, nextCheckAt: at, lastCheckedAt: null, lastResult: null } };
       if (!row) domainReject('source_card_not_found', 404);
       const card = row.card;
+      if (input.action === 'skip_gap') {
+        if (!card.gap || card.gap.checkId !== input.checkId) domainReject('source_card_changed');
+        return { ...row, card: { ...card, gap: { ...card.gap, skipped: true } } };
+      }
+      if (input.action === 'suggest_location') {
+        if (!card.enabled || card.kind === 'document' || sourceAccessGate.safeParse(card.lastResult?.status).success) domainReject('source_hint_unavailable', 409);
+        if (input.checkId !== card.gap?.checkId) domainReject('source_card_changed');
+        try { sourceCardScope({ cardId, kind: card.kind, entryUrl: card.url, allowedPath: card.allowedPath })(input.url); }
+        catch { domainReject('source_hint_scope', 400); }
+        if (card.hint?.status === 'pending' && card.hint.url !== input.url) domainReject('source_hint_pending', 409);
+        if (card.hint?.status === 'pending') return row;
+        if (card.methods?.length === 8 && !card.methods.some(m => m.url === input.url)) domainReject('source_method_limit', 409);
+        return { ...row, card: { ...card, revision: row.lease ? card.revision : revision, nextCheckAt: at, hint: { url: input.url, status: 'pending',
+          ...(row.lease ? { afterCheckId: row.lease.checkId } : {}), ...(card.gap ? { checkId: card.gap.checkId, covers: card.gap.url } : {}) } } };
+      }
       if (input.action === 'remove') {
         deleteCredential(binding, card.credentialRef);
         return { removed: true, cardId, revision };
@@ -100,12 +117,13 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
       if (input.action === 'check_now' && row.lease) return row;
       if (input.action === 'set_enabled' && input.enabled === card.enabled) return row;
       const enabled = input.action === 'set_enabled' ? input.enabled : card.enabled;
-      const { allowedPath, ...base } = card;
+      const { allowedPath, methods, gap, hint, ...base } = card;
       const settings = input.action === 'update' ? input.settings : { ...(allowedPath ? { allowedPath } : {}) };
       const sourceChanged = input.action === 'update' && (input.settings.url !== card.url || input.settings.kind !== card.kind || input.settings.allowedPath !== allowedPath);
       if (sourceChanged) deleteCredential(binding, card.credentialRef);
       const accessRevision = (row.accessRevision ?? 1) + Number(sourceChanged || enabled !== card.enabled);
       return { removed: false, accessRevision, lease: null, finished: null, card: { ...base, ...settings, revision, enabled,
+        ...(!sourceChanged && enabled ? { ...(methods ? { methods } : {}), ...(gap ? { gap } : {}), ...(hint ? { hint } : {}) } : {}),
         credentialRef: sourceChanged ? null : card.credentialRef,
         ...(sourceChanged ? { lastResult: null, lastCheckedAt: null } : {}),
         nextCheckAt: enabled && (input.action !== 'update' || sourceChanged || card.nextCheckAt !== null) ? at : null } };
@@ -123,7 +141,8 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
         binding.transaction.create(vault(key), { ...data.tags(binding.scope), ...data.seal('registered-source-credential', key,
           binding.scope, sourceCredentialRecord, { cardId, credentialRef, origin, loginUrl, username: input.username, password: input.password }) });
       }
-      return { removed: false, accessRevision: (row.accessRevision ?? 1) + 1, lease: null, finished: null, card: { ...card, revision: card.revision + 1,
+      const { methods, gap, hint, ...settings } = card;
+      return { removed: false, accessRevision: (row.accessRevision ?? 1) + 1, lease: null, finished: null, card: { ...settings, revision: card.revision + 1,
         credentialRef, nextCheckAt: card.enabled ? iso(now()) : null } };
     });
   }
@@ -153,7 +172,8 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
         const row = await read(binding, id(candidate.cardId)), time = now();
         if (!row || row.removed || !row.card.enabled || row.card.revision !== candidate.revision || !row.card.nextCheckAt
           || Date.parse(row.card.nextCheckAt) > time || row.lease && Date.parse(row.lease.until) > time) return null;
-        const lease = { checkId: row.lease?.checkId ?? randomUUID(), token: randomUUID(), until: iso(time + LEASE_MS),
+        const resumeId = row.card.hint?.status === 'pending' ? row.card.hint.checkId : undefined;
+        const lease = { checkId: row.lease?.checkId ?? resumeId ?? randomUUID(), token: randomUUID(), until: iso(time + LEASE_MS),
           generation: binding.generation, authorizationVersion: binding.authorizationVersion };
         const next = { ...row, lease };
         save(binding, next);
@@ -200,16 +220,23 @@ export function createFirestoreRegisteredSourceCards(options: FirestoreAuthority
       save(binding, { ...row, lease: { ...row.lease!, until: iso(now() + LEASE_MS) } });
     });
   }
-  function finish(job: RegisteredSourceJob, raw: RegisteredSourceResult) {
+  function finish(job: RegisteredSourceJob, raw: RegisteredSourceResult, report?: SourceReadingReport) {
     const result = domainParse(registeredSourceResultSchema, raw);
     return authority.runTransaction(job.ownerUserId, null, async binding => {
       const current = await read(binding, id(job.cardId));
-      if (current && !current.removed && current.card.revision === job.revision && current.finished?.checkId === job.checkId
+      if (current && !current.removed && current.finished?.checkId === job.checkId
         && current.finished.token === job.leaseToken && firestoreDomainHash(current.finished.result) === firestoreDomainHash(result)) return;
       const row = checkLease(binding, job, current), time = now();
       const automatic = ['changed', 'unchanged', 'failed'].includes(result.status);
+      const updated = report ? applyReadingReport(row.card, report, job.checkId) : row.card;
+      if (updated.hint?.status === 'pending' && updated.hint.afterCheckId === job.checkId) {
+        const { afterCheckId, ...hint } = updated.hint;
+        updated.hint = hint;
+        updated.revision++;
+      }
+      const nextCheckAt = automatic ? iso(updated.hint?.status === 'pending' ? time : time + row.card.frequencyMinutes * 60000) : null;
       save(binding, { removed: false, accessRevision: (row.accessRevision ?? 1) + Number(!automatic), lease: null, finished: { checkId: job.checkId, token: job.leaseToken, result },
-        card: { ...row.card, lastCheckedAt: iso(time), lastResult: result, nextCheckAt: automatic ? iso(time + row.card.frequencyMinutes * 60000) : null } });
+        card: { ...updated, lastCheckedAt: iso(time), lastResult: result, nextCheckAt } });
     });
   }
   return { get, list, command, credential, due, claim, credentialFor, finish, renew, withCurrentCheck };

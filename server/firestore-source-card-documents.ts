@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { FieldPath, type DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { CHAT_FILE_LIMITS } from '../src/shared/chat-files.ts';
+import { sourceAccessGate } from '../src/shared/registered-source-card.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction, type FirestoreAuthorityOptions } from './firestore-authority.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
@@ -12,6 +13,7 @@ import { readChatFile } from './chat-file-reader.ts';
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from './knowledge-pdf.ts';
 import { knowledgeIndexTokens } from './knowledge-ranking.ts';
 import { sourceCardFrontier, scanCounts, type SourceScanBatch } from './source-card-frontier.ts';
+import { observeMethods, readingReport } from './source-reading-evidence.ts';
 import { parsePersonalPage } from './personal-source-fetch.ts';
 import {
   SOURCE_CARD_PART_BYTES, sourceCardDocumentRecord, sourceDocumentKey, sourceDocumentUrl, sourceDocumentMetadata,
@@ -128,21 +130,29 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
       return fn(b, head);
     });
   }
-  async function checkResult(job: RegisteredSourceJob) {
+  async function checkResult(job: RegisteredSourceJob, startUrl?: string) {
     return cards.withCurrentCheck(job, async b => {
       const grant = grantFor(job), id = sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'receipt');
       const raw = open(b, id, await b.transaction.get(ref(id)));
       if (raw && raw.kind !== 'receipt') return corrupt();
       const row = raw?.checkId === job.checkId && raw.revision === job.revision ? raw : null;
-      return { sequence: row?.sequence ?? 0, items: await frontier.pending(b, job, grant, row), result: scanCounts(row) };
+      return { sequence: row?.sequence ?? 0, items: await frontier.pending(b, job, grant, row, startUrl), result: scanCounts(row), reading: readingReport(row) };
     });
   }
-  // Retry transient reads only after there is a durable checkpoint to resume.
-  async function retryBatch(job: RegisteredSourceJob, sequence: number) {
+  async function retryBatch(job: RegisteredSourceJob, sequence: number, startUrl = job.url) {
     return cards.withCurrentCheck(job, async b => {
       const id = sourceDocumentKey(job.ownerUserId, job.cardId, grantFor(job), 'receipt');
       const row = open(b, id, await b.transaction.get(ref(id)));
-      if (row?.kind !== 'receipt' || row.checkId !== job.checkId || row.revision !== job.revision || row.sequence !== sequence || !row.pending) return false;
+      if (row?.kind !== 'receipt' || row.checkId !== job.checkId || row.revision !== job.revision) {
+        if (sequence) return false;
+        const grant = grantFor(job), fields = { cardId: job.cardId, grant, checkId: job.checkId, revision: job.revision };
+        save(b, { ...fields, kind: 'frontier', ordinal: 0, pending: true, item: { url: sourceDocumentUrl(job, startUrl).href } });
+        save(b, { ...fields, kind: 'scan-cleanup', cleanupAt: new Date(now() + 86400_000).toISOString() });
+        save(b, { ...fields, kind: 'receipt', status: 'unchanged', sequence: 0, pending: 1, discovered: 1,
+          transientFailures: 1, issueCount: 0, issueExamples: [], savedDocumentCount: 0, indexedDocumentCount: 0, oversizedCount: 0 });
+        return true;
+      }
+      if (row.sequence !== sequence || !row.pending) return false;
       const tries = row.transientFailures ?? 0;
       if (tries >= 2) return false;
       save(b, { ...row, transientFailures: tries + 1 });
@@ -159,6 +169,13 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
     try { ready = originals.map(item => materialize(job, item)); }
     catch { return invalid(); }
     if (new Set(ready.map(item => item.edition.documentId)).size !== ready.length) return invalid();
+    if (batch.candidate) {
+      const candidate = batch.candidate, observed = new Set([...batch.next.filter(i => !i.offset).map(i => i.url), ...ready.map(r => r.edition.url)]);
+      if (!batch.items.slice(0, batch.consumed).some(i => i.url === candidate.url) || !candidate.samples.length ||
+          candidate.samples.some(url => !observed.has(sourceDocumentUrl(job, url).href))) return invalid();
+      if (candidate.covers) sourceDocumentUrl(job, candidate.covers);
+      if (candidate.feedUrl) sourceDocumentUrl(job, candidate.feedUrl);
+    }
     for (const { bytes, edition } of ready) {
       const exists = await cards.withCurrentCheck(job, async b => {
         const id = sourceDocumentRecordId(b.scope, edition), prior = open(b, id, await b.transaction.get(ref(id)));
@@ -196,7 +213,7 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
       const recorded = open(b, receiptId, await b.transaction.get(ref(receiptId)));
       if (recorded && recorded.kind !== 'receipt') return corrupt();
       const prior = recorded?.checkId === job.checkId && recorded.revision === job.revision ? recorded : null;
-      if (prior && prior.sequence > batch.sequence) return { pending: prior.pending, result: scanCounts(prior) };
+      if (prior && prior.sequence > batch.sequence) return { pending: prior.pending, result: scanCounts(prior), reading: readingReport(prior) };
       const queue = await frontier.plan(b, job, grant, prior, batch);
       const authorityTag = authorityTagFor(b);
       const rows = await Promise.all(ready.map(async ({ edition }) => {
@@ -214,7 +231,7 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
         return { previous, edition, saved, counted, head, work };
       }));
       signal.throwIfAborted();
-      let changed = prior?.status === 'changed', savedDocumentCount = prior?.savedDocumentCount ?? 0, indexedDocumentCount = prior?.indexedDocumentCount ?? 0;
+      let changed = prior?.contentChanged ?? (prior?.status === 'changed'), savedDocumentCount = prior?.savedDocumentCount ?? 0, indexedDocumentCount = prior?.indexedDocumentCount ?? 0;
       for (const { previous, edition, saved, counted, head, work } of rows) {
         if (!saved) {
           save(b, edition);
@@ -238,14 +255,17 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
       const issueExamples = prior?.issueExamples.slice() ?? [];
       if (batch.issue && issueExamples.length < 8)
         issueExamples.push({ url: sourceDocumentUrl(job, batch.items[0]!.url).href, reason: batch.issue });
+      const prospects = observeMethods(prior, batch, rows.map(r => r.saved ?? r.edition), new Date(now()).toISOString());
+      const gate = sourceAccessGate.safeParse(batch.issue);
+      const accessGate = prior?.accessGate ?? (gate.success ? { url: batch.items[0]!.url, reason: gate.data } : undefined);
       const receipt: Extract<SourceCardDocumentRecord, { kind: 'receipt' }> = {
         kind: 'receipt' as const, cardId: job.cardId, grant, checkId: job.checkId, revision: job.revision, sequence: batch.sequence + 1,
-        discovered: queue.discovered, pending: queue.pending, status, savedDocumentCount, indexedDocumentCount,
-        issueCount: (prior?.issueCount ?? 0) + Number(!!batch.issue), issueExamples,
+        discovered: queue.discovered, pending: queue.pending, status, contentChanged: changed, savedDocumentCount, indexedDocumentCount,
+        issueCount: (prior?.issueCount ?? 0) + Number(!!batch.issue), issueExamples, ...(prospects.length ? { prospects } : {}), ...(accessGate ? { accessGate } : {}),
         oversizedCount: (prior?.oversizedCount ?? 0) + Number(batch.issue === 'file_too_large')
       };
       save(b, receipt);
-      return { pending: receipt.pending, result: scanCounts(receipt) };
+      return { pending: receipt.pending, result: scanCounts(receipt), reading: readingReport(receipt) };
     });
   }
   // Expired staging rows can outlive their owner lease, including after a card was removed.

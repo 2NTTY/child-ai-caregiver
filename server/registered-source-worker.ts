@@ -4,7 +4,8 @@ import { domainReject, FirestoreDomainData, type FirestoreDomainOptions } from '
 import type { FirestoreRegisteredSourceCards, RegisteredSourceJob } from './firestore-registered-source-cards.ts';
 import type { createFirestoreSourceCardDocuments } from './firestore-source-card-documents.ts';
 import type { acquireSourceCardBatch, SourceCardResult, SourceCardBatchResult, SourceCardAccess, SourceCardInput } from './source-card-acquire.ts';
-import type { RegisteredSourceResult } from '../src/shared/registered-source-card.ts';
+import { sourceAccessGate, type RegisteredSourceResult } from '../src/shared/registered-source-card.ts';
+import type { SourceScanBatch } from './source-card-frontier.ts';
 
 const outcomes = { login: 'needs_login', mfa: 'mfa_required', captcha: 'captcha_required', purchase: 'payment_required' } as const;
 type Cards = Pick<FirestoreRegisteredSourceCards, 'due' | 'claim' | 'get' | 'finish' | 'withCurrentCheck' | 'credentialFor' | 'renew'>;
@@ -64,8 +65,11 @@ export function createRegisteredSourceWorker(options: FirestoreDomainOptions & {
     try {
       if (!await authorize(job.cardId)) return stopped;
       await cards.renew(job);
-      const progress = await documents.checkResult(job);
+      const hint = card.hint?.status === 'pending' && card.hint.afterCheckId !== checkId ? card.hint : undefined;
+      const startUrl = hint?.url ?? job.url;
+      const progress = await documents.checkResult(job, startUrl);
       let result: RegisteredSourceResult = progress.result;
+      let reading = progress.reading;
       if (progress.items.length) {
         const access: SourceCardAccess = {
           authorize, async credentialFor(cardId) {
@@ -76,6 +80,8 @@ export function createRegisteredSourceWorker(options: FirestoreDomainOptions & {
         };
         const acquire: Acquirer = options.acquire ?? (await import('./source-card-acquire.ts')).acquireSourceCardBatch;
         const input = acquisitionScope(job);
+        input.methods = card.methods;
+        input.hint = hint;
         if (job.credentialRef) {
           const credential = await cards.credentialFor(job);
           if (!credential || credential.origin !== new URL(job.url).origin || new URL(credential.loginUrl).origin !== credential.origin)
@@ -84,30 +90,42 @@ export function createRegisteredSourceWorker(options: FirestoreDomainOptions & {
         }
         const acquired = await acquire(input, access, signal, { revision: job.revision, checkId: job.checkId, items: progress.items });
         if (!await authorize(job.cardId)) return stopped;
-        const issue = acquired.status === 'failed' && (acquired.reason === 'file_too_large' || acquired.reason === 'listing_changed')
-          ? acquired.reason : undefined;
+        if (acquired.status === 'failed' && acquired.reason === 'unavailable' && await documents.retryBatch(job, progress.sequence, startUrl))
+          return { state: 'deferred' as const, nextAt: new Date(Date.now() + 60_000).toISOString() };
+        let issue: SourceScanBatch['issue'];
+        if (acquired.status === 'needs_user' && !job.credentialRef && progress.items[0]!.url !== job.url)
+          issue = hint ? 'unverified_hint' : outcomes[acquired.reason];
+        if (acquired.status === 'failed' && acquired.reason !== 'authorization' && acquired.reason !== 'scope') issue = acquired.reason;
         if (acquired.status === 'ok' || issue) {
           try {
             const accepted = acquired.status === 'ok' ? acquired : null;
             if (accepted && accepted.consumed === undefined && progress.sequence) domainReject('source_document_invalid', 400);
             const batch = accepted?.consumed !== undefined ? accepted : { consumed: 1, next: [] };
+            const extra = !hint && !progress.sequence && job.kind !== 'document'
+              ? card.methods?.filter(method => method.url !== job.url).map(method => ({ url: method.url })) : undefined;
             const committed = await documents.ingest(job, accepted?.originals ?? [], signal, {
-              sequence: progress.sequence, items: progress.items, consumed: batch.consumed, next: batch.next, issue
+              sequence: progress.sequence, items: progress.items, consumed: batch.consumed, next: batch.next, extra, issue, startUrl,
+              candidate: accepted && 'candidate' in accepted ? accepted.candidate : undefined,
+              redirects: accepted && 'redirects' in accepted ? accepted.redirects : undefined
             });
             if (committed.pending) return { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() };
             result = committed.result;
+            reading = committed.reading;
           } catch (error) {
             if (!(error && typeof error === 'object' && 'code' in error && error.code === 'source_document_invalid')) throw error;
             result = { ...(progress.sequence ? progress.result : {}), status: 'failed' };
           }
         } else {
-          if (progress.sequence && acquired.status === 'failed' && acquired.reason === 'unavailable' && await documents.retryBatch(job, progress.sequence))
-            return { state: 'deferred' as const, nextAt: new Date(Date.now() + 60_000).toISOString() };
           result = { ...(progress.sequence ? progress.result : {}), status: acquired.status === 'needs_user' ? outcomes[acquired.reason] : 'failed' };
+          if (acquired.status === 'needs_user') reading = { ...reading, gap: { reason: outcomes[acquired.reason], url: progress.items[0]!.url } };
         }
       }
       signal.throwIfAborted();
-      await cards.finish(job, result);
+      if (reading?.gap) {
+        const gate = sourceAccessGate.safeParse(reading.gap.reason);
+        result = { ...result, status: gate.success ? gate.data : 'failed' };
+      }
+      await cards.finish(job, result, reading);
       return { state: 'completed' as const };
     } catch (error) {
       if (signal.aborted || rejected(error)) return stopped;

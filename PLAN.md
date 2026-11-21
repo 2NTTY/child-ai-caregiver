@@ -74,6 +74,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
   同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。助手頁固定，真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
 - C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。沿[REQ-004](docs/REQUIREMENTS_BACKLOG.md#req-004)以《飲奶知多少？》核對出版者指定的現行網頁，以《奶瓶餵哺指引》核對獨立附件和官方劇本。另按[REQ-006](docs/REQUIREMENTS_BACKLOG.md#req-006)驗同卡教材在適用條件不同、明示取代、以及原文確有衝突時的實際召回與引用。既有單項選擇和固定版本沿用。
 - [衞生署入庫手冊](docs/DEPLOYMENT.md#fhs-ingestion)記錄首批的實際做法。自訂來源以兩種網站結構驗證在用戶零介入下完成首次入庫、改版後更新及無變更時復用。另以一個現有讀法都失敗的私人來源，驗卡內求助、從原對話補線索、核實後接續同一工作。錯誤線索保留已驗版本，同一障礙只求助一次。
+  - 本人網站已在本機完成兩站首次入庫、改版、無變更重跑及固定版引文讀回。錯誤位置未入庫；正確位置沿原巡查接續；一份公告讀取失敗時，另一份更新仍可引用。Edge 已核對私人卡求助開啟原助手草稿及跳過後的帳戶收據。正式發布由主聊天接續。[兩站原文與適用範圍](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [窄屏求助](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
 - 參考資料首頁列「目前的卡」及「未啟用的個人卡」。右上「平台卡列表」在彈窗選卡，加入後回到目前清單。停用平台卡後從彈窗重新選取，停用個人卡後可在首頁再次啟用。卡內來源、版本、影音按[操作角色](frontend/DESIGN_SYSTEM.md#control-roles)呈現。以同一帳戶核對加入、停用、再加入及原有局部採用狀態。
 
   `codex/fhs-child-health-series` 已接回原有文件及個人訂閱。本機 Edge 以三份已發布教材核對局部採用、整卡採用、同範圍跟隨及移除。移除後新召回為零，原聊天仍可開啟同版 PDF 第 3 頁。正式站待主對話整合發布。[家長操作及原頁收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json)
