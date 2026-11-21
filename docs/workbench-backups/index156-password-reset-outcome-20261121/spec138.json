@@ -1,0 +1,61 @@
+{
+  "group": {
+    "id": "password-reset-link-form-and-verified-completion",
+    "title": "打開重設密碼的電郵連結，密碼就改好了嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：家長開啟重設密碼的電郵連結，只進入流程，不會改密碼或登入。新密碼須為 12 至 128 個字元，兩次輸入相符。只有服務確認成功，才顯示已重設；仍需用新密碼正常登入。未確認成功、連結可能過期或已使用，不算已改；可返回登入並重新要求指引，不自動重送。A 先見到表單及返回入口，B 用獨立畫面確認結果和下一步。工作台只比較整頁，不開啟任何實際重設連結、不輸入資料、不提交。",
+    "choices": [
+      {
+        "name": "A｜先填表，完成後再指引登入",
+        "note": "開啟電郵連結後，先顯示「新密碼」、「再次輸入新密碼」及「確認重設密碼」；還沒改好時不要顯示成功。下方保留返回登入並重新要求指引。Microsoft CMT 截圖供表單與頁首入口參考，不沿用它的 CAPTCHA、字元組合或一小時期限。",
+        "source": "https://cmt3.research.microsoft.com/docs/help/general/images/request-password/reset-password-page-from-email-link.png",
+        "sourceNotes": [
+          {
+            "label": "Microsoft CMT 官方：從電郵進入重設表單，提交後另行登入",
+            "url": "https://cmt3.research.microsoft.com/docs/help/general/request-new-password.html"
+          },
+          {
+            "label": "育伴港：兩次新密碼需相符，及返回登入的入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L61-L82"
+          },
+          {
+            "label": "育伴港：開啟連結、重設成功、未確認成功是不同狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AccountServiceOwner.ts#L211-L224"
+          }
+        ],
+        "linkLabel": "查看 Microsoft CMT 重設表單原圖（需連網）",
+        "version": "Microsoft CMT 官方 Request Password Reset 文件，電郵連結後的重設表單原圖；核對日期 2026-11-21。文件未標示發布日、拍攝日或應用程式版本。",
+        "rights": "Microsoft Corporation 原圖，只提供外部連結；不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜表單與結果分頁呈現，先說明目前做到哪一步",
+        "note": "重設表單顯示新密碼和再次輸入；只有服務確認成功，才換成獨立結果畫面「密碼已重設」，並把「前往正常登入」放在結果下方。不會自動登入；未能確認時仍顯示未確認和重新要求指引的出口。OCPS 原圖是獨立確認頁，保留完整的品牌區和操作區；只參考「重設結果與登入分開」，不沿用其短訊驗證或密碼規則。",
+        "source": "https://myid.ocps.net/documentation/images/sspr_reset_07_success.png",
+        "sourceNotes": [
+          {
+            "label": "OCPS 官方：使用自助重設，第 6、7 步分開重設表單與返回登入",
+            "url": "https://myid.ocps.net/documentation/#using-self-service-password-reset"
+          },
+          {
+            "label": "育伴港：兩次新密碼需相符，及返回登入的入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/AccountCallbackGate.tsx#L61-L82"
+          },
+          {
+            "label": "育伴港：開啟連結、重設成功、未確認成功是不同狀態",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/AccountServiceOwner.ts#L211-L224"
+          }
+        ],
+        "linkLabel": "查看 OCPS 重設結果原圖（需連網）",
+        "version": "Orange County Public Schools 官方 Account Documentation，第 9 節第 7 步；文件版權標示 2025，非拍攝日。核對日期 2026-11-21。未標示發布日、拍攝日或應用程式版本。",
+        "rights": "Orange County Public Schools 官方原圖，只提供外部連結；不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "424126a50fef12f33447137f010bb998551fb84a02a6ab2eacf1669d4726f7c0"
+}
