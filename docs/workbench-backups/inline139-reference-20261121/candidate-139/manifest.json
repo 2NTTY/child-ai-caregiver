@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-139-image-count",
+  "base": {
+    "artifact": "candidate-137/out",
+    "htmlSha256": "7bd7af454a743bdaf1eb1f308f51dff95b8f719824391d1d74933ad9f81cba09",
+    "rawRecordsSha256": "da1b50fb876c1a23ed489a161702ce8e0877e76b1a150867417aaf1251bac47a",
+    "rawArtworkSha256": "0794bc11a4363fd9e9f84c0866d7bdfd5565054acb748ee3e010e2f8571cca96",
+    "topics": 67,
+    "choices": 137,
+    "images": 137
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-archived-concern/assets.json",
+      "sha256": "2111a8826b3e8f148da7f7d8ccaf712529914041fe8c1822441e8169808cd73b"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "009e2daf6730a5c8c8a81e9b1cf03defe7694c0b359a5c396177bf6d6437bffd",
+    "PROVENANCE.md": "0eaf7e35d3eb08bfe1be7db1a41ff45b56f0adfec51132c71875ae5e68351636"
+  },
+  "topics": [
+    {
+      "number": 68,
+      "title": "解除封存：從清單選擇或在原頁確認",
+      "choices": [
+        {
+          "name": "從封存清單解除封存",
+          "note": "清單已篩至封存專案。符合條件的原專案列可從選單直接解除封存，不另開確認視窗；這幅圖未執行操作。",
+          "links": [
+            {
+              "label": "OpenProject v17.0.0：完整專案清單",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/app/views/projects/index.html.erb#L30-L45"
+            },
+            {
+              "label": "同一版本：專案清單路徑",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/config/routes.rb#L286-L292"
+            },
+            {
+              "label": "同一版本：專案清單入口",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/app/controllers/projects_controller.rb#L62-L81"
+            },
+            {
+              "label": "同一版本：已封存專案的篩選方法",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/docs/user-guide/projects/project-settings/project-information/README.md#L112-L123"
+            },
+            {
+              "label": "同一版本：已封存標記",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/app/components/projects/row_component.rb#L152-L163"
+            },
+            {
+              "label": "同一版本：解除封存選項與出現條件",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/app/components/projects/row_component.rb#L362-L386"
+            },
+            {
+              "label": "同一版本：直接從列表解除封存的測試",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/spec/features/projects/lists/filters_spec.rb#L170-L194"
+            },
+            {
+              "label": "同一版本：解除同一專案的封存",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/app/services/projects/unarchive_service.rb#L43-L56"
+            },
+            {
+              "label": "同一版本：程式版權聲明",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/COPYRIGHT#L1-L18"
+            },
+            {
+              "label": "OpenProject 程式授權：GPL-3.0-only（非圖像授權）",
+              "url": "https://github.com/opf/openproject/blob/acbb059c8820da8236cee1f43dc0796d83836259/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-archived-concern/archived-a-list-menu.png",
+            "sha256": "69abd7ea8db49defd1708cd85e8e4e598cf094ddbc9b588d9307f4f4fb9dca1e",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構展務工作台的完整專案清單，以啟用中為否篩出封存項目；其中一個符合條件的既有專案列展開解除封存選項，沒有額外確認視窗。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "在原專案內確認解除封存",
+          "note": "同一個封存專案及原有任務仍可查看。解除封存前先在原頁確認對象；目前尚未確認，也沒有更改任何任務。",
+          "links": [
+            {
+              "label": "Vikunja v2.1.0：解除封存確認",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/views/project/settings/ProjectSettingsArchive.vue#L1-L13"
+            },
+            {
+              "label": "同一版本：原本專案的頁面路徑",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/router/index.ts#L339-L346"
+            },
+            {
+              "label": "同一版本：專案清單視圖",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/views/project/ProjectView.vue#L135-L142"
+            },
+            {
+              "label": "同一版本：原頁保留已封存提示",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/components/project/ProjectWrapper.vue#L33-L44"
+            },
+            {
+              "label": "同一版本：封存狀態不顯示新增任務",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/components/project/views/ProjectList.vue#L20-L35"
+            },
+            {
+              "label": "同一版本：原有任務仍顯示",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/components/project/views/ProjectList.vue#L69-L97"
+            },
+            {
+              "label": "同一版本：從該專案開啟解除封存選項",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/components/project/ProjectSettingsDropdown.vue#L43-L49"
+            },
+            {
+              "label": "同一版本：確認視窗路徑",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/router/index.ts#L276-L282"
+            },
+            {
+              "label": "同一版本：確認保留原頁作背景",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/composables/useRouteWithModal.ts#L6-L24"
+            },
+            {
+              "label": "同一版本：原頁及確認視窗",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/components/home/ContentAuth.vue#L40-L59"
+            },
+            {
+              "label": "同一版本：確認對象是同一專案",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/src/views/project/settings/ProjectSettingsArchive.vue#L34-L47"
+            },
+            {
+              "label": "同一版本：前端版本及授權聲明",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/package.json#L1-L7"
+            },
+            {
+              "label": "Vikunja 前端程式授權：AGPL-3.0-or-later（非圖像授權）",
+              "url": "https://github.com/go-vikunja/vikunja/blob/ec11643c24b0f00c55ec5a60328b54e2c3a69962/frontend/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-archived-concern/archived-b-project-confirm.png",
+            "sha256": "d5d88ce9f08bf56121d41f12768c2dadc0bbf58121f18ae28758d45a3f9dd59b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構的已封存海報專案仍顯示原有任務；置中的視窗指向同一專案並請求確認解除封存。已封存標記仍在，未執行確認。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 68 題 · 清單與原頁解除封存的兩幅自製合成示意",
+      "input": "draft-archived-concern/DECLARATION.txt",
+      "sha256": "009e2daf6730a5c8c8a81e9b1cf03defe7694c0b359a5c396177bf6d6437bffd"
+    }
+  ]
+}
