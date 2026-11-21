@@ -72,12 +72,13 @@ function ChatContents({ compact }: { compact: boolean }) {
   const [discussNext, setDiscussNext] = useState(false);
   const [openedDiscussion, setOpenedDiscussion] = useState<string>();
   useEffect(() => { if (pathname !== '/chat') setDiscussNext(false); }, [pathname]);
-  const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const handlePaneLayout = (event: LayoutChangeEvent) => {
     setPaneHeight(event.nativeEvent.layout.height);
   };
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
-  useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
+  useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !optionsOpen, visibleIds);
   const displayedMessages = visibleIds.length ? chat.messages.filter(message => visibleIds.includes(message.id)) : chat.messages.slice(-6);
   const turns = useMemo(() => conversationTurns(chat.messages), [chat.messages]);
   const displayedRuns = displayedMessages.flatMap(message => {
@@ -257,9 +258,10 @@ function ChatContents({ compact }: { compact: boolean }) {
           {child && <Text style={styles.meta}>{child.displayName}的私人對話</Text>}</View>
       </View>
       <View style={styles.toolbarActions}>
-        <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? "對話活動 · 待查核" : needsDecision ? "對話活動 · 待確認" : "對話活動"}
+        <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? '活動 · 待查核' : needsDecision ? '活動 · 待確認' : compact ? '活動' : '對話活動'}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"}
           onPress={target => { detailsTrigger.current = target; setActivityEntry("list"); setDetailsOpen(true); }} compact={compact} disabled={!child} />
+        <ChatAction label="更多助手選項" icon="dots-horizontal" iconOnly expanded={optionsOpen} onPress={() => setOptionsOpen(true)} />
       </View>
     </BackgroundSurface>
     <View style={styles.conversationLayout}>
@@ -381,10 +383,6 @@ function ChatContents({ compact }: { compact: boolean }) {
       attachments={submittedDraft ? [] : agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat}
       onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
-    <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
-      onPress={() => setPrivacyOpen(true)} subtle />
-      {child ? <ChatAction label="平台卡庫" accessibilityLabel="查看可下載的平台卡"
-        onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references', catalog: 'platform' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
     {!compact && <View style={styles.companionAside}><View style={styles.companionStage}>
       <View pointerEvents="none" style={styles.companionBackdrop} /><ChatToolbarCompanion compact={false} />
@@ -392,9 +390,17 @@ function ChatContents({ compact }: { compact: boolean }) {
     </View>
     <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
-    <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
-      <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。獲授權的文字或照片會交由 Google 或你選用的模型供應商處理；私人來源不加入公共知識庫，通知及分享仍需另外授權。</Text></AppDialog.Content>
-      <AppDialog.Actions><AppButton label="知道了" variant="quiet" onPress={() => setPrivacyOpen(false)} /></AppDialog.Actions>
+    <AppDialog visible={optionsOpen} onDismiss={() => setOptionsOpen(false)} accessibilityLabel="助手選項">
+      <AppDialog.Title>助手選項</AppDialog.Title>
+      <AppDialog.Content style={styles.optionsContent}>
+        {child && <ChatAction label="平台卡庫" icon="book-open-variant" onPress={() => {
+          setOptionsOpen(false);
+          navigate(() => router.push({ pathname: '/memory', params: { section: 'references', catalog: 'platform' } }), 'workspace');
+        }} />}
+        <Text accessibilityRole="header" style={styles.optionHeading}>AI 資料處理說明</Text>
+        <Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。獲授權的文字或照片會交由 Google 或你選用的模型供應商處理；私人來源不加入公共知識庫，通知及分享仍需另外授權。</Text>
+      </AppDialog.Content>
+      <AppDialog.Actions><AppButton label="關閉" variant="quiet" onPress={() => setOptionsOpen(false)} /></AppDialog.Actions>
     </AppDialog>
   </>;
 }
@@ -409,6 +415,8 @@ const styles = StyleSheet.create({
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   headerIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
   headingTitle: { color: colors.ink, fontSize: 21, lineHeight: 29, fontWeight: '700' },
+  optionsContent: { gap: 8 },
+  optionHeading: { ...chatType.section, color: colors.ink },
   welcomePanel: { justifyContent: 'center' },
   welcome: { width: '100%', maxWidth: chatLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 22, paddingBottom: 4 },
   conversationLayout: { justifyContent: 'center', flex: 1, flexDirection: 'row', minHeight: 0, width: '100%', maxWidth: 1060, alignSelf: 'center' },
@@ -429,6 +437,5 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "600" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
-  privacyFooter: { flexDirection: 'row', flexWrap: 'wrap', flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
 
