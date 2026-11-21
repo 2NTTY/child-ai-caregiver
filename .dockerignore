@@ -56,6 +56,7 @@ scripts/**
 !scripts/fhs-review-printed-pages.mjs
 !scripts/fhs-printed-correction.mjs
 !scripts/fhs-held-window-evidence.mjs
+!scripts/fhs-script-review-stage.mjs
 !scripts/fhs-initial-campaign.mjs
 !scripts/fhs-catalog-batch.mjs
 !scripts/fhs-publication-lanes.mjs
