@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-161-image-count",
+  "base": {
+    "artifact": "candidate-159/out",
+    "htmlSha256": "fa555fa9dcfa73d9dc6ea187def68beceb1b4ccd8bb2b2ccbb7913aa15c9bf66",
+    "rawRecordsSha256": "ff3d42365656631d62e7feccdc5d44bc1879cd329de0dc198f0049db5f46da30",
+    "rawArtworkSha256": "1efb02c05b573c0cb312ae432245aecd6d9011314fa6f2091bd3e714f7520fdd",
+    "topics": 78,
+    "choices": 159,
+    "images": 159
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-delete-version/assets.json",
+      "sha256": "8fff066756824a029091c865308ca85747d0ad1b99077d071c6f3fc2fad77db6"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "e00b46073b1c0d1313013d24927b03d19de390ba749f9b5152f3d564e7bb11d3",
+    "PROVENANCE.md": "f33a95bc6bfe5310a547eb58414f5354209f3cb08cf540853931801767f600a6"
+  },
+  "topics": [
+    {
+      "number": 79,
+      "title": "刪除前記錄已更新：核對新版本後重新確認",
+      "choices": [
+        {
+          "name": "版本變更後重新確認刪除",
+          "note": "發現頁面版本已變更，MediaWiki 不會執行原來的刪除請求，而是顯示警告和新的確認表單。頁面尚未刪除；可先查看頁面歷史，再自行按「刪除頁面」。",
+          "links": [
+            {
+              "label": "MediaWiki 1.44.1：確認版本不符時退回表單，不執行刪除",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/DeleteAction.php#L184-L211"
+            },
+            {
+              "label": "同版：變更警告、修訂數及歷史連結",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/DeleteAction.php#L300-L332"
+            },
+            {
+              "label": "同版：顯示完整刪除確認表單及下方日誌",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/DeleteAction.php#L386-L418"
+            },
+            {
+              "label": "同版：原因下拉選單和額外原因欄位",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/DeleteAction.php#L449-L487"
+            },
+            {
+              "label": "同版：可另行按下的刪除鍵及更新後的確認基準",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/DeleteAction.php#L521-L534"
+            },
+            {
+              "label": "MediaWiki 程式碼授權：GPL-2.0-or-later",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/COPYING"
+            }
+          ],
+          "asset": {
+            "input": "draft-delete-version/delete-version-a.png",
+            "sha256": "a1b1268661699015ca66a0e39907923fb57d0e268d54d971c1d7a5ce9d624323",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "MediaWiki 的非官方「海濱展板備註」刪除確認頁。上方黃色警告指出頁面已被編輯，下一行顯示六次修訂並連到頁面歷史。下方仍有原因欄、紅色「刪除頁面」按鈕，以及沒有項目的刪除日誌。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "拒絕舊版本提交，保留原刪除表單",
+          "note": "舊分頁嘗試刪除同一分支上已更新的檔案，提交被拒。頁頂浮動提示出現，原表單仍在；未建立提交，檔案也未刪除。",
+          "links": [
+            {
+              "label": "Gitea v1.26.0：檔案刪除頁、檔案樹及路徑",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/templates/repo/editor/delete.tmpl#L1-L29"
+            },
+            {
+              "label": "同版：提交內容、直接提交與另開分支選項",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/templates/repo/editor/commit_form.tmpl#L13-L53"
+            },
+            {
+              "label": "同版：提交按鈕和取消按鈕",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/templates/repo/editor/commit_form.tmpl#L75-L87"
+            },
+            {
+              "label": "同版：刪除提交帶原先版本及分支",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/routers/web/repo/editor.go#L419-L438"
+            },
+            {
+              "label": "同版：同一分支上的同一檔案已更新，拒絕舊提交",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/services/repository/files/update.go#L390-L403"
+            },
+            {
+              "label": "同版：先返回提交版本不符，不帶比較連結",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/routers/web/repo/editor_error.go#L66-L69"
+            },
+            {
+              "label": "同版：提交版本不符的原始訊息",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/options/locale/locale_en-US.json#L1296-L1302"
+            },
+            {
+              "label": "同版：以浮動提示顯示提交錯誤",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/web_src/js/features/common-fetch-action.ts#L50-L54"
+            },
+            {
+              "label": "同版：頁頂中央的紅色提示及關閉按鈕",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/web_src/js/modules/toast.ts#L30-L72"
+            },
+            {
+              "label": "同版：版本紀錄",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/CHANGELOG.md#L1-L9"
+            },
+            {
+              "label": "Gitea 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/go-gitea/gitea/blob/9b9d1e31aa0bd2e2bb87d2ba329521ed3c5084bd/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-delete-version/delete-version-b.png",
+            "sha256": "679779845bb7dd4ee9241092bb19161809b711e56c328520ac823d9c58b1e5e2",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Gitea 示例：左側檔案樹選中「展板備註.txt」，上方路徑亦顯示同一檔案。提交表單仍選擇直接提交至 main；頁頂紅色浮動提示指開始編輯時的提交版本已不符。沒有比較連結、成功提示或已刪除狀態。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 79 題 · 版本變更後尚未刪除的兩幅自製示意",
+      "input": "draft-delete-version/DECLARATION.txt",
+      "sha256": "e00b46073b1c0d1313013d24927b03d19de390ba749f9b5152f3d564e7bb11d3"
+    }
+  ]
+}
