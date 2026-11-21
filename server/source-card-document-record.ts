@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { documentCategoriesSchema } from '../src/shared/source-card-reading.ts';
+import { privateTopic } from './private-source-index-record.ts';
 import { KNOWLEDGE_PDF_MAX_BYTES } from './knowledge-pdf.ts';
 import { chatFileMimeSchema } from '../src/shared/chat-files.ts';
 import { registeredSourceUrlSchema, sourceAccessGate, sourceCardAllowsUrl, sourceGapReason, sourceReadingMethod, sourceReadingParser, type RegisteredSourceSettings } from '../src/shared/registered-source-card.ts';
@@ -16,18 +18,25 @@ const prospect = z.strictObject({ url: registeredSourceUrlSchema, parser: source
 const scan = { ...base, checkId: z.uuid(), revision: z.int().positive() };
 export const sourceIndexCoverage = z.enum(['full_text', 'text_excerpt', 'page_one_excerpt', 'original_only']);
 const itemFields = {
+  categories: documentCategoriesSchema.optional(),
   indexCoverage: sourceIndexCoverage, indexText: z.string().max(12000), indexTerms: z.array(z.string().min(1).max(64)).max(512),
   ...item, url: z.url().max(4096), mimeType: chatFileMimeSchema, originalHash: digest,
   bytes: z.int().positive().max(KNOWLEDGE_PDF_MAX_BYTES), storedHash: digest,
   preview: z.string().max(2400), title: z.string().min(1).max(300), capturedAt: z.iso.datetime(),
 };
 export const scanItemSchema = z.strictObject({
-  url: z.url().max(4096), offset: z.int().positive().optional(), listingHash: digest.optional()
+  url: z.url().max(4096), offset: z.int().positive().optional(), listingHash: digest.optional(),
+  sections: documentCategoriesSchema.shape.labels.optional()
 }).refine(item => (item.offset === undefined) === (item.listingHash === undefined));
 export type SourceScanItem = z.infer<typeof scanItemSchema>;
+export function scanItemKey({ sections: _sections, ...location }: SourceScanItem) {
+  return firestoreDomainHash(location);
+}
 export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('head'), ...itemFields,
-    rag: z.strictObject({ accessRevision: z.int().positive().max(2147483647), incarnation: z.uuid(), authorityTag: digest.optional() }).optional() }),
+  z.strictObject({ kind: z.literal('head'), ...itemFields, bodyVersion: digest.optional(),
+    rag: z.strictObject({ accessRevision: z.int().positive().max(2147483647), incarnation: z.uuid(), authorityTag: digest.optional(),
+      topic: privateTopic.extend({ page: z.int().positive().nullable(), offset: z.int().nonnegative(),
+        organizeRunId: z.uuid(), reviewRunId: z.uuid() }).optional() }).optional() }),
   z.strictObject({ kind: z.literal('edition'), ...itemFields }),
   z.strictObject({
     kind: z.literal('staging'), ...item, cleanupAt: z.iso.datetime(), next: z.int().nonnegative(),
@@ -37,7 +46,8 @@ export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
     kind: z.literal('part'), ...item, part: z.int().nonnegative().lt(Math.ceil(KNOWLEDGE_PDF_MAX_BYTES / SOURCE_CARD_PART_BYTES)),
     base64: z.base64().min(4).max(Math.ceil(SOURCE_CARD_PART_BYTES / 3) * 4)
   }),
-  z.strictObject({ kind: z.literal('frontier'), ...scan, item: scanItemSchema, ordinal: z.int().nonnegative(), pending: z.boolean(), issue: scanItemIssue.optional() }),
+  z.strictObject({ kind: z.literal('frontier'), ...scan, item: scanItemSchema, ordinal: z.int().nonnegative(), pending: z.boolean(),
+    originalUrl: registeredSourceUrlSchema.optional(), issue: scanItemIssue.optional() }),
   z.strictObject({ kind: z.literal('scan-document'), ...scan, documentId: digest, indexed: z.boolean() }),
   z.strictObject({ kind: z.literal('scan-cleanup'), ...scan, cleanupAt: z.iso.datetime() }),
   z.strictObject({
@@ -68,7 +78,7 @@ export function sourceDocumentKey(owner: string, cardId: string, grant: string, 
 export function sourceDocumentRecordId(scope: WorkRecoveryScope, row: SourceCardDocumentRecord) {
   const key = (...tail: (string | number)[]) => sourceDocumentKey(scope.ownerUserId, row.cardId, row.grant, row.kind, ...tail);
   if (row.kind === 'receipt') return key();
-  if (row.kind === 'frontier') return key(row.revision, row.checkId, firestoreDomainHash(row.item));
+  if (row.kind === 'frontier') return key(row.revision, row.checkId, scanItemKey(row.item));
   if (row.kind === 'scan-document') return key(row.revision, row.checkId, row.documentId);
   if (row.kind === 'scan-cleanup') return key(row.revision, row.checkId);
   if (row.kind === 'head') return key(row.documentId);

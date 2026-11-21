@@ -19,7 +19,7 @@ type Failure = 'scope' | 'authorization' | 'limit' | 'file_too_large' | 'listing
 export type SourceCardResult = { status: 'ok'; originals: SourceCardOriginal[] }
   | { status: 'needs_user'; reason: UserAction } | { status: 'failed'; reason: Failure };
 type Reply = { url: string; mime: string; body: Buffer };
-export interface SourceCardWorkItem { url: string; offset?: number; listingHash?: string }
+export interface SourceCardWorkItem { url: string; offset?: number; listingHash?: string; sections?: string[] }
 export interface SourceCardBatchWork { revision: number; checkId: string; items: SourceCardWorkItem[] }
 export interface SourceMethodCandidate { url: string; parser: SourceReadingMethod['parser']; samples: string[]; covers?: string; feedUrl?: string; listed?: number; reduced?: boolean }
 export type SourceCardBatchResult = Exclude<SourceCardResult, { status: 'ok' }> |
@@ -244,18 +244,23 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
         let content;
         try { content = parsePersonalPage(html, reply.url); } catch { return fail('unreadable'); }
         found.push({ url: reply.url, mimeType: 'text/html', bytes: reply.body,
-          sha256: createHash('sha256').update(reply.body).digest('hex'), preview: content.text.slice(0,12000) });
+          sha256: createHash('sha256').update(reply.body).digest('hex'), preview: content.text.slice(0,12000),
+          ...(page.sections.length ? { sections: page.sections } : {}) });
       }
-      if (!catalogue && input.kind !== 'document' && page.article && listing.length && !offset) savePage();
+      if ((page.currentBody || !catalogue && page.article) && listing.length && !offset) savePage();
       const dynamic = input.kind !== 'document' && !feedMime && page.dynamic;
+      const listedGroups = listing.flatMap(url => page.groups.has(url) ? [[url, page.groups.get(url)]] : []);
       const listingHash = work ? digest([input.cardId, work.revision, work.checkId, input.kind, entry.href, input.allowedPath ?? null,
-        reply.url, listing, dynamic]) : '';
+        reply.url, listing, dynamic, ...(listedGroups.length ? [listedGroups] : [])]) : '';
       if (work && offset <= listing.length && offset > 0 && item.listingHash !== listingHash) fail('listing_changed');
       if (work && offset > listing.length && !dynamic) fail('listing_changed');
       if (listing.length && (!work || offset < listing.length)) {
         const end = work ? Math.min(offset + listingWindow, listing.length) : listing.length;
         remember(parser, listing.slice(offset, end), listing.length);
-        children.push(...listing.slice(offset, end).map(url => ({ url })));
+        children.push(...listing.slice(offset, end).map(url => {
+          const sections = page.groups.get(url);
+          return sections ? { url, sections } : { url };
+        }));
         if (work) {
           if (end < listing.length || dynamic) children.push({ url: item.url, offset: end, listingHash });
           return leaf;
@@ -309,7 +314,7 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
         if (!listing.length) remember('rendered', [...discovered]);
         if (!children.length && !found.length && !listing.length && !offset) fail('unreadable');
       } else if (!listing.length) {
-        if (feedMime || catalogue && (!page.hasText || !hint && saved?.parser !== 'document' && (input.kind === 'directory' || !!saved)))
+        if (feedMime || catalogue && !page.currentBody && (!page.hasText || !hint && saved?.parser !== 'document' && (input.kind === 'directory' || !!saved)))
           fail('unreadable');
         savePage();
         remember('document', [reply.url]);
