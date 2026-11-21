@@ -4786,5 +4786,281 @@
       "reserved_unknown": 2,
       "work_without_verified_terminal_receipt": 1
     }
+  },
+  "longOriginalSettlement": {
+    "readTime": "2026-11-21T07:16:26.038325Z",
+    "sourceId": "pdf-f3051ac61ad97b50bf629775",
+    "stageHash": "e26d141d892c8b84d716f4098d32f274307b94f6a4a0859a01955af5f0efe568",
+    "providerHttpStatus": 504,
+    "settledCostMicros": 0,
+    "releasedMicros": 1634304,
+    "evidenceSha256": "1feec2010ea059a2b78f130f242166595cfc61f8897453a0b26166c70c18bf5b",
+    "balanceMicros": {
+      "held": 3268608,
+      "spent": 10488818,
+      "limit": 30000000,
+      "available": 16242574
+    },
+    "other115SourceRowsUnchanged": true,
+    "outcomes": {
+      "candidate_held": 68,
+      "family_edition_verified": 32,
+      "no_original_work_record": 2,
+      "original_request_rejected_before_edition": 10,
+      "reserved_unknown": 2,
+      "work_without_verified_terminal_receipt": 2
+    }
+  },
+  "longOriginalsWithoutProviderTickets": {
+    "readTime": "2026-11-21T07:16:26.038325Z",
+    "availableMicros": 531586,
+    "requiredFirstGenerationMicros": 1634304,
+    "campaignAttempts": 590,
+    "campaignSettled": 578,
+    "openingReadTime": "2026-11-20T16:52:01.162848Z",
+    "lastWorkRecordedAt": "2026-11-20T17:17:42.307430Z",
+    "closingRunCompletedAt": "2026-11-20T17:18:36.183Z",
+    "ownerBalanceSamples": 18,
+    "openingLogSha256": "7b005d5a4bc36b1d7dfb6271b6b8c420027ec3118cc66beb6e48e525e266c9b2",
+    "closingLogSha256": "7f11ecffcf9e597190e1338a3292d354c198f8b0fed22cd6a106bd67c9105790",
+    "method": "For the 80-page original, the contemporaneous account versions match at work creation and final hold. The C3 balance after that work and the C1 balance immediately after the 40-page terminal decision have identical cumulative reservation and settlement counters, limit, spend and held totals. The four other work intervals fall between those two balances. The original entry point reserves before calling the model. The per-source terminal code does not specify a more precise cause.",
+    "entries": [
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "sourceSha256": "013fb4c49babc6dffcc92ce5b11c959078241dd0ac3e9134e66a31295ba11b71",
+        "owner": "C2",
+        "physicalPages": 28,
+        "originalOperationSha256": "7abf9455e972adc0df413198adce9e79a56564e80db289fdaf221c341a7729dc",
+        "workCreatedAt": "2026-11-20T16:59:54.077646Z",
+        "terminalWorkWrittenAt": "2026-11-20T16:59:57.737438Z",
+        "originalTerminalCode": "unavailable",
+        "sourceProviderTickets": 0,
+        "originalPlannedModelStages": 4,
+        "prepared": false,
+        "activeEdition": null
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "sourceSha256": "7b25839ed7b67e14a5f2160eca7c10d11d5305e15f692506b8bf3f35557569a3",
+        "owner": "C1",
+        "physicalPages": 32,
+        "originalOperationSha256": "67126d9240f69aedb279cc73df63340425b7887d7e390a23e756431cd0c4d064",
+        "workCreatedAt": "2026-11-20T17:15:45.504569Z",
+        "terminalWorkWrittenAt": "2026-11-20T17:15:57.324414Z",
+        "originalTerminalCode": "unavailable",
+        "sourceProviderTickets": 0,
+        "originalPlannedModelStages": 6,
+        "prepared": false,
+        "activeEdition": null
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "sourceSha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+        "owner": "C2",
+        "physicalPages": 36,
+        "originalOperationSha256": "25a9b2b5689eab47c4d260beb9d40ca0e0fb2ee22af4fe1b0a6a2b581a0a6b3c",
+        "workCreatedAt": "2026-11-20T16:52:56.218092Z",
+        "terminalWorkWrittenAt": "2026-11-20T16:52:58.769082Z",
+        "originalTerminalCode": "unavailable",
+        "sourceProviderTickets": 0,
+        "originalPlannedModelStages": 6,
+        "prepared": false,
+        "activeEdition": null
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "sourceSha256": "898255b3acfd80e57744462a3eb83510345da9139e2ca014988a3e3c87aba209",
+        "owner": "C1",
+        "physicalPages": 40,
+        "originalOperationSha256": "2bf1feb2e2b0da25d609fa2830688e31d3b24b0c262247db07b5b4b7f892dad0",
+        "workCreatedAt": "2026-11-20T17:17:02.201069Z",
+        "terminalWorkWrittenAt": "2026-11-20T17:17:42.307430Z",
+        "originalTerminalCode": "unavailable",
+        "sourceProviderTickets": 0,
+        "originalPlannedModelStages": 6,
+        "prepared": false,
+        "activeEdition": null
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "sourceSha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
+        "owner": "C3",
+        "physicalPages": 80,
+        "originalOperationSha256": "b64000492efd416dc74375a69c6c2972977c723522baaf460b209b925506585e",
+        "workCreatedAt": "2026-11-20T16:51:41.553273Z",
+        "terminalWorkWrittenAt": "2026-11-20T16:51:48.094909Z",
+        "originalTerminalCode": "unavailable",
+        "sourceProviderTickets": 0,
+        "originalPlannedModelStages": 14,
+        "prepared": false,
+        "activeEdition": null
+      }
+    ]
+  },
+  "originalLongWindowBindings": {
+    "readTime": "2026-11-21T07:16:26.038325Z",
+    "method": "Matched each original first organizer stage address to a request reconstructed from its parent hash, registered physical ranges, schema, historical prompt and source-specific stored PDF slice hash. Three slice hashes also match the private local packets byte for byte. The 32- and 40-page originals use different stored slice bytes; their local packets do not substitute for their registered inputs.",
+    "entries": [
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "physicalPages": 28,
+        "firstWindowSourcePages": [
+          1,
+          15
+        ],
+        "firstWindowCore": [
+          1,
+          14
+        ],
+        "originalFirstWindowRanges": 14,
+        "originalStageCount": 4,
+        "newWorkStageCount": 8,
+        "unchangedWindowLayout": false,
+        "localPacketSha256": "24954c1737bae3d48b6e93e57b5194a199d2a442ea6bd05026bc40fddf0f6929",
+        "recordedFirstWindowPdfSha256": "24954c1737bae3d48b6e93e57b5194a199d2a442ea6bd05026bc40fddf0f6929",
+        "recordedFirstWindowPdfBytes": 2872876,
+        "byteIdenticalLocalPacket": true,
+        "originalOrganizerStageHash": "12a7ab00dde187294d347c8f78537a2cb72096f197b8699fbcc7eb8e0d23d622",
+        "stageCreatedAt": "2026-11-20T16:59:56.883445Z",
+        "stageLastWrittenAt": "2026-11-20T16:59:57.578067Z"
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "physicalPages": 32,
+        "firstWindowSourcePages": [
+          1,
+          15
+        ],
+        "firstWindowCore": [
+          1,
+          14
+        ],
+        "originalFirstWindowRanges": 14,
+        "originalStageCount": 6,
+        "newWorkStageCount": 8,
+        "unchangedWindowLayout": false,
+        "localPacketSha256": "002ff98bd4aadda2c53061c30bf28f0c4a87ff44fe16cf906fda9a3687991fa8",
+        "recordedFirstWindowPdfSha256": "eecf4e1daba0d4950358a8ba44172b39892b92c36ef913b77bbaaeef249d97cc",
+        "recordedFirstWindowPdfBytes": 4330085,
+        "byteIdenticalLocalPacket": false,
+        "originalOrganizerStageHash": "9c3b9b61407ff8eef399804f60c9bf25588594d7715ee577360162414c56541b",
+        "stageCreatedAt": "2026-11-20T17:15:56.073600Z",
+        "stageLastWrittenAt": "2026-11-20T17:15:57.167336Z"
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "physicalPages": 36,
+        "firstWindowSourcePages": [
+          1,
+          15
+        ],
+        "firstWindowCore": [
+          1,
+          14
+        ],
+        "originalFirstWindowRanges": 7,
+        "originalStageCount": 6,
+        "newWorkStageCount": 6,
+        "unchangedWindowLayout": true,
+        "localPacketSha256": "854e46c29de11cac4f2facf674e38861056102f232a0e7ed7e16128f007e53b7",
+        "recordedFirstWindowPdfSha256": "854e46c29de11cac4f2facf674e38861056102f232a0e7ed7e16128f007e53b7",
+        "recordedFirstWindowPdfBytes": 1343858,
+        "byteIdenticalLocalPacket": true,
+        "originalOrganizerStageHash": "36b957bf045d2452e27cb7b425489d5eedb57689451fbb227fd27e3cfe64252b",
+        "stageCreatedAt": "2026-11-20T16:52:57.961600Z",
+        "stageLastWrittenAt": "2026-11-20T16:52:58.611773Z"
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "physicalPages": 40,
+        "firstWindowSourcePages": [
+          1,
+          15
+        ],
+        "firstWindowCore": [
+          1,
+          14
+        ],
+        "originalFirstWindowRanges": 7,
+        "originalStageCount": 6,
+        "newWorkStageCount": 6,
+        "unchangedWindowLayout": true,
+        "localPacketSha256": "1766b96a3f12ac25f6ac2bcac5a836e769801c45e8801b7e477f49525e5c647a",
+        "recordedFirstWindowPdfSha256": "86efa28681814f6f498e4cf41432beb9bec21f8424037ae9c5671a188324498c",
+        "recordedFirstWindowPdfBytes": 4364666,
+        "byteIdenticalLocalPacket": false,
+        "originalOrganizerStageHash": "a5b45134214e5285f736a6f0fd73b0a4ef50ae209c7980bcccf52432d7f3f46c",
+        "stageCreatedAt": "2026-11-20T17:17:40.870945Z",
+        "stageLastWrittenAt": "2026-11-20T17:17:42.108100Z"
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "physicalPages": 80,
+        "firstWindowSourcePages": [
+          1,
+          13
+        ],
+        "firstWindowCore": [
+          1,
+          12
+        ],
+        "originalFirstWindowRanges": 4,
+        "originalStageCount": 14,
+        "newWorkStageCount": 14,
+        "unchangedWindowLayout": true,
+        "localPacketSha256": "ce9c21e19c47fb3d84b5f3fdf86aca9275a4fbe04fc68881b2d374c498a878b0",
+        "recordedFirstWindowPdfSha256": "ce9c21e19c47fb3d84b5f3fdf86aca9275a4fbe04fc68881b2d374c498a878b0",
+        "recordedFirstWindowPdfBytes": 6535561,
+        "byteIdenticalLocalPacket": true,
+        "originalOrganizerStageHash": "c18372dcd364647b2089c686d2d806e38c2ee87a8e38a94c67b23e7cd131af13",
+        "stageCreatedAt": "2026-11-20T16:51:47.136040Z",
+        "stageLastWrittenAt": "2026-11-20T16:51:47.942283Z"
+      }
+    ],
+    "compatiblePreparedSource": {
+      "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+      "sha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+      "physicalPages": 36,
+      "windows": [
+        {
+          "core": [
+            1,
+            14
+          ],
+          "attachmentPhysicalPages": [
+            1,
+            15
+          ],
+          "attachmentBytes": 1343858,
+          "sha256": "854e46c29de11cac4f2facf674e38861056102f232a0e7ed7e16128f007e53b7"
+        },
+        {
+          "core": [
+            15,
+            28
+          ],
+          "attachmentPhysicalPages": [
+            14,
+            29
+          ],
+          "attachmentBytes": 1581548,
+          "sha256": "607591a8d0d795c6920e48d43273c29671daf66197d7543e5def1dad1640772a"
+        },
+        {
+          "core": [
+            29,
+            36
+          ],
+          "attachmentPhysicalPages": [
+            28,
+            36
+          ],
+          "attachmentBytes": 1255768,
+          "sha256": "f78d2354786b7c41d06d9f207b3c0631a6c20efdff4c2ecdbba32e39fe5483b3"
+        }
+      ],
+      "requiredOrganizeAndReviewStages": 6,
+      "result": "All 36 original core pages and their neighboring context are present. The original and current window ranges are identical. The original terminal work remains held with no provider ticket. These checks provide no model reading or authorization to reopen the work."
+    }
   }
 }
