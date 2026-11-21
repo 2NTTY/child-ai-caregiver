@@ -205,7 +205,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
-    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[]} };
+    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -449,6 +449,14 @@ export async function prepareKnowledgeMaintenance(input: {
       explanation:z.string().trim().min(1).max(160)})]))),
     questions:z.array(reviewFields.questions.element.extend({expectedKeys:z.array(z.enum(source.chunks.map(c=>c.key))).min(1)})).min(1).max(12)
   }):null;
+  const comparisonFacts = new Map(comparisonUnits.map(({key,oldQuote,newQuote}) => [key,
+    oldQuote === null ? 'new' as const : newQuote === null ? 'removed' as const :
+    knowledgeHash(before.get(key)) === knowledgeHash(after.get(key)) ? 'unchanged' as const : null]));
+  const explanation = z.string().trim().min(1).max(160);
+  const sourceComparisonSchema = publisherScope?.sourceComparison && publisherReviewSchema ? publisherReviewSchema.extend({
+    changes:z.strictObject(Object.fromEntries(comparisonUnits.map(({key}) => [key, comparisonFacts.get(key) ? z.strictObject({explanation}) :
+      z.strictObject({explanation,meaning:z.enum(['changed','unchanged'])})]))),
+  }) : null;
   const pdfReviewSchema = pdf ? modelAssessmentSchema.extend({
     ...(amendments ? { amendments: z.strictObject(Object.fromEntries(amendments.map(edit => [edit.key, amendmentDecision]))) } : {}),
     ...(priorConditions.length ? { priorConditions: z.strictObject(Object.fromEntries(priorConditions.map(row =>
@@ -474,6 +482,8 @@ export async function prepareKnowledgeMaintenance(input: {
     ...(retained?.revision.action === 'review_pdf_region' ? { editorialRegionProposal: { edits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),
     ...(retained?.revision.action === 'review_pdf_source_age' ? { officialAgeRanges: { ranges: retained.revision.sourceRanges, regionEdits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),
     binding, comparisonUnits, growthRuleBindings,
+    ...(sourceComparisonSchema ? {sourceComparison:{facts:Object.fromEntries(comparisonFacts),
+      instructions:'Explain every unit. A non-null fact records a structural comparison verified by the server. For these units return only explanation. Where the fact is null both editions contain the unit and differ: independently assess whether the meaning changed. Carry prior concerns, even for identical wording, into the checks and decision.'}} : {}),
     ...(held ? { revisionFeedback: held.feedback } : {}),
     ...(amendments ? { proposedAmendments: amendments } : {}),
     ...(priorConditions.length ? { priorConditions: priorConditions.map(({ conditions, ...row }) => ({ ...row,
@@ -486,14 +496,17 @@ export async function prepareKnowledgeMaintenance(input: {
   };
   const originalTexts=publisherScope?[...source.chunks,...(baseline?.source.chunks??[])].map(c=>c.originalText??c.sourceExcerpt):[];
   const reviewed = await complete("review", reviewPrompt.text,publisherScope?compactPublisherReview(reviewPayload,originalTexts):reviewPayload,
-    nativeResponseSchema(publisherReviewSchema ?? pdfReviewSchema ?? modelAssessmentSchema));
+    nativeResponseSchema(sourceComparisonSchema ?? publisherReviewSchema ?? pdfReviewSchema ?? modelAssessmentSchema));
   // Executable dependencies come from the catalog, not a model's interpretation
   // of whether a passage is about health. Semantic approval remains independent.
   if (reviewed.value && typeof reviewed.value === "object"
     && ("growthRuleImpact" in reviewed.value || "growthRuleReason" in reviewed.value))
     reject("knowledge_growth_rule_authority_invalid");
   const nativeReview = pdfReviewSchema?.parse(reviewed.value);
-  const publisherReview=publisherReviewSchema?.parse(reviewed.value);
+  const comparisonReview=sourceComparisonSchema?.parse(reviewed.value);
+  const publisherReview=publisherReviewSchema?.parse(comparisonReview ? {...comparisonReview,
+    changes:Object.fromEntries(Object.entries(comparisonReview.changes).map(([key,change]) => [key,
+      {...change,meaning:comparisonFacts.get(key) ?? ('meaning' in change ? change.meaning : undefined)}]))} : reviewed.value);
   const reviewedCoverage = nativeReview ? coverage({
     pages: pageKeys.map((key, i) => ({ page: i + 1, finding: nativeReview.nativeCoverage.pageFindings[key] })),
     ...(nativeReview.nativeCoverage.layoutFacts ? {layoutFacts:nativeReview.nativeCoverage.layoutFacts} : {}),

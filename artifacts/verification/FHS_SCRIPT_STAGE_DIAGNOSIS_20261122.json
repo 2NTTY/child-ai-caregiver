@@ -1,0 +1,268 @@
+{
+  "asOf": "2026-11-21T18:28:05.680133Z",
+  "worker": {
+    "worker": "375243d64bf3cf982780ed5e71831d90cd59f5df",
+    "digest": "sha256:dfdac6cf049e2fcf01f81a6a96e85174762f920c5e476d4830c7912169a15734",
+    "api": "375243d64bf3cf982780ed5e71831d90cd59f5df",
+    "web": "375243d64bf3cf982780ed5e71831d90cd59f5df",
+    "requiredRevision": "78b5412ad07f5532726382133f40634214723dbd",
+    "release": "r44934163597-1",
+    "at": "2026-11-21T18:23:56+00:00",
+    "receipt": "deployed",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44934163597",
+    "hostToolSha256": "210f23b3a6533f35b19733eb5fc0cc947c11ed4bc9a27b9fd04cb138196a5a65"
+  },
+  "totals": {
+    "archived": 61,
+    "archivedParagraphs": 1695,
+    "indexed": 42,
+    "indexedParagraphs": 1286,
+    "locatedByTitle": 42,
+    "contentLocated": 5,
+    "contentCases": 6
+  },
+  "diagnostics": {
+    "fhs-12196": {
+      "operationFingerprint": "af7660c9d5649042657d1fa07c6668e34d84d6d037ee1531add55903e101d057",
+      "observationHash": "90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772",
+      "reviewStage": {
+        "stageHash": "d5e214647515ee47644d484317a3d4766d016bafdc613c733767e113dd832e57",
+        "requestHash": "046b6bc4d1fb8a1d0be090ee996fbff9d81e461b18c1c8a9c49b8e6b6fab68ba",
+        "state": "ready",
+        "modelCalls": 0,
+        "retainedText": true,
+        "validation": "invalid",
+        "issues": [
+          {
+            "path": "changes.p0-fb6716d05520055ed5ba.meaning",
+            "code": "invalid_value"
+          }
+        ]
+      },
+      "embeddingStage": null,
+      "code": "knowledge_review_failed",
+      "prepared": false,
+      "modelCalls": 1
+    },
+    "fhs-30092": {
+      "operationFingerprint": "922adefcd2b9116e5184415a3caf7f80c8ff05bf05720bb4e3c760e9ac8878a1",
+      "observationHash": "bfd658600b4bbae14dc4863de513eb99ddadddda7b4e77cef4287d5844a7f289",
+      "reviewStage": {
+        "stageHash": "5b01f26a4c201f7833eea28b5a14cc9dc7adc1e6e47cd4f8c21d4a79a64c4cd2",
+        "requestHash": "a6308365674b6ea79a473ff681f2f3b3a0f2410cfd6464b28cc3a6dffe4d979b",
+        "state": "unknown",
+        "modelCalls": 0,
+        "retainedText": false
+      },
+      "embeddingStage": null,
+      "code": "invalid_response",
+      "prepared": false,
+      "modelCalls": 1
+    },
+    "fhs-13043": {
+      "operationFingerprint": "22caf823d58796259a705276521a6dc65b26b039b8af2ec71adb510a9c409022",
+      "observationHash": "72db528549e6b9f2befab1cbc934b7ec7500ee5441ef637920d22b2fe3296fc6",
+      "reviewStage": null,
+      "embeddingStage": null,
+      "prepared": false
+    },
+    "fhs-20000": {
+      "operationFingerprint": "50d8c76318f725bb0756ec27f000baa8b3fd89f333f642e941277c5638d52fc7",
+      "observationHash": "ab69a37fa24bafe82561ee25a4ac5d6a21d9ef11020452366a97819e5b52aa89",
+      "reviewStage": null,
+      "embeddingStage": {
+        "stageHash": "eca7199facdd774d986b2b388bce5d9841f65a2945ca24a7a5674e0cc77353df",
+        "documentHash": "b48cd1266623b0e9d1f99f5ff578b0ade4ff5803c7caf36db0091191c9a98ea7",
+        "operationId": "fb60651f-f395-543f-8dd4-1f2c32f98313",
+        "versionHash": "710259827ad27d429d8e3ce4040e0ee19fffd32f4026b518d902b8ff271e3bf8",
+        "ticketAt": "2026-11-21T16:22:54.068Z",
+        "reservedAtMs": 1795278173890,
+        "record": {
+          "kind": "embedding",
+          "outcome": "invalid_input",
+          "inputTokens": null,
+          "billableCharacters": null,
+          "durationMs": 1598
+        }
+      },
+      "prepared": true,
+      "approved": "approve_candidate",
+      "modelCalls": 1
+    }
+  },
+  "providerReviewLogs": {
+    "observedAt": "2026-11-22T02:12:45.743917+08:00",
+    "publisherSettings": {
+      "model": {
+        "httpStatus": 404,
+        "requestResponseEnabled": false,
+        "inferenceMetadataState": null,
+        "samplingRate": null
+      },
+      "project": {
+        "httpStatus": 404,
+        "requestResponseEnabled": false,
+        "inferenceMetadataState": null,
+        "samplingRate": null
+      }
+    },
+    "originalReviewMetadata": [
+      {
+        "sourceId": "fhs-12196",
+        "stageHash": "d5e214647515ee47644d484317a3d4766d016bafdc613c733767e113dd832e57",
+        "at": "2026-11-21T17:02:18.806Z",
+        "logHttpStatus": 200,
+        "entries": [],
+        "more": false
+      },
+      {
+        "sourceId": "fhs-30092",
+        "stageHash": "5b01f26a4c201f7833eea28b5a14cc9dc7adc1e6e47cd4f8c21d4a79a64c4cd2",
+        "at": "2026-11-21T17:04:56.207Z",
+        "logHttpStatus": 200,
+        "entries": [],
+        "more": false
+      }
+    ]
+  },
+  "embeddingServiceMetric": {
+    "operation": "f52049d43dd8cc6ba956e24331be3767a1c2e9060d05922dd417805b46bd24c9",
+    "stageHash": "eca7199facdd774d986b2b388bce5d9841f65a2945ca24a7a5674e0cc77353df",
+    "ticketAt": "2026-11-21T16:22:54.068Z",
+    "amountReservedMicros": 308,
+    "metric": "aiplatform.googleapis.com/publisher/online_serving/model_invocation_count",
+    "metricHttpStatus": 200,
+    "series": [],
+    "publisherSeriesCount": 0,
+    "logHttpStatus": 200,
+    "serviceMetricStatus": 200,
+    "predictionServiceCounts": [
+      {
+        "method": "google.cloud.aiplatform.v1.PredictionService.Predict",
+        "region": "us-central1",
+        "responseCode": "400",
+        "points": [
+          {
+            "start": "2026-11-21T16:22:52.001Z",
+            "end": "2026-11-21T16:23:52Z",
+            "count": "1"
+          }
+        ]
+      }
+    ],
+    "metadataEntries": [],
+    "metadataSources": [
+      "https://docs.cloud.google.com/monitoring/api/metrics_gcp_a_b",
+      "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/enable-audit-logs"
+    ]
+  },
+  "pricingReference": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
+  "sleep": {
+    "version": {
+      "id": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+      "hash": "4d247c8f9b00145a2820b987fb80f82ac78d539bd08c0c19b82fe72cd6c23c72",
+      "scriptRanges": 5
+    },
+    "work": "22caf823d58796259a705276521a6dc65b26b039b8af2ec71adb510a9c409022",
+    "review": "approve_candidate",
+    "receipt": "committed",
+    "charges": [
+      {
+        "sourceId": "fhs-13043",
+        "ceiling": 308,
+        "operationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+        "cost": 19,
+        "at": "2026-11-21T18:27:16.685Z",
+        "kind": "embedding",
+        "inputTokens": 124,
+        "state": "settled",
+        "stageHash": "a507704f9b6e6c8e83ccf15057244494c650ed17ca638e4a1c9a83ab2ef8d0a6",
+        "outputTokens": 0
+      },
+      {
+        "sourceId": "fhs-13043",
+        "ceiling": 308,
+        "operationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+        "cost": 95,
+        "at": "2026-11-21T18:27:18.962Z",
+        "kind": "embedding",
+        "inputTokens": 627,
+        "state": "settled",
+        "stageHash": "3558b65e4a3c0e127cf0e80645abaed1e9be04f5682c9a4aadbdc0c65867ee82",
+        "outputTokens": 0
+      },
+      {
+        "sourceId": "fhs-13043",
+        "ceiling": 1603584,
+        "operationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+        "cost": 44780,
+        "at": "2026-11-21T18:26:56.549Z",
+        "kind": "generation",
+        "inputTokens": 20333,
+        "state": "settled",
+        "stageHash": "2ec23c58b11deb2c8edb40f582cc873f40138668a83e3a0bc2e39c58a2019dde",
+        "outputTokens": 1904
+      }
+    ],
+    "content": [
+      {
+        "query": "想搵官方教材嘅相關原段。想問幫BB換尿片嗰陣，要預備啲乜嘢？",
+        "ordinaryQuery": "想問幫BB換尿片嗰陣，要預備啲乜嘢？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000004.html#transcript",
+        "kind": "content",
+        "title": "替寶寶換尿片",
+        "initiallyIndexed": false,
+        "rank": null,
+        "returned": 2
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "ordinaryQuery": "想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+        "kind": "content",
+        "title": "建立睡前常規",
+        "initiallyIndexed": false,
+        "rank": 1,
+        "returned": 2,
+        "sourceId": "fhs-13043",
+        "versionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+        "chunkId": "d7875821-6269-52ed-8cb2-5ecfcc691b3f",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+          "title": "建立睡前常規",
+          "firstParagraph": 1,
+          "lastParagraph": 48,
+          "originalHash": "104613dc064c428d70d3a21d55ff1e4c9bff91a92c88c97d353b320eaebf1cd6"
+        },
+        "expandedCharacters": 780,
+        "originalCharacters": 780,
+        "use": "original_lookup",
+        "returnedScope": "requires_clarification",
+        "ageBasis": "unconfirmed",
+        "publisherAudiences": []
+      }
+    ],
+    "productionPostings": [
+      {
+        "kind": "content",
+        "query": "想搵官方教材嘅相關原段。想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+        "versionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+        "chunkId": "d7875821-6269-52ed-8cb2-5ecfcc691b3f",
+        "sourceId": "fhs-13043",
+        "token": "c4ac5b0a70646c3d346b5c4b7c8c15bfe90c904d4dfc9d8194bc7d5c81a1137b",
+        "bucketId": "5f47c78f-632a-596f-8061-c49679a96a15",
+        "termsHash": "e13d7bfdf1de5d9996b9316eebf5f1abfa3c8b38bc8fda60037884616e86e29e",
+        "score": 13
+      }
+    ],
+    "method": "Product find_official_material and same-version context on the adopted child-health card of an isolated parent. The two tools are invoked directly. Six separate search_knowledge calls check that routine care excludes original-only material. All lexical buckets are rebuilt from production public chunks and verified against stored hashes. Query embeddings were unavailable. Positive matches include original-span comparison."
+  },
+  "sharedBalance": {
+    "held": 3268916,
+    "settled": 780,
+    "spent": 12944057,
+    "limit": 30000000,
+    "attempts": 783
+  }
+}

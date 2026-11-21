@@ -6,6 +6,7 @@ import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createKnowledgeCampaignBudget, campaignLimitMicros, campaignRecoverySchemas } from '../server/knowledge-campaign-budget.ts';
+import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { bindFirstDispatch, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
@@ -157,6 +158,28 @@ test('independent leased sources share one cap and unknown or replayed stages re
   assert.equal((await restarted.sourceStatus('c')).reservations.length,1);
   assert.equal((await restarted.sourceStatus('d')).admissible,true);
   assert.deepEqual([(await restarted.status())?.attempts,(await restarted.status())?.held], [3,1634304+308]);
+});
+
+test('only the original rejected embedding receipt releases its own hold once',async()=>{
+  const pin=rejectedScriptEmbedding,{database}=firestoreDomainFixture(),ledger=createKnowledgeCampaignBudget(database,'test');
+  const root=database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120');
+  await ledger.initialize();
+  await database.runTransaction(async tx=>{
+    tx.update(root,{held:pin.ceiling,attempts:1});
+    tx.create(root.collection('attempts').doc(pin.ticketId),{sourceId:pin.sourceId,kind:'embedding',state:'reserved',
+      operationFingerprint:pin.parent,stageHash:pin.stageHash,at:pin.at,ceiling:pin.ceiling});
+  });
+  const evidence={stageHash:pin.stageHash,versionHash:pin.versionHash,ticketAt:pin.at,
+    documentHash:'b48cd1266623b0e9d1f99f5ff578b0ade4ff5803c7caf36db0091191c9a98ea7',operationId:'fb60651f-f395-543f-8dd4-1f2c32f98313',
+    reservedAtMs:1795278173890,record:{kind:'embedding',outcome:'invalid_input',inputTokens:null,billableCharacters:null,durationMs:1598}};
+  await assert.rejects(ledger.settleScriptEmbeddingRejection(async()=>({...evidence,record:null})),/receipt_binding/u);
+  assert.equal((await ledger.status())!.held,308);
+  await ledger.settleScriptEmbeddingRejection(async()=>evidence);
+  await ledger.settleScriptEmbeddingRejection(async()=>evidence);
+  const row=await ledger.status();assert.deepEqual([row?.held,row?.spent,row?.attempts,row?.settled],[0,0,1,1]);
+  const original=await database.runTransaction(tx=>tx.get(root.collection('attempts').doc(pin.ticketId)));
+  const entry=campaignRecoverySchemas.attempt.parse(original.data());
+  assert.equal(entry.rejection?.evidenceSha256,pin.evidenceHash);assert.equal(entry.inputTokens,undefined);
 });
 
 test('an evidenced native rejection releases its original reservation once without inventing usage or replaying it', async () => {

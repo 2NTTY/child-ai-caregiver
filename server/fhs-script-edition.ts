@@ -6,6 +6,7 @@ import type { KnowledgeChunkInput } from '../src/shared/knowledge.ts';
 import { embeddingForChunk } from './knowledge-inputs.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 import { ageExampleRegistration } from './knowledge-age-examples.ts';
+import { rejectedScriptEmbedding } from './fhs-script-embedding-receipt.ts';
 
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const schema = z.strictObject({sourceId: z.string().regex(/^fhs-\d+$/u), observationHash: digest,
@@ -62,6 +63,17 @@ const exampleEditions = z.array(exampleEdition).parse(JSON.parse(readFileSync(
   new URL('../knowledge/fhs-script-age-examples.json',import.meta.url),'utf8')));
 export function currentScriptReadingWork(pin:ScriptEdition) {
   const previous = lookupScriptWork(pin), edition = exampleEditions.find(row => row.sourceId === pin.sourceId);
+  const repair = stageRepairs.find(row => row.sourceId === pin.sourceId);
+  if (repair) {
+    const stage = recordedScriptReviewStage(pin.sourceId);
+    if (!stage || repair.priorWork !== previous || stage.operationFingerprint !== previous) throw Error('knowledge_script_review_stage_binding');
+    return knowledgeReviewHash(['fhs-script-comparison-repair/1', stage, repair]);
+  }
+  if (pin.sourceId === rejectedScriptEmbedding.sourceId) {
+    if (previous !== rejectedScriptEmbedding.priorWork || pin.observationHash !== rejectedScriptEmbedding.observationHash)
+      throw Error('knowledge_script_embedding_receipt_binding');
+    return knowledgeReviewHash(['fhs-script-index-repair/1', rejectedScriptEmbedding]);
+  }
   if (!edition) return previous;
   if (edition.priorWork !== previous || edition.observationHash !== pin.observationHash) throw Error('knowledge_script_age_example_binding');
   return knowledgeReviewHash(['fhs-script-reading-examples/1',edition]);
@@ -73,6 +85,10 @@ const failedReviewStage = z.strictObject({
 });
 const stageReceipts = z.array(failedReviewStage).parse(JSON.parse(readFileSync(
   new URL('../knowledge/fhs-script-review-stages.json', import.meta.url), 'utf8')));
+const repairSchema = z.strictObject({ sourceId:schema.shape.sourceId,priorWork:digest,stage:z.enum(['ready','unknown']),
+  amendUnits:publisherScope.shape.amendUnits,examples:z.array(ageExampleRegistration).min(1).optional() });
+const stageRepairs = z.array(repairSchema).parse(JSON.parse(readFileSync(
+  new URL('../knowledge/fhs-script-review-repairs.json',import.meta.url),'utf8')));
 export function recordedScriptReviewStage(sourceId: string) {
   const row = stageReceipts.find(entry => entry.sourceId === sourceId);
   if (!row) return null;
@@ -82,7 +98,9 @@ export function recordedScriptReviewStage(sourceId: string) {
   return row;
 }
 type RecordedHold = Parameters<typeof verifyHeldScript>[1];
-export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerprint:string)=>Promise<RecordedHold>,workId=currentScriptReadingWork(pin)) {
+type StageReading = {state:string;text:string|null};
+export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerprint:string)=>Promise<RecordedHold>,
+  workId=currentScriptReadingWork(pin),readStage?:(fingerprint:string)=>Promise<StageReading>) {
   const original=verifyHeldScript(pin,await inspect(scriptEditionWorkId(pin))),scope=publisherScopes.get(pin.sourceId);
   if(!scope)return original;
   const previous=await inspect(scriptRevisionWorkId(pin));
@@ -97,18 +115,41 @@ export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerpri
     || publisher.result.code!=='review_hold' || publisher.result.observationHash!==pin.observationHash
     || publisher.prepared?.versionHash!==lookup.priorVersionHash || publisher.prepared.review.decision!=='hold_candidate'))
     throw Error('knowledge_script_lookup_predecessor_changed');
-  const edition = workId === lookupScriptWork(pin) ? undefined : exampleEditions.find(row => row.sourceId === pin.sourceId);
-  if (workId !== lookupScriptWork(pin) && (!edition || currentScriptReadingWork(pin) !== workId)) throw Error('knowledge_script_age_example_binding');
+  const repaired = workId !== lookupScriptWork(pin);
+  if (repaired && currentScriptReadingWork(pin) !== workId) throw Error('knowledge_script_age_example_binding');
+  const edition = repaired ? exampleEditions.find(row => row.sourceId === pin.sourceId) : undefined;
+  const repair = repaired ? stageRepairs.find(row => row.sourceId === pin.sourceId) : undefined;
+  const embedding = repaired && pin.sourceId === rejectedScriptEmbedding.sourceId ? rejectedScriptEmbedding : undefined;
   const prior = edition ? await inspect(edition.priorWork) : null;
   if (edition && (!prior || prior.lease || prior.receipt || prior.result?.status !== 'candidate_held' || prior.result.code !== 'review_hold'
     || prior.result.observationHash !== pin.observationHash || prior.prepared?.versionHash !== edition.priorVersionHash
     || prior.prepared.review.decision !== 'hold_candidate')) throw Error('knowledge_script_age_example_predecessor_changed');
-  return {...original,notes:[...original.notes,...(previous?.prepared?.review.notes??[]),...(publisher?.prepared?.review.notes??[]),...(prior?.prepared?.review.notes??[])],
+  const notes = [...original.notes,...(previous?.prepared?.review.notes??[]),...(publisher?.prepared?.review.notes??[]),...(prior?.prepared?.review.notes??[])];
+  if (repair) {
+    const stage = await readStage?.(repair.priorWork);
+    if (stage?.state !== repair.stage || (stage.state === 'ready') !== Boolean(stage.text)) throw Error('knowledge_script_review_stage_binding');
+    if (stage.text) {
+      const raw = stage.text.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/u,'$1');
+      const report = JSON.parse(raw);
+      // A structurally invalid assessment is background evidence for a new independent reader.
+      notes.push(JSON.stringify({priorAssessment:'unvalidated',decision:report.decision,reason:report.decisionReason,
+        checks:report.checks,disputedComparison:report.changes?.[repair.amendUnits![0]!]}));
+    }
+  }
+  if (embedding) {
+    const approved = await inspect(embedding.priorWork);
+    if (!approved || approved.receipt || approved.result || approved.prepared?.versionHash !== embedding.versionHash
+      || approved.prepared.review.decision !== 'approve_candidate') throw Error('knowledge_script_embedding_receipt_binding');
+    notes.push('The previous independent review approved the original publication. Check the new non-film retrieval text, the complete unchanged original and all film passages.');
+  }
+  const examples = edition?.examples ?? repair?.examples;
+  return {...original,notes,
     ...(previous?{previousReading:{work:scriptRevisionWorkId(pin),reason:scope.previousCode,version:scope.previousVersionHash}}:{}),
     ...(lookup?{priorPublisherReview:{work:publisherScriptWork(pin),versionHash:lookup.priorVersionHash}}:{}),
     publisherScope:{audiences:scope.audiences.map(label=>lookup?.upperBound?.audience===label.audience?{...label,beforeMonths:lookup.upperBound.beforeMonths}:label),
-      amendUnits:[...(scope.amendUnits??[]),...(lookup?.amendUnits??[])],
-      ...(lookup?{exclusiveLookup:true as const}:{}),...(edition?{ageExamples:edition.examples}:{})}};
+      amendUnits:[...(scope.amendUnits??[]),...(lookup?.amendUnits??[]),...(repair?.amendUnits??[]),...(embedding?[embedding.chunkKey]:[])],
+      ...(lookup||embedding?{exclusiveLookup:true as const}:{}),...(examples?{ageExamples:examples}:{}),
+      ...(repair?{sourceComparison:true as const}:{})}};
 }
 export function verifyHeldScript(pin: ScriptEdition, original: {
   receipt:unknown; lease:unknown; result?:{status:string;code?:string|null;observationHash?:string|null}|null;

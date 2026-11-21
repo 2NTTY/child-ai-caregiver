@@ -5,6 +5,7 @@ import type { EmbeddingProvider } from './embedding-gateway.ts';
 import { z } from 'zod';
 import { knowledgeOperationId, knowledgeReviewHash } from './knowledge-review-assessment.ts';
 import type { ManualPublicationPin } from './fhs-manual-publication.ts';
+import { rejectedScriptEmbedding } from './fhs-script-embedding-receipt.ts';
 
 export const campaign = 'fhs-child-initial-20261120';
 export const campaignModel = 'gemini-3.8-flash';
@@ -29,7 +30,10 @@ const attempt = z.strictObject({ kind: z.enum(['generation','embedding']), sourc
   operationFingerprint: hash.optional(), stageHash: hash.optional(),
   rejection: nativeRejection.extend({ legacyReceiptHash: hash.optional() }).optional(),
 }).refine(row => row.rejection
-  ? row.kind === 'generation' && !!row.operationFingerprint && (Boolean(row.stageHash) !== Boolean(row.rejection.legacyReceiptHash)) && row.state === 'settled'
+  ? (row.kind === 'generation' || row.sourceId === rejectedScriptEmbedding.sourceId && row.stageHash === rejectedScriptEmbedding.stageHash
+      && row.operationFingerprint === rejectedScriptEmbedding.parent && row.at === rejectedScriptEmbedding.at && row.ceiling === rejectedScriptEmbedding.ceiling
+      && row.rejection.evidenceSha256 === rejectedScriptEmbedding.evidenceHash && row.rejection.httpStatus === 400)
+    && !!row.operationFingerprint && (Boolean(row.stageHash) !== Boolean(row.rejection.legacyReceiptHash)) && row.state === 'settled'
     && row.cost === 0 && row.inputTokens === undefined && row.outputTokens === undefined
   : (!row.stageHash || !!row.operationFingerprint) && (row.state === 'settled'
   ? row.cost !== undefined && row.cost <= row.ceiling && row.inputTokens !== undefined && row.outputTokens !== undefined : row.cost === undefined));
@@ -245,6 +249,24 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       tx.update(ticket, { state: 'settled', cost: 0, rejection });
     });
   }
+  async function settleScriptEmbeddingRejection(readOriginal:(tx:Transaction)=>Promise<unknown>) {
+    const pin = rejectedScriptEmbedding, ticket = ref.collection('attempts').doc(pin.ticketId);
+    await database.runTransaction(async tx => {
+      const {row,open} = await openReservations(tx);
+      const entry = attempt.parse((await tx.get(ticket)).data());
+      if (entry.kind !== 'embedding' || entry.sourceId !== pin.sourceId || entry.operationFingerprint !== pin.parent
+        || entry.at !== pin.at || entry.ceiling !== pin.ceiling || entry.stageHash !== pin.stageHash || !matchesCampaignAttempt(ticket.id,entry)
+        || knowledgeReviewHash(await readOriginal(tx)) !== pin.evidenceHash) throw Error('knowledge_script_embedding_receipt_binding');
+      if (entry.state === 'settled') {
+        if (entry.rejection?.httpStatus === 400 && entry.rejection.evidenceSha256 === pin.evidenceHash) return;
+        throw Error('knowledge_campaign_attempt_changed');
+      }
+      if (row.reconciliationRequired || entry.inputTokens !== undefined || entry.outputTokens !== undefined
+        || open.some(item=>item.sourceId===pin.sourceId && item.ticketId!==ticket.id)) throw Error('knowledge_campaign_reconcile_before_settlement');
+      tx.update(ref,{held:row.held-entry.ceiling,settled:row.settled+1});
+      tx.update(ticket,{state:'settled',cost:0,rejection:{httpStatus:400,evidenceSha256:pin.evidenceHash}});
+    });
+  }
   function meter(binding: Omit<CampaignDispatch, 'stageKey'>, maxOutputTokens: number) {
     async function before(kind: CampaignKind, stageKey: string) {
       try { return await reserveShared(kind, { ...binding, stageKey }, kind === 'generation' ? maxOutputTokens : 0); }
@@ -274,5 +296,5 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       },
     };
   }
-  return { status, initialize, reserve, canAdvance, sourceStatus, hasGenerationCapacity, retainInspected, reserveShared, settleRejectedGeneration, meter };
+  return { status, initialize, reserve, canAdvance, sourceStatus, hasGenerationCapacity, retainInspected, reserveShared, settleRejectedGeneration, settleScriptEmbeddingRejection, meter };
 }
