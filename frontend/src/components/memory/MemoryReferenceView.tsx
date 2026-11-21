@@ -177,7 +177,7 @@ function MaterialLink({ url, label, name = label, kind, onFailure }: {
   return <Pressable accessibilityRole="link" accessibilityLabel={name}
     {...(Platform.OS === 'web' ? { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } }
       : { onPress: () => { void Linking.openURL(url).catch(() => onFailure(url)); } })}
-    style={({ pressed }) => [styles.materialLink, kind === 'document' && styles.documentLink, kind === 'media' && styles.mediaLink, pressed && styles.sourcePressed]}>
+    style={({ pressed }) => [styles.materialLink, kind === 'document' ? styles.documentLink : Platform.OS === 'web' && styles.webMediaTarget, kind === 'media' && styles.mediaLink, pressed && styles.sourcePressed]}>
     <Text style={kind === 'document' ? styles.materialTitle : kind === 'media' ? styles.mediaTitle : styles.transcriptText}>{label}</Text>
   </Pressable>;
 }
@@ -194,7 +194,8 @@ function CatalogDocument({ item, onRead }: {
   const revision = item.sourceDateText?.trim() || (item.sourceUpdatedAt ? '原文更新於 ' + sourceDate(item.sourceUpdatedAt) : undefined);
   const [expanded, setExpanded] = useState(false), [failedUrl, setFailedUrl] = useState('');
   const status = documentStatus(item);
-  const notes = [status === '已跟隨更新' ? '' : status, !expanded && media.length ? `${media.length} 項影音` : ''].filter(Boolean);
+  const showStatus = status !== '已跟隨更新' && !(status === '未採用' && item.childHealth?.adopted === 0);
+  const notes = [showStatus ? status : '', !expanded && media.length ? `${media.length} 項影音` : ''].filter(Boolean);
   const hasDetails = !!(media.length || revision || item.validUntil);
   return <View testID={`memory-catalog-source-${item.sourceId}`} style={styles.materialRow}>
     <View style={styles.materialHeading}><View style={styles.materialMain}>
@@ -209,7 +210,7 @@ function CatalogDocument({ item, onRead }: {
     {expanded && hasDetails ? <View style={styles.materialDetails}>
       {revision ? <Text style={styles.meta}>{revision}</Text> : null}
       {item.validUntil ? <Text style={styles.meta}>有效至 {sourceDate(item.validUntil)}</Text> : null}
-      {media.length ? <View><Text accessibilityRole="header" style={styles.mediaHeading}>相關影音</Text>
+      {media.length ? <View style={styles.mediaGroup}><Text accessibilityRole="header" style={styles.mediaHeading}>相關影音</Text>
         {media.map(({ url, title, transcriptUrl }) => <View key={url} style={styles.mediaRow}>
           <MaterialLink kind="media" url={url} label={title} onFailure={setFailedUrl} />
           {transcriptUrl ? <MaterialLink kind="transcript" url={transcriptUrl} label="文字稿" name={`${title}的官方文字稿`} onFailure={setFailedUrl} /> : null}
@@ -600,10 +601,12 @@ const styles = StyleSheet.create({
   materialMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.sm },
   materialLink: { minWidth: 44, minHeight: 44, alignItems: 'flex-start', justifyContent: 'center' },
   documentLink: { minWidth: 0, flexBasis: 300, flexGrow: 1, flexShrink: 1, maxWidth: '100%' },
+  webMediaTarget: { minHeight: 38 },
   mediaLink: { flex: 1, minWidth: 0 },
   materialTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, textDecorationLine: 'underline' },
   materialToggle: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.small },
   materialDetails: { minWidth: 0, gap: spacing.xs, paddingVertical: spacing.sm },
+  mediaGroup: { width: '100%', maxWidth: 420 },
   mediaHeading: { color: colors.muted, fontFamily: chineseFont, ...readingType.meta, fontWeight: '600' },
   mediaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine },
   mediaTitle: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool, textDecorationLine: 'underline' },
