@@ -72,5 +72,19 @@
     "publishedAtUtc": "2026-11-20T17:06:36.303Z",
     "androidReadback": "EAS group and the public manifest for this channel, platform and runtime matched the published Android update."
   },
+  "companionRouteContinuityRelease": {
+    "gitSha": "375243d64bf3cf982780ed5e71831d90cd59f5df",
+    "siteRun": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44934163597",
+    "releaseId": "r44934163597-1",
+    "routeEvidence": "frontend/verification/companion-route-2026-11-22/receipt.json",
+    "androidChannel": "preview",
+    "androidVersionCode": 8,
+    "runtime": "f5c61d6a5e93b4253cbac75f15a5179fbcf101c5",
+    "group": "0b7bcfcd-8a35-474f-a94e-fe47a3f2bdf1",
+    "androidManifestUpdateId": "01a1ff6e-c1b0-7cb1-8bfd-fbbdb6c11b27",
+    "manifestVerifiedAtUtc": "2026-11-21T18:50:50.948Z",
+    "manifestHttpStatus": 200,
+    "physicalAndroidVerified": false
+  },
   "deviceEvidence": "See ZUNDAMON_SITE_ASSISTANT_20261120.json. Physical mobile interaction is pending."
 }

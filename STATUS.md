@@ -24,7 +24,7 @@
 
 **2026-11-20 香港 14:15**　09:00 清單的 116 份 PDF 已核實 18 份正式家長卡及 18 個文件向量。17 份完整摘錄逐字命中原頁，另 1 份海報引文在兩份獨立轉錄均命中。13 份保留，1 份已有整理稿、等候獨立審核。其餘 84 份逐份查無模型用量或生效版，當中 4 份已恢復來源觀察。今日維護 300／300 次；原 C 已安排香港 11 月 21 日 08:00:03 沿原操作接續。另已核回同批 C2 二十頁圖表的兩次閱讀、兩個向量及原頁。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44684090457)
 
-**2026-11-21 香港**　全身 Live2D 互動已隨 `883426b6` 上線，Android 版本 8 的 preview 通道已回傳同版更新。桌面及窄屏已驗角色避開待辦狀態及聊天首行。從待辦向角色提問、回主聊天展開三方討論及點讀同版教材的流程已在 Edge 驗通。實機手勢及鍵盤待驗。[畫面與量度](artifacts/verification/ZUNDAMON_INTERACTION_20261120/layout-20261121/receipt.json) · [跨功能及發布收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
+**2026-11-22 香港**　Live2D 切頁修正已隨 `375243d6` 發布到原站和 Android 版本 8 的 preview 通道。Edge 在待辦、助手、成長和首頁之間切換五次，窄屏 212 格及桌面 131 格均可見同一個角色。從待辦提問、回主聊天展開三方討論及點讀教材已有聯驗收據。Android 已核對更新清單，實機手勢及鍵盤待驗。[切頁錄影與量度](frontend/verification/companion-route-2026-11-22/receipt.json) · [跨功能及發布收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
 
 **2026-11-19 15:12 香港，正式交付。** 來源庫及聊天均可免費加入已發布平台卡。平台管理五個家庭健康服務來源，私人來源的整理與新查詢向量沿本人密鑰。原站 Web、API、worker 同版，站外健康核對通過。Android preview 已向版本 8 提供同一套產品畫面。付費網站的真實帳戶和本次手機點按留待體驗驗收。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261) · [Android 更新](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/bc937464-28b8-40ea-ade7-a83d1c763966) · [平台卡驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 

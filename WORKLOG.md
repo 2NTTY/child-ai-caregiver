@@ -7366,6 +7366,10 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
 - 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
 
+### 2026-11-22｜角色切頁修正交付
+
+原站發布 `r44934163597-1` 已交付 #784。版本 8 的 Android preview 公開更新清單於香港 02:50 回傳 HTTP 200，更新 ID 和 runtime 與本次 EAS 發布吻合。切頁畫格來自 Edge；手機實際套用和觸控效果待驗。[版本及查回收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
+
 ### 2026-11-22 · C2 嬰兒用品正式查回及親子溝通原票定位
 
 香港 03:52，正式版 `736d5a1b` 已提交嬰兒用品審核，八套共 50 段首次上架。隔離家長逐套查回 60 套、1,362 段。換尿片首位查到全文 17 段，睡前常規首位查到全文 48 段。六個內容問題全數命中，66 個命中對回 46 個正式索引位置。耳溫計逐段查找在 3 個月、17 個月及年齡未確認三種情況下，依次顯示「一歲以下」、「一歲以上」及兩組；同版原文均保留兩組。正式共用帳本結算 US$13.165279、預留 US$3.268608。[正式收據](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json)
