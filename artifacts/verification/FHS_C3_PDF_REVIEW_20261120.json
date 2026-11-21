@@ -7855,5 +7855,192 @@
         "chapterDirectory": false
       }
     ]
+  },
+  "collection112FirstWindow": {
+    "checkedAt": "2026-11-21T15:34:52.410Z",
+    "sourceId": "pdf-836e9d989e83046a43059df7",
+    "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+    "officialPdf": "https://www.fhs.gov.hk/tc_chi/health_info/child/30035.pdf",
+    "physicalPages": 112,
+    "bytes": 53090252,
+    "release": {
+      "run": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44907701414/attempts/2",
+      "source": "9f4ab5b6476514dcbeeaf6ff9684f7f143213206",
+      "backendArchiveSha256": "3fad26803586928a49a939ffd1ae3bb7698407ac9ceac5e581b4c2bde0f01520",
+      "workerImageId": "sha256:8c96f1b7cbf56e53d889da2b15690c4a6fd98ede07482b4833411e03cfe71ba5"
+    },
+    "localWorker": {
+      "scope": "同一正式 worker 映像在本機停於整理工序的模型派送前。無網絡、唯讀、無憑證。",
+      "node": "v24.19.0",
+      "parser": "4e5d2d51168172b6567198645cadbde6016d77bce1985662fb76871106a1194e",
+      "parent": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+      "observation": "a6598a8a40ee0d9c0298b73a03a81292e00f2fab389a48306bf86f336b3cb4b8",
+      "index": "bec34ea42d8b2d8d227d385a7dff6e798768ca7a4d90a2815f614ade5b57703e",
+      "keys": [
+        "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34.1.8.text",
+        "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34.1.13.slice",
+        "8d6c55681b2e14e30e3d1a9c261c3b019c1b50310d2dff9a1d5b13794dc3c988.1.8.text",
+        "8d6c55681b2e14e30e3d1a9c261c3b019c1b50310d2dff9a1d5b13794dc3c988.9.8.text"
+      ],
+      "range": {
+        "first": 1,
+        "last": 12,
+        "firstRead": 1,
+        "lastRead": 13,
+        "ranges": [
+          {
+            "first": 1,
+            "last": 4
+          },
+          {
+            "first": 5,
+            "last": 8
+          },
+          {
+            "first": 9,
+            "last": 12
+          }
+        ]
+      },
+      "sliceHash": "8d6c55681b2e14e30e3d1a9c261c3b019c1b50310d2dff9a1d5b13794dc3c988",
+      "sliceBytes": 8003903,
+      "requestFingerprint": "knowledge-window-organize:2eb72989c5a2cb7dcfca0b9d1936b513b2459214d8a9c89fda7b4286b168e88f",
+      "providerCalls": 0,
+      "physicalPage9": {
+        "status": "text",
+        "unmappedExample": true,
+        "containsPrintedSentence": false,
+        "textHash": "6889e95697604af00e2bfee4e24a14a9d735b945c28888d0d67f89bff0804052"
+      },
+      "memoryLimit": 536870912,
+      "memoryPeak": 297713664
+    },
+    "preparedReads": {
+      "relativeToC3Worktree": ".cache/fhs-preflight/c3-font-map-packets/pdf-836e9d989e83046a43059df7/index.json",
+      "totalIndexedReads": 43,
+      "windows": 10,
+      "allProbeKeysPresent": true
+    },
+    "printComparison": {
+      "chapterSourceId": "pdf-65148c48ab4b294035fb977a",
+      "chapterOfficialPdf": "https://www.fhs.gov.hk/tc_chi/health_info/child/15670.pdf",
+      "chapterParentSha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+      "chapterOriginalOperation": "0e53006aae167996589f71ee76fdec69efd5235e0f2a2d41b903c40e2100c580",
+      "chapterSettledStageHashes": [
+        "13549094b522df13fe8cce7c047e965f712c84b976daa56ee6c94e011e9f386f",
+        "3a6c209d6742ef00f90f5cd6266b3ca1d3fb1d09c89c0b57b8963cabf8baf516"
+      ],
+      "method": "Poppler pdftoppm -scale-to 1200 -png；以 RGB 順序比對合訂本、官方單張及首個原頁附件各八幅 846 × 1200 圖像。",
+      "pixels": [
+        {
+          "collectionPage": 3,
+          "chapterPage": 1,
+          "rgbSha256": "3ac36579cdfe66393997a6ae65a5e2e74c026b4eb4d52c12e63a4f861ddc76cb"
+        },
+        {
+          "collectionPage": 4,
+          "chapterPage": 2,
+          "rgbSha256": "3cecb758ef4eefbce392173f629172ad09dd48692d5f26f512b1ee24e13103c2"
+        },
+        {
+          "collectionPage": 5,
+          "chapterPage": 3,
+          "rgbSha256": "2964ee975b57ab63a84a0855af668b2a47d4aee21f48aaf95179cadd1042f663"
+        },
+        {
+          "collectionPage": 6,
+          "chapterPage": 4,
+          "rgbSha256": "b8c136481003fe3be7bd4c44f5dd00e96da9791b7e84857dafb60b40d9fe482f"
+        },
+        {
+          "collectionPage": 7,
+          "chapterPage": 5,
+          "rgbSha256": "3d588c4c7a613f3eacb5669ada3950e37ea12ca8d7f14f4ce0e8d15cd2af1ef8"
+        },
+        {
+          "collectionPage": 8,
+          "chapterPage": 6,
+          "rgbSha256": "7f9082cf7ea2070738e990711b7e221ff8ee3170f40568bd30776c3a03e587cb"
+        },
+        {
+          "collectionPage": 9,
+          "chapterPage": 7,
+          "rgbSha256": "03dd0cc50f82bbcb60f87367a8a6c6e837efbcb30271971ad802b5a08ac02ed8"
+        },
+        {
+          "collectionPage": 10,
+          "chapterPage": 8,
+          "rgbSha256": "38ee9cbdb0ea2177bb403adbf64ee3e0aa90c72c42726350d2ee58f7cd6bc982"
+        }
+      ],
+      "witnesses": [
+        {
+          "collectionPage": 4,
+          "chapterPage": 2,
+          "passageSha256": "474d9acb80d2a52b0064eef4c32fbe0b0cddecc42ece17aa863f91ca0fbfede3",
+          "collectionLayerStatus": "unreadable",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 5,
+          "chapterPage": 3,
+          "passageSha256": "821106df6063d98a5f3c14d5090cbd320a9b58dffa415ab2b674ea80d5a9ffc0",
+          "collectionLayerStatus": "unreadable",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 6,
+          "chapterPage": 4,
+          "passageSha256": "f939d3033cb3db628f824b2aa41e41ac41faaf0e05c236318b9e081656ff4ed1",
+          "collectionLayerStatus": "unreadable",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 7,
+          "chapterPage": 5,
+          "passageSha256": "a2854fde6c73a656125d5d3ce42f5abec6f6e170ed21980db3d5027d20acaca1",
+          "collectionLayerStatus": "unreadable",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 8,
+          "chapterPage": 6,
+          "passageSha256": "669884beac54d863c4806de4c00302f38e86f8764698a8d16a260def846489a3",
+          "collectionLayerStatus": "text",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 9,
+          "chapterPage": 7,
+          "passageSha256": "431593ee57397636b8cf37e546acad565f3dbbb85d0eefefba85e933336e14a3",
+          "collectionLayerStatus": "text",
+          "inCollectionLayer": false
+        },
+        {
+          "collectionPage": 10,
+          "chapterPage": 8,
+          "passageSha256": "95c99a2e69f65c0c7ea1fd3e09ff2d9dd47f6cf60da52d53a21d5ef7aa44190a",
+          "collectionLayerStatus": "text",
+          "inCollectionLayer": false
+        }
+      ]
+    },
+    "encodingCheck": {
+      "collectionPage": 9,
+      "font": "LSVHOC+MHeiHK-Bold",
+      "registry": "Adobe",
+      "ordering": "CNS1",
+      "encoding": "Identity-H",
+      "toUnicodeSha256": "df2f06b1599b6bdcdf0a1f043f67babba4a2dc1bcee9012a0e2efc585318bfa7",
+      "explicitMappings": 33,
+      "missingSourceCode": "0534",
+      "referenceOnly": "在一頁本機參考副本內，讓原字碼表繼承 Adobe-CNS1-UCS2。保留全部 33 條明示對照，頁面像素與合訂本實頁 9 逐值相同。現行附件用原本字碼表。",
+      "matchingPrintedParagraphsAfterSupplement": 2,
+      "supplementedLayerSha256": "4010194d16523ffc45e88aa2533436880f4b341224c34c0d4f12cd01a653e974",
+      "reportedBookSelectionSentenceInSupplement": false
+    },
+    "disposition": "實頁 7 可供正式兩次讀頁後核對。實頁 9 雖有文字層，當中混入未映射字碼；已登記的選書句在補表後仍未能逐字命中。七個短篇原有印本選段只供對頁。合訂本仍欠自身的模型讀頁、獨立審核、向量、家長版本及原頁引用。",
+    "productionWrites": 0,
+    "chargedUsd": 0
   }
 }
