@@ -305,12 +305,12 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
         {originals.length ? <View style={styles.section}>
           <AppButton label={`待收錄的官方原文（${originals.length}）`} variant="quiet" density="compact" expanded={showOriginals} onPress={() => setShowOriginals(!showOriginals)} />
           {showOriginals ? originals.map(link => <View key={link.sourceId} style={styles.materialRow}>
-            <MaterialLink url={link.url} label={link.title} kind="document" onFailure={setFailedOriginal} />
+            <View style={styles.materialHeading}><MaterialLink url={link.url} label={link.title} kind="document" onFailure={setFailedOriginal} /></View>
             {failedOriginal === link.url ? <Text selectable style={styles.warning}>{link.url}</Text> : null}
           </View>) : null}
         </View> : null}
-        <View style={styles.materialList}>{documents.map(item =>
-          <CatalogDocument key={item.sourceId} item={item} onRead={() => setSettingsSource(item.sourceId)} />)}</View>
+        {documents.length ? <View style={styles.materialList}>{documents.map(item =>
+          <CatalogDocument key={item.sourceId} item={item} onRead={() => setSettingsSource(item.sourceId)} />)}</View> : null}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
       {preference ? <Metadata label="我的設定">{managed ? `${state}，${managed.enabled} 份已啟用` : state + ' · ' + (preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版')}</Metadata> : null}

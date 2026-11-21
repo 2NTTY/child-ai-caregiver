@@ -35,7 +35,15 @@
     "previousAndCurrentApiPublishedCountMatched": true,
     "existingCardToOfficialInArticleReadAt": "2026-11-21T13:02:23.090Z",
     "existingDirectInArticleRoutes": 6,
-    "assistantIndexForNine": "No active web edition. The source links do not contribute chunks, vectors, citations, family selections or export entries."
+    "assistantIndexForNine": "No active web edition. The source links do not contribute chunks, vectors, citations, family selections or export entries.",
+    "categoryCheck": {
+      "category": "免疫接種及預防傳染病",
+      "pendingSourceIds": [
+        "fhs-481"
+      ],
+      "viewportWidth": 390,
+      "screenshot": "../../frontend/verification/parent-material-reading-20261121/pending-originals-390.png"
+    }
   },
   "versionEvidence": {
     "publisherTemplate": "https://www.fhs.gov.hk/common/js/script_header.js",
