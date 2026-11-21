@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { knowledgeAgeExample } from '../src/shared/knowledge-age-example.ts';
 import { mediaClip, scriptPassage } from '../src/shared/platform-media.ts';
 import { z } from "zod";
 import { platformPublisherHosts } from '../src/shared/platform-material.ts';
@@ -27,13 +28,14 @@ export const originalOrganizerApplicability = z.strictObject({
 // Keep the historical organizer grammar stable so its sealed requests can be resumed.
 const establishedApplicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable(), use:z.literal('original_lookup').optional() });
 const applicability = z.strictObject({...establishedApplicability.shape,ageBasis:z.enum(['actual','corrected','any','publisher','unconfirmed']),
-  publisherAudiences:z.array(text(240)).min(1).max(8).optional()}).superRefine((value,ctx)=>{
-  const {publisherAudiences,...scope}=value;
+  publisherAudiences:z.array(text(240)).min(1).max(8).optional(),
+  ageExamples:z.array(knowledgeAgeExample).min(1).max(32).optional()}).superRefine((value,ctx)=>{
+  const {publisherAudiences,ageExamples,...scope}=value;
   const valid=scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
     ? scope.use==='original_lookup' && scope.minAgeMonths===null && (scope.maxAgeMonths===null ? scope.maxAgeMonthsExclusive===undefined
       : scope.ageBasis==='publisher' && scope.maxAgeMonthsExclusive===true)
       && (scope.ageBasis==='publisher')===Boolean(publisherAudiences)
-    : publisherAudiences===undefined && establishedApplicability.safeParse(scope).success;
+    : publisherAudiences===undefined && ageExamples===undefined && establishedApplicability.safeParse(scope).success;
   if(!valid)ctx.addIssue({code:'custom',message:'Invalid publisher or numeric age applicability'});
 });
 const publicSourceUrl = z.url().refine(value => {
@@ -74,6 +76,15 @@ const sourceSchema = z.strictObject({
   if (value.series && value.series.institutionId !== new URL(value.url).hostname)
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
+    for (const example of chunk.applicability.ageExamples ?? []) {
+      const original = chunk.originalText;
+      const paragraph = original && chunk.scriptPassage
+        ? chunk.scriptPassage.firstParagraph + original.slice(0,example.start).split('\n').length - 1 : undefined;
+      if (!original || original.slice(example.start,example.start + example.quote.length) !== example.quote
+        || !example.quote.includes(example.age.wording) || example.paragraph !== paragraph
+        || example.paragraph !== undefined && example.quote.includes('\n'))
+        ctx.addIssue({code:'custom',message:'Printed age example must identify an exact original passage'});
+    }
     if (chunk.applicability.ageBasis === 'publisher' || chunk.applicability.ageBasis === 'unconfirmed') {
       const audiences=chunk.applicability.publisherAudiences??[];
       if(chunk.treatment?.kind!=='overview' || audiences.some(audience=>!value.title.includes(audience) &&

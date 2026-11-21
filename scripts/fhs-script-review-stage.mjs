@@ -19,7 +19,7 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
   assertScriptBaseline(script, baseline);
   const { observation } = await refresh.inspect(script.sourceId);
   if (observation?.contentHash !== pin.observationHash) throw Error('knowledge_script_review_stage_binding');
-  const scriptRevision = await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }));
+  const scriptRevision = await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),pin.operationFingerprint);
   let matched = false;
   try {
     const result = await prepareKnowledgeMaintenance({

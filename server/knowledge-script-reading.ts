@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import type { KnowledgeChunkInput } from '../src/shared/knowledge.ts';
 import { originalOrganizerApplicability } from './knowledge-inputs.ts';
+import { bindPublisherAgeExamples, type AgeExampleRegistration } from './knowledge-age-examples.ts';
 
-type Unit = { id: string; originalText: string; scriptPassage?: { title: string } };
+type Unit = { id: string; originalText: string; scriptPassage?: { title: string; firstParagraph?:number } };
 export type PublisherAudience = {title?:string; audience:string; beforeMonths?:number};
 export const publisherReviewInstruction = 'Review this verbatim reference edition for the family library. A source audience, when present, is the publisher’s literal wording. Numeric eligibility is unknown. A reading-only unit cannot authorise advice or proactive use, including when a child’s age is known. Check that the audience wording is faithful, paragraph ranges and age-specific examples remain exact, and no numeric inference or unrestricted eligibility is introduced. The conditions list quotes selected age-specific examples, not a numeric interval for the whole unit. Assess unchanged material and carry forward prior unresolved concerns. A textRef refers to repeatedText by zero-based index; optional start and end select the exact UTF-16 substring, end excluded. textIsOriginal marks a complete verbatim unit.';
 
@@ -29,7 +30,9 @@ export function compactPublisherReview(payload:object,originals:readonly string[
 }
 
 /** Literal-only editions keep each restriction inside its original paragraph. An unconfirmed range never grants advice eligibility. */
-export function publisherScriptReading(units:readonly Unit[],materialTitle:string,labels:readonly PublisherAudience[],materialText='',exclusiveLookup=false) {
+export function publisherScriptReading(units:readonly Unit[],materialTitle:string,labels:readonly PublisherAudience[],materialText='',exclusiveLookup=false,
+  examples:readonly AgeExampleRegistration[] = []) {
+  const bound = bindPublisherAgeExamples(units,examples);
   for(const label of labels) {
     const evidence = label.title ? units.filter(u=>u.scriptPassage?.title===label.title).flatMap(u=>[u.scriptPassage!.title,u.originalText])
       : [materialTitle,materialText];
@@ -45,6 +48,7 @@ export function publisherScriptReading(units:readonly Unit[],materialTitle:strin
     const conditions=[...new Set(sentences.filter(s=>s.length<=600 &&
       /(?:[\d零〇一二兩三四五六七八九十百半]+\s*(?:個?月|歲|星期大|週大|日大)|學前|初生|新生)/u.test(s)))].slice(0,8);
     const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:['official-transcript'],conditions,
+      ...(bound.has(unit.id) ? {ageExamples:bound.get(unit.id)!} : {}),
       use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:before??null,
       ...(before!==undefined?{maxAgeMonthsExclusive:true}:{}),
       ...(audiences.length?{publisherAudiences:audiences}:{})};
