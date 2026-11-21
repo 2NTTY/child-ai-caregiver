@@ -5277,6 +5277,15 @@
     ]
   },
   "originalQuoteReadback": {
+    "readTime": "2026-11-21T08:37:40.773852Z",
+    "unchangedOriginalsAfterInspection": 116,
+    "verifiedFamilyEditions": 34,
+    "exportedVectors": 76,
+    "verifiedCitations": 76,
+    "registeredSources": 4,
+    "registeredPassages": 20,
+    "distinctPassageHolds": 2,
+    "registrationCommit": "6d5ed6512302d35bc2631f6228a1c1cb84c6669f",
     "workerSource": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
     "releaseRun": "44882194026",
     "inputIndexSha256": "944affb50ce17f9bf8cb2328248b81ee5a84feaf9732a81c382c2a7983e03561",
@@ -5503,7 +5512,39 @@
           "46cf743ef6113029ad6457075f0d632d6d9ee7c5a60c750d30f3ab697fc9b8c4",
           "597e1707da73873b1b64f462e1b5cf62e04853c0cbacf6cfcbb7ecbfb018725b"
         ],
-        "disposition": "inspection_pending"
+        "inspectionReceiptSha256": "f58a0ce40658a3f72316673f185540be089204844cb3ede590589010ba5dcb7d",
+        "verifiedWindow": [
+          1,
+          4
+        ],
+        "physicalPagesWithPairedQuotes": [
+          2,
+          3,
+          4
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "registered_original_passages",
+        "registrationBinding": "c4bf0a272cd55b19b6c39f040811bff78d98fb08edf50264ff04da64f2a7bc61",
+        "registeredPassages": 3,
+        "printedProofs": 3,
+        "textLayerProofs": 0,
+        "privateInputArchiveSha256": "77933404461a93cb938a79a87167178be623cf782e5f59a24d35934fee86b315",
+        "inputIndexSha256": "7d52c26550b25e6cb25c15a47ac2b4ea7ec979ec2226c84e73672b68fa6bb4bb",
+        "operatorReadDirectory": "fhs-c3-ready-pdf-a251b7696c8d6660d7aad77e-7d52c26550b2",
+        "verifiedInputReads": [
+          {
+            "key": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7.1.4.text",
+            "recordSha256": "6c29c0e3b6970b203ec9c279b364ce375651933a03b94fe981924ae8a00ceeda"
+          },
+          {
+            "key": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7.1.4.slice",
+            "recordSha256": "bfbd366fb2d7aa6973c6098388725d6ad78db83aa09b1030b4180b12ea91eec2"
+          },
+          {
+            "key": "bff90208035edf5664adf9c916f181bb8206583d89e5fe983f86b2db2aac9a37.1.8.text",
+            "recordSha256": "bcbb804671df00666c28f082e834abde09a1e8f5c813d5198cb00fbac8e48c2f"
+          }
+        ]
       }
     ]
   }
