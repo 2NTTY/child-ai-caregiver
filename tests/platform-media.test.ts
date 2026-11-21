@@ -9,7 +9,7 @@ import { fhsMaterialWatches } from '../server/platform-materials.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { randomUUID } from 'node:crypto';
 import { knowledgeHash } from '../server/knowledge-inputs.ts';
-import { mediaPlaybackUrl } from '../src/shared/platform-media.ts';
+import { mediaPlaybackUrl, platformMediaLink } from '../src/shared/platform-media.ts';
 import { readLinkedOfficialPages, readOfficialMediaPage } from '../server/fhs-source-forms.ts';
 import { librarySeriesV3Page, librarySeriesV4Page, type PersonalLibraryPage } from '../src/shared/personal-library.ts';
 
@@ -57,6 +57,21 @@ test('direct links share one official page fetch and only inherit the verified p
   const changed = html.replace('zKcYlmle4gI', 'J9dAb6KPN2w');
   assert.equal(readOfficialMediaPage(page, changed, direct), null);
   assert.equal(readOfficialMediaPage(page, changed.replace('id="transcript"', ''), direct), null);
+});
+
+test('an official video directory is not a film and old publisher shortcuts keep their HTTPS player link', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/index.html';
+  const shortcut = 'http://youtu.be/0dnvyCJEGyE';
+  const direct = 'https://www.youtube.com/watch?v=0dnvyCJEGyE';
+  assert.equal(platformMediaLink(shortcut, page), direct);
+  assert.equal(platformMediaLink(shortcut), null);
+  assert.equal(platformMediaLink('http://somewhere.invalid/0dnvyCJEGyE', page), null);
+  const html = '<div id="content"><h2 class="title">Index</h2><a href="bf_vid_c4.html">First video</a></div>';
+  const read = await readLinkedOfficialPages([page, direct], async target => {
+    assert.equal(target, page);
+    return { status: 'response', response: { status: 200, contentType: 'text/html', body: Buffer.from(html) } };
+  }, new AbortController().signal);
+  assert.deepEqual(read, { links: [direct], pages: [], scripts: [] });
 });
 
 test('a fresh source check alone replaces discovered links and never starts media when disabled', async () => {

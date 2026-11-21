@@ -157,8 +157,8 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
           }
           if (original.status !== 'ok' || !mediaLinks) return original;
           try {
-            const { pages } = await readLinkedOfficialPages(mediaLinks, transport, signal);
-            return { ...original, mediaLinks, mediaPages: pages };
+            const { links, pages } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+            return { ...original, mediaLinks: links, mediaPages: pages };
           } catch {
             signal.throwIfAborted();
             return { ...original, mediaLinks };
@@ -177,9 +177,9 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         && (result.url ?? definition.url) === definition.url) {
         mediaLinks = mediaLinksFromPage(load(html), definition.selector, definition.url);
         if (mediaLinks?.length) {
-          const { pages, scripts } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+          const { links, pages, scripts } = await readLinkedOfficialPages(mediaLinks, transport, signal);
           if (scripts.length) items[0]!.scripts = scripts;
-          return { status: 'ok', mediaLinks, mediaPages: pages, items };
+          return { status: 'ok', mediaLinks: links, mediaPages: pages, items };
         }
       }
       return { status: "ok", ...(mediaLinks ? { mediaLinks } : {}), ...(definition.id === "chp-recent"

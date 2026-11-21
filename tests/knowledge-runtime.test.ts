@@ -65,10 +65,42 @@ test('a request for a video list returns distinct scripts from the authorized ed
     assert.equal(selection?.versionId, anchor.versionId);
     return [...rows, rows[1]!];
   } }, gateway).createRun({ actor: queryActor, budget: budget(t), authorize: async () => true });
-  const result = await run.search('影片清單', filter);
+  const result = await run.search('兒童發燒的影片清單', filter);
   assert.equal(new Set(result.chunks.map(c => c.scriptPassage?.url)).size, 6);
   assert.equal(result.omittedChunks, 1);
   assert.equal(result.complete, false);
+  assert.equal(result.videoListScope, 'named_material_reviewed_passages');
+});
+
+test('a whole-card video list keeps cross-material evidence and a short single-material list cannot certify catalogue completeness', async t => {
+  const a = candidate('one', 0, { title: '第一份教材', rankScore: 3 });
+  const b = candidate('two', 0, { title: '第二份教材', sourceId: 'other', versionId: 'v2', rankScore: 1 });
+  const s = candidate('script', 0, { ...a, chunkId: 'script', scriptPassage: { title: '短片',
+    url: 'https://www.fhs.gov.hk/tc_chi/mulit_med/example.html#transcript', firstParagraph: 1, lastParagraph: 1 }, rankScore: 2 });
+  let expansions = 0;
+  const gateway = createEmbeddingGateway({ config, usage: fakeUsage().usage,
+    provider: fakeProvider(async () => ({ values: vector, inputTokens: 1, billableCharacters: 4 })) });
+  const run = createKnowledgeRetriever({ candidates: async (_f, _v, sel) => {
+    if (sel?.query) return [a,s,b];
+    expansions++; assert.equal(sel?.versionId, 'v1'); return [a,s];
+  } }, gateway).createRun({actor: queryActor, budget: budget(t), authorize: async()=>true});
+  const whole = await run.search('整張卡包括第一份教材，請列出所有劇本。', filter);
+  assert.deepEqual(whole.chunks.map(c=>c.chunkId), ['one','two','script']);
+  assert.equal(expansions, 0); assert.equal(whole.complete, false);
+  const single = await run.search('第一份教材的影片清單', filter);
+  assert.deepEqual(single.chunks.map(c=>c.chunkId), ['script']);
+  assert.equal(expansions, 1); assert.equal(single.complete, false); assert.equal(single.omittedChunks, 0);
+});
+
+test('a question about what a film teaches preserves its full reviewed evidence', async t => {
+  const item = candidate('advice', 0, { text: 'Full reviewed evidence about communicating with a child.', rankScore: 1 });
+  const gateway = createEmbeddingGateway({ config, usage: fakeUsage().usage,
+    provider: fakeProvider(async () => ({ values: vector, inputTokens: 1, billableCharacters: 4 })) });
+  const run = createKnowledgeRetriever({ candidates: async (_f, _v, sel) => {
+    assert.ok(sel?.query); assert.equal(sel.preferDistinctSources, undefined); return [item];
+  } }, gateway).createRun({ actor: queryActor, budget: budget(t), authorize: async()=>true });
+  const result = await run.search('影片中有哪些方法可以同小朋友溝通？', filter);
+  assert.equal(result.videoListScope, undefined); assert.equal(result.chunks[0]?.text, item.text);
 });
 
 test('publisher priority binds one exact print edition and preserves explicit print and separate attachment scope', () => {

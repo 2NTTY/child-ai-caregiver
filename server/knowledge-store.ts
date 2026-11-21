@@ -8,7 +8,7 @@ import { knowledgeTokens } from "./knowledge-ranking.ts";
 import { omittedLeafletPrints } from "./fhs-leaflet-editions.ts";
 import { reviewKnowledgeVersion, publishKnowledgeVersion } from "./knowledge-version-review.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
-import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { embeddingForChunk, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { sqlTimelyEligibilityClause } from "./knowledge-timely-policy.ts";
 
 interface VersionRow { id: string; source_id: string; version_hash: string; document: KnowledgeSourceInput; review_state: "draft" | "reviewed" | "withdrawn"; checked_at: Date | null }
@@ -56,7 +56,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         const versionId = randomUUID();
         await client.query("INSERT INTO knowledge_versions (id,source_id,version_hash,document) VALUES ($1,$2,$3,$4)", [versionId, document.sourceId, hash, document]);
         for (const chunk of document.chunks) {
-          const embedding = embeddingDocument(document.title, chunk.section, chunk.text);
+          const embedding = embeddingForChunk(document.title, chunk);
           await client.query("INSERT INTO knowledge_chunks (id,version_id,section_key,document,content_hash,embedding_hash) VALUES ($1,$2,$3,$4,$5,$6)",
             [randomUUID(), versionId, chunk.key, chunk, knowledgeHash(chunk), embedding.hash]);
         }
@@ -103,7 +103,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          WHERE c.version_id = $4 AND COALESCE(c.document->'treatment'->>'kind','detailed') NOT IN ('structured','excluded') AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
          WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)
          ORDER BY c.embedding_hash`, [...embeddingKey, versionId]);
-      return result.rows.map(chunk => embeddingDocument(row.document.title, chunk.document.section, chunk.document.text));
+      return result.rows.map(chunk => embeddingForChunk(row.document.title, chunk.document));
     },
     async embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>) {
       if (document.hash !== knowledgeHash([document.title, document.text])) throw new Error("Embedding document hash mismatch");
@@ -144,7 +144,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
     },
     async candidates(input: KnowledgeFilter, vector: readonly number[] | null, selection: {
-      libraryUserId?: string; query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
+      libraryUserId?: string; query?: string; preferDistinctSources?: boolean; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
     } = {}): Promise<KnowledgeCandidate[]> {
       const filter = parseKnowledgeFilter(input);
       const values = vector === null ? null : vectorLiteral(vector);
@@ -169,7 +169,9 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
           WHERE score>0 ORDER BY score DESC,id LIMIT 60),
         fused AS (SELECT id,sum(1.0/(60+r)) AS rank_score,min(r) AS best_rank
           FROM (SELECT * FROM vector_top UNION ALL SELECT * FROM keyword_top) ranks GROUP BY id)
-        SELECT eligible.*,fused.rank_score FROM fused JOIN eligible USING(id) ORDER BY fused.rank_score DESC,fused.best_rank,id LIMIT $15`
+        SELECT eligible.*,fused.rank_score FROM fused JOIN eligible USING(id) ORDER BY
+        ${selection.preferDistinctSources ? '(row_number() OVER (PARTITION BY eligible.source_id ORDER BY fused.rank_score DESC,fused.best_rank,id)>1),' : ''}
+        fused.rank_score DESC,fused.best_rank,id LIMIT $15`
         : `SELECT *,NULL::numeric AS rank_score FROM eligible ORDER BY chunk_order,id LIMIT $15`;
       const rows = await transaction(pool, client => client.query<{ id: string; source_id: string; version_id: string; version_hash: string; content_hash: string;
         source_document: KnowledgeSourceInput; document: KnowledgeChunkInput; checked_at: Date; last_successful_check_at: Date | null;

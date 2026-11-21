@@ -9,6 +9,9 @@ export function youtubeVideoId(url: URL) {
 export function platformMediaLink(raw: string, base?: string): string | null {
   try {
     const url = new URL(raw, base);
+    // Older publisher pages link directly to an HTTP YouTube shortcut. Emit only the canonical HTTPS watch URL.
+    if (url.protocol === 'http:' && !url.port && base && new URL(base).origin === 'https://www.fhs.gov.hk' && youtubeVideoId(url))
+      url.protocol = 'https:';
     if (url.protocol !== 'https:' || url.port || url.username || url.password) return null;
     const video = youtubeVideoId(url);
     if (video) return 'https://www.youtube.com/watch?v=' + video;
@@ -24,7 +27,8 @@ export const platformMediaPage = z.strictObject({ url: mediaUrlSchema, title: z.
   transcriptUrl: transcriptUrl.optional() }).refine(page => !page.transcriptUrl || !page.url.endsWith('.html') || page.transcriptUrl === page.url + '#transcript');
 export type PlatformMediaPage = z.infer<typeof platformMediaPage>;
 export const scriptPassage = z.strictObject({ url: transcriptUrl, title: z.string().trim().min(1).max(300),
-  firstParagraph: z.int().positive(), lastParagraph: z.int().positive() }).refine(p => p.firstParagraph <= p.lastParagraph);
+  firstParagraph: z.int().positive(), lastParagraph: z.int().positive(), originalHash: z.string().regex(/^[a-f0-9]{64}$/u).optional()
+}).refine(p => p.firstParagraph <= p.lastParagraph);
 export type ScriptPassage = z.infer<typeof scriptPassage>;
 export const mediaCue = z.strictObject({ start: z.number().nonnegative(), end: z.number().positive(), text: z.string().trim().min(1).max(1600) })
   .refine(cue => cue.end > cue.start);

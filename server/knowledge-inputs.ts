@@ -65,6 +65,7 @@ const sourceSchema = z.strictObject({
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
     if (chunk.scriptPassage && (new URL(value.url).origin !== new URL(chunk.scriptPassage.url).origin
+      || chunk.scriptPassage.originalHash && chunk.scriptPassage.originalHash !== knowledgeHash(chunk.originalText)
       || chunk.mediaClip || chunk.pageStart || chunk.pageEnd || chunk.originalKind || chunk.excerptPage || !chunk.originalText?.includes(chunk.sourceExcerpt)))
       ctx.addIssue({ code: 'custom', message: 'Invalid official script passage' });
     if ((chunk.applicability.maxAgeMonths ?? 0) > 120 && value.classification !== 'official_guidance') {
@@ -120,6 +121,16 @@ export function treatmentContentHash(source: KnowledgeSourceInput): string {
 export function embeddingDocument(title: string, section: string, body: string): { title: string; text: string; hash: string } {
   const documentTitle = `${title} — ${section}`;
   return { title: documentTitle, text: body, hash: knowledgeHash([documentTitle, body]) };
+}
+
+/** The same verified original can share a vector across materials. Each family's selected chunk keeps its own review and conditions. */
+export function embeddingForChunk(title: string, chunk: Pick<KnowledgeSourceInput['chunks'][number], 'section' | 'text' | 'originalText' | 'scriptPassage'>) {
+  const script = chunk.scriptPassage;
+  if (script?.originalHash) {
+    if (!chunk.originalText || knowledgeHash(chunk.originalText) !== script.originalHash) throw Error('knowledge_script_original_mismatch');
+    return embeddingDocument(script.title, `劇本第 ${script.firstParagraph}–${script.lastParagraph} 段`, chunk.originalText);
+  }
+  return embeddingDocument(title, chunk.section, chunk.text);
 }
 
 export const knowledgeChunkInputSchema = sourceSchema.shape.chunks.element;

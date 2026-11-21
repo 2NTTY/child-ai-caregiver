@@ -182,7 +182,8 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
       let last = first, originalText = script.paragraphs[first]!;
       while (last + 1 < script.paragraphs.length && originalText.length + 1 + script.paragraphs[last + 1]!.length <= 1200)
         originalText += '\n' + script.paragraphs[++last]!;
-      const scriptPassage = { url: script.page.transcriptUrl!, title: script.page.title, firstParagraph: first + 1, lastParagraph: last + 1 };
+      const scriptPassage = { url: script.page.transcriptUrl!, title: script.page.title, firstParagraph: first + 1, lastParagraph: last + 1,
+        originalHash: knowledgeReviewHash(originalText) };
       units.push({ id: 'p0-' + knowledgeReviewHash(['official-script/1', scriptPassage, originalText]).slice(0, 20), originalText,
         page: null, pageEnd: null, scriptPassage });
       if (units.length > 32) reject('knowledge_maintenance_batch_too_large');

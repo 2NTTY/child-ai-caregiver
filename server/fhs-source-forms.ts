@@ -19,6 +19,10 @@ export function readOfficialMediaPage(url: string, body: string, linkedVideo?: s
   const players = new Set($('#content iframe[src],#content video[src],#content audio[src],#content source[src]').toArray()
     .map(el => platformMediaLink($(el).attr('src') ?? '', url)).filter(Boolean));
   if (linkedVideo && (players.size !== 1 || !players.has(linkedVideo))) return null;
+  if (!players.size && $('#content a[href]').toArray().some(el => {
+    const target = platformMediaLink($(el).attr('href') ?? '', url);
+    return target && target !== url && target.endsWith('.html');
+  })) return { page, directory: true };
   if (block.length !== 1 || players.size !== 1) return { page };
   const paragraphs = block.children('h4,p,ul,ol').not('#wcag-audio-toggle').toArray()
     .map(el => $(el).text().replace(/\s+/gu, ' ').trim()).filter(Boolean);
@@ -29,6 +33,7 @@ export function readOfficialMediaPage(url: string, body: string, linkedVideo?: s
 
 export async function readLinkedOfficialPages(links: readonly string[], transport: typeof fetchPublicSourceResponse, signal: AbortSignal) {
   const pages: PlatformMediaPage[] = [], scripts = new Map<string, OfficialScript>();
+  const directories = new Set<string>();
   const bodies = new Map<string, string>();
   for (const link of links) {
     if (platformMediaLink(link) !== link) continue;
@@ -49,8 +54,9 @@ export async function readLinkedOfficialPages(links: readonly string[], transpor
       bodies.set(url, body);
     }
     const read = readOfficialMediaPage(url, body, video ? link : undefined);
+    if (read?.directory) { directories.add(link); continue; }
     if (read) pages.push({ ...read.page, url: link });
     if (read?.script) scripts.set(url, read.script);
   }
-  return { pages, scripts: [...scripts.values()] };
+  return { links: links.filter(link => !directories.has(link)), pages, scripts: [...scripts.values()] };
 }

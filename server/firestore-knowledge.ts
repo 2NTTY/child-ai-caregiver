@@ -6,8 +6,8 @@ import { FieldPath, FieldValue, VectorValue, type Firestore, type Transaction } 
 import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { personalLibraryItemSchema, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
-import { embeddingDocument, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash, treatmentContentHash } from "./knowledge-inputs.ts";
-import { knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
+import { embeddingForChunk, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash, treatmentContentHash } from "./knowledge-inputs.ts";
+import { firstHitPerSource, knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
@@ -237,7 +237,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     if (!listed || row.order !== listed.order || row.versionId !== edition.version.versionId || row.sourceId !== edition.source.sourceId
       || row.document.key !== listed.key || row.contentHash !== knowledgeHash(document)
       || listed.mediaClipHash !== (document.mediaClip ? knowledgeHash(document.mediaClip) : undefined)
-      || row.embeddingHash !== embeddingDocument(edition.document.title, document.section, document.text).hash
+      || row.embeddingHash !== embeddingForChunk(edition.document.title, document).hash
       || listed.contentHash !== undefined && listed.contentHash !== row.contentHash
       || listed.embeddingHash !== undefined && listed.embeddingHash !== row.embeddingHash
       || listed.applicability !== undefined && knowledgeHash(listed.applicability) !== knowledgeHash(document.applicability)) reject("knowledge_binding_invalid", 503);
@@ -804,7 +804,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (edition.version.reviewState !== "reviewed") reject("knowledge_version_unreviewed");
         const missing = new Map<string, { hash: string; title: string; text: string }>();
         for (const chunk of edition.chunks) if (needsKnowledgeVector(chunk.document.treatment) && chunk.embedding === null && (await readVector(tx, chunk.embeddingHash))?.state !== "ready") {
-          missing.set(chunk.embeddingHash, embeddingDocument(edition.document.title, chunk.document.section, chunk.document.text));
+          missing.set(chunk.embeddingHash, embeddingForChunk(edition.document.title, chunk.document));
         }
         return [...missing.values()];
       }, { readOnly: true });
@@ -888,7 +888,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       const { chunks: inputChunks, ...header } = document;
       const records: Chunk[] = inputChunks.map((chunk, index) => ({ ...scope, sourceId: document.sourceId, versionId,
         chunkId: deterministicUuid([projectId, namespace, "chunk", versionId, chunk.key]), order: index + 1, document: chunk,
-        contentHash: knowledgeHash(chunk), embeddingHash: embeddingDocument(document.title, chunk.section, chunk.text).hash,
+        contentHash: knowledgeHash(chunk), embeddingHash: embeddingForChunk(document.title, chunk).hash,
         embedding: null, vectorHash: null, model: null, dimensions: null, pipeline: null }));
       const version: Version = { ...scope, sourceId: document.sourceId, versionId, versionHash, header: parse(headerSchema, header),
         chunks: records.map(row => ({ chunkId: row.chunkId, key: row.document.key, order: row.order, contentHash: row.contentHash,
@@ -1274,7 +1274,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           else fused.set(id, { id, rankScore: 1 / (60 + rank), bestRank: rank });
         };
         vectorTop.forEach(([id], index) => add(id, index + 1)); keywordTop.forEach(([id], index) => add(id, index + 1));
-        const top = [...fused.values()].sort((a, b) => b.rankScore - a.rankScore || a.bestRank - b.bestRank || compareId(a.id, b.id));
+        const ranked = [...fused.values()].sort((a, b) => b.rankScore - a.rankScore || a.bestRank - b.bestRank || compareId(a.id, b.id));
+        const top = selection.preferDistinctSources ? firstHitPerSource(ranked, row => eligible.get(row.id)!.edition.source.sourceId) : ranked;
         const result: KnowledgeCandidate[] = [];
         for (let offset = 0; offset < top.length && result.length < limit; offset += limit) {
           const page = top.slice(offset, offset + limit);

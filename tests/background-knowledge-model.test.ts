@@ -14,7 +14,7 @@ import { createModelKnowledgeReviewPort, includePriorRetrieval, prepareKnowledge
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { checkKnowledgeObservation, observationHash } from "../server/knowledge-observation.ts";
-import { knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
+import { embeddingForChunk, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
 import { reviseRetainedDraft } from '../server/knowledge-retained-draft.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
@@ -62,7 +62,10 @@ test('official script paragraphs bind to their own original page across organiza
   const calls: Parameters<Completion>[0][] = [];
   const { source } = await prepareKnowledgeMaintenance({ candidate: c, baseline: null, fetchedAt, growthRules: [], completeText: provider(calls) });
   const chunk = source.chunks.find(row => row.scriptPassage)!;
-  assert.deepEqual(chunk.scriptPassage, { url: url + '#transcript', title: '原頁題名', firstParagraph: 1, lastParagraph: 2 });
+  assert.deepEqual(chunk.scriptPassage, { url: url + '#transcript', title: '原頁題名', firstParagraph: 1, lastParagraph: 2,
+    originalHash: knowledgeHash(paragraphs.join('\n')) });
+  assert.deepEqual(embeddingForChunk('Material A', chunk), embeddingForChunk('Material B', { ...chunk, text: 'A second reviewed synopsis' }));
+  assert.throws(() => embeddingForChunk('Material A', { ...chunk, originalText: 'Changed script' }), /knowledge_script_original_mismatch/);
   assert.equal(chunk.originalText, paragraphs.join('\n'));
   assert.equal(chunk.mediaClip, undefined);
   assert.deepEqual(JSON.parse(calls[1]!.user).candidate.chunks.at(-1).scriptPassage, chunk.scriptPassage);

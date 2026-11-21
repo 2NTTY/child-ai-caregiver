@@ -124,6 +124,7 @@ export interface KnowledgeResult {
   degradationReason: "embedding_unavailable" | null;
   chunks: KnowledgeEvidence[];
   queryContext?: KnowledgeQueryContext;
+  videoListScope?: 'named_material_reviewed_passages' | 'matching_materials_reviewed_passages';
   complete?: boolean;
   omittedChunks?: number;
   returned?: number;
