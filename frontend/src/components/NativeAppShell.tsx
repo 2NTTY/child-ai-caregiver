@@ -1,4 +1,4 @@
-import { SiteCompanion } from './companion/SiteCompanion';
+import { CompanionSlot } from './companion/CompanionViewport';
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -43,7 +43,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
 
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
-    <View style={styles.content}>{children}<SiteCompanion /></View>
+    <View style={styles.content}>{children}<CompanionSlot /></View>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧資訊側欄" onRequestClose={() => setRailOpen(false)}>
       <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>

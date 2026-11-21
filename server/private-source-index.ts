@@ -10,7 +10,7 @@ import type { FirestoreModelRouting } from './firestore-model-routing.ts';
 import type { createPrivateSourceModelSession, PrivateSourceModelSessionOptions } from './private-source-model-session.ts';
 import { PRIVATE_INDEX_COLLECTION, PRIVATE_INDEX_FAMILY, privateIndexBasis, privateIndexId, privateIndexMetadata, privateIndexRecord,
   type PrivateIndexRecord, type PrivateProgress, type PrivateStageReceipt } from './private-source-index-record.ts';
-import { privateReadingInput, privateWindow, parsePrivateFacts, parsePrivateReview } from './private-source-reading.ts';
+import { privateReadingInput, privateWindow, parsePrivateDraft, parsePrivateVerdict } from './private-source-reading.ts';
 
 type Documents = ReturnType<typeof createFirestoreSourceCardDocuments>;
 export type OpenPrivateSession = (options: Omit<PrivateSourceModelSessionOptions,'routing'|'rootBudget'>) => ReturnType<typeof createPrivateSourceModelSession>;
@@ -117,7 +117,8 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
         const prior = await progress(b,h);
         if (firestoreDomainHash(row) !== firestoreDomainHash(prior)) return;
         save(b,{...bindingOf(b,h),kind:'held',page:row.page,offset:row.offset,ordinal:row.ordinal,proof:row.proof,issue:window.issue});
-        save(b,{...row,...window.next,stage:window.next ? 'organize' : 'unreadable',ordinal:row.ordinal+Number(!!window.next),
+        const { topic: _topic, ...unreadable } = row;
+        save(b,{...unreadable,...window.next,stage:window.next ? 'organize' : 'unreadable',ordinal:row.ordinal+Number(!!window.next),
           held:row.held+1,issue:window.issue,attempt:null,next:null,facts:[],proof:proof()});
       });
       return window.next ? defer() : completed;
@@ -166,7 +167,8 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
         save(b,{...location,kind:'unit',facts:updated.facts,vector:result.vector,embeddingModel:KNOWLEDGE_EMBEDDING.model,proof:{organize,review,embed}});
       } else save(b,{...location,kind:'held',issue:result.issue});
       const next = updated.next;
-      save(b,{...updated,...(next ?? {}),next:null,stage:next ? 'organize' : 'complete',attempt:null,facts:[],proof:proof(),
+      const { topic: _topic, ...finished } = updated;
+      save(b,{...finished,...(next ?? {}),next:null,stage:next ? 'organize' : 'complete',attempt:null,facts:[],proof:proof(),
         ordinal:row.ordinal+Number(!!next),ready:row.ready+Number('vector' in result),held:row.held+Number('issue' in result),issue:null});
     };
     let session: Awaited<ReturnType<OpenPrivateSession>> | undefined;
@@ -186,16 +188,31 @@ export function createPrivateSourceIndex(options: {domain: FirestoreDomainOption
       } else {
         if (!window || 'issue' in window) return absent();
         updated.next = window.next;
-        const input = await privateReadingInput(stage,window,{page:row.page,offset:row.offset},row.facts,'model:source-'+stage);
+        const input = await privateReadingInput(stage,window,{page:row.page,offset:row.offset},row.facts,'model:source-'+stage,
+          start.head.title, !start.head.rag?.topic, row.topic);
         const reply = await session.completeText({...input,onProviderStart:() => { providerStarted = true; }});
-        let approved = false;
+        let approved = false, topicSupported = false;
         try {
-          if (stage === 'organize') { updated.facts = parsePrivateFacts(reply,window.text); approved = updated.facts.length > 0; }
-          else approved = parsePrivateReview(reply,row.facts.length);
+          if (stage === 'organize') {
+            const draft = parsePrivateDraft(reply,window.text);
+            updated.facts = draft.facts;
+            delete updated.topic;
+            if (draft.topic && !start.head.rag?.topic) updated.topic = draft.topic;
+            approved = updated.facts.length > 0;
+          } else {
+            const verdict = parsePrivateVerdict(reply,row.facts.length);
+            approved = verdict.factsSupported;
+            topicSupported = verdict.topicSupported;
+          }
         } catch { /* Malformed or unanchored observations are held with the original page. */ }
         if (!await commit((b,h) => {
           if (!approved) completeUnit(b,h,updated,{issue:stage === 'review' ? 'review_held' : 'no_verified_candidate'});
-          else save(b,{...updated,stage:stage === 'organize' ? 'review' : 'embed'});
+          else {
+            if (stage === 'review' && topicSupported && row.topic && row.proof.organize)
+              documents.saveReviewedTopicIn(b,h,{...row.topic,page:row.page,offset:row.offset,
+                organizeRunId:row.proof.organize.rootRunId,reviewRunId:receipt.rootRunId});
+            save(b,{...updated,stage:stage === 'organize' ? 'review' : 'embed'});
+          }
         },true)) return stopped;
       }
       return defer();

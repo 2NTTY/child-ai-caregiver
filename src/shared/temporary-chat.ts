@@ -15,7 +15,7 @@ export const TEMPORARY_CHAT_COPY = {
   title: "臨時聊天",
   entryLabel: "臨時聊天",
   entryAccessibilityLabel: "開啟獨立空白臨時聊天",
-  badgeLabel: "空白隔離 · 退出即清除",
+  badgeLabel: "空白隔離 · 退出清除本機",
   exitButtonLabel: "結束並清除",
   restartButtonLabel: "開啟新臨時聊天",
   retryCloseButtonLabel: "重試遠端清除",
@@ -34,6 +34,8 @@ export const TEMPORARY_CHAT_COPY = {
     "本機臨時對話已立即清除，但尚未收到伺服器確認清除（不可視作遠端已確認刪除）；恢復連線後會自動重送清除通知，且伺服器最遲於閒置 15 分鐘或滿 60 分鐘後自動失效並清除。",
   sessionExpiredNotice:
     "此臨時會話已失效或已清除，無法續接；請開啟全新的空白臨時聊天。",
+  sessionRestartRequiredNotice:
+    "無法確認上一則訊息的處理結果，這次臨時聊天不能繼續。系統不會重送訊息；開啟新聊天會清除本機舊對話。",
   inputPlaceholder: "在空白臨時聊天提問公共育兒知識…",
 } as const;
 

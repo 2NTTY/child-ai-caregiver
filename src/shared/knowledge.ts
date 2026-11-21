@@ -5,8 +5,11 @@ export type { TimelyEventKind, TimelyEventLifecycle, TimelyEventStatus };
 export const KNOWLEDGE_EMBEDDING = Object.freeze({ model: "gemini-embedding-001", dimensions: 1024, pipeline: "section-v1" });
 export type KnowledgeClass = "official_guidance" | "recent_information";
 export interface KnowledgeApplicability {
+  use?: 'original_lookup';
   region: string;
-  ageBasis: "actual" | "corrected" | "any";
+  ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed" | "per_instruction";
+  publisherAudiences?: string[];
+  ageExamples?: import('./knowledge-age-example.ts').KnowledgeAgeExample[];
   minAgeMonths: number | null;
   maxAgeMonths: number | null;
   maxAgeMonthsExclusive?: boolean;
@@ -14,6 +17,7 @@ export interface KnowledgeApplicability {
   conditions: string[];
 }
 export interface KnowledgeFilter {
+  purpose?: 'read_originals';
   region: string;
   classification: KnowledgeClass;
   age: { basis: "actual" | "corrected"; minMonths: number; maxMonths: number } | null;
@@ -36,6 +40,7 @@ export interface KnowledgeExtraction {
   totalPages?: number; pageStart?: number; pageEnd?: number; complete: boolean;
 }
 export interface KnowledgeChunkInput {
+  scriptPassage?: import('./platform-media.ts').ScriptPassage;
   mediaClip?: import('./platform-media.ts').PlatformMediaClip;
   treatment?: import('./source-series.ts').ChunkTreatment;
   key: string;
@@ -123,6 +128,7 @@ export interface KnowledgeResult {
   degradationReason: "embedding_unavailable" | null;
   chunks: KnowledgeEvidence[];
   queryContext?: KnowledgeQueryContext;
+  videoListScope?: 'named_material_reviewed_passages' | 'matching_materials_reviewed_passages';
   complete?: boolean;
   omittedChunks?: number;
   returned?: number;

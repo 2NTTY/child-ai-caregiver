@@ -6,10 +6,14 @@ import { z } from "zod";
 import { knowledgeExtractionSchema, knowledgeHash } from "./knowledge-inputs.ts";
 import { definitionHash, observationHash, observationId } from "./knowledge-observation.ts";
 import { refreshJobSchema, type ObservedContent, type RefreshJob, type SourceFetcher, type SourceWatchDefinition } from "./knowledge-refresh-types.ts";
-import { adminKnowledgeStatusSchema, type AdminKnowledgeStatus } from '../src/shared/admin.ts';
+import { adminKnowledgeStatusSchema, knowledgeCheckStatus, pdfEditionReviewSchema, type AdminKnowledgeStatus } from '../src/shared/admin.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 import { createPlatformMediaStore } from './firestore-platform-media.ts';
+import { officialScript } from './fhs-source-forms.ts';
+import { campaignMaterialWatches, isReviewedExternalSuccessor } from './platform-materials.ts';
+
+const campaignSources = new Set(campaignMaterialWatches.map(source => source.id));
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/), hash = z.string().regex(/^[a-f0-9]{64}$/), date = z.iso.datetime({ offset: true });
 const binding = { schemaVersion: z.literal(1), projectId: z.string(), namespace: z.string() };
@@ -22,6 +26,7 @@ const definitionSchema = z.strictObject({ id, url: z.url(), kind: z.enum(["page"
 const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), title: z.string().min(1).max(300),
   text: z.string().max(256020).refine(text => text.isWellFormed()), nativeWindowMethod: z.literal("native-pdf-window/1").optional(), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
+  scripts: z.array(officialScript).min(1).max(128).optional(),
   rssItem: z.strictObject({ xml: z.string().min(1).max(48000), copyright: z.string().min(1).max(160) }).optional(),
   pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() }).refine(doc => doc.nativeWindowMethod
     ? !doc.pages && doc.text === "" && doc.extraction?.format === "text_pdf" && doc.extraction.complete === false
@@ -36,7 +41,8 @@ const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchem
   retainedSourceIds: z.array(id).max(MAX_RETAINED_PER_FEED).optional(),
   retainedWindows: z.array(z.strictObject({ sourceId: id, until: date })).max(MAX_RETAINED_PER_FEED).optional(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
-  priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
+  priorPdfRevision: z.uuid().nullable().optional(), lastScheduledFor: date.optional(), confirmedGone: z.boolean().optional(), lastStatus: knowledgeCheckStatus.nullable(),
+  pdfEditionReview: pdfEditionReviewSchema.optional(),
   lease: z.strictObject({ jobId: z.uuid(), token: z.uuid(), until: date }).nullable() });
 const observationSchema = z.strictObject({ ...binding, sourceId: id, watchId: id, url: z.url(), contentHash: hash,
   feedOriginalHash: hash.optional(), pdfReadback: pdfReadback.optional(),
@@ -46,7 +52,7 @@ const observationSchema = z.strictObject({ ...binding, sourceId: id, watchId: id
 const partSchema = z.strictObject({ ...binding, sourceId: id, contentHash: hash, part: z.number().int().nonnegative().max(39), text: z.string().max(16001) });
 const checkSchema = z.strictObject({ ...binding, jobId: z.uuid(), watchId: id, revision: z.uuid(), workerGeneration: z.uuid(), token: z.uuid(),
   state: z.enum(["running", "recorded", "unknown"]), attempts: z.number().int().min(1).max(2), checkedAt: date,
-  status: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(), itemCount: z.number().int().min(0).max(50),
+  status: knowledgeCheckStatus.nullable(), pdfEditionReview: pdfEditionReviewSchema.optional(), itemCount: z.number().int().min(0).max(50),
   changedCount: z.number().int().min(0).max(50), failureCode: z.enum(["network", "timeout", "response", "parse"]).nullable(),
   readMethod: z.string().min(1).max(80).optional(), originalHash: hash.optional(), itemHashes: z.array(z.strictObject({ sourceId: id, contentHash: hash })).max(50).optional(),
   httpStatus: z.union([z.literal(404), z.literal(410)]).nullable() });
@@ -93,10 +99,26 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
   const definitions = options.definitions.map(definition => definitionSchema.parse(definition));
   if (definitions.length > 512 || new Set(definitions.map(row => row.id)).size !== definitions.length) reject("knowledge_watch_catalog_invalid");
   const catalog = new Map(definitions.map(row => [row.id, row]));
+  const cardIds = definitions.filter(row => campaignSources.has(row.id) && row.classification === 'official_guidance'
+    && row.audience === 'public_noncommercial').map(row => row.id).sort();
   const watchRef = (id: string) => database.collection(namespace + "_knowledge_watches").doc(id);
   const observationRef = (id: string) => database.collection(namespace + "_knowledge_observations").doc(id);
   const partRef = (sourceId: string, hash: string, part: number) => database.collection(namespace + "_knowledge_observation_parts").doc(knowledgeHash([sourceId, hash, part]));
   const checkRef = (id: string) => database.collection(namespace + "_knowledge_checks").doc(id);
+  async function publishedCard(tx: Transaction, row: Watch, through?: string) {
+    const source = await tx.get(database.collection(namespace + '_knowledge_sources').doc(row.id));
+    if (!source.exists || source.get('enabled') !== true || !source.get('activeVersionId')) return false;
+    if (source.get('projectId') !== projectId || source.get('namespace') !== namespace || source.get('sourceId') !== row.id
+      || source.get('url') !== row.definition.url || !z.uuid().safeParse(source.get('activeVersionId')).success) reject('knowledge_binding_invalid');
+    if (source.get('disabledReason') !== null) return false;
+    const versionId = source.get('activeVersionId');
+    const [edition] = await tx.getAll(database.collection(namespace + '_knowledge_versions').doc(versionId),
+      { fieldMask: ['projectId', 'namespace', 'sourceId', 'versionId', 'reviewState', 'publishedAt'] });
+    const version = edition?.data();
+    if (version?.projectId !== projectId || version.namespace !== namespace || version.sourceId !== row.id || version.versionId !== versionId)
+      reject('knowledge_binding_invalid');
+    return version.reviewState === 'reviewed' && !!version.publishedAt && (!through || version.publishedAt <= through);
+  }
   function parse<T extends { projectId: string; namespace: string }>(schema: z.ZodType<T>, raw: unknown): T {
     const value = schema.parse(raw);
     if (value.projectId !== projectId || value.namespace !== namespace) reject("knowledge_binding_invalid");
@@ -238,6 +260,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           || receipt.workerGeneration !== job.workerGeneration || receipt.state !== "recorded") return null;
         if (receipt.status === "unavailable" && receipt.httpStatus)
           return { status: "unavailable" as const, httpStatus: receipt.httpStatus };
+        if (receipt.status === 'needs_review' && receipt.pdfEditionReview)
+          return { status: 'failed' as const, reason: 'response' as const, pdfEditionReview: receipt.pdfEditionReview };
         if (receipt.status === "failed" && receipt.failureCode)
           return { status: "failed" as const, reason: receipt.failureCode };
         if (!receipt.itemHashes || !["changed", "unchanged"].includes(receipt.status ?? "")) return null;
@@ -279,14 +303,16 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           const row = parse(checkSchema, snapshot.data());
           if (snapshot.id !== row.jobId) reject('knowledge_binding_invalid');
           const { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus } = row;
-          return { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus };
+          return { jobId, watchId, checkedAt, state, status, attempts, itemCount, changedCount, failureCode, httpStatus,
+            ...(row.pdfEditionReview ? { pdfEditionReview: row.pdfEditionReview } : {}) };
         });
         const checks = checked.slice(0, 20), last = checks.at(-1);
         return adminKnowledgeStatusSchema.parse({ watches: definitions.map(definition => {
           const row = registered.get(definition.id);
           return { id: definition.id, publisher: definition.publisher, url: definition.url, kind: definition.kind,
             registration: !row ? 'not_registered' : !matches(row) ? 'definition_changed' : row.enabled ? 'enabled' : 'disabled',
-            lastAttemptAt: row?.lastAttemptAt ?? null, lastSuccessfulCheckAt: row?.lastSuccessfulCheckAt ?? null, lastStatus: row?.lastStatus ?? null };
+            lastAttemptAt: row?.lastAttemptAt ?? null, lastSuccessfulCheckAt: row?.lastSuccessfulCheckAt ?? null, lastStatus: row?.lastStatus ?? null,
+            ...(row?.enabled && matches(row) && row.pdfEditionReview ? { pdfEditionReview: row.pdfEditionReview } : {}) };
         }), checks, nextCursor: checked.length > 20 && last ? Buffer.from(JSON.stringify({ checkedAt: last.checkedAt, jobId: last.jobId })).toString('base64url') : null });
       }, { readOnly: true });
     },
@@ -309,6 +335,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           ...(unchanged && old.retainedSourceIds ? { retainedSourceIds: old.retainedSourceIds } : {}),
           ...(unchanged && old.retainedWindows ? { retainedWindows: old.retainedWindows } : {}),
           ...(unchanged && old.lastScheduledFor ? { lastScheduledFor: old.lastScheduledFor } : {}),
+          ...(unchanged && old.pdfEditionReview ? { pdfEditionReview: old.pdfEditionReview } : {}),
           lease: unchanged ? old.lease : null };
         bounded([row]); tx.set(watchRef(id), row);
       });
@@ -334,6 +361,24 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         return { watches, observations: observations.docs.map(row => parse(observationSchema, row.data())), checks: checks.docs.map(row => parse(checkSchema, row.data())) };
       }, { readOnly: true });
     },
+    // Read existing publication pointers, including editions published by an older campaign worker.
+    // Leave the original watch revision, paid work fingerprint and receipts intact.
+    async publishedCardChecks(after: string | null, slot: string) {
+      date.parse(slot);
+      const remaining = after === null ? cardIds : cardIds.filter(id => id > after);
+      const page = remaining.slice(0, 16);
+      return database.runTransaction(async tx => {
+        const control = await options.readControl(tx);
+        const checked = control.enabled ? await Promise.all(page.map(async id => {
+          const row = await watch(tx, id);
+          if (!row?.manualOnly || !row.enabled || !matches(row) || row.registeredAt > slot || row.confirmedGone
+            || !await publishedCard(tx, row, slot)) return null;
+          return { definition: row.definition, registeredAt: row.registeredAt,
+            data: { watchId: id, revision: row.revision, workerGeneration: control.generation } };
+        })) : [];
+        return { entries: checked.filter(row => row !== null), next: remaining.length > page.length ? page.at(-1)! : null };
+      }, { readOnly: true });
+    },
     async jobs(manualId?: string): Promise<{ definition: SourceWatchDefinition; data: RefreshJob; registeredAt: string }[]> {
       return database.runTransaction(async tx => {
         const control = await options.readControl(tx); if (!control.enabled) return [];
@@ -344,7 +389,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },
-    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string) {
+    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string,
+      beforeRecord?: (tx:Transaction)=>Promise<void>) {
       if (scheduledFor !== undefined) date.parse(scheduledFor);
       const job = refreshJobSchema.parse(raw); z.uuid().parse(jobId);
       const token = randomUUID(), now = new Date().toISOString();
@@ -354,6 +400,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (receipt && (receipt.watchId !== job.watchId || receipt.revision !== job.revision || receipt.workerGeneration !== job.workerGeneration)) reject("knowledge_job_conflict");
         if (receipt?.state === "recorded") return { status: "already_recorded" as const };
         if (!row?.enabled || !matches(row) || row.revision !== job.revision || !control.enabled || control.generation !== job.workerGeneration || signal.aborted) return { status: "inactive" as const };
+        if (scheduledFor && row.manualOnly && (!campaignSources.has(row.id) || row.confirmedGone || !await publishedCard(tx, row)))
+          return { status: 'inactive' as const };
         if (scheduledFor && row.lastScheduledFor && Date.parse(scheduledFor) < Date.parse(row.lastScheduledFor)) return { status: "superseded" as const };
         if (row.lease && Date.parse(row.lease.until) > Date.now()) reject("knowledge_check_in_progress");
         if (receipt && (receipt.state === "unknown" || receipt.attempts >= 2)) return { status: "unknown" as const };
@@ -389,12 +437,18 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (receipt.state === "recorded") return { status: "already_recorded" as const };
         if (receipt.token !== token) reject("knowledge_check_superseded");
         const eligible = row?.enabled && matches(row) && row.revision === job.revision && row.lease?.token === token
-          && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted;
+          && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted
+          && (!scheduledFor || !row.manualOnly || await publishedCard(tx, row));
         const previous = new Map<string, Observation | null>();
+        if (eligible) await beforeRecord?.(tx);
         if (eligible) for (const item of prepared) {
           const snapshot = await tx.get(observationRef(item.sourceId));
           const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;
-          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId || observed.url !== item.document.url)) reject("knowledge_binding_invalid");
+          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId)) reject("knowledge_binding_invalid");
+          if (observed && observed.url !== item.document.url) {
+            if (observed.approved || !isReviewedExternalSuccessor(item.sourceId, await gate.content(tx, observed), item.document))
+              reject("knowledge_binding_invalid");
+          }
           previous.set(item.sourceId, observed);
         }
         const at = new Date().toISOString(); let changed = 0;
@@ -422,21 +476,28 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           if (!same) item.segments.forEach((text, part) => writes.push({ ref: partRef(item.sourceId, item.contentHash, part),
             value: { ...scope, sourceId: item.sourceId, contentHash: item.contentHash, part, text } }));
         }
-        const status = !eligible ? "superseded" as const : fetched.status === "ok" ? changed ? "changed" as const : "unchanged" as const
+        const pdfEditionReview = eligible && fetched.status === 'failed' ? fetched.pdfEditionReview : undefined;
+        const status = !eligible ? "superseded" as const : pdfEditionReview ? 'needs_review' as const : fetched.status === "ok" ? changed ? "changed" as const : "unchanged" as const
           : fetched.status === "unavailable" ? "unavailable" as const : "failed" as const;
         const nextCheck = { ...receipt, state: "recorded" as const, status, itemCount: eligible ? prepared.length : 0, changedCount: changed,
           ...(eligible && fetched.status === "ok" ? { itemHashes: prepared.map(({ sourceId, contentHash }) => ({ sourceId, contentHash })),
             ...(fetched.readMethod ? { readMethod: fetched.readMethod } : {}), ...(originalHash ? { originalHash } : {}) } : {}),
-          checkedAt: at, failureCode: eligible && fetched.status === "failed" ? fetched.reason : null, httpStatus: eligible && fetched.status === "unavailable" ? fetched.httpStatus : null };
-        if (row?.lease?.token === token) writes.push({ ref: watchRef(row.id), value: { ...row, lease: null,
-          ...(eligible ? { lastAttemptAt: at, lastStatus: status, lastSuccessfulCheckAt: fetched.status === "ok" ? at : row.lastSuccessfulCheckAt,
-            // A single 404 or feed outage cannot withdraw its items. Explicit 410 on a document invalidates its revision.
-            confirmedGone: fetched.status === "ok" ? false : fetched.status === "unavailable" && fetched.httpStatus === 410
-              && row.definition.kind !== "rss" || (row.confirmedGone ?? row.lastStatus === "unavailable"),
-            ...(fetched.status === 'unavailable' && fetched.httpStatus === 410 && row.id === feedingBookletId ? { priorPdfRevision: null } : {}),
-            revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
+          ...(pdfEditionReview ? { pdfEditionReview } : {}),
+          checkedAt: at, failureCode: status === 'failed' && fetched.status === "failed" ? fetched.reason : null, httpStatus: eligible && fetched.status === "unavailable" ? fetched.httpStatus : null };
+        if (row?.lease?.token === token) {
+          const { pdfEditionReview: previousReview, ...watch } = row;
+          const pending = pdfEditionReview ?? (eligible && (fetched.status === 'ok' || fetched.status === 'unavailable' && fetched.httpStatus === 410)
+            ? undefined : previousReview);
+          writes.push({ ref: watchRef(row.id), value: { ...watch, lease: null, ...(pending ? { pdfEditionReview: pending } : {}),
+            ...(eligible ? { lastAttemptAt: at, lastStatus: status, lastSuccessfulCheckAt: fetched.status === "ok" ? at : row.lastSuccessfulCheckAt,
+              // A single 404 or feed outage cannot withdraw its items. Explicit 410 on a document invalidates its revision.
+              confirmedGone: fetched.status === "ok" ? false : fetched.status === "unavailable" && fetched.httpStatus === 410
+                && row.definition.kind !== "rss" || (row.confirmedGone ?? row.lastStatus === "unavailable"),
+              ...(fetched.status === 'unavailable' && fetched.httpStatus === 410 && row.id === feedingBookletId ? { priorPdfRevision: null } : {}),
+              revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
+        }
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
-        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks);
+        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks, fetched.mediaPages);
         for (const write of writes) tx.set(write.ref, write.value);
         return { status, items: nextCheck.itemCount, changed };
       });

@@ -30,8 +30,11 @@ function load(relative) {
   const output = ts.transpileModule(fs.readFileSync(input, 'utf8'), { fileName: filename,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   new Function('require', 'module', 'exports', output)(name => {
-    if (filename.endsWith('/TaskKnowledgeDomains.tsx')) {
-      if (name === './useDomainEnvironment') return { useDomainEnvironment: () => bridgeEnvironment };
+    if (name === './library-package' || name === '../platform/file-export') return {};
+    if (name.endsWith('/useDomainEnvironment')) return { useDomainEnvironment: () => bridgeEnvironment ?? { sharedMode: false }, forSharedModule: env => env };
+    if (name.endsWith('/ImportedConversationHistoryView')) return { ImportedConversationHistoryView: () => null };
+    if (path.basename(filename) === 'TaskKnowledgeDomains.tsx') {
+      if (name === 'expo-router') return { usePathname: () => '/history' };
       if (name === './task-knowledge-tasks') return { useTaskKnowledgeTasks: env => { childBridgeEntries++; return { scopeKey: env.scopeKey, model: {} }; } };
       if (name === './task-knowledge-summary') return { useTaskKnowledgeSummary: env => ({ scopeKey: env.scopeKey }) };
       if (name === './task-knowledge-memory') return { useTaskKnowledgeMemory: () => ({ value: null }) };
@@ -46,7 +49,7 @@ function load(relative) {
     if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1000, ref: React.useRef(null), onLayout() {} }) };
     if (name.endsWith('/FormDialog')) return { FormDialog: ({visible, children, title, onClose}) => visible ? e('section', {role: 'dialog', 'aria-label': title}, e('button', {onClick: onClose}, 'Close detail'), children) : null };
     if (name.endsWith('/VoiceMessage')) return { VoiceMessage: () => null };
-    if (name.endsWith('/ui')) return { AppButton: ({ label, disabled, onPress }) => e('button', { disabled, onClick: onPress }, label) };
+    if (name.endsWith('/ui')) return { AppSelect: () => null, AppButton: ({ label, disabled, onPress }) => e('button', { disabled, onClick: onPress }, label) };
     if (name.endsWith('/AppStatusBadge')) return { AppStatusBadge: ({ label }) => e('span', null, label) };
     if (name.endsWith('/EmptyListCard')) return { EmptyListCard: ({ title, testID }) => e('div', { 'data-testid': testID }, title) };
     if (name.endsWith('/StatusAnnouncement')) return { StatusAnnouncement: () => null };
@@ -343,7 +346,7 @@ test('the actual host mounts one account-only message owner without child reads 
   } };
   const environment = (childId, user = 'synthetic-account') => {
     const scopeKey = childId ? `${user}:${childId}` : '', identityKey = user;
-    return { owner: authority, scopeKey, identityKey, userId: user, childId, childName: 'Synthetic child', online: true, apiBaseUrl: 'https://synthetic.test/api', queryClient,
+    return { owner: authority, scopeKey, identityKey, userId: user, childId, childName: 'Synthetic child', sharedMode: false, allows: () => true, online: true, apiBaseUrl: 'https://synthetic.test/api', queryClient,
       current: () => active && bridgeEnvironment.scopeKey === scopeKey && bridgeEnvironment.identityKey === identityKey,
       currentIdentity: () => active && bridgeEnvironment.identityKey === identityKey, accessError() {} };
   };

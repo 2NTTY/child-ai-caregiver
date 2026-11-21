@@ -1,0 +1,509 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "checkpoint": "2026-11-20T01:00:52.589Z",
+  "verifiedAt": "2026-11-20T05:49:40.736Z",
+  "initialInputs": "FHS_HELD_INPUTS_20261120.json",
+  "recoveryManifest": "../../knowledge/fhs-initial-recovery.json",
+  "release": {
+    "commit": "fa1bdecb342a71104bd71b17826acc6c7746e84e",
+    "receipt": "r44682020469-1",
+    "run": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469",
+    "apiAndWorkerDigest": "sha256:7a19304785a310c5b7f3fb4ef1411a11e7d8033f352c1b188c42dd88510823ca"
+  },
+  "summary": {
+    "checkpointSources": 24,
+    "published": 10,
+    "heldAfterNewReview": 2,
+    "heldFromOriginalCheck": 10,
+    "quarantined504": 2,
+    "newIndependentReviewerCalls": 12,
+    "newOrganizerCalls": 0,
+    "newDocumentEmbeddings": 15,
+    "cardsReadBack": 10,
+    "exportedCurrentVersions": 10
+  },
+  "readback": "正式卡庫按原網址查回生效版本，按卡片系列匯出同版內容，核對審核、已提交收據、原觀測、段落及向量。三份 PDF 另讀回原檔及定位摘錄。",
+  "entries": [
+    {
+      "sourceId": "fhs-30034",
+      "title": "共享育兒樂 (三) 嬰幼兒篇",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.html",
+      "originalOperationFingerprint": "b91110b6ffe375163c91bfe23239dffa1801ab5e8b3b2991b3e249a95f5fce49",
+      "heldOperationFingerprint": "b91110b6ffe375163c91bfe23239dffa1801ab5e8b3b2991b3e249a95f5fce49",
+      "observationHash": "89a6a9a443348b09942efa3d8a7d5e51ee7dd5c3a7b26836a28a4cccf658a9ba",
+      "recoveryOperationFingerprint": "8141a5f4e60f37ebf3a9ca29600dcb81b2b12efba810950ecbd74012c14731d7",
+      "previousZeroCallPreflight": "knowledge_retained_page_request_changed",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "2fb5db6d-5d5e-521f-b4b0-f8f7d34b6ff9",
+      "versionHash": "0a5cfd980415b293f80d162691e220bee51521772e26bd8e07cdfb4d75a69549",
+      "listedCard": {
+        "seriesId": "fhs-30034",
+        "versionId": "2fb5db6d-5d5e-521f-b4b0-f8f7d34b6ff9"
+      },
+      "exportedVersionHash": "0a5cfd980415b293f80d162691e220bee51521772e26bd8e07cdfb4d75a69549",
+      "chunks": 1,
+      "documentEmbeddings": 1
+    },
+    {
+      "sourceId": "fhs-30136",
+      "title": "餵哺孩子 由你作主 (組合套裝)",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.html",
+      "originalOperationFingerprint": "cfefa008c690b44298be7ad2c13f5017cfb55712a31ccc44b928a1c85be7aed8",
+      "heldOperationFingerprint": "6005ec447496656367bc43b8958a23877ba7dd5190af57773221adf73b5cb986",
+      "observationHash": "cee7157afb4a60000ef74cafc45bf603e40c82266ddbd5b0e766c49911e6bf27",
+      "recoveryOperationFingerprint": "e2bbaccb5e453779db76ff1f6bbeeb06c29f6393548927a7d949b928ebc7a401",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "9a807917-8318-556e-8768-ff44cad1e561",
+      "versionHash": "977033805cec6df0175bf61dc795ee73b0166953ab5b9636c41e51b4dd070a2f",
+      "listedCard": {
+        "seriesId": "fhs-30136",
+        "versionId": "9a807917-8318-556e-8768-ff44cad1e561"
+      },
+      "exportedVersionHash": "977033805cec6df0175bf61dc795ee73b0166953ab5b9636c41e51b4dd070a2f",
+      "chunks": 3,
+      "documentEmbeddings": 3
+    },
+    {
+      "sourceId": "fhs-20000",
+      "title": "愛·從母乳開始……",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.html",
+      "originalOperationFingerprint": "af335003a82cba9be2d6ae5d3a1a3ac6233027ecd0ab4e2d89b59d7c1f1db4a3",
+      "heldOperationFingerprint": "0064203201779253221dd5f7beb7b3dfd1dbad1bcd99317ac2910be5895df345",
+      "observationHash": "b107cd01b5f6cc3cff14aa80c32c1b140f66de22eb2c9b42c87e51109e3f7e89",
+      "outcome": "retain_incomplete",
+      "code": "model_output_limit",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原整理及其一次修復均在輸出上限截斷，沒有完整候選可交審。須按同版八章分段整理，核齊各章孕婦、哺乳母親及嬰兒對象後，再作獨立審核。",
+      "nextAction": "沿同一版原件把緒言及八章分段整理，逐章核對對象和章節齊全後再送獨立審核。"
+    },
+    {
+      "sourceId": "fhs-30073",
+      "title": "全方位認識「泵奶器」",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.html",
+      "originalOperationFingerprint": "4ab214d1f138b73fd6a87c27ea5a13cca899ff402d95e8c444394e7bea8b6306",
+      "heldOperationFingerprint": "4ab214d1f138b73fd6a87c27ea5a13cca899ff402d95e8c444394e7bea8b6306",
+      "observationHash": "a2fa92f77fe297fda96c10911db6723c2d9dda99ee1c622a668b094398267c98",
+      "recoveryOperationFingerprint": "8915fecbf33a4fa4a1e33d8d61e1840ada48a06b738c194640cfa8ca88d52366",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "43fa7f6b-d0b6-50a9-97d1-2e3bed119208",
+      "versionHash": "91ad6b2bc4f5a2f74eaa1d5023674cb370974de746edb10e10c0593fceb3bbac",
+      "listedCard": {
+        "seriesId": "fhs-30073",
+        "versionId": "43fa7f6b-d0b6-50a9-97d1-2e3bed119208"
+      },
+      "exportedVersionHash": "91ad6b2bc4f5a2f74eaa1d5023674cb370974de746edb10e10c0593fceb3bbac",
+      "chunks": 2,
+      "documentEmbeddings": 2
+    },
+    {
+      "sourceId": "fhs-30018",
+      "title": "「媽記奶品工場」漫畫",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.html",
+      "originalOperationFingerprint": "43e9b57d6cc05b1b95c6f53c16b497851b3ac46735a80236305d0bdd0c9188c5",
+      "heldOperationFingerprint": "9ae1831abeccbcaa3a88fbb819bc3794722a1102976a29a3fcdace55a9870097",
+      "observationHash": "d85e75a25fd2f1df2ff5fdda31885b4f3e330c7043c7cbf76f04b20e5ee160f2",
+      "recoveryOperationFingerprint": "f9d1472caa71eb5e33f03cb0f8ee2164d934cdc312230c0df6597aa2f2edaff3",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "32567434-57aa-5177-8284-490c57977a61",
+      "versionHash": "53bfb22767422591d6eacd65099a428638168784288b41898c2b3c1db3c1d12c",
+      "listedCard": {
+        "seriesId": "fhs-30018",
+        "versionId": "32567434-57aa-5177-8284-490c57977a61"
+      },
+      "exportedVersionHash": "53bfb22767422591d6eacd65099a428638168784288b41898c2b3c1db3c1d12c",
+      "chunks": 2,
+      "documentEmbeddings": 2
+    },
+    {
+      "sourceId": "fhs-30008",
+      "title": "替孩子轉換奶粉",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30008.html",
+      "originalOperationFingerprint": "3817d8cd192534e6a6f30f09ff8a347c012c80f882cd13850fc102a16ecd0d08",
+      "heldOperationFingerprint": "3817d8cd192534e6a6f30f09ff8a347c012c80f882cd13850fc102a16ecd0d08",
+      "observationHash": "c5186658896dfd7ca92e7607c5e7108d775434f7ef6b14f61b9ec3ebb6a2cbef",
+      "recoveryOperationFingerprint": "f6faac5823b06b9d9f743eb805b0adf8beba090ba9f12f50562e677b5ed06230",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "2fdcb41e-8742-538b-9752-8f8c5ef8f220",
+      "versionHash": "fc4a78cb80c4634c2ac4734694d2eabfea9b318d347d9ce67aade1d8fb46a7d9",
+      "listedCard": {
+        "seriesId": "fhs-30008",
+        "versionId": "2fdcb41e-8742-538b-9752-8f8c5ef8f220"
+      },
+      "exportedVersionHash": "fc4a78cb80c4634c2ac4734694d2eabfea9b318d347d9ce67aade1d8fb46a7d9",
+      "chunks": 1,
+      "documentEmbeddings": 1
+    },
+    {
+      "sourceId": "fhs-20033",
+      "title": "孩子「偏食」怎麼辦?",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
+      "originalOperationFingerprint": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+      "heldOperationFingerprint": "8bee02fe4b4c5c4e046ea83d0a0da57ee38f701f1c0f5dfe4846c09a7d05847d",
+      "observationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原文指定幼兒和學前階段，沒有把這兩個詞定義成 12–72 個月。整段受眾若無法忠實表達，須保留待審。",
+      "nextAction": "依原文保留幼兒及學前階段的條件，以可表達該群組的適用欄位重建候選，再送獨立審核。"
+    },
+    {
+      "sourceId": "fhs-30012",
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
+      "originalOperationFingerprint": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+      "heldOperationFingerprint": "ac7b55c641c342c264f3c9146d5f91a8fe1532468ad7e59bd4a644b01419c8fb",
+      "observationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "7 至 9 個月指開始學用有杯嘴的訓練杯。吸管在習慣後才引入，其他杯子注意事項亦沒有給整段統一的上下限。原輸出只填 7，沒有理由補上限。",
+      "nextAction": "把訓練杯起步、熟習後改用吸管及通用安全提示分開，逐段表達適用條件後再送審。"
+    },
+    {
+      "sourceId": "fhs-13034",
+      "title": "育兒預備篇",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/13034.html",
+      "originalOperationFingerprint": "1ce643542c6fadbdbac0ff761f74ac94045ed0f327f8daeb154bbe395c4690f4",
+      "heldOperationFingerprint": "1ce643542c6fadbdbac0ff761f74ac94045ed0f327f8daeb154bbe395c4690f4",
+      "observationHash": "ce2ba41bde2dcde610ad47f1e9a96873d7cc11dd87f1481a8b46a65503ea6781",
+      "recoveryOperationFingerprint": "0aaf9c30a39fa0df1e3de62ba1eb8097e94398b5440c845cfceef1c3d93b46cc",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "94c9e508-6170-5c93-9cd8-cc5e4f672a6f",
+      "versionHash": "e3095c938bab6be0c85a833dd3db9f97da227dc4ccf5ed759ec08d5c7f8820e6",
+      "listedCard": {
+        "seriesId": "fhs-13034",
+        "versionId": "94c9e508-6170-5c93-9cd8-cc5e4f672a6f"
+      },
+      "exportedVersionHash": "e3095c938bab6be0c85a833dd3db9f97da227dc4ccf5ed759ec08d5c7f8820e6",
+      "chunks": 1,
+      "documentEmbeddings": 1
+    },
+    {
+      "sourceId": "fhs-30130",
+      "title": "陪我玩、同我講",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30130.html",
+      "originalOperationFingerprint": "5a7fd20d95ba08febf59edb9d5e1585621e837f5468b41551cf947b5ac6fc978",
+      "heldOperationFingerprint": "5a7fd20d95ba08febf59edb9d5e1585621e837f5468b41551cf947b5ac6fc978",
+      "observationHash": "4edde67e4bfca633d70ece50494bb8452a97e929c9e6665953751f766181e479",
+      "recoveryOperationFingerprint": "ce2c08146e98bf1399c14384b657bdb683307b0d8241b646eedda09946cd753a",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "22009185-605f-5e07-8a2c-6ed577f938ac",
+      "versionHash": "6c9e9e991ab9200deb05e1474846779e1456419cf574703f562cf22cea62c5ec",
+      "listedCard": {
+        "seriesId": "fhs-30130",
+        "versionId": "22009185-605f-5e07-8a2c-6ed577f938ac"
+      },
+      "exportedVersionHash": "6c9e9e991ab9200deb05e1474846779e1456419cf574703f562cf22cea62c5ec",
+      "chunks": 1,
+      "documentEmbeddings": 1
+    },
+    {
+      "sourceId": "fhs-30006",
+      "title": "培育還是催谷子女",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
+      "originalOperationFingerprint": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+      "heldOperationFingerprint": "8ce642077b1ae23736478f886a1c917cdcafb2b235aa43dd083922a4cb29c900",
+      "observationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+      "recoveryOperationFingerprint": "3bafef7cdfc3738c6d73a361c96fa8d76ca6d5fcc6ec95cc3bec0e2ca23d72a1",
+      "outcome": "candidate_held",
+      "code": "review_hold",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "獨立審核認為移除數值後，候選未能限制至原文的嬰幼兒／學前對象，會擴大適用範圍。",
+      "nextAction": "先以原文明確保留嬰幼兒及學前兒童的適用條件，再交獨立審核者判斷。原文的腦部發展例子不足以設定全篇數值上下限。",
+      "reviewDecision": "hold_candidate"
+    },
+    {
+      "sourceId": "fhs-30143",
+      "title": "足不出戶的「親子遊樂團」",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
+      "originalOperationFingerprint": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+      "heldOperationFingerprint": "83e1fcde8862378006c39d09216ce3096ad6e50ca6a526fe570c066fece55b82",
+      "observationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原文以幼兒和學前孩子為對象，較難的活動另指三歲以上。沒有為整段訂明至 72 個月，亦不能把局部下限套在其他活動。 原整理的文字條件也寫入 0 至 6 歲，單改數字欄不足。",
+      "nextAction": "分開一般幼兒活動及三歲以上的較難活動，修正整理稿的文字條件及月齡後再送審。"
+    },
+    {
+      "sourceId": "fhs-14836",
+      "title": "正面親職（二）：學前階段的實踐",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+      "originalOperationFingerprint": "962d0ed2b1179f762c82072d0c135e79e1ee75cca06c8cde5a646cce34f4c2f7",
+      "heldOperationFingerprint": "962d0ed2b1179f762c82072d0c135e79e1ee75cca06c8cde5a646cce34f4c2f7",
+      "observationHash": "fe0c92ed1dcfc4fb6093a9a0b3b80181cf4671597c37f1bfc908952f341f345e",
+      "outcome": "retain_reviewer_hold",
+      "code": "review_hold",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原獨立審核退回切斷的獎勵計劃末句。首段在第 3000 字「避免」結束，餘下十字自成一段。兩段也套用原文未界定的 24–72 個月。須接回完整末句，按幼稚園階段保留適用條件後再獨立審核。",
+      "nextAction": "接回跨段末句，按幼稚園階段核實適用條件，再提交完整段落。"
+    },
+    {
+      "sourceId": "fhs-14838",
+      "title": "品德培育之一",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+      "originalOperationFingerprint": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+      "heldOperationFingerprint": "f422f6dcc57aa4c61fedd853b85348568969dcfc8c4f92dace02dda251515e9d",
+      "observationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "七歲、十歲和三歲分別出現在故事或示例中。十歲不是整段親職指引的上限。 原整理條件另列學齡兒童；先釐清學前管教方法的對象。",
+      "nextAction": "把故事人物的年齡與整段指引對象分開，再按原文核定學前管教條件。"
+    },
+    {
+      "sourceId": "fhs-13050",
+      "title": "新生嬰兒護理預備篇",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/13050.html",
+      "originalOperationFingerprint": "68d00f4ebac76d616717aa3250cf7e56ea8482b2608c1a3813fbe21dbd2dd289",
+      "heldOperationFingerprint": "68d00f4ebac76d616717aa3250cf7e56ea8482b2608c1a3813fbe21dbd2dd289",
+      "observationHash": "f917732a5d7b983f99a05fad97b9351afae4268636f526be78fd77de0082a894",
+      "outcome": "retain_reviewer_hold",
+      "code": "review_hold",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原獨立審核指整理把新生嬰兒擴至幼兒。原頁沒有為整篇列出月齡上下限，三個月或以上只屬一般揹帶。須可分別保存新生嬰兒這個對象和揹帶條件，再把修訂交獨立審核。",
+      "nextAction": "分開新生嬰兒護理及揹帶的局部年齡條件，將完整修訂交獨立審核。"
+    },
+    {
+      "sourceId": "fhs-14851",
+      "title": "常見嬰兒皮膚問題",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+      "originalOperationFingerprint": "e2f043b6991c703ef026fe1427233b0812cc29a85b712286125fcaf4c04c1970",
+      "heldOperationFingerprint": "86c92d9da315819036bc6b86c6e8fe212b7dd6b581db477eea36dbe2287bbcb8",
+      "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+      "outcome": "quarantine_504",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原供應商回報 HTTP 504，用量仍未確認。原工作沒有準備好的候選或刊登收據。",
+      "nextAction": "沿原票據對帳，保留全額預留及隔離，待可核實的供應商用量。"
+    },
+    {
+      "sourceId": "fhs-15672",
+      "title": "三至四歲大兒童發展",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.html",
+      "originalOperationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18",
+      "heldOperationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18",
+      "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+      "outcome": "quarantine_504",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原供應商回報 HTTP 504，用量仍未確認。原工作沒有準備好的候選或刊登收據。",
+      "nextAction": "沿原票據對帳，保留全額預留及隔離，待可核實的供應商用量。"
+    },
+    {
+      "sourceId": "fhs-30108",
+      "title": "你的初生寶寶安全嗎?",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30108.html",
+      "originalOperationFingerprint": "c703c1a8916b406cfc4ebbd428dd815dd247ca1bcf4988e67b0ebb97d0876f49",
+      "heldOperationFingerprint": "c703c1a8916b406cfc4ebbd428dd815dd247ca1bcf4988e67b0ebb97d0876f49",
+      "observationHash": "da587782b7ea5cd855161931ac8f9d440e88861e580d4bc20f3e8065136653ed",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_age_one_sided",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原整理只回報單邊月齡。原件是一份給初生寶寶的 24 題自評，未列整份適用的月齡上限。沒有同牀睡要跳到第 6 題，每題另有不適用選項。須保留新生階段和答題條件，依題序連回理想答案後再獨立審核。",
+      "nextAction": "將二十四題、跳題規則、不適用選項及理想答案逐題對回，按初生寶寶階段重建候選。"
+    },
+    {
+      "sourceId": "fhs-481",
+      "title": "卡介苗（預防結核病）",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
+      "originalOperationFingerprint": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+      "heldOperationFingerprint": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+      "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_age_one_sided",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "原整理只回報單邊月齡，沒有準備好可用的適用條件。乙段分列出生後的新生嬰兒及十五歲以下、居港且從未接種的兒童。丙段另列近期活疫苗、免疫抑制治療、免疫缺乏、癌病、嚴重皮膚病及母親孕期生物製劑治療，包括專科評估是否延遲。須分別保留兩組及其例外，再交獨立審核。",
+      "nextAction": "分開新生嬰兒及十五歲以下居港未接種者，逐項綁定例外、延遲接種與專科評估條件，再送審。"
+    },
+    {
+      "sourceId": "pdf-24570709d1a53c93d8c9e581",
+      "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.pdf",
+      "originalOperationFingerprint": "048a88d2807ee6cfbc404a6485a680f5b4cc1211449cbf0df844aaf837cc4eb2",
+      "heldOperationFingerprint": "048a88d2807ee6cfbc404a6485a680f5b4cc1211449cbf0df844aaf837cc4eb2",
+      "observationHash": "e0abf6dc42b7d49e885fb07d509a5e8adf46ab2cbd1729015f91c687f312fa44",
+      "outcome": "scope_unresolved",
+      "code": "knowledge_age_one_sided",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "7 至 9 個月是開始學用有杯嘴訓練杯的時段。習慣後才引入吸管；保留坐姿、飲料及安全提示。此 PDF 與網頁分開審核。",
+      "nextAction": "按這份 PDF 獨立處理訓練杯的學習時段和吸管的先決條件，保留坐姿與飲用安全提示。"
+    },
+    {
+      "sourceId": "pdf-eefb43f9c484a1a24343d64e",
+      "title": "孩子轉用杯飲奶，分量比以前少，怎麼辦？",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30017.pdf",
+      "originalOperationFingerprint": "fbc4d7a0419a2348cb483e7965628b86bb3180dca00fd12b65d76dbf9e0baf96",
+      "heldOperationFingerprint": "fbc4d7a0419a2348cb483e7965628b86bb3180dca00fd12b65d76dbf9e0baf96",
+      "observationHash": "2758c927f4f7490c37a792dba5f23aa3351fa1fad2aa6821155ce0b8488d31be",
+      "recoveryOperationFingerprint": "f5076e5ab03a55093162315641028d9b1d3df76e18925d1875b4d05c2d9e63e1",
+      "previousZeroCallPreflight": "knowledge_retained_page_request_changed",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "65377b4a-99ab-57bc-b332-1996e86c16ff",
+      "versionHash": "8b42dab9f803ad273664b6d0a8b2586fd9c5d5e2df290d98872d8e11427f5da5",
+      "listedCard": {
+        "seriesId": "pdf-eefb43f9c484a1a24343d64e",
+        "versionId": "65377b4a-99ab-57bc-b332-1996e86c16ff"
+      },
+      "exportedVersionHash": "8b42dab9f803ad273664b6d0a8b2586fd9c5d5e2df290d98872d8e11427f5da5",
+      "chunks": 1,
+      "documentEmbeddings": 1,
+      "originalPdf": {
+        "sha256": "6201b61746b170f693a970ffc1b3acaf7388f0469625d2e3009f2e26d42ad1c7",
+        "bytes": 420031,
+        "excerpts": [
+          {
+            "chunkKey": "p1-8d3876f3027eb0834946",
+            "first": 1,
+            "last": 1,
+            "matchedPages": [
+              1
+            ],
+            "spanningPages": [],
+            "excerptSha256": "a0ee8b2a8cecad2961be274970c994cb94e4f4c6a6a070d806f16ec6ce3e5e06"
+          }
+        ]
+      }
+    },
+    {
+      "sourceId": "pdf-17a3f9316300dcf81b376854",
+      "title": "足不出戶的「親子遊樂團」",
+      "sourceUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.pdf",
+      "originalOperationFingerprint": "b9d298025cad5878b8804b825f7124bd2d272816f7feb7c07325f6b404319934",
+      "heldOperationFingerprint": "b9d298025cad5878b8804b825f7124bd2d272816f7feb7c07325f6b404319934",
+      "observationHash": "b00d4387ca178b9f436568fa098f4b28844242f4dc8c4b46e91f670cd59f3994",
+      "recoveryOperationFingerprint": "1c86f74bb1c4e9f7b356ee442f90d290478b19204f1a42192a4d210a76a4060a",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "3dbd3757-0da1-5e1f-8590-8e2e8d5ad602",
+      "versionHash": "fe7667dd8bc96b9b3c4f9aaad0e200cc3d2bbf47dcd6587b781bf7df0fedc806",
+      "listedCard": {
+        "seriesId": "pdf-17a3f9316300dcf81b376854",
+        "versionId": "3dbd3757-0da1-5e1f-8590-8e2e8d5ad602"
+      },
+      "exportedVersionHash": "fe7667dd8bc96b9b3c4f9aaad0e200cc3d2bbf47dcd6587b781bf7df0fedc806",
+      "chunks": 1,
+      "documentEmbeddings": 1,
+      "originalPdf": {
+        "sha256": "aa26ab9132b470d636bf2f812728ab453d7009c871d41aa522ac21835ca81ae7",
+        "bytes": 932339,
+        "excerpts": [
+          {
+            "chunkKey": "p1-9420a2b283fc0a41fd5f",
+            "first": 1,
+            "last": 1,
+            "matchedPages": [
+              1
+            ],
+            "spanningPages": [],
+            "excerptSha256": "a44f4390b3870622bb135f27944a361b7f458cb80c40f3be9e036beb26fb9cbc"
+          }
+        ]
+      }
+    },
+    {
+      "sourceId": "resource-d8149af7847e38",
+      "title": "香港2020生長圖表",
+      "sourceUrl": "https://www.dh.gov.hk/english/useful/useful_PP_Growth_Chart/files/growth_charts.pdf",
+      "originalOperationFingerprint": "4b2d77191f63fc7c2f5e0b56f279b37ecae1cf708415416e73cced5da5c08de3",
+      "heldOperationFingerprint": "91c5563f5371ce3ea231bf874323476cc2f43930d734f9be3cc14882796100a2",
+      "observationHash": "e62e782f958eb72b0d43131cdb984309432f9208dbd6cb14d0e5ea34e8cb6eca",
+      "recoveryOperationFingerprint": "47f5c278e796dedc146d30a85d29990bbddbf2812d48fbb5e854c92f024f092e",
+      "outcome": "published",
+      "reviewDecision": "approve_candidate",
+      "publicationReceipt": "committed",
+      "activeVersionId": "05a3a66f-0bb6-527d-9fe7-169e9976dcab",
+      "versionHash": "3640ce5888c3f20e8850d342a1a4cb59a9582990fcef9f35afebbb10fb87e4d3",
+      "listedCard": {
+        "seriesId": "resource-d8149af7847e38",
+        "versionId": "05a3a66f-0bb6-527d-9fe7-169e9976dcab"
+      },
+      "exportedVersionHash": "3640ce5888c3f20e8850d342a1a4cb59a9582990fcef9f35afebbb10fb87e4d3",
+      "chunks": 2,
+      "documentEmbeddings": 2,
+      "originalPdf": {
+        "sha256": "73a8961326934dfaa598052b00a5cfccbe101459e1c51ea4fcf4e8ab27cf7eb1",
+        "bytes": 8499482,
+        "excerpts": [
+          {
+            "chunkKey": "p1-7e8663654368ec64eeeb",
+            "first": 1,
+            "last": 11,
+            "matchedPages": [],
+            "spanningPages": [
+              [
+                1,
+                2
+              ]
+            ],
+            "excerptSha256": "09920022434886eedc1ddf78848ab815200524eec2b85abb27d8b69bc6e26edc"
+          },
+          {
+            "chunkKey": "p12-57b6f959b227e06a39d7",
+            "first": 12,
+            "last": 20,
+            "matchedPages": [
+              12
+            ],
+            "spanningPages": [],
+            "excerptSha256": "92694158a6385d54f16303d10c028ff7fecd79fe2f9b99e2bbfcbc747060c9fc"
+          }
+        ]
+      },
+      "citationReadback": "第一段的完整摘錄可在第 1 至 2 頁連續讀到；目前從第 1 頁開啟，接看第 2 頁可讀完摘錄。第二段命中第 12 頁。下一次產生新版本時，按共用實體頁定位規則重選第一段的單頁摘錄。"
+    },
+    {
+      "sourceId": "resource-6c18c8d7a17495",
+      "title": "保護兒童 你我有責",
+      "sourceUrl": "https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf",
+      "originalOperationFingerprint": "281ee8c2103e167081524f29b5e8ff8588243d28db96a4173cb2db6a725eb490",
+      "heldOperationFingerprint": "43a2c64683631f1935049c5b9500f734037612d11d6bd5fbc7618aaafdf42c2e",
+      "observationHash": "4a64e53682e87d00c77c98d02f097279dbbb2ec6b0a5d7a947f55c189c985231",
+      "recoveryOperationFingerprint": "f974b7d7010e3c37f9ec07829662858718aeae2ac557982c68cd2db473154793",
+      "outcome": "candidate_held",
+      "code": "knowledge_review_failed",
+      "activeVersionId": null,
+      "publicationReceipt": null,
+      "reason": "已保存的審核回應在第 2 頁證據欄寫了 249 字，超出 240 字上限，未能建立有效的審核結果。",
+      "nextAction": "保留原二頁 PDF 與已結算回應。再次送審時，須由獨立審核者就第 2 頁提供符合 240 字上限的完整證據，再驗整份回應後刊登。",
+      "reviewerValidation": {
+        "request": "knowledge-review:dee6422ef65d6c8ad7a039306536ba2231140732a30917de5db4e016162a1386",
+        "field": "nativeCoverage.pageFindings.page2",
+        "length": 249,
+        "limit": 240,
+        "issue": "too_big",
+        "prepared": false
+      }
+    }
+  ]
+}

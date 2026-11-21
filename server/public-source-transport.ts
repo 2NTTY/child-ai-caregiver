@@ -11,7 +11,7 @@ export function publicSourceAddress(address: string): boolean { return isIP(addr
 type SourceResponse = {status:number;location?:string;url?:string;contentType:string;body:Buffer};
 interface SourceTransportOptions {
   maxBytes?: number;
-  onBodyLimit?: (status: number) => void;
+  onBodyLimit?: (status: number, contentType?: string) => void;
   /** Discovery can defer attachment bytes for a separately authorized GET. */
   omitBody?: (contentType: string) => boolean;
   /** Called after DNS pinning, immediately before each GET, including redirect hops. */
@@ -32,12 +32,18 @@ export function submitSourceLogin(url: URL, form: URLSearchParams, signal: Abort
 }
 async function transfer(initialUrl:string,validate:(value:string)=>URL,outerSignal:AbortSignal,accept:string,options:SourceTransportOptions, loginBody?:string):Promise<SourceResult>{
   const maxBytes=options.maxBytes??1024*1024;
-  if(!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>32*1024*1024)throw new Error("source_max_bytes_invalid");
+  if(!Number.isSafeInteger(maxBytes)||maxBytes<1)throw new Error("source_max_bytes_invalid");
+  if (maxBytes > 32 * 1024 * 1024) {
+    const { largeFhsPdf } = await import('./platform-materials.ts');
+    if (accept !== 'application/pdf' || loginBody !== undefined || largeFhsPdf(initialUrl)?.bytes !== maxBytes)
+      throw new Error('source_max_bytes_invalid');
+  }
   const signal = AbortSignal.any([outerSignal, AbortSignal.timeout(20000)]);
   try {
     let url = validate(initialUrl);
     for (let redirects = 0; redirects <= 2; redirects++) {
       signal.throwIfAborted();
+      if (maxBytes > 32 * 1024 * 1024 && url.href !== initialUrl) return { status: 'failed', reason: 'response' };
       // Prefer IPv4 deliberately; never fall back to unchecked IPv6 or a second DNS lookup.
       const addresses = await new Promise<{ address: string; family: number }[]>((resolve, reject) => {
         const abort = () => reject(new Error("source_request_aborted"));
@@ -77,11 +83,11 @@ async function transfer(initialUrl:string,validate:(value:string)=>URL,outerSign
           const chunks: Buffer[] = []; let bytes = 0;
           const responseLimit = isGate ? Math.min(maxBytes, 512 * 1024) : maxBytes;
           if (Number(response.headers['content-length']) > responseLimit) {
-            options.onBodyLimit?.(status); response.destroy(); reject(Error('source_body_too_large')); return;
+            options.onBodyLimit?.(status, contentType); response.destroy(); reject(Error('source_body_too_large')); return;
           }
           response.on("data", (chunk: Buffer) => {
             bytes += chunk.length;
-            if (bytes > responseLimit) { options.onBodyLimit?.(status); response.destroy(new Error("source_body_too_large")); }
+            if (bytes > responseLimit) { options.onBodyLimit?.(status, contentType); response.destroy(new Error("source_body_too_large")); }
             else chunks.push(chunk);
           });
           response.on("error", reject);

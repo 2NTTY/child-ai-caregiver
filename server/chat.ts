@@ -12,11 +12,17 @@ export interface ChatStore {
   listImportedForUser?(userId: string, childId: string, cursor?: string | null): Promise<ImportedChatPage>;
   getImportedForUser?(userId: string, childId: string, id: string): Promise<ImportedChatMessage | null>;
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
-  listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent'): Promise<(ChatPage & {
+  listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent' | 'display'): Promise<(ChatPage & {
     dataVersion?: string; sourceDeadlines?: Record<string, string>;
   }) | null>;
   createUserMessageForUser(userId: string, childId: string, text: string, chatMode?: ChatMode): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
+}
+export class LegacyChatModeUnsupportedError extends Error {
+  constructor() {
+    super("The retired PostgreSQL adapter cannot persist chat-only mode");
+    this.name = "LegacyChatModeUnsupportedError";
+  }
 }
 interface MessageRow {
   id: string; child_id: string; author_user_id: string | null;
@@ -65,7 +71,9 @@ export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges 
         nextCursor: result.rows.length > 100 ? rows.at(-1)!.id : null };
       });
     },
-    async createUserMessageForUser(userId, childId, text, _chatMode) {
+    async createUserMessageForUser(userId, childId, text, chatMode) {
+      // Never persist a chat-only turn without its mode, which defaults to assistant.
+      if (chatMode === "chat_only") throw new LegacyChatModeUnsupportedError();
       return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
       const messageId = randomUUID();
       const result = await client.query<MessageRow>(

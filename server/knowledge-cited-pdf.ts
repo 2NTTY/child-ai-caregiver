@@ -6,6 +6,7 @@ import { publicMaintenanceWatch } from "./knowledge-source-catalog.ts";
 import { sourceFetchUrl } from "./knowledge-source-fetch.ts";
 import { fetchPublicSourceResponse } from "./public-source-transport.ts";
 import { apiError } from "./workspace-api.ts";
+import { largeFhsPdf } from './platform-materials.ts';
 
 export type SavedCitationIdentity = Pick<KnowledgeEvidence, "chunkId" | "sourceId" | "versionId" | "versionHash" | "contentHash" | "url">;
 export interface CitedPdf { sourceId: string; url: string; sha256: string }
@@ -18,8 +19,9 @@ export interface KnowledgeOriginalPort {
 export async function readPublisherPdf(target: CitedPdf, signal: AbortSignal): Promise<Buffer | null> {
   const watch = publicMaintenanceWatch(target.sourceId);
   if (watch?.kind !== 'pdf' || watch.url !== target.url) return null;
+  const large = largeFhsPdf(target.url);
   const result = await fetchPublicSourceResponse(watch.url, value => sourceFetchUrl(value, watch), signal,
-    "application/pdf", { maxBytes: KNOWLEDGE_PDF_MAX_BYTES });
+    "application/pdf", { maxBytes: large?.sha256 === target.sha256 ? large.bytes : KNOWLEDGE_PDF_MAX_BYTES });
   if (result.status !== "response") throw new Error("citation_publisher_unavailable");
   if (result.response.status === 404 || result.response.status === 410) return null;
   if (result.response.status !== 200) throw new Error("citation_publisher_unavailable");
@@ -46,7 +48,9 @@ export async function openCitedPdf(request: Request, chunkId: string,
   try { bytes = await originals.read(target, request.signal); }
   catch { return apiError("citation_original_service_unavailable", "暫時未能讀取原件，請稍後再試。", 503); }
   if (!bytes) return unavailable();
-  if (bytes.length > KNOWLEDGE_PDF_MAX_BYTES || bytes.subarray(0, 5).toString("ascii") !== "%PDF-"
+  const large = largeFhsPdf(target.url);
+  if (bytes.length > KNOWLEDGE_PDF_MAX_BYTES && (large?.sha256 !== target.sha256 || large.sourceId !== target.sourceId || large.bytes !== bytes.length)
+    || bytes.subarray(0, 5).toString("ascii") !== "%PDF-"
     || createHash("sha256").update(bytes).digest("hex") !== target.sha256)
     return apiError("citation_original_changed", "檔案與當時引用的版本不同。", 409);
   const current = await saved();

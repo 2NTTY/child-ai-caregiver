@@ -263,7 +263,7 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
   };
   const readMessage = model.readState === "idle" ? "尚未讀取結果"
     : model.readState === "loading" ? "正在讀取…"
-      : model.readState === "failed" ? "未能讀取結果"
+      : model.readState === "failed" ? model.notice?.text ?? "未能讀取結果"
         : denied ? "你已沒有權限查看這次結果"
           : !run ? "目前沒有可展示的運行結果。" : null;
   const announcementKey = readMessage ? `read:${model.readState}`
@@ -298,7 +298,7 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
     </View> : null}
     {activityNavigation}
     {activityHeaderVisible && run && ready && run.status !== "completed" && !run.stopReasonLabel ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}
-    {readMessage && !model.pendingDecision ? <StateNote tone={model.readState === "failed" ? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
+    {readMessage && !model.pendingDecision ? <StateNote tone={model.readState === "failed" ? model.notice?.tone ?? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
     {targetUnavailable ? <StateNote tone="warning">未能核對你點選的事項，請重新檢查；不會改為展示另一項供你確認。</StateNote> : null}
     {proposalTarget && ready && selectedProposals.some(proposal => proposal.version > proposalTarget.version) ? <Text style={styles.meta}>內容已更新，以下是剛讀取的版本，請重新核對。</Text> : null}
     {!model.online ? <StateNote tone="warning">目前離線；所示資料是上次讀取的快照。恢復連線後才可重新讀取或確認事項。</StateNote> : null}

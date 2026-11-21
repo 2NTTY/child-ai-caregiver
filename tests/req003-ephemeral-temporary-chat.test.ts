@@ -733,7 +733,8 @@ test("8. exiting mid-flight cancels AbortSignal and drops late slow response wit
 });
 
 test("9. abnormal disconnect TTLs enforce 15m sliding idle expiry and 60m hard ceiling without reactivation", async () => {
-  let now = Date.UTC(2026, 10, 20, 1, 0, 0);
+  // The agent deadline uses the runtime wall clock; only TTL intervals are simulated.
+  let now = Date.now();
   const h = buildScriptedHarness({ clock: () => now });
 
   // Part A: 15-minute idle expiration
@@ -834,6 +835,31 @@ test("10. idempotent close retry after reconnect returns already_cleared while c
   const retryBody = (await retryClose.json()) as { receipt: { status: string; scope: string } };
   assert.equal(retryBody.receipt.status, "already_cleared");
   assert.equal(retryBody.receipt.scope, "application_controlled_only");
+});
+
+test("an instance without the session cannot confirm its clearance", async () => {
+  const owningInstance = buildScriptedHarness();
+  const otherInstance = buildScriptedHarness();
+  const { session } = owningInstance.service.createSession(USER_A);
+  const closeRequest = () =>
+    jsonPost(`/api/temporary-chat/sessions/${session.sessionId}/close`, {}, USER_A);
+  const options = { isCurrentUser: async () => true };
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const unverifiedClose = await handleTemporaryChatRequest(
+      closeRequest(), USER_A, otherInstance.service, options,
+    );
+    assert.equal(unverifiedClose.status, 404);
+    const body = await unverifiedClose.json();
+    assert.equal(body.error.code, "temporary_session_not_found");
+    assert.equal(body.receipt, undefined);
+  }
+
+  const ownerClose = await handleTemporaryChatRequest(
+    closeRequest(), USER_A, owningInstance.service, options,
+  );
+  assert.equal(ownerClose.status, 200);
+  assert.equal((await ownerClose.json()).receipt.status, "cleared");
 });
 
 test("11. HTTP integration on both createRequestHandler and createFirebaseRequestHandler preserves headers and leaves main chat untouched", async () => {

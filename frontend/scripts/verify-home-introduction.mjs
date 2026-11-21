@@ -7,7 +7,7 @@ const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w31
 const browser = await launchPreviewBrowser(), failures = [], passed = [], metrics = [];
 const greetingName = "你好，媽媽！";
 const homeLink = page => page.getByRole("link", { name: "主頁", exact: true });
-const chatLink = page => page.getByRole("link", { name: "與 Agent 對話", exact: true });
+const chatLink = page => page.getByRole("link", { name: "助手", exact: true });
 const cardFor = page => page.getByTestId("mobile-child-card");
 const describe = card => card.evaluate(element => {
   const button = element.querySelector('[role="button"]'), avatar = button.children[0], copy = button.children[1], arrow = button.children[2];

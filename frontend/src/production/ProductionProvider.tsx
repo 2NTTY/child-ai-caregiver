@@ -1,4 +1,5 @@
 import type { ChatSendOptions } from '../../../src/shared/chat';
+import type { ChatAttachmentUpload } from '../../../src/client/chat-controller';
 import { readCitationPdf } from '../../../src/client/citation-original';
 import { openCitationPdf } from '../platform/file-export';
 import { useNativePushNavigation } from "./useNativePushNavigation";
@@ -222,14 +223,30 @@ function useProductionValue(owner: ProductionOwner) {
       if(attachments.length&&(attachments.length!==1||!['voice','file','photo'].includes(attachments[0].kind)))return;
       const known=new Set(owner.chatController.getSnapshot().messages.map(item=>item.id));
       const attachment=attachments[0];
-      const voice=attachment?.kind==='voice'?await owner.voiceOwner.prepare(attachment):null;
-      const file=attachment?.kind==='file'?await owner.fileOwner.prepare(attachment):null;
-      const photo=attachment?.kind==='photo'?(attachment.photoReference
-        ?await owner.photoOwner.prepareReference(attachment.photoReference,attachment.id):attachment.photo?await owner.photoOwner.prepare({id:attachment.id,photo:attachment.photo}):null):null;
-      if(!currentScope()||attachments.length&&!voice&&!file&&!photo||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined, options);
-      if(currentScope()&&photo){const saved=owner.chatController.getSnapshot().messages.find(item=>!known.has(item.id)&&item.photo?.id===photo.id);
-        if(saved){owner.draftOwner.remove(snapshot.scopeKey,attachment.id);owner.photoOwner.linked(saved.id,photo.id);}}
+      let photoId: string | undefined;
+      let upload: ChatAttachmentUpload | undefined;
+      if (attachment && (attachment.kind === 'voice' || attachment.kind === 'file' || attachment.kind === 'photo')) {
+        upload = {
+          kind: attachment.kind,
+          label: attachment.kind === 'voice' ? '語音訊息' : attachment.fileName,
+          async prepare() {
+            let reference;
+            if (attachment.kind === 'voice') reference = await owner.voiceOwner.prepare(attachment);
+            else if (attachment.kind === 'file') reference = await owner.fileOwner.prepare(attachment);
+            else {
+              reference = attachment.photoReference ? await owner.photoOwner.prepareReference(attachment.photoReference, attachment.id)
+                : attachment.photo ? await owner.photoOwner.prepare({ id: attachment.id, photo: attachment.photo }) : null;
+              photoId = reference?.id;
+            }
+            return currentScope() && owner.chatWritesAllowed() ? reference ?? null : null;
+          },
+        };
+      }
+      await owner.chatController.send(undefined, undefined, undefined, options, upload);
+      if (currentScope() && photoId) {
+        const saved = owner.chatController.getSnapshot().messages.find(item => !known.has(item.id) && item.photo?.id === photoId);
+        if (saved) { owner.draftOwner.remove(snapshot.scopeKey, attachment.id); owner.photoOwner.linked(saved.id, photoId); }
+      }
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();
     },
     fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},

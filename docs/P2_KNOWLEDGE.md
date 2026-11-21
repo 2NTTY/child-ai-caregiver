@@ -76,6 +76,8 @@ Firestore `embed` 只處理本次獲准上限內的缺失片段，回報剩餘�
 `knowledge-refresh` 沿既有指定來源、解析器及核對指令；Firestore 保存 watch、原文分段、觀察與執行 lease。排程由 F06 接線，自主爬取／多模態維護 Agent 仍屬 P3。私人来源沿原 `/inputs` 服務保存密文及獲准選段，不加入公共詞彙或向量索引；前端和 Agent 共用相同資源、版本與原操作收據。
 
 - [KnowledgeFilter／KnowledgeResult](../src/shared/knowledge.ts) 由 Server 核定地域、分類及範圍。精確年齡用包含篩選；有來源的約數／查詢假設可找相交範圍，未知年齡亦可發現相關資料，但必須回傳 conditional／requires_clarification 語義。數字約數須連同原 asOf 推移為仍屬約數的當前檢索提示，不造生日；日期無效或未來便保留未知。原話及數值解讀不是已確認事實；檢索假設不改孩子檔案或精確任務資格。
+- 家庭查詢的上下限為 0–120 個月。官方教材如覆蓋更大年齡範圍，來源片段可保留高至 216 個月的原上限及是否包括端點，例如 0–18 歲生長圖表及十八歲以下兒童的定義。獨立審核仍須按每段的原頁核對。
+- 社署《保護兒童 你我有責》沿用同一張卡。現行原件取自社署程序指引頁所連的 2026 年 3 月雙語印本，新舊檔案分別按各自的網址及 SHA-256 核對。新版須按兩頁實物獨立整理及審核；舊版的審核紀錄繼續對應舊原件。[社署單張目錄](https://www.swd.gov.hk/tc/pubsvc/family/fcw_info/fcwprocedure/fcwp_mdco/index.html)
 - [KnowledgeRetriever](../server/knowledge-retriever.ts) 每個 Agent run 建立一次，重用現有 `AgentBudget`；兩次查詢 embedding／90 秒與生成及工具共用同一運行期限。同 query 只重用向量，來源狀態每次重新查 DB；引用在交付前再以 chunk／版本／hash 核對。這項 metadata 檢查不證明語義支持。
 - PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。P2-A04 在 SQL 內分別排名及限量取回，不因全庫候選超过 1,000 便失敗；引用重驗按確切 ID，與排名前綴分開。
 - 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。不提高現行平台／本人用量配置；本文件的舊驗收數字不作運行上限。
@@ -141,7 +143,15 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 
 ### 失敗、日期與恢復
 
-抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；網絡呼叫總計 20 秒，HTML／RSS 最多1MiB／50個RSS項目；已登記PDF最多32MiB，另用受限20秒worker解析已指定的最多八頁。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；網絡呼叫總計 20 秒，HTML／RSS 最多1MiB／50個RSS項目；已登記PDF一般限32MiB，另用受限20秒worker解析已指定的最多八頁。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+
+FHS 首批的 `30034.pdf` 及 `30035.pdf` 有兩份已核對的大原件。只在已登記網址容許該版實際長度，超過 32 MiB 的內容須核對完整 SHA-256 才可解析及保存。原件庫、備份與引用讀回沿相同版本，模型逐窗接收不超過 32 MiB 的原頁。
+
+已發布的兩冊沿每週排程查新。管理後台「知識管理 → 知識來源」的來源及檢查紀錄會顯示「PDF 原件待核對」。當大檔已完整下載而版本不符，紀錄列出實際大小及 SHA-256；超過該冊下載上限時，紀錄只列上限。維護者從已登記的官方網址核實版本、大小及使用條款；需要新的大檔例外時，須保留歷來版本的讀回資格，再沿原有審核及發布流程接續。待核期間保留已發布卡及其引用原件。新版若在一般 32 MiB 上限以內，沿現有版本觀察及內容審核流程處理。
+
+首批持鎖者可將[頁段準備收據](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)所列私用壓縮包解到 worker 可讀目錄，核對包的 SHA-256，並在原批次環境設定 `FHS_CAMPAIGN_PDF_READS` 為該目錄及 `FHS_CAMPAIGN_PDF_READS_SHA256` 為收據內的索引指紋。`process-age-checked` 仍會按原觀測流程查官方網址。首次讀取核對解析器版本，逐段核對原件、物理頁及輸出指紋。已記錄的分窗仍優先使用，官方版本變動則沿現有流程解析。每份所需的模型呼叫仍受該次運行的有效政策約束。
+
+在正式 worker 用 `node scripts/fhs-publication-receipt.mjs SOURCE_ID ORIGINAL_OPERATION [DELIVERY_OPERATION]` 可唯讀查回首批 PDF。修復發行時可加上由原操作派生的交付操作。輸出 `fhs-publication-receipt/1` 的 `outcome` 取自指定工作；已刊登且 `readback=verified` 代表家長卡、同版匯出所需的全部向量、每段引用及官方原件均已核實。`pdf.pages` 列開啟頁、跨頁摘錄的終頁及核對方法。純圖像按保存的兩次獨立閱讀查證。缺少原頁證據或版本已取代時，查回會交代缺口及回傳狀態碼 2。
 
 觀察的 fetched_at 與 last_successful_check_at、來源發布／修訂日期及既有版本 checked_at（人工核對）分開。hash 未變只更新成功抓取 metadata，沒有向量呼叫；失敗保留最後成功內容與時間。404／410 或停用立即排除，恢復後也需重新批准。feed 不再列某項不自動判斷官方撤回，其成功時間停止前進；超過 24 小時或七日發布窗口便不進近期結果。
 

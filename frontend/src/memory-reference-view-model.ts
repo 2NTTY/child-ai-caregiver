@@ -47,7 +47,8 @@ export interface KnowledgeReferenceView {
   readonly usageScope?: "public_noncommercial" | "internal_noncommercial";
   readonly reviewState: "reviewed";
   readonly applicability: {
-    readonly region: string; readonly ageBasis: "actual" | "corrected" | "any";
+    readonly region: string; readonly ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed" | "per_instruction"; readonly publisherAudiences?: readonly string[];
+    readonly ageExamples?: readonly {readonly quote:string}[];
     readonly minAgeMonths: number | null; readonly maxAgeMonths: number | null;
     readonly maxAgeMonthsExclusive?: boolean;
     readonly topics: readonly string[]; readonly conditions: readonly string[];
@@ -67,6 +68,7 @@ export interface KnowledgeReferencesView {
   readonly items: readonly KnowledgeReferenceView[];
   readonly catalog?: readonly PersonalLibraryItem[];
   readonly registered?: readonly import('../../src/shared/personal-library').RegisteredLibrarySource[];
+  readonly publisherOriginals?: readonly import('../../src/shared/personal-library').PublisherOriginal[];
   readonly hasMore: boolean;
 }
 export interface MemoryReferenceModel {
@@ -89,6 +91,7 @@ export interface MemoryReferenceWorkspaceValue {
     readFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreReferences?(): void;
+    loadAllReferences?(): void;
     exportLibraryArchive?(selection: import('../../src/shared/source-series').LibraryArchiveSelection): Promise<{ message: string; sha256: string; share?: () => Promise<void> } | undefined>;
     setLibraryPreference?(change: import('../../src/shared/source-series').LibrarySelectionCommand): void;
     loadMoreWork?(): void;

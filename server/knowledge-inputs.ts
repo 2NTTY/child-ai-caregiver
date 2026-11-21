@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { mediaClip } from '../src/shared/platform-media.ts';
+import { knowledgeAgeExample } from '../src/shared/knowledge-age-example.ts';
+import { mediaClip, scriptPassage } from '../src/shared/platform-media.ts';
 import { z } from "zod";
 import { platformPublisherHosts } from '../src/shared/platform-material.ts';
 import type { KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -12,7 +13,7 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 const region = z.string().regex(/^[A-Z]{2}$/);
 const date = z.iso.datetime({ offset: true });
 const topicList = z.array(id).max(12).refine(values => new Set(values).size === values.length);
-const applicability = z.strictObject({
+export const originalOrganizerApplicability = z.strictObject({
   region, ageBasis: z.enum(["actual", "corrected", "any"]),
   minAgeMonths: z.number().min(0).max(120).nullable(), maxAgeMonths: z.number().min(0).max(120).nullable(),
   maxAgeMonthsExclusive: z.boolean().optional(),
@@ -22,6 +23,23 @@ const applicability = z.strictObject({
     : value.minAgeMonths === null || value.maxAgeMonths === null || value.minAgeMonths > value.maxAgeMonths) {
     ctx.addIssue({ code: "custom", message: "Invalid age applicability" });
   }
+});
+// An official source can extend beyond the families' 0–10 query range, e.g. a 0–18 growth chart.
+// Keep the historical organizer grammar stable so its sealed requests can be resumed.
+const establishedApplicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable(), use:z.literal('original_lookup').optional() });
+const applicability = z.strictObject({...establishedApplicability.shape,ageBasis:z.enum(['actual','corrected','any','publisher','unconfirmed','per_instruction']),
+  publisherAudiences:z.array(text(240)).min(1).max(8).optional(),
+  ageExamples:z.array(knowledgeAgeExample).min(1).max(32).optional()}).superRefine((value,ctx)=>{
+  const {publisherAudiences,ageExamples,...scope}=value;
+  const valid=scope.ageBasis==='per_instruction'
+    ? scope.use==='original_lookup' && scope.minAgeMonths===null && scope.maxAgeMonths===null && scope.maxAgeMonthsExclusive===undefined
+      && Boolean(ageExamples?.length && ageExamples.every(e=>e.procedure))
+    : ageExamples?.some(e=>e.procedure) ? false : scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
+    ? scope.use==='original_lookup' && scope.minAgeMonths===null && (scope.maxAgeMonths===null ? scope.maxAgeMonthsExclusive===undefined
+      : scope.ageBasis==='publisher' && scope.maxAgeMonthsExclusive===true)
+      && (scope.ageBasis==='publisher')===Boolean(publisherAudiences)
+    : publisherAudiences===undefined && ageExamples===undefined && establishedApplicability.safeParse(scope).success;
+  if(!valid)ctx.addIssue({code:'custom',message:'Invalid publisher or numeric age applicability'});
 });
 const publicSourceUrl = z.url().refine(value => {
   const url = new URL(value);
@@ -52,7 +70,7 @@ const sourceSchema = z.strictObject({
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
   validUntil: date.nullable().optional(), timelyEvent: timelyEventLifecycleSchema.optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
   chunks: z.array(z.strictObject({ key: id, treatment: chunkTreatmentSchema.optional(), section: text(240), sourceExcerpt: z.union([text(300), z.literal("")]),
-    mediaClip: mediaClip.optional(), originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
+    mediaClip: mediaClip.optional(), scriptPassage: scriptPassage.optional(), originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
     originalText: text(4000).optional(), pageStart: z.number().int().min(1).optional(), pageEnd: z.number().int().min(1).optional(),
     keywords: z.array(text(80)).min(1).max(24), applicability }).refine(chunk => chunk.originalKind === "visual_page"
       ? !chunk.sourceExcerpt && !chunk.originalText : Boolean(chunk.sourceExcerpt.trim()))).min(1).max(32),
@@ -61,6 +79,28 @@ const sourceSchema = z.strictObject({
   if (value.series && value.series.institutionId !== new URL(value.url).hostname)
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
+    for (const example of chunk.applicability.ageExamples ?? []) {
+      const original = chunk.originalText;
+      const paragraph = original && chunk.scriptPassage
+        ? chunk.scriptPassage.firstParagraph + original.slice(0,example.start).split('\n').length - 1 : undefined;
+      if (!original || original.slice(example.start,example.start + example.quote.length) !== example.quote
+        || !example.quote.includes(example.age.wording) || example.paragraph !== paragraph
+        || example.paragraph !== undefined && example.quote.includes('\n'))
+        ctx.addIssue({code:'custom',message:'Printed age example must identify an exact original passage'});
+    }
+    if (chunk.applicability.ageBasis === 'publisher' || chunk.applicability.ageBasis === 'unconfirmed' || chunk.applicability.ageBasis === 'per_instruction') {
+      const audiences=chunk.applicability.publisherAudiences??[];
+      if(chunk.treatment?.kind!=='overview' || audiences.some(audience=>!value.title.includes(audience) &&
+        !value.chunks.some(c=>(c.originalText??c.sourceExcerpt).includes(audience) || c.scriptPassage?.title.includes(audience))))
+        ctx.addIssue({code:'custom',message:'Original reading requires a source-bound publisher scope'});
+    }
+    if (chunk.scriptPassage && (new URL(value.url).origin !== new URL(chunk.scriptPassage.url).origin
+      || chunk.scriptPassage.originalHash && chunk.scriptPassage.originalHash !== knowledgeHash(chunk.originalText)
+      || chunk.mediaClip || chunk.pageStart || chunk.pageEnd || chunk.originalKind || chunk.excerptPage || !chunk.originalText?.includes(chunk.sourceExcerpt)))
+      ctx.addIssue({ code: 'custom', message: 'Invalid official script passage' });
+    if ((chunk.applicability.maxAgeMonths ?? 0) > 120 && value.classification !== 'official_guidance') {
+      ctx.addIssue({ code: 'custom', message: 'Only official guidance may retain an upper age beyond the family query range' });
+    }
     if (chunk.treatment?.kind === 'structured' && chunk.treatment.fields.some(field => !(chunk.originalText ?? chunk.sourceExcerpt).includes(field.value)))
       ctx.addIssue({ code: 'custom', message: 'Structured values require exact source text' });
     if (chunk.mediaClip) {
@@ -70,7 +110,7 @@ const sourceSchema = z.strictObject({
     }
     if (chunk.originalKind && value.extraction?.format !== "text_pdf")
       ctx.addIssue({ code: "custom", message: "Invalid original representation" });
-    if (chunk.excerptPage !== undefined && (!chunk.originalKind || !chunk.pageStart || !chunk.pageEnd ||
+    if (chunk.excerptPage !== undefined && (value.extraction?.format !== 'text_pdf' || !chunk.pageStart || !chunk.pageEnd ||
       chunk.excerptPage < chunk.pageStart || chunk.excerptPage > chunk.pageEnd))
       ctx.addIssue({ code: "custom", message: "The physical evidence page must belong to the reviewed PDF section" });
     if (value.extraction?.format === "text_pdf" && ((!chunk.originalText && chunk.originalKind !== "visual_page") || !chunk.pageStart || !chunk.pageEnd))
@@ -88,6 +128,7 @@ const sourceSchema = z.strictObject({
     || Date.parse(value.fetchedAt) > Date.now()) ctx.addIssue({ code: "custom", message: "Future source date" });
 });
 const filterSchema = z.strictObject({ region, classification: z.enum(["official_guidance", "recent_information"]).default("official_guidance"),
+  purpose:z.literal('read_originals').optional(),
   age: z.strictObject({ basis: z.enum(["actual", "corrected"]), minMonths: z.number().min(0).max(120), maxMonths: z.number().min(0).max(120) })
     .refine(value => value.minMonths <= value.maxMonths).nullable(), topics: topicList,
   ageMatch: z.enum(["contained", "overlap", "unknown"]).default("contained") });
@@ -111,6 +152,16 @@ export function treatmentContentHash(source: KnowledgeSourceInput): string {
 export function embeddingDocument(title: string, section: string, body: string): { title: string; text: string; hash: string } {
   const documentTitle = `${title} — ${section}`;
   return { title: documentTitle, text: body, hash: knowledgeHash([documentTitle, body]) };
+}
+
+/** The same verified original can share a vector across materials. Each family's selected chunk keeps its own review and conditions. */
+export function embeddingForChunk(title: string, chunk: Pick<KnowledgeSourceInput['chunks'][number], 'section' | 'text' | 'originalText' | 'scriptPassage'>) {
+  const script = chunk.scriptPassage;
+  if (script?.originalHash) {
+    if (!chunk.originalText || knowledgeHash(chunk.originalText) !== script.originalHash) throw Error('knowledge_script_original_mismatch');
+    return embeddingDocument(script.title, `劇本第 ${script.firstParagraph}–${script.lastParagraph} 段`, chunk.originalText);
+  }
+  return embeddingDocument(title, chunk.section, chunk.text);
 }
 
 export const knowledgeChunkInputSchema = sourceSchema.shape.chunks.element;

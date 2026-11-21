@@ -384,21 +384,8 @@ export function createTemporaryChatStore(options: TemporaryChatStoreOptions = {}
         };
       }
 
-      recordTombstone({
-        sessionId,
-        userId,
-        generation: 1,
-        closedAtMs: now,
-        reason,
-      });
-      return {
-        sessionId,
-        status: "already_cleared",
-        clearedAt: new Date(now).toISOString(),
-        scope: "application_controlled_only",
-        cancelledInFlight: false,
-        generation: 1,
-      };
+      // This process cannot verify whether another instance still owns the session.
+      throw new TemporaryChatError(404, "temporary_session_not_found");
     },
 
     closeAllForUser(

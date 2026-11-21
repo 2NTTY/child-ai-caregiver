@@ -32,7 +32,9 @@ import type { ImportProvenance } from '../src/shared/import-provenance.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { indexBatchSchema, indexBatchReceiptSchema, indexBatchSort } from '../server/knowledge-index-batch-records.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
-import { campaign, createKnowledgeCampaignBudget } from '../server/knowledge-campaign-budget.ts';
+import { campaign, campaignCredentials, createKnowledgeCampaignBudget } from '../server/knowledge-campaign-budget.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { transferBatchSchema, transferResultSchema, transferItemId } from '../server/knowledge-transfer-records.ts';
 import { mixedRoomRecordSchema, mixedMessageRecordSchema, mixedRecordId } from '../server/mixed-chat-records.ts';
 import { firestoreAgentRunSchema, firestoreAgentClaimSchema } from '../server/firestore-agent-runs.ts';
@@ -71,6 +73,59 @@ test('restore preserves the campaign balance and every attempt and fences new sp
   }
   assert.equal((await ledger.status())?.spent, 825);
   await assert.rejects(ledger.reserve('embedding', 'fhs-synthetic', 0), /reconcile_before_next_attempt/);
+});
+
+test('restore binds a commissioned ticket to its original source, operation and stage', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await ledger.reserveShared('embedding', { sourceId: 'fhs-synthetic', operationFingerprint: digest,
+    stageKey: 'document', assertLease: async () => {} }, 0);
+  const [path, data] = [...f.fake.records].find(([key]) => key.includes('/attempts/'))!;
+  assert.equal(f.codec.decode({ path, data }).path, path);
+  assert.throws(() => f.codec.decode({ path, data: { ...data, sourceId: 'different-source' } }), errors('restore_binding'));
+});
+
+test('restore preserves a nonbillable native rejection and its original ticket binding', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await ledger.reserveShared('generation', { sourceId: 'fhs-synthetic', operationFingerprint: digest,
+    stageKey: 'review', assertLease: async () => {} }, 8192);
+  const [path, before] = [...f.fake.records].find(([key]) => key.includes('/attempts/'))!;
+  await ledger.settleRejectedGeneration({ ticketId: path.split('/').at(-1), sourceId: before.sourceId,
+    operationFingerprint: digest, stageHash: before.stageHash, at: before.at, ceiling: before.ceiling,
+    rejection: { httpStatus: 400, evidenceSha256: 'd'.repeat(64) } });
+  const record = { path, data: f.fake.records.get(path)! };
+  const restored = f.codec.transform(f.codec.decode(record), input());
+  assert.deepEqual(f.codec.decode(restored).value, record.data);
+  assert.throws(() => f.codec.decode({ path, data: { ...record.data, sourceId: 'other-source' } }), errors('restore_binding'));
+});
+
+test('restore binds an inspected legacy rejection to its random ticket, source and original operation', async () => {
+  const f = fixture(), ledger = createKnowledgeCampaignBudget(f.fake.database, namespace);
+  await ledger.initialize();
+  await ledger.reserve('generation', 'archived', 4096);
+  const [path, before] = [...f.fake.records].find(([key]) => key.includes('/attempts/'))!;
+  const pin = { ticketId: path.split('/').at(-1)!, sourceId: 'archived', kind: 'generation' as const, operationFingerprint: digest,
+    at: before.at as string, ceiling: 1603584 };
+  const owner = createKnowledgeCampaignBudget(f.fake.database, namespace, [pin]);
+  await owner.retainInspected();
+  const { kind: _kind, ...proof } = pin;
+  await owner.settleRejectedGeneration({ ...proof, rejection: { httpStatus: 504, evidenceSha256: 'd'.repeat(64) } });
+  const data = f.fake.records.get(path)!;
+  assert.deepEqual(f.codec.transform(f.codec.decode({ path, data }), input()).data, data);
+  assert.throws(() => f.codec.decode({ path: path.replace(pin.ticketId, randomUUID()), data }), errors('restore_binding'));
+  for (const diff of [{ sourceId: 'different' }, { operationFingerprint: 'f'.repeat(64) }, { ceiling: 1 }])
+    assert.throws(() => f.codec.decode({ path, data: { ...data, ...diff } }), errors('restore_binding'));
+});
+
+test('restore preserves the original publication assignment and rejects an altered lane or generation', () => {
+  const f = fixture(), pin = manualPublicationPin('pdf-63e7d5463521682636a066e5')!, revision = randomUUID();
+  const path = namespace + '_knowledge_campaigns/' + campaign + '/publicationBindings/' + pin.sourceId;
+  const data = { lane: pin.lane, pages: pin.pages, sourceId: pin.sourceId, sha256: pin.sha256, revision, workerGeneration: generation,
+    operationFingerprint: knowledgeReviewHash([campaignCredentials, pin.sourceId, revision, generation]) };
+  assert.deepEqual(f.codec.transform(f.codec.decode({ path, data }), input()).data, data);
+  for (const difference of [{ lane: 'C3' }, { workerGeneration: randomUUID() }, { pages: 1 }])
+    assert.throws(() => f.codec.decode({ path, data: { ...data, ...difference } }), errors('restore_binding'));
 });
 
 test('restore permits account scope only for mixed agent runs and claims while preserving stopped execution and deduplication', () => {

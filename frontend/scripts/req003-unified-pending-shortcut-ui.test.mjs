@@ -614,7 +614,7 @@ test('extractProposalEditableDraft, applyProposalDraftEdit and buildProposalDiff
 });
 
 test('ProductAgentOwner.editProposal updates version across run & pending discovery, clears sharedConfirmed and surfaces 409 conflicts safely', async () => {
-  const proposal = makeCareReviseProposal();
+  let proposal = makeCareReviseProposal();
   let mode = 'ok';
   const apiCalls = [];
   const fetcher = async (url, init) => {
@@ -622,11 +622,9 @@ test('ProductAgentOwner.editProposal updates version across run & pending discov
     if (String(url).endsWith('/pending')) return Response.json({ proposals: [proposal], nextCursor: null });
     if (String(url).endsWith('/edit')) {
       if (mode === 'conflict') return Response.json({ error: { code: 'version_conflict' } }, { status: 409 });
-      if (mode === 'offline_err') throw new Error('Synthetic failure');
       const body = JSON.parse(init.body);
-      return Response.json({
-        proposal: { ...proposal, version: body.expectedVersion + 1, value: body.value },
-      });
+      proposal = { ...proposal, version: body.expectedVersion + 1, value: body.value };
+      return Response.json({ proposal });
     }
     return Response.json({
       result: {
@@ -668,24 +666,27 @@ test('ProductAgentOwner.editProposal updates version across run & pending discov
   assert.equal(owner.getSnapshot().model.run.proposals[0].version, 2);
   assert.match(owner.getSnapshot().model.notice.text, /草稿或原資料版本已變更/);
 
-  mode = 'offline_err';
-  const errOk = await owner.editProposal(propA, { content: 'Network edit', reason: 'Err reason' });
-  assert.equal(errOk, false);
-  assert.equal(owner.getSnapshot().model.run.proposals[0].version, 2);
-  assert.match(owner.getSnapshot().model.notice.text, /未能更新草稿/);
+  assert.equal(owner.getSnapshot().model.readState, 'failed');
+  assert.equal(await owner.editProposal(propA, { content: 'Stale retry', reason: 'Needs resync' }), false);
+  assert.equal(apiCalls.filter(call => call.url.endsWith('/edit')).length, 2);
+  await owner.refresh();
+  assert.equal(owner.getSnapshot().model.readState, 'ready');
   owner.dispose();
 });
 
-test('AgentRunView shows readable before/after diff, locks confirm during inline edit, saves v+1 draft and displays factual undo capabilities', async () => {
+test('AgentRunView recovers a saved draft after response loss without reposting and requires fresh sharing consent', async () => {
   const initialProposal = makeCareReviseProposal();
   let serverProposal = initialProposal;
+  let edits = 0, decisions = 0;
   const fetcher = async (url, init) => {
     if (String(url).endsWith('/edit')) {
       const body = JSON.parse(init.body);
       serverProposal = { ...initialProposal, version: body.expectedVersion + 1, value: body.value };
-      return Response.json({ proposal: serverProposal });
+      edits++;
+      throw new Error('Synthetic connection loss after successful draft commit');
     }
     if (String(url).endsWith('/decide')) {
+      decisions++;
       const body = JSON.parse(init.body);
       serverProposal = { ...serverProposal, version: body.expectedVersion + 1, status: 'accepted', result: { kind: 'care_record', id: recA, version: 4 } };
       return Response.json({ proposal: serverProposal });
@@ -766,6 +767,19 @@ test('AgentRunView shows readable before/after diff, locks confirm during inline
   await settle();
   render();
 
+  assert.match(allText(), /暫時無法確認草稿修改是否已保存/);
+  assert.equal(button('保存草稿修改').props.disabled, true);
+  assert.equal(button('確認資料').props.disabled, true);
+  assert.equal(await owner.editProposal(propA, { content: 'Stale retry' }), false);
+  owner.decide(propA, 'accept');
+  assert.equal(edits, 1);
+  assert.equal(decisions, 0);
+  button('重試讀取結果').props.onPress();
+  await settle();
+  render();
+
+  assert.equal(edits, 1, 'refresh only reads the server version');
+  assert.equal(decisions, 0, 'refresh never confirms the proposal');
   assert.equal(h.node(`agent-proposal-editor-${propA}`), undefined);
   assert.match(allText(), /Final 175ml feeding note/);
   assert.match(allText(), /草稿版本：版本 2/);
@@ -973,6 +987,7 @@ test('AgentAuthorizationOwner & AgentAuthorization manage executionMode selectio
 
 test('AppShell and NativeAppShell both place PendingReviewShortcut inside header-actions before NotificationBell', () => {
   const { mocks } = uiMocks({ pathname: '/' });
+  mocks['./companion/CompanionViewport'] = { CompanionSlot: 'CompanionSlot' };
   mocks['./PendingReviewShortcut'] = { PendingReviewShortcut: 'PendingReviewShortcut' };
   mocks['./TemporaryChatEntry'] = { TemporaryChatEntry: 'TemporaryChatEntry' };
   mocks['./AppScrollView'] = { AppScrollView: 'ScrollView' };
@@ -1078,4 +1093,3 @@ test('PendingReviewShortcut exposes pagination and honest retry when pending rea
   h.unmount();
   owner.dispose();
 });
-

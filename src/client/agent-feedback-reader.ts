@@ -4,7 +4,7 @@ type FeedbackResult = { status: number; body: unknown };
 
 /** Bounded SSE decoding. Missing final receipt is unknown, never an invitation to POST again. */
 export async function readAgentFeedback(response: Response, onProgress: (event: AgentProgress) => void,
-  onResult?: (result: FeedbackResult) => void): Promise<FeedbackResult> {
+  onResult?: (result: FeedbackResult) => void, onActivity?: () => void): Promise<FeedbackResult> {
   if (!response.body) throw new Error('feedback_body_missing');
   const reader = response.body.getReader(), decoder = new TextDecoder();
   let buffer = '', bytes = 0;
@@ -12,6 +12,7 @@ export async function readAgentFeedback(response: Response, onProgress: (event: 
     while (true) {
       const { value, done } = await reader.read();
       if (done) throw new Error('feedback_result_missing');
+      if (value.byteLength) onActivity?.();
       bytes += value.byteLength; if (bytes > 512 * 1024) throw new Error('feedback_limit');
       buffer += decoder.decode(value, { stream: true });
       let boundary: number;
@@ -31,5 +32,9 @@ export async function readAgentFeedback(response: Response, onProgress: (event: 
       }
       if (buffer.length > 256 * 1024) throw new Error('feedback_frame_limit');
     }
-  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+  } finally {
+    // Cancel releases transport resources. Its acknowledgement is not part of the reply receipt.
+    void reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }

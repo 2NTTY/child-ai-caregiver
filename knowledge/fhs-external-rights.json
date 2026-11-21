@@ -198,6 +198,13 @@
       "sourceId": "resource-6c18c8d7a17495",
       "title": "保護兒童 你我有責",
       "url": "https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf",
+      "currentEdition": {
+        "publisherIndex": "https://www.swd.gov.hk/tc/pubsvc/family/fcw_info/fcwprocedure/fcwp_mdco/index.html",
+        "url": "https://www.swd.gov.hk/storage/asset/section/652/tc/Bilingual%20Leaflet_We%20All%20Have%20a%20Duty%20(March%202026).pdf",
+        "sha256": "0bf08a72f09cbda1ad5a848d7d2ce49adb6c1b7de58409b710f45cda7a9a3dc0",
+        "dateText": "March 2026",
+        "sourceAgeDefinition": "People under 18"
+      },
       "inventoryStatus": "pdf",
       "sha256": "afa57bcfc265dcec5c49d89958bc7ae4e0d3dd3dea251d1e33563cb2e6cea63c",
       "pages": 2,
@@ -304,9 +311,10 @@
       "sourceId": "resource-d641aa0d19b568",
       "title": "常見飲品糖分大比拼",
       "url": "https://www.facebook.com/CentreforHealthProtection/posts/1104338059582110",
-      "inventoryStatus": "unavailable",
+      "inventoryStatus": "external_post",
       "disposition": "link_only",
-      "reason": "盤點時未能讀取此原件或正文，無法核對出版者、版本及內容。"
+      "reason": "已核對原帖識別碼、發布者及所列單張。未取得在平台重製帖文或圖片的授權。",
+      "publisher": "衞生防護中心"
     },
     {
       "sourceId": "resource-0771fa5be45ae6",
@@ -464,11 +472,11 @@
       "sourceId": "resource-c7f8affc912a34",
       "title": "健康地使用互聯網及電子屏幕產品",
       "url": "https://www.studenthealth.gov.hk/tc_chi/internet/health_effects.html",
-      "inventoryStatus": "unavailable",
+      "inventoryStatus": "directory_link",
       "disposition": "link_only",
       "publisher": "學生健康服務",
       "termsUrl": "https://www.studenthealth.gov.hk/tc_chi/notices/notices.html",
-      "reason": "盤點時未能讀取此原件或正文，無法核對出版者、版本及內容。"
+      "reason": "原網址是專題目錄，列出健康貼士、網絡欺凌、活動與論壇及其他資源。"
     },
     {
       "sourceId": "resource-53d1126a6451e7",
@@ -695,6 +703,18 @@
       "publisher": "食物安全中心",
       "termsUrl": "https://www.cfs.gov.hk/english/notices/notices.html",
       "reason": "食環署要求先取得書面授權才可複製、改編或向公眾分發。此項未取得授權。"
+    },
+    {
+      "sourceId": "pdf-633a950e50816d1fa946ed53",
+      "title": "喝多杯",
+      "url": "https://www.chp.gov.hk/archive/healthatwork/files/pdf/drink_tc.pdf",
+      "inventoryStatus": "pdf",
+      "sha256": "58ed0acb9ab2787dc3bac4e15be5e9865d10596fc394312496eaec3bc4f22d63",
+      "pages": 1,
+      "disposition": "link_only",
+      "publisher": "衞生署",
+      "termsUrl": "https://www.chp.gov.hk/tc/static/24027.html",
+      "reason": "原帖所列的一頁單張，未取得在平台製作摘要、摘錄及向家庭分發的授權。"
     },
     {
       "sourceId": "pdf-0ac95e0192e1cddab78b8d32",

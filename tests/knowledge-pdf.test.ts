@@ -4,10 +4,61 @@ import test from "node:test";
 import React from "react";
 import { Document, Page, Text, renderToBuffer } from "@react-pdf/renderer";
 import { extractKnowledgePdf } from "../server/knowledge-pdf.ts";
+import { PDFDocument, PDFName, PDFString } from "pdf-lib";
 import type { PDFPageProxy } from "pdfjs-dist";
 import { OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { repairPdfGlyphs } from "../server/knowledge-pdf-glyphs.ts";
 import { readablePdfQuote } from "../server/knowledge-pdf-quotes.ts";
+import { physicalPdfQuote } from "../server/knowledge-pdf-physical-quote.ts";
+import { checkKnowledgeObservation } from "../server/knowledge-observation.ts";
+import { parseKnowledgeSource } from "../server/knowledge-inputs.ts";
+import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
+
+test("composite glyph IDs need a Unicode map before they can be quoted as printed letters", async () => {
+  const document = await PDFDocument.create(), context = document.context;
+  const descendant = context.register(context.obj({
+    Type: "Font", Subtype: "CIDFontType2", BaseFont: "Example",
+    CIDSystemInfo: { Registry: PDFString.of("Adobe"), Ordering: PDFString.of("Identity"), Supplement: 0 },
+    CIDToGIDMap: "Identity",
+  }));
+  const pageText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const encoded = [...pageText].map((_, i) => (0x4e01 + i).toString(16)).join("");
+  const mapping = [...pageText].map((ch,i) => "<" + (0x4e01+i).toString(16) + "> <00" + ch.charCodeAt(0).toString(16) + ">").join("\n");
+  const cmap = context.register(context.stream("begincmap\n1 begincodespacerange\n<0000> <ffff>\nendcodespacerange\n26 beginbfchar\n" + mapping + "\nendbfchar\nendcmap"));
+  for (const mapped of [false,true]) {
+    const page = document.addPage(), font = context.obj({Type:"Font",Subtype:"Type0",BaseFont:"Example",Encoding:"Identity-H",DescendantFonts:[descendant]});
+    if (mapped) font.set(PDFName.of("ToUnicode"),cmap);
+    page.node.set(PDFName.of("Resources"),context.obj({Font:{F1:context.register(font)}}));
+    page.node.set(PDFName.of("Contents"),context.register(context.stream("BT /F1 10 Tf 50 700 Td <" + encoded + "> Tj ET")));
+  }
+  const extracted = await extractKnowledgePdf(await document.save());
+  assert.deepEqual(extracted.pages.map(page => page.status), ["unreadable","text"]);
+  assert.deepEqual(extracted.pages.map(page => page.text), ["",pageText]);
+});
+
+test("a grouped PDF opens the exact physical quote without discarding the rest of the reviewed range", () => {
+  const pages = [{page:1, text:"Cover", status:"text" as const}, {page:2, text:"Second page presents the complete printed passage.", status:"text" as const}];
+  const joined = pages.map(p => p.text).join("\n\n");
+  const quote = physicalPdfQuote(joined, pages);
+  assert.deepEqual(physicalPdfQuote(joined, undefined), readablePdfQuote(joined));
+  assert.deepEqual(quote, {sourceExcerpt:pages[1]!.text, originalText:joined, excerptPage:2});
+  assert.deepEqual(physicalPdfQuote(joined, pages, 'complete printed passage'), {
+    originalText:joined, sourceExcerpt:'complete printed passage', excerptPage:2
+  });
+  assert.deepEqual(physicalPdfQuote(joined, pages, 'Cover'), {originalText:joined, sourceExcerpt:'Cover'});
+  const definition = SOURCE_WATCHES.find(d => d.leafletPage)!;
+  const extraction = {format:'text_pdf' as const, contentHash:'a'.repeat(64), totalPages:2, pageStart:1, pageEnd:2, complete:true};
+  const header = {sourceId:definition.id, url:definition.url, title:'Fixture', publisher:definition.publisher, classification:definition.classification,
+    termsUrl:definition.termsUrl, fetchedAt:'2026-01-01T00:00:00.000Z', sourceDateText:null, sourcePublishedAt:null, sourceUpdatedAt:null, extraction};
+  const chunk = {key:'range', section:'Example', text:'Reviewed range', keywords:['example'], pageStart:1, pageEnd:2,
+    applicability:{region:'HK', ageBasis:'any', minAgeMonths:null, maxAgeMonths:null, topics:['example'], conditions:[]}, ...quote};
+  const pin = {url:definition.url, content_hash:'b'.repeat(64), unavailable:false, document:{
+    url:definition.url, title:'Fixture', text:joined, sourceDateText:null, sourcePublishedAt:null, sourceUpdatedAt:null, extraction, pages}};
+  const watch = {enabled:true, definition};
+  checkKnowledgeObservation(parseKnowledgeSource({...header, chunks:[chunk]}), watch, pin, pin.content_hash);
+  assert.throws(() => checkKnowledgeObservation(parseKnowledgeSource({...header, chunks:[{...chunk, excerptPage:1}]}),
+    watch, pin, pin.content_hash), /knowledge_pdf_original_page_mismatch/u);
+});
 
 test("official PDF extraction keeps file-bound continuation and refuses page-number-only text", async () => {
   const pdf = await renderToBuffer(React.createElement(Document, {},

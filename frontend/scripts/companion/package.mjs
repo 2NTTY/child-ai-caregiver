@@ -10,7 +10,7 @@ const read = path => execFileSync('tar', ['-xOf', zip, 'runtime/' + path], {maxB
 const references = JSON.parse(read('zundamon.model3.json')).FileReferences;
 const expression = name => references.Expressions.find(item => item.Name === name).File;
 const assets = Object.fromEntries(Object.entries({ model: references.Moc, texture: references.Textures[0], physics: references.Physics,
-  wave: 'motions/mtnBody_wave.motion3.json', smile: expression('exp_smile'), laugh: expression('exp_laugh') })
+  wave: 'motions/mtnBody_wave.motion3.json', nod: 'motions/mtnBody_yes.motion3.json', smile: expression('exp_smile'), laugh: expression('exp_laugh') })
   .map(([name, file]) => [name, read(file).toString('base64')]));
 const frameworkLicense = readFileSync(frameworkDir + '/LICENSE.md', 'utf8');
 const script = (core.toString() + '\n;' + readFileSync(rendererPath, 'utf8')).replaceAll(/<\/script/gi, '<\\/script');

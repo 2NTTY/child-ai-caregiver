@@ -62,7 +62,10 @@ test('existing strict Android catalogue and new series-aware client read the sam
   const released = z.strictObject({ items: z.array(z.strictObject({ sourceId: z.string(), versionId: z.uuid(), title: z.string(),
     publisher: z.string(), url: z.url(), classification: z.enum(['official_guidance', 'recent_information']), checkedAt: time,
     sourceUpdatedAt: time.nullable(), validUntil: time.nullable() })), nextCursor: z.string().nullable(), complete: z.boolean() });
+  const mediaUrl = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html';
   const item = { sourceId: 'fhs-solid-food', versionId: scope.storageEpoch, title: 'Booklet', publisher: 'FHS', url: 'https://www.fhs.gov.hk/',
+    sourceDateText: '(02/2026 修訂內容)', media: { enabled: false, revision: 1, links: [mediaUrl],
+      pages: [{ url: mediaUrl, title: '怎樣替嬰兒掃風', transcriptUrl: mediaUrl + '#transcript' }] },
     classification: 'official_guidance' as const, checkedAt: '2026-11-01T12:00:00Z', sourceUpdatedAt: null, validUntil: null,
     series: { id: 'fhs-infant-feeding', institutionId: 'www.fhs.gov.hk', name: 'Feeding' }, versionHash: 'a'.repeat(64),
     preference: { revision: 1, enabled: true, mode: 'fixed' as const, selectedVersionId: scope.storageEpoch, eligible: true } };
@@ -76,10 +79,18 @@ test('existing strict Android catalogue and new series-aware client read the sam
   assert.equal(old.status, 200); assert.deepEqual(released.parse(await old.json()).items.map(i => i.sourceId), [item.sourceId]);
   const v2 = await route(new Request(baseUrl + path, { headers: { accept: 'application/vnd.yuyoufang.library-series.v2+json', 'x-expected-user-id': scope.ownerUserId } }));
   assert.deepEqual((await v2.json()).items.map((i: { sourceId: string }) => i.sourceId), [item.sourceId]);
+  const v4Type = 'application/vnd.yuyoufang.library-series.v4+json';
+  const v4 = await route(new Request(baseUrl + path, { headers: { accept: v4Type, 'x-expected-user-id': scope.ownerUserId } }));
+  assert.equal(v4.headers.get('content-type'), v4Type);
+  const prior = (await v4.json()).items[0];
+  assert.deepEqual(prior.media, { enabled: false, revision: 1, links: [mediaUrl] });
+  assert.ok(!('sourceDateText' in prior));
   const client = createProductAgentApi(baseUrl, (url, init) => route(new Request(url, init)));
   const current = await client.getLibrary(scope.childId, new AbortController().signal, scope.ownerUserId);
   assert.equal(current.items[0]?.series?.id, item.series.id); assert.deepEqual(current.items[0]?.preference, item.preference);
   assert.deepEqual(current.registered, []);
+  assert.deepEqual(current.items[0]?.media, item.media);
+  assert.equal(current.items[0]?.sourceDateText, item.sourceDateText);
   assert.deepEqual(current.items[1]?.media, external.media);
   const platform = { ...item.preference, mode: 'platform' as const, selectedVersionId: null, revision: 0 };
   const defaultRoute = (req: Request) => handlePersonalLibraryRequest(req, scope.ownerUserId, { isCurrentUser: async () => true,

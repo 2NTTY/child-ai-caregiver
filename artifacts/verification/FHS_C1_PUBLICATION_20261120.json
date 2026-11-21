@@ -1,0 +1,891 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "lane": "C1",
+  "manifestCommit": "ff43e917",
+  "sourceCount": 28,
+  "physicalPages": 468,
+  "originalBytesChecked": 175382778,
+  "initialWorker": "98eea8be3614314043d43751b668885dbe3c779f",
+  "initialReadAt": "2026-11-20T13:01:03.329Z",
+  "initialState": {
+    "registrations": 0,
+    "providerAttempts": 0,
+    "activeEditions": 0,
+    "balanceMicros": {
+      "campaign": "fhs-child-initial-20261120",
+      "limit": 30000000,
+      "model": "gemini-3.8-flash",
+      "location": "global",
+      "attempts": 500,
+      "held": 8110080,
+      "settled": 495,
+      "spent": 6959583
+    }
+  },
+  "productionPreparation": {
+    "readbackFinishedAt": "2026-11-20T13:05:23+00:00",
+    "entry": "fhs-catalog-batch.mjs --lane C1 prepare; a separate status process read back the same Firestore bindings on the deployed worker using a preparation-only copy of the CLI.",
+    "preparedOriginals": 28,
+    "providerAttempts": 0,
+    "modelCalls": 0,
+    "published": 0
+  },
+  "entries": [
+    {
+      "sourceId": "pdf-63e7d5463521682636a066e5",
+      "pages": 192,
+      "operationFingerprint": "125245f585eeaf703109aea65cabee42c92edee169617a7c2e4aaa647a58de41",
+      "checkId": "6209ad5d-c344-53f7-825b-45bc1f391197",
+      "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
+      "production": {
+        "outcome": "capacity_wait",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "originalLaneReadback": "capacity_wait",
+        "modelCalls": 0,
+        "workStarted": false,
+        "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
+        "capacityMiB": {
+          "available": 844,
+          "job": 512,
+          "family": 384,
+          "launcher": 64,
+          "required": 960
+        }
+      },
+      "physicalPageMapSha256": "346da2f57bd6a7c5b2202c9e33b4ec736e55a5b659dc87a773e68503fd8d36f8",
+      "title": "共享育兒樂 (三) 嬰幼兒篇",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.pdf",
+      "originalSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177"
+    },
+    {
+      "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+      "pages": 40,
+      "operationFingerprint": "462e96ea0cec8394e8340b6dc14fc3b03340032c39c2918dd3331b08b04c30c0",
+      "checkId": "c0d2d86d-681b-559f-8fa7-75ef9af1cb0e",
+      "observationHash": "d4a5d326d80c188a7eb7369dcd5535fa2c895031996e223d1545dab4ed0d7b1d",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "d4a5d326d80c188a7eb7369dcd5535fa2c895031996e223d1545dab4ed0d7b1d",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "61badaaa7ab1bca27a02ea0604449d5d61afb955ede4d0ad0a4c4637ecafbdd1",
+      "title": "6至24個月嬰幼兒7日飲食全攻略小冊子",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14732.pdf",
+      "originalSha256": "898255b3acfd80e57744462a3eb83510345da9139e2ca014988a3e3c87aba209"
+    },
+    {
+      "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+      "pages": 32,
+      "operationFingerprint": "76486aa5e7fd64948af67258dd5334e073f4d6429241324fefa3363e73aa8115",
+      "checkId": "cc7bd2ff-85c3-5a60-81a1-d8d70eab870c",
+      "observationHash": "82d782d2fb532cd856e40a7552589f8b56a1d144a970e0c4dc18daf31f81c1ce",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "82d782d2fb532cd856e40a7552589f8b56a1d144a970e0c4dc18daf31f81c1ce",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "4b762d13272972e746fb11787996e41612d4815166f9443bb5ee322c1e8a0283",
+      "title": "懷孕及哺乳期的健康飲食",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/woman/20036.pdf",
+      "originalSha256": "7b25839ed7b67e14a5f2160eca7c10d11d5305e15f692506b8bf3f35557569a3"
+    },
+    {
+      "sourceId": "pdf-c212ef9814e180c2794a4aa1",
+      "pages": 20,
+      "operationFingerprint": "5f59adadf66d26eb6a3283817b96ba1c8ebfbfe0fd2830189b2cf8cd5c19ce81",
+      "checkId": "86cabefc-adb1-50da-8b61-8059f607517f",
+      "observationHash": "f5a7fc000559f140470985e70312dc66619b686f8aec277a432c64783b204bf5",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "f5a7fc000559f140470985e70312dc66619b686f8aec277a432c64783b204bf5",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "83e1b9e873d63a32d90e5291429e4abd82d0a90b42fc518d6a4d385c0f9f6103",
+      "title": "6至24個月嬰幼兒健康飲食 (1) 起步篇小冊子",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.pdf",
+      "originalSha256": "f8baba2adf459d58c95d20b497e1895c62a4bebcf1487623764ce68fe7cb979a"
+    },
+    {
+      "sourceId": "resource-af8c3e8cc813be",
+      "pages": 18,
+      "operationFingerprint": "17d6080c2c028426e39ec34d0fbb870038cf5aa04a15c67e03748430ca36a283",
+      "checkId": "82630547-3532-59da-82d9-879e476c2dac",
+      "observationHash": "7fbad46ab556d5661e3168414a178f0efb14233099ba74c0a8f198558c394de7",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "7fbad46ab556d5661e3168414a178f0efb14233099ba74c0a8f198558c394de7",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "c1a13dcc3553acc5f8b9f0c15fa081c0feef8e9d87e025a84824e3a8c2b0dc5e",
+      "title": "幼兒口腔護理全接觸小冊子",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/archive/files/oral_health/oral_health_care_for_your_children(tc).pdf",
+      "originalSha256": "79ff818d17f7da0898a2dfeb52330caca99ae51818026cddb97c9413444b7998"
+    },
+    {
+      "sourceId": "pdf-422bb3fc181398ac29e0f914",
+      "pages": 12,
+      "operationFingerprint": "3c4ae9c1b387b60d8f3900c52e3545d53978788eafca041836e9e85997553eb5",
+      "checkId": "9585dcfe-9d63-5bfa-82b4-c32455bddc76",
+      "observationHash": "c15324cb97b41c382f42b79e14ff1f7bf704e1fe9d8934f31dd6d95b6fcd42c3",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_review_failed",
+        "modelCalls": 0,
+        "observationHash": "c15324cb97b41c382f42b79e14ff1f7bf704e1fe9d8934f31dd6d95b6fcd42c3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "b421dca14a728b1810e0b39e614c168bc9cf49bdd5b3d38256a84cc998a09cfb",
+      "title": "培育高「EQ」孩子從零歲開始：為嬰幼兒「情緒導航」的小錦囊",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30159.pdf",
+      "originalSha256": "09f521c96b52259a3128b5fda10494c5ca9767acc50bb0880fa56d27d6186c4c"
+    },
+    {
+      "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
+      "pages": 12,
+      "operationFingerprint": "418c9b9d5619b24aa4236267367869b9582b860a05d7dfb5aa88cd69856c152b",
+      "checkId": "49a5b6f3-54c5-54f4-8582-267287db45ea",
+      "observationHash": "c430c7a3ee1e1e828bfe8be586caba01425ac121385fd485a888b34a2bf67511",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "c430c7a3ee1e1e828bfe8be586caba01425ac121385fd485a888b34a2bf67511",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "cdde38b2bae0c734d9b2ccd252cd3ad6af37b390d6d193aadbe214550ff5a59e",
+      "title": "培育高「EQ」孩子：三至五歲延續篇 為學前兒童「情緒導航」的小錦囊",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30160.pdf",
+      "originalSha256": "a469145670618b1485fda671b0fe24c119d6dd7f0d7dbc4e50115aa9c8af3f4e"
+    },
+    {
+      "sourceId": "pdf-0964fd47800bc6931d69b130",
+      "pages": 8,
+      "operationFingerprint": "9a7e4c642dd823c94558d4d832d9794bc1daa6267544ea56e7c11e840bad99aa",
+      "checkId": "57993517-1329-5028-8fd4-c3969ad524a2",
+      "observationHash": "d68e6a57580b0619fc9d668ece53d11b4094adefd419785999900c19ab62b39c",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "d68e6a57580b0619fc9d668ece53d11b4094adefd419785999900c19ab62b39c",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
+      "title": "品德培育之一",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.pdf",
+      "originalSha256": "002ad01d48b6fa971cb2a89393c1b2c2fcded24338b954150afa192d693ed53c"
+    },
+    {
+      "sourceId": "pdf-10198577dd00f5dbce4da010",
+      "pages": 8,
+      "operationFingerprint": "bbb9310997e19c3357dc918f67293d3335c2c74e62658989f370a24392e7bc35",
+      "checkId": "23f922c3-73d9-54ec-80fb-69f6d7edd1d6",
+      "observationHash": "92dbfbd34e4a05a6d266982d9603ccc9ca7342ce0d04684766ab4283ad947035",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "92dbfbd34e4a05a6d266982d9603ccc9ca7342ce0d04684766ab4283ad947035",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "d8ce1baaa111efeac792d15e0b6aa8857f2c32a640216b664d126cd7d041dd5b",
+      "title": "嬰兒揹帶、手推車、餐椅及汽車用兒童束縛設備安全使用小貼士",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/12566.pdf",
+      "originalSha256": "4146919699ecfb8bff6c48815d5bb5c54786b4ec0b1c54c9630d829fd3466e41"
+    },
+    {
+      "sourceId": "pdf-26a1e80e0727a8e30c63f634",
+      "pages": 8,
+      "operationFingerprint": "34565798b7ab49b43da84544429376f9c72c74c7ea7279fe31814b1fbfaf84fe",
+      "checkId": "7621260e-f1f3-51ce-8677-2757f92cee06",
+      "observationHash": "eaf1161f837a2ddc6a47aea39a74977fb39bb34f51d9a767ec55be59601ad001",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "eaf1161f837a2ddc6a47aea39a74977fb39bb34f51d9a767ec55be59601ad001",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
+      "title": "連繫．情感 兒童社交情緒發展 (一歲至兩歲)",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30157.pdf",
+      "originalSha256": "374f0d8aa67016761519f1c30f740f35c81667e08293ef5a20fa67bec0566a07"
+    },
+    {
+      "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
+      "pages": 8,
+      "operationFingerprint": "a2e1b949097f0f2e9a5e929be57421dbeac4257cc4f962f57515244ad388977d",
+      "checkId": "64de9107-c4d1-59ae-8909-6c4bc22a240d",
+      "observationHash": "bea590f15181b7b310dc28c055a3b3f5e7127a13dd7166a640c6ad05907df88c",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "bea590f15181b7b310dc28c055a3b3f5e7127a13dd7166a640c6ad05907df88c",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "c62e82e3aff2afc80286a5288f38c03d4be669efc7c054d9949466758f13565a",
+      "title": "你攝取足夠碘嗎？",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/woman/30146.pdf",
+      "originalSha256": "5545c93b5ae9b75311aaea006de031003c460b5d8fdc2a38659e6660c7bdc37c"
+    },
+    {
+      "sourceId": "pdf-6488540e32c5e926ecee6787",
+      "pages": 8,
+      "operationFingerprint": "75f3200c6ebd4640314f209f521f0c54153d0432f2f06bc24afcd63d1ee266d1",
+      "checkId": "3e795afb-f5d8-5c1d-8c2c-3451554d4f5c",
+      "observationHash": "52e668ad0b62454e4ccc09f87775ecd384ba7382bfcc3e5a7425bcd7ca73e3b3",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "52e668ad0b62454e4ccc09f87775ecd384ba7382bfcc3e5a7425bcd7ca73e3b3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "057b29da1db00e7f3ec0bcfdb7cad5bf7a80dece62b1abdc13c090d689a7da1d",
+      "title": "八至十二個月大嬰兒的發展",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15697.pdf",
+      "originalSha256": "24fe5a18a42e2c93adc506fdf4f5deb2121b45a1236bc06fa6d68450c6f7b2fc"
+    },
+    {
+      "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
+      "pages": 8,
+      "operationFingerprint": "39532e5673ffd316bafa172df6d580f0263ce36cd0015dea37987cc78a7d07b6",
+      "checkId": "e86b1fec-63b1-5df1-8090-e6006da346c6",
+      "observationHash": "436d40eeb50aa694f0dddea8122687b154ad98ec51928d318f357d655c6cef25",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "436d40eeb50aa694f0dddea8122687b154ad98ec51928d318f357d655c6cef25",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "f61800f197aa1dfaffbb47b2e069bfdb720c2056d2f12cbe395d57e15e2dce35",
+      "title": "嬰兒的啼哭",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/13041.pdf",
+      "originalSha256": "bddce7c9e60a48d35a931c9f720133fd79a8feef51123be67ea9f9c2b9e47468"
+    },
+    {
+      "sourceId": "pdf-811789c9be36ae025ee7e2a2",
+      "pages": 8,
+      "operationFingerprint": "9130fd3b92bdccb2b68be48ff3598b35e475d024d7d2d105431a7793265a64af",
+      "checkId": "8630e1ff-cc77-53c3-8b02-aa69bb5403b6",
+      "observationHash": "8a442357648d890a34c198488c06943b1bbf8e19c716ac3e6f128434214906f3",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "8a442357648d890a34c198488c06943b1bbf8e19c716ac3e6f128434214906f3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "receiptProvenance": "Official lane C1 status reread of the original operation after the second run."
+      },
+      "physicalPageMapSha256": "02ce36344d75697d00feb7dc85c3868ba8ceb69549a6aac26aabe2009fc118c7",
+      "title": "發燒的護理",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14743.pdf",
+      "originalSha256": "39ca751752e913ba359c392df1e11004f603f6469e904cb3af4ea18d47a391f3"
+    },
+    {
+      "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
+      "pages": 8,
+      "operationFingerprint": "3630b57e08ce66bf6200ee59f7d230f3c9fbd8f7ed1ad6dc47454f0d89e9a2a3",
+      "checkId": "194656b3-5886-5be4-88a6-e6f0c11473a2",
+      "observationHash": "2683bea63d6a62409e2bcad45c42a3419e1a001cc1687137643fa0775ea4a5e2",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "2683bea63d6a62409e2bcad45c42a3419e1a001cc1687137643fa0775ea4a5e2",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "receiptProvenance": "Official lane C1 status reread of the original operation after the second run."
+      },
+      "physicalPageMapSha256": "764e5c47062d9c0c7d22202d891d2f9f9311e63abc299599125570a8a5e1b578",
+      "title": "寶寶有便秘嗎？",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30009.pdf",
+      "originalSha256": "4cd14b0d28296168212ca436d3bd9928983089836accffe64202b28e43d453db"
+    },
+    {
+      "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
+      "pages": 8,
+      "operationFingerprint": "cfb14d5b603b74654aea6c30a81da256216d2facd745f0bc3038c703ac0b7e28",
+      "checkId": "b8c7312f-bde8-5bce-84e5-01d965ead194",
+      "observationHash": "fa1322c7775878a560ed3dca993b0877080819d4d893e8bc088015259b939f00",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "fa1322c7775878a560ed3dca993b0877080819d4d893e8bc088015259b939f00",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "c60a4a67afbd756a4ce2c536ed86ee3dcaf292d21ef2024ec3a7a29474459ea7",
+      "title": "你的寶寶安全嗎？",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/16051.pdf",
+      "originalSha256": "fbe514799a4a121556ed2491c1175ac24a3c371e5d3c513140ccb23507f0925d"
+    },
+    {
+      "sourceId": "pdf-b23cd70ace657d574bfaa15b",
+      "pages": 8,
+      "operationFingerprint": "d7141aaaf4abddfac863f2a4c886aa1a9f0e2e54ddb3f86375e16791dc8e3eba",
+      "checkId": "f656d8b9-190d-5dbd-8393-71b41f2b9432",
+      "observationHash": "14017f2dbde204930256ff3ce6733d4dca91968d8e9acfb8d58a89876469eb62",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "14017f2dbde204930256ff3ce6733d4dca91968d8e9acfb8d58a89876469eb62",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
+      "title": "品德培育之二 （兩至四歲）",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14839.pdf",
+      "originalSha256": "9beff60c484a3af8e0899b32897b341fcea00df845682ed63232f063dce6b841"
+    },
+    {
+      "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
+      "pages": 8,
+      "operationFingerprint": "33a6fb0ebfc5a0c1882ad87b2da8995fe8523260255fb7b41439beb1c6d32637",
+      "checkId": "c507c8bd-eb46-5979-8a84-ecd5fa594dba",
+      "observationHash": "2f2bd0ca60a9adcf82ceb401dc1be6d7cb746f24fb9bde0c8bd8c386fa82f469",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "2f2bd0ca60a9adcf82ceb401dc1be6d7cb746f24fb9bde0c8bd8c386fa82f469",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
+      "title": "四至七個月大嬰兒的發展",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15678.pdf",
+      "originalSha256": "0f1980cf97fe70c8bded3df16cb49bbc4bd72c07bce20b5a08bdf1756746295c"
+    },
+    {
+      "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
+      "pages": 8,
+      "operationFingerprint": "0dc6d4567ab35b58a4d4ad29f8f164551d655e3f9b4047e99d4ec98093b02076",
+      "checkId": "b8f47f86-e451-54dd-8617-cc4c0601de64",
+      "observationHash": "53ece6de285ec40a1a38be84a4db87dfa9d5f1d5cef79615d25d5c1a87c2d311",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "53ece6de285ec40a1a38be84a4db87dfa9d5f1d5cef79615d25d5c1a87c2d311",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "c691963eb0a2aededff77f5a2d28726806361d27d69bc33590e8b244ef1357ac",
+      "title": "連繫．情感 兒童社交情緒發展(初生至6個月)",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30155.pdf",
+      "originalSha256": "4557e11a18d634bdcf02127a9cf040964b6f3c1bda235dad40ac77774d5023ab"
+    },
+    {
+      "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
+      "pages": 8,
+      "operationFingerprint": "5334debd416c6d6d066db47096f7c8a2084fd4c4cb020c15a3c77e5eb0aa5ad6",
+      "checkId": "e50c9ac4-7fde-50af-873b-9c140f6802e7",
+      "observationHash": "0d3bf14bd340f6d235c3c3f349fb50e0535caffb9b07499e564befb0ccbbc492",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "0d3bf14bd340f6d235c3c3f349fb50e0535caffb9b07499e564befb0ccbbc492",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "880d742381433aabb690d550b5962492f455599d3ba3fe23a34544b1a67c7aca",
+      "title": "跟尿片說再見",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/13035.pdf",
+      "originalSha256": "989c2e8552ae82e615e45baaea72c39087d37c490f4a537f782b08dc7085f763"
+    },
+    {
+      "sourceId": "pdf-3428e3d13ed575680a0fa8a5",
+      "pages": 6,
+      "operationFingerprint": "72f840a8b57daf95b623b3c19e9cb85de734078b320000b40ae701f80f2c5ce0",
+      "checkId": "3fd54345-0895-5c45-8fd7-2ea438247d9a",
+      "observationHash": "411a5668dec5e6a7f4a25192ccaf6450cc76fe09d598d374302239f865539d5e",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "modelCalls": 1,
+        "observationHash": "411a5668dec5e6a7f4a25192ccaf6450cc76fe09d598d374302239f865539d5e",
+        "originalLaneReadback": "held",
+        "tickets": [
+          {
+            "id": "ecfd443a-8c0f-5923-83cf-845cc4665f0e",
+            "stageHash": "00869e5be592ecd080edbfc024f8dbecbf5acd3009126972384f2c86e38902a2",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 40979
+          }
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "2c92dbcd3f62a2dafefd7cf57da45da852b6182a67250a87365e9c4fff7204c1",
+      "title": "學前兒童視力普查",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.pdf",
+      "originalSha256": "aaae92edd4dc06c0bf8ae3b62ec0984f6f7e03bccca891eb0d9256137f0a7abd"
+    },
+    {
+      "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
+      "pages": 6,
+      "operationFingerprint": "b8dda26c53fb4bc6a8555fac802b61f2528d78bf033abfa077d05ac6ede899b4",
+      "checkId": "879e7925-2f01-5c25-8109-3db9c0e647dc",
+      "observationHash": "3f1ccbf3c7cacce9c6953feb213d85c5bb35346c59d79d804b42ece9c04de51f",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "3f1ccbf3c7cacce9c6953feb213d85c5bb35346c59d79d804b42ece9c04de51f",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "ead5bba2a8901f6f3112cbdbff32630a94dd7ca511ebda56067b99bf1782ca45",
+      "title": "常見嬰兒皮膚問題",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.pdf",
+      "originalSha256": "0f754bab3be7a48d32cd05af7bd461fec73053f0e17f6df19cc6730ae72e03f5"
+    },
+    {
+      "sourceId": "pdf-a195a3e5ac7644036bdaf073",
+      "pages": 6,
+      "operationFingerprint": "4a589c653a28270ec74b2f10caca72f5b264b5dba3f626fe9e2421944a3e5688",
+      "checkId": "cebd745b-94ef-504d-8535-86c2608c03c1",
+      "observationHash": "88e5a8eee36051db8866381149f6961def5e35badeea76d9f55e13787160c7c3",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "88e5a8eee36051db8866381149f6961def5e35badeea76d9f55e13787160c7c3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "fa756735ba118438ba847790ead0d595bb341d50f73bf602c82b76490c9a3a73",
+      "title": "你的 0 – 5 歲孩子需要電子屏幕產品嗎？",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30047.pdf",
+      "originalSha256": "bcda7ebf7e412cddfc4903a266395fbd624a0f5287e54435362b9488962a1627"
+    },
+    {
+      "sourceId": "pdf-01991cbeb3f85382c992d63a",
+      "pages": 4,
+      "operationFingerprint": "9f1a9b29f79fbb73def547c0bf390032a2af4162d598a40b8418ac7ddf86297b",
+      "checkId": "5c74b518-330a-5dfc-8ff9-e3d76cd649e8",
+      "observationHash": "fb5a16781f44cbf6a8c5b1ce61e11975e728025ded1408477cc147afb41554bd",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "modelCalls": 2,
+        "observationHash": "fb5a16781f44cbf6a8c5b1ce61e11975e728025ded1408477cc147afb41554bd",
+        "originalPdf": {
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15662.pdf",
+          "sha256": "d3348b550bbf64fed516d76ea25bb1457e16a4df35d2fb72b090bc5b6fa249e6",
+          "totalPages": 4
+        },
+        "prepared": false,
+        "review": null,
+        "reviewNotes": [],
+        "quotaDay": null,
+        "otherActiveVersionId": null,
+        "checkedAt": "2026-11-20T14:56:57.945Z",
+        "originalLaneReadback": "held",
+        "tickets": [
+          {
+            "id": "2f2b8fa6-6461-5d8b-8203-c4c0420be1fd",
+            "stageHash": "19266bcc29c5d7d2470921a8f22c7314994f226cd913aa39166a7c2e5cf950d6",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 32936
+          },
+          {
+            "id": "09e9edfe-84f1-5b59-8f27-fbf03f13c988",
+            "stageHash": "f6f90712afcdd32c130b5cebf838622db7a58e73f1142fa70ce49a0392709cd2",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 28830
+          }
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "3415e7f2ae9154d63a2c3fbf5cce890db0320e88ff1d86179ea696ded141a4af",
+      "title": "你的寶寶聽到你嗎?",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15662.pdf",
+      "originalSha256": "d3348b550bbf64fed516d76ea25bb1457e16a4df35d2fb72b090bc5b6fa249e6"
+    },
+    {
+      "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
+      "pages": 4,
+      "operationFingerprint": "5b5d81259f3c261d9b0e8dd3fd70e3c2e31ed2f22b70ba39f88129d45f83c826",
+      "checkId": "03d6b64f-ec02-5e96-8f0a-774b73281b0b",
+      "observationHash": "6a9b62c245af4d2cd50c06d7198d04f66af2791f1dd09209c961005378b8504f",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "modelCalls": 2,
+        "observationHash": "6a9b62c245af4d2cd50c06d7198d04f66af2791f1dd09209c961005378b8504f",
+        "originalPdf": {
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15648.pdf",
+          "sha256": "5dc95a10db4bc83f0a02ad1f80e062903e0e436702977a39ac9eb0c7af4dcdac",
+          "totalPages": 4
+        },
+        "prepared": false,
+        "review": null,
+        "reviewNotes": [],
+        "quotaDay": null,
+        "otherActiveVersionId": null,
+        "checkedAt": "2026-11-20T16:17:20.530Z",
+        "originalLaneReadback": "held",
+        "tickets": [
+          {
+            "id": "fa94f5e7-55dc-5d94-8885-1d199e57710a",
+            "stageHash": "0f2034340b824f63c5966bf6b1cf401e4758556f6ead491c4bf886467e452908",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 30327
+          },
+          {
+            "id": "59ed8637-e024-508b-8e24-66f9a4b14f29",
+            "stageHash": "5c9a028ad1f83980f8027b6999ac3743274646e303713dac46cbe2cd8ac24db2",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 32193
+          }
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "2ad86183b6f33fdbd7e9d4bf161711cf4743a19589795c8f96d4798566cb89b4",
+      "title": "新生至一個月大嬰兒的發展",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15648.pdf",
+      "originalSha256": "5dc95a10db4bc83f0a02ad1f80e062903e0e436702977a39ac9eb0c7af4dcdac"
+    },
+    {
+      "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
+      "pages": 4,
+      "operationFingerprint": "2fa43b0ee0cc84db58ff905821d3e5f61c770cba3ee0ea3320a017482df3064c",
+      "checkId": "1f956e73-94c2-55f8-87ca-8495ae96cc03",
+      "observationHash": "82e6896c7533a7bbfab057405a579e4c89de02449e4376dc47c21fcb3d309d2b",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "modelCalls": 2,
+        "observationHash": "82e6896c7533a7bbfab057405a579e4c89de02449e4376dc47c21fcb3d309d2b",
+        "originalLaneReadback": "held",
+        "tickets": [
+          {
+            "id": "ef247116-11fe-5017-8c4d-c7dbee883ae9",
+            "stageHash": "bb90062aa4d985072b09644b7d11671c64ae17c4f878c94a2d623acf9d4b6b09",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 34685
+          },
+          {
+            "id": "b47ee594-1ef7-5782-82bf-2db9ecb14a21",
+            "stageHash": "3fef76d3bec60a7cd8d5c0ab9e7de8954503a05d8bb1b2ddde29ed9334c108ee",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 30986
+          }
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "9a32be8139b1b140439b7a0eb8d44e756af56f489d03543d62d0d471e0c5eee9",
+      "title": "愛護兒童慎防意外 (一歲至三歲)",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15663.pdf",
+      "originalSha256": "76488f6912f334cc544e99d36af047d5836f94b5fccafc06e8d287e78659830d"
+    },
+    {
+      "sourceId": "pdf-d6050975ffe38c8275c7c121",
+      "pages": 4,
+      "operationFingerprint": "eea3cb4a3d1dc0580064cd2996b7413659c8c89fa3c9103e9dfa5dbd821c65f9",
+      "checkId": "1b531f1c-2ebd-5af8-8c23-26080ec43c08",
+      "observationHash": "839146069ee10fce29c6ce70e585e09b92ecabe1ea1021a9c55bae0a7a38aaf7",
+      "production": {
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "modelCalls": 1,
+        "observationHash": "839146069ee10fce29c6ce70e585e09b92ecabe1ea1021a9c55bae0a7a38aaf7",
+        "originalLaneReadback": "held",
+        "tickets": [
+          {
+            "id": "636aa8e3-9e33-5905-8cde-3257fe6e4d93",
+            "stageHash": "3a28fd06c4d5385e04624dc539f320705df9926e4a38b25020e16815cc1a4786",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 34086
+          }
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
+      },
+      "physicalPageMapSha256": "6937242f0c3208e3dddf521c1f62ac1e141b16b913094f2f8c4716a639edc05b",
+      "title": "疫苗資料二維條碼索引",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/qr_cat/30148.pdf",
+      "originalSha256": "ee4200e3674ced2f8fd2925d85dc1c9b8701a767d539d042d4dde0dd38e9fcd8"
+    },
+    {
+      "sourceId": "pdf-f43b59147093cacef5308dcd",
+      "pages": 4,
+      "operationFingerprint": "d08b74ab2b1f78006ca9a8ecb04c87e948e14313a86a5a7d2f6bddeabf15c8c5",
+      "checkId": "755caba4-585a-5fd2-8e94-92c023b8a886",
+      "observationHash": "b8b81653e8976872be7a8ce0ffef16d6c812e2b732f6a2aac2552cd2db130126",
+      "production": {
+        "outcome": "published",
+        "publicationReceipt": "committed",
+        "review": "approve_candidate",
+        "modelCalls": 2,
+        "observationHash": "b8b81653e8976872be7a8ce0ffef16d6c812e2b732f6a2aac2552cd2db130126",
+        "originalLaneReadback": "published",
+        "familyReadback": {
+          "checkedAt": "2026-11-21T05:56:27.748Z",
+          "card": {
+            "sourceId": "pdf-f43b59147093cacef5308dcd",
+            "versionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
+            "versionHash": "18e99a3a2e06e94ede97cf29693b6ab162afc5f03f858c75bd21ea988405b30c",
+            "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15655.pdf",
+            "seriesId": "pdf-f43b59147093cacef5308dcd"
+          },
+          "vectors": {
+            "required": 1,
+            "exported": 1,
+            "documents": [
+              {
+                "chunkKey": "p1-8afa3db84cb7873eb6db",
+                "inputHash": "4b42b659f5ebd4df409cf27ccff0583f94af532a7013909f8929c70818636e99",
+                "dimensions": 1024,
+                "model": "gemini-embedding-001"
+              }
+            ]
+          },
+          "pdf": {
+            "sha256": "cbd0b718793986c7af93b6f4eac0a1c27499428b0e53bbb8f90d350cb3a7934f",
+            "bytes": 1508902,
+            "totalPages": 4,
+            "pages": [
+              {
+                "key": "p1-8afa3db84cb7873eb6db",
+                "chunkId": "2a1a1f3f-276f-5995-b303-ea6c2c4fcd43",
+                "contentHash": "45c9694aaafa93395a6e2111c48a013b098146eb2e7992235520e7ccfd7b1abc",
+                "page": 4,
+                "proof": "text_exact"
+              }
+            ]
+          }
+        },
+        "tickets": [
+          {
+            "id": "26efa0d7-a24a-5e06-86de-4486f9a64646",
+            "stageHash": "bce5821d18ba51080bf0cc595b45ead41a090027c3f0558fd781993fe314735d",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 23112
+          },
+          {
+            "id": "0d8c4481-c25b-5386-80b5-e767fcf9a563",
+            "stageHash": "708386529657a4fa441623e0959de6a875524573272e7c162a220ea04d334ce4",
+            "kind": "generation",
+            "state": "settled",
+            "settledMicros": 27695
+          },
+          {
+            "id": "033ae358-0125-5f5c-88f5-62b14dc9ee2f",
+            "stageHash": "aedab49e9798aa10548ea40770dc44474d370e4a10e33e2ee3280e1960522073",
+            "kind": "embedding",
+            "state": "settled",
+            "settledMicros": 78
+          }
+        ],
+        "listedVersionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
+        "vectorExport": "verified"
+      },
+      "physicalPageMapSha256": "961660cce1ae5b16a1a8101cf2af05f77aa3577afc3e6e94a6f9c9559a367b38",
+      "title": "新生嬰兒聽力普查測驗:耳聲發射測試",
+      "originalUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/15655.pdf",
+      "originalSha256": "cbd0b718793986c7af93b6f4eac0a1c27499428b0e53bbb8f90d350cb3a7934f"
+    }
+  ],
+  "productionReadback": {
+    "asOf": "2026-11-21T05:56:40.095961Z",
+    "workflowRun": 44746426203,
+    "releaseAttempt": 2,
+    "releaseSha": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
+    "readIndexSha256": "e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c",
+    "counts": {
+      "candidate_held": 26,
+      "capacity_wait": 1,
+      "published": 1
+    },
+    "laneTickets": 11,
+    "laneSettledMicros": 315907,
+    "laneReservedMicros": 0,
+    "sharedCampaign": {
+      "limitMicros": 30000000,
+      "settledMicros": 9918357,
+      "reservedMicros": 19550208,
+      "availableMicros": 531435,
+      "attempts": 594,
+      "settledAttempts": 582,
+      "originalFiveReserved": [
+        {
+          "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
+          "sourceId": "fhs-14851",
+          "ceilingMicros": 1603584
+        },
+        {
+          "ticketId": "667f96bb-5806-47c1-8fb1-f40e82befba2",
+          "sourceId": "fhs-15672",
+          "ceilingMicros": 1603584
+        },
+        {
+          "ticketId": "55239b19-c354-4b6f-9423-38ec0f312cad",
+          "sourceId": "pdf-6637fb9890bacf75064562bd",
+          "ceilingMicros": 1634304
+        },
+        {
+          "ticketId": "632a2fd4-47cb-4ccd-b956-620824ebbb46",
+          "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+          "ceilingMicros": 1634304
+        },
+        {
+          "ticketId": "e85d43cf-69ef-490d-b9b5-d3c4729ccd46",
+          "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+          "ceilingMicros": 1634304
+        }
+      ]
+    },
+    "originalLaneEvidence": "Both coordinator runs used the capacity-limited production lane. Each terminal operation was matched to its source, observation, physical PDF and tickets. Two truncated output lines were reread with the official read-only lane status command.",
+    "firstRunStop": {
+      "afterTerminalSources": 6,
+      "exitCode": 1,
+      "reason": "Site release in progress",
+      "nextReleaseReceipt": "r44773701383-1",
+      "nextReleaseSha": "883426b658c032e496228b877b0c0b5cee8b24ab",
+      "nextReleaseObservedAt": "2026-11-20T16:40:12+00:00"
+    },
+    "heldByCode": {
+      "knowledge_age_one_sided": 2,
+      "knowledge_review_failed": 1,
+      "knowledge_window_quote_mismatch": 3,
+      "unavailable": 20
+    },
+    "secondRun": {
+      "completedAt": "2026-11-20T17:18:36.183Z",
+      "existingTerminal": 6,
+      "additionalHeld": 21,
+      "runBalances": {
+        "settledMicros": 9918206,
+        "reservedMicros": 19550208,
+        "availableMicros": 531586
+      },
+      "perGenerationReservationMicros": 1634304,
+      "maxOutputTokens": 8192,
+      "capacityWaitSourceId": "pdf-63e7d5463521682636a066e5",
+      "supplementalStatusSourceIds": [
+        "pdf-811789c9be36ae025ee7e2a2",
+        "pdf-88bcbb29830a2b0bf2bda335"
+      ],
+      "unavailableEvidence": "Twenty original operations report candidate_held / unavailable. Each has one locally counted model step, no supplier ticket, no candidate ready for publication and no visible edition. The shared balance could not reserve the next generation. The recorded code gives no finer cause for an individual operation."
+    },
+    "currentFamilyCatalogue": {
+      "checkedAt": "2026-11-21T05:56:27.734Z",
+      "releaseSha": "6e91757e5f66fded6dc3f8bfe58602f2d26daf7a",
+      "releaseId": "r44782348928-1",
+      "method": "Queried all 28 original URLs through the family catalogue in one read-only Firestore transaction under the deployed public source configuration. Matched the one visible edition to its original operation, exported all required vectors and resolved its citation against the frozen physical PDF.",
+      "urls": 28,
+      "listedEditions": 1,
+      "withoutVisibleEdition": 27,
+      "verifiedDocumentVectors": 1
+    }
+  },
+  "physicalPageReadback": {
+    "checkedAt": "2026-11-20T15:44:51.512Z",
+    "parser": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "indexSha256": "150695d0ea140a7b4a91fcbe72465c3c897960e4acef992f4d6ae33ce8149e15",
+    "sources": 28,
+    "pages": 468,
+    "blocks": 64,
+    "reusedBlocks": 33,
+    "pageStatuses": {
+      "text": 310,
+      "empty": 11,
+      "unreadable": 147
+    },
+    "source": "Operator-local copies of the 28 original FHS PDFs pinned in the assignment; no new download or model call.",
+    "range": "Opening-page blocks requested by the production FHS citation verifier, with up to eight physical pages per block.",
+    "method": "Reused 22 exact indexed blocks and 11 final blocks ending at the same last page. The same pinned PDF parser directly read the other 31 blocks from their original files. Reopened all 64 blocks and compared each ordered physical page, parser status and text digest.",
+    "pageMapDigest": "SHA-256 of the UTF-8 JSON array of [physical page number, parser status, SHA-256 of unmodified UTF-8 page text].",
+    "archive": {
+      "location": "Operator workstation",
+      "file": "c1-citation-pages-150695d0ea14.tar.gz",
+      "bytes": 173570,
+      "sha256": "3f2cc25fbb7fa17ae6c22d0be587c5e0f953593ba305709a465859877f773f5b"
+    }
+  }
+}

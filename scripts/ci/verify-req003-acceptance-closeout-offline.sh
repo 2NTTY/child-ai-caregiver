@@ -34,6 +34,8 @@ TEST_FILES=(
   tests/req003-ephemeral-temporary-chat.test.ts
   frontend/scripts/req003-ephemeral-temporary-chat.test.mjs
   tests/req003-main-chat-mode-switch.test.ts
+  tests/req003-legacy-chat-mode.test.ts
+  tests/req003-composer-mode-integration.test.ts
   frontend/scripts/req003-main-chat-mode-switch.test.mjs
   tests/req003-auth-mode-and-draft-binding.test.ts
   frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs
@@ -48,7 +50,7 @@ TEST_FILES=(
   tests/summary-progress.test.ts
   tests/summary-prompt-contract.test.ts
 )
-TEST_CASES=(6 4 12 6 10 5 10 10 44 9 7 2 14 11 3 9 18 1)
+TEST_CASES=(6 5 13 11 10 2 2 5 10 10 44 9 7 2 19 11 3 9 18 1)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

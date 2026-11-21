@@ -6,7 +6,7 @@ import { CHAT_FILE_LIMITS } from '../src/shared/chat-files.ts';
 
 export interface SourceCardOriginal {
   url: string; mimeType: string; bytes: Buffer; sha256: string;
-  preview: string | null; totalPages?: number;
+  preview: string | null; totalPages?: number; sections?: string[];
 }
 const docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 

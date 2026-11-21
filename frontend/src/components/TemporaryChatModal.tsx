@@ -176,7 +176,7 @@ export function TemporaryChatModal({
             </Text>
           ) : null}
 
-          {state.phase === "expired" || (state.phase === "error" && !state.session) ? (
+          {state.phase === "expired" || state.phase === "error" ? (
             <View style={styles.restartRow}>
               <Pressable
                 testID="temporary-chat-restart-button"

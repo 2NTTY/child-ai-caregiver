@@ -95,6 +95,132 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 若主機已有具名贊助者或另一組知識維護設定，程式會指出衝突。若中途斷線，以同一版本和同一命令接續。設定已套用後，查實際排程的 `lastCheckedAt`、該時段的工作結果及知識版本。來源未變時沿用既有版本與處理結果。帳戶自行登記的來源由該帳戶的來源卡、授權及私有資料服務處理。
 
+<a id="fhs-ingestion"></a>
+### 衞生署兒童健康教材如何入庫
+
+| 步驟 | 做法與查核位置 |
+|---|---|
+| 1．列出教材 | 從[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)依年齡、主題和小冊子展開，為同份教材保留各分類入口。對照[逐項清單](../knowledge/fhs-child-inventory.json)區分網頁、原件、譯本、影音、站外教材和純入口。 |
+| 2．判斷今次該讀甚麼 | 先查出版者的版本聲明及其指向的單張。《[飲奶知多少？](https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html)》指定網頁為現行文字，重複印本文字可略過。《[奶瓶餵哺指引](https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html)》同頁另有獨立附件，須分辨其原件及用途。記錄 PDF 獨有圖表；影片的[官方劇本](https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript)可用於文字問答。 |
+| 3．固定原文及整理範圍 | 保存原址、觀察版本、原件指紋和可點讀的位置。HTML 定位正文段落，PDF 綁實頁，劇本綁段落或官方提供的時間碼。確需閱讀的 PDF 使用原頁多模態；長冊按原頁分窗，留下已讀與待補的範圍。 |
+| 4．核對說法 | 整理與獨立審核讀同版原件，逐條核實引文及適用條件。有新說法才處理受影響的部分。兩份教材表面不同時先對照適用對象、期間和具體情況；同條件下仍有分歧，記下兩處引文及待核部分。 |
+| 5．讓家長查得到 | 確認審核結果、補缺少的向量，再切換已核准版本。以家長已採用的「衛生署 兒童健康」卡查一條問題，點回本次使用的原文、版本及頁段。舊回答仍指原版。發布收據、卡內可見及實際問答分別記錄。[逐份 PDF 引文查回](../scripts/fhs-publication-receipt.mjs) |
+| 6．下次接續 | 目錄用來發現新增條目；已知原件另外核對修訂和撤回。方法及原文未變且已完成便復用。解析失敗、網站暫停或派送結果不明時查原工作，只接續欠項。首批操作依下節逐份執行。 |
+
+**11 月 21 日的實際邊界。** 已核實上述兩張單張的網頁版入庫及官方影片頁提供劇本。首批影音關閉；在清單看到劇本指紋只證明曾發現文字，仍要用可點讀的劇本引文驗其入庫。出版者的版本聲明已用於首批人工去重。新站自動辨認、網站改版後修正讀法及跨教材衝突的正式問答，分別沿 [REQ-004](REQUIREMENTS_BACKLOG.md#req-004) 與 [REQ-006](REQUIREMENTS_BACKLOG.md#req-006)驗收。
+
+**新網站的交付門檻。** 以兩種結構不同的來源，各從登記網址走到家長可點回原文的回答。再改動其中一個目錄，觀察維護助手發現變化、用樣本驗證另一個讀法並更新；上述步驟均無人介入。最後才用一個確實超出能力的案例驗求助。只就該私人卡的缺口詢問擁有人，回答後沿原工作接續，其他教材繼續更新。平台卡的同類問題由平台接手。
+
+### FHS 首批同一帳日續作
+
+11 月 21 日獲委託的[22 份官方劇本教材](../knowledge/fhs-script-editions.json)按網頁觀測版本接續。在[分組製卡工具](#fhs-publication-lanes)用 `script inspect SOURCE_ID OBSERVATION_SHA256` 查原單，再用 `script run SOURCE_ID OBSERVATION_SHA256` 整理、獨立審核及補缺少的向量。重開用同一命令。入口沿用同一主機工位、記憶體限制及帳本，核對前一生效版本、完整文字指紋及已登記的片段數。舊單未明、版本變更或預留不足時保留原紀錄。發布後的 `listedCard.scripts` 按劇本列出完整段數、各段範圍、短引長度及原文向量查回結果。
+
+對[12 份已登記的保留原單](../knowledge/fhs-held-script-editions.json)，用 `script inspect` 查原來的保留原因及審核意見。`script revise SOURCE_ID OBSERVATION_SHA256` 從原先已保存的文字開始，沿同一帳本逐筆預留，用精簡欄位整理原文適用條件，並把原意見交獨立審核。`script inspect-revision SOURCE_ID OBSERVATION_SHA256` 查修訂收據。重開相同修訂沿用已完成的步驟。原單不明、觀測或基線改變時停止。[首次上架及覆蓋](../artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)
+
+已登記[出版者受眾修訂](../knowledge/fhs-publisher-script-editions.json)的教材沿用上述兩個修訂入口。worker 核實原單，以及前次修訂的終態和候選指紋；尚未派修訂的教材須查無前次工作。Server 從已核的段落建立純原文片段，直接送獨立審核，保留先前的保留意見。審核通過才沿原帳本建向量及上架。
+
+五份已有獨立保留決定的教材另登記了[候選版本及原文查閱條件](../knowledge/fhs-script-lookup-reviews.json)。上述入口會核對該次保留及之前各份收據，把新閱讀入口的實際用途連同原意見送審。母乳教材已有審核決定，向量費用仍待原票據確認，維持該工作指紋。
+
+親子溝通及新生嬰兒用品的審核未有有效決定時，用同一 `script inspect-revision` 查 `reviewStage`。兩份[已結算的原審核請求](../knowledge/fhs-script-review-stages.json)已按原工作、原觀測及完整請求指紋登記。若有保存回應，worker 用原候選重驗，只輸出欄位、驗證結果及指紋。沒有已保存回應時，收據會列明原階段狀態。查回過程不會派送模型、改寫工作或發布教材。
+
+睡眠教材的[分齡原句](../knowledge/fhs-script-age-examples.json)沿原修訂入口處理。worker 先核對前次保留決定及候選版本，按原表格行或劇本段落綁定年齡、單位及引句，再連同原意見交獨立審核。任何登記字眼找不到對應原文時即停。
+
+親子溝通、嬰兒用品及母乳教材沿同一 `script revise` 入口接續。前兩份的[修訂登記](../knowledge/fhs-script-review-repairs.json)綁定原審核階段。親子溝通把原回應的判斷和疑點交新審核，並核對單張和影片的受眾；嬰兒用品補上兩段原句中的四個年齡條件。母乳教材先讀同一文件、操作者及日額操作的原收據。在交易內完全吻合[已核對的向量拒絕紀錄](../server/fhs-script-embedding-receipt.ts)才可按零費用結算該票。修訂只縮短非影片片段的搜尋文字，保留完整原文及所有劇本，再交獨立審核。
+
+親子溝通第二次比較失敗時，用 `script inspect-revision` 重建同一次審核請求，核對已保存回應的欄位、結構事實及允許值。`comparisonReplay` 逐字保留獨立判斷與說明，只在回應重複列出、且完全吻合已驗結構事實時移除多餘欄位。已保存的決定通過原校驗後才沿 `script revise` 接續。兩步均復用原審核回應。嬰兒用品另沿[原分齡操作](../knowledge/fhs-script-procedure-conditions.json)核對前次保留版本，由獨立審核再決定是否可上架。
+
+**人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
+
+**舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。
+
+2026-11-20 UTC 的一次營運批准只供 `fhs-child-initial-20261120` 的兒童健康目錄首批。當日政策 v3 的平台維護身份由 200 次增至最多 300 次，全站仍為 400 次，家長每人 200 次。每次整理、審核及文件向量都佔一次。首批仍逐次在原 US$30 毛額帳本預留，兩張 504 共 US$3.207168 繼續全額扣起。其他日子及其他維護入口沿日常政策。香港時間 11 月 21 日 08:00 批准自動到期。
+
+由持有原批次鎖的操作者接手。先核實新 worker 的發布收據，在同一容器用已核對的兩張票據檔設定 `FHS_CAMPAIGN_RETAINED_RECEIPTS`（容器內的絕對路徑），只向本次首批命令傳入 `FHS_CAMPAIGN_DAY_ADMISSION=2026-11-20`。以下命令在該 worker 的 `/app` 內執行。首行讀回同一付款身份、當日兩個計數及毛額帳本，第二行核對原版本與指紋，第三行只接續這份教材。
+
+```sh
+node scripts/fhs-initial-campaign.mjs status
+node scripts/fhs-initial-campaign.mjs inspect pdf-a036f537a86308ec16eb7d21
+node scripts/fhs-initial-campaign.mjs resume-age-checked pdf-a036f537a86308ec16eb7d21 7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4
+```
+
+這份 PDF 的已審版本指紋為 `b7a4f123fba8723557f8040650f497f9ca7fc0ae3553edc2123a7e4d7933f45c`，已有兩次生成。再用同一 `inspect` 核對已提交的發布收據、生效版本及模型次數，對回新增的向量票據。若交送結果未知，先查原操作。原鎖接回整個排序時可用 `node scripts/fhs-catalog-batch.mjs --wait-for-daily --from-deferred SOURCE_ID ORIGINAL_FINGERPRINT`，該入口先接回同一份工作；已完成的原工作直接讀回。再次用盡日額時保留進度並等到下一個 UTC 帳日。要提早結束這項批准，由持鎖者在兩份工作之間移除本次命令的日期選項。
+
+同一持鎖者可在兩份教材之間執行 `node scripts/fhs-catalog-batch.mjs --recover-held`，處理[已綁定原稿的教材](../knowledge/fhs-initial-recovery.json)。若持鎖者選用上述當日批准，重審須同時符合原登記、固定重審指紋及映像內的完整修訂。每份沿同一總帳最多派一次新審核，通過後才處理向量和刊登。按來源查進度可用 `node scripts/fhs-initial-campaign.mjs inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT`，只讀取工作及生效版本。遇未知交送先查同一指紋及票據。
+
+12:43 香港收據另有六份 PDF，只需修正原稿的地區寫法。持鎖者以 `node scripts/fhs-recovery-plan.mjs SOURCE_ID` 查看該份登記，按回傳的 `campaignArgs` 執行 `node scripts/fhs-initial-campaign.mjs recover SOURCE_ID ORIGINAL_FINGERPRINT`。這六份須逐份指定；原有 `--recover-held` 繼續處理 09:00 收據。[六份原操作及審核重點](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+首批有兩份在新 worker 讀回舊提示時得到 `knowledge_retained_page_request_changed`。持鎖者使用支援舊提示換行的版本後，對 `fhs-30034` 及 `pdf-eefb43f9c484a1a24343d64e` 再執行清單內原來的 `recover` 參數。入口只允許已登記、零模型呼叫且沒有租約、候選稿或發布收據的這種失敗接續一次，`inspect-recovery` 的 `retainedPromptFailure` 保留舊結果。其餘十份可沿原序列繼續。
+
+《電子屏幕與幼兒》可按同一逐份入口接回兩次已結算的分窗閱讀。原件、單頁、兩個請求及兩段轉錄各自的引文位置均已固定。重開後應見恢復工作新增生成 0 次，向量及發布結果仍以正式收據核實。《幼兒的一天》須先釐清睡眠年齡能否用於整頁，《臍帶護理》第 2 頁的兩次轉錄分屬不同段落，兩份均繼續保留。[逐頁覆核](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+### FHS 分組人工製卡與帳本
+
+正式 worker 更新後，原操作者先在容器內以 `FHS_CAMPAIGN_RETAINED_RECEIPTS` 指向已核對的私人收據檔，執行 `node scripts/fhs-initial-campaign.mjs retain-inspected`。此步核對原工作的保留結果及每筆預留，將原操作指紋寫回同一筆帳。中斷後可原樣重行。五筆結果未明的請求仍全額預留。
+
+三組各由本組入口傳入 `FHS_CAMPAIGN_LANE` 及 `FHS_CAMPAIGN_ORIGINAL_OPERATION`，按[固定清單](../knowledge/fhs-initial-publication-lanes.json)呼叫 `publish-approved SOURCE_ID` 或 `resume-approved SOURCE_ID ORIGINAL_OPERATION`。已整理的《貼心照顧》由原操作者用後者接續。伺服器核對官方網址、原件 SHA-256、實頁、登記版本及工作租約，再逐次向共用 US$30 帳本預留。每份只可有一筆未結預留；結果未知時保留原帳，其他教材可獨立繼續。團隊命令沿原 `scripts/fhs-initial-campaign.mjs` 執行。
+
+`status` 的 `globalAttempts` 是全站實際登記次數，`manualPublication` 是當日人工製卡的次數和 token。`ordinaryGlobalAttempts` 及 `maintenanceAttempts` 用於一般全站及排程准入，`maintenanceRemaining` 顯示目前所選維護入口的可用次數。排程及普通 API 沿原身份執行。每次原操作查回用 `inspect SOURCE_ID`，刊登結果另核生效版本與原頁。
+
+### FHS 首批分組的 PDF 讀取資料
+
+三組的 `prepare`、送審及中斷接續共用已核實的原件及文字層。容器使用以下索引時，未預載的分窗附件由正式讀取器從同一份原件擷取。[原件與實頁收據](../artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+```sh
+export FHS_CAMPAIGN_PDF_READS=/var/tmp/yuban-knowledge/fhs-pdf-reads-e25b694bff20
+export FHS_CAMPAIGN_PDF_READS_SHA256=e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c
+```
+
+更換 worker 後先核對所選索引的 SHA-256。若暫存卷已更換，從操作者保存的封裝核對 SHA-256，再解壓到該卷內由 worker 使用者擁有的目錄。製卡容器會再核對索引、解析器及實際讀取的記錄。
+
+```sh
+sudo docker exec yuban-p1-worker-1 sha256sum "$FHS_CAMPAIGN_PDF_READS/index.json"
+```
+
+從倉庫根目錄可重建共用文字層或單冊所需的全部原頁附件。最後一個參數使用 `--text-only` 或該冊在固定分工表的來源 ID。指定單冊時亦封存正式收據讀取原 PDF 各實頁所需的記錄，包括末段不足八頁的部分。
+
+```sh
+node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT --text-only
+node scripts/fhs-stage-pdf-reads.mjs ORIGINALS PREPARED_READS OUTPUT_PARENT SOURCE_ID
+```
+
+`ORIGINALS` 是以官方網址 SHA-256 命名檔案的原件目錄，`PREPARED_READS` 是[已核實的全批索引與讀取資料](../artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)。命令核對官方原件、實頁範圍及分窗附件，輸出目錄和索引指紋。整批原頁封裝保存在操作者本機，VM 可只載入當前一冊。該冊使用自己的目錄及索引，完成後可移走已驗證有本機副本的暫存檔。主機發布前需保留 3 GiB。每個分窗各有一次整理和一次獨立審核，逐次沿同一帳本預留支出。索引綁定解析器版本，版本有變須重新驗證。
+
+<a id="fhs-publication-lanes"></a>
+### 受命製卡的分組執行
+
+在正式 VM 主機執行[製卡工具](../deploy/knowledge-worker/publication.py)，把 `C1` 換成本組。省略 `SOURCE_ID` 會按實頁數處理全組，每份完成後交回共用名額。教材及原件 SHA-256 取自[固定分工檔](../knowledge/fhs-initial-publication-lanes.json)。
+
+```sh
+tool=/usr/local/lib/yuyoufang-fhs/publication.py
+sudo python3 -I "$tool" lane C1 status SOURCE_ID
+sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 prepare SOURCE_ID
+sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 run SOURCE_ID
+```
+
+`prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留。已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，結果未明的票據逐張足額預留。自動維護的每日次數適用於排程及自動查新。
+
+三組共用一個主機檔案鎖。鎖涵蓋同一份原件的準備、送審及終態核對，各階段的 Node 程序會先後退出。工具逐次驗證 Compose 版本和家長 API 健康，從可用記憶體預留 384 MiB 給家長服務、64 MiB 給主機啟動工具，餘下按 16 MiB 向下取整。製卡容器以 0.5 CPU、256 至 512 MiB 硬上限、零額外 swap 運行。送審另按原檔大小檢查可用空間，32 MiB 或以上原件保留原有的 512 MiB 上限。可用記憶體短暫跌穿共同門檻 704 MiB 時，主機程序持有原工位及原操作，每五秒重讀記憶體。回升後再驗正式版本、家長 API 及當下餘量，才啟動該階段一次。等候期間不建立新容器或預留模型費用。若其他原件仍能運行，大原件只差一級容量時最多再等 30 秒，之後列出 `capacity_wait` 給同組其他教材繼續。容器沿用已發布的 worker 映像及唯讀 PDF 卷。每次結束會輸出核心記錄的記憶體峰值。SSH 中斷後先查原單。
+
+安裝或更新主機工具時，從已核對的提交取出 `deploy/knowledge-worker/publication.py`，核對檔案 SHA-256，再以 root 擁有、0644 安裝至上述位置。日常查帳用 `sudo python3 -I "$tool" accounting`。在同一張四頁原單等候供應商結果期間，用 `sudo python3 -I "$tool" inspect SOURCE_ID` 查租約、預留及生效版。
+
+C2 原單因 `knowledge_window_quote_mismatch` 保留時，可用 `--reads DIR --reads-hash SHA256 inspect SOURCE_ID` 核對引文。讀本須含原 PDF 的引用頁段，每段由第 1、9、17 等頁起，最後一段取實際餘頁。工具讀回原操作最後失敗窗口內的兩份封存回應，核對整理及審核請求指紋，分別比對整理稿所指實頁。操作員可在本機檢視兩段摘錄；公開收據只記核對結果。圖像頁須另開官方原頁核實。這個查核不會送出模型請求或刊登教材。
+
+同一入口亦可核查分窗原單的 `knowledge_review_failed`。它用封存回應重現原來的輸出驗證，報告出錯的欄位、長度或地區代碼。若只能重現其他邊界，沿用原保留結果。
+
+需要離開 SSH 時，可把本組命令和收據留在 VM 上本人可讀的檔案。
+
+```sh
+log=$(mktemp "$HOME/fhs-C1.XXXXXXXX.log")
+nohup sudo -n python3 -I "$tool" \
+  --reads "${FHS_CAMPAIGN_PDF_READS:?Set the verified PDF reads directory}" \
+  --reads-hash "${FHS_CAMPAIGN_PDF_READS_SHA256:?Set its verified index digest}" \
+  lane C1 run >"$log" 2>&1 </dev/null &
+```
+
+重新登入或 worker 重啟後，先用 `status` 讀回 Firestore 的原操作、觀測、未結算票據和版本。`run` 會按同一指紋接續。出現 `reconciliation_required` 先按回傳的來源與票據查原結果；已付費資料出現綁定差異時會停止派送。
+
+逐份驗收用 `sudo python3 -I "$tool" receipt SOURCE_ID ORIGINAL_OPERATION`。該命令從家長卡庫核對版本、已匯出的向量及原頁。若曾依有據的修復工作上架，可在原操作後加上該修復工作的指紋；已核實的讀本可沿用同一組 `--reads` 參數。
+
 ### 公共知識 ZIP 暫存
 
 正式 Firestore 映像把 `/var/tmp/yuban-knowledge` 宣告為容器專用的可寫暫存卷，目錄由 node 帳號獨佔。原 VM 與 Compose 可直接使用該映像，原本 32 MiB 的 `/tmp` 繼續供其他功能使用。Linux 打開檔案後隨即解除檔名，程序被停止也會釋放 ZIP 的空間。草稿、進度和收據在 Firestore，暫存卷毋須備份。

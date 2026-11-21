@@ -1,0 +1,829 @@
+{
+  "asOf": "2026-11-21T19:09:00.127628Z",
+  "release": {
+    "worker": "8f94b86f9d739e1501ae36b30f19ac85d7c825b2",
+    "digest": "sha256:e50bb19a1e960577954ffe362a5ec5e581c2615ca536f0e813f30ff999e06d55",
+    "api": "8f94b86f9d739e1501ae36b30f19ac85d7c825b2",
+    "web": "8f94b86f9d739e1501ae36b30f19ac85d7c825b2",
+    "requiredRevision": "4294743f3c372317f6f630663f35727cc1b7ffd4",
+    "release": "r44937996242-1",
+    "at": "2026-11-21T19:03:03+00:00",
+    "receipt": "deployed",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44937996242",
+    "hostToolSha256": "210f23b3a6533f35b19733eb5fc0cc947c11ed4bc9a27b9fd04cb138196a5a65"
+  },
+  "totals": {
+    "archived": 61,
+    "archivedParagraphs": 1695,
+    "indexed": 52,
+    "indexedParagraphs": 1312,
+    "locatedByTitle": 52,
+    "contentLocated": 5,
+    "contentCases": 6
+  },
+  "originalArchive": {
+    "scripts": 61,
+    "paragraphs": 1695
+  },
+  "previousTitleEvidence": "FHS_SCRIPT_RECOVERY_20261122.json",
+  "originalStageEvidence": "FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json",
+  "materials": {
+    "fhs-20000": {
+      "operationFingerprint": "5ff190396900de451a4591451671cb0e9e10112520acbb6213ab5b68fa5822a7",
+      "priorOperationFingerprint": "f52049d43dd8cc6ba956e24331be3767a1c2e9060d05922dd417805b46bd24c9",
+      "observationHash": "ab69a37fa24bafe82561ee25a4ac5d6a21d9ef11020452366a97819e5b52aa89",
+      "status": "already_recorded",
+      "code": "published",
+      "reviewDecision": "approve_candidate",
+      "reviewNotes": [
+        "所有候選分段均逐字對應衞生署家庭健康服務《愛·從母乳開始······》手冊原文及全套官方短片逐字稿。對象描述、數值、單位、年齡範疇、例外及禁止事項完全保留且無推斷；所有影片單元皆正確標記 textIsOriginal 及精確劇本段落範圍，符合家庭庫逐字典藏標準。"
+      ],
+      "candidateVersionHash": "2f41e6f6f8268de01e75835d5e4c5c70217a91c0e360da41e446f88ab5401742",
+      "published": true,
+      "receiptState": "committed",
+      "independentReview": "knowledge-review:e46e1086066d2a54d40c0581c8a810cb5420f4edd8abfed4dad502bf3a4604eb",
+      "activeVersionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+      "activeVersionHash": "2f41e6f6f8268de01e75835d5e4c5c70217a91c0e360da41e446f88ab5401742",
+      "generationReceipt": {
+        "sourceId": "fhs-20000",
+        "ceiling": 1603584,
+        "operationFingerprint": "f52049d43dd8cc6ba956e24331be3767a1c2e9060d05922dd417805b46bd24c9",
+        "cost": 70743,
+        "at": "2026-11-21T19:06:49.688Z",
+        "kind": "generation",
+        "inputTokens": 34967,
+        "state": "settled",
+        "stageHash": "0c7a38207d784b5d655d2c4899d2de6921e459095c44f749b0e4a01ddaff77d6",
+        "outputTokens": 2439
+      }
+    },
+    "fhs-13043": {
+      "operationFingerprint": "22caf823d58796259a705276521a6dc65b26b039b8af2ec71adb510a9c409022",
+      "priorOperationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+      "observationHash": "72db528549e6b9f2befab1cbc934b7ec7500ee5441ef637920d22b2fe3296fc6",
+      "status": "already_recorded",
+      "code": "published",
+      "reviewDecision": "approve_candidate",
+      "reviewNotes": [
+        "先前 hold 提出的年齡截斷與範例對照問題已獲妥善處理：p0-0397be2575110d272930 已改採逐字原文，並將 ageBasis 設為 unconfirmed 及端點 null，不再以 0-48 個月硬性截斷原文提及約 3 至 6 歲的睡眠循環敘述；所有年齡段均於 ageExamples 中按原文具體詞句逐一對照。新增的《建立睡前常規》及《家居安全》劇本各單元均為完整逐字官方原件（textIsOriginal: true），各場景中的具體示範年齡（如 12-1"
+      ],
+      "candidateVersionHash": "4d247c8f9b00145a2820b987fb80f82ac78d539bd08c0c19b82fe72cd6c23c72",
+      "published": true,
+      "receiptState": "committed",
+      "independentReview": "knowledge-review:fc26eb873166408faea96880c48d48957b9ab18e8621351288cbae85052ea97b",
+      "activeVersionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+      "activeVersionHash": "4d247c8f9b00145a2820b987fb80f82ac78d539bd08c0c19b82fe72cd6c23c72",
+      "generationReceipt": {
+        "sourceId": "fhs-13043",
+        "ceiling": 1603584,
+        "operationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+        "cost": 44780,
+        "at": "2026-11-21T18:26:56.549Z",
+        "kind": "generation",
+        "inputTokens": 20333,
+        "state": "settled",
+        "stageHash": "2ec23c58b11deb2c8edb40f582cc873f40138668a83e3a0bc2e39c58a2019dde",
+        "outputTokens": 1904
+      }
+    },
+    "fhs-12196": {
+      "operationFingerprint": "b3a35ffdb2c443f3b2713542054382d0015f95656e833220ee44efc8809665bc",
+      "priorOperationFingerprint": "ae8e22d7c427ca84a400d5594984f7daad7d7c6d4900213379300014ead5de58",
+      "observationHash": "90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772",
+      "status": "candidate_held",
+      "code": "knowledge_review_failed",
+      "reviewDecision": null,
+      "reviewNotes": [],
+      "candidateVersionHash": null,
+      "published": false,
+      "receiptState": null,
+      "independentReview": null,
+      "generationReceipt": {
+        "sourceId": "fhs-12196",
+        "ceiling": 1603584,
+        "operationFingerprint": "ae8e22d7c427ca84a400d5594984f7daad7d7c6d4900213379300014ead5de58",
+        "cost": 59762,
+        "at": "2026-11-21T19:05:36.205Z",
+        "kind": "generation",
+        "inputTokens": 29676,
+        "state": "settled",
+        "stageHash": "26ca4883045046fc7b725c419c63c5ae68841e3cfe4ed94906854fdce402df22",
+        "outputTokens": 2033
+      }
+    },
+    "fhs-30092": {
+      "operationFingerprint": "c5a6404a39c81ca33e3be4046746740556a27122b9dc2e9cb53c38f6ef38b633",
+      "priorOperationFingerprint": "3836ac9e0f6759b39e449b2dcf7258ce0da3848da564b399643495b4c34f4577",
+      "observationHash": "bfd658600b4bbae14dc4863de513eb99ddadddda7b4e77cef4287d5844a7f289",
+      "status": "candidate_held",
+      "code": "review_hold",
+      "reviewDecision": "hold_candidate",
+      "reviewNotes": [
+        "維持 hold。先前審閱指出的 knowledge_age_uncertain 疑慮依然未獲解決：新增劇本片段 p0-976d08c325de043f1f59 包含『9個月學杯』與『14個月前戒奶瓶』之具體月齡端點，p0-5175faf0a5e5801ed992 亦以『一歲』為界分開耳道拉直操作，但候選 chunks 的適用條件中 ageBasis 仍為 unconfirmed，且未對應具體的月齡數值限制，實質年齡操作限制在檢索及適用條件中失去限制作用，故承襲前次 hold"
+      ],
+      "candidateVersionHash": "fc773571c50266c4c60a8cc57e1d1e62a4e39b31257f9aaf873a00f77539559b",
+      "published": false,
+      "receiptState": null,
+      "independentReview": "knowledge-review:009b0bcbc758b3d32c59e242ae2972b1bb535a78b32e0bb4bd468c8800ef7186",
+      "generationReceipt": {
+        "sourceId": "fhs-30092",
+        "ceiling": 1603584,
+        "operationFingerprint": "3836ac9e0f6759b39e449b2dcf7258ce0da3848da564b399643495b4c34f4577",
+        "cost": 42642,
+        "at": "2026-11-21T19:04:49.234Z",
+        "kind": "generation",
+        "inputTokens": 18653,
+        "state": "settled",
+        "stageHash": "a8476fb1a3445d44c4a6a4cf8c26309b4d1a569c9aa7b517f524dc8c0df41d05",
+        "outputTokens": 1955
+      }
+    }
+  },
+  "remainingAtPreviousReceipt": [
+    {
+      "title": "替初生寶寶清潔臍帶",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000003.html#transcript",
+      "paragraphs": 11,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "替寶寶換尿片",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000004.html#transcript",
+      "paragraphs": 17,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "剪指甲",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000007.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "替寶寶清潔口腔",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000009.html#transcript",
+      "paragraphs": 6,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "穿衣技巧",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000010.html#transcript",
+      "paragraphs": 3,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "挑選衣服",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000011.html#transcript",
+      "paragraphs": 3,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "電子探熱針的使用步驟",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000012.html#transcript",
+      "paragraphs": 6,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "紅外線耳温計的使用步驟",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000013.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-30092"
+      ]
+    },
+    {
+      "title": "建立睡前常規",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+      "paragraphs": 48,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-13043",
+          "versionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+          "paragraphs": 48,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 48,
+              "originalHash": "104613dc064c428d70d3a21d55ff1e4c9bff91a92c88c97d353b320eaebf1cd6",
+              "chunkId": "d7875821-6269-52ed-8cb2-5ecfcc691b3f"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-13043"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-13043",
+        "versionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+        "chunkId": "d7875821-6269-52ed-8cb2-5ecfcc691b3f",
+        "expandedCharacters": 780,
+        "originalCharacters": 780
+      }
+    },
+    {
+      "title": "BB話你知 - 親子溝通小錦囊(完整版)",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029.html#transcript",
+      "paragraphs": 333,
+      "previouslyIndexed": false,
+      "owners": [],
+      "exactTitleRank": null,
+      "materials": [
+        "fhs-12196"
+      ]
+    },
+    {
+      "title": "乳頭凹陷可以餵嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c2p3.html#transcript",
+      "paragraphs": 6,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 6,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 6,
+              "originalHash": "5d1aae32c6f80f864c77be09acc21a2e20684aec54670b096f96a1895d4c05ea",
+              "chunkId": "45d3b90a-97da-5a19-be35-4578dbc180f2"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "45d3b90a-97da-5a19-be35-4578dbc180f2",
+        "expandedCharacters": 293,
+        "originalCharacters": 293
+      }
+    },
+    {
+      "title": "母嬰肌膚接觸",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c4.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "b59225684c0b437d57d64778bb326929ed21ae4df2c4a41a586cc37e5b615fda",
+              "chunkId": "b92f63be-31f2-553e-8619-3dba3a415aca"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "b92f63be-31f2-553e-8619-3dba3a415aca",
+        "expandedCharacters": 288,
+        "originalCharacters": 288
+      }
+    },
+    {
+      "title": "初乳",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c5.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "c1e4f346623ab5522722223616037df6298ef560e5d2ce2e823f878ff9d74a9b",
+              "chunkId": "6f9589f1-3c2a-5ae1-8ef1-38d49121ba26"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "6f9589f1-3c2a-5ae1-8ef1-38d49121ba26",
+        "expandedCharacters": 132,
+        "originalCharacters": 132
+      }
+    },
+    {
+      "title": "肚餓的信號",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p2.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "7700bff629f3022da286fcf885b5997bb93928b20a327940b81002b02f4f8186",
+              "chunkId": "783e3904-3958-59dc-827b-55e9493eaf8e"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "783e3904-3958-59dc-827b-55e9493eaf8e",
+        "expandedCharacters": 242,
+        "originalCharacters": 242
+      }
+    },
+    {
+      "title": "餵哺技巧: 技巧概要",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_1.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "e872720c8f0dde9cefbec6a77a71787e5660908977e49e4fcaf9b54963367c58",
+              "chunkId": "6f84add7-eaf7-5ffc-b4c2-794d4a7da74b"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "6f84add7-eaf7-5ffc-b4c2-794d4a7da74b",
+        "expandedCharacters": 164,
+        "originalCharacters": 164
+      }
+    },
+    {
+      "title": "餵哺技巧: 媽媽及寶寶的姿勢",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_2.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "3f39a2e6861155512d12f1983341763b8c4b1d87e644d0cafbfd2c5f25bb380d",
+              "chunkId": "11b3d67a-6f18-5872-9529-3800612e85b8"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "11b3d67a-6f18-5872-9529-3800612e85b8",
+        "expandedCharacters": 273,
+        "originalCharacters": 273
+      }
+    },
+    {
+      "title": "餵哺技巧: 把寶寶帶到乳房",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_3.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "46ea82935d55f862aa5290d346e7ce2df590de5891184c9056c88042dee12bfc",
+              "chunkId": "1da98c90-3006-5b2b-8ce7-7cff302be569"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "1da98c90-3006-5b2b-8ce7-7cff302be569",
+        "expandedCharacters": 214,
+        "originalCharacters": 214
+      }
+    },
+    {
+      "title": "餵哺技巧: 有效的吸吮",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_5.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "4054177339b4a75ddba7589d18f848d1052a137289987b166ffcf7f024398294",
+              "chunkId": "f25f3c78-3874-5d3c-bde7-c1bd2d8f5a8c"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "f25f3c78-3874-5d3c-bde7-c1bd2d8f5a8c",
+        "expandedCharacters": 311,
+        "originalCharacters": 311
+      }
+    },
+    {
+      "title": "吃得夠嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p5.html#transcript",
+      "paragraphs": 2,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "4613416bfe208921ba82e357aef572c811250962b8055a60994c77f394df819f",
+              "chunkId": "38d9e4ea-f5b5-55d6-a350-24578d7ce1fc"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "38d9e4ea-f5b5-55d6-a350-24578d7ce1fc",
+        "expandedCharacters": 416,
+        "originalCharacters": 416
+      }
+    },
+    {
+      "title": "其他支援",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p8.html#transcript",
+      "paragraphs": 4,
+      "previouslyIndexed": false,
+      "owners": [
+        {
+          "id": "fhs-20000",
+          "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+          "paragraphs": 4,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 4,
+              "originalHash": "d909b7f755d277e13fdfb5842d01a2bc91c75fb6006082a51cf5f9ad6c1afab3",
+              "chunkId": "a44d7edf-08a1-587d-9a4d-a7012d1c772c"
+            }
+          ]
+        }
+      ],
+      "exactTitleRank": 1,
+      "materials": [
+        "fhs-20000"
+      ],
+      "isolatedParent": {
+        "rank": 1,
+        "sourceId": "fhs-20000",
+        "versionId": "d45234d8-3b4e-587c-9d9b-09a132a361f1",
+        "chunkId": "a44d7edf-08a1-587d-9a4d-a7012d1c772c",
+        "expandedCharacters": 771,
+        "originalCharacters": 771
+      }
+    }
+  ],
+  "mother": {
+    "ticketId": "599697dc-9d96-52de-8b4c-ddf05397f328",
+    "daily": {
+      "stageHash": "eca7199facdd774d986b2b388bce5d9841f65a2945ca24a7a5674e0cc77353df",
+      "documentHash": "b48cd1266623b0e9d1f99f5ff578b0ade4ff5803c7caf36db0091191c9a98ea7",
+      "operationId": "fb60651f-f395-543f-8dd4-1f2c32f98313",
+      "versionHash": "710259827ad27d429d8e3ce4040e0ee19fffd32f4026b518d902b8ff271e3bf8",
+      "ticketAt": "2026-11-21T16:22:54.068Z",
+      "reservedAtMs": 1795278173890,
+      "record": {
+        "kind": "embedding",
+        "outcome": "invalid_input",
+        "inputTokens": null,
+        "billableCharacters": null,
+        "durationMs": 1598
+      }
+    },
+    "campaign": {
+      "sourceId": "fhs-20000",
+      "ceiling": 308,
+      "operationFingerprint": "f52049d43dd8cc6ba956e24331be3767a1c2e9060d05922dd417805b46bd24c9",
+      "cost": 0,
+      "at": "2026-11-21T16:22:54.068Z",
+      "kind": "embedding",
+      "state": "settled",
+      "stageHash": "eca7199facdd774d986b2b388bce5d9841f65a2945ca24a7a5674e0cc77353df",
+      "rejection": {
+        "httpStatus": 400,
+        "evidenceSha256": "3b4793824801946bf91e90d8f6cbf45a94d320f0c50cfe645e6374ead3ed24b5"
+      }
+    }
+  },
+  "parent": {
+    "method": "Product find_official_material and same-version context on the adopted child-health card of an isolated parent. The two tools are invoked directly. Six separate search_knowledge calls check that routine care excludes original-only material. All lexical buckets are rebuilt from production public chunks and verified against stored hashes. Query embeddings were unavailable. Positive matches include original-span comparison.",
+    "activeVersions": 161,
+    "materialIdentities": 253,
+    "modelCalls": 0,
+    "productionFamilyWrites": 0,
+    "content": [
+      {
+        "query": "想搵官方教材嘅相關原段。想問幫BB換尿片嗰陣，要預備啲乜嘢？",
+        "ordinaryQuery": "想問幫BB換尿片嗰陣，要預備啲乜嘢？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000004.html#transcript",
+        "kind": "content",
+        "title": "替寶寶換尿片",
+        "initiallyIndexed": false,
+        "rank": null,
+        "returned": 2
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。奶瓶同餵奶用嘅用具，每日可以點樣清潔同消毒？",
+        "ordinaryQuery": "奶瓶同餵奶用嘅用具，每日可以點樣清潔同消毒？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html#transcript",
+        "kind": "content",
+        "title": "奶瓶和用具消毒日常",
+        "initiallyIndexed": false,
+        "rank": 2,
+        "returned": 3,
+        "sourceId": "fhs-12146",
+        "versionId": "dd49c6a1-feed-59a6-89c6-cbe623ee7898",
+        "chunkId": "118416aa-25f5-50d7-9b2f-65f1a7afdc0d",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html#transcript",
+          "title": "奶瓶和用具消毒日常",
+          "firstParagraph": 1,
+          "lastParagraph": 52,
+          "originalHash": "1e9708bce959a4adc4784f46da66b4d5873656ed7ad59e75886e5ea189936ef4"
+        },
+        "expandedCharacters": 1194,
+        "originalCharacters": 1194,
+        "use": "original_lookup",
+        "returnedScope": "requires_clarification"
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "ordinaryQuery": "想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+        "kind": "content",
+        "title": "建立睡前常規",
+        "initiallyIndexed": false,
+        "rank": 1,
+        "returned": 2,
+        "sourceId": "fhs-13043",
+        "versionId": "b78b1e3d-6a46-51a7-be43-a8a0b6d0e767",
+        "chunkId": "d7875821-6269-52ed-8cb2-5ecfcc691b3f",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+          "title": "建立睡前常規",
+          "firstParagraph": 1,
+          "lastParagraph": 48,
+          "originalHash": "104613dc064c428d70d3a21d55ff1e4c9bff91a92c88c97d353b320eaebf1cd6"
+        },
+        "expandedCharacters": 780,
+        "originalCharacters": 780,
+        "use": "original_lookup",
+        "returnedScope": "requires_clarification",
+        "ageBasis": "unconfirmed",
+        "publisherAudiences": []
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。學前小朋友唔開心，我想了解情緒導航五部曲。",
+        "ordinaryQuery": "學前小朋友唔開心，我想了解情緒導航五部曲。",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+        "kind": "content",
+        "title": "「情緒導航」五部曲（學前兒童篇）",
+        "initiallyIndexed": false,
+        "rank": 2,
+        "returned": 2,
+        "sourceId": "fhs-14842",
+        "versionId": "800d6021-ce74-5e81-9f3e-d7074c274ff7",
+        "chunkId": "571c84f9-44ce-5c85-ab4a-3c29c00c30f1",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+          "title": "「情緒導航」五部曲（學前兒童篇）",
+          "firstParagraph": 1,
+          "lastParagraph": 42,
+          "originalHash": "b4e2dc53ea55ea25de97b8d367c6cc95507cb88be828b729b062f1beb24924dc"
+        },
+        "expandedCharacters": 1186,
+        "originalCharacters": 1186,
+        "use": "original_lookup",
+        "returnedScope": "requires_clarification",
+        "ageBasis": "publisher",
+        "publisherAudiences": [
+          "學前兒童"
+        ]
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。想睇同寶寶服用維他命D補充劑有關嘅官方原文。",
+        "ordinaryQuery": "想睇同寶寶服用維他命D補充劑有關嘅官方原文。",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000132.html#transcript",
+        "kind": "content",
+        "title": "如何給寶寶服用維他命D 補充劑？",
+        "initiallyIndexed": false,
+        "rank": 1,
+        "returned": 2,
+        "sourceId": "fhs-30078",
+        "versionId": "534fade1-6d31-51d5-b3d8-70a89c38499f",
+        "chunkId": "195bb30a-ed5e-532b-ac6c-aa4ff4524efc",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000132.html#transcript",
+          "title": "如何給寶寶服用維他命D 補充劑？",
+          "firstParagraph": 1,
+          "lastParagraph": 7,
+          "originalHash": "86e22dda4ac14dee47cdd779a73033189c3643d7ad18ba81e1b887af6cc18900"
+        },
+        "expandedCharacters": 269,
+        "originalCharacters": 269,
+        "use": "original_lookup",
+        "returnedScope": "requires_clarification",
+        "ageBasis": "publisher",
+        "publisherAudiences": [
+          "嬰幼兒"
+        ]
+      },
+      {
+        "query": "想搵官方教材嘅相關原段。同歲半小朋友玩玩具茶壺，佢好快就冇興趣。親子溝通時可以點樣加入新玩法？",
+        "ordinaryQuery": "同歲半小朋友玩玩具茶壺，佢好快就冇興趣。親子溝通時可以點樣加入新玩法？",
+        "want": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p5.html#transcript",
+        "kind": "content",
+        "title": "加入新玩法",
+        "initiallyIndexed": true,
+        "rank": 2,
+        "returned": 3,
+        "sourceId": "fhs-30130",
+        "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+        "chunkId": "59ca2144-dc0f-5996-b59f-9c014d0c0b50",
+        "locator": {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p5.html#transcript",
+          "title": "加入新玩法",
+          "firstParagraph": 1,
+          "lastParagraph": 7,
+          "originalHash": "150a7d66982b82a04e750abce53969486825627cf901295b1e17996c85e2b716"
+        },
+        "expandedCharacters": 227,
+        "originalCharacters": 227,
+        "use": "reviewed_guidance",
+        "returnedScope": "applicable"
+      }
+    ],
+    "ordinaryCareQueries": [
+      {
+        "query": "想問幫BB換尿片嗰陣，要預備啲乜嘢？",
+        "returned": 2,
+        "originalLookupReturned": 0
+      },
+      {
+        "query": "奶瓶同餵奶用嘅用具，每日可以點樣清潔同消毒？",
+        "returned": 3,
+        "originalLookupReturned": 0
+      },
+      {
+        "query": "想幫小朋友建立固定睡前常規，可以做啲乜？",
+        "returned": 3,
+        "originalLookupReturned": 0
+      },
+      {
+        "query": "學前小朋友唔開心，我想了解情緒導航五部曲。",
+        "returned": 3,
+        "originalLookupReturned": 0
+      },
+      {
+        "query": "想睇同寶寶服用維他命D補充劑有關嘅官方原文。",
+        "returned": 2,
+        "originalLookupReturned": 0
+      },
+      {
+        "query": "同歲半小朋友玩玩具茶壺，佢好快就冇興趣。親子溝通時可以點樣加入新玩法？",
+        "returned": 3,
+        "originalLookupReturned": 0
+      }
+    ],
+    "allTitleChecks": 61,
+    "verifiedPostingQueries": 57,
+    "verifiedPostingBuckets": 38
+  },
+  "sharedCampaignMicroUSD": {
+    "held": 3268608,
+    "settled": 802,
+    "spent": 13117740,
+    "limit": 30000000,
+    "attempts": 804
+  }
+}

@@ -270,15 +270,16 @@ export class ProductAgentOwner {
     } catch (error) {
       if (!request.current()) return false;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
-      else if (error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error)) {
+      else {
+        // A missing reply can follow a successful commit. Never retry the edit or allow a
+        // decision from the stale card; only a fresh run read restores the interactive view.
+        const conflict = error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error);
         this.model({
+          readState: "failed",
           sharedConfirmed: {},
-          notice: { tone: "error", text: "草稿或原資料版本已變更，未能保存修改；請先重新讀取最新內容再核對。" },
-        });
-      } else {
-        this.model({
-          sharedConfirmed: {},
-          notice: { tone: "error", text: "未能更新草稿，原草稿與正式資料未改變；請重試或重新讀取核對。" },
+          notice: conflict
+            ? { tone: "error", text: "草稿或原資料版本已變更，未能保存修改；請先重新讀取最新內容再核對。" }
+            : { tone: "warning", text: "暫時無法確認草稿修改是否已保存；請重新讀取並核對最新草稿，再決定是否確認。" },
         });
       }
       return false;

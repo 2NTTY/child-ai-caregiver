@@ -127,10 +127,12 @@ export class TemporaryChatOwner {
     }
   }
 
-  private removePendingClose(sessionId: string, userId: string) {
+  private removePendingClose(sessionId: string, userId: string): boolean {
+    const priorCount = this.pendingRemoteCloses.length;
     this.pendingRemoteCloses = this.pendingRemoteCloses.filter(
       item => !(item.sessionId === sessionId && item.userId === userId),
     );
+    return this.pendingRemoteCloses.length < priorCount;
   }
 
   subscribe = (listener: () => void) => {
@@ -186,10 +188,14 @@ export class TemporaryChatOwner {
   open = async () => {
     const activeUserId = this.userId;
     if (!activeUserId) return;
-    if (this.isOpen && this.session && this.phase !== "expired" && this.phase !== "error") {
+    if (this.isOpen && this.phase !== "expired" && this.phase !== "error") {
       return;
     }
 
+    if (this.session) {
+      // Explicit recovery closes the old session without waiting or replaying its message.
+      void this.exitAndClear("client_reset");
+    }
     this.wipeLocalSessionState();
     const token = this.clientToken;
     this.isOpen = true;
@@ -254,7 +260,7 @@ export class TemporaryChatOwner {
   };
 
   setDraft = (value: string) => {
-    if (!this.isOpen || this.phase === "expired") return;
+    if (!this.isOpen || this.phase === "expired" || this.phase === "error") return;
     if (value === this.draft) return;
     this.draft = value;
     this.emit();
@@ -346,6 +352,19 @@ export class TemporaryChatOwner {
         }
       }
       this.messages = this.messages.filter(item => item.id !== pendingMessageId);
+      if (
+        !(error instanceof TemporaryChatApiError) ||
+        error.status >= 500 ||
+        error.code === "temporary_session_not_found" ||
+        error.code === "temporary_session_generation_mismatch" ||
+        error.code === "temporary_chat_turn_in_progress"
+      ) {
+        this.phase = "error";
+        this.draft = "";
+        this.error = TEMPORARY_CHAT_COPY.sessionRestartRequiredNotice;
+        this.emit();
+        return;
+      }
       if (!this.draft) this.draft = text;
       this.phase = "ready";
       this.error =
@@ -360,6 +379,30 @@ export class TemporaryChatOwner {
     }
   };
 
+  private completeRemoteClose(
+    entry: PendingRemoteClose,
+    epoch: number,
+    receipt: TemporaryChatCloseReceipt,
+  ) {
+    if (!this.removePendingClose(entry.sessionId, entry.userId) || this.userId !== entry.userId) {
+      return;
+    }
+    const stillPending = this.pendingRemoteCloses.some(item => item.userId === entry.userId);
+    if (!this.isOpen && this.closeEpoch === epoch) {
+      this.closeState = stillPending ? "local_cleared_remote_pending" : "remote_confirmed";
+      this.closeReceipt = stillPending ? null : receipt;
+      this.closeNotice = stillPending
+        ? TEMPORARY_CHAT_COPY.localClearedRemotePendingNotice
+        : TEMPORARY_CHAT_COPY.localAndRemoteClearedNotice;
+    } else if (!this.isOpen && !stillPending && this.closeState === "local_cleared_remote_pending") {
+      // An older request can be the last outstanding clearance after a restart.
+      this.closeState = "remote_confirmed";
+      this.closeReceipt = receipt;
+      if (this.closeNotice) this.closeNotice = TEMPORARY_CHAT_COPY.localAndRemoteClearedNotice;
+    }
+    this.emit();
+  }
+
   exitAndClear = async (
     reason: TemporaryChatCloseReason = "user_exit",
     options?: { keepalive?: boolean },
@@ -370,6 +413,15 @@ export class TemporaryChatOwner {
 
     this.wipeLocalSessionState();
     if (!wasActiveOrPending || !closingUserId || !closingSession) {
+      if (
+        wasActiveOrPending &&
+        closingUserId &&
+        this.pendingRemoteCloses.some(item => item.userId === closingUserId)
+      ) {
+        this.closeState = "local_cleared_remote_pending";
+        this.closeNotice = TEMPORARY_CHAT_COPY.localClearedRemotePendingNotice;
+        this.closeReceipt = null;
+      }
       this.emit();
       return;
     }
@@ -402,13 +454,7 @@ export class TemporaryChatOwner {
         { generation: entry.generation, reason },
         options?.keepalive ? { keepalive: true } : undefined,
       );
-      this.removePendingClose(entry.sessionId, entry.userId);
-      if (this.userId === entry.userId && !this.isOpen && this.closeEpoch === epoch) {
-        this.closeState = "remote_confirmed";
-        this.closeReceipt = response.receipt;
-        this.closeNotice = TEMPORARY_CHAT_COPY.localAndRemoteClearedNotice;
-        this.emit();
-      }
+      this.completeRemoteClose(entry, epoch, response.receipt);
     } catch (error) {
       if (
         error instanceof TemporaryChatApiError &&

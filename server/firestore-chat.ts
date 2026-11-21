@@ -317,7 +317,10 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { not
             if (Number.isFinite(until)) sourceDeadlines[item.id] = new Date(until).toISOString();
           }
         }
-        const messages = items.map(({ memorySummaryUntil, memorySources, ...message }) => message);
+        const messages = await Promise.all(items.map(async ({ memorySummaryUntil, memorySources, ...message }) =>
+          purpose === 'display' && message.proactive
+            ? { ...message, proactiveUnread: await contact.isContactUnread(binding, message.id) }
+            : message));
         const page = { messages: [...messages].reverse(), limit: 100, nextCursor: rows.size > 100 ? messages.at(-1)!.id : null };
         if (purpose !== 'agent') return page;
         return { ...page, dataVersion: binding.scope.storageEpoch + ':' + binding.changeSeq, sourceDeadlines };

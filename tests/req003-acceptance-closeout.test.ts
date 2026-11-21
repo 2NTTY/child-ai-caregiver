@@ -371,16 +371,13 @@ test("2. chat_only mode stays strictly orthogonal to REQ-009 three-role discussi
 
       exposedToolNamesPerCall.push(Object.keys(request.toolsDict ?? {}));
       const stepIndex = modelStep++;
-      const previous = request.contents.flatMap(c => c.parts ?? [])
-        .map(p => p.functionResponse?.response?.data as { nextTurn?: string } | undefined)
-        .filter(Boolean).at(-1);
       const toolName = stepIndex === 0 ? "search_knowledge"
         : stepIndex <= 3 ? discussionToolNames[stepIndex - 1]!
         : "present_answer";
       const toolArgs = stepIndex === 0
         ? { query: "兒童發燒 補水", classification: "official_guidance" }
         : stepIndex <= 3
-          ? { previous: previous?.nextTurn ?? "start", kind: "caregiving", text: turns[stepIndex - 1]!, citationIds: [sampleChunk.chunkId] }
+          ? { kind: "caregiving", text: turns[stepIndex - 1]!, citationIds: [sampleChunk.chunkId] }
           : { kind: "caregiving", paragraphs: [{ kind: "caregiving", text: "整合三個觀點：少量多次飲水。", citationIds: [sampleChunk.chunkId] }] };
       return {
         content: { role: "model", parts: [{ functionCall: { id: "d-" + stepIndex, name: toolName, args: toolArgs } }] },
@@ -700,21 +697,39 @@ test("5. PLAN.md#req003-closeout01 maps all 5 PRs, all 21 §7 items, all 7 §8 d
   }
 });
 
-test("6. docs/REQUIREMENTS_BACKLOG.md lines 25 and 579 sync with PLAN.md#req003-closeout01 and contain zero forbidden working codes", () => {
+test("6. REQ-003 backlog index and section sync with PLAN.md#req003-closeout01 without relying on fixed lines", () => {
   const backlog = readFileSync(path.join(ROOT_DIR, "docs/REQUIREMENTS_BACKLOG.md"), "utf8");
-  const lines = backlog.split(/\r?\n/);
-  const row25 = lines[24] ?? "";
-  const status579 = lines[578] ?? "";
 
-  assert.match(row25, /^\| REQ-003 \|/);
-  assert.ok(row25.includes("../PLAN.md#req003-closeout01"));
-  assert.ok(!row25.includes("未實施"));
-  assert.match(row25, /真模型/);
+  function assertReq003Backlog(doc: string) {
+    const lines = doc.split(/\r?\n/);
+    const rows = lines.filter(line => /^\|\s*REQ-003\s*\|/.test(line));
+    assert.equal(rows.length, 1, "Expected exactly one REQ-003 backlog index row");
+    const row = rows[0]!;
 
-  assert.ok(status579.startsWith("**目前狀態：**"));
-  assert.ok(status579.includes("../PLAN.md#req003-closeout01"));
-  assert.ok(!status579.includes("尚未啟動本需求包工程"));
-  assert.match(status579, /實機|物理手機|原生實機/);
+    const sectionStart = lines.findIndex(line => /^#\s+REQ-003(?:\s|[｜|]|$)/.test(line));
+    assert.ok(sectionStart >= 0, "Missing REQ-003 backlog section");
+    const sectionEnd = lines.findIndex((line, index) => index > sectionStart && /^#\s+/.test(line));
+    const statusLines = lines.slice(sectionStart + 1, sectionEnd === -1 ? lines.length : sectionEnd)
+      .filter(line => line.startsWith("**目前狀態：**"));
+    assert.equal(statusLines.length, 1, "Expected exactly one REQ-003 backlog status");
+    const status = statusLines[0]!;
+
+    assert.ok(row.includes("../PLAN.md#req003-closeout01"));
+    assert.ok(!row.includes("未實施"));
+    assert.match(row, /真模型/);
+
+    assert.ok(status.includes("../PLAN.md#req003-closeout01"));
+    assert.ok(!status.includes("尚未啟動本需求包工程"));
+    assert.match(status, /實機|物理手機|原生實機/);
+    return { row, status };
+  }
+
+  const { row, status } = assertReq003Backlog(backlog);
+  // Simulate an earlier requirement gaining its own status (e.g. REQ-001 closeout).
+  const earlierSection = /^(#\s+REQ-001(?:\s|[｜|])[^\r\n]*)/m;
+  assert.match(backlog, earlierSection);
+  const shiftedBacklog = backlog.replace(earlierSection, "$1\n\n**目前狀態：** Earlier requirement update.\n");
+  assert.deepEqual(assertReq003Backlog(shiftedBacklog), { row, status });
 
   const worklog = readFileSync(path.join(ROOT_DIR, "WORKLOG.md"), "utf8");
   assert.ok(worklog.includes("codex/req003-acceptance-closeout"));
@@ -728,8 +743,8 @@ test("6. docs/REQUIREMENTS_BACKLOG.md lines 25 and 579 sync with PLAN.md#req003-
   for (const [label, text] of [
     ["PLAN#req003-closeout01", planCloseout],
     ["WORKLOG(REQ-003)", worklogReq003],
-    ["BACKLOG row 25", row25],
-    ["BACKLOG line 579", status579],
+    ["BACKLOG REQ-003 index row", row],
+    ["BACKLOG REQ-003 status", status],
     ["CI closeout script", ciScript],
   ] as const) {
     assert.equal(forbidden.test(text), false, `Forbidden working code leaked into ${label}`);

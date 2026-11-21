@@ -68,6 +68,8 @@ function setup() {
     '../components/chat/ChatAction': {
       ChatAction: p => ({ type: 'ChatAction', props: p }),
     },
+    '../components/companion/CompanionViewport': { CompanionSlot: 'CompanionSlot' },
+    '../AppIcon': { AppIcon: 'AppIcon' },
     '../components/chat/ChatTimeline': {
       ChatTimeline: ({ items = [], renderItem, footer, header, emptyState }) => {
         const renderedItems = items.map(renderItem);
@@ -99,6 +101,7 @@ function setup() {
     '../preview/PreviewNavigationGuard': { PreviewLink: 'PreviewLink', usePreviewLeaveGuard() {}, usePreviewNavigation: () => fn => fn() },
   };
 
+  mocks['./ChatMessage'] = mocks['../components/chat/ChatMessage'];
   const h = harness(mocks);
   const { default: ChatPage } = h.load('src/screens/chatScreen.tsx');
   const { ChatModeSwitch } = h.load('src/components/chat/ChatModeSwitch.tsx');

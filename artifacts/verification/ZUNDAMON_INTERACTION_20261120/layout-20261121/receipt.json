@@ -1,0 +1,45 @@
+{
+  "observed": "2026-11-21 香港",
+  "reviewedCommit": "81173df40e488c74086afa5b8dcd923eaa9e25fc",
+  "environment": "獨立無頭 Edge 157、同一合成家庭、本機正式 Web 及 Firebase 模擬器",
+  "changes": "初始位置在待辦列下方。助手頁把角色固定在工具列內，聊天閱讀區獨立排版。",
+  "checked": [
+    "在兩個尺寸檢視「待回報」、全行及右側箭嘴，點箭嘴均打開原待辦詳情。",
+    "兩個尺寸的首個可見聊天文字完整，角色觸控區在工具列內；點「對話活動」均打開活動視窗。",
+    "前端 TypeScript 通過。"
+  ],
+  "geometry": [
+    {
+      "width": 390,
+      "height": 844,
+      "rowBottom": 500.265625,
+      "badgeBottom": 475.484375,
+      "dockTop": 511.1875,
+      "dockBottom": 755.984375,
+      "navigationTop": 766.203125,
+      "toolbarBottom": 148.796875,
+      "quietFigureBottom": 142.796875,
+      "readingTop": 148.796875,
+      "firstVisibleTextTop": 166.328125
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "rowBottom": 498.6875,
+      "badgeBottom": 470.109375,
+      "dockTop": 513.796875,
+      "dockBottom": 874.984375,
+      "toolbarBottom": 198.796875,
+      "quietFigureBottom": 191.796875,
+      "readingTop": 198.796875,
+      "firstVisibleTextTop": 280.53125
+    }
+  ],
+  "images": {
+    "phoneTasks": "mobile.png",
+    "desktopTasks": "desktop.png",
+    "phoneChat": "assistant.png",
+    "desktopChat": "assistant-desktop.png"
+  },
+  "otherEvidence": "../receipt.json"
+}

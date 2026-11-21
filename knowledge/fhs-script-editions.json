@@ -1,0 +1,156 @@
+[
+  {
+    "sourceId": "fhs-20000",
+    "observationHash": "ab69a37fa24bafe82561ee25a4ac5d6a21d9ef11020452366a97819e5b52aa89",
+    "baselineId": null,
+    "baselineHash": null,
+    "chunkCount": 19
+  },
+  {
+    "sourceId": "fhs-30119",
+    "observationHash": "31e53f0fd423f6e4638969ba208b5ba618831fa7c5c5b2fe7cfd07ac8f88089e",
+    "baselineId": "8184b7de-4f2e-5f64-8be8-721c7dec7162",
+    "baselineHash": "5d5fdbdf7ca45736e308ed85852fe280f0cbff12544822ca7d8ce8bedee95392",
+    "chunkCount": 2
+  },
+  {
+    "sourceId": "fhs-30073",
+    "observationHash": "04bcb77ea85868ac48f7861096db2b34365b0240031344dd6bb2bcbc2db2180b",
+    "baselineId": "43fa7f6b-d0b6-50a9-97d1-2e3bed119208",
+    "baselineHash": "91ad6b2bc4f5a2f74eaa1d5023674cb370974de746edb10e10c0593fceb3bbac",
+    "chunkCount": 3
+  },
+  {
+    "sourceId": "fhs-12146",
+    "observationHash": "0d6bab8185e798a8c9acba56bbaec81c72e12605efab6ba6173c2edf9d9c2fec",
+    "baselineId": "77384ed2-1cce-5133-af13-924b2174c251",
+    "baselineHash": "8446830eba0bac6e62d0bcf8a3160fc236aeaddf45ab2494539048ab134a3c9c",
+    "chunkCount": 10
+  },
+  {
+    "sourceId": "fhs-30078",
+    "observationHash": "1fbf194e2044e919efce9773b26ace7d3475c70df905fb3fc973261bc70e1ea2",
+    "baselineId": "7f2837c1-4612-543a-b0b1-243eebf45e46",
+    "baselineHash": "877eebe7375efba6536f766f44510e890178a02349dd366859308e08aae3478e",
+    "chunkCount": 3
+  },
+  {
+    "sourceId": "fhs-14727",
+    "observationHash": "5c5ab84f61edf1559281684f1b7073800a1304a458d3a9c2c21c28dad29b9ef8",
+    "baselineId": "6d122965-e73c-5e4a-bc8d-678338f8f3f2",
+    "baselineHash": "3d8aad16ddbfcdfa5401cc40d3d63caa515566abe60ad90e45b2c699fa7e01bb",
+    "chunkCount": 9
+  },
+  {
+    "sourceId": "fhs-14722",
+    "observationHash": "f1c2d0e8f73b67a4f658cf249e060cb19cd7237f826da9b4887c8ef362ec1f77",
+    "baselineId": "ee24cbd4-1877-50ac-8b6e-947c210e8acd",
+    "baselineHash": "be91115e93bbc2350dc789bc15a5787a5c1e8bacbfb803a3a1e9c75a2011ddc2",
+    "chunkCount": 10
+  },
+  {
+    "sourceId": "fhs-16301",
+    "observationHash": "d9673b562f37fbd2c7112f28f86b90f1b718fe328ee36a3b9bc8379f2b0b9506",
+    "baselineId": "8ca9e689-4947-59cd-a880-db7661c34a01",
+    "baselineHash": "d6a75cbe91c89e6dd09e69e0d2164bf6bf230d16c503706432e8d3c1daaa6e06",
+    "chunkCount": 8
+  },
+  {
+    "sourceId": "fhs-30169",
+    "observationHash": "0eeba4bc919e7ffd3ece929735cd38712948261f0cdfa350cd57b085dbbbb25f",
+    "baselineId": "08d7a933-9dfb-57ab-a19a-aa3a756848df",
+    "baselineHash": "045c81fd219faa3abf60a8730376baa77ea089c0be8bb5d3d20f4b57b8355c0b",
+    "chunkCount": 6
+  },
+  {
+    "sourceId": "fhs-13034",
+    "observationHash": "fcc33ea69d234b21625c1f4215b04fd2955fc39ba94d39cbb91acd25264bba9c",
+    "baselineId": "94c9e508-6170-5c93-9cd8-cc5e4f672a6f",
+    "baselineHash": "e3095c938bab6be0c85a833dd3db9f97da227dc4ccf5ed759ec08d5c7f8820e6",
+    "chunkCount": 2
+  },
+  {
+    "sourceId": "fhs-12196",
+    "observationHash": "90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772",
+    "baselineId": "61c90b6a-8634-5390-a8d3-b8d6e17763dc",
+    "baselineHash": "36ec766463d1fb33a50f97df553ec89b5f4e396c18be0a07abc8fc2f773f97f4",
+    "chunkCount": 17
+  },
+  {
+    "sourceId": "fhs-30130",
+    "observationHash": "68e7e8b9bb28095869f8d35cc5d1d6c2f264cb50f27e6c5c75bf84a67e5c8eb6",
+    "baselineId": "22009185-605f-5e07-8a2c-6ed577f938ac",
+    "baselineHash": "6c9e9e991ab9200deb05e1474846779e1456419cf574703f562cf22cea62c5ec",
+    "chunkCount": 8
+  },
+  {
+    "sourceId": "fhs-13043",
+    "observationHash": "72db528549e6b9f2befab1cbc934b7ec7500ee5441ef637920d22b2fe3296fc6",
+    "baselineId": "4b0d5348-ceef-537e-bbb2-a9b1e80cad26",
+    "baselineHash": "89395dab571ef6891e5f2f541edaf4b78e4ff3e392cf078ad132d06f359815c2",
+    "chunkCount": 6
+  },
+  {
+    "sourceId": "fhs-14841",
+    "observationHash": "d1f3d1948aee4f635f6698a41bcbca6435662361f7979763fad24a245d9e6a2f",
+    "baselineId": "5cd7e04e-b3d2-596e-b02c-5b0a5d70bb1a",
+    "baselineHash": "b39846845d98d0ea71049249064bbb2cd0e1e6393df6abef6ee85bbcc9a6142c",
+    "chunkCount": 6
+  },
+  {
+    "sourceId": "fhs-14842",
+    "observationHash": "8c6b7dc5dfd2e71265f27fb27caef3ffce5553ea1ab32bd13f1e615a60c82861",
+    "baselineId": "2b0237da-167c-5275-8317-39d95c815cf5",
+    "baselineHash": "cef6ed47ad572ff79c0f6a7ec064e2d94b5937a35d83e156af76fea51f926dd9",
+    "chunkCount": 3
+  },
+  {
+    "sourceId": "fhs-13048",
+    "observationHash": "986746661265eec835f23c9ebd5fb204bac016dce89f1d1559985c46ba70eb56",
+    "baselineId": "c06cbd86-2f9f-5025-bec5-8aa2238ca488",
+    "baselineHash": "a4655fb34accf4d0cc4418d1386f9b58373efa65df33b4ecd1e47ea9261490f3",
+    "chunkCount": 10
+  },
+  {
+    "sourceId": "fhs-14836",
+    "observationHash": "36b3cbdf13243b681a57d54d0eb73a924d6f461398a1b3f56e191b06e2b15bb0",
+    "baselineId": null,
+    "baselineHash": null,
+    "chunkCount": 11
+  },
+  {
+    "sourceId": "fhs-14837",
+    "observationHash": "1c4cb9b27661ccd8de6221c8cfd6e391110f3db9512fa85b245b64a27b3bb7a0",
+    "baselineId": "d20d10b8-284a-570a-9dbe-a8d0a0420fb0",
+    "baselineHash": "637507d7e3a78c63732d63fd13e3b72217e8f58304fe4b2c82a116efc5a0ca24",
+    "chunkCount": 8
+  },
+  {
+    "sourceId": "fhs-30142",
+    "observationHash": "5b910fbab3ebfb8c7dddbf84adb5aa53d419c8acf66f718abe3db1b56ea10b21",
+    "baselineId": "733e053d-4bd8-555f-a3b2-8d2995da3906",
+    "baselineHash": "731012dfe8b91bbeb53a743fe97960d28ba9d790dfc72bce7935c34aa36985b1",
+    "chunkCount": 6
+  },
+  {
+    "sourceId": "fhs-13050",
+    "observationHash": "659f00ec742eee3438f3779168e96305af25e2df38340f64c4019ae0bef1ae3e",
+    "baselineId": null,
+    "baselineHash": null,
+    "chunkCount": 3
+  },
+  {
+    "sourceId": "fhs-30092",
+    "observationHash": "bfd658600b4bbae14dc4863de513eb99ddadddda7b4e77cef4287d5844a7f289",
+    "baselineId": "c6a93e37-0d22-56f5-af6b-87143fd75068",
+    "baselineHash": "be0ba5d15bff5315be29c88691b2b69bfcf9300b2d473ec0f6d36fd1016f5eb9",
+    "chunkCount": 11
+  },
+  {
+    "sourceId": "fhs-14799",
+    "observationHash": "1f476bfcc865aa5cea0053ddcc33ed78465a6ba6bb5f8f3434808c9d3362fa7d",
+    "baselineId": "3e236f9b-94cf-505d-99c9-187a720c1ad6",
+    "baselineHash": "ca557cc8a505126cdbab57ebf11f1d1bc02f6b322bd592be54e583b84caef4bc",
+    "chunkCount": 6
+  }
+]

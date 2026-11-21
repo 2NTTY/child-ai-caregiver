@@ -1,0 +1,190 @@
+{
+  "checkedAt": "2026-11-21T11:04:55.467Z",
+  "materials": [
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html",
+      "htmlSha256": "5b05b1494e746d8768cb019c21bf0365d3a5878710b074f39be96fb2a4bae368",
+      "printUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+      "printSha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+      "publisherDate": "(02/2026 修訂內容)",
+      "duplicateGate": "publisher_current_web_text",
+      "localFixtureChunks": 10,
+      "pages": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html",
+          "title": "怎樣替嬰兒掃風",
+          "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html#transcript",
+          "htmlSha256": "16d9b13ab20d613e4fbc406cecc19e48cc0a3581c0e487c838db407d3f581584",
+          "paragraphs": 21
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html",
+          "title": "BB教餵奶 － 回應式餵哺",
+          "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html#transcript",
+          "htmlSha256": "301c06a18497942af514c9ad8d50678773a1acc90ddf7a6ae81e684e6c1d8687",
+          "paragraphs": 134
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html",
+          "title": "配方奶沖調大揭秘",
+          "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript",
+          "htmlSha256": "46123f720cacb95f1607ec9582802a5a799d5b02ab535a482fe44dc811f3cae0",
+          "paragraphs": 53
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html",
+          "title": "奶瓶和用具消毒日常",
+          "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html#transcript",
+          "htmlSha256": "e368c095a7e8d91bcb8edb49243e5d83023bc5cb3f32a5e0d52de949f49cc963",
+          "paragraphs": 66
+        }
+      ]
+    },
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html",
+      "htmlSha256": "9e20a8df78caf3b8840bfaf1bd89816b844ee561b5f221ee98730e3f5285c25f",
+      "printUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf",
+      "printSha256": "247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355",
+      "publisherDate": "(04/2025 修訂網上內容)",
+      "duplicateGate": "publisher_current_web_text",
+      "localFixtureChunks": 1,
+      "pages": []
+    }
+  ],
+  "tools": [
+    {
+      "surface": "search_knowledge + read_knowledge_context",
+      "query": "怎樣替嬰兒掃風影片劇本",
+      "source": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html",
+      "firstParagraph": 1,
+      "lastParagraph": 21,
+      "excerptSha256": "78654d7aa4fb4ba743a9036bb10fc19a3de777cc3b0cc84f74597f83d815c7b3",
+      "hasTimecode": false
+    },
+    {
+      "surface": "search_knowledge + read_knowledge_context",
+      "query": "BB教餵奶 － 回應式餵哺影片劇本",
+      "source": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html",
+      "firstParagraph": 1,
+      "lastParagraph": 59,
+      "excerptSha256": "15152ba1bbfbc1d0d6ce258d79d6910abb27d5dc436b5171ce679de3f1c2968f",
+      "hasTimecode": false
+    },
+    {
+      "surface": "search_knowledge + read_knowledge_context",
+      "query": "配方奶沖調大揭秘影片劇本",
+      "source": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html",
+      "firstParagraph": 1,
+      "lastParagraph": 53,
+      "excerptSha256": "7d60197368501349f441357f0ce18fb7b61ebe78243d5dc4303290fd691a08aa",
+      "hasTimecode": false
+    },
+    {
+      "surface": "search_knowledge + read_knowledge_context",
+      "query": "奶瓶和用具消毒日常影片劇本",
+      "source": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html",
+      "firstParagraph": 1,
+      "lastParagraph": 52,
+      "excerptSha256": "63db1220918e9f12ff5edac9b5da5d47357cb0bd2b5c142933afb5903aa2f9f7",
+      "hasTimecode": false
+    },
+    {
+      "surface": "search_knowledge",
+      "query": "奶瓶餵哺指引的四個影片有甚麼題名和劇本？",
+      "titles": [
+        "怎樣替嬰兒掃風",
+        "BB教餵奶 － 回應式餵哺",
+        "配方奶沖調大揭秘",
+        "奶瓶和用具消毒日常"
+      ],
+      "allFourInSingleToolResponse": true,
+      "unsubscribedHits": 0
+    },
+    {
+      "surface": "search_knowledge",
+      "query": "飲奶知多少 孩子飲奶分量",
+      "source": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html",
+      "productionVersion": "169c7a81-baf4-539d-8c49-1d56ce2932e0",
+      "excerptSha256": "1e5cc1d044722b4323ec0af8739af4b02cb725ba2ef33de5e224a4133d603bc4",
+      "printExcluded": true,
+      "explicitPrintRetained": true
+    },
+    {
+      "surface": "search_knowledge",
+      "case": "two synthetic sources in isolated Firestore, both applying to morning entry",
+      "passages": [
+        {
+          "syntheticTitle": "合成識別名牌 0",
+          "section": "上午入場",
+          "conditions": [
+            "上午入場"
+          ],
+          "original": "上午掛藍色名牌。"
+        },
+        {
+          "syntheticTitle": "合成識別名牌 1",
+          "section": "上午入場",
+          "conditions": [
+            "上午入場"
+          ],
+          "original": "上午掛綠色名牌。"
+        }
+      ]
+    }
+  ],
+  "providerRequests": 0,
+  "catalogue": {
+    "contract": "application/vnd.yuyoufang.library-series.v5+json",
+    "legacy": "application/vnd.yuyoufang.library-series.v4+json",
+    "matchingBrowserPageRecords": 4,
+    "legacyOriginalLinks": 4,
+    "analysisEnabled": false,
+    "browserReceipt": "frontend/verification/parent-material-reading-20261121/browser.json"
+  },
+  "editionNotice": {
+    "source": "https://www.fhs.gov.hk/common/js/script_header.js",
+    "sha256": "80dc85259d3233c336dddd3353115e009d96774da506d11f69fef7876f781b9a",
+    "verifiedCounterparts": 34,
+    "leafletText": 31,
+    "chapterDirectories": 3,
+    "independentAttachment": "https://www.chp.gov.hk/files/her/hand_hygiene_pamphlet.pdf",
+    "changedPrintRequiresNewCheck": true
+  },
+  "productionReadAt": "2026-11-21T10:31:29.196856Z",
+  "printedEditions": [
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+      "activeVersion": null
+    },
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf",
+      "activeVersion": null
+    }
+  ],
+  "validation": {
+    "targetedTests": 52,
+    "toolScenarios": 7,
+    "productionMutations": 0,
+    "mediaDownloads": 0,
+    "paidRequests": 0
+  },
+  "production": [
+    {
+      "sourceId": "fhs-12549",
+      "versionId": "169c7a81-baf4-539d-8c49-1d56ce2932e0",
+      "versionHash": "00880e89a5d06d620a9cb23bd927b578fa6fbd9381d9f8f03a2efe43f559fe0a",
+      "state": "reviewed",
+      "publishedChunks": 1,
+      "readyVectors": 1
+    },
+    {
+      "sourceId": "fhs-12146",
+      "versionId": "77384ed2-1cce-5133-af13-924b2174c251",
+      "versionHash": "8446830eba0bac6e62d0bcf8a3160fc236aeaddf45ab2494539048ab134a3c9c",
+      "state": "reviewed",
+      "publishedChunks": 3,
+      "readyVectors": 3
+    }
+  ],
+  "limits": "The four new scripts used actual official HTML, isolated Firestore, simulated reviewer responses and local vector fixtures. The two current HTML editions were read from production. Product tools used the real lexical fallback. No live assistant answer or new production edition was generated."
+}

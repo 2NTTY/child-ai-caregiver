@@ -1,6 +1,7 @@
 import { layoutFactsSchema, layoutFactContract } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { knowledgeChunkInputSchema } from "./knowledge-inputs.ts";
+import { ageReviewRequired } from './knowledge-age-output.ts';
 import { nativeResponseSchema } from "./structured-output-schema.ts";
 export { nativeResponseSchema };
 
@@ -22,23 +23,30 @@ export const nativeCoverageSchema = z.strictObject({
 
 /** The response grammar requires every server-assigned range, including image/table pages. */
 export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[],
-  factKeys: readonly string[] = [], priorTopics: readonly string[] = [], inheritedCoverage?: z.infer<typeof nativeCoverageSchema>) {
+  factKeys: readonly string[] = [], priorTopics: readonly string[] = [], inheritedCoverage?: z.infer<typeof nativeCoverageSchema>, explicitAgeScope = false,
+  extendedSourceAge = false) {
   const ranges = units.map((unit, i) => {
     const first = unit.page!, last = unit.pageEnd!;
     const pages = Array.from({length:last - first + 1}, (_, offset) => "physicalPage" + (first + offset));
     return { key: "fromPage" + first + "Through" + last + "Unit" + (i + 1), unitId: unit.id, first, last, pages };
   });
-  const shape = z.strictObject({ ranges: z.strictObject(Object.fromEntries(ranges.map(r => [r.key, group.extend({
+  const sourceGroup = extendedSourceAge ? group.extend({ ageRange: group.shape.ageRange.unwrap().extend({
+    maxMonths: applicability.shape.maxAgeMonths.unwrap(),
+  }).nullable() }) : group;
+  const scopedGroup = explicitAgeScope ? sourceGroup.extend({
+    ageRange: z.union([sourceGroup.shape.ageRange, ageReviewRequired]),
+  }) : sourceGroup;
+  const shape = z.strictObject({ ranges: z.strictObject(Object.fromEntries(ranges.map(r => [r.key, scopedGroup.extend({
     pageText: z.strictObject(Object.fromEntries(r.pages.map(key => [key, text]))),
     ...(priorTopics.length ? { priorTopicMatches: z.strictObject(Object.fromEntries(priorTopics.map(key => [key, z.boolean()]))) } : {}),
   })]))), nativeCoverage: factKeys.length ? nativeCoverageSchema.extend({ layoutFacts: layoutFactContract(factKeys) }) : nativeCoverageSchema });
   return { ranges, schema: nativeResponseSchema(inheritedCoverage ? shape.omit({nativeCoverage:true}) : shape), parse(raw: unknown) {
-    // The English FHS publication can spell its jurisdiction in full. Normalize that
-    // exact display name to its ISO code before applying the unchanged storage schema.
+    // Preserve the same jurisdiction when the organizer uses a display name or the lowercase ISO code.
     const envelope = z.object({ ranges: z.record(z.string(), z.unknown()) }).passthrough().parse(raw);
     if (inheritedCoverage && Object.hasOwn(envelope, "nativeCoverage")) throw Error("knowledge_pdf_revision_unbound_coverage");
     const normalized = Object.fromEntries(Object.entries(envelope.ranges).map(([key, value]) =>
-      [key, value && typeof value === "object" && "region" in value && value.region === "Hong Kong"
+      [key, value && typeof value === "object" && "region" in value
+        && (value.region === "Hong Kong" || value.region === "香港" || value.region === "hk")
         ? { ...value, region: "HK" } : value]));
     const value = shape.parse({ ...envelope, ranges: normalized, ...(inheritedCoverage ? {nativeCoverage:inheritedCoverage} : {}) });
     return { nativeCoverage: value.nativeCoverage, units: ranges.map(({ key, unitId, first, pages }) => {

@@ -56,6 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="registered-source-categories"></a>
+**REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
+
+本機普通家長帳戶已驗 NHS 教材及香港生長圖表，各巡查兩次、各一份原件及一項索引工作。詞表外教材《兩個信封》的離線整理提出「財務管理」，獨立審核接納引文並否決主題。受控審核另驗接納後顯示主題及原句，網站加分類、改名、移除分類均沿用原整理和向量。正式 Gemini 語意效果待驗；主聊天統籌整合發布，正式批次及金額由 C 統籌。[逐站收據及卡內畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json) · [語意分類及重用收據](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/semantic-topic.json)
+
 <a id="assistant-discussion-companion-catalogue"></a>
 ### 三方討論、頁內助手與平台卡庫
 
@@ -65,13 +70,96 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 |---|---|
 | A · [REQ-009](docs/REQUIREMENTS_BACKLOG.md#req-009) | 家長可在送出前或收到原回答後，逐題選擇三方討論。共用當前授權背景，角色可讀彼此已交付的發言、回應分歧。可收合的群組對話保留主回答、原來源、停止及斷線查回。送出前選擇只建一個 run；已結算的回答由明確發起操作綁定唯一後續討論，所有角色、工具與核對共用該 run 的預算。同題重開只讀回，普通下一題的討論用量為零。 |
 | B · Zundamon Live2D 頁內助手 | 一個共用角色接回現有文字／錄音聊天；從待辦、記錄或文件送出時固定已保存項目及孩子，伺服器重新核權。到助手頁能接續同一訊息、回答、停止及結果，角色在該頁只作動作互動。Web、iPhone PWA、Android 各按實際載入與操作取得證據。 |
-| C · 兒童健康平台卡庫 | 全責官方目錄、報價、整理、RAG、管理後台及家長卡庫。管理員新建／匯入後同步已審核版本；家長在參考資料挑選下載，自動匯入及跟隨新版。普通問答與討論只檢索本人已下載且啟用的卡。刪除停止新召回，可重下；原回答仍綁舊版。沿用既有固定快照與顯式停用。管理員逐卡控制影音整理，預設只列影音連結，下一次成功檢查確認移除才清走。 |
+| C · 兒童健康平台卡庫 | 管理員同步已審核版本，家長下載、跟隨更新或固定版本。普通問答與三方討論只檢索本人已啟用的卡。刪除後停止新召回，歷史引用保留舊版。影片如有獲准使用的官方劇本，按片名自動收錄劇本文字及段落出處；沒有劇本則保留原連結。讀取畫面或聲音由管理員逐卡開啟。只有成功檢查確認原件已移除，才更新目前清單。 |
 
-C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 148 份相異 PDF、1,799 頁，5 項未能取得。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
+**11 月 21 日家長實際使用後的修訂。** 三線沿原工作包接續，正式使用的驗收如下。
+
+- A 核對家長在已收回答按「討論」時觸及模型次數上限的原操作。按實際帳戶政策驗一題能看見三方交流和主答，再問普通問題。遇到預算不足時保留已交付的發言，給一個可行的下一步。#749 已發布；隔離家庭的三席、主答及下一題已驗。原截圖未能配對；正式測試帳號的發起及收合仍待登入後點按。[收尾收據](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json)
+- 主聊天沿用青綠、暖黃的 [Base demo](https://www.assistant-ui.com/demos/base) 佈局。送出立即呈現原訊息並清空輸入框，等待期間可寫下一句。完整記錄、討論及引用留在主聊天。既有桌面及窄屏流程已核對。[先前驗收](artifacts/verification/ASSISTANT_CONVERSATION_20261121/verification.md)
+- B 在其他頁面以同一隻角色承接提問。點身體顯示單一輸入框，當輪回答出現在角色旁的氣泡。麥克風輕點即開始收音，錄音中可取消或送出。點頭互動、主動提醒時招手及助手頁安靜模式沿用。驗收從一項待辦問「這個」、點麥克風錄音並送出、讀氣泡，再回助手頁核對原對話。以前的浮動聊天窗收據只作歷史記錄。
+  同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。助手頁固定，真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
+- C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。沿[REQ-004](docs/REQUIREMENTS_BACKLOG.md#req-004)以《飲奶知多少？》核對出版者指定的現行網頁，以《奶瓶餵哺指引》核對獨立附件和官方劇本。另按[REQ-006](docs/REQUIREMENTS_BACKLOG.md#req-006)驗同卡教材在適用條件不同、明示取代、以及原文確有衝突時的實際召回與引用。既有單項選擇和固定版本沿用。
+- [衞生署入庫手冊](docs/DEPLOYMENT.md#fhs-ingestion)記錄首批的實際做法。自訂來源以兩種網站結構驗證在用戶零介入下完成首次入庫、改版後更新及無變更時復用。另以一個現有讀法都失敗的私人來源，驗卡內求助、從原對話補線索、核實後接續同一工作。錯誤線索保留已驗版本，同一障礙只求助一次。
+  - 本人網站已在本機完成兩站首次入庫、改版、無變更重跑及固定版引文讀回。錯誤位置未入庫；正確位置沿原巡查接續；一份公告讀取失敗時，另一份更新仍可引用。Edge 已核對私人卡求助開啟原助手草稿及跳過後的帳戶收據。正式發布由主聊天接續。[兩站原文與適用範圍](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [窄屏求助](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
+- 參考資料首頁列「目前的卡」及「未啟用的個人卡」。右上「平台卡列表」在彈窗選卡，加入後回到目前清單。停用平台卡後從彈窗重新選取，停用個人卡後可在首頁再次啟用。卡內來源、版本、影音按[操作角色](frontend/DESIGN_SYSTEM.md#control-roles)呈現。以同一帳戶核對加入、停用、再加入及原有局部採用狀態。
+
+  `codex/fhs-child-health-series` 已接回原有文件及個人訂閱。本機 Edge 以三份已發布教材核對局部採用、整卡採用、同範圍跟隨及移除。移除後新召回為零，原聊天仍可開啟同版 PDF 第 3 頁。正式站待主對話整合發布。[家長操作及原頁收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json)
+
+C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 [149 份相異 PDF、1,800 頁](knowledge/fhs-child-inventory.json)。3 個指定原網址回傳 404。11 月 20 日晚補核的專題目錄、公開帖文及其一頁附件只列連結。該附件未列入[原報價](artifacts/verification/FHS_CHILD_CATALOG_ESTIMATE_20261120.json)，本批新增模型成本為零。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
+
+#### 兒童健康首批交付分工
+
+11 月 20 日 14:11 香港，原批次有 84 份 PDF 尚未開始整理，共 1,400 頁。[固定分工清單](knowledge/fhs-initial-publication-lanes.json)列出每份教材的來源 ID、原件 SHA-256、頁數和主責。各組直接沿同一批次送審、發布及從正式卡庫讀回。接手時先查原收據，已完成的教材可直接交付。
+
+| 主責 | 本次交付 |
+|---|---|
+| C · 平台卡庫 | 統籌同一活動的費用預留、逐來源認領及中斷接續，確保不同組可各自推進。另接續已有整理稿的《貼心照顧》，核對卡庫與總帳。 |
+| C1 · 28 份／468 頁 | 11 月 21 日 13:56 按全部原操作核實 1 份上架、26 份候選保留、1 份因主機容量待辦。家長卡《新生嬰兒聽力普查測驗：耳聲發射測試》可匯出 1 個文件向量，引用逐字命中原件第 4 頁。26 份按原回條分為引用不符 3 份、年齡只有單側界限 2 份、審核失敗 1 份及 `unavailable` 20 份。192 頁《共享育兒樂（三）嬰幼兒篇》未派送。C1 已結算 US$0.315907。共用拒件由 C 對帳，餘額及主機容量許可後由主對話接續。[逐份收據及共用帳本](artifacts/verification/FHS_C1_PUBLICATION_20261120.json) |
+| C2 · 28 份／464 頁 | 負責清單內 28 份教材及各組共用的正式卡片、向量和原頁收據查回。 |
+| C3 · 28 份／468 頁 | 負責清單內 28 份教材，並讓較長的 PDF 能依原頁分段及接續，沿用既有整理與獨立審核。 |
+
+每組自行修正所領教材，逐份交付原件版本、生效卡及引用原頁，或記錄具體保留原因。受命由 Codex 製作的這批平台卡按人工製作處理。三組共用 US$30 抵免前毛額，上游整理、審核、向量及交送不明的預留均入原帳。自動維護另受每日次數限制。11 月 20 日的 300／300 是舊入口的收據；各組可在人工製卡入口上線後於同一帳日接續。[操作手冊](docs/DEPLOYMENT.md#fhs-首批同一帳日續作)
+
+前一輪從[09:00 逐份收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)起步。C1 已接回待向量的 PDF。C2 的 24 份教材結果見下方恢復清單。C3 核齊原 116 份 PDF 共 1,471 頁，其中 18 份已在卡庫核實，13 份保留，1 份待獨立審核，餘下 84 份按上表分工。六冊原估每份需 14 至 32 次模型呼叫，須逐份核對可接續的處理方法。[原件及分窗](artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json) · [逐份狀態及長檔收據](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+#### C3 分組交付（28 份、468 頁）
+
+11 月 21 日香港 21:59，09:00 原單 116 份、1,471 頁已有 **35 份正式 PDF** 可由家長讀取。34 份原版本有 40 段引文逐字命中原頁、36 段對回同一版本的獨立轉錄。18 頁《幼兒口腔護理全接觸》修訂版的實頁 1、6、12、15 已通過印本盲讀，沿用四個逐值相同的向量。共 80 個向量、80 處原頁引用。共用帳本已結算 US$12.010120、預留 US$3.268608、可用 US$14.721272。[逐份結果、原頁及帳本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+餘下 81 份均有原操作及當前處置。當中 67 份有已審核的對應網頁，五份有已審核的分章目錄，八份對應網頁待上架，一份印本由出版者修訂中。12 份超過 20 頁的 PDF 仍待首張家長版本。原 C 已選定 36 頁《「媽記奶品工場」漫畫》。印刷第 14 頁（實頁 16）有三格漫畫，網頁該節只有標題。原 C2 工位沿漫畫原單和已保存的首窗附件接續，C1 核算共用額度。第四冊的目錄缺《正面親職（二）》，一般照護先沿已審章節。需要完整合訂本頁碼時，112 頁第四冊排在 192 頁第三冊之前。[逐份保留原因、兩冊原單及印本驗收點](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+112 頁《共享育兒樂（四）》的首窗已用正式映像在本機核實。整理工序讀入實頁 1 至 13，負責實頁 1 至 12。實頁 7 的「社交和情緒發展」可供兩次正式閱讀後核對引用。實頁 9 的字碼表不完整，選書一段雖清楚印在頁上，現行文字層無法逐字核對。合訂本的正式兩次閱讀、向量及發布仍待原 C 按原單處理。[首窗收據及七個印本驗收點](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+11 月 22 日香港 01:53，正式庫逐份核對的 116 行與 00:31 相同。漫畫原單於 00:31 為 `held / unavailable`，第四冊於 00:28 為 `ready` 且尚未開始，兩冊至 01:53 仍各有零票。漫畫首次派送登記已在本機對回原 C2 操作、觀測及固定檔案，須待正式部署。漫畫及第四冊的單冊封裝分別有 20 及 43 筆已核實資料。第四冊的索引於 00:33 尚未載入工位，大型原件派送需主機可用記憶體達 960 MiB。兩冊均待本冊的 Gemini 原頁閱讀、獨立審核、向量和家長引用。[正式狀態、封裝位置及印本驗收點](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+原 C 已結清 C3 四宗及 C2 一宗原生 HTTP 400。五筆的實際費用均為零，已釋放 US$8.171520。C3 的 24 頁《奶瓶餵哺指引》仍欠供應商結果，保留原 US$1.634304 預留。[逐份結果、原頁及帳本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+三份 C2 整本教材的正式整理票據，均與此前按完整 PDF 重建的請求指紋相符。12 頁《睡得安全 親子無憂》因適用年齡只有單側界限而保留。16 頁健康飲食進展篇（下）已結算整理費 US$0.051726，程序其後達到 400 MiB 上限並退出，原單未見獨立審核票據。24 頁進展篇（上）的完整 PDF 已送達整理工序，Vertex 回覆 HTTP 504，原 C 已按該票據零費用結算。另一本 24 頁《奶瓶餵哺指引》的整理階段自派送前起一直未再寫入，兩宗同時段成功用量仍無法逐單歸屬。[三份原單、供應商結果及階段證據](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+28、32、36、40 及 80 頁五份原單均有 `unavailable` 結果及原整理階段，當時可用 US$0.531586，五份均無供應商票據。28 及 32 頁的原分窗與現行版本有別。36 頁《「媽記奶品工場」漫畫》的三窗覆蓋實頁 1–14、15–28、29–36，實頁 3–34 須讀印刷畫面。18:27 工位沿原操作查回保留收據，其後更換了字型讀取器。36、112 及 192 頁三冊現已在本機用新版重建及解封，29 個重切附件均有新雜湊。漫畫首窗繼續沿用正式工位保存的實頁 1–15 附件，新輸入包亦附該附件的文字讀取記錄。112 及 192 頁兩冊仍未送讀。已封存的漫畫首窗仍由原 C2 工位沿用。[逐冊索引、原單及帳本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+84 頁《共享育兒樂（二）》已核對原整理附件及首窗雙讀。實頁 3、6、7、12 均無可引用文字層。覆核稿在第 4–6 頁段選取的跟進段落位於實頁 4，整理稿則在實頁 6 引用兒童發展原則。這一段須重新校對。另有四份短冊的 20 處已登記引文均通過新版讀取記錄及兩份原稿覆核。[84 頁冊實頁 4](https://www.fhs.gov.hk/tc_chi/health_info/child/30033.pdf#page=4) · [實頁 6](https://www.fhs.gov.hk/tc_chi/health_info/child/30033.pdf#page=6)
+
+11 月 21 日香港 00:53，C3 已逐份對帳 28 份原單、468 頁。5 張正式家長卡的 10 個文件向量均可匯出，引文已對上原 PDF 實頁。16 份按內容核對保留，其中 9 份適用年齡未確定、6 份引文未能核對、1 份經獨立分窗審核保留。另有 2 份技術或額度保留。《交朋友》的獨立審核結果未明，原單只有首筆已結算生成。80 頁《共享育兒樂（五）》立單至保留期間，帳本可用 US$0.531586，未能預留一次生成所需的 US$1.634304，該冊沒有供應商票據。[逐份來源、版本、向量、實頁及原帳](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+六份因引文差異保留的 C3 教材共有 12 筆已結算生成。已從正式工位查回全部六份的整理稿及獨立審核。《一至三個月大嬰兒的發展》、《兩至三歲大兒童的發展》、《三至四歲大兒童發展》及《兒童語音發展 知多一點點》共 20 處引文可對回兩稿及印刷原頁。四份原件輸入已在現有工位核對，引文登記已合併 #751，待原 C 沿原單接續及讀回家長版本與向量。84 頁《共享育兒樂（二）》只讀至實頁 12，兩稿在實頁 3、6 引用不同段落。《培育還是催谷子女》實頁 6 亦有相同問題，兩冊維持保留。[引文登記](https://github.com/2NTTY/child-ai-caregiver/pull/751) · [逐份收據、原操作及工位輸入](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+
+九份因年齡保留的原單，各有一份已結算整理及零筆獨立審核。已按原附件或完整 PDF 對回九個整理請求，抽查共 18 個印刷實頁。兩冊抗逆力單張的文字層把延伸閱讀標題列作「三至五歲」，印刷頁只列「學前兒童」。另一冊發展單張的三個約數年齡各連着班級及已入班一段時間的條件。九份維持原保留，逐頁限制已留給原 C 核對個別段落。[逐份印刷頁及原票據](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 共同驗收只串一條流程：家長下載一張已審核卡，在待辦頁點角色提問，開助手頁讀到同一原問題及回答，發起討論，再由引用打開當時的官方原件。每線實作、定向驗收、正式交付、仍待本人操作分開記錄。
 
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
+
+<a id="fhs-official-source-forms"></a>
+#### 官方文字稿與同教材多格式
+
+家長卡按正式來源歸屬、登記、觀測及撤回狀態列出待收錄原文，與已發布教材共用游標及官方分類。香港 22:14 在隔離環境以普通家長開啟第十份《嬰兒的啼哭》，它在第 3 頁出現。隔離發布後，重新開卡可在同頁找到正式版本，待收錄原文由 10 份回到 9 份。[轉版查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
+
+首批現行網頁已按正式版本逐份對帳。香港 21:23，251 個來源中有 156 個生效版本；扣除 C2 劇本後，本線九份網頁仍待助手收錄。本機家長卡已從九個題名逐一開啟官網並核回全文。115 份印本對應本批網頁，3 份對應既有平台教材，另列 4 份獨立原件。五冊《共享育兒樂》的 94 個目錄連結按各自版本列明。家長入口待主聊天發布，助手仍須解決年齡及答題條件或接續已結算的 504 原單。[逐教材對照及家長查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
+
+香港 11 月 21 日 21:20 從正式資料庫重組全部 22 份教材的文字觀測，61 套官方劇本的 1,695 段逐段對回原稿。10 份教材的新版本已上架，可按劇本及段號定位 30 套、852 段，分布於 43 個有全文向量的片段。關鍵詞索引採用已審摘要等欄位，短引最多 150 字，可再擴讀同版原文。整卡清單可跨已審教材命中同一劇本；指名教材時依該版列出。[61 套逐項覆蓋、正式版本及查回](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json) · [86 個來源連結及上架前基線](artifacts/verification/FHS_SCRIPT_COVERAGE_20261121.json)
+
+其餘 31 套共 843 段已存完整原稿，尚無可直接定位的正式劇本片段。12 份教材的新版依原單保留，當中 6 份未能確定適用年齡、2 份僅有單邊年齡、2 份達整理輸出上限、2 份由獨立審核保留。22 個原單均已處理，78 次請求已結算 US$1.330376，共用抵免前帳本尚可預留 US$14.721272，因餘額擱置 0 份。後續處理保留項時按逐份原因查原單及原稿。[逐份原因、工作指紋及費用](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json) · [委託版本](knowledge/fhs-script-editions.json) · [原單入口](docs/DEPLOYMENT.md#fhs-ingestion)
+
+《奶瓶餵哺指引》的四個影片頁均有官方題名及劇本。v5 家長目錄沿原連結提供題名及 `#transcript`。文字審核按影片原頁及首末段號核對。隔離卡庫的助手工具可一次列出四個題名，亦可逐套擴讀原句。v4 保留四個原連結。兩版均已與家長閱讀頁實測對回。[來源及工具收據](artifacts/verification/FHS_SOURCE_FORMS_20261121.json) · [家長閱讀驗收](frontend/verification/parent-material-reading-20261121/browser.json)
+
+首批未索引的 31 套沿原單處理。正式版 `7e41cf5c` 讓家長按題名或內容找教材，純原文片段保留原對象、條件及未知月齡。一般照護、建議及主動提醒排除這類片段。香港 11 月 22 日 01:05 查回 41 套、1,238 段，較首批增加 11 套、386 段。以整張卡的正式快照逐名測試，41 套均可展開同版原段；6 條內容查找有 4 條命中所問劇本。6 條一般照護查詢傳回純原文片段 0 個。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44926747284) · [逐套收據](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
+
+香港 03:09，隔離家長逐套查回 52／61 套、1,312／1,695 段，內容查找 5／6。《建立睡前常規》首位命中並展開 48 段。10 套母乳劇本已獲獨立批准，原向量票已按 HTTP 400 結算 US$0。餘下九套、383 段中，嬰兒用品八套的原回應無法查回，其後獨立審核要求檢索時區分原文的分齡操作。親子溝通一套的單張已補上出版者明示的年齡上限，第二次比較回應仍未通過結構校驗。下一步沿原票查其錯誤，並驗嬰兒用品按分齡查找、重新獨立審核及《替寶寶換尿片》的內容問題。[原單入口](docs/DEPLOYMENT.md#fhs-ingestion) · [母乳結算及逐套結果](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json) · [首輪原單診斷](artifacts/verification/FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json)
+
+普通文字問題使用發行者明示的現行網頁。《飲奶知多少？》的印刷本和網頁已按原件核對。34 組範本中，31 組是單張正文，3 組是分章目錄。查問印本、圖表或獨立附件時保留所問版本。兩個同範圍的合成矛盾段落已在一次實際工具回應中各自帶回原文。正式環境於香港 18:31 有上述兩個網頁生效版，共 4 個段落及 4 個向量。[出版者版本證據](knowledge/fhs-leaflet-editions.json)
+
+<a id="fhs-c2-publication-lane"></a>
+#### C2 本批 28 份 PDF
+
+C2 本批 28 份官方 PDF 共 464 頁，香港 11 月 21 日 14:04 已逐份核對。8 張生效家長卡的 33 個所需文件向量全部可匯出。33 處引文中，11 處逐字對上原頁文字層，22 處對上同一實頁的兩份獨立轉錄。當中 6 張沿原操作接回已獲獨立審核的讀稿，上架時只新增 31 次向量請求，合共 US$0.000996。[逐份版本、引用實頁及保留原因](artifacts/verification/FHS_C2_PUBLICATION_20261120.json) · [修復版本的正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44782348928) · [前批 24 份的處置](#fhs-initial-recovery)
+
+共用毛額餘 US$0.530590，一次新生成須預留 US$1.634304。13 份因此暫停，當中 10 份未派出，2 份原工作因預留不足而結束、各無供應商票據，另 1 份《母乳餵哺－新生嬰兒篇》已有整理稿，仍需獨立審核。其餘 7 份逐項保留，當中 2 份的年齡範圍未確定、2 份未通過獨立審核、1 份的頁面覆蓋有分歧。《搖籃曲之一：建立睡眠常規》有一筆未結算生成，保留全額並沿原票據隔離。《僱員指引－母乳餵哺與工作相容》在 256 MiB 容器中斷，原租約已過，只有一筆生成結算，續作須先核對原工作第二階段。[原件分工](knowledge/fhs-initial-publication-lanes.json) · [逐項收據及毛額](artifacts/verification/FHS_C2_PUBLICATION_20261120.json)
+
+<a id="fhs-initial-recovery"></a>
+**09:00 快照的 24 份教材已逐份處置。** 香港 13:49 已從正式卡庫核回十份生效教材。另十二份保留，兩份 504 沿原票據隔離。原 C 在 `fa1bdecb` 的持鎖序列復用十二份已保存的整理稿，逐份獨立審核。十張卡的刊登收據、原觀測、卡庫版本、匯出版本與十五組文件向量均已核對。首份網頁及首份 PDF 在舊 worker 的零呼叫失敗，已保存在各自原操作，兩份均已上架。[24 份正式結果、版本及下一步](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [原 09:00 快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json)
+
+十二份保留中，十份沿原整理和段落證據保留，另兩份在本輪重審後保留。〈培育還是催谷子女〉仍須表達原文學前及嬰幼兒受眾。社署保護兒童單張的第 2 頁審核說明有 249 字，超出 240 字上限，須重新取得符合契約的獨立逐頁證據。上架的《香港2020生長圖表》第一段摘錄跨第 1、2 頁，第二段可在第 12 頁完整找到。兩份單頁 PDF 的摘錄均在各自第 1 頁命中。原始作業及具體限制可從[恢復清單](knowledge/fhs-initial-recovery.json)查回；另計的待向量 PDF 已於 12:32 上架。
 
 <a id="agent-evidence"></a>
 ### 助手原件、引用與私人記憶
@@ -1888,3 +1976,48 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 | **D8-05** | 臨時聊天儲存、正常退出與晚到結果阻擋 | 採用純記憶體 `TemporaryChatStore`（零 DB／零 browser storage／零正文日誌），正常退出中止 `AbortSignal`、核對 generation 並物理抹除正文，寫入只含雜湊元數據的 revoked 墓碑 |
 | **D8-06** | 異常清理時限、雙運行環境與供應商政策 | 15 分鐘滑動閒置與 60 分鐘硬上限 TTL、雙運行環境（`server/firebase-runtime.ts` 與 PostgreSQL `server/index.ts`）停機呼叫 `dispose()`；客戶端分狀態 `local_cleared_remote_pending` 與重連補清；單行程／sticky routing 及第三方供應商保留邊界如前文揭示 |
 | **D8-07** | 最少合成驗收及與 REQ-001／002／009 正交性 | 五支 PR 分層與 PR 5 跨 PR 合成驗收（共 18 份測試 180 項）覆蓋全部 §7 場景；`chatMode=chat_only` 與 REQ-009 三角色討論 `discussion=true` 完全正交，即使在純聊天發起討論亦受 `CHAT_ONLY_ALLOWED_TOOL_NAMES + discussionToolNames` 雙重邊界限制 |
+
+---
+
+<a id="req001-closeout01"></a>
+### REQ-001 收束對照與跨類離線驗收（`codex/req001-acceptance-closeout`）
+
+- **對應主線基礎與本輪補齊：**
+  - **A 類長期官方知識庫：** 承接 `#600`/`#601`/`#602`/`#606`/`#634`/`#640` 主線能力（原文結構化保存、`read_knowledge_context` 相鄰續讀、[`server/knowledge-query-minimization.ts`](server/knowledge-query-minimization.ts) `assertPublicKnowledgeQuery` / `findExternalQueryPrivacyViolation`、異步固定 [`OFFICIAL_HELP`](src/shared/agent-feedback.ts) 求助入口及 [`server/chat-delivery-review.ts`](server/chat-delivery-review.ts) 獨立審核）。
+  - **B 類每日檢查時效資訊庫：** 承接 [`src/shared/knowledge-timely.ts`](src/shared/knowledge-timely.ts)、[`server/knowledge-timely-policy.ts`](server/knowledge-timely-policy.ts)、[`server/proactive-event-sources.ts`](server/proactive-event-sources.ts) 及 [`server/firestore-proactive-public.ts`](server/firestore-proactive-public.ts)，並於本輪補入 **`shouldAutoNotifyTimelyEvent` 主動提醒免打擾守衛**：明確標記為滾動新聞（`timelyEvent.kind === "news"`）者保留 7 天對話檢索資格（`within_recent_window`），同時排除在自動主動推送候選生成之外，並維持未變化來源之 `fingerprint` 重用、`semanticId`／`assessmentId` 家庭去重及 `proactiveSettingsSchema` 用戶偏好開關。
+  - **C 類按需即時社群／商品搜尋：** 承接 [`src/shared/live-source-citation.ts`](src/shared/live-source-citation.ts)、[`server/live-community-product-search.ts`](server/live-community-product-search.ts)（`createLiveCommunityProductSearch`、`composeLiveSourceReaders`、`validateLiveSourceClaims`）及 [`AnswerSources.tsx`](frontend/src/components/chat/AnswerSources.tsx)／`CitationMarker` 的 `【n·即時】` 非單靠顏色標示與兩步展開卡片；離線測試經由 `ProductAgent` 的 `liveSourceReader` 注入接點驗證端到端不建庫行為。
+
+#### 1. REQ-001 §7 十五項驗收情境逐項映射
+
+| 編號 | §7 場景原文 | 對應程式與測試收據 | 離線結論與剩餘線上／裝置邊界 |
+|---|---|---|---|
+| **R001-S01** | 常見口語育兒問題 | [`createProductAgent`](server/product-agent.ts)＋[`search_knowledge`](server/product-agent-tools.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts)（`R001-S01 & R001-S02`）＋[`tests/firestore-knowledge.test.ts`](tests/firestore-knowledge.test.ts) | **離線已驗證：** 口語提問經 `saveLibraryPreference(join)` 下載官方來源後命中並附引用（對齊 `e7ea1e22` 家庭下載檢索邊界）；缺決定性條件時只問必要澄清，不泛化成就醫或編造劑量。真實 Gemini 語義理解待 `--live`。 |
+| **R001-S02** | 年齡／地區不一致 | [`baseAgentKnowledgeFilter`](server/knowledge-query-context.ts)＋[`tests/search-official-evidence.test.ts`](tests/search-official-evidence.test.ts)＋[`tests/knowledge-ranking.test.ts`](tests/knowledge-ranking.test.ts) | **離線已驗證：** 未確認地區／月齡範圍或不相符版本資料絕不充當適用答案。 |
+| **R001-S03** | 私人提問送外部搜索 | [`assertPublicKnowledgeQuery`](server/knowledge-query-minimization.ts)＋[`tests/search-query-minimization.test.ts`](tests/search-query-minimization.test.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證：** 含姓名、完整生日、住址及電話之提問在外送前攔截，僅留年齡段／症狀／地區；內部主聊天獲授權上下文不因此清除。 |
+| **R001-S04** | 臨時聊天外搜與傳輸邊界 | [`assembleTurnBackground`](server/agent-context-assembly.ts)（`mode: "ephemeral"`）＋`assertPublicKnowledgeQuery`＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證（`master` 上下文邊界）：** 臨時會話採空白私人背景（`ephemeral_blank_scope`）並維持同等外送最小化，不多加逐次分類模型。REQ-003 持久化模式切換與 `TemporaryChatStore`（PR `#690`–`#701`）尚待合併至 `master`。 |
+| **R001-S05** | 長文件、表格及例外 | `read_knowledge_context`（[`server/product-agent-tools.ts`](server/product-agent-tools.ts)）＋[`tests/search-official-evidence.test.ts`](tests/search-official-evidence.test.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證：** 相鄰段落續讀與原文片段範圍保留；不得將搜尋摘要偽稱已讀全文。實時網上重開原 PDF 由 REQ-006 原站收據覆蓋。 |
+| **R001-S06** | 無資料／證據不足 | `found != read != 適用` 檢索／引用約束＋[`OFFICIAL_HELP`](src/shared/agent-feedback.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證：** 找不到適用來源時改為明確缺項與安全補問，不編造建議，並保留異步官方求助入口。 |
+| **R001-S07** | 多次提交格式錯誤 | `enforceChatDeliveryReview`＋[`createChatDeliveryReviewObligation`](server/chat-delivery-review.ts)＋[`AgentBudget`](server/agent-budget.ts)＋[`tests/search-review-boundaries.test.ts`](tests/search-review-boundaries.test.ts) | **離線已驗證：** 無效展示／格式超限有界中止；僅在成立審核義務時扣起或執行審核預算，不對普通澄清回覆強迫普遍預留。 |
+| **R001-S08** | 審核失敗／逾時 | [`enforceChatDeliveryReview`](server/chat-delivery-review.ts)＋[`handleProductAgentRequest`](server/product-agent-api.ts)＋[`agentStopMessage`](src/shared/agent-stop-message.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證：** 區分審核未通過、來源失效與預算不足之單一終態，未核草稿不作正式答案。 |
+| **R001-S09** | 斷線後原 run 稍後完成 | [`handleProductAgentRequest`](server/product-agent-api.ts)（依原 `messageId`／`runId` 查回）＋[`tests/chat-web-sources-copy.test.ts`](tests/chat-web-sources-copy.test.ts) | **離線已驗證：** 重讀原回覆與運行結果時直接取回已保存答案，不另開重複操作、不殘留過時警告。 |
+| **R001-S10** | 新聞沒有更新 | [`createProactiveEventSources`](server/proactive-event-sources.ts)（`checkpoint` `fingerprint` 重用）＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證：** 來源版本指標未變時命中 checkpoint 重用，不重覆寫入當日事件頁或製造虛假更新提醒。 |
+| **R001-S11** | 事件更正／解除／過期 | [`evaluateTimelyEligibility`](server/knowledge-timely-policy.ts)＋[`sqlTimelyEligibilityClause`](server/knowledge-timely-policy.ts)＋[`createProactiveEventSources`](server/proactive-event-sources.ts)＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線已驗證（政策／SQL／主動探索）：** `corrected`、`lifted`、`superseded`、`expired`、`validUntil` 屆滿與檢查逾時均 fail-closed 退出日常檢索及主動推薦（`state: "withdrawn"`），只保留歷史追溯（`retainProvenanceOnly: true`）。註：`e7ea1e22`/`7ca3064e` 後 `personalCorpus(tx, owner)` 限已加入之公開平台卡，帶 `libraryUserId` 的 Firestore `audience: "internal"` B 類聊天檢索路徑（歷史 `tests/req001-timely-news-and-expiry.test.ts` Case 7）另待對齊內部時效查詢通道。 |
+| **R001-S12** | 重要相關提醒 | [`shouldAutoNotifyTimelyEvent`](server/knowledge-timely-policy.ts)＋[`createFirestoreProactivePublicStore`](server/firestore-proactive-public.ts)（`semanticId`/`assessmentId` 去重）＋[`proactiveSettingsSchema`](frontend/src/production/proactive-settings-api.ts) | **離線已驗證：** 召回／安全警報依家庭資格去重推送，明確 `news` 類型不觸發自動主動推送，且受家長時區與開關管理；真實手機 Push 推播待實機與運維開啟。 |
+| **R001-S13** | 社群原文不可讀 | [`createLiveCommunityProductSearch`](server/live-community-product-search.ts)＋[`tests/req001-live-community-product-search.test.ts`](tests/req001-live-community-product-search.test.ts) | **離線已驗證：** 非白名單網域、登入／會員路徑、403／登入牆及非 HTML 一律阻擋並回報 `limitations`，絕不以搜尋摘要充當原文證據。 |
+| **R001-S14** | 社群經驗與產品比較 | [`extractLiveProductSpec`](server/live-community-product-search.ts)＋[`validateLiveSourceClaims`](server/live-community-product-search.ts)＋[`tests/req001-live-community-product-search.test.ts`](tests/req001-live-community-product-search.test.ts) | **離線已驗證：** 擷取品牌／型號／版本／價格、標示自述／廣告／過舊／矛盾警訊，攔截虛構統計與商業推薦，且零寫入持久知識庫。真實外網搜尋連接器另待核准接入。 |
+| **R001-S15** | Web／手機 | [`projectAgentRun`](frontend/src/production/agent-projection.ts)＋[`AnswerSources.tsx`](frontend/src/components/chat/AnswerSources.tsx)＋`CitationMarker`＋[`tests/req001-acceptance-closeout.test.ts`](tests/req001-acceptance-closeout.test.ts) | **離線元件投影已驗證：** 答案收斂、兩步展開詳情、`【n·即時】` 非色盲依賴提示及停止恢復選項俱備；實體手機鍵盤／螢幕閱讀器／放大字體遮擋驗收仍待實機執行。 |
+
+#### 2. REQ-001 §8 八項待決事項結算
+
+| 編號 | §8 待決原文 | 結算決定與依據 | 剩餘邊界 |
+|---|---|---|---|
+| **R001-D01** | 第一批官方文件、主題及驗收問題範圍 | **已固定：** 以 [`SOURCE_WATCHES`](server/knowledge-source-catalog.ts)（`fhs-*` 育兒指引與手冊、`chp-recent`、`rthk-recent` 公開／內部非商業watch清單）及 [`hk-official-seed.json`](knowledge/hk-official-seed.json)／FHS 首發分批上架為主體，配合 `tests/req001-*.test.ts` 合約案例。 | 實際線上庫完整發布進度沿 `WORKLOG.md` FHS 分組記錄，非離線測試可替代。 |
+| **R001-D02** | 本地預覽使用環境 | **已定案：** 採倉庫離線 CI（Node `v24.22.1` + `unshare --net` + `family-cleanup-network-guard.mjs`）搭配本地模擬 Web／元件投影測試及本機助手預覽；不要求單一雲端預覽環境。 | 正式雲端部署預覽仍須經授權流程。 |
+| **R001-D03** | 即時搜索供應商、來源可用性及成本上限 | **合約已定案，接點留邊界：** [`DEFAULT_LIVE_COMMUNITY_PRODUCT_DOMAINS`](server/live-community-product-search.ts)（`www.baby-kingdom.com`、`www.consumer.org.hk`、`www.cfs.gov.hk`）搭配 `liveSourceReader` 依賴注入介面與 `validateApprovedLiveUrl`；每次搜尋上限 `MAX_READS = 6`、不建長期論壇庫。 | 線上真實搜尋供應商 API 金鑰、法務條款最終核對與計費配額須於接線時另批。 |
+| **R001-D04** | 時效資料有效期、清理及最低追溯規則 | **已定案：** [`TIMELY_KNOWLEDGE_POLICY_DEFAULTS`](server/knowledge-timely-policy.ts) 固定一般滾動新聞 `7` 天、來源檢查新鮮度 `24` 小時、`observationLookbackDays = 180`；召回與安全警報採 `persistent_until_resolved`，政策／限期依 `validUntil` 有界保留，退出檢索後維持 `retainProvenanceOnly: true`。 | 生產端排程清理任務運行監控另由背景維護負責。 |
+| **R001-D05** | 重要消息定義、相關性、通知渠道與偏好 | **已定案：** 重要主動候選限 `recall`/`safety_alert` 及經運維顯式選取之官方公告（`shouldAutoNotifyTimelyEvent` 排除一般 `news` 自動主動推送）；相關性經 `createProactiveEventSources` 嚴格比對家庭確認地區、年齡及主題且以 `semanticId`/`assessmentId` 去重；渠道與開關沿 `proactiveSettingsSchema`（及 REQ-010 手機推送契約）。 | 生產環境真實推送開啟與裝置表現待 REQ-010 實機驗證。 |
+| **R001-D06** | 異步官方入口檢查方案、位置與急迫呈現 | **已定案（承接 `#634`）：** 採用與主 Agent 工具獨立的客戶端／共享關鍵詞異步匹配（[`matchOfficialHelpForText`](src/shared/agent-feedback.ts)），於輸入框上方固定位置展示 [`OfficialHelpCards`](frontend/src/components/chat/OfficialHelpCards.tsx)，失去意識等急症優先展示且一般用藥不誤升格為急症。 | 實體手機鍵盤彈出及系統放大字體下之遮擋實測待實機補驗。 |
+| **R001-D07** | 真模型驗收批准、案例與停止條件 | **原則已固定，未擅自執行：** 離線合成與 scripted provider 只驗證路由、引用綁定、審核屏障與恢復契約，不能冒充真 Gemini 理解品質或延遲基準；執行 `--live` 須專案擁有者另批計費專案、題數、預算上限及停止條件。 | 本收束 PR 不含付費 `--live` 呼叫。 |
+| **R001-D08** | 與後續需求包依賴與最終次序 | **已對齊：** 搜索主鏈已與 REQ-002 提速／分階段交付整合；持久化模式切換與 `TemporaryChatStore` 依 REQ-003（PR `#690`–`#701` 待合併）接入；深度多步專責與產物預覽沿 REQ-008 收束對齊。 | 後續依 REQ-003／008／010 合併與生產發布次序逐步啟用。 |
+
+- **剩餘未宣稱完成之實機／線上閘門：** `e7ea1e22`/`7ca3064e` 家庭下載範圍改造後之內部 B 類 `personalCorpus` 聊天直查通路與歷史測試更新（見 `tests/req001-timely-news-and-expiry.test.ts` Case 7 / `tests/search-official-evidence.test.ts`）、C 類即時搜尋之外網真實 HTTP 連接器與供應商配置、FHS 全冊線上正式發布狀態、REQ-003 PR `#690`–`#701` 合併後之持久化臨時聊天整合、付費真實 Gemini `--live` 基準測試，以及 Web／Android／iOS 實體手機鍵盤與無障礙實機測試。

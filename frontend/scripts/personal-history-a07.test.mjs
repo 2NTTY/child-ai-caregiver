@@ -72,6 +72,7 @@ test("scoped personal reads reject late results and retain bounded scan and orig
   const ownerModule = compile("../src/production/usePersonalHistory.ts", name => {
     if (name === "react") return h.react;
     if (name === "../../../src/client/product-agent-api") return { createProductAgentApi: () => api };
+    if (name === "./library-package" || name === "../platform/file-export") return {};
     if (name === "./notification-messages-api") return { createNotificationMessagesApi: () => ({ setIdentity() {}, async page() { throw new Error("not requested"); } }) };
     if (name === "../history-view-model") return projection;
     if (name === "./task-knowledge-runtime") return runtime;
@@ -126,7 +127,7 @@ test("notification views expose only own safe metadata; catalog uses current pub
   const workspaceId = randomUUID(), cipher = createStorageCipher(Buffer.alloc(32, 7));
   let accessVersion = 3; const statements = [];
   const sourceRows = Array.from({ length: 11 }, (_, index) => ({ source_id: "synthetic-" + String(index).padStart(2, "0"), version_id: randomUUID(),
-    source_document: { title: "Synthetic source", publisher: "Synthetic publisher", url: "https://www.fhs.gov.hk/synthetic",
+    source_document: { sourceId: "synthetic-" + String(index).padStart(2, "0"), title: "Synthetic source", publisher: "Synthetic publisher", url: "https://www.fhs.gov.hk/synthetic",
       classification: "official_guidance", sourceUpdatedAt: null, validUntil: null }, checked_at: new Date(time) }));
   const client = { release() {}, async query(sql, values = []) {
     statements.push({ sql, values });

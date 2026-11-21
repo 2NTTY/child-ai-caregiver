@@ -131,6 +131,7 @@ function uiMocks() {
 
 test('1. AppShell (wide + compact) and NativeAppShell mount TemporaryChatEntry at far top-left while keeping PendingReviewShortcut at top-right', () => {
   const { mocks } = uiMocks();
+  mocks['./companion/CompanionViewport'] = { CompanionSlot: 'CompanionSlot' };
   mocks['./TemporaryChatEntry'] = { TemporaryChatEntry: p => ({ type: 'TemporaryChatEntry', props: p }) };
   mocks['../production/useProductionHome'] = {
     useProductionHome: () => ({
@@ -623,3 +624,132 @@ test('6. Expired 410 session blocks resume & offers restart, and sign-out / user
   h.unmount();
   owner.dispose();
 });
+
+for (const failure of ['lost_response', 'temporary_session_generation_mismatch']) {
+  test(`An ambiguous send (${failure}) requires an explicit empty restart without replay`, async () => {
+    const { mocks } = uiMocks();
+    const oldId = '77777777-7777-4777-8777-777777777777';
+    const newId = '88888888-8888-4888-8888-888888888888';
+    const requests = [];
+    const api = createTemporaryChatApi('https://example.test/api', async (url, init) => {
+      requests.push({ url, body: JSON.parse(init.body) });
+      if (url.endsWith('/sessions')) {
+        const sessionId = requests.length === 1 ? oldId : newId;
+        return Response.json({ session: { sessionId, generation: 1 }, messages: [] }, { status: 201 });
+      }
+      if (url.endsWith('/messages')) {
+        if (failure === 'lost_response') throw new TypeError('connection lost');
+        return Response.json({ error: { code: failure } }, { status: 409 });
+      }
+      if (url.endsWith(`/${newId}/close`)) {
+        return Response.json({
+          receipt: {
+            sessionId: newId, status: 'cleared', clearedAt: '2026-11-20T01:05:00Z',
+            scope: 'application_controlled_only', cancelledInFlight: false, generation: 2,
+          },
+        });
+      }
+      return Response.json({ error: { code: 'temporary_session_not_found' } }, { status: 404 });
+    });
+
+    const owner = new TemporaryChatOwner(api);
+    owner.syncContext('user-1', true);
+    await owner.open();
+    owner.setDraft('Synthetic public question');
+    await owner.send();
+    await owner.send();
+    assert.equal(requests.filter(({ url }) => url.endsWith('/messages')).length, 1);
+    assert.equal(owner.getSnapshot().session?.sessionId, oldId);
+    assert.equal(owner.getSnapshot().error, TEMPORARY_CHAT_COPY.sessionRestartRequiredNotice);
+
+    const h = componentHarness(mocks);
+    const { TemporaryChatModal } = h.load('src/components/TemporaryChatModal.tsx');
+    h.render(h.jsx(TemporaryChatModal, { state: owner.getSnapshot(), actions: owner }));
+    assert.equal(h.node('temporary-chat-send-button'), undefined);
+    const restart = h.node('temporary-chat-restart-button');
+    assert.ok(restart);
+    restart.props.onPress();
+    await settle();
+    assert.equal(owner.getSnapshot().session?.sessionId, newId);
+    assert.deepEqual(owner.getSnapshot().messages, []);
+    assert.equal(owner.getSnapshot().draft, '');
+    assert.deepEqual(requests.map(({ url }) => url.split('/').at(-1)), ['sessions', 'messages', 'close', 'sessions']);
+    assert.ok(requests[2].url.endsWith(`/${oldId}/close`));
+    assert.deepEqual(requests[2].body, { generation: 1, reason: 'client_reset' });
+    assert.equal(owner.getSnapshot().pendingRemoteCloseCount, 1);
+    assert.equal(owner.getSnapshot().closeReceipt, null);
+    await owner.exitAndClear();
+    assert.equal(owner.getSnapshot().closeState, 'local_cleared_remote_pending');
+    assert.equal(owner.getSnapshot().pendingRemoteCloseCount, 1);
+    assert.equal(owner.getSnapshot().closeReceipt, null);
+    h.unmount();
+    owner.dispose();
+  });
+}
+
+test('Unknown remote session stays unconfirmed during exit and close retries', async () => {
+  const id = '99999999-9999-4999-8999-999999999999';
+  const api = createTemporaryChatApi('https://example.test/api', async url =>
+    url.endsWith('/sessions')
+      ? Response.json({ session: { sessionId: id, generation: 1 }, messages: [] }, { status: 201 })
+      : Response.json({ error: { code: 'temporary_session_not_found' } }, { status: 404 }),
+  );
+  const owner = new TemporaryChatOwner(api);
+  owner.syncContext('user-1', true);
+  await owner.open();
+  await owner.exitAndClear();
+  await owner.retryPendingRemoteCloses();
+  const state = owner.getSnapshot();
+  assert.equal(state.closeState, 'local_cleared_remote_pending');
+  assert.equal(state.closeReceipt, null);
+  assert.equal(state.pendingRemoteCloseCount, 1);
+  owner.dispose();
+});
+
+for (const restartFails of [false, true]) {
+  test(`Pending old close is visible and settles after ${restartFails ? 'a failed' : 'a successful'} restart`, async () => {
+    const oldId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const newId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const receipt = sessionId => Response.json({
+      receipt: {
+        sessionId, status: 'cleared', clearedAt: '2026-11-20T01:05:00Z',
+        scope: 'application_controlled_only', cancelledInFlight: false, generation: 2,
+      },
+    });
+    let creates = 0;
+    let resolveOldClose;
+    const api = createTemporaryChatApi('https://example.test/api', async url => {
+      if (url.endsWith('/sessions')) {
+        if (++creates === 2 && restartFails) {
+          return Response.json({ error: { code: 'temporary_chat_unavailable' } }, { status: 503 });
+        }
+        const sessionId = creates === 1 ? oldId : newId;
+        return Response.json({ session: { sessionId, generation: 1 }, messages: [] }, { status: 201 });
+      }
+      if (url.endsWith('/messages')) throw new TypeError('connection lost');
+      if (url.endsWith(`/${oldId}/close`)) {
+        return new Promise(resolve => { resolveOldClose = resolve; });
+      }
+      return receipt(newId);
+    });
+
+    const owner = new TemporaryChatOwner(api);
+    owner.syncContext('user-1', true);
+    await owner.open();
+    owner.setDraft('Synthetic public question');
+    await owner.send();
+    await owner.open();
+    await owner.exitAndClear();
+    assert.equal(owner.getSnapshot().open, false);
+    assert.equal(owner.getSnapshot().pendingRemoteCloseCount, 1);
+    assert.equal(owner.getSnapshot().closeState, 'local_cleared_remote_pending');
+    assert.equal(owner.getSnapshot().closeNotice, TEMPORARY_CHAT_COPY.localClearedRemotePendingNotice);
+
+    resolveOldClose(receipt(oldId));
+    await settle();
+    assert.equal(owner.getSnapshot().pendingRemoteCloseCount, 0);
+    assert.equal(owner.getSnapshot().closeState, 'remote_confirmed');
+    assert.equal(owner.getSnapshot().closeNotice, TEMPORARY_CHAT_COPY.localAndRemoteClearedNotice);
+    owner.dispose();
+  });
+}

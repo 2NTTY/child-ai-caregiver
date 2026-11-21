@@ -1,7 +1,9 @@
 import { load } from "cheerio";
 import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
-import { fhsPdfMediaPages, reviewedExternalOriginal } from './platform-materials.ts';
+import { readLinkedOfficialPages } from './fhs-source-forms.ts';
+import { oralPrint,verifiedOralExcerpts } from './fhs-verified-oral-excerpts.ts';
+import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalEdition, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
@@ -39,7 +41,19 @@ export function sourceFetchUrl(value: string, definition: SourceWatchDefinition)
 export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition, original: Buffer, title: string,
   revision: string | null, readMethod: string, signal: AbortSignal, reader = extractKnowledgePdf): Promise<Awaited<ReturnType<SourceFetcher>>> {
   if (!definition.leafletPage || definition.kind !== "pdf") throw Error("knowledge_pdf_source_mismatch");
-  let batch = await reader(original, { startPage: 1, pageLimit: 8, signal });
+  const large = original.length > KNOWLEDGE_PDF_MAX_BYTES ? largeFhsPdf(definition.url) : undefined;
+  if (original.length > KNOWLEDGE_PDF_MAX_BYTES) {
+    if (!large || large.sourceId !== definition.id) return { status: 'failed', reason: 'response' };
+    const sha256 = createHash('sha256').update(original).digest('hex');
+    if (large.bytes !== original.length || large.sha256 !== sha256)
+      return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'new_fingerprint', sha256, bytes: original.length } };
+  }
+  if (definition.id === oralPrint.sourceId) {
+    const printed = verifiedOralExcerpts(definition,createHash('sha256').update(original).digest('hex'),oralPrint.totalPages,title,revision);
+    if (printed) return {status:'ok',readMethod:'fhs-independent-printed-excerpts/1',
+      original:{mimeType:'application/pdf',bytes:original},items:[printed]};
+  }
+  let batch = await reader(original, { startPage: 1, pageLimit: 8, ...(large ? { expectedHash: large.sha256 } : {}), signal });
   const { fileHash, totalPages } = batch;
   const windowed = (): Awaited<ReturnType<SourceFetcher>> => ({
     status: "ok", readMethod, original: { mimeType: "application/pdf", bytes: original }, items: [{
@@ -112,9 +126,15 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       revision = $("#content-rev-date").text().trim() || null;
       mediaLinks = mediaLinksFromPage($, '#content', definition.leafletPage);
     }
+    const large = pdf && definition.leafletPage ? largeFhsPdf(definition.url) : undefined;
+    let oversizedOfficialPdf = false;
     const fetched = await transport(definition.url, definition.leafletPage || definition.id === "chp-recent" ? exact(definition.url) : value => sourceFetchUrl(value, definition), signal,
       pdf ? "application/pdf" : definition.kind === "rss" ? "application/rss+xml, application/xml, text/xml" : "text/html",
-      pdf ? { maxBytes: KNOWLEDGE_PDF_MAX_BYTES } : {});
+      large && large.sourceId === definition.id ? { maxBytes: large.bytes, onBodyLimit(status, contentType) {
+        oversizedOfficialPdf = status === 200 && /^application\/pdf(?:\s*;|$)/iu.test(contentType ?? '');
+      } } : pdf ? { maxBytes: KNOWLEDGE_PDF_MAX_BYTES } : {});
+    if (fetched.status === 'failed' && large && oversizedOfficialPdf)
+      return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'download_limit', limitBytes: large.bytes } };
     if (fetched.status !== "response") return fetched;
     const result = fetched.response;
     if (result.status === 404 || result.status === 410) return { status: "unavailable", httpStatus: result.status };
@@ -127,6 +147,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {
+          if (approvedHash) revision = reviewedExternalEdition(definition.url, approvedHash)?.dateText ?? revision;
           const original = await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
           const landing = definition.leafletPage === definition.url && fhsPdfMediaPages.get(definition.url);
           if (original.status === 'ok' && landing) {
@@ -141,7 +162,14 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
               }
             } catch { signal.throwIfAborted(); }
           }
-          return original.status === 'ok' && mediaLinks ? { ...original, mediaLinks } : original;
+          if (original.status !== 'ok' || !mediaLinks) return original;
+          try {
+            const { links, pages } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+            return { ...original, mediaLinks: links, mediaPages: pages };
+          } catch {
+            signal.throwIfAborted();
+            return { ...original, mediaLinks };
+          }
         }
         const parsed = await (adapters.pdfReader ?? extractKnowledgePdf)(result.body, { startPage: window!.startPage,
           pageLimit: window!.endPage - window!.startPage + 1, signal });
@@ -155,6 +183,11 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (definition.kind === 'page' && definition.selector && new URL(definition.url).hostname === 'www.fhs.gov.hk'
         && (result.url ?? definition.url) === definition.url) {
         mediaLinks = mediaLinksFromPage(load(html), definition.selector, definition.url);
+        if (mediaLinks?.length) {
+          const { links, pages, scripts } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+          if (scripts.length) items[0]!.scripts = scripts;
+          return { status: 'ok', mediaLinks: links, mediaPages: pages, items };
+        }
       }
       return { status: "ok", ...(mediaLinks ? { mediaLinks } : {}), ...(definition.id === "chp-recent"
         ? { original: { mimeType: "application/rss+xml" as const, bytes: result.body } } : {}), items };

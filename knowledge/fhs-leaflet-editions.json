@@ -1,0 +1,245 @@
+{
+  "noticeSource": "https://www.fhs.gov.hk/common/js/script_header.js",
+  "noticeSourceSha256": "80dc85259d3233c336dddd3353115e009d96774da506d11f69fef7876f781b9a",
+  "notice": "（此單張的最新內容，請參考以下的網頁文字。）",
+  "editions": [
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html",
+      "webSha256": "5b05b1494e746d8768cb019c21bf0365d3a5878710b074f39be96fb2a4bae368",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+      "printSha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.html",
+      "webSha256": "9e20a8df78caf3b8840bfaf1bd89816b844ee561b5f221ee98730e3f5285c25f",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf",
+      "printSha256": "247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/12566.html",
+      "webSha256": "d0ca81cb9902ed2b18f2b730db0605b4b6d02fefbdbe25e0964766816e4198f1",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/12566.pdf",
+      "printSha256": "4146919699ecfb8bff6c48815d5bb5c54786b4ec0b1c54c9630d829fd3466e41",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/13035.html",
+      "webSha256": "8219c91022813448a4e9648a71a9bfdcae63502fbdce003dda2e6abac38442d0",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/13035.pdf",
+      "printSha256": "989c2e8552ae82e615e45baaea72c39087d37c490f4a537f782b08dc7085f763",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/13041.html",
+      "webSha256": "00eec37d16b5a2c386fddf31d179a2bd6ce713aa0194aa50a2cb96cb276e1da5",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/13041.pdf",
+      "printSha256": "bddce7c9e60a48d35a931c9f720133fd79a8feef51123be67ea9f9c2b9e47468",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.html",
+      "webSha256": "81c106084d2ecd26c20a60afc3d2ced19dcf4fd7d8807eb10897c828459feca5",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.pdf",
+      "printSha256": "f8baba2adf459d58c95d20b497e1895c62a4bebcf1487623764ce68fe7cb979a",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14732.html",
+      "webSha256": "010058929e80e2fe4a0c5d30bec884fa41306e6ebf92c84aa63fa347cdef2de5",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14732.pdf",
+      "printSha256": "898255b3acfd80e57744462a3eb83510345da9139e2ca014988a3e3c87aba209",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14743.html",
+      "webSha256": "68406a2c5aaa877ac36eab560c35a19cc3e0c5fc054871d7d6658bd4bbd5c810",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14743.pdf",
+      "printSha256": "39ca751752e913ba359c392df1e11004f603f6469e904cb3af4ea18d47a391f3",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+      "webSha256": "96566da6ac4bb243019d461bc56702a3d19771a3f23472df9cb4673bacf145d8",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.pdf",
+      "printSha256": "002ad01d48b6fa971cb2a89393c1b2c2fcded24338b954150afa192d693ed53c",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14839.html",
+      "webSha256": "0fcda45777d8ae060ef27c885af2ff08d2ddbf2d775c6aadb24dfde583b85a3c",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14839.pdf",
+      "printSha256": "9beff60c484a3af8e0899b32897b341fcea00df845682ed63232f063dce6b841",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+      "webSha256": "b6be4c754d1196d321aa076aa58628a3f73cdbcf2d9ba020b3b501f981c910dd",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.pdf",
+      "printSha256": "0f754bab3be7a48d32cd05af7bd461fec73053f0e17f6df19cc6730ae72e03f5",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15648.html",
+      "webSha256": "afa2c833a3dceac37ef7492d310292d998dc12d0256c1d9538ac03126026a7bb",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15648.pdf",
+      "printSha256": "5dc95a10db4bc83f0a02ad1f80e062903e0e436702977a39ac9eb0c7af4dcdac",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15650.html",
+      "webSha256": "90ebb4b27baa927da6e7c1afd1a35d757c5c8ca799261841bd7743faf795c13a",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15650.pdf",
+      "printSha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15662.html",
+      "webSha256": "9e18a992030d6fe23e90138dc6ccb337d7c30db34a670922d7333ea9aba3a147",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15662.pdf",
+      "printSha256": "d3348b550bbf64fed516d76ea25bb1457e16a4df35d2fb72b090bc5b6fa249e6",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15663.html",
+      "webSha256": "a2153f0d701655a833ad6484ec2091b7c0945a45d31c740053cb3c5c21d95992",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15663.pdf",
+      "printSha256": "76488f6912f334cc544e99d36af047d5836f94b5fccafc06e8d287e78659830d",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15670.html",
+      "webSha256": "839c71f5e1460a4f8d3e13cd022a420830c278ad76ea474204316a699b51e348",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15670.pdf",
+      "printSha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.html",
+      "webSha256": "e50191f40d3dd935b56e50432948b2cf75236139aff0705348301165c99670c9",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.pdf",
+      "printSha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15678.html",
+      "webSha256": "6d4eb1fb412421c7c3ceb573eb2d12971a086e2d191a7c7a7adaedff7dd1e930",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15678.pdf",
+      "printSha256": "0f1980cf97fe70c8bded3df16cb49bbc4bd72c07bce20b5a08bdf1756746295c",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/15697.html",
+      "webSha256": "a5045f266e5ac7611908778e60c60129fdd8c669e91b1c94c03dafa1479cab6b",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/15697.pdf",
+      "printSha256": "24fe5a18a42e2c93adc506fdf4f5deb2121b45a1236bc06fa6d68450c6f7b2fc",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/16051.html",
+      "webSha256": "59eeec576aff88f603e46dedfcac35b4e2f67015ada2b7746d9d385d1745e5f5",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/16051.pdf",
+      "printSha256": "fbe514799a4a121556ed2491c1175ac24a3c371e5d3c513140ccb23507f0925d",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30009.html",
+      "webSha256": "664a84811bb43e9f0af103adea26924e5f3b1f0efb575664f956e3df946d5d41",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30009.pdf",
+      "printSha256": "4cd14b0d28296168212ca436d3bd9928983089836accffe64202b28e43d453db",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.html",
+      "webSha256": "995840cd5450d7cb93a70b88ac5a8b28c10075bcc562812dea5dda1ad641af66",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.pdf",
+      "printSha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.html",
+      "webSha256": "8e024abf2bc6aea1d1309e4b4255fe9c3e692fc2fe0e52b78c066a814d90d774",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.pdf",
+      "printSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+      "scope": "chapter_directory"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30035.html",
+      "webSha256": "bd05d8ac718587b05a5e4e541503ef632505a4ec5812f2dabae85fa86a5867f0",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30035.pdf",
+      "printSha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+      "scope": "chapter_directory"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.html",
+      "webSha256": "a113dbbab7ae8818140b658ff2b5cd97bdf8e1db4714864a4dc90b9f12222c2d",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.pdf",
+      "printSha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
+      "scope": "chapter_directory"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30047.html",
+      "webSha256": "ad002a7b8f38783142a0e72d67cfbf7f6ad1e61d31c211748c3aeaee332eddfe",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30047.pdf",
+      "printSha256": "bcda7ebf7e412cddfc4903a266395fbd624a0f5287e54435362b9488962a1627",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30121.html",
+      "webSha256": "e1a9d845f8f9cdab84d95d9baa1f21ae639d294f61adba02d419307eb706129c",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30121.pdf",
+      "printSha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.html",
+      "webSha256": "f21c67caa2b2c8b590122faf79c441df9391348979e4c5a22b403af6bb9e0219",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.pdf",
+      "printSha256": "013fb4c49babc6dffcc92ce5b11c959078241dd0ac3e9134e66a31295ba11b71",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30155.html",
+      "webSha256": "ed85b1548337cbd9c76fd30c76496306b242b06a4176eda62ecb57d550ca3e2d",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30155.pdf",
+      "printSha256": "4557e11a18d634bdcf02127a9cf040964b6f3c1bda235dad40ac77774d5023ab",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30157.html",
+      "webSha256": "926526153e0f11e606d893b5d9f9708d30715cfbcbf1234e4407a77b5360df9f",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30157.pdf",
+      "printSha256": "374f0d8aa67016761519f1c30f740f35c81667e08293ef5a20fa67bec0566a07",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30159.html",
+      "webSha256": "aead35733cc8ded7b2c3acfc97950a79555136f8aa88695cccc05c0f739d7947",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30159.pdf",
+      "printSha256": "09f521c96b52259a3128b5fda10494c5ca9767acc50bb0880fa56d27d6186c4c",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/child/30160.html",
+      "webSha256": "6aa3e83839f792bf8055ce35ec6d0f891374b262aab257d122762f3db6a5fc3c",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/child/30160.pdf",
+      "printSha256": "a469145670618b1485fda671b0fe24c119d6dd7f0d7dbc4e50115aa9c8af3f4e",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/woman/20036.html",
+      "webSha256": "c6b4137b93d95dc1cf567697dbc73a2f76cd557b6d51acc9365149e6d5af9276",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/woman/20036.pdf",
+      "printSha256": "7b25839ed7b67e14a5f2160eca7c10d11d5305e15f692506b8bf3f35557569a3",
+      "scope": "leaflet_text"
+    },
+    {
+      "web": "https://www.fhs.gov.hk/tc_chi/health_info/woman/30146.html",
+      "webSha256": "c9bdedba5d7ed843d139edb7e5cf032e28a159039af36f6dce023efb443a61f5",
+      "print": "https://www.fhs.gov.hk/tc_chi/health_info/woman/30146.pdf",
+      "printSha256": "5545c93b5ae9b75311aaea006de031003c460b5d8fdc2a38659e6660c7bdc37c",
+      "scope": "leaflet_text"
+    }
+  ]
+}

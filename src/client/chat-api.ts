@@ -3,7 +3,7 @@ import { AGENT_RUN_LIMITS } from '../shared/agent-run-limits.ts';
 import { chatFileMessageReferenceSchema, type ChatFileMessageReference } from '../shared/chat-files.ts';
 import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shared/voice.ts';
 import { photoMessageReferenceSchema, type PhotoMessageReference } from '../shared/photos.ts';
-import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
+import { CHAT_STREAM_HEARTBEAT_MS, officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
 import { readAgentFeedback } from './agent-feedback-reader.ts';
 import { isChatMode, resolveChatMode, type ChatMessage, type ChatMode, type ChatPage, type ChatReplyState, type ChatSendOptions } from "../shared/chat.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
@@ -89,6 +89,7 @@ function message(value: unknown): value is ChatMessage {
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
     && (value.proactive === undefined || value.proactive === true)
+    && (value.proactiveUnread === undefined || value.proactive === true && typeof value.proactiveUnread === 'boolean')
     && (value.role === "user" ? value.authorUserId !== null && value.inReplyTo === null && !value.proactive
       : value.authorUserId === null && (value.inReplyTo === null) === (value.proactive === true));
 }
@@ -124,6 +125,12 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
     signal.addEventListener("abort", abort, { once: true });
     if (signal.aborted) controller.abort();
     const timeout = setTimeout(abort, timeoutMs);
+    let heartbeatTimeout: ReturnType<typeof setTimeout> | undefined;
+    const trackStream = () => {
+      clearTimeout(heartbeatTimeout);
+      heartbeatTimeout = setTimeout(abort, 3 * CHAT_STREAM_HEARTBEAT_MS);
+    };
+    if (onProgress) trackStream();
     try {
       const response = await fetcher(`${apiUrl}${path}`, {
         method: body === undefined ? "GET" : "POST",
@@ -138,6 +145,8 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: controller.signal,
       });
+      const streaming = response.headers.get('content-type')?.startsWith('text/event-stream');
+      if (!streaming || !response.ok) clearTimeout(heartbeatTimeout);
       if (!response.ok) {
         let code: ChatErrorCode | null = null;
         try {
@@ -147,8 +156,9 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
         } catch { /* The status is still available when the body is malformed. */ }
         throw new ChatApiError(response.status, code);
       }
-      if (onProgress && response.headers.get('content-type')?.startsWith('text/event-stream')) {
-        const result = await readAgentFeedback(response, onProgress);
+      if (onProgress && streaming) {
+        trackStream();
+        const result = await readAgentFeedback(response, onProgress, undefined, trackStream);
         if (result.status < 200 || result.status >= 300) {
           const body = result.body, code = object(body) && object(body.error) && knownCodes.has(body.error.code as ChatErrorCode) ? body.error.code as ChatErrorCode : null;
           throw new ChatApiError(result.status, code);
@@ -160,6 +170,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       if (error instanceof ChatApiError) throw error;
       throw new ChatApiError();
     } finally {
+      clearTimeout(heartbeatTimeout);
       clearTimeout(timeout);
       signal.removeEventListener("abort", abort);
     }

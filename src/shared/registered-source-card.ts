@@ -44,9 +44,24 @@ export const registeredSourceResultSchema = z.strictObject({
   savedDocumentCount: z.int().nonnegative().optional(),
   indexedDocumentCount: z.int().nonnegative().optional(),
 });
+export const sourceReadingParser = z.enum(['links', 'records', 'feed', 'rendered', 'document']);
+export const sourceReadingMethod = z.strictObject({
+  schema: z.literal(1), revision, url: registeredSourceUrlSchema, parser: sourceReadingParser, feedUrl: registeredSourceUrlSchema.optional(),
+  sample: z.strictObject({ url: registeredSourceUrlSchema, documentId: z.string().regex(/^[a-f0-9]{64}$/u), version: z.string().regex(/^[a-f0-9]{64}$/u) }),
+  verifiedAt: timestamp, covers: registeredSourceUrlSchema.optional(),
+  listed: z.int().positive().optional(),
+});
+export const sourceAccessGate = z.enum(['needs_login', 'mfa_required', 'captcha_required', 'payment_required']);
+export const sourceGapReason = z.enum(['unreadable', 'listing_changed', 'file_too_large', 'unavailable', 'limit', ...sourceAccessGate.options]);
+export type SourceReadingMethod = z.infer<typeof sourceReadingMethod>;
+export type SourceGapReason = z.infer<typeof sourceGapReason>;
 export const registeredSourceCardSchema = registeredSourceSettingsSchema.extend({
   cardId: z.uuid(), revision, enabled: z.boolean(), credentialRef: z.uuid().nullable(), checking: z.boolean(),
   lastCheckedAt: timestamp.nullable(), nextCheckAt: timestamp.nullable(), lastResult: registeredSourceResultSchema.nullable(),
+  methods: z.array(sourceReadingMethod).max(8).optional(),
+  gap: z.strictObject({ url: registeredSourceUrlSchema, reason: sourceGapReason, checkId: z.uuid(), skipped: z.boolean() }).optional(),
+  hint: z.strictObject({ url: registeredSourceUrlSchema, checkId: z.uuid().optional(), covers: registeredSourceUrlSchema.optional(),
+    afterCheckId: z.uuid().optional(), status: z.enum(['pending', 'verified', 'rejected']) }).optional(),
 });
 const identity = { cardId: z.uuid(), operationId: z.uuid(), expectedRevision: revision };
 export const registeredSourceCommandSchema = z.discriminatedUnion('action', [
@@ -54,6 +69,8 @@ export const registeredSourceCommandSchema = z.discriminatedUnion('action', [
   z.strictObject({ ...identity, action: z.literal('update'), settings: registeredSourceSettingsSchema }),
   z.strictObject({ ...identity, action: z.literal('set_enabled'), enabled: z.boolean() }),
   z.strictObject({ ...identity, action: z.literal('check_now') }),
+  z.strictObject({ ...identity, action: z.literal('suggest_location'), url: registeredSourceUrlSchema, checkId: z.uuid().optional() }),
+  z.strictObject({ ...identity, action: z.literal('skip_gap'), checkId: z.uuid() }),
   z.strictObject({ ...identity, action: z.literal('remove') }),
 ]);
 export type RegisteredSourceSettings = z.infer<typeof registeredSourceSettingsSchema>;

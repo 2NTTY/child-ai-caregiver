@@ -43,8 +43,8 @@ export async function verifyAppearance(browser, failures, directory) {
     });
     const image = { name: "synthetic-background.png", mimeType: "image/png", buffer: Buffer.from(data, "base64") };
     if (width >= 900) {
-      const button = page.getByTestId("agent-entry");
-      assert.equal(await button.evaluate(element => getComputedStyle(element).backgroundColor), "rgb(255, 216, 3)");
+      const assistant = page.getByTestId("agent-entry");
+      assert.equal(await assistant.evaluate(element => getComputedStyle(element).backgroundColor), "rgb(255, 216, 3)");
     }
     if (width >= 1024) {
       const banner = await page.getByTestId("desktop-home-banner").boundingBox();

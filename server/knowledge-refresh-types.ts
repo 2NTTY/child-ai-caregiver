@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PdfEditionReview } from '../src/shared/admin.ts';
 
 export const KNOWLEDGE_REFRESH_QUEUE = "knowledge-source-check-v1";
 export const REFRESH_JOB_OPTIONS = { heartbeatSeconds: 60, expireInSeconds: 90, retryLimit: 1,
@@ -33,12 +34,13 @@ export interface ObservedContent {
   sourceDateText: string | null;
   nativeWindowMethod?: "native-pdf-window/1";
   rssItem?: { xml: string; copyright: string };
+  scripts?: import('./fhs-source-forms.ts').OfficialScript[];
   extraction?: import("../src/shared/knowledge.ts").KnowledgeExtraction;
   pages?: { page: number; text: string; status: "text" | "empty" | "unreadable" }[];
 }
-export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; mediaLinks?: string[]; readMethod?: string; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
+export type SourceFetchResult = { status: "ok"; items: ObservedContent[]; mediaLinks?: string[]; mediaPages?: import('../src/shared/platform-media.ts').PlatformMediaPage[]; readMethod?: string; original?: { mimeType: "application/pdf" | "application/rss+xml"; bytes: Buffer } }
   | { status: "unavailable"; httpStatus: 404 | 410 }
-  | { status: "failed"; reason: "network" | "timeout" | "response" | "parse" };
+  | { status: "failed"; reason: "network" | "timeout" | "response" | "parse"; pdfEditionReview?: PdfEditionReview };
 export type SourceFetcher = (definition: SourceWatchDefinition, signal: AbortSignal) => Promise<SourceFetchResult>;
 export function refreshCron(definition: Pick<SourceWatchDefinition, "classification">): string {
   return definition.classification === "official_guidance" ? "0 9 * * 1" : "0 9 * * *";

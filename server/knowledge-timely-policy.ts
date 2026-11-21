@@ -158,6 +158,14 @@ export function evaluateTimelyEligibility(
   return { eligible: false, reason: "recent_window_elapsed", retentionClass, retainProvenanceOnly: true };
 }
 
+export function shouldAutoNotifyTimelyEvent(
+  classification: KnowledgeClass,
+  timelyEvent?: TimelyEventLifecycle | null,
+): boolean {
+  // Legacy timely editions lack kind metadata; retrieval already treats them as ordinary news.
+  return classification !== "recent_information" || (timelyEvent?.kind ?? "news") !== "news";
+}
+
 export function proactiveKindForTimelyEvent(
   classification: KnowledgeClass,
   timelyEvent?: TimelyEventLifecycle | null,

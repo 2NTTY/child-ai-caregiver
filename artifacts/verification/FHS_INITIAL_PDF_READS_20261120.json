@@ -1,0 +1,392 @@
+{
+  "schema": "fhs-initial-pdf-read-preparation/1",
+  "capturedAt": "2026-11-20T04:10:11.396Z",
+  "baseline": "1cc95c146289406aa30b32d103c37beec473b053",
+  "scopeCheckpoint": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "scope": "Only entries with kind pdf and outcome no_terminal_receipt in the 09:00 HKT checkpoint. Source identities and original hashes remain in that receipt and knowledge/fhs-child-inventory.json.",
+  "verified": {
+    "originals": 116,
+    "bytes": 539592688,
+    "physicalPages": 1471,
+    "over20Pages": 12,
+    "newPublisherDownloads": 0,
+    "whole": 48,
+    "windowed": 68,
+    "nativeWindows": 125,
+    "wholeOrganizerInputsChecked": 48,
+    "localTextLayers": {
+      "text": 934,
+      "unreadable": 378,
+      "empty": 159
+    }
+  },
+  "archive": {
+    "name": "fhs-pdf-reads.tar.gz",
+    "bytes": 440664725,
+    "sha256": "4184b2d58b7dc425b4942c69477252cb63b7addc090a5e129878d51dd3666c46",
+    "indexSha256": "6ff102b184434a148b802ce83acf34ed9e372f4ad0ac0d0dabb337aa7583faa6",
+    "parserBinding": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "records": 448,
+    "recordBytes": 476681996,
+    "handling": "Operator-private archive outside Git. The original FHS catalogue cache is keyed by SHA-256 of the official URL. Only extraction outputs enter this bundle."
+  },
+  "method": {
+    "node": "v24.22.3",
+    "pdfjs": "6.4.299",
+    "readLayer": "createKnowledgeSourceFetcher using the original inventory responses; local transport, exact registered URLs, real PDF reader and persisted authenticated results.",
+    "windowLayer": "All planned attached ranges were extracted and reopened with PDF.js, checked for physical page count and bound to parent and slice digests. The exemplar passed through createFirestoreKnowledgeOriginals and createFirestoreKnowledgeWork.readPdfWindow with in-memory storage ports; cached descriptors reopened without derivation.",
+    "inputBoundary": "The exemplar organizer inputs were inspected inside readKnowledgePdfWindow before a provider could be called. Whole PDF organizer inputs were inspected inside createModelKnowledgeReviewPort. Model semantics, independent review and live publication require the shared campaign.",
+    "initialFailure": {
+      "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+      "pages": [
+        9,
+        16
+      ],
+      "code": "ERR_WORKER_OUT_OF_MEMORY",
+      "boundedWorkerHeapMiB": 128,
+      "offlineWorkerHeapMiB": 384,
+      "outcome": "Same verified parent and exact reader with an offline preparation heap completed these eight pages. The pinned result reached the whole-document organizer in the standard campaign path."
+    }
+  },
+  "representative": {
+    "sourceId": "pdf-63e7d5463521682636a066e5",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30034.pdf",
+    "sha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+    "bytes": 63746648,
+    "pages": 192,
+    "windows": 16,
+    "organizerInputsChecked": 16,
+    "rendered": [
+      {
+        "physicalPage": 1,
+        "core": [
+          1,
+          12
+        ],
+        "attached": [
+          1,
+          13
+        ],
+        "windowPage": 1,
+        "sha256": "94ea46c81a92227da61e121965aa4316b48f020ccd1a7b2c920e21e9699987af",
+        "rasterSha256": "3d319decfe2b0343ea050bdfdabcfbe1b5c008182bac6f87794a93f4686e91d0"
+      },
+      {
+        "physicalPage": 99,
+        "core": [
+          97,
+          108
+        ],
+        "attached": [
+          96,
+          109
+        ],
+        "windowPage": 4,
+        "sha256": "d76e30408818095f1fc39c5450349baf31d80d85cf702d9f83e899ce4c555d12",
+        "rasterSha256": "997cab6d7ad522d716bb2e97454e43e742e0551d0b3aa3345114cd8fbfb07229"
+      },
+      {
+        "physicalPage": 192,
+        "core": [
+          181,
+          192
+        ],
+        "attached": [
+          180,
+          192
+        ],
+        "windowPage": 13,
+        "sha256": "1fc975df454bd68417313bb488c86dd000ac82e2abeea0f9e3a0cf0887c04d27",
+        "rasterSha256": "3d319decfe2b0343ea050bdfdabcfbe1b5c008182bac6f87794a93f4686e91d0"
+      }
+    ],
+    "localCitationSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177"
+  },
+  "physicalPageNote": "Physical page 99 displays printed page 97. Physical pages 1 and 192 are matching covers. Each listed original/slice raster pair matched at 72 dpi.",
+  "admission": {
+    "source": "PUBLIC_MAINTENANCE_ENABLED_20261119.json",
+    "policyVersion": 3,
+    "maxModelCallsPerRun": 8,
+    "withinRecordedModelCallLimit": 110,
+    "exceedsRecordedModelCallLimit": [
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "pages": 96,
+        "windows": 8,
+        "minimumModelCalls": 16
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "pages": 84,
+        "windows": 7,
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "pages": 84,
+        "windows": 7,
+        "minimumModelCalls": 14
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "pages": 192,
+        "windows": 16,
+        "minimumModelCalls": 32
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "pages": 112,
+        "windows": 10,
+        "minimumModelCalls": 20
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "pages": 80,
+        "windows": 7,
+        "minimumModelCalls": 14
+      }
+    ],
+    "limits": "These are minimum organizer/reviewer calls, before any billable work. Runtime daily admission, durable work-unit allowance, available gross budget and independent review remain authoritative."
+  },
+  "suggestedLiveExample": {
+    "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+    "physicalPages": 36,
+    "windows": 3,
+    "minimumModelCalls": 6,
+    "reason": "33 physical pages have an empty or unreadable local text layer. The approved campaign can demonstrate visual reading and independent review."
+  },
+  "production": {
+    "modelCallsByThisPreparation": 0,
+    "embeddingCallsByThisPreparation": 0,
+    "writesByThisPreparation": 0,
+    "publishedByThisPreparation": 0,
+    "next": "The sole campaign owner uses the existing lock, gross ledger and original continuation. Reconcile by sourceId and original hash after each actual run. A local attachment check is not a publication receipt."
+  },
+  "localWorkerImage": {
+    "target": "firebase-server",
+    "source": "3e0490febf17efe9639cd74a8943018685a4f2a1 with the .dockerignore and Dockerfile reader inclusion",
+    "baseImage": "node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+    "linuxImageConfig": "sha256:9e748ecad2a11f7e3d70a54ffb482aa68d4b71da0639888a660b1ceff4924016",
+    "docker": "29.4.0",
+    "cliSmoke": "Fresh read-only container, UID 1000, network disabled and no host mounts. The actual campaign CLI reached its argument validation and the packaged parser binding matched the prepared index.",
+    "nativeRead": "A second network-disabled container with only the private opening read pack and the official sample mounted read-only returned pages 14-29 of the 36-page comic.",
+    "windowBytes": 1581548,
+    "windowSha256": "607591a8d0d795c6920e48d43273c29671daf66197d7543e5def1dad1640772a"
+  },
+  "openingArchive": {
+    "name": "fhs-pdf-opening.tar.gz",
+    "records": 329,
+    "indexSha256": "130c94bcc4c4e37b6b2ea3f7a621ffe9f6108c7c95aeced6aa37e0d83ad23afe",
+    "archiveSha256": "bbdaa56f92327e84b496076dc6de632ba6f79dcd1d19711d1adc97e746a7b9cd",
+    "archiveBytes": 10230850,
+    "expandedBytes": 11413803,
+    "contents": "All prepared text-layer batches and the native attachments for outstanding one- and two-page PDFs and the 36-page comic. Other slices remain in the full private archive; missing keys use the ordinary reader.",
+    "verification": "Private campaign host stage only. The archive and internal index SHA-256 were read back on the existing VM. No active worker files, operations or ledger entries were changed by staging."
+  },
+  "boundedWindowPreparation": {
+    "sourceReceiptReadTime": "2026-11-20T17:08:56.519129Z",
+    "model": "gemini-3.8-flash",
+    "location": "global",
+    "sdk": "@google/genai 2.24.0",
+    "comparison": "Rebuilt first-window organizer requests and joined their exact stage hashes to original generation tickets. Includes only matched organizers with settled usage or an isolated returned HTTP 400. Unanswered, unmatched and ticketless sources are excluded from the comparison.",
+    "settledOrganizersByMaterialRanges": {
+      "4": 8,
+      "6": 1,
+      "7": 4,
+      "8": 15
+    },
+    "largestAcceptedAttachmentBytes": 9723714,
+    "inference": "Output-schema complexity is the leading explanation. The SDK retained HTTP 400 without the rejected field, and a targeted Data Access audit query found no matching service error. Google documents complex response schemas as a possible cause. All four PDFs were within the documented GenerateContent size and page limits.",
+    "modelSpecs": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash",
+    "structuredOutput": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/control-generated-output",
+    "newWindowLimit": 8,
+    "legacyWindowLimit": 14,
+    "firstWindowSchemaSha256": "e0d0d94d28070336bcda87084dece024e925d27722592687dc22b3a691b1af79",
+    "settledOrganizersWithIdenticalFirstSchema": 15,
+    "immutablePacket": {
+      "parserSha256": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+      "indexSha256": "2576c56be2af4b1108d476d663aa1fcae938009cd4ea98d9cda7d27de7f66e69",
+      "records": 39,
+      "verification": "Checked both stored layouts for all four original PDFs, opened every slice with the normal worker reader and compared page numbers, extracted text and extraction status. Restaging from the pinned packet produced the same complete index. Adjacent context pages remain attached and each core page occurs once."
+    },
+    "production": "No new provider call, publication or accounting change was made for this verification. Existing work keeps its original layout and saved readings. The four original decisions remain held for the production coordinator.",
+    "entries": [
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "pages": 10,
+        "originalFirstStageHash": "8cbddb2c9b7104c14050bfd612a41568bc9bc047318b6b21cebf1b5b431690d6",
+        "originalFirstRanges": 10,
+        "originalSchemaSha256": "22d241f29d9f0b99723da4773661221b91b8f33dae09891c5cbbdb017877c5ba",
+        "originalSchemaBytes": 3309,
+        "expandedOriginalSchemaBytes": 18174,
+        "originalFirstAttachmentBytes": 5320430,
+        "packet": {
+          "indexSha256": "cc0dd622c617bb9a4cda62f9eb46b56c8d142cd9db2365ee1611cfb0193818f3",
+          "archiveSha256": "a26283a7ef460e886f4ad694f661b3d133fd9c26057e2d7954659873e0b234c8",
+          "bytes": 11877769,
+          "records": 9
+        },
+        "priorRequiredGenerationCalls": 2,
+        "newRequiredGenerationCalls": 4,
+        "windows": [
+          {
+            "corePages": [
+              1,
+              8
+            ],
+            "attachedPages": [
+              1,
+              9
+            ],
+            "attachmentSha256": "f424b45c9c429051b0d2cf57035b825d808160f949128906e16b073fdf636274",
+            "organizerSchemaSha256": "e0d0d94d28070336bcda87084dece024e925d27722592687dc22b3a691b1af79"
+          },
+          {
+            "corePages": [
+              9,
+              10
+            ],
+            "attachedPages": [
+              8,
+              10
+            ],
+            "attachmentSha256": "a37c1c49b77d9d51854aa333870878eb1c0ee7d23182ae9982df210342cb6e39",
+            "organizerSchemaSha256": "5cf26258d0ca41396933e7dc01004ef0d5c7857b9fc646b83475d9a122633a36"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "pages": 12,
+        "originalFirstStageHash": "e6cdd9bf19ab2f46b39d55148f88e9cd9ea76b680b81e16c04416a711bc27b80",
+        "originalFirstRanges": 12,
+        "originalSchemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b",
+        "originalSchemaBytes": 3517,
+        "expandedOriginalSchemaBytes": 21768,
+        "originalFirstAttachmentBytes": 882159,
+        "packet": {
+          "indexSha256": "b52db319d3ea69268309f2e3742ea4c413e9afd80b2f61fd2e1fe559fcfe2716",
+          "archiveSha256": "ef629e71c3462f6f77cba267d4f6445ab1c5b37ae8fee08283207de528e2afef",
+          "bytes": 1898915,
+          "records": 9
+        },
+        "priorRequiredGenerationCalls": 2,
+        "newRequiredGenerationCalls": 4,
+        "windows": [
+          {
+            "corePages": [
+              1,
+              8
+            ],
+            "attachedPages": [
+              1,
+              9
+            ],
+            "attachmentSha256": "d5d6bb1d2b1e69bf90486b63a09219687af02ee6552219e2e79c69c20b2335fc",
+            "organizerSchemaSha256": "e0d0d94d28070336bcda87084dece024e925d27722592687dc22b3a691b1af79"
+          },
+          {
+            "corePages": [
+              9,
+              12
+            ],
+            "attachedPages": [
+              8,
+              12
+            ],
+            "attachmentSha256": "3fce9d0ac5af1349abf29bce986b2b21992036eea9a49e4fa9a74a4ede9975e7",
+            "organizerSchemaSha256": "9af9444b638c55b770d0aa07538000a6b54f7b4abb75405057bd31cb669f22f1"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "pages": 12,
+        "originalFirstStageHash": "d175200bb0402f75013173c69938eb871f20295979cd79a684339abc0ccd5c7e",
+        "originalFirstRanges": 12,
+        "originalSchemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b",
+        "originalSchemaBytes": 3517,
+        "expandedOriginalSchemaBytes": 21768,
+        "originalFirstAttachmentBytes": 7837614,
+        "packet": {
+          "indexSha256": "3034c17e57c019f121b14e989b62c963afa7edbab062c17f4fb1791a33f77bf9",
+          "archiveSha256": "37efd23b9908cf18313c50e8da6164589ad52d3493de8d4a7d44291fb5e1fc2c",
+          "bytes": 16405120,
+          "records": 9
+        },
+        "priorRequiredGenerationCalls": 2,
+        "newRequiredGenerationCalls": 4,
+        "windows": [
+          {
+            "corePages": [
+              1,
+              8
+            ],
+            "attachedPages": [
+              1,
+              9
+            ],
+            "attachmentSha256": "9f9c07f2dcc55a883749538e72f60bcba23053541b11a90c4016d7d77cb5490e",
+            "organizerSchemaSha256": "e0d0d94d28070336bcda87084dece024e925d27722592687dc22b3a691b1af79"
+          },
+          {
+            "corePages": [
+              9,
+              12
+            ],
+            "attachedPages": [
+              8,
+              12
+            ],
+            "attachmentSha256": "297a4bc077ee548a09c0e01367e70922822ad3676964e1b2bd44018fa5775a37",
+            "organizerSchemaSha256": "9af9444b638c55b770d0aa07538000a6b54f7b4abb75405057bd31cb669f22f1"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "pages": 16,
+        "originalFirstStageHash": "c0232be52a2dc0ef1e2da2fddbf299dee134e850779551457d8c5e39e38cd435",
+        "originalFirstRanges": 14,
+        "originalSchemaSha256": "d89b7162dad4c58461f05bf1ab4ec5ecfcd62d731b609b2e7bfc6f0d12f2ebc9",
+        "originalSchemaBytes": 3725,
+        "expandedOriginalSchemaBytes": 25362,
+        "originalFirstAttachmentBytes": 4926570,
+        "packet": {
+          "indexSha256": "b40110077a47ac492ad55842dd40f3675ee6186d4e06767d4ed51edff3ed857d",
+          "archiveSha256": "a0ef73e5bbcb0ae99ac3d09042f7fd8dbfb683397e5bc977eb20967b4fe08790",
+          "bytes": 13286124,
+          "records": 12
+        },
+        "priorRequiredGenerationCalls": 4,
+        "newRequiredGenerationCalls": 4,
+        "windows": [
+          {
+            "corePages": [
+              1,
+              8
+            ],
+            "attachedPages": [
+              1,
+              9
+            ],
+            "attachmentSha256": "5c860a684025ebeaa31478604ad515fd3760005361028158cc4fc09839855907",
+            "organizerSchemaSha256": "e0d0d94d28070336bcda87084dece024e925d27722592687dc22b3a691b1af79"
+          },
+          {
+            "corePages": [
+              9,
+              16
+            ],
+            "attachedPages": [
+              8,
+              16
+            ],
+            "attachmentSha256": "e34cc50afe8114af2253377d1b803ca88d5fbc2d212a6db87846ea66aae741f2",
+            "organizerSchemaSha256": "54217ed29de1c4b1e6a54f4c07d3e00c152c37c43b36d3da3ac952fe9f95f2c4"
+          }
+        ]
+      }
+    ]
+  }
+}

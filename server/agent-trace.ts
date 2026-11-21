@@ -587,7 +587,7 @@ export function createAgentRunTraceCollector(options: {
       openBatchReads.set(callId, pending);
       if (tool === "load_capabilities") handle.noteLoaderCall("capabilityLoads");
       else if (tool === "read_history" || tool === "search_history") handle.noteLoaderCall("historyReads");
-      else if (tool === "search_knowledge") handle.noteLoaderCall("knowledgeSearches");
+      else if (tool === "search_knowledge" || tool === "find_official_material") handle.noteLoaderCall("knowledgeSearches");
       emit({ ...identity, phase: "tool_start" });
       let settled = false;
       return ({ status, faultCode, stopReason }: BatchReadSettlement) => {

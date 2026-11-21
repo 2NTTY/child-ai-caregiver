@@ -16,7 +16,7 @@ const toolNames: Record<string, string> = {
   propose_fact_revision: "提出事實更正", propose_fact_deactivation: "提出事實停用", request_confirmation: "準備具體確認", confirmed_proposal: "已按本人確認保存",
   read_concerns:"讀取持續關注",propose_concern:"保存持續關注候選",propose_concern_change:"保存關注變更候選",
   list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
-  stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
+  stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源", find_official_material: "查閱官方教材",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
   read_family_document_content: "續讀文件固定版本", list_family_document_versions: "讀取文件版本目錄", propose_family_document_change: "保存文件修改候選",
   read_family_documents: "讀取家庭文件", generate_family_document: "整理及保存家庭文件", change_family_document: "更新家庭文件",
@@ -81,9 +81,12 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
     validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
-    applicabilityLabel: [age.region, age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
+    applicabilityLabel: [age.region, ...(age.ageBasis==='per_instruction' ? ['按操作分齡',...(age.ageExamples??[]).map(e=>e.quote),'只供查閱原文'] : age.ageBasis === 'publisher' || age.ageBasis === 'unconfirmed'
+      ? [age.publisherAudiences ? `原文對象：${age.publisherAudiences.join('、')}` : '原文未指明對象',
+        age.maxAgeMonths===null?'月齡範圍未確定':`少於 ${age.maxAgeMonths} 個月，下限未指明`,'只供查閱原文']
+      : [age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
       age.minAgeMonths === null ? "沒有最低月齡" : `最低 ${age.minAgeMonths} 個月`,
-      age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`,
+      age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`]),
       ...age.topics, ...age.conditions].join(" · "),
   };
 }
@@ -214,7 +217,7 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
 }
 // Only these steps can be shown inline without the decision/receipt dialog.
 const chatReadSteps = new Set(['load_capabilities', 'read_context', 'read_memory_facts', 'search_history', 'read_history',
-  'search_knowledge', 'read_knowledge_context', 'present_answer']);
+  'search_knowledge', 'find_official_material', 'read_knowledge_context', 'present_answer']);
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
   const cardLinks = new Map<string, boolean>();
   const platformSeries = new Set<string>();

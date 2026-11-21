@@ -8,11 +8,15 @@ import { dailyFinance, dayFinancialEvidenceSchema, type DayFinancialEvidence } f
 import type { StorageCipher } from './storage-crypto.ts';
 import type { ModelBillingSource, ModelSettingsUsage } from '../src/shared/model-settings.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
+import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-campaign-budget.ts';
+import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
+import { approvedScriptEdition, type ScriptEdition } from './fhs-script-edition.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
 const FORMAT = 'yuban-ai-daily-usage', VERSION = 1, MAX_BYTES = 16 * 1024;
 export const KNOWLEDGE_MAINTENANCE_PAYER = 'system:knowledge-maintenance';
+export const KNOWLEDGE_PUBLICATION_PAYER = 'system:knowledge-publication';
 const id = z.string().min(1).refine(value => value.isWellFormed() && Buffer.byteLength(value, 'utf8') <= 256);
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -62,6 +66,8 @@ export interface FirestoreAiUsageOptions {
   /** Trusted constructor choice, never inferred from a model/request body. */
   billingSource: ModelBillingSource;
   serverClock?: () => number;
+  campaignAdmission?: CampaignDayAdmission;
+  manualPublication?: ManualPublicationPin | ScriptEdition;
 }
 
 /**
@@ -76,14 +82,24 @@ export class FirestoreAiUsage implements DurableAiUsage {
   readonly #namespace: string;
   readonly #source: ModelBillingSource;
   readonly #clock: () => number;
+  readonly #campaignAdmission?: CampaignDayAdmission;
+  readonly #publication: boolean;
   get billingSource() { return this.#source; }
-  constructor({ database, cipher, projectId, namespace, billingSource, serverClock = Date.now }: FirestoreAiUsageOptions) {
+  constructor({ database, cipher, projectId, namespace, billingSource, serverClock = Date.now, campaignAdmission, manualPublication }: FirestoreAiUsageOptions) {
     if (typeof database?.collection !== 'function' || typeof database.runTransaction !== 'function'
       || typeof cipher?.encrypt !== 'function' || typeof cipher.decrypt !== 'function'
       || typeof projectId !== 'string' || !projectId || projectId !== projectId.trim() || !projectId.isWellFormed() || Buffer.byteLength(projectId) > 256
       || typeof namespace !== 'string' || !/^[a-z][a-z0-9_]{0,60}$/u.test(namespace) || typeof serverClock !== 'function') reject('invalid_configuration');
     this.#database = database; this.#cipher = cipher; this.#projectId = projectId; this.#namespace = namespace;
     this.#source = parse(sourceSchema, billingSource, 'invalid_configuration'); this.#clock = serverClock;
+    this.#publication = manualPublication !== undefined;
+    if (manualPublication && (billingSource !== 'platform' || campaignAdmission
+      || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication))
+      reject('invalid_configuration');
+    if (campaignAdmission) {
+      if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');
+      this.#campaignAdmission = campaignAdmission;
+    }
   }
   #now() {
     const now = this.#clock();
@@ -91,6 +107,23 @@ export class FirestoreAiUsage implements DurableAiUsage {
     return now;
   }
   #day(now: number) { return new Date(now).toISOString().slice(0, 10); }
+  #ownerLimit(day: string, userId: string, ordinary: number) {
+    return this.#campaignAdmission?.day === day && userId === KNOWLEDGE_MAINTENANCE_PAYER && ordinary === 200
+      ? this.#campaignAdmission.attempts : ordinary;
+  }
+  async #availableAttempts(tx: Transaction, global: Counter, owner: Counter, day: string, userId: string, userLimit: number, globalLimit: number, maximum: number) {
+    if (this.#publication !== (userId === KNOWLEDGE_PUBLICATION_PAYER)) reject('invalid_request');
+    if (this.#publication) return maximum;
+    const available = Math.max(0, Math.min(maximum, this.#ownerLimit(day, userId, userLimit) - owner.attempts));
+    if (!available || global.attempts + available <= globalLimit) return available;
+    if (this.#source !== 'platform') return Math.max(0, Math.min(available, globalLimit - global.attempts));
+    // Total consumption is shared. Only server-commissioned publication receipts are
+    // excluded from the ordinary admission count, including after a worker restart.
+    const publicationId = this.#counterId(day, KNOWLEDGE_PUBLICATION_PAYER);
+    const publication = this.#counter(publicationId, await tx.get(this.#ref(publicationId)));
+    this.#consistent(global, publication);
+    return Math.max(0, Math.min(available, globalLimit - (global.attempts - publication.attempts)));
+  }
   #attemptId(request: Pick<DurableAiUsageRequest, 'rootRunId' | 'attemptKey'>) { return 'attempt_' + hash([request.rootRunId, request.attemptKey]); }
   #counterId(day: string, userId: string | null) { return 'daily_' + hash([this.#source, day, userId]); }
   // Existing workers and rollback images read the strict v1 quota documents.
@@ -171,19 +204,25 @@ export class FirestoreAiUsage implements DurableAiUsage {
     activities.tool = (activities.tool ?? 0) + integer.min(1).parse(units);
     detail.save();
   }
-  /** Peek before starting a native PDF stage. The usual reserve remains authoritative at dispatch. */
-  async modelCapacity(tx: Transaction, userId: string, userLimit: number, globalLimit: number) {
+  /** Read current daily headroom. Every subsequent provider attempt still reserves atomically. */
+  async availableModelAttempts(tx: Transaction, userId: string, userLimit: number, globalLimit: number, maximum: number) {
     const day = this.#day(this.#now());
     const globalId = this.#counterId(day, null), ownerId = this.#counterId(day, userId);
     const [globalSnapshot, ownerSnapshot] = await tx.getAll(this.#ref(globalId), this.#ref(ownerId));
     const global = this.#counter(globalId, globalSnapshot, ownerSnapshot.exists);
     const owner = this.#counter(ownerId, ownerSnapshot);
     this.#consistent(global, owner);
-    return global.attempts < globalLimit && owner.attempts < userLimit;
+    return this.#availableAttempts(tx, global, owner, day, userId, userLimit, globalLimit, maximum);
+  }
+  async modelCapacity(tx: Transaction, userId: string, userLimit: number, globalLimit: number) {
+    return (await this.availableModelAttempts(tx, userId, userLimit, globalLimit, 1)) > 0;
   }
 
   async reserve(input: DurableAiUsageRequest, embeddingPurpose?: 'query_embedding' | 'corpus_maintenance' | 'private_document_embedding', activity?: ModelAttemptActivity): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
+    if (this.#publication !== (request.userId === KNOWLEDGE_PUBLICATION_PAYER)
+      || (this.#publication && request.kind === 'embedding' && embeddingPurpose !== 'corpus_maintenance'))
+      reject('invalid_request');
     if (embeddingPurpose !== undefined && (request.kind !== 'embedding'
       || !['query_embedding', 'corpus_maintenance', 'private_document_embedding'].includes(embeddingPurpose))) reject('invalid_request');
     if (activity && (request.kind === 'embedding' || !MODEL_USAGE_ACTIVITIES.includes(activity.activity)
@@ -205,7 +244,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const global = this.#counter(globalId, globalSnapshot, userSnapshot.exists), user = this.#counter(userId, userSnapshot);
       this.#consistent(global, user);
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
-      if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
+      if (!await this.#availableAttempts(transaction, global, user, day, request.userId, request.userLimit, request.globalLimit, 1))
+        return { decision: 'quota_exceeded' };
       const detail = await this.#detail(transaction, globalId);
       if (request.budgetPurpose === 'knowledge_maintenance' && this.#source === 'personal') {
         const ownerDetail = await this.#detail(transaction, userId);

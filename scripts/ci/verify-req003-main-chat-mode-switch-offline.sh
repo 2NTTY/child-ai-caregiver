@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/req003-main-chat-mode-switch.test.ts
+  tests/req003-legacy-chat-mode.test.ts
   frontend/scripts/req003-main-chat-mode-switch.test.mjs
   tests/chat-delivery-review.test.ts
   tests/chat-api.test.ts
@@ -43,7 +44,7 @@ TEST_FILES=(
   tests/req003-auth-mode-and-draft-binding.test.ts
   frontend/scripts/req003-unified-pending-shortcut-ui.test.mjs
 )
-TEST_CASES=(10 5 44 7 2 14 11 3 9 18 1 10 10)
+TEST_CASES=(10 2 5 44 7 2 19 11 3 9 18 1 10 10)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

@@ -98,6 +98,7 @@ export function createProactivePublicEvents(options: ProactivePublicOptions) {
         const rows = await options.knowledge.ruleCandidates(transaction, [{ sourceId: event.sourceId, key: event.key }], filter);
         const evidence = rows.find(row => row.sourceId === event.sourceId && row.key === event.key);
         if (!evidence) { exclude('source_unavailable'); continue; }
+        if (evidence.applicability.use === 'original_lookup') { exclude('not_applicable'); continue; }
         if (evidence.versionHash !== event.versionHash || evidence.contentHash !== event.contentHash) { exclude('source_changed'); continue; }
         if (evidence.usageScope !== 'public_noncommercial') { exclude('usage_restricted'); continue; }
         if (!originalInstitution(evidence, institution)) { exclude('issuer_unbound'); continue; }

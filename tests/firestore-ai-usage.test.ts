@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { agentBudgetFingerprint } from '../server/agent-budget.ts';
-import { FirestoreAiUsage, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
+import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER, type FirestoreAiUsageOptions } from '../server/firestore-ai-usage.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { approvedScriptEdition } from '../server/fhs-script-edition.ts';
 import { DurableAiUsageError, type DurableAiUsageRecord, type DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import { firestoreUsageFixture } from './helpers/firestore-ai-usage.ts';
 import { readFinancialEvidence } from '../server/ai-financial-evidence.ts';
 import { createFirestoreOperatorEmbeddingUsage } from '../server/firestore-embedding-usage.ts';
+import { createEmbeddingGateway } from '../server/embedding-gateway.ts';
+import { EmbeddingAdmissionDeferred } from '../server/embedding-failure.ts';
+import { readAiConfig } from '../server/ai-config.ts';
+import { campaignDayAdmission, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { restoreFirestoreUsage } from '../server/firestore-restore-usage.ts';
 import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 
@@ -34,6 +40,97 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
   model: 'synthetic-model', deadlineAtMs: now + 90000, userLimit: 20, globalLimit: 100, ...patch });
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
+
+test('a registered script edition uses the platform publication account and cannot authorize a personal request', async () => {
+  const f = firestoreUsageFixture(now), pin = approvedScriptEdition('fhs-30119')!;
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: { ...pin } }), code('invalid_configuration'));
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: pin, billingSource: 'personal' }), code('invalid_configuration'));
+  const usage = new FirestoreAiUsage({ ...f.options, manualPublication: pin });
+  await assert.rejects(usage.reserve(request({ userId: KNOWLEDGE_MAINTENANCE_PAYER })), code('invalid_request'));
+  const paid = request({ userId: KNOWLEDGE_PUBLICATION_PAYER });
+  assert.equal((await usage.reserve(paid)).decision, 'execute');
+  await usage.record(paid, known);
+  assert.equal((await usage.reserve(paid)).decision, 'lookup');
+});
+
+test('commissioned receipts report actual platform use and leave the ordinary daily allowance intact', async () => {
+  const f = firestoreUsageFixture(now), ordinary = f.service;
+  const pin = manualPublicationPin('pdf-63e7d5463521682636a066e5')!;
+  const manual = new FirestoreAiUsage({ ...f.options, manualPublication: pin });
+  assert.throws(() => new FirestoreAiUsage({ ...f.options, manualPublication: { ...pin } }), code('invalid_configuration'));
+  const limits = { userLimit: 1, globalLimit: 2 };
+  const scheduled = request({ ...limits, userId: KNOWLEDGE_MAINTENANCE_PAYER });
+  const published = request({ ...limits, userId: KNOWLEDGE_PUBLICATION_PAYER, attemptKey: 'review' });
+  assert.equal((await ordinary.reserve(scheduled)).decision, 'execute');
+  assert.equal((await ordinary.reserve({ ...scheduled, attemptKey: 'next' })).decision, 'quota_exceeded');
+  await assert.rejects(ordinary.reserve(published), code('invalid_request'));
+  await assert.rejects(manual.reserve(scheduled), code('invalid_request'));
+  assert.equal((await manual.reserve(published)).decision, 'execute');
+  await manual.record(published, known);
+  assert.equal((await manual.reserve(published)).decision, 'lookup');
+  const doc = { ...published, attemptKey: 'embed', kind: 'embedding' as const };
+  await assert.rejects(manual.reserve(doc, 'query_embedding'), code('invalid_request'));
+  assert.equal((await manual.reserve(doc, 'corpus_maintenance')).decision, 'execute');
+  assert.equal((await ordinary.getForUser(KNOWLEDGE_PUBLICATION_PAYER)).attempts, 2);
+  assert.equal((await ordinary.getForUser(KNOWLEDGE_MAINTENANCE_PAYER)).attempts, 1);
+  assert.equal((await ordinary.reserve({ ...scheduled, attemptKey: 'next' })).decision, 'quota_exceeded');
+  assert.equal((await ordinary.reserve(request({ ...limits, attemptKey: 'family' }))).decision, 'execute');
+  assert.equal((await ordinary.reserve(request({ ...limits, userId: 'second-family', attemptKey: 'another' }))).decision, 'quota_exceeded');
+  const total = await ordinary.getGlobal('2026-10-09');
+  assert.deepEqual([total.attempts, total.inputTokens, total.breakdown.model, total.breakdown.documentEmbedding], [4, 12, 3, 1]);
+});
+
+test('FHS day admission resumes a deferred document with the same payer and expires at UTC midnight', async t => {
+  const beforeMidnight = Date.parse('2026-11-20T23:59:59Z');
+  t.mock.timers.enable({ apis: ['Date'], now: beforeMidnight });
+  const f = firestoreUsageFixture(beforeMidnight);
+  const usage = new FirestoreAiUsage({ ...f.options, namespace: f.options.namespace + '_ai_usage' });
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'demo-test',
+    AI_DAILY_USER_ATTEMPTS: '200', AI_DAILY_GLOBAL_ATTEMPTS: '400' });
+  const limits = { userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts, deadlineAtMs: beforeMidnight + 60000 };
+  for (let i = 0; i < limits.userLimit; i++) {
+    const stage = request({ ...limits, userId: KNOWLEDGE_MAINTENANCE_PAYER, attemptKey: 'model:' + i });
+    assert.equal((await usage.reserve(stage)).decision, 'execute');
+  }
+  let dispatched = 0;
+  const actor = { kind: 'corpus_maintenance' as const, actorId: 'operator:knowledge-maintenance',
+    operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' };
+  assert.equal(selectCampaignDayAdmission(undefined), undefined);
+  assert.throws(() => selectCampaignDayAdmission('2026-11-21'), /not_approved/);
+  const grant = selectCampaignDayAdmission('2026-11-20')!;
+  const embed = (approved?: typeof campaignDayAdmission) => createEmbeddingGateway({ config,
+    usage: createFirestoreOperatorEmbeddingUsage(f.options, limits.deadlineAtMs, undefined, approved),
+    provider: { async embed() {
+      dispatched++;
+      return { values: [1, ...Array<number>(1023).fill(0)], inputTokens: 1, billableCharacters: 4 };
+    } },
+  }).embed({ task: 'RETRIEVAL_DOCUMENT', title: 'Fixture', text: 'Text' }, actor, new AbortController().signal, async () => true);
+  await assert.rejects(embed(), EmbeddingAdmissionDeferred);
+  assert.equal(dispatched, 0);
+  assert.equal((await usage.getForUser('synthetic-user')).attempts, 0);
+  assert.equal((await usage.reserve(request({ ...limits, rootRunId: 'chat' }))).decision, 'execute');
+  const firstDay = await usage.getGlobal('2026-11-20');
+  assert.equal(firstDay.attempts, 201);
+  assert.equal(firstDay.finance.unsettledAttempts, 1);
+  assert.equal(firstDay.maintenanceFinance?.unsettledAttempts, 200);
+  await embed(grant);
+  assert.equal(dispatched, 1);
+  const funded = new FirestoreAiUsage({ ...f.options, namespace: f.options.namespace + '_ai_usage', campaignAdmission: grant });
+  const model = (index: number) => request({ ...limits, userId: KNOWLEDGE_MAINTENANCE_PAYER, attemptKey: 'funded:' + index });
+  assert.equal((await usage.reserve(model(0))).decision, 'quota_exceeded');
+  for (let i = 1; i < 100; i++) assert.equal((await funded.reserve(model(i))).decision, 'execute');
+  assert.equal((await funded.reserve(model(100))).decision, 'quota_exceeded');
+  for (let i = 1; i < 100; i++) {
+    assert.equal((await usage.reserve(request({ ...limits, rootRunId: 'chat', attemptKey: 'chat:' + i }))).decision, 'execute');
+  }
+  assert.equal((await usage.reserve(request({ ...limits, rootRunId: 'another-chat', userId: 'another-parent' }))).decision, 'quota_exceeded');
+  t.mock.timers.tick(1000);
+  f.setNow(Date.now());
+  for (let i = 101; i <= 300; i++) assert.equal((await funded.reserve(model(i))).decision, 'execute');
+  assert.equal((await funded.reserve(model(301))).decision, 'quota_exceeded');
+  assert.equal((await usage.getGlobal('2026-11-21')).attempts, 200);
+  assert.equal((await usage.getGlobal('2026-11-20')).attempts, 400);
+});
 
 test('sponsored corpus ceiling counts maintenance separately while the owner daily total still gates all calls', async () => {
   const f = firestoreUsageFixture(now);

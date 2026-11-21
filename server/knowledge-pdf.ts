@@ -31,8 +31,10 @@ export interface KnowledgePdfOptions {
 
 export async function extractKnowledgePdf(data: Uint8Array, options: KnowledgePdfOptions = {}): Promise<KnowledgePdfResult> {
   const { startPage = 1, pageLimit = 8, expectedHash, signal } = options;
-  if (!(data instanceof Uint8Array) || data.byteLength === 0 || data.byteLength > KNOWLEDGE_PDF_MAX_BYTES) {
-    throw new Error("knowledge_pdf_invalid_size");
+  if (!(data instanceof Uint8Array) || data.byteLength === 0) throw new Error("knowledge_pdf_invalid_size");
+  if (data.byteLength > KNOWLEDGE_PDF_MAX_BYTES) {
+    const { largeFhsPdf } = await import('./platform-materials.ts');
+    if (!expectedHash || largeFhsPdf(expectedHash)?.bytes !== data.byteLength) throw new Error("knowledge_pdf_invalid_size");
   }
   if (!Number.isSafeInteger(startPage) || startPage < 1
     || !Number.isSafeInteger(pageLimit) || pageLimit < 1 || pageLimit > (options.includePagePdf ? 16 : 8)) {

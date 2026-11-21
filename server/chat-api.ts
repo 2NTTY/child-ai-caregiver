@@ -1,5 +1,5 @@
 import { displayAccountMessage, type PrivateRunReader } from './agent-account-directory.ts';
-import type { ChatStore } from "./chat.ts";
+import { LegacyChatModeUnsupportedError, type ChatStore } from "./chat.ts";
 import { isChatMode, type ChatMode } from "../src/shared/chat.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
@@ -45,9 +45,10 @@ export async function handleChatRequest(request: Request, userId: string | null,
     const params = new URL(request.url).searchParams, before = params.get("before");
     if (params.getAll("before").length > 1 || before !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(before))
       return apiError("invalid_input", "請重新讀取聊天歷史。", 400);
-    const page = await store.listForUser(userId, childId, before);
+    const includeProactive = request.headers.get('x-chat-proactive') === '1';
+    const page = await store.listForUser(userId, childId, before, includeProactive ? 'display' : undefined);
     if (!page) return apiError("not_found", "找不到資料。", 404);
-    const visible = request.headers.get('x-chat-proactive') === '1' ? page.messages : page.messages.filter(message => !message.proactive);
+    const visible = includeProactive ? page.messages : page.messages.filter(message => !message.proactive);
     return jsonResponse({ ...page, messages: await Promise.all(visible.map(message => displayAccountMessage(message, userId, readRun))) });
   }
   if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
@@ -76,8 +77,15 @@ export async function handleChatRequest(request: Request, userId: string | null,
     if (!isChatMode(parsedBody.chatMode)) return apiError("invalid_input", "請檢查輸入資料。", 400);
     chatMode = parsedBody.chatMode;
   }
-  const message = chatMode !== undefined
-    ? await store.createUserMessageForUser(userId, childId, parsedBody.text, chatMode)
-    : await store.createUserMessageForUser(userId, childId, parsedBody.text);
-  return message ? jsonResponse({ message }, 201) : apiError("not_found", "找不到資料。", 404);
+  try {
+    const message = chatMode !== undefined
+      ? await store.createUserMessageForUser(userId, childId, parsedBody.text, chatMode)
+      : await store.createUserMessageForUser(userId, childId, parsedBody.text);
+    return message ? jsonResponse({ message }, 201) : apiError("not_found", "找不到資料。", 404);
+  } catch (error) {
+    if (error instanceof LegacyChatModeUnsupportedError) {
+      return apiError("chat_mode_unavailable", "目前不支援「只是聊天」模式，訊息未有傳送。", 400);
+    }
+    throw error;
+  }
 }

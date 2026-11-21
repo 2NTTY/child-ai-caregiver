@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test, { mock } from "node:test";
 import * as genai from "@google/genai";
 import type { LlmRequest } from "@google/adk";
@@ -21,7 +22,39 @@ class StubGoogleGenAI {
 }
 mock.module("@google/genai", { namedExports: { ...genai, GoogleGenAI: StubGoogleGenAI } });
 mock.method(globalThis, "fetch", async () => { throw new Error("Network requests are forbidden in this offline suite"); });
-const { createVertexAgentProvider, AgentGatewayModel } = await import("../server/agent-model-gateway.ts");
+const { createVertexAgentProvider, AgentGatewayModel, originalKnowledgePdf, agentModelRequestFingerprint } = await import("../server/agent-model-gateway.ts");
+
+test("verified native PDF fingerprints match existing receipts without parsing a copy of the attachment", t => {
+  const bytes = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(16384, 255)]);
+  const pdf = originalKnowledgePdf(bytes, createHash("sha256").update(bytes).digest("hex"), true);
+  const model = "synthetic-native-model";
+  const request = { contents: [{ role: "user", parts: [{ text: "原頁 \"1\"" },
+    { inlineData: { mimeType: "application/pdf", data: pdf.data }, mediaResolution: { level: genai.PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH } }] }],
+    config: { systemInstruction: "Read the page", temperature: 0, topP: undefined } };
+  const expected = agentBudgetFingerprint({ model, ...request });
+  const parse = JSON.parse;
+  t.mock.method(JSON, "parse", (text: string) => {
+    assert.ok(!text.includes(pdf.data), "The attachment was copied into canonical JSON");
+    return parse(text);
+  });
+  assert.equal(agentModelRequestFingerprint(model, request, pdf), expected);
+});
+
+test("native PDF fingerprints preserve distinct prompts, attachments and marker collisions", () => {
+  const bytes = Buffer.from("%PDF-1.4\n\xff", "latin1");
+  const pdf = originalKnowledgePdf(bytes, createHash("sha256").update(bytes).digest("hex"));
+  const model = "synthetic-native-model";
+  const attachment = { inlineData: { data: pdf.data, mimeType: "application/pdf" } };
+  for (const parts of [
+    [{ text: "\u0000verified PDF attachment\u0000" }, attachment],
+    [{ text: "Different input" }, attachment],
+    [attachment, attachment],
+    [{ inlineData: { mimeType: "application/pdf", data: "AQ==" } }],
+  ]) {
+    const request = { contents: [{ role: "user", parts }] };
+    assert.equal(agentModelRequestFingerprint(model, request, pdf), agentBudgetFingerprint({ model, ...request }));
+  }
+});
 
 function setup() {
   clients.length = 0;

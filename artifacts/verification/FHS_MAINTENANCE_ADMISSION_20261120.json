@@ -1,0 +1,62 @@
+{
+  "campaign": "fhs-child-initial-20261120",
+  "baselineRelease": {
+    "receipt": "r44651458542-1",
+    "observedAt": "2026-11-20T01:19:36Z",
+    "webApiWorker": "c5334be942df12c672c15a2ebe653e9614998a58",
+    "workflow": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44651458542"
+  },
+  "checkpoint": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+  "readOnlyWorkerObservation": {
+    "at": "2026-11-20T03:51:58.603Z",
+    "utcDay": "2026-11-20",
+    "policyVersion": 3,
+    "systemMaintenanceAttempts": 200,
+    "ownerLimit": 200,
+    "globalPlatformAttempts": 200,
+    "globalLimit": 400,
+    "adminMaintenanceMoneyBudget": null,
+    "adminMaintenanceMoneyBudgetVersion": 0
+  },
+  "providerObservation": {
+    "at": "2026-11-20T03:49:05.022Z",
+    "project": "ai-caregivers-for-children",
+    "source": "scripts/read-vertex-embedding-quota.py --predict-region us-central1 (Service Usage effective limits)",
+    "geminiEmbeddingBaseModelRPM": 100000,
+    "usCentral1SharedPredictRPM": 30000,
+    "applicableFiniteEmbeddingTPMReturned": false,
+    "generationEffectiveLimit": null,
+    "deferredEmbeddingReachedProvider": false
+  },
+  "grossCheckpointMicros": {
+    "cap": 30000000,
+    "spentEstimate": 5509195,
+    "reservedForTwoUnknownGenerations": 3207168,
+    "available": 21283637,
+    "providerAttemptsAcrossTwoUtcDays": 400,
+    "settled": 398,
+    "holdReceipt": "FHS_INITIAL_RETAINED_UNKNOWN_20261120.json"
+  },
+  "operatorDecision": {
+    "appliesTo": "Platform-funded initial age-checked FHS work on the original source registration, observation, operation fingerprint and provider route.",
+    "utcDay": "2026-11-20",
+    "maxMaintenancePayerAttempts": 300,
+    "maxAdditionalAttempts": 100,
+    "siteWideLimit": 400,
+    "parentLimit": 200,
+    "expiresAt": "2026-11-21T00:00:00Z",
+    "activation": "Only the existing campaign lock holder opts in on the worker command.",
+    "deferredFingerprint": "7e38e8ae1cd6991712f1f58fcdf3365a8885f8df940835b5bd5619e2151cf8c4"
+  },
+  "offlineChecks": {
+    "node": "24.22.3",
+    "command": "node --test --test-name-pattern='FHS day admission|same-day admission reopens' tests/firestore-ai-usage.test.ts tests/background-knowledge-model.test.ts",
+    "passed": 2,
+    "results": [
+      "Original maintenance refusal at 200 before provider dispatch, ordinary chat capacity and funding attribution, same-document admission, maximum 300 for the selected payer, 400 site-wide and automatic return to 200 the next UTC day.",
+      "The durable work keeps its sealed candidate when capacity is unavailable and reclaims the identical candidate under the same publication binding when capacity opens."
+    ],
+    "schedulerReplay": "With the real checkpoint and simulated child exits, --from-deferred first issued resume-age-checked with the original fingerprint; exit 4 stopped further work and a terminal success allowed the next previously unstarted source.",
+    "paidCalls": 0
+  }
+}
