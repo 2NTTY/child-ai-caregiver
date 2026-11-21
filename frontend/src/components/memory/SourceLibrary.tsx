@@ -1,5 +1,7 @@
-import type { ReactNode, Ref } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState, type ReactNode, type Ref } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppRadioItem } from '../AppRadioItem';
+import { AppSelectionTrigger } from '../ui';
 import { Text } from 'react-native-paper';
 import { AppDialog } from '../AppDialog';
 import { AppIcon, type AppIconName } from '../AppIcon';
@@ -48,7 +50,24 @@ export function LibrarySheet({ title, close, children, wide, closeDisabled, acti
     <AppDialog.ScrollArea style={s.scroll}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>{children}</ScrollView></AppDialog.ScrollArea>
   </AppDialog>;
 }
+export function CatalogChoice({ label, value, onChange, options, action }: {
+  label: string; value: string; onChange(value: string): void; options: { value: string; label: string }[];
+  action?: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const trigger = useRef<View>(null);
+  const filter = <AppSelectionTrigger ref={trigger} label={label + '：' + (options.find(row => row.value === value)?.label ?? value)}
+    expanded={expanded} onPress={() => setExpanded(!expanded)} />;
+  return <View>{action ? <View style={s.seriesTools}><View style={s.seriesFilter}>{filter}</View>{action}</View> : filter}
+    {expanded ? <View accessibilityRole="radiogroup" accessibilityLabel={label}>{options.map(row =>
+      <AppRadioItem key={row.value} {...row} checked={row.value === value} onPress={() => {
+        onChange(row.value); setExpanded(false); if (Platform.OS === 'web') trigger.current?.focus();
+      }} />)}</View> : null}
+  </View>;
+}
 const s = StyleSheet.create({
+  seriesTools: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  seriesFilter: { maxWidth: '100%', flexShrink: 1 },
   home: { minWidth: 0, gap: spacing.xl },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.xs },
   title: { fontFamily: chineseFont, color: '#173C3A', fontWeight: '700', fontSize: 26, lineHeight: 34 },

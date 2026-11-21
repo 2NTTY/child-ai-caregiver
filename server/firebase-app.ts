@@ -1,4 +1,4 @@
-import { sourceReadingSchema } from '../src/shared/source-card-reading.ts';
+import { sourceDirectoryPageSchema, sourceReadingSchema } from '../src/shared/source-card-reading.ts';
 import { readSourceCardExcerpt } from './agent-registered-document-tools.ts';
 import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
 import { citedPdfRoute, openCitedPdf, type KnowledgeOriginalPort } from './knowledge-cited-pdf.ts';
@@ -323,11 +323,17 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         if (request.headers.get('x-expected-user-id') !== userId) throw new RequestError('identity_changed', 409);
-        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential|\/reading)?)?$/iu.exec(path);
+        const match = /^\/api\/account\/source-cards(?:\/([a-f0-9-]{36})(\/credential|\/reading|\/documents)?)?$/iu.exec(path);
         if (!match) throw new RequestError('not_found', 404);
         const [, cardId, route] = match;
         let result: unknown;
-        if (request.method === 'GET' && route === '/reading') {
+        if (request.method === 'GET' && route === '/documents') {
+          const documents = options.registeredSourceDocuments;
+          if (!documents) throw new RequestError('source_documents_unavailable', 503);
+          const cursor = new URL(request.url).searchParams.get('cursor');
+          if (cursor !== null && !/^[a-f0-9]{64}$/u.test(cursor)) throw new RequestError('invalid_input', 400);
+          result = sourceDirectoryPageSchema.parse(await documents.list(userId, cardId, cursor));
+        } else if (request.method === 'GET' && route === '/reading') {
           const documents = options.registeredSourceDocuments;
           if (!documents) throw new RequestError('not_found', 404);
           const params = new URL(request.url).searchParams;

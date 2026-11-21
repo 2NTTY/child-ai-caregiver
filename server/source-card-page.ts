@@ -1,4 +1,5 @@
 import { load } from 'cheerio';
+import { declaredPrintCopies, listingSections, publisherSections } from './source-card-categories.ts';
 import { personalSourceUrl } from './personal-source-fetch.ts';
 import { fhsLeafletControl } from './knowledge-source-fetch.ts';
 import { classifyGate, downloadLabel, fileLink, mutation, nextLabel } from './source-card-controls.mjs';
@@ -47,21 +48,24 @@ export function inspectSourcePage(html: string, url: string) {
   const links = new Set<string>();
   const leaflet = fhsLeafletControl($, url);
   const base = new URL($('base[href]').first().attr('href') ?? url, url);
-  function urls(selector: string) {
+  function urls(selector: string, skipNavigation = false) {
     const result = new Set<string>();
     for (const node of $(selector).toArray()) {
+      if (skipNavigation && $(node).closest('nav,[itemtype$="/BreadcrumbList"]').length) continue;
       const href = $(node).attr('href')?.trim();
       if (!href || href.startsWith('#')) continue;
       try { result.add(new URL(href, base).href); } catch { /* Ignore malformed publisher links. */ }
     }
     return [...result];
   }
-  const records = urls('table tr td a[href],dl dd a[href],[itemprop="itemListElement"] a[href]');
+  const records = urls('table tr td a[href],dl dd a[href],[itemprop="itemListElement"] a[href]', true);
   const feeds = urls('link[rel~=alternate][type="application/atom+xml"],link[rel~=alternate][type="application/rss+xml"]');
   const references = urls('a[href],link[rel~=alternate]');
   const hasText = $('article p,main p,[role=main] p,body p').toArray().some(node => !!$(node).text().trim());
   const article = $('article').length === 1 && !!$('article p').text().trim();
-  if (leaflet) return { gate, links: [leaflet.url], dynamic: false, records, feeds, references, hasText, article: false };
+  const sections = publisherSections($, url);
+  const groups = listingSections($, base);
+  if (leaflet) return { gate, links: [leaflet.url], dynamic: false, records, feeds, references, hasText, article: false, sections, groups, currentBody: false };
   const main = $('main,article,[role=main],#content').first();
   const region = main.length ? main : $('body');
   let dynamic = false;
@@ -77,7 +81,9 @@ export function inspectSourcePage(html: string, url: string) {
   }
   // Script-rendered catalogue shells may initially contain no controls or text.
   if ($('script').length && !links.size && (region.text().replace(/\s/gu,'').length < 100 || !region.find('p,article').length)) dynamic = true;
-  return { gate, links: [...links], dynamic, records, feeds, references, hasText, article };
+  const copies = declaredPrintCopies($, base);
+  return { gate, links: [...links].filter(link => !copies.has(link)), dynamic,
+    records: records.filter(link => !copies.has(link)), feeds, references, hasText, article, sections, groups, currentBody: copies.size > 0 };
 }
 
 /** Only take publisher-provided item locators. Feed summaries never enter the document store. */

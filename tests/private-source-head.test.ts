@@ -133,6 +133,34 @@ test('legacy heads are backfilled and pause/re-enable requires a fresh index inc
   await assert.rejects(f.documents.withIndexHead('alice', f.cardId, legacy.documentId, async () => true), { code: 'source_document_integrity' });
 });
 
+test('a legacy HTML edition keeps its exact original and index when standalone category markup is recognized',async()=>{
+  const f = await fixture(), text = 'Keep the two envelopes separate. '.repeat(420).trim(), section = 'First collection';
+  async function scan(tag:string,sections:string[],paragraph=text) {
+    const job = await f.claim();
+    const body = '<article><h1>Envelope lesson</h1><p>'+paragraph+'</p>'+tag+'</article>';
+    const original = {...f.original(body),mimeType:'text/html',sections};
+    const result = await f.documents.ingest(job,[original],AbortSignal.timeout(10000));
+    await f.cards.finish(job,result.result); f.advance();
+    return (await f.documents.list('alice',f.cardId)).items[0]!;
+  }
+  // The prior HTML extractor included standalone category text in the frozen original.
+  const legacy = await scan('<span>'+section+'</span>',[section]);
+  const oldHead = f.head(), {bodyVersion:_bodyVersion,...oldFields} = oldHead.record.value as any;
+  f.rewrite(oldHead,oldFields);
+  const renamed = 'New collection';
+  const recognized = await scan('<a rel=category href="/group">'+renamed+'</a>',[renamed]);
+  assert.equal(recognized.version,legacy.version);
+  assert.deepEqual(recognized.categories,{basis:'publisher',labels:[renamed]});
+  const removed = await scan('',[]);
+  assert.equal(removed.version,legacy.version); assert.equal(f.jobs().length,1);
+  const saved = await f.documents.read('alice',f.cardId,legacy.documentId,legacy.version);
+  assert.ok('text' in saved.content && text.startsWith(saved.content.text.split('\n\n')[1]!));
+  const tail = await f.documents.read('alice',f.cardId,legacy.documentId,legacy.version,{offset:text.length});
+  assert.ok('text' in tail.content && tail.content.text.includes(section));
+  const revised = await scan('',[],'Spend the coins in the first envelope.');
+  assert.notEqual(revised.version,legacy.version); assert.equal(f.jobs().length,2);
+});
+
 test('a private index claim requires its own live background lease and leaves the default claim allowlist unchanged', async () => {
   const f = await fixture(); await f.ingest();
   const [work] = f.jobs(), reference = firestoreBackgroundReference(work), data = new FirestoreDomainData(f.options);
