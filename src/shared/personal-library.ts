@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { platformPublisherHosts } from './platform-material.ts';
-import { platformCardMedia } from './platform-media.ts';
+import { mediaWithoutPages, platformCardMedia } from './platform-media.ts';
 
 import { libraryPreferenceViewSchema, managedSeriesViewSchema, sourceSeriesSchema } from './source-series.ts';
 import type { LibraryJoin } from './source-series.ts';
@@ -10,7 +10,10 @@ const time = z.iso.datetime({ offset: true });
 export const librarySeriesV1MediaType = 'application/vnd.yuyoufang.library-series.v1+json';
 export const librarySeriesV2MediaType = 'application/vnd.yuyoufang.library-series.v2+json';
 export const librarySeriesV3MediaType = 'application/vnd.yuyoufang.library-series.v3+json';
-export const librarySeriesMediaType = 'application/vnd.yuyoufang.library-series.v4+json';
+export const librarySeriesV4MediaType = 'application/vnd.yuyoufang.library-series.v4+json';
+export const librarySeriesV5MediaType = 'application/vnd.yuyoufang.library-series.v5+json';
+export const librarySeriesMediaType = 'application/vnd.yuyoufang.library-series.v6+json';
+export const libraryCatalogPageSize = 10;
 const legacyLibraryItem = z.object({
   sourceId, versionId: z.uuid(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   url: z.url().refine(value => {
@@ -27,6 +30,7 @@ export const personalLibraryItemSchema = legacyLibraryItem.extend({
     categoryCounts: z.array(z.strictObject({ name: z.string().min(1).max(200), count: z.int().positive() })).max(100).optional(),
     previousChoice: libraryPreferenceViewSchema.optional() }).optional(),
   media: platformCardMedia.optional(),
+  sourceDateText: z.string().max(200).optional(),
   versionHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(), fetchedAt: time.optional(), lastCheckedAt: time.nullable().optional(),
   lastSuccessfulCheckAt: time.nullable().optional(), publishedAt: time.nullable().optional(),
   coverage: z.string().max(240).optional(), methods: z.array(z.string().max(200)).max(8).optional(), topics: z.array(z.string()).max(384).optional(),
@@ -35,11 +39,18 @@ export const registeredLibrarySourceSchema = z.strictObject({ sourceId, series: 
   url: personalLibraryItemSchema.shape.url, kind: z.enum(['page', 'pdf']), status: z.enum(['registered', 'pending', 'withdrawn']),
   lastCheckedAt: time.nullable(), lastSuccessfulCheckAt: time.nullable(), live: z.boolean() });
 export type RegisteredLibrarySource = z.infer<typeof registeredLibrarySourceSchema>;
+const publisherOriginal = z.strictObject({ sourceId, title: legacyLibraryItem.shape.title, url: legacyLibraryItem.shape.url,
+  categories: z.array(z.string().min(1).max(200)).max(100) });
+export type PublisherOriginal = z.infer<typeof publisherOriginal>;
 export const personalLibraryPageSchema = z.object({
-  items: z.array(personalLibraryItemSchema).max(10), registered: z.array(registeredLibrarySourceSchema).max(10).optional(),
+  items: z.array(personalLibraryItemSchema).max(libraryCatalogPageSize), registered: z.array(registeredLibrarySourceSchema).max(10).optional(),
+  publisherOriginals: z.array(publisherOriginal).max(libraryCatalogPageSize).optional(),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,2048}$/).nullable(), complete: z.boolean(),
-}).strict().refine(page => page.complete === (page.nextCursor === null)
-  && new Set(page.items.map(item => item.sourceId)).size === page.items.length);
+}).strict().refine(page => {
+  const rows = [...page.items, ...(page.publisherOriginals ?? [])];
+  return page.complete === (page.nextCursor === null) && rows.length <= libraryCatalogPageSize
+    && new Set(rows.map(row => row.sourceId)).size === rows.length;
+});
 export type PersonalLibraryItem = z.infer<typeof personalLibraryItemSchema>;
 export type PersonalLibraryPage = z.infer<typeof personalLibraryPageSchema>;
 export const libraryDocumentChoice = (item: PersonalLibraryItem) => item.childHealth?.previousChoice ?? item.preference;
@@ -78,7 +89,12 @@ export function librarySeriesV2Page(page: PersonalLibraryPage) {
   return { ...page, items: librarySeriesV3Page(page).items.filter(releasedCatalogueItem).map(({ media: _, ...item }) => item) };
 }
 export function librarySeriesV3Page(page: PersonalLibraryPage) {
-  return { ...page, items: page.items.map(({ childHealth: _, ...item }) => item) };
+  return { ...page, items: librarySeriesV4Page(page).items.map(({ childHealth: _, ...item }) => item) };
+}
+export function librarySeriesV4Page(page: PersonalLibraryPage) {
+  return { ...page, items: page.items.map(({ sourceDateText: _date, media, ...item }) => ({
+    ...item, ...(media ? { media: mediaWithoutPages(media) } : {}),
+  })) };
 }
 
 // Existing app versions use strict item and page schemas. Only send fields they understand.

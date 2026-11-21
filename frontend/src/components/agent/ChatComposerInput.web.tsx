@@ -5,13 +5,14 @@ import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, type CSSPrope
 import { chatColors, chatFont, chatLayout, chatType } from "../chat/chat-presentation";
 import type { ChatComposerInputHandle, ChatComposerInputProps } from "./ChatComposerInput";
 
-function fitInput(input: HTMLTextAreaElement) {
+function fitInput(input: HTMLTextAreaElement, compact = false) {
   // Measure and restore synchronously before paint, so deletion can shrink without a visible reset.
+  const min = compact ? 32 : chatLayout.inputMinHeight, max = compact ? 68 : chatLayout.inputMaxHeight;
   const scrollTop = input.scrollTop;
   input.style.height = "0px";
   const height = input.scrollHeight;
-  input.style.height = `${Math.max(chatLayout.inputMinHeight, Math.min(chatLayout.inputMaxHeight, height))}px`;
-  input.style.overflowY = height > chatLayout.inputMaxHeight ? "auto" : "hidden";
+  input.style.height = `${Math.max(min, Math.min(max, height))}px`;
+  input.style.overflowY = height > max ? "auto" : "hidden";
   input.scrollTop = scrollTop;
 }
 
@@ -40,22 +41,22 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
   }
   const lastEscape = useRef<{ time: number; target: string | undefined } | null>(null);
   useImperativeHandle(ref, () => ({ focus: options => input.current?.focus(options), blur: () => input.current?.blur() }), []);
-  useLayoutEffect(() => { if (input.current) fitInput(input.current); }, [props.value]);
+  useLayoutEffect(() => { if (input.current) fitInput(input.current, props.compact); }, [props.value, props.compact]);
   useLayoutEffect(() => {
     const node = input.current;
     if (!node) return;
     let width = node.clientWidth;
     const observer = new ResizeObserver(() => {
       if (node.clientWidth === width) return;
-      width = node.clientWidth; fitInput(node);
+      width = node.clientWidth; fitInput(node, props.compact);
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [props.compact]);
   return <><style>{`.chat-composer-input::placeholder { color: ${chatColors.secondary}; opacity: 1; }`}</style>
-    <textarea autoFocus={props.autoFocus} className="chat-composer-input" ref={input} aria-label="撰寫對話問題" placeholder="補充情況，或加入附件…"
+    <textarea autoFocus={props.autoFocus} className="chat-composer-input" ref={input} aria-label="撰寫對話問題" aria-description={props.hint} title={props.hint} placeholder={props.placeholder ?? "補充情況，或加入附件…"}
     rows={1} disabled={props.disabled} value={props.value} onChange={event => props.onChangeText(event.currentTarget.value)}
-    onFocus={props.onFocus} onBlur={() => { lastEscape.current = null; props.onBlur(); }} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
+    onFocus={props.onFocus} onBlur={() => { lastEscape.current = null; props.onBlur?.(); }} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
     onPaste={event => {
       const files = Array.from(event.clipboardData.files);
       if (files.length) { event.preventDefault(); void addFiles(files); }
@@ -79,7 +80,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
       if (event.key !== "Enter" || event.shiftKey || composing.current || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       event.preventDefault();
       if (!props.disabled && (props.canSubmit ?? !!props.value.trim())) props.onSubmit();
-    }} style={inputStyle} /></>;
+    }} style={props.compact ? compactStyle : inputStyle} /></>;
 });
 
 const inputStyle: CSSProperties = {
@@ -89,3 +90,5 @@ const inputStyle: CSSProperties = {
   fontFamily: chatFont, fontSize: chatType.input.fontSize, lineHeight: `${chatType.input.lineHeight}px`,
   color: chatColors.ink, overflowWrap: "anywhere", overflowY: "hidden", scrollbarWidth: "thin",
 };
+
+const compactStyle: CSSProperties = { ...inputStyle, minHeight: 32, height: 32, maxHeight: 68, padding: "6px 7px", fontSize: 14, lineHeight: "20px" };

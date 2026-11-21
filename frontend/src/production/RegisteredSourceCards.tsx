@@ -32,7 +32,7 @@ type Pending = { kind: 'card'; input: SourceCardMutation } | { kind: 'credential
 const dateLabel = (value: string | null) => value ? new Date(value).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', hour12: false }) : '尚未有紀錄';
 export function sourceCardResultLabel(card: RegisteredSourceCard) {
   if (card.checking || card.nextCheckAt && Date.parse(card.nextCheckAt) <= Date.now()) return '巡查已排入，正在等候結果';
-  const labels = { changed: '已發現更新', unchanged: '未有更新', failed: '巡查未成功，請稍後重試', needs_login: '需要本人登入授權', payment_required: '需要本人先到網站付款', mfa_required: '需要本人先到網站完成雙重驗證', captcha_required: '需要本人先到網站完成人機驗證' };
+  const labels = { changed: '已發現更新', unchanged: '未有更新', failed: '上次巡查未能完成', needs_login: '需要本人登入授權', payment_required: '需要本人先到網站付款', mfa_required: '需要本人先到網站完成雙重驗證', captcha_required: '需要本人先到網站完成人機驗證' };
   return card.lastResult ? labels[card.lastResult.status] + (card.lastResult.documentCount === undefined ? '' : ` · ${card.lastResult.documentCount} 份文件`) : '尚未巡查';
 }
 
@@ -45,6 +45,7 @@ export function RegisteredSourceCards({ active = true, renderLibrary }: { active
 
 function SourceCards({ active, renderLibrary }: { active: boolean; renderLibrary?: RenderLibrary }) {
   const env = useDomainEnvironment(), requests = useSettingsRequests(env, true);
+  const { actions } = useProduction();
   const api = useMemo(() => createRegisteredSourceCardsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const { sourceCard, sourceAction } = useLocalSearchParams<{ sourceCard?: string; sourceAction?: string }>();
   const [items, setItems] = useState<RegisteredSourceCard[]>([]);
@@ -237,7 +238,7 @@ function SourceCards({ active, renderLibrary }: { active: boolean; renderLibrary
         <View style={styles.actions}><AppButton label="保存來源" disabled={!canWrite || !!settingsStale} onPress={() => { void saveSettings(); }} /><AppButton label="取消修改" variant="quiet" disabled={!!pending || requests.busy} onPress={() => { setEditing(null); settings.reset(emptySettings); }} /></View>
       </View> : null}
       {!editing && !authCard && items.filter(card => card.cardId === opened).map(card => <View key={card.cardId} style={styles.card}>
-        <Text style={styles.body}>{sourceCardResultLabel(card)}</Text>
+        {(!card.gap || card.gap.skipped || card.checking) && <Text style={styles.body}>{sourceCardResultLabel(card)}</Text>}
         <Text selectable style={styles.meta}>{card.url}</Text>
         <Text style={styles.meta}>{kinds.find(kind => kind.value === card.kind)?.label} · 每 {card.frequencyMinutes} 分鐘 · {card.enabled ? '巡查已開啟' : '巡查已關閉'} · {card.credentialRef ? '已提供本人登入授權' : '未提供登入授權'}</Text>
         {card.kind !== 'document' ? <Text style={styles.meta}>允許路徑：{card.allowedPath ?? '按來源入口限定'}</Text> : null}
@@ -246,6 +247,28 @@ function SourceCards({ active, renderLibrary }: { active: boolean; renderLibrary
           ...(card.lastResult?.savedDocumentCount !== undefined ? [`已保存 ${card.lastResult.savedDocumentCount} 份`] : []),
           ...(card.lastResult?.indexedDocumentCount !== undefined ? [`可檢索 ${card.lastResult.indexedDocumentCount} 份`] : []),
         ].join(' · ')}</Text> : null}
+        {card.enabled && card.gap && !card.gap.skipped ? <View style={styles.form}>
+          <Text style={styles.body}>{{
+            unreadable: '巡查未能從這個位置讀到可引用的原文。', listing_changed: '目錄在讀取期間改變，尚欠這一段。',
+            file_too_large: '這份原件超出單檔讀取上限。', unavailable: '多次巡查仍未能讀取這個位置。',
+            limit: '這個位置超出一次巡查的讀取上限。',
+            needs_login: '這個位置需要本人登入。', mfa_required: '這個位置需要本人完成雙重驗證。',
+            captcha_required: '這個位置需要本人人機驗證。', payment_required: '網站要求先取得付費閱覽權。',
+          }[card.gap.reason]}</Text>
+          {card.gap.url !== card.url && <Text selectable style={styles.meta}>{card.gap.url}</Text>}
+          <View style={styles.actions}>
+            {!!env.childId && !env.sharedMode && <LibraryAction label="在助手對話跟進" disabled={locked} onPress={() => {
+              setOpened(null);
+              actions.prepareQuestion('請幫我跟進本人來源卡「' + card.name + '」（' + card.url + '）未能讀取的位置。');
+            }} />}
+            {card.gap.reason === 'needs_login' && <LibraryAction label="提供登入授權" disabled={!listWritable} onPress={() => openAuthorization(card)} />}
+            <LibraryAction label="跳過這次求助" disabled={!listWritable} onPress={() => {
+              if (card.gap) void execute({ kind: 'card', input: { action: 'skip_gap', cardId: card.cardId,
+                expectedRevision: card.revision, operationId: crypto.randomUUID(), checkId: card.gap.checkId } });
+            }} />
+          </View>
+        </View> : null}
+        {card.hint && <Text style={styles.meta}>{{ pending: '已收到位置，等候站內原文核實。', verified: '已在該位置找到可查的原文。', rejected: '未能從站內原文核實這個位置。' }[card.hint.status]}</Text>}
         {management ? <View style={styles.actions}>
           <LibraryAction label={card.enabled ? '停用個人卡' : '啟用個人卡'} disabled={!listWritable} onPress={() => mutate(card, 'set_enabled')} />
           <LibraryAction label="修改設定" disabled={!listWritable} onPress={() => openSettings(card)} />

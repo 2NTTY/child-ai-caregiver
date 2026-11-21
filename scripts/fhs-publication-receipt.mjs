@@ -2,13 +2,15 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
-import { bindReviewedWindow, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
+import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
 import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
 import { hasSettledGenerationOutput } from './fhs-held-window-evidence.mjs';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
+import { damagedPdfText } from '../server/knowledge-pdf-quotes.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -17,6 +19,7 @@ const confirmedPages = new Set(['text_exact', 'text_layout_whitespace', 'text_ac
 
 function pageEvidence(chunk, physical, windows, pin) {
   const excerpt = chunk.sourceExcerpt;
+  if (excerpt && damagedPdfText.test(excerpt)) return 'unreadable_excerpt';
   if (chunk.originalKind === 'page_transcription' || chunk.originalKind === 'visual_page') {
     const window = windows.find(reading => reading.parentHash === pin.sha256
       && reading.first <= physical.page && reading.last >= physical.page
@@ -228,6 +231,11 @@ async function main() {
     const work = createFirestoreKnowledgeWork(domain);
     const inspect = operationFingerprint => work.inspect({ watchId: sourceId, workerGeneration: job.data.workerGeneration, publishMode: 'live', operationFingerprint });
     async function verifyRepair(original, delivery) {
+      if (delivery===firstDispatchWorkId(original)) {
+        const [prior,child]=await Promise.all([inspect(original),inspect(delivery)]);
+        const grant=bindFirstDispatch(manualPublicationPin(sourceId),original,prior);
+        return Boolean(grant && child?.firstDispatchFrom===original && (!child.result || child.result.observationHash===grant.observation));
+      }
       const truncated = knowledgeTruncatedOutputRepairId(original);
       let parent = original;
       if (delivery === retainedDraftWorkId(truncated)) parent = truncated;
@@ -258,7 +266,11 @@ async function main() {
       }, { readOnly: true }), exportEdition: (...args) => store.exportPublishedEdition(...args),
       resolve: citation => store.citedPdf(citation), readOriginal: (id, hash) => refresh.originals.readPdf(id, hash), extract };
     let deliveryOperation = requestedDelivery ?? originalOperation;
-    if (!requestedDelivery && ports.originalOperation === originalOperation && manualPublicationPin(sourceId)?.lane === 'C2'
+    if (!requestedDelivery && ports.originalOperation===originalOperation && hasUndispatchedOriginal(sourceId)) {
+      const child=firstDispatchWorkId(originalOperation);
+      if (await inspect(child)) deliveryOperation=child;
+    }
+    if (!requestedDelivery && ports.originalOperation === originalOperation && hasReviewedWindowSource(sourceId)
       && bindReviewedWindow(manualPublicationPin(sourceId),originalOperation,await inspect(originalOperation))) {
       const child = retainedDraftWorkId(originalOperation);
       if (await inspect(child)) deliveryOperation = child;

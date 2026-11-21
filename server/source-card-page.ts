@@ -2,10 +2,13 @@ import { load } from 'cheerio';
 import { personalSourceUrl } from './personal-source-fetch.ts';
 import { fhsLeafletControl } from './knowledge-source-fetch.ts';
 import { classifyGate, downloadLabel, fileLink, mutation, nextLabel } from './source-card-controls.mjs';
+import type { RegisteredSourceCard } from '../src/shared/registered-source-card.ts';
 
 export interface SourceCardInput {
   cardId: string; entryUrl: string; kind: 'document' | 'directory' | 'bulletin'; allowedPath?: string;
   login?: { url: string; submitUrl?: string };
+  methods?: RegisteredSourceCard['methods'];
+  hint?: RegisteredSourceCard['hint'];
 }
 export type UserAction = 'login' | 'mfa' | 'captcha' | 'purchase';
 
@@ -43,11 +46,25 @@ export function inspectSourcePage(html: string, url: string) {
     !!$('[data-sitekey],iframe[src*="captcha" i],input[name*="captcha" i]').length, !!$('input[type=password]').length);
   const links = new Set<string>();
   const leaflet = fhsLeafletControl($, url);
-  if (leaflet) return { gate, links: [leaflet.url], dynamic: false };
+  const base = new URL($('base[href]').first().attr('href') ?? url, url);
+  function urls(selector: string) {
+    const result = new Set<string>();
+    for (const node of $(selector).toArray()) {
+      const href = $(node).attr('href')?.trim();
+      if (!href || href.startsWith('#')) continue;
+      try { result.add(new URL(href, base).href); } catch { /* Ignore malformed publisher links. */ }
+    }
+    return [...result];
+  }
+  const records = urls('table tr td a[href],dl dd a[href],[itemprop="itemListElement"] a[href]');
+  const feeds = urls('link[rel~=alternate][type="application/atom+xml"],link[rel~=alternate][type="application/rss+xml"]');
+  const references = urls('a[href],link[rel~=alternate]');
+  const hasText = $('article p,main p,[role=main] p,body p').toArray().some(node => !!$(node).text().trim());
+  const article = $('article').length === 1 && !!$('article p').text().trim();
+  if (leaflet) return { gate, links: [leaflet.url], dynamic: false, records, feeds, references, hasText, article: false };
   const main = $('main,article,[role=main],#content').first();
   const region = main.length ? main : $('body');
   let dynamic = false;
-  const base = new URL($('base[href]').first().attr('href') ?? url, url);
   for (const node of region.find('a,button,[role=button],input[type=button],input[type=submit]').add($('a[rel~=next],link[rel~=next]')).toArray()) {
     const element = $(node), href = element.attr('href');
     const label = (element.attr('aria-label') || element.attr('value') || element.text()).trim();
@@ -60,5 +77,19 @@ export function inspectSourcePage(html: string, url: string) {
   }
   // Script-rendered catalogue shells may initially contain no controls or text.
   if ($('script').length && !links.size && (region.text().replace(/\s/gu,'').length < 100 || !region.find('p,article').length)) dynamic = true;
-  return { gate, links: [...links], dynamic };
+  return { gate, links: [...links], dynamic, records, feeds, references, hasText, article };
+}
+
+/** Only take publisher-provided item locators. Feed summaries never enter the document store. */
+export function sourceFeedLinks(xml: string, location: string): string[] {
+  const $ = load(xml, { xmlMode: true });
+  const urls = new Set<string>();
+  for (const item of $('rss > channel > item > link, feed > entry > link').toArray()) {
+    const element = $(item), rel = element.attr('rel');
+    if (rel && rel !== 'alternate') continue;
+    const value = (element.attr('href') ?? element.text()).trim();
+    if (!value) continue;
+    try { urls.add(new URL(value, location).href); } catch { /* An invalid item cannot identify an original. */ }
+  }
+  return [...urls];
 }

@@ -2,8 +2,8 @@
 import { useEffect, useRef } from 'react';
 import type { DOMProps } from 'expo/dom';
 
-export type CharacterAction = 'nod' | 'wave' | 'arrive';
-export type CharacterMode = 'idle' | 'quiet' | 'hidden';
+export type CharacterAction = 'nod' | 'wave' | 'arrive' | 'acknowledge' | 'answer';
+export type CharacterMode = 'idle' | 'quiet' | 'hidden' | 'listen-left' | 'listen-right';
 
 export default function CharacterFrame({ src, mode, action, serial, onState }: {
   src: string; mode: CharacterMode; action: CharacterAction; serial: number;

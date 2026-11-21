@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { z } from "zod";
-import { legacyLibraryPage, librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV1Page, librarySeriesV2MediaType, librarySeriesV2Page, librarySeriesV3MediaType, librarySeriesV3Page, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
+import { legacyLibraryPage, librarySeriesMediaType, librarySeriesV1MediaType, librarySeriesV1Page, librarySeriesV2MediaType, librarySeriesV2Page, librarySeriesV3MediaType, librarySeriesV3Page, librarySeriesV4MediaType, librarySeriesV4Page, librarySeriesV5MediaType, type PersonalLibraryPage } from "../src/shared/personal-library.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { FirestoreKnowledgeError } from './firestore-knowledge.ts';
 import { createKnowledgeStore } from "./knowledge-store.ts";
@@ -29,7 +29,7 @@ export function createPersonalLibrary(pool: Pool, cipher: StorageCipher) {
     } catch { throw new FamilyError(400, "invalid_cursor"); }
   }
   return {
-    async page(userId: string, childId: string, rawCursor: string | null = null): Promise<PersonalLibraryPage | null> {
+    async page(userId: string, childId: string, rawCursor: string | null = null, _includeOriginals = false): Promise<PersonalLibraryPage | null> {
       const cursor = decode(rawCursor, userId, childId);
       return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
         const space = (await client.query<{ access_version: number }>("SELECT access_version FROM workspaces WHERE id=$1", [workspaceId])).rows[0];
@@ -76,13 +76,14 @@ export async function handlePersonalLibraryRequest(request: Request, userId: str
     if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
     if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1)
       throw new FamilyError(400, "invalid_input");
-    const page = await options.library.page(userId, match[1].toLowerCase(), url.searchParams.get("cursor"));
+    const format = request.headers.get('accept');
+    const page = await options.library.page(userId, match[1].toLowerCase(), url.searchParams.get("cursor"), format === librarySeriesMediaType);
     if (!await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
     if (!page) return apiError("not_found", "沒有可讀取的參考目錄。", 404);
-    const format = request.headers.get('accept');
-    const response = jsonResponse(format === librarySeriesMediaType ? page : format === librarySeriesV3MediaType ? librarySeriesV3Page(page) : format === librarySeriesV2MediaType ? librarySeriesV2Page(page)
-      : format === librarySeriesV1MediaType ? librarySeriesV1Page(page) : legacyLibraryPage(page));
-    if (format && [librarySeriesMediaType, librarySeriesV3MediaType, librarySeriesV1MediaType, librarySeriesV2MediaType].includes(format)) response.headers.set('content-type', format);
+    const { publisherOriginals: _originals, ...v5 } = page;
+    const response = jsonResponse(format === librarySeriesMediaType ? page : format === librarySeriesV5MediaType ? v5 : format === librarySeriesV4MediaType ? librarySeriesV4Page(v5) : format === librarySeriesV3MediaType ? librarySeriesV3Page(v5) : format === librarySeriesV2MediaType ? librarySeriesV2Page(v5)
+      : format === librarySeriesV1MediaType ? librarySeriesV1Page(v5) : legacyLibraryPage(v5));
+    if (format && [librarySeriesMediaType, librarySeriesV5MediaType, librarySeriesV4MediaType, librarySeriesV3MediaType, librarySeriesV1MediaType, librarySeriesV2MediaType].includes(format)) response.headers.set('content-type', format);
     response.headers.append('vary', 'Accept');
     return response;
   } catch (error) {

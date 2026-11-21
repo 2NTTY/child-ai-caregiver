@@ -4,13 +4,15 @@ import { RegisteredReadingCard } from '../production/RegisteredReadingCard';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards, ProgressSourceCards } from '../components/chat/OfficialHelpCards';
 import {
-  AGENT_PROGRESS_LABELS,
   isIncompleteModelReplyText,
   matchOfficialHelpForText,
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { failedChatReply } from '../components/chat/failed-reply';
+import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../components/chat/chat-turn-status';
+import { chatDraftIsSubmitted } from '../../../src/client/chat-controller';
+import { ChatTurnStatusLine } from '../components/chat/ChatTurnStatusLine';
 import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
@@ -57,11 +59,12 @@ export default function ChatPage() {
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
-  const { model, actions, owner, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, owner, scopeKey, sharedChild, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const { height: viewportHeight, fontScale = 1 } = useWindowDimensions();
   const child = model.children.find(item => item.id === model.selectedChildId);
+  const childName = privateChatChildName(model.children, child?.id);
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
@@ -107,13 +110,10 @@ function ChatContents({ compact }: { compact: boolean }) {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
   usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", voiceUpload.busy || voiceUpload.unknown || fileUpload.busy || fileUpload.unknown || photoUpload.busy || photoUpload.unknown, "child", attachmentLeaveCopy);
-  const remoteReplyStillRunning = chat.remoteReply?.status === "running"
-    && !chat.messages.some(item => item.role === "model" && item.inReplyTo === chat.remoteReply?.messageId);
-  const replyRunning = chat.busy === "reply" || remoteReplyStillRunning;
-  const activeReplyId = chat.replyingMessageId ?? (remoteReplyStillRunning ? chat.remoteReply?.messageId : null);
-  const stopPending = chat.cancelling || !!activeReplyId && chat.cancelAcceptedFor === activeReplyId;
-  const submittedDraft = !!draft?.savedUserMessageId && (phase === "replying" || phase === "reply_failed");
-  const composerText = submittedDraft ? draft.nextText ?? "" : chatDraft;
+  const activity = chatReplyActivity(chat);
+  const { replyRunning, activeReplyId, stopPending } = activity;
+  const submittedDraft = chatDraftIsSubmitted(chat, draft);
+  const composerText = submittedDraft ? draft?.nextText ?? "" : chatDraft;
   const canSend = !replyRunning && !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
     && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file", "photo"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file"||v.kind==="photo")) && chatDraft.length <= 10_000;
   function send() {
@@ -178,9 +178,6 @@ function ChatContents({ compact }: { compact: boolean }) {
   ];
   const hasEmergencyHelp = autoHelpIds.includes("emergency-hk-v1");
   const hasMedicalConsultHelp = !hasEmergencyHelp && autoHelpIds.includes("medical-consult-hk-v1");
-  const progressLabel = chat.busy === "save" ? "正在保存…"
-    : replying ? (turnFeedback ? AGENT_PROGRESS_LABELS[turnFeedback.phase] : "已保存，正在等候回覆…")
-      : remoteReplyStillRunning ? "原回覆仍在處理，毋須重新發送。" : null;
   // Leave room for the composer when a contextual card opens on a short screen.
   const measuredPaneHeight = paneHeight > 0 ? paneHeight : Math.max(0, (viewportHeight || 640) - 180);
   const preferredDockHeight = Math.min(220, Math.max(132, Math.round((viewportHeight || 640) * (compact || fontScale > 1.25 ? 0.28 : 0.34))));
@@ -199,35 +196,28 @@ function ChatContents({ compact }: { compact: boolean }) {
   const savedDraftReply = !!draft?.savedUserMessageId && scopedMessages.some(m => m.inReplyTo === draft.savedUserMessageId);
   const recoveryRowId = phase === 'reply_failed' && savedFailure && currentReply?.inReplyTo === draft?.savedUserMessageId
     && turns.rows.slice(-6).some(row => row.id === currentReply.id) ? currentReply.id : undefined;
-  const showDraftNotice = phase === 'save_unknown' || phase === 'checked' || phase === 'draft' && !!chatDraft.trim()
-    || phase === 'reply_failed' && !(savedFailure && currentReply?.inReplyTo === draft?.savedUserMessageId);
-  const sameFailureNotice = savedFailure && (!remote || remote.messageId === currentReply?.inReplyTo)
-    && (chat.replyError?.startsWith('這次回覆未完成，') || chat.replyError === savedFailure.reason);
-  const replyNotice = sameFailureNotice ? null : chat.replyError;
-  const notice = (showDraftNotice && draft?.notice) || replyNotice;
+  const turnStatus = childScopedChat ? chatTurnStatus(chat, draft, activity,
+    savedFailure && currentReply?.inReplyTo ? { questionId: currentReply.inReplyTo, reason: savedFailure.reason } : undefined,
+    chatWritesAllowed) : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
-    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
+    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
     {photoUpload.unknown?<AppButton label="查核原照片上傳" disabled={photoUpload.busy||!chat.online} onPress={checkPhotoUpload}/>:null}
-    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
+    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳檔案…</Text>:null}
     {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
     {fileUpload.unknown?<AppButton label="查核原檔案上傳" disabled={fileUpload.busy||!chat.online} onPress={checkFileUpload}/>:null}
-    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
+    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳錄音…</Text>:null}
     {voiceUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{voiceUpload.notice}</Text>:null}
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
-    {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
+    {chat.available === false && !turnStatus && !savedFailure ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
-    {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
-      <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{stopPending && replyRunning ? "正在停止…" : progressLabel}</Text></View>
-    </View> : null}
+    {turnStatus && turnStatus.text !== chat.error && <ChatTurnStatusLine status={turnStatus} />}
     {turnFeedback?.sources?.length
       ? <ProgressSourceCards sources={turnFeedback.sources} reviewing={replying && turnFeedback.phase === "reviewing"} retainedAfterFailure={!replying} />
       : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
-    {notice && notice !== chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{notice}</Text> : null}
     {chat.error || phase === "save_unknown" || phase === "checked" ? <AppButton label={phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重試讀取聊天"}
       variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /> : null}
-    {chat.cancelNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{chat.cancelNotice}</Text> : null}
     {phase === "checked" ? <View style={styles.statusRow}>
       {draft?.candidateMessageId ? <AppButton label="已核對，確認這則聊天已保存" variant="quiet" disabled={busy} onPress={() => chatController.confirmFoundMessage()} /> : null}
       <AppButton label="已核對，解鎖原文重試" variant="quiet" disabled={busy || !chat.online} onPress={() => chatController.unlockCheckedSave()} /></View> : null}
@@ -243,7 +233,12 @@ function ChatContents({ compact }: { compact: boolean }) {
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
   </BackgroundSurface> : null;
-  const timelineFooter = feedback ? <View style={styles.feedback}>{feedback}</View> : null;
+  const outgoing = childScopedChat && scopeKey && !sharedChild?.target ? chat.outgoing : undefined;
+  const timelineFooter = <View style={styles.feedback}>
+    {outgoing && <ChatMessage testID="chat-outgoing" message={{ id: "outgoing", role: "user",
+      text: [outgoing.attachmentLabel, outgoing.text].filter(Boolean).join("\n") }} />}
+    {feedback}
+  </View>;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
   const welcome = confirmedEmptyChat && !busy && !agentAttachments.length && phase === 'draft';
@@ -254,8 +249,7 @@ function ChatContents({ compact }: { compact: boolean }) {
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
       <View style={styles.headerIdentity}>
         {compact && <CompanionSlot quietHeight={78} />}
-        <View><Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.headingTitle}>育有方助手</Text>
-          {child && <Text style={styles.meta}>{child.displayName}的私人對話</Text>}</View>
+        <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.headingTitle}>育有方助手{childName ? ` · ${childName}` : ''}</Text>
       </View>
       <View style={styles.toolbarActions}>
         <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? '活動 · 待查核' : needsDecision ? '活動 · 待確認' : compact ? '活動' : '對話活動'}
@@ -293,8 +287,7 @@ function ChatContents({ compact }: { compact: boolean }) {
         const discussionRun = linkedRunId ? agentRuns[linkedRunId] : original?.discussion ? run : undefined;
         const discussionQuestion = followup ?? (original?.discussion ? original : message.discussion && !hasModelReply ? message : undefined);
         const discussionActive = !!discussionQuestion && activeReplyId === discussionQuestion.id && replyRunning;
-        const discussionState = discussionActive ? (scopedFeedback?.messageId === discussionQuestion?.id
-          ? AGENT_PROGRESS_LABELS[scopedFeedback.phase] : '討論進行中，發言核對後會在這裏顯示。')
+        const discussionState = discussionActive ? undefined
           : discussionRun?.status === 'completed' ? discussionRun.discussion?.length ? '已完成部分觀點。' : '這次討論沒有可顯示的觀點。'
           : discussionRun?.stopReasonLabel ?? (discussionRun?.status === 'unknown' ? '結果待核對。'
             : chat.remoteReply?.messageId === discussionQuestion?.id && chat.remoteReply?.status === 'stopped' ? '討論已停止。'
@@ -375,10 +368,10 @@ function ChatContents({ compact }: { compact: boolean }) {
       icon={discussNext ? 'check' : 'account-group-outline'} compact disabled={busy || !chat.online || !chatWritesAllowed}
       onPress={() => setDiscussNext(value => !value)} />}
       enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
-      allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
+      allowTyping={childScopedChat && pathname === "/chat" && (!!outgoing || chatWritesAllowed && (replyRunning || submittedDraft) && (submittedDraft || phase === "draft"))}
       onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
       queueAction={childScopedChat && chatWritesAllowed && chat.online && !stopPending && phase === "replying" && activeReplyId && draft?.savedUserMessageId === activeReplyId && !!composerText.trim() && composerText.length <= 10_000
-        ? { queued: chat.queuedTextAfter === activeReplyId, press: () => chat.queuedTextAfter === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}
+        ? { queued: chat.queuedText?.afterMessageId === activeReplyId, press: () => chat.queuedText?.afterMessageId === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}
       stopDisabled={stopPending || !chat.online} stopTarget={activeReplyId ?? undefined}
       attachments={submittedDraft ? [] : agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat}
@@ -414,7 +407,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: chatLayout.wideInset, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
   headerIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
-  headingTitle: { color: colors.ink, fontSize: 21, lineHeight: 29, fontWeight: '700' },
+  headingTitle: { color: colors.ink, fontSize: 21, lineHeight: 29, fontWeight: '700', flexShrink: 1 },
   optionsContent: { gap: 8 },
   optionHeading: { ...chatType.section, color: colors.ink },
   welcomePanel: { justifyContent: 'center' },
@@ -431,9 +424,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: chatLayout.wideInset, overflow: "hidden", marginBottom: chatLayout.composerOverlap },
   helpDockScroll: { flexGrow: 0 }, helpDockContent: { paddingVertical: 4 },
   statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
-  progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
-  progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
-  progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "600" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },

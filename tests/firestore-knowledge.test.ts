@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestorePersonalLibrary } from '../server/firestore-personal-library.ts';
+import { personalLibraryPageSchema } from '../src/shared/personal-library.ts';
 import { handlePersonalLibraryRequest } from '../server/personal-library-api.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
@@ -111,6 +112,79 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
   }
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
+test('pending publisher links require a current observation and never become a selectable edition', async () => {
+  const id = 'fhs-30012', definition = publicMaintenanceWatch(id)!;
+  const f = fixture(['fhs-child-vision'], undefined, new Map([[id, platformMaterials.get(id)!]]));
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+    async readControl() { return {enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd'}; } });
+  const store = createFirestoreKnowledgeStore({...f.options, observations: refresh.gate});
+  const list = () => store.catalogForUser('reader', null, true);
+  await refresh.register(id, 'fixture', true);
+  assert.equal((await list()).publisherOriginals, undefined);
+  const job = (await refresh.jobs(id))[0]!.data;
+  await refresh.process(job, crypto.randomUUID(), async () => ({status: 'ok', items: [{url: definition.url, title: definition.title!,
+    text: 'Synthetic cup article for testing the catalogue.', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null}]}), new AbortController().signal);
+  const page = await list();
+  assert.deepEqual(page.publisherOriginals, [{sourceId: id, title: definition.title, url: definition.url, categories: childHealthCategories({sourceId:id, url:definition.url})}]);
+  assert.equal(page.items.length, 0);
+  assert.equal((await store.catalogForUser('reader', null)).publisherOriginals, undefined);
+  assert.equal((await store.catalogForUser('reader', id, true)).publisherOriginals, undefined);
+  assert.equal(await store.mayReadLivePage('reader', id), false);
+  await refresh.disable(id);
+  assert.equal((await list()).publisherOriginals, undefined);
+});
+test('the tenth discovered publisher original moves into the published list on the same family catalogue cursor', async () => {
+  const members = [...platformMaterials.values()].filter(row => /^fhs-13\d+$/u.test(row.id))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en')).slice(0, 11);
+  assert.equal(members.length, 11);
+  const definitions = members.map(row => publicMaintenanceWatch(row.id)!);
+  const f = fixture([members[0]!.id], undefined, new Map(members.map(row => [row.id, row])));
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions,
+    async readControl() { return { enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd' }; } });
+  const reads = new Set<string>();
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: { ...refresh.gate,
+    read(tx, id) { reads.add(id); return refresh.gate.read(tx, id); } } });
+  const entries = members.map((row, index) => ({ url: row.url, title: row.title, text: 'Synthetic observed article ' + index,
+    sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null }));
+  async function observe(index: number) {
+    const id = members[index]!.id;
+    await refresh.register(id, 'fixture', true);
+    await refresh.process((await refresh.jobs(id))[0]!.data, crypto.randomUUID(), async () =>
+      ({ status: 'ok', items: [entries[index]!] }), new AbortController().signal);
+  }
+  const first = () => store.catalogForUser('reader', null, true);
+  for (let i = 0; i < 9; i++) await observe(i);
+  assert.equal((await first()).publisherOriginals?.length, 9);
+  await observe(9);
+  await observe(10);
+  reads.clear();
+  const ten = await first(), tenth = members[9]!, next = members[10]!;
+  assert.deepEqual(ten.publisherOriginals?.map(link => link.sourceId), members.slice(0, 10).map(row => row.id));
+  assert.equal(ten.nextSourceId, tenth.id);
+  assert.equal(reads.has(next.id), false);
+  assert.ok(personalLibraryPageSchema.safeParse({ items: ten.items, publisherOriginals: ten.publisherOriginals, nextCursor: 'cursor', complete: false }).success);
+  const last = await store.catalogForUser('reader', ten.nextSourceId, true);
+  assert.deepEqual(last.publisherOriginals?.map(link => link.sourceId), [next.id]);
+  assert.equal(last.nextSourceId, null);
+
+  const original = entries[9]!, watch = definitions[9]!;
+  const document = { ...source(tenth.id, [chunk('article', { sourceExcerpt: original.text, originalText: original.text })]),
+    title: original.title, url: original.url, publisher: watch.publisher, termsUrl: watch.termsUrl };
+  const imported = await store.importSource(document);
+  for (let offset = 0; offset < KNOWLEDGE_LEXICAL_BUCKETS; offset += KNOWLEDGE_LEXICAL_BATCH)
+    await store.prepareSearch(imported.versionId, imported.hash);
+  await store.review(imported.versionId, imported.hash, 'fixture-reviewer', { ...assessment(document), observationHash: observationHash(original) });
+  await store.publish(imported.versionId, imported.hash, embeddings(document));
+  const published = await first();
+  assert.equal(published.nextSourceId, ten.nextSourceId);
+  assert.deepEqual(published.publisherOriginals?.map(link => link.sourceId), members.slice(0, 9).map(row => row.id));
+  assert.deepEqual(published.items.map(item => [item.sourceId, item.versionId, item.childHealth?.categories]),
+    [[tenth.id, imported.versionId, childHealthCategories({ sourceId: tenth.id, url: tenth.url })]]);
+  await store.disable(tenth.id, 'Synthetic publisher withdrawal');
+  const withdrawn = await first();
+  assert.equal(withdrawn.items.some(row => row.sourceId === tenth.id), false);
+  assert.equal(withdrawn.publisherOriginals?.some(row => row.sourceId === tenth.id), false);
+});
 test('one group command handles more than one archive of editions and fixes a previously moved document explicitly', () => {
   const members = [...platformMaterials.values()].filter(m => childHealthCategories({ sourceId: m.id, url: m.url })).slice(0, 110)
     .map(m => ({ sourceId: m.id, versionId: crypto.randomUUID(), seriesId: 'native-series', scopeHash: '1'.repeat(64) }));
@@ -1236,6 +1310,70 @@ test('external material admission binds each reviewed PDF to its exact publisher
     return { status: 'response', response: { status: 200, url: value, contentType: 'application/pdf', body: Buffer.from('%PDF-updated') } };
   }, pdfReader: async () => { throw Error('Unapproved replacement reached the reader'); } });
   assert.deepEqual(await fetch(selected, new AbortController().signal), { status: 'failed', reason: 'response' });
+});
+
+test('the March 2026 SWD leaflet uses the existing card and binds each edition to its own bytes', async () => {
+  const { campaignMaterialWatches, platformMaterials, reviewedExternalOriginal, externalMaterialAllowed } = await import('../server/platform-materials.ts');
+  const { sourceFetchUrl } = await import('../server/knowledge-source-fetch.ts');
+  const id = 'resource-6c18c8d7a17495';
+  const current = 'https://www.swd.gov.hk/storage/asset/section/652/tc/Bilingual%20Leaflet_We%20All%20Have%20a%20Duty%20(March%202026).pdf';
+  const historical = 'https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf';
+  const currentHash = '0bf08a72f09cbda1ad5a848d7d2ce49adb6c1b7de58409b710f45cda7a9a3dc0';
+  const historicalHash = 'afa57bcfc265dcec5c49d89958bc7ae4e0d3dd3dea251d1e33563cb2e6cea63c';
+  const watches = campaignMaterialWatches.filter(watch => watch.id === id);
+  assert.deepEqual(watches.map(watch => watch.url), [current]);
+  assert.deepEqual([...platformMaterials.values()].filter(item => [historical,current].includes(item.url)).map(item => item.id), [id]);
+  assert.equal(platformMaterials.get(id)?.url, current);
+  assert.equal(reviewedExternalOriginal(current), currentHash);
+  assert.equal(reviewedExternalOriginal(historical), historicalHash);
+  assert.equal(sourceFetchUrl(current, watches[0]!).href, current);
+  assert.throws(() => sourceFetchUrl(historical, watches[0]!), /source_url_rejected/);
+  const allowed = (url:string, contentHash:string) => externalMaterialAllowed({sourceId:id, url,
+    publisher:watches[0]!.publisher, termsUrl:watches[0]!.termsUrl, classification:'official_guidance',
+    extraction:{format:'text_pdf', contentHash, totalPages:2, pageStart:1, pageEnd:2, complete:true}});
+  assert.ok(allowed(current,currentHash) && allowed(historical,historicalHash));
+  assert.ok(!allowed(current,historicalHash) && !allowed(historical,currentHash));
+});
+
+test('a held external observation moves to its registered successor while preserving the old check and original text', async t => {
+  const { reviewedExternalOriginal, isReviewedExternalSuccessor } = await import('../server/platform-materials.ts');
+  const id = 'resource-6c18c8d7a17495', current = publicMaintenanceWatch(id)!;
+  const oldUrl = 'https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf';
+  const previous = { ...current, url: oldUrl, leafletPage: oldUrl };
+  const f = fixture([id]), generation = crypto.randomUUID();
+  const settings = { ...f.options, readControl: async () => ({enabled:true,generation}) };
+  async function capture(definition: typeof current, contentHash: string) {
+    const refresh = createFirestoreKnowledgeRefresh({...settings, definitions:[definition]});
+    // The archive port supplies the verified digest; PDF download and storage have independent byte-level tests.
+    t.mock.method(refresh.originals, 'save', async () => contentHash);
+    await refresh.register(id, 'fixture-operator', true);
+    const [job] = await refresh.jobs(id), check = crypto.randomUUID();
+    const fetched: SourceFetchResult = {status:'ok', original:{mimeType:'application/pdf',bytes:Buffer.from('%PDF-fixture')},
+      items:[{url:definition.url, title:'Child protection',text:'Printed guidance.', pages:[{page:1,text:'Printed guidance.',status:'text'}],
+        sourcePublishedAt:null,sourceUpdatedAt:null,sourceDateText:null,
+        extraction:{format:'text_pdf',contentHash,totalPages:1,pageStart:1,pageEnd:1,complete:true,extractionQuality:'requires_review'}}]};
+    return {refresh,check,job:job!.data, run:()=>refresh.process(job!.data,check,async()=>fetched,new AbortController().signal)};
+  }
+  const old = await capture(previous, reviewedExternalOriginal(oldUrl)!);
+  assert.equal((await old.run()).status, 'changed');
+  const retained = (await old.refresh.inspect(id))!.observation!;
+  const now = await capture(current, reviewedExternalOriginal(current.url)!);
+  assert.equal((await now.run()).status, 'changed');
+  assert.equal((await now.run()).status, 'already_recorded');
+  const active = await now.refresh.inspect(id);
+  assert.equal(active?.document?.url, current.url);
+  assert.equal(active?.observation?.approved,null);
+  const original = await f.database.runTransaction(tx=>old.refresh.gate.content(tx,retained));
+  assert.equal(original.url, oldUrl);
+  assert.equal(original.extraction?.contentHash, reviewedExternalOriginal(oldUrl));
+  const updated = active!.document!;
+  assert.equal(isReviewedExternalSuccessor(id,original,updated),true);
+  assert.equal(isReviewedExternalSuccessor('different-card',original,updated),false);
+  assert.equal(isReviewedExternalSuccessor(id,{...original,extraction:updated.extraction},updated),false);
+  assert.equal(isReviewedExternalSuccessor(id,original,{...updated,extraction:original.extraction}),false);
+  assert.equal((await now.refresh.list()).checks.filter(entry=>entry.state==='recorded').length,2);
+  const rollback = await capture(previous, reviewedExternalOriginal(oldUrl)!);
+  await assert.rejects(rollback.run(), /knowledge_binding_invalid/);
 });
 
 test('published campaign cards get observation-only weekly checks and retain a changed original for review', async t => {

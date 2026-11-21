@@ -510,5 +510,333 @@
         "layerLength": 12
       }
     ]
+  },
+  {
+    "sourceId": "pdf-65148c48ab4b294035fb977a",
+    "sha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+    "pages": 8,
+    "bindingHash": "0f27f8589c65c10cfd4fe42dde7863bcfa5fcecdaa052341acdd4350f53e4812",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "text_layer",
+        "organizerStart": 40,
+        "reviewerStart": 91,
+        "length": 11,
+        "sha256": "474d9acb80d2a52b0064eef4c32fbe0b0cddecc42ece17aa863f91ca0fbfede3",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "text_layer",
+        "organizerStart": 20,
+        "reviewerStart": 38,
+        "length": 15,
+        "sha256": "821106df6063d98a5f3c14d5090cbd320a9b58dffa415ab2b674ea80d5a9ffc0",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "text_layer",
+        "organizerStart": 54,
+        "reviewerStart": 162,
+        "length": 11,
+        "sha256": "f939d3033cb3db628f824b2aa41e41ac41faaf0e05c236318b9e081656ff4ed1",
+        "proof": "printed"
+      },
+      {
+        "page": 5,
+        "originalKind": "text_layer",
+        "organizerStart": 21,
+        "reviewerStart": 20,
+        "length": 22,
+        "sha256": "a2854fde6c73a656125d5d3ce42f5abec6f6e170ed21980db3d5027d20acaca1",
+        "proof": "printed"
+      },
+      {
+        "page": 6,
+        "originalKind": "text_layer",
+        "organizerStart": 9,
+        "reviewerStart": 6,
+        "length": 40,
+        "sha256": "669884beac54d863c4806de4c00302f38e86f8764698a8d16a260def846489a3",
+        "proof": "printed"
+      },
+      {
+        "page": 7,
+        "originalKind": "text_layer",
+        "organizerStart": 45,
+        "reviewerStart": 40,
+        "length": 27,
+        "sha256": "431593ee57397636b8cf37e546acad565f3dbbb85d0eefefba85e933336e14a3",
+        "proof": "printed"
+      },
+      {
+        "page": 8,
+        "originalKind": "text_layer",
+        "organizerStart": 30,
+        "reviewerStart": 28,
+        "length": 14,
+        "sha256": "95c99a2e69f65c0c7ea1fd3e09ff2d9dd47f6cf60da52d53a21d5ef7aa44190a",
+        "proof": "printed"
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+    "sha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+    "pages": 8,
+    "bindingHash": "1416861268e2970a7b1182e9aa18573c4683333978c6e1f8c8f2743d4c503243",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 16,
+        "length": 16,
+        "sha256": "f1511515ff38061ab111856b53d9adda9dd9097b310a3b3277a6e6505caa5345",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "page_transcription",
+        "organizerStart": 19,
+        "reviewerStart": 19,
+        "length": 10,
+        "sha256": "69b0b468d6d8e0bb20e8a44c003c21fd1ee55f9978675904d1a765e77027c960",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "page_transcription",
+        "organizerStart": 28,
+        "reviewerStart": 53,
+        "length": 12,
+        "sha256": "f30ccdf851d0a13436c5f27591e74581f0cedaee27d01b4396e075021a3b1e9d",
+        "proof": "printed"
+      },
+      {
+        "page": 5,
+        "originalKind": "page_transcription",
+        "organizerStart": 32,
+        "reviewerStart": 32,
+        "length": 21,
+        "sha256": "73889bdf368dba8200718163bc1ac4d09a2d1b11d4a96f2e28e3f955a4a110f7",
+        "proof": "printed"
+      },
+      {
+        "page": 6,
+        "originalKind": "page_transcription",
+        "organizerStart": 61,
+        "reviewerStart": 61,
+        "length": 13,
+        "sha256": "6a6fa1409560675dc60b176dd0458b0125a88d1450a60ed1c24d3271980f896f",
+        "proof": "printed"
+      },
+      {
+        "page": 7,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 173,
+        "length": 38,
+        "sha256": "11f19c947515050103db5323b6c716f39a8cd4432ee41e098f7ea86db7d0aceb",
+        "proof": "printed"
+      },
+      {
+        "page": 8,
+        "originalKind": "page_transcription",
+        "organizerStart": 45,
+        "reviewerStart": 133,
+        "length": 11,
+        "sha256": "7f07a1140c7818b694e07f2d5b81adea6a9d97082fc2fdd78c49a4e9ab45f6b8",
+        "proof": "text_layer",
+        "layerStart": 90,
+        "layerLength": 13
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-1d48962862d76b3ffc07490b",
+    "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+    "pages": 4,
+    "bindingHash": "2bf7723a1ecc839931640c9e5e6e5008aa73c28c9eb584696a752fd7d6ed3aa9",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 0,
+        "length": 19,
+        "sha256": "c9b8341230b4a7e001482206ef154d889f01dd8f8740562377a1a3dd8a2a82ca",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 201,
+        "length": 18,
+        "sha256": "1b5bc49a688b893712322d6de8af03fcedc3ebb1b93fad2ef46c92fa64ec5845",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 180,
+        "length": 15,
+        "sha256": "2deea3c16113f11ba7a59e360460797256ce0ef7247fbd95be913c08d030f9e1",
+        "proof": "printed"
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+    "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+    "pages": 4,
+    "bindingHash": "c4bf0a272cd55b19b6c39f040811bff78d98fb08edf50264ff04da64f2a7bc61",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "page_transcription",
+        "organizerStart": 7,
+        "reviewerStart": 0,
+        "length": 26,
+        "sha256": "555fafba3caa200a407467e0811e8234ac7310bff155b7ebc989178b6120ce11",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "page_transcription",
+        "organizerStart": 6,
+        "reviewerStart": 0,
+        "length": 44,
+        "sha256": "3ccea9631b1478e42dacf45558573d84ea2d0bba8c8db2b8ccebfb25c60c772d",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 0,
+        "length": 68,
+        "sha256": "1171d774fddaffba218fc8f3b11a07c0328743cd749f5999eb0e5eba88c14859",
+        "proof": "printed"
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-01991cbeb3f85382c992d63a",
+    "sha256": "d3348b550bbf64fed516d76ea25bb1457e16a4df35d2fb72b090bc5b6fa249e6",
+    "pages": 4,
+    "bindingHash": "caed55ba688b4c452937c71d6d6eb3fcab737734a1d318781d8a38da9db33e3c",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 0,
+        "length": 20,
+        "sha256": "28926da3ddf2234e7f1f4fb3eddab65c89ab411de3ef2299da67ce31482cc932",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "page_transcription",
+        "organizerStart": 8,
+        "reviewerStart": 8,
+        "length": 14,
+        "sha256": "5dbcaafebce0fa50e2be38193c2020c1bb91c2c19a465c6ed62e20a060cb740d",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "page_transcription",
+        "organizerStart": 32,
+        "reviewerStart": 116,
+        "length": 13,
+        "sha256": "0375e9cfe3a3f89cfbd1bbde741c15e87962a2c6b26cbfe5334b399a7b960bed",
+        "proof": "printed"
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
+    "sha256": "5dc95a10db4bc83f0a02ad1f80e062903e0e436702977a39ac9eb0c7af4dcdac",
+    "pages": 4,
+    "bindingHash": "de6c99ceedfcb323d5a253e665251eae8f1646d295a1387615c0a87caaa4f8da",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 232,
+        "length": 10,
+        "sha256": "71b1e8537cba79c33744865494ee53360f0d631e9c65a3cf186a58df3d021384",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 19,
+        "length": 18,
+        "sha256": "fa49e03da2c2ef49abcaa9f8d07d5c678b2d9cc37d6c7ab21777c0517fb06139",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "text_layer",
+        "organizerStart": 0,
+        "reviewerStart": 195,
+        "length": 10,
+        "sha256": "67aa958088850310225a45ccc31d61427f721cde95fd44bcd0f83a14555c7646",
+        "proof": "printed"
+      }
+    ]
+  },
+  {
+    "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
+    "sha256": "76488f6912f334cc544e99d36af047d5836f94b5fccafc06e8d287e78659830d",
+    "pages": 4,
+    "bindingHash": "b8309c1a31c2337eddc15acae506a5124105bf9db251686729d602922c58e6bb",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "page_transcription",
+        "organizerStart": 10,
+        "reviewerStart": 78,
+        "length": 23,
+        "sha256": "468e7247ed1ac534fddc16ffe29d456de7036dff2a4dbd7662f32f29acf30d1e",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 53,
+        "length": 10,
+        "sha256": "93fb01350b186eef7eaabb63816192dc0e3e2090184e7f4de52a16b511f430f9",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "text_layer",
+        "organizerStart": 24,
+        "reviewerStart": 217,
+        "length": 14,
+        "sha256": "b5c5b5541db8d9716a1786338c99b173b03243d5f940065d42302d6a16b4bdd0",
+        "proof": "text_layer",
+        "layerStart": 115,
+        "layerLength": 15
+      }
+    ]
   }
 ]

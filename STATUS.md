@@ -1,5 +1,11 @@
 # STATUS
 
+**2026-11-21 香港 22:14，本機家長驗收。** 《嬰兒的啼哭》登記及觀測後自動成為第十份原文，隔離發布後移入同一分類的正式列表。卡內入口待部署。21:23 的正式快照共有 156 個生效來源；本線九份原文均已點讀，七份仍待審適用條件或問卷結構，另兩份 504 原票已結算。[逐教材對照及家長查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
+
+**2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
+
+**2026-11-22 香港 00:28 查庫**　61 套官方劇本共 1,695 段已保存，38 套、1,162 段已在整卡按片名查回。餘下 23 套涉及六份教材。五份由獨立審核保留，正處理原文與照護搜尋的用途限制。母乳教材已通過內容審核，一筆 US$0.000308 向量預留尚待原單結算。[劇本驗收](PLAN.md#fhs-official-source-forms)
+
 **2026-11-21 香港 16:54**　回答後討論已在本機 Edge 以同一合成家庭、普通政策及真 Vertex 驗通。家長從已保存的原答開討論，四次模型呼叫取得三席、主答及獨立核對。收合重開後本人及平台用量同為 4 → 4；下一條廣東話普通問題正常回覆，兩邊用量均為 5。正式舊截圖仍未能配對原單，發布由主對話處理。[分項收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [家長畫面](artifacts/verification/REQ009_PARENT_BUDGET_THREE_20261121.png)
 
 **2026-11-21 香港**　家長平台卡庫及本人參考資料已在整合版以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。正式站待整合發布。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png)

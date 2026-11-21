@@ -23,6 +23,14 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 const fixtures = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'));
 const booklet = parseKnowledgeSource(fixtures.find(item => item.sourceId === 'fhs-feeding-booklet-en'));
 
+test('a parent citation displays a qualitative publisher audience with unknown month bounds', () => {
+  const chunk=booklet.chunks[0], source={...booklet,...chunk,
+    applicability:{...chunk.applicability,ageBasis:'publisher',publisherAudiences:['學前兒童'],use:'original_lookup',minAgeMonths:null,maxAgeMonths:null}};
+  const label=projectAgentCitation(source).applicabilityLabel;
+  assert.match(label,/原文對象：學前兒童.*月齡範圍未確定.*只供查閱原文/u);
+  assert.doesNotMatch(label,/不限|沒有最高/u);
+});
+
 test('a scanned quotation and an image description retain their evidence type and exact physical page', () => {
   const evidence = { ...booklet, ...booklet.chunks[0], originalKind: 'visual_page', sourceExcerpt: '',
     text: 'A diagram shows two stages.', pageStart: 4, pageEnd: 7, excerptPage: 6 };

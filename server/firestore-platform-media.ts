@@ -22,12 +22,13 @@ export function createPlatformMediaStore(database: Firestore, namespace: string)
     tx.set(ref(id), next);
     return next;
   }
-  async function reconcile(tx: Transaction, id: string, urls: string[]) {
+  async function reconcile(tx: Transaction, id: string, urls: string[], verifiedPages?: PlatformCardMedia['pages']) {
     if (!known(id)) return;
     const prior = await read(tx, id), links = normalized(urls);
-    if (JSON.stringify(links) === JSON.stringify(prior.links)) return;
+    const pages = (verifiedPages ?? prior.pages ?? []).filter(page => links.includes(page.url));
+    if (JSON.stringify(links) === JSON.stringify(prior.links) && JSON.stringify(pages) === JSON.stringify(prior.pages ?? [])) return;
     // Binding a newly discovered video to a card requires processing that exact link.
-    const next = platformCardMedia.parse({ enabled: prior.enabled, revision: prior.revision + 1, links,
+    const next = platformCardMedia.parse({ enabled: prior.enabled, revision: prior.revision + 1, links, ...(pages.length ? { pages } : {}),
       ...(prior.clips ? { clips: prior.clips.filter(clip => links.includes(clip.link)) } : {}) });
     tx.set(ref(id), next);
   }

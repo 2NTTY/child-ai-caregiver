@@ -47,14 +47,14 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
   const dependencies = name => {
     if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : expanded && initial === false ? true : initial) };
     if (name === 'react/jsx-runtime') return require(name);
-    if (name === 'react-native') return { View: nativeElement('div'), ScrollView: nativeElement('div'), Pressable: props => { controls.push(props); return nativeElement('button')(props); }, StyleSheet: { create: value => value } };
+    if (name === 'react-native') return { View: nativeElement('div'), ScrollView: nativeElement('div'), Platform: { OS: 'web' }, Pressable: props => { controls.push(props); return nativeElement('button')(props); }, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => params, useFocusEffect() {} };
     if (name === './SourceLibrary') return compile('../src/components/memory/SourceLibrary.tsx', dependencies);
     if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
     if (name === './PlatformCardJoin') return { PlatformCardJoin: () => null };
     if (name === '../AppRadioItem') return { AppRadioItem: nativeElement('button') };
-    if (name === '../AppDialog') return { AppDialog: Object.assign(nativeElement('dialog'), { ScrollArea: nativeElement('div') }) };
+    if (name === '../AppDialog') return { AppDialog: Object.assign(nativeElement('dialog'), { Content: nativeElement('div'), ScrollArea: nativeElement('div') }) };
     if (name === '../../../../src/shared/source-series') return sourceSeries;
     if (name === '../../../../src/shared/personal-library') return library;
     if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package'].includes(name)) return {};
@@ -78,6 +78,40 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
   const api = compile('../src/components/memory/MemoryReferenceView.tsx', dependencies);
   return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, controls, panels, tabLists, toolbars };
 }
+
+test('expanded material links match verified source pages by URL and keep editorial metadata out of the reader', () => {
+  const value = snapshot(), base = 'https://www.fhs.gov.hk/tc_chi/mulit_med/';
+  const first = base + '000005.html', second = base + '000067.html', unknown = base + '000129.html';
+  const item = { title: '測試教材', sourceId: 'synthetic-material', series: { id: 'test-materials', name: '測試來源' },
+    versionId: 'ce21a085-e357-40a6-87ec-fadc2991c666', url: 'https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html',
+    publisher: '測試', classification: 'official_guidance', coverage: '已收錄 18 個段落', methods: ['測試整理管線'],
+    fetchedAt: '2025-05-01T00:00:00Z', publishedAt: '2025-05-02T00:00:00Z', lastCheckedAt: '2025-05-03T00:00:00Z',
+    sourceUpdatedAt: '2026-02-12T00:00:00Z', media: { links: [first, second, unknown], pages: [
+      { url: second, title: '第二份原題' }, { url: first, title: '第一份原題', transcriptUrl: first + '#transcript' },
+      { url: base + 'other.html', title: '不屬此教材' },
+    ] } };
+  value.model.references = { scopeKey, state: 'ready', revision: 'read', asOf: null, data: { audience: 'public', items: [], hasMore: false, catalog: [item] } };
+  const read = () => renderView(value, { tab: 'references', expanded: true, params: { series: item.series.id } });
+  const { controls, html } = read();
+  const links = controls.filter(control => control.accessibilityRole === 'link');
+  assert.deepEqual(links.map(control => [control.accessibilityLabel, control.href]), [
+    [item.title, item.url], ['第一份原題', first], ['第一份原題的官方文字稿', first + '#transcript'],
+    ['第二份原題', second], ['家庭健康服務影片 · 000129', unknown],
+  ]);
+  assert.match(html, /原文更新於/);
+  for (const text of [item.versionId, item.methods[0], item.coverage, '最近取得', '發布版本', '已選快照', '最近檢查', '不屬此教材'])
+    assert.ok(!html.includes(text), text);
+  item.sourceDateText = '(02/2026 修訂內容)';
+  const labelled = read();
+  assert.ok(labelled.html.includes(item.sourceDateText));
+  assert.doesNotMatch(labelled.html, /原文更新於/);
+  delete item.sourceDateText;
+  delete item.media.pages;
+  item.sourceUpdatedAt = null;
+  const legacy = read();
+  assert.deepEqual(legacy.controls.filter(control => control.accessibilityRole === 'link').map(control => control.href), [item.url, first, second, unknown]);
+  assert.doesNotMatch(legacy.html, /文字稿|原文更新於|影音 [123]/u);
+});
 
 test('the store joins an unowned series and re-enables a disabled fixed series without selecting new editions', () => {
   const workspace = snapshot(), writes = [];

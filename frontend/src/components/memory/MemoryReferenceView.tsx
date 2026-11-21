@@ -131,6 +131,7 @@ function readableReferenceUrl(value: string): string | null {
   } catch { return null; }
 }
 function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
+  const readingScope=source.applicability?.ageBasis === 'publisher' || source.applicability?.ageBasis === 'unconfirmed';
   const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const sourceUrl = readableReferenceUrl(source.url);
   return <View testID={`memory-reference-source-${source.sourceId}-${source.chunkId}`} style={styles.card}>
@@ -149,8 +150,11 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
       <Metadata label="來源更新">{memoryDateLabel(source.sourceUpdatedAt)}</Metadata><Metadata label="最近覆核">{memoryDateLabel(source.checkedAt)}</Metadata>
       <Metadata label="最近成功取得">{memoryDateLabel(source.lastSuccessfulCheckAt)}</Metadata>{source.validUntil ? <Metadata label="有效至">{memoryDateLabel(source.validUntil)}</Metadata> : null}
       <Metadata label="地區">{source.applicability.region || "未提供"}</Metadata>
-      <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>
-      <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>
+      {readingScope
+        ? <Metadata label="原文對象">{source.applicability.publisherAudiences?.join('、') ?? '未有指明'}</Metadata>
+        : <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>}
+      {readingScope ? <><Metadata label="月齡範圍">{source.applicability.maxAgeMonths===null?'未確定':`少於 ${source.applicability.maxAgeMonths} 個月，下限未指明`}</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
+        : <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>}
       {source.applicability.conditions.length ? <Metadata label="適用條件">{source.applicability.conditions.join("；")}</Metadata> : null}
       <AppButton label={technical ? "收起版本識別" : "查看版本識別"} expanded={technical} variant="quiet" density="compact" onPress={() => setTechnical(value => !value)} />
       {technical ? <View style={styles.details}><Metadata label="來源">{source.sourceId}</Metadata><Metadata label="版本">{source.versionId}</Metadata><Metadata label="片段">{source.chunkId}</Metadata>
@@ -159,49 +163,65 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
   </View>;
 }
 type MaintenanceEntry = (sourceId: string) => ReactNode;
-function MaterialLink({ url, label, title, onFailure }: { url: string; label: string; title?: boolean; onFailure(url: string): void }) {
-  return <Pressable accessibilityRole="link" accessibilityLabel={label}
+type ReadingMedia = { url: string; title: string; transcriptUrl?: string };
+function mediaLinks(media?: { links: string[]; pages?: ReadingMedia[] }): ReadingMedia[] {
+  const pages = new Map(media?.pages?.map(page => [page.url, page]));
+  return (media?.links ?? []).map(url => {
+    const page = pages.get(url);
+    if (page) return page;
+    const link = new URL(url), file = link.pathname.split('/').pop() ?? '';
+    if (link.hostname === 'www.youtube.com') return { url, title: 'YouTube 影片 · ' + link.searchParams.get('v') };
+    const kind = /\.(mp3|m4a)$/iu.test(file) ? '音訊' : '影片';
+    return { url, title: '家庭健康服務' + kind + ' · ' + file.replace(/\.[^.]+$/u, '') };
+  });
+}
+function MaterialLink({ url, label, name = label, kind, onFailure }: {
+  url: string; label: string; name?: string; kind: 'document' | 'media' | 'transcript'; onFailure(url: string): void;
+}) {
+  return <Pressable accessibilityRole="link" accessibilityLabel={name}
     {...(Platform.OS === 'web' ? { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } }
       : { onPress: () => { void Linking.openURL(url).catch(() => onFailure(url)); } })}
-    style={({ pressed }) => [styles.materialLink, title ? styles.materialTitleLink : styles.mediaLink, pressed && styles.sourcePressed]}>
-    <Text style={title ? styles.materialTitle : styles.mediaLabel}>{label}</Text>
+    style={({ pressed }) => [styles.materialLink, kind === 'document' ? styles.documentLink : Platform.OS === 'web' && styles.webMediaTarget, kind === 'media' && styles.mediaLink, pressed && styles.sourcePressed]}>
+    <Text style={kind === 'document' ? styles.materialTitle : kind === 'media' ? styles.mediaTitle : styles.transcriptText}>{label}</Text>
   </Pressable>;
 }
-function CatalogDocument({ item, maintenanceEntry, pin }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry; pin?: () => void }) {
-  const [metadata, setMetadata] = useState(false), [failedUrl, setFailedUrl] = useState('');
-  const fetched = item.lastSuccessfulCheckAt ?? item.fetchedAt;
+function documentStatus(item: PersonalLibraryItem) {
   const choice = libraryDocumentChoice(item);
-  const links = item.media?.links ?? [];
-  const version = metadata ? <View style={styles.historyEntry}>
-    <Metadata label="發布版本">{item.versionId}</Metadata>
-    {choice?.mode === 'fixed' && choice.selectedVersionId ? <Metadata label="已選快照">{choice.selectedVersionId}</Metadata> : null}
-    {item.publishedAt ? <Metadata label="發布">{memoryDateLabel(item.publishedAt)}</Metadata> : null}
-    {fetched ? <Metadata label="最近取得">{memoryDateLabel(fetched)}</Metadata> : null}
-    {item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}
-    {item.methods?.length ? <Metadata label="整理方式">{item.methods.join('、')}</Metadata> : null}
-  </View> : null;
-  const warning = failedUrl ? <Text selectable style={styles.warning}>未能開啟：{failedUrl}</Text> : null;
-  const status = !choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用'
-    : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新';
+  return !choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用' : !choice.eligible ? '待選版本'
+    : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新';
+}
+const sourceDate = (value: string) => new Date(value).toLocaleDateString('zh-HK', { timeZone: 'Asia/Hong_Kong' });
+function CatalogDocument({ item, onRead }: {
+  item: PersonalLibraryItem & { sourceDateText?: string | null }; onRead(): void;
+}) {
+  const media = mediaLinks(item.media);
+  const revision = item.sourceDateText?.trim() || (item.sourceUpdatedAt ? '原文更新於 ' + sourceDate(item.sourceUpdatedAt) : undefined);
+  const [expanded, setExpanded] = useState(false), [failedUrl, setFailedUrl] = useState('');
+  const status = documentStatus(item);
+  const showStatus = status !== '已跟隨更新' && !(status === '未採用' && item.childHealth?.adopted === 0);
+  const notes = [showStatus ? status : '', !expanded && media.length ? `${media.length} 項影音` : ''].filter(Boolean);
+  const hasDetails = !!(media.length || revision || item.validUntil);
   return <View testID={`memory-catalog-source-${item.sourceId}`} style={styles.materialRow}>
     <View style={styles.materialHeading}><View style={styles.materialMain}>
-      <MaterialLink url={item.url} label={item.title} title onFailure={setFailedUrl} />
-      <Text style={styles.meta}>{status}{links.length ? ` · ${links.length} 項影音` : ''}</Text>
-    </View><Pressable accessibilityRole="button" accessibilityLabel={item.title + '的教材詳情'}
-      accessibilityState={{ expanded: metadata }} aria-expanded={metadata}
-      onPress={() => { setMetadata(!metadata); setFailedUrl(''); }}
+      <MaterialLink url={item.url} label={item.title} kind="document" onFailure={setFailedUrl} />
+      {notes.length ? <Text style={styles.meta}>{notes.join(' · ')}</Text> : null}
+    </View>{hasDetails ? <Pressable accessibilityRole="button" accessibilityLabel={item.title + '的教材詳情'}
+      accessibilityState={{ expanded }} aria-expanded={expanded}
+      onPress={() => { if (!expanded) onRead(); setExpanded(!expanded); setFailedUrl(''); }}
       style={({ pressed }) => [styles.materialToggle, pressed && styles.sourcePressed]}>
-      <AppIcon name={metadata ? 'chevron-up' : 'chevron-down'} size={20} />
-    </Pressable></View>
-    {metadata ? <View style={styles.materialDetails}>
-      {links.length ? <View style={styles.mediaLinks}>{links.map((url, index) =>
-        <MaterialLink key={url} url={url} label={`影音 ${index + 1}`} onFailure={setFailedUrl} />)}</View> : null}
-      <Text style={styles.meta}>{item.coverage ?? '部分收錄'} · {item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}</Text>
-      {version}
-      {!item.childHealth ? maintenanceEntry?.(item.sourceId) : null}
-      {pin ? <LibraryAction label={choice?.enabled && choice.selectedVersionId ? '固定這份教材的目前版本' : '採用這份教材的固定版本'} onPress={pin} /> : null}
+      <AppIcon name={expanded ? 'chevron-up' : 'chevron-down'} size={20} />
+    </Pressable> : null}</View>
+    {expanded && hasDetails ? <View style={styles.materialDetails}>
+      {revision ? <Text style={styles.meta}>{revision}</Text> : null}
+      {item.validUntil ? <Text style={styles.meta}>有效至 {sourceDate(item.validUntil)}</Text> : null}
+      {media.length ? <View style={styles.mediaGroup}><Text accessibilityRole="header" style={styles.mediaHeading}>相關影音</Text>
+        {media.map(({ url, title, transcriptUrl }) => <View key={url} style={styles.mediaRow}>
+          <MaterialLink kind="media" url={url} label={title} onFailure={setFailedUrl} />
+          {transcriptUrl ? <MaterialLink kind="transcript" url={transcriptUrl} label="文字稿" name={`${title}的官方文字稿`} onFailure={setFailedUrl} /> : null}
+        </View>)}
+      </View> : null}
     </View> : null}
-    {warning}
+    {failedUrl ? <Text selectable style={styles.warning}>未能開啟：{failedUrl}</Text> : null}
   </View>;
 }
 function CatalogChoice({ label, value, onChange, options, action }: {
@@ -224,6 +244,7 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
   onClose(): void; onJoin?: () => void; maintenanceEntry?: MaintenanceEntry; requestedDocument?: string;
 }) {
   const [section, setSection] = useState(initialSection);
+  const [settingsSource, setSettingsSource] = useState(requestedDocument ?? items[0]?.sourceId);
   const tabsId = useId();
   const [category, setCategory] = useState('all'), [archivePart, setArchivePart] = useState('0');
   const [exportNotice, setExportNotice] = useState(''), active = useRef(true);
@@ -231,7 +252,9 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
   const [exporting, setExporting] = useState(false), [fingerprint, setFingerprint] = useState('');
   const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
   const first = items[0]!, managed = first.childHealth, series = managed ? childHealthSeries : first.series ?? sourceSeries(first), preference = first.preference;
-  const categories = managed?.categoryCounts?.map(row => row.name) ?? [...new Set(items.flatMap(item => item.childHealth?.categories ?? []))];
+  const publisherOriginals = managed && workspace.model.references.state === 'ready' ? workspace.model.references.data?.publisherOriginals ?? [] : [];
+  const categories = [...new Set([...(managed?.categoryCounts?.map(row => row.name) ?? items.flatMap(item => item.childHealth?.categories ?? [])),
+    ...publisherOriginals.flatMap(link => link.categories)])];
   const selected = section === 'settings' ? selectedLibraryEditions(items) : [];
   const parts = Math.ceil(selected.length / libraryArchiveMaxEditions);
   const start = Math.min(Number(archivePart), Math.max(0, parts - 1)) * libraryArchiveMaxEditions;
@@ -254,11 +277,16 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
   const firstDocument = requestedDocument && items.find(item => item.sourceId === requestedDocument);
   const documents = (firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items)
     .filter(item => !managed || category === 'all' || item.childHealth?.categories.includes(category));
+  const originals = publisherOriginals.filter(link => (category === 'all' || link.categories.includes(category)) && !items.some(item => item.sourceId === link.sourceId));
+  const [showOriginals, setShowOriginals] = useState(false), [failedOriginal, setFailedOriginal] = useState('');
   const requiresSelection = managed ? items.some(item => { const choice = libraryDocumentChoice(item); return choice?.selectedVersionId && !choice.eligible; })
     : preference?.mode !== 'platform' && items.some(item => item.preference?.eligible === false);
   const enabled = managed ? managed.enabled > 0 : preference?.enabled !== false;
   const state = managed ? childHealthStatus(managed) : preference?.mode === 'platform' ? '未下載' : !enabled ? '已停用' : requiresSelection ? '待選版本'
     : preference?.mode === 'fixed' ? '已固定' : preference?.mode === 'follow' ? '已跟隨' : '使用中';
+  const selectedDocument = items.find(item => item.sourceId === settingsSource) ?? first;
+  const choice = libraryDocumentChoice(selectedDocument);
+  const currentPinned = choice?.enabled && choice.mode === 'fixed' && choice.selectedVersionId === selectedDocument.versionId;
   const pin = (item: PersonalLibraryItem) => {
     if (!managed || !item.versionHash) return;
     workspace.reads?.setLibraryPreference?.({ seriesId: childHealthSeries.id, expectedRevision: managed.revision,
@@ -278,9 +306,15 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
         {managed && categories.length > 0 ? <CatalogChoice label="分類" value={category} onChange={setCategory}
           options={[{ value: 'all', label: '全部' }, ...categories.map(value => ({ value, label: value }))]}
           action={!onJoin && !busy && managed.adopted < managed.total ? <PlatformCardJoin seriesId={series.id} compact /> : undefined} /> : null}
-        <View style={styles.materialList}>{documents.map(item =>
-          <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry}
-            pin={managed && item.versionHash && !busy && workspace.reads?.setLibraryPreference && !(libraryDocumentChoice(item)?.enabled && libraryDocumentChoice(item)?.mode === 'fixed' && libraryDocumentChoice(item)?.selectedVersionId === item.versionId) ? () => pin(item) : undefined} />)}</View>
+        {originals.length ? <View style={styles.section}>
+          <AppButton label={`待收錄的官方原文（${originals.length}）`} variant="quiet" density="compact" expanded={showOriginals} onPress={() => setShowOriginals(!showOriginals)} />
+          {showOriginals ? originals.map(link => <View key={link.sourceId} style={styles.materialRow}>
+            <View style={styles.materialHeading}><MaterialLink url={link.url} label={link.title} kind="document" onFailure={setFailedOriginal} /></View>
+            {failedOriginal === link.url ? <Text selectable style={styles.warning}>{link.url}</Text> : null}
+          </View>) : null}
+        </View> : null}
+        {documents.length ? <View style={styles.materialList}>{documents.map(item =>
+          <CatalogDocument key={item.sourceId} item={item} onRead={() => setSettingsSource(item.sourceId)} />)}</View> : null}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
       {preference ? <Metadata label="我的設定">{managed ? `${state}，${managed.enabled} 份已啟用` : state + ' · ' + (preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版')}</Metadata> : null}
@@ -289,6 +323,15 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
         <AppButton label="固定目前版本" variant="quiet" disabled={busy || !managed && (workspace.model.references.data?.hasMore || preference?.mode === 'fixed' && !requiresSelection && items.every(item => item.preference?.selectedVersionId === item.versionId))} onPress={() => change('fixed')} />
         <AppButton label="跟隨同範圍更新" variant="quiet" disabled={busy || (managed ? managed.fixed === 0 : preference?.mode === 'follow')} onPress={() => change('follow')} />
         <AppButton label="從我的參考資料刪除" variant="quiet" disabled={busy} onPress={() => change('platform')} />
+      </View> : null}
+      {section === 'settings' && (managed || maintenanceEntry) ? <View style={styles.documentSettings}>
+        <CatalogChoice label="個別教材" value={selectedDocument.sourceId} onChange={setSettingsSource}
+          options={items.map(item => ({ value: item.sourceId, label: item.title }))} />
+        <Text style={styles.meta}>{documentStatus(selectedDocument)}</Text>
+        {managed && selectedDocument.versionHash && workspace.reads?.setLibraryPreference && !currentPinned
+          ? <LibraryAction label={choice?.enabled && choice.selectedVersionId ? '固定這份教材的目前版本' : '採用這份教材的固定版本'}
+              disabled={busy} onPress={() => pin(selectedDocument)} /> : null}
+        {!managed ? maintenanceEntry?.(selectedDocument.sourceId) : null}
       </View> : null}
       {workspace.model.references.data?.hasMore ? <Text style={styles.meta}>{managed ? '載入所有教材後可匯出。' : '載入所有來源後可固定目前版本及匯出。'}</Text> : null}
       {managed && parts > 1 && !workspace.model.references.data?.hasMore ? <CatalogChoice label="匯出教材範圍" value={String(start / libraryArchiveMaxEditions)} onChange={setArchivePart}
@@ -571,14 +614,19 @@ const styles = StyleSheet.create({
   materialRow: { minWidth: 0, paddingVertical: spacing.xs, borderBottomWidth: 1, borderColor: colors.softLine },
   materialHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   materialMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.sm },
-  materialLink: { minWidth: 48, minHeight: 48, justifyContent: 'center', paddingVertical: spacing.xs },
-  materialTitleLink: { flexBasis: 300, flexGrow: 1, flexShrink: 1, maxWidth: '100%' },
+  materialLink: { minWidth: 44, minHeight: 44, alignItems: 'flex-start', justifyContent: 'center' },
+  documentLink: { minWidth: 0, flexBasis: 300, flexGrow: 1, flexShrink: 1, maxWidth: '100%' },
+  webMediaTarget: { minHeight: 38 },
+  mediaLink: { flex: 1, minWidth: 0 },
   materialTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, textDecorationLine: 'underline' },
   materialToggle: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.small },
-  materialDetails: { gap: spacing.sm, paddingVertical: spacing.sm },
-  mediaLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  mediaLink: { paddingHorizontal: spacing.sm, borderRadius: radius.small, backgroundColor: colors.quietSurface },
-  mediaLabel: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool, textDecorationLine: 'underline' },
+  materialDetails: { minWidth: 0, gap: spacing.xs, paddingVertical: spacing.sm },
+  mediaGroup: { width: '100%', maxWidth: 420 },
+  mediaHeading: { color: colors.muted, fontFamily: chineseFont, ...readingType.meta, fontWeight: '600' },
+  mediaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine },
+  mediaTitle: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool, textDecorationLine: 'underline' },
+  transcriptText: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.meta, textDecorationLine: 'underline' },
+  documentSettings: { gap: spacing.xs, alignItems: 'flex-start', minWidth: 0 },
   scrollArea: { paddingHorizontal: 0, flexShrink: 1 },
   dialogContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },

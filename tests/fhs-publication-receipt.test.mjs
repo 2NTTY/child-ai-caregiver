@@ -14,6 +14,13 @@ const metadata = { sourceId: 'pdf-test', versionId: 'version', versionHash: 'ver
 const identities = [{ key: 'part', chunkId: 'chunk', contentHash: 'chunk-hash' }];
 const source = { ...metadata, extraction: { contentHash: digest, totalPages: 2 }, chunks: [chunk] };
 
+test('the same undecoded glyph marker in a stored quote and its page cannot verify a citation', async () => {
+  const quote = 'printed \ufffd passage';
+  const result = await verifyFhsPdfPages(metadata, {...source, chunks:[{...chunk,sourceExcerpt:quote}]},
+    identities, [], {sha256:digest, pages:2, bytes:blob.length}, pagePorts(quote));
+  assert.equal(result.pages[0].proof, 'unreadable_excerpt');
+});
+
 function pagePorts(secondPage = 'the complete quote') {
   return {
     async resolve(identity) {

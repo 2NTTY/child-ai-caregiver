@@ -1,4 +1,4 @@
-import type { AgentProgress } from '../src/shared/agent-feedback.ts';
+import { CHAT_STREAM_HEARTBEAT_MS, type AgentProgress } from '../src/shared/agent-feedback.ts';
 
 /** One response channel, not an execution queue. Disconnect never starts or cancels a business operation. */
 export function agentFeedbackStream(execute: (publish: (progress: AgentProgress) => void) => Promise<Response>,
@@ -24,7 +24,7 @@ export function agentFeedbackStream(execute: (publish: (progress: AgentProgress)
           }
         }).catch(() => {});
       };
-      heartbeat = setInterval(() => { if (!closed && (controller.desiredSize ?? 0) > 0) controller.enqueue(encoder.encode(': keepalive\n\n')); }, 15000);
+      heartbeat = setInterval(() => { if (!closed && (controller.desiredSize ?? 0) > 0) controller.enqueue(encoder.encode(': keepalive\n\n')); }, CHAT_STREAM_HEARTBEAT_MS);
       void (async () => {
         try {
           const response = await execute(publish);

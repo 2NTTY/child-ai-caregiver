@@ -8,6 +8,18 @@ import publication
 
 
 class PublicationTests(unittest.TestCase):
+    def test_script_command_requires_the_version_in_the_published_worker(self):
+        row = {"sourceId": "fhs-30119", "observationHash": "a" * 64}
+        args = SimpleNamespace(action="script", mode="run", source=row["sourceId"], observation=row["observationHash"], reads=None)
+        self.assertEqual(list(publication.commands(args, [row])), [
+            ["scripts/fhs-initial-campaign.mjs", "publish-script-edition", args.source, args.observation]])
+        args.mode = "revise"
+        self.assertEqual(list(publication.commands(args, [row])), [
+            ["scripts/fhs-initial-campaign.mjs", "revise-script-edition", args.source, args.observation]])
+        args.observation = "b" * 64
+        with self.assertRaisesRegex(ValueError, "Unassigned script edition"):
+            list(publication.commands(args, [row]))
+
     def setUp(self):
         self.host = Mock()
         layout = {"wd": "/site", "env": "/site/env", "files": ["/site/compose.yml"]}

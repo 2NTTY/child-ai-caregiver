@@ -18,34 +18,54 @@ export const knownVideoDurations = inventory.videoDurationSeconds;
 interface ExternalDecision {
   sourceId: string; url: string; title: string; disposition: 'link_only' | 'public_noncommercial';
   publisher?: string; termsUrl?: string; sha256?: string;
+  currentEdition?: { publisherIndex: string; url: string; sha256: string; dateText: string; sourceAgeDefinition: string };
 }
 const external: ExternalDecision[] = JSON.parse(readFileSync(new URL('../knowledge/fhs-external-rights.json', import.meta.url), 'utf8')).materials;
 const externalById = new Map(external.map(row => [row.sourceId, row]));
 const externalByUrl = new Map(external.map(row => [row.url, row]));
+for (const row of external) {
+  if (row.currentEdition) externalByUrl.set(row.currentEdition.url, row);
+}
 // Sources supported before the catalogue extension retain their existing publication and audience rules.
 const priorSourceHosts = new Set(['www.fhs.gov.hk', 'www.studenthealth.gov.hk', 'www.chp.gov.hk', 'www.dh.gov.hk', 'news.rthk.hk', 'rthk.hk', 'www.rthk.hk']);
 export const externalMaterialWatches: SourceWatchDefinition[] = external.filter(row => row.disposition === 'public_noncommercial').map(row => {
   if (!row.publisher || !row.termsUrl || !row.sha256 || !inventory.pdfOriginals.some(pdf => pdf.url === row.url && pdf.sha256 === row.sha256))
     throw Error('Invalid reviewed external material');
-  return { id: row.sourceId, url: row.url, title: row.title, kind: 'pdf', leafletPage: row.url,
+  const url = row.currentEdition?.url ?? row.url;
+  return { id: row.sourceId, url, title: row.title, kind: 'pdf', leafletPage: url,
     publisher: row.publisher, termsUrl: row.termsUrl, classification: 'official_guidance', audience: 'public_noncommercial' };
 });
 export function reviewedExternalOriginal(url: string) {
   const entry = externalByUrl.get(url);
-  return entry?.disposition === 'public_noncommercial' ? entry.sha256 : undefined;
+  if (entry?.disposition !== 'public_noncommercial') return undefined;
+  return entry.currentEdition?.url === url ? entry.currentEdition.sha256 : entry.sha256;
+}
+export function reviewedExternalEdition(url: string, hash: string) {
+  const entry = externalByUrl.get(url);
+  const edition = entry?.currentEdition;
+  return entry?.disposition === 'public_noncommercial' && edition?.url === url && edition.sha256 === hash ? edition : undefined;
+}
+export function isReviewedExternalSuccessor(sourceId: string, previous: Pick<KnowledgeSourceInput, 'url' | 'extraction'>,
+  next: Pick<KnowledgeSourceInput, 'url' | 'extraction'>) {
+  const entry = externalById.get(sourceId);
+  return entry?.disposition === 'public_noncommercial' && entry.url === previous.url && previous.extraction?.format === 'text_pdf'
+    && previous.extraction.contentHash === entry.sha256 && entry.currentEdition?.url === next.url && next.extraction?.format === 'text_pdf'
+    && next.extraction.contentHash === entry.currentEdition.sha256;
 }
 export function externalMaterialAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'publisher' | 'extraction' | 'classification'>) {
   const entry = externalById.get(source.sourceId) ?? externalByUrl.get(source.url);
   if (!entry) return priorSourceHosts.has(new URL(source.url).hostname);
-  return entry.disposition === 'public_noncommercial' && entry.sourceId === source.sourceId && entry.url === source.url
+  return entry.disposition === 'public_noncommercial' && entry.sourceId === source.sourceId && externalByUrl.get(source.url) === entry
     && source.classification === 'official_guidance' && source.publisher === entry.publisher && source.termsUrl === entry.termsUrl
-    && source.extraction?.format === 'text_pdf' && source.extraction.contentHash === entry.sha256;
+    && source.extraction?.format === 'text_pdf' && source.extraction.contentHash === reviewedExternalOriginal(source.url);
 }
 function add(id: string, title: string, url: string, mediaLinks: string[]) {
   if (new URL(url).hostname !== 'www.fhs.gov.hk' && !reviewedExternalOriginal(url)) return;
   if (byUrl.has(url)) return;
   if (platformMaterials.has(id)) throw new Error('Duplicate platform material identity');
-  platformMaterials.set(id, { id, title, url, mediaLinks });
+  const currentUrl = externalById.get(id)?.currentEdition?.url ?? url;
+  platformMaterials.set(id, { id, title, url: currentUrl, mediaLinks });
+  if (currentUrl !== url) byUrl.set(currentUrl, id);
   byUrl.set(url, id);
 }
 for (const item of inventory.items) {

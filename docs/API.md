@@ -169,7 +169,15 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
 <a id="platform-source-follow"></a>
-家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v4+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁，v1 至 v3 維持原有欄位。
+家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v6+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+
+v6 的 `publisherOriginals` 與已發布文件 `items` 共用目錄游標，每頁合共最多 10 份。每項原文有 `sourceId`、官方題名 `title`、原文 `url` 及官方 `categories`。屬於兒童健康卡、符合公開分享條件的網頁，登記及觀測有效後便可點讀。當頁若只有未觀測或已撤回的來源，客戶端按 `nextCursor` 繼續。發布生效後，同一來源移入 `items`；停用及撤回會移除原文入口。採用、固定、助手引用及 ZIP 匯出繼續使用已發布版本。
+
+v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項對應同一筆 `media.links` 網址。題名取自已讀官方頁，該頁有可定位劇本才提供 `transcriptUrl`。文件的 `sourceDateText?` 沿用發布版所載的官方修訂字樣及精度。v4 保留分類及原連結，v1 至 v3 沿用各自欄位。回應以 `Vary: Accept` 區分版本。
+
+助手搜尋影片清單時，`videoListScope` 會標明本次是跨教材命中，還是指名教材的已審劇本。清單的 `complete: false` 表示未能確認包含來源的所有影片。`omittedChunks` 只計已知但未放入回應的項目。普通問題沿原有檢索及同版擴讀流程。
+
+家長想找教材、讀原文或核對引用時，助手可按本輪意思以片名、內容描述或同義問法呼叫 `find_official_material`。結果沿用本人卡庫選擇、版本和引用位置。`search_knowledge` 的一般照護結果及其同版擴讀會排除標記為 `original_lookup` 的片段。主動提醒沒有原文查找工具。
 
 整卡操作向同一個人目錄端點提交 `{action:"manage", seriesId:"fhs-child-health", operation, expectedState}`。Server 在本人及孩子授權交易內核對成員、已發布版本及個人選擇。首次 `join` 跟隨已展示範圍，再次明確採用只加入缺少的教材；全數已選時回傳現況。`fixed` 明確選取已採用教材的目前版本，`follow` 跟隨已選範圍，`enable`、`disable` 和 `remove` 操作已選教材。選擇衝突回傳 `409 library_selection_changed`。版本參照及合法分享 ZIP 繼續逐份核查原件、版本與權利，每包最多 100 份。
 
@@ -822,7 +830,7 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 `POST /api/children/:childId/library` 的 `action=join` 把已發布系列加入本人參考資料。選擇只屬該帳戶，下載復用平台向量。普通教材須已下載、已啟用並符合適用範圍才進入新問答。跟版採用同範圍的審核更新，固定版本沿已選快照。停用可再啟用，移除以 `mode=platform` 清除本人版本選擇。未載齊目錄時，`wholeSeries=true` 讓 Server 在同一交易核對畫面所示版本及系列成員。固定新快照或匯入指定版本須提交完整選擇。個人動作保留已交付主聊天訊息及其原引用。重開 PDF 再核本人 run、原版本、片段、授權和原件 SHA-256，平台撤回後回傳 404。
 
-管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音初始關閉，已確認的頁面查核可更新連結，網絡或解析失敗保留上次結果。啟用後優先讀官方時間字幕，其次以官方講稿對齊影音。已核對片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
+管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音分析初始關閉。原頁查核可更新連結及題名，並將可定位的官方劇本按原頁段號送入文字審核。未標時間的對白只附劇本位置。啟用影音處理後優先讀官方時間字幕，已有劇本的對白毋須派發整片分析。已核對的有時間片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
 
 
 <a id="firestore-target"></a>
@@ -967,6 +975,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | 列出、查看 | `GET /api/account/source-cards?cursor=…` 回傳 `{items,nextCursor}`。用 `GET /api/account/source-cards/:cardId` 讀取一張卡的 `{card}`。 |
 | 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
 | 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
+| 提供位置、跳過求助 | `suggest_location` 附家長提供的 `url`，已有缺口時須附目前 `gap.checkId`。`skip_gap` 附同一 `checkId`。兩者沿用本人卡、原操作收據及預期版本。 |
 | 本人授權 | 助手用 `sourceCardAuthorizationPath(cardId)` 打開指定卡。本人表單單獨提交至 `POST /api/account/source-cards/:cardId/credential`。`replace` 包含網站帳戶、密碼、選填同源登入頁；`clear` 撤銷授權。兩者都帶原操作 ID 及預期版本。卡片讀取只回傳 `credentialRef`。 |
 | 聊天引用 | `GET /api/account/source-cards/:cardId/reading` 以文件 ID、版本、頁及位置讀回當時引用的片段。圖像描述與逐字原文分開標示，已審核片段另核對摘錄雜湊及該次索引身份。打開時再次核對本人權限。 |
 
@@ -975,6 +984,10 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 worker 以 `due → claim → finish` 接續每張卡的排程。下載前可用 `credentialFor` 核對當前租約及取出該站表單憑證，憑證只供登入適配器使用。長操作用 `renew` 延長租約，私人資料寫入用 `withCurrentCheck` 在同一交易核對卡版本、擁有人及執行者。逾時接手沿用原 `checkId`，停用、修改及刪除會截停舊執行者回寫。卡片記錄上次檢查、結果及下次時間；重新登入、付款、多重驗證或 CAPTCHA 會暫停巡查，待本人處理後再試。帳戶刪除涵蓋卡片、操作收據及加密憑證。災難還原後卡片保持停用，本人重新提供登入授權。[交易與 worker 契約](../server/firestore-registered-source-cards.ts)
 
 巡查完成時可隨 `lastResult` 填寫本次確實保存到本人資料庫的 `savedDocumentCount`、已可供檢索的 `indexedDocumentCount`。未取得相應收據便省略該數；零表示已核實為零。來源按內容自動保存及整理。
+
+目錄及公告可在 `methods` 讀回已驗入口、讀法版本、已觀察項數、核實時間，以及實際可查的樣本文件和固定版本。網站公布的 RSS／Atom 入口、HTML 正文連結、表格或結構化項目可自動辨認。巡查可沿原有受限瀏覽器讀取動態目錄。變更讀法必須有本次保存及索引的樣本；目錄縮短而未能交代覆蓋時保留上版。卡內資料只在原授權範圍流通。
+
+已嘗試的私人來源如仍有缺口，`gap` 指出網址、原因、原巡查及是否已跳過。從原助手交回位置後，worker 用原巡查 ID、新卡版本及獨立進度核實指定入口。只有站內原頁指向該位置，或目錄能對上已驗樣本，且實際讀回可查原件，才保存新讀法。`hint.status` 會由 `pending` 轉為 `verified` 或 `rejected`。線索及方法留在加密卡片和巡查收據；引文只取固定版本的站內原文。每卡同時可核實一個位置，最多保留八個已驗入口。
 
 <a id="private-source-rag"></a>
 #### 本人來源的視覺檢索

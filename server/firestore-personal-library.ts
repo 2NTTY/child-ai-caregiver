@@ -80,7 +80,7 @@ export function createFirestorePersonalLibrary(options: {
         throw error;
       }
     },
-    async page(userId: string, childId: string, rawCursor: string | null = null): Promise<PersonalLibraryPage> {
+    async page(userId: string, childId: string, rawCursor: string | null = null, includeOriginals = false): Promise<PersonalLibraryPage> {
       const initial = await options.authority.readScope(userId, childId);
       let after: string | null = null;
       if (rawCursor !== null) {
@@ -94,13 +94,15 @@ export function createFirestorePersonalLibrary(options: {
         if (canonical(cursor.scope) !== canonical(initial.scope) || cursor.authorizationVersion !== initial.authorizationVersion) changed();
         after = cursor.afterSourceId;
       }
-      const page: { items: PersonalLibraryPage['items']; nextSourceId: string | null; registered?: PersonalLibraryPage['registered'] } = options.knowledge.catalogForUser ? await options.knowledge.catalogForUser(userId, after) : await options.knowledge.catalog(after);
+      const page: Pick<PersonalLibraryPage, 'items' | 'registered' | 'publisherOriginals'> & { nextSourceId: string | null } =
+        options.knowledge.catalogForUser ? await options.knowledge.catalogForUser(userId, after, includeOriginals) : await options.knowledge.catalog(after);
       const current = await options.authority.readScope(userId, childId);
       if (canonical(current) !== canonical(initial)) changed();
       const nextCursor = page.nextSourceId === null ? null : Buffer.from(options.cipher.encrypt(JSON.stringify(
         cursorSchema.parse({ version: 1, scope: current.scope, authorizationVersion: current.authorizationVersion, afterSourceId: page.nextSourceId })
       ), aad(userId))).toString('base64url');
-      return { items: page.items, ...(page.registered ? { registered: page.registered } : {}), nextCursor, complete: nextCursor === null };
+      const {nextSourceId: _after, ...contents} = page;
+      return { ...contents, nextCursor, complete: nextCursor === null };
     },
   };
 }

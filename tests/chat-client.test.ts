@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ChatApiError, type ChatApi } from "../src/client/chat-api.ts";
+import { ChatApiError, createChatApi, type ChatApi } from "../src/client/chat-api.ts";
 import { ChatController } from "../src/client/chat-controller.ts";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
 
@@ -24,9 +24,106 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+test("a terminal reply is available while transport cleanup is still pending", async () => {
+  const cleanup = deferred<void>();
+  const frame = { type: "result", status: 200, body: { message: modelMessage() } };
+  const response = new Response(new ReadableStream<Uint8Array>({
+    start(stream) { stream.enqueue(new TextEncoder().encode("data: " + JSON.stringify(frame) + "\n\n")); },
+    cancel() { return cleanup.promise; },
+  }), { headers: { "content-type": "text/event-stream" } });
+  const api = createChatApi("", async () => alice, async () => response);
+  const pending = api.requestReply(firstChild, "message-1", new AbortController().signal, alice.id, () => {});
+  try {
+    assert.deepEqual(await Promise.race([pending, settle().then(() => null)]), modelMessage());
+  } finally { cleanup.resolve(); await pending; }
+});
+
+test("a silent reply channel detaches after missed heartbeats while live heartbeats keep it open", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let emit!: (frame: string) => void;
+  const listening = deferred<void>();
+  let transportSignal!: AbortSignal;
+  const api = createChatApi("", async () => alice, async (_url, init) => {
+    transportSignal = init!.signal!;
+    return new Response(new ReadableStream<Uint8Array>({
+      start(controller) {
+        emit = frame => controller.enqueue(new TextEncoder().encode(frame));
+        transportSignal.addEventListener("abort", () => controller.error(new Error("aborted")), { once: true });
+        listening.resolve();
+      },
+    }), { headers: { "content-type": "text/event-stream" } });
+  });
+  const request = api.requestReply(firstChild, "message-1", new AbortController().signal, alice.id, () => {});
+  await listening.promise; await new Promise<void>(resolve => setImmediate(resolve));
+  for (let i = 0; i < 5; i++) {
+    t.mock.timers.tick(15_000);
+    assert.equal(transportSignal.aborted, false);
+    emit(": keepalive\n\n");
+    await new Promise<void>(resolve => setImmediate(resolve));
+  }
+  t.mock.timers.tick(46_000);
+  try { assert.equal(transportSignal.aborted, true); }
+  finally {
+    if (!transportSignal.aborted) emit('data: {"type":"result","status":503,"body":{}}\n\n');
+    await assert.rejects(request, ChatApiError);
+  }
+});
+
 async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
+
+test("send immediately displays the submitted turn while the receipt is pending", async () => {
+  const { values, controller, api } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  const receipt = deferred<void>();
+  const save = api.saveMessage;
+  api.saveMessage = async (...args) => { await receipt.promise; return save(...args); };
+  controller.setText(original);
+  const sending = controller.send();
+  assert.equal(controller.getSnapshot().outgoing?.text, original);
+  assert.equal(controller.getSnapshot().messages.length, 0);
+  controller.setText("下一句");
+  assert.equal(controller.getSnapshot().drafts[firstChild].nextText, "下一句");
+  await controller.send();
+  receipt.resolve(); await sending;
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  assert.equal(values.saves, 1);
+  assert.deepEqual(values.messages.filter(row => row.role === "user").map(row => row.text), [original]);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, "下一句");
+  controller.dispose();
+});
+
+test("an attachment appears at tap time and a late upload cannot send into a different conversation", async () => {
+  const { values, controller } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  const upload = deferred<{ id: string; version: number }>();
+  const sending = controller.send(undefined, undefined, undefined, {}, {
+    kind: "voice", label: "語音訊息", prepare: () => upload.promise,
+  });
+  assert.equal(controller.getSnapshot().outgoing?.attachmentLabel, "語音訊息");
+  controller.setText("下一句");
+  controller.syncContext(alice.id, true, secondChild);
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  upload.resolve({ id: "voice", version: 1 }); await sending;
+  assert.equal(values.saves, 0);
+  assert.equal(controller.getSnapshot().drafts[secondChild]?.text ?? "", "");
+  controller.dispose();
+});
+
+test("a failed upload restores the editable caption before any chat write", async () => {
+  const { values, controller } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  controller.setText(original);
+  await controller.send(undefined, undefined, undefined, {}, {
+    kind: "file", label: "作息表.pdf", prepare: async () => null,
+  });
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, original);
+  assert.equal(controller.getSnapshot().drafts[firstChild].phase, "draft");
+  assert.equal(values.saves, 0);
+  controller.dispose();
+});
 
 test("editing the next draft and stopping twice targets only the original saved message", async () => {
   const { values, api, controller } = fixture();
@@ -53,16 +150,21 @@ test("an explicitly queued next question is sent once after the first reply; wit
     const { values, controller, api } = fixture();
     const started = deferred<void>(), finish = deferred<void>();
     const reply = api.requestReply;
+    const savedContexts: unknown[] = [];
+    const save = api.saveMessage;
+    api.saveMessage = (...args) => { savedContexts.push(args[7]?.pageContext); return save(...args); };
     api.requestReply = async (...args) => { started.resolve(); await finish.promise; return reply(...args); };
     controller.syncContext(alice.id, true, firstChild); await settle();
     controller.setText("第一句");
     const run = controller.send(); await started.promise;
-    controller.setText("第二句"); controller.queueNextText(); controller.queueNextText();
+    const task = { page: "/tasks" as const, item: { kind: "task" as const, id: firstChild, version: 1 } };
+    controller.setText("第二句"); controller.queueNextText(task); controller.queueNextText({ page: "/care" });
     if (withdraw) controller.unqueueNextText();
     assert.equal(values.saves, 1);
     finish.resolve(); await run; await settle();
     assert.equal(values.saves, withdraw ? 1 : 2);
     assert.equal(values.replies, withdraw ? 1 : 2);
+    assert.deepEqual(savedContexts, withdraw ? [undefined] : [undefined, task]);
     assert.equal(controller.getSnapshot().drafts[firstChild].text, withdraw ? "第二句" : "");
     controller.dispose();
   }

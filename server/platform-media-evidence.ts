@@ -27,7 +27,7 @@ export async function loadMediaOriginals(link: string, signal: AbortSignal, fetc
   const canonical = platformMediaLink(link);
   if (!canonical) throw Error('knowledge_media_url_invalid');
   const id = youtubeVideoId(new URL(canonical)), page = id ? officialVideoPages.get(id) : canonical;
-  let transcript = '', streams = [canonical];
+  let transcript = '', fingerprintTranscript = '', streams = [canonical];
   const captionsByStream = new Map<string, MediaCue[]>();
   async function exact(url: string, accept: string) {
     const result = await fetcher(url, value => {
@@ -44,7 +44,11 @@ export async function loadMediaOriginals(link: string, signal: AbortSignal, fetc
     // A direct link selects one stream, but cannot disambiguate a page-wide script.
     const singleStream = streams.length === 1;
     if (singleStream) {
-      transcript = html('#transcript').text().replace(/\s+/gu, ' ').trim();
+      const block = html('#transcript').clone();
+      // Previously confirmed timecodes use the full publisher block in their edition fingerprint.
+      fingerprintTranscript = block.text().replace(/\s+/gu, ' ').trim();
+      block.find('h3,#wcag-audio-toggle,#wcag-audio,audio,video,script,style').remove();
+      transcript = block.text().replace(/\s+/gu, ' ').trim();
       if (transcript.length > 64000) throw Error('knowledge_media_transcript_too_large');
     }
     if (id) streams = streams.filter(url => youtubeVideoId(new URL(url)) === id);
@@ -68,6 +72,6 @@ export async function loadMediaOriginals(link: string, signal: AbortSignal, fetc
   return streams.map(url => {
     const captions = captionsByStream.get(url) ?? [];
     const video = youtubeVideoId(new URL(url)), duration = video ? knownVideoDurations[video] : undefined;
-    return { url, hash: knowledgeHash(['public-media/1', url, captions, transcript]), captions, transcript, ...(duration ? { duration } : {}) };
+    return { url, hash: knowledgeHash(['public-media/1', url, captions, fingerprintTranscript]), captions, transcript, ...(duration ? { duration } : {}) };
   });
 }
