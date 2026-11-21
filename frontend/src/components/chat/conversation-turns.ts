@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../../../../src/shared/chat';
+import type { ChatMessage } from '../../../../src/shared/chat.ts';
 
 type Discussion = { question: ChatMessage; reply?: ChatMessage };
 
