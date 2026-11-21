@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-115-image-count",
+  "base": {
+    "siteVersion": 116,
+    "htmlSha256": "9a31627236474209fabdaf9008305eeafe7a25e776610abfa00db1ed83c8de88",
+    "rawRecordsSha256": "4009b665a6252bc474489672d3c5fe8ccbfa845177a2d8aedae237553e23d659",
+    "rawArtworkSha256": "f6e2008e5d4c3295d58c0eae81599efa0834fc629aad516ad4f7a9d851f03f2c",
+    "topics": 53,
+    "choices": 109,
+    "images": 109
+  },
+  "topics": [
+    {
+      "number": 54,
+      "title": "教師空間：課程與成員怎樣找",
+      "choices": [
+        {
+          "name": "教師空間比較 A｜課程與成員各有頁面",
+          "note": "課程列表先顯示連結課程及發佈標記，另有獨立成員入口；畫面不以發佈標記推斷誰可讀取。",
+          "links": [
+            {
+              "label": "固定版本原始碼：教學小組課程頁",
+              "url": "https://github.com/classroomio/classroomio/blob/75cde7fe2c20f8d85de1e21ae509b6395f98e164/apps/dashboard/src/routes/%28app%29/cohorts/%5Bid%5D/courses/%2Bpage.svelte#L94-L183"
+            },
+            {
+              "label": "同一版本：課程與成員分開的側欄",
+              "url": "https://github.com/classroomio/classroomio/blob/75cde7fe2c20f8d85de1e21ae509b6395f98e164/apps/dashboard/src/lib/features/cohort/components/sidebar/cohort-sidebar-navigation.svelte#L31-L68"
+            },
+            {
+              "label": "原方整頁參考圖（連結）",
+              "url": "https://github.com/classroomio/classroomio/blob/75cde7fe2c20f8d85de1e21ae509b6395f98e164/apps/help/content/help/manage-learners/images/add-courses-to-a-cohort/overview.webp"
+            }
+          ],
+          "asset": {
+            "input": "draft-teachers/teachers-a-cohort-courses.png",
+            "sha256": "05f36342e29af5ec595b30e3d83ad9e22d67890f23a887b115e0d80a37a78848",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "教學小組的課程頁示意。右側列出兩個連結課程與發佈狀態，成員只在左欄作為另一頁入口，沒有展開成員資料。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台自製 · 參考 ClassroomIO 課程與成員入口（非官方原圖）"
+          }
+        },
+        {
+          "name": "教師空間比較 B｜同頁核對導師與課程",
+          "note": "同一教學小組的設定並列導師與連結課程，另列各課程的評核員，方便核對分工。",
+          "links": [
+            {
+              "label": "固定版本原始碼：學習批次設定",
+              "url": "https://github.com/frappe/lms/blob/4d7090c2be366db97a7000c92e8d693f6b92a350/frontend/src/pages/Batches/BatchForm.vue"
+            },
+            {
+              "label": "同一版本：批次導師欄位",
+              "url": "https://github.com/frappe/lms/blob/4d7090c2be366db97a7000c92e8d693f6b92a350/frontend/src/pages/Batches/BatchForm.vue#L142-L168"
+            },
+            {
+              "label": "同一版本：嵌入課程欄",
+              "url": "https://github.com/frappe/lms/blob/4d7090c2be366db97a7000c92e8d693f6b92a350/frontend/src/pages/Batches/BatchForm.vue#L287-L299"
+            },
+            {
+              "label": "同一版本：課程與評核員",
+              "url": "https://github.com/frappe/lms/blob/4d7090c2be366db97a7000c92e8d693f6b92a350/frontend/src/pages/Batches/components/BatchCourses.vue#L68-L105"
+            }
+          ],
+          "asset": {
+            "input": "draft-teachers/teachers-b-batch-settings.png",
+            "sha256": "67966e25b7391440fba052ab97b2d661044138e3d5629d35aa9975cdcc36a3ac",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "學習批次設定頁示意。左欄顯示兩位虛構批次導師，右欄列出兩個已連結課程及各自的評核員欄，沒有學生名冊。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台自製 · 參考 Frappe Learning 批次設定（非官方原圖）"
+          }
+        }
+      ]
+    },
+    {
+      "number": 55,
+      "title": "附件庫：對照日期、類型與原件",
+      "choices": [
+        {
+          "name": "附件庫比較 A｜按日期掃視照片與影片",
+          "note": "按日期分組看照片與影片，保留所選原件及返回時間軸的位置；文件不擠進圖牆。",
+          "links": [
+            {
+              "label": "固定版本原始碼：照片頁路由",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/routes/%28user%29/photos/%5B%5BassetId%3Did%5D%5D/%2Bpage.svelte#L91-L112"
+            },
+            {
+              "label": "同一版本：時間軸",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/lib/components/timeline/Timeline.svelte#L587-L666"
+            },
+            {
+              "label": "同一版本：日期分組",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/lib/components/timeline/Month.svelte#L49-L109"
+            },
+            {
+              "label": "同一版本：縮圖列",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/lib/components/assets/thumbnail/Thumbnail.svelte#L241-L278"
+            },
+            {
+              "label": "同一版本：原件檢視",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/lib/components/timeline/TimelineAssetViewer.svelte#L99-L106"
+            },
+            {
+              "label": "同一版本：查找方式的測試",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/web/src/lib/managers/timeline-manager/timeline-manager.svelte.spec.ts#L78-L165"
+            },
+            {
+              "label": "原方視覺資料（連結）",
+              "url": "https://github.com/immich-app/immich/blob/b6b4b80df113656bfa4872cab31c7319e89438a9/design/immich-screenshots.png"
+            }
+          ],
+          "asset": {
+            "input": "draft-attachments/a-date-group-gallery.png",
+            "sha256": "952f585abaa603cecfe09ddc386342099a255b45ca0271232232c03fd2cff462",
+            "dimensions": [
+              1440,
+              900
+            ],
+            "alt": "自製整頁示意：在同一範圍按兩日分組排列四個幾何照片縮圖和一個影片縮圖。右側為所選「示例－色塊練習.png」的日期、類型、大小和可讀狀態；返回原時間軸位置。文件留在其他分類。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "本工作台自製 · 參考 Immich 日期分組與原件查找（非官方原圖）"
+          }
+        },
+        {
+          "name": "附件庫比較 B｜按檔名及類型找原件",
+          "note": "先以檔名搜尋，再按類型縮減清單，並排核對同一示例原件的日期、類型與大小。",
+          "links": [
+            {
+              "label": "固定版本原始碼：檔案列表",
+              "url": "https://github.com/nextcloud/server/blob/7764ef4927e5f85071e495ce7602ccd247bb6b30/apps/files/src/views/FilesList.vue#L57-L95"
+            },
+            {
+              "label": "同一版本：篩選工具列",
+              "url": "https://github.com/nextcloud/server/blob/7764ef4927e5f85071e495ce7602ccd247bb6b30/apps/files/src/components/FileListFilter/FileListFilters.vue#L30-L92"
+            },
+            {
+              "label": "同一版本：類型篩選",
+              "url": "https://github.com/nextcloud/server/blob/7764ef4927e5f85071e495ce7602ccd247bb6b30/apps/files/src/filters/TypeFilter.ts#L30-L106"
+            },
+            {
+              "label": "同一版本：列表欄位",
+              "url": "https://github.com/nextcloud/server/blob/7764ef4927e5f85071e495ce7602ccd247bb6b30/apps/files/src/components/FileEntry.vue#L30-L84"
+            },
+            {
+              "label": "同一版本：查找方式的測試",
+              "url": "https://github.com/nextcloud/server/blob/7764ef4927e5f85071e495ce7602ccd247bb6b30/tests/playwright/e2e/files/files-filtering.spec.ts#L9-L87"
+            },
+            {
+              "label": "原方視覺資料（連結）",
+              "url": "https://github.com/nextcloud/documentation/blob/8ee3a8c49e205916e2e9adda6633c3e0dcb58b08/user_manual/images/users-files.png"
+            }
+          ],
+          "asset": {
+            "input": "draft-attachments/b-filter-name-type-list.png",
+            "sha256": "7cc33c21f5397341a5f04cea6a0c6c27765cfe018443097cb6c94061a04bee9b",
+            "dimensions": [
+              1440,
+              900
+            ],
+            "alt": "自製整頁示意：以「示例」查找，在六項中按照片和文件篩出五項。每列有檔名、類型、建立時間及大小；右側核對與 A 相同的「示例－色塊練習.png」。影片不在本次篩選結果。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "本工作台自製 · 參考 Nextcloud Files 檔名與類型篩選（非官方原圖）"
+          }
+        }
+      ]
+    },
+    {
+      "number": 56,
+      "title": "成長檔案：按期間找，或按指定版閱讀",
+      "choices": [
+        {
+          "name": "成長檔案比較 A｜先找期間，再選版次",
+          "note": "先按年度、季度或日期範圍找報告，核對涵蓋程度、整理日期及同期間版次，再選一版閱讀。",
+          "links": [
+            {
+              "label": "原方發布索引（會變動）",
+              "url": "https://www.bea.gov/news/archive?created_1=All&field_related_product_target_id=456&title="
+            },
+            {
+              "label": "原方同期間：2025 年第 2 季初估 PDF",
+              "url": "https://www.bea.gov/sites/default/files/2025-07/gdp2q25-adv.pdf"
+            },
+            {
+              "label": "原方同期間：2025 年第 2 季次估 PDF",
+              "url": "https://www.bea.gov/sites/default/files/2025-08/gdp2q25-2nd.pdf"
+            },
+            {
+              "label": "原方同期間：2025 年第 2 季第三估 PDF",
+              "url": "https://www.bea.gov/sites/default/files/2025-09/gdp2q25-3rd.pdf"
+            }
+          ],
+          "asset": {
+            "input": "draft-archive/archive-a-period-first.png",
+            "sha256": "ac5d7a5298228197c75f4e10b2bf7a8932bf3b648113bca99aefc0c5a87a4c74",
+            "dimensions": [
+              1440,
+              940
+            ],
+            "alt": "成長檔案期間清單的合成示意。上方可按年度、季度或日期範圍篩選；列表組合相同期間，各期間顯示完整度，各版本顯示整理日期及版號。示例 2030 年第 2 季版本 2 取代版本 1，兩版仍可作獨立閱讀。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "本工作台自製 · 參考 BEA 同期間的發布版次（非官方原圖）"
+          }
+        },
+        {
+          "name": "成長檔案比較 B｜讀所選版，再查其他版次",
+          "note": "先讀所選版本正文，旁邊列可切換的其他版次；有較新版也不會自動換掉正在閱讀的舊版。",
+          "links": [
+            {
+              "label": "固定版本原始碼：報告閱讀頁",
+              "url": "https://github.com/inveniosoftware/invenio-app-rdm/blob/7ce5b430f37a20ed56f2f66b683c50a4c18ac7a6/invenio_app_rdm/records_ui/templates/semantic-ui/invenio_app_rdm/records/detail.html"
+            },
+            {
+              "label": "同一版本：版次側欄",
+              "url": "https://github.com/inveniosoftware/invenio-app-rdm/blob/7ce5b430f37a20ed56f2f66b683c50a4c18ac7a6/invenio_app_rdm/records_ui/templates/semantic-ui/invenio_app_rdm/records/details/side_bar/versions.html"
+            },
+            {
+              "label": "同一版本：檔案預覽區",
+              "url": "https://github.com/inveniosoftware/invenio-app-rdm/blob/7ce5b430f37a20ed56f2f66b683c50a4c18ac7a6/invenio_app_rdm/records_ui/templates/semantic-ui/invenio_app_rdm/records/macros/files.html"
+            }
+          ],
+          "asset": {
+            "input": "draft-archive/archive-b-edition-reader.png",
+            "sha256": "1720e02d98b40f1b99e284093ada341f945dfad19f3eee7d6cff7a9d84311d65",
+            "dimensions": [
+              1440,
+              940
+            ],
+            "alt": "成長檔案逐版閱讀的合成示意。主區正文已鎖定示例 2030 年第 2 季的版本 1，側欄突出目前所讀版本並列出可切換的版本 2；舊版提示不會自動切換。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "本工作台自製 · 參考 InvenioRDM 指定版閱讀（非官方原圖）"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 54 題 · 教師空間兩幅自製合成示意",
+      "input": "draft-teachers/DECLARATION.txt",
+      "sha256": "b95f0e60c833a923ccded76ca7050a243efb5f8f0b282d66c5222a77fd1ec678"
+    },
+    {
+      "heading": "第 55 題 · 附件庫兩幅自製合成示意",
+      "input": "draft-attachments/DECLARATION.txt",
+      "sha256": "dfa411a4a3b73fbd32960172417cb65ccfbef21bbaf2d6d02727c187e93fdf3f"
+    },
+    {
+      "heading": "第 56 題 · 成長檔案兩幅自製合成示意",
+      "text": "兩張為從空白畫布獨立繪製的非官方整頁示意，沒有使用原方截圖、品牌、數據、文稿、檔案或程式碼。成長資訊、期間和版次全為虛構，沒有孩子、監護人、量度、健康紀錄或實際 PDF；所有圖中控制不可操作。BEA 索引會變動，日期版本 PDF 只作來源錨，未聲稱核證該等原件位元組。InvenioRDM 版式參考有固定版本，原方程式碼授權為 MIT。圖像只用已安裝 Noto Sans CJK HK 渲染文字，未分發字型。"
+    }
+  ]
+}
