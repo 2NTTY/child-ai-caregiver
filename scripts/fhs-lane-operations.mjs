@@ -82,7 +82,7 @@ export function createLaneOperations(persistence, fetchSource, lane) {
       work.inspect(request),
     ]);
     let operation = classifyLaneOperation(source, check, saved, active, tickets);
-    const revision = pin && lane === 'C2' && matchesFhsPdfObservation(source, check)
+    const revision = pin && matchesFhsPdfObservation(source, check)
       && bindReviewedWindow(manualPublicationPin(id),operationFingerprint,saved);
     let repair;
     const firstDispatch = pin && matchesFhsPdfObservation(source,check) && bindFirstDispatch(manualPublicationPin(id),operationFingerprint,saved);
