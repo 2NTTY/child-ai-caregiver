@@ -88,7 +88,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 11 月 21 日香港 01:08，按早上 09:00 原清單逐份對回正式卡庫及原工作。116 份當中，26 張家長卡的生效版本、31 個文件向量及引用實頁已有收據。另有 51 份有保留決定，6 份以未結算原預留列帳，15 份已有工作但尚未核得終態，18 份當時查無原工作及供應商票據。12 份超過 20 頁的原件仍待交出首張完整長檔卡，現有 26 張最長 8 頁。[116 份逐項對照](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
-C3 已將四宗 Vertex HTTP 400 各自對回唯一原票據。按 Google 的計費條款，這四次 Gemini 3.8 Flash 的輸入及輸出費用均為零。C1 可按票據及錯誤收據指紋核對 US$6.537216 的預留。01:08 原帳可用 US$0.531586。若只結清這四筆，當時可用額會變為 US$7.068802。24 頁《奶瓶餵哺指引》仍欠供應商回應。[Google Cloud 計費條款](https://cloud.google.com/model-garden/pricing) · [原票據對照](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+C3 已將四宗 Vertex HTTP 400 各自對回唯一原票據。按 Google 的計費條款，這四次 Gemini 3.8 Flash 的輸入及輸出費用均為零。按主線最新分工，原 C 負責按票據及錯誤收據指紋核對 US$6.537216 的預留。01:08 原帳可用 US$0.531586。若只結清這四筆，當時可用額會變為 US$7.068802。24 頁《奶瓶餵哺指引》仍欠供應商回應。[Google Cloud 計費條款](https://cloud.google.com/model-garden/pricing) · [原票據對照](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 11 月 21 日香港 00:53，C3 已逐份對帳 28 份原單、468 頁。5 張正式家長卡的 10 個文件向量均可匯出，引文已對上原 PDF 實頁。16 份按內容核對保留，其中 9 份適用年齡未確定、6 份引文未能核對、1 份經獨立分窗審核保留。另有 2 份技術或額度保留。《交朋友》的獨立審核結果未明，原單只有首筆已結算生成。80 頁《共享育兒樂（五）》立單至保留期間，帳本可用 US$0.531586，未能預留一次生成所需的 US$1.634304，該冊沒有供應商票據。[逐份來源、版本、向量、實頁及原帳](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 

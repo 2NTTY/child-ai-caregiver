@@ -2277,7 +2277,7 @@
       "pricing": "https://cloud.google.com/model-garden/pricing",
       "pricingCheckedOn": "2026-11-21 Asia/Hong_Kong",
       "rule": "A returned HTTP 400 carries no input or output token charge under the published Google Cloud rule. The November 13 timeout provision concerns Gemini 4 completions above 32K tokens. Each of these four original requests had one authenticated SDK error and one matching original generation reservation.",
-      "accounting": "C1 can reconcile the four identified reservations against the original source, operation, stage and ticket. Token usage was not returned. No zero-token measurement or ledger settlement is asserted. The 24-page bottle-feeding request had no matched provider response and is excluded.",
+      "accounting": "The original C production coordinator now owns reconciliation of the four identified reservations against the original source, operation, stage and ticket. Token usage was not returned. No zero-token measurement or ledger settlement is asserted. The 24-page bottle-feeding request had no matched provider response and is excluded.",
       "observedLedgerMicros": {
         "limit": 30000000,
         "settled": 9918206,
