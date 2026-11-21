@@ -28,10 +28,11 @@ export function platformCardProviders(domain: FirestoreDomainOptions, config: Ai
       dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts };
   }
   const analyze: MediaAnalyzer = async (original, signal, authorize) => {
+    if (original.transcript.trim() || original.captions.length) throw Error('knowledge_media_text_available');
     const cfg = await route(), native = createVertexAgentProvider(cfg);
     const instruction = await readFile(new URL('../prompts/modules/platform-media-timing.md', import.meta.url), 'utf8');
     const mimeType = original.url.endsWith('.mp3') ? 'audio/mpeg' : original.url.endsWith('.m4a') ? 'audio/mp4' : 'video/mp4';
-    const contents = [{ role: 'user', parts: [{ text: original.transcript || '此影音未有官方講稿。' },
+    const contents = [{ role: 'user', parts: [{ text: '此影音未有官方講稿。' },
       { fileData: { fileUri: original.url, mimeType } }] }];
     const request = { kind: 'model' as const, budgetPurpose: 'knowledge_maintenance' as const,
       rootRunId: knowledgeOperationId('platform-media/1', original.hash), attemptKey: 'align-public-media',
@@ -49,7 +50,6 @@ export function platformCardProviders(domain: FirestoreDomainOptions, config: Ai
       cachedTokens: response.usageMetadata?.cachedContentTokenCount ?? null, durationMs: Date.now() - started });
     if (response.finishReason !== 'STOP') throw Error('knowledge_media_incomplete');
     const cues = z.array(mediaCue).min(1).max(200).parse(JSON.parse(response.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('') ?? ''));
-    if (original.transcript && cues.some(cue => !original.transcript.includes(cue.text))) throw Error('knowledge_media_transcript_mismatch');
     return cues;
   };
   async function indexReviewed(versionId: string, versionHash: string) {

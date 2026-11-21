@@ -13,6 +13,7 @@ export const OFFICIAL_HELP = {
 } as const;
 
 export const AGENT_PROGRESS_MAX_SOURCES = 6;
+export const CHAT_STREAM_HEARTBEAT_MS = 15_000;
 
 export const agentProgressSourceSchema = z.object({
   chunkId: z.string().min(1).max(120),

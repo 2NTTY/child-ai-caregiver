@@ -2,6 +2,17 @@ import type { KnowledgeCandidate, KnowledgeEvidence } from "../src/shared/knowle
 
 const RRF_K = 60;
 const MAX_RESULTS = 6;
+
+/** Keep the best hit from each matching material ahead of further passages from the same material. */
+export function firstHitPerSource<T>(rows: readonly T[], source: (row: T) => string) {
+  const seen = new Set<string>(), first: T[] = [], rest: T[] = [];
+  for (const row of rows) {
+    const id = source(row);
+    if (seen.has(id)) rest.push(row);
+    else { seen.add(id); first.push(row); }
+  }
+  return first.concat(rest);
+}
 const QUESTION_PHRASES = /請問|想知道|想知|點樣|點算|點解|有冇|有無|係咪|是否|如何|怎樣|甚麼|什麼|乜嘢|可唔可以|可以|應該|(?<!頭|這|呢|近|首|前|上|下)幾多?個月大?|幾時|邊度|洗唔洗|使唔使|要唔要|會唔會|好唔好/gu;
 const QUESTION_PARTICLES = /[嗎呢呀啊嘛啦吧㗎嘅]/gu;
 const LATIN_FILLERS = new Set(["a", "an", "the", "is", "are", "what", "how", "can", "should", "please"]);

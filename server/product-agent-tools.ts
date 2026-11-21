@@ -914,7 +914,8 @@ export function createProductAgentTools(options: {
           { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
             budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
         const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
-        const result = { ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
+        const result = { complete: true, omittedChunks: 0, returned: 0, hasMore: false,
+          ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext };
         result.returned = result.chunks.length;
         if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
         const allowance = Math.max(0, budget.toolResponseCharacters - 512);

@@ -1,5 +1,6 @@
 import type { Transaction } from '@google-cloud/firestore';
 import type { PlatformMediaStore } from './firestore-platform-media.ts';
+import { mediaWithoutPages } from '../src/shared/platform-media.ts';
 import { platformMaterials } from './platform-materials.ts';
 import { platformCardCommand, type PlatformCardPreview } from '../src/shared/admin-platform-cards.ts';
 import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
@@ -40,9 +41,9 @@ export function createAdminPlatformCards(store: FirestoreKnowledgeStore, readCon
       const changed = await media.database.runTransaction(async tx => {
         await enabled(tx); return media.toggle(tx, cmd.sourceId, cmd.enabled, cmd.revision);
       });
-      if (!cmd.enabled || !processMedia) return changed;
+      if (!cmd.enabled || !processMedia) return mediaWithoutPages(changed);
       await processMedia(cmd.sourceId, AbortSignal.timeout(300000));
-      return media.database.runTransaction(tx => media.read(tx, cmd.sourceId));
+      return mediaWithoutPages(await media.database.runTransaction(tx => media.read(tx, cmd.sourceId)));
     }
     if (cmd.action === 'draft') {
       const source = parseKnowledgeSource(cmd.source);
@@ -80,6 +81,6 @@ export function createAdminPlatformCards(store: FirestoreKnowledgeStore, readCon
     return edition?.enabled ? { versionId: edition.versionId, source: edition.source } : null;
   }, async mediaStatus(id: string) {
     if (!media) domainReject('knowledge_media_unavailable', 503);
-    return media.database.runTransaction(tx => media.read(tx, id), { readOnly: true });
+    return mediaWithoutPages(await media.database.runTransaction(tx => media.read(tx, id), { readOnly: true }));
   } };
 }

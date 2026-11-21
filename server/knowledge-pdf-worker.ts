@@ -1,4 +1,5 @@
 import { repairPdfGlyphs, type PdfTextItem } from "./knowledge-pdf-glyphs.ts";
+import { unmappedPdfFonts } from "./knowledge-pdf-font-maps.ts";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +31,7 @@ class LocalBinaryDataFactory {
 
 async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
   const { data, startPage, pageLimit, includePagePdf } = workerData as { data: Uint8Array; startPage: number; pageLimit: number; includePagePdf?: boolean };
+  const unmapped = await unmappedPdfFonts(data, startPage, pageLimit);
   const task = getDocument({
     data,
     stopAtErrors: true,
@@ -61,6 +63,16 @@ async function extract(): Promise<Omit<KnowledgePdfResult, "fileHash">> {
         const items = content.items.filter(item => "str" in item);
         if (items.reduce((sum, item) => sum + item.str.length + 1, 0) > maxPageCharacters)
           throw new Error("knowledge_pdf_page_too_long");
+        const fonts = unmapped.get(pageNumber);
+        if (fonts) {
+          await page.getOperatorList();
+          // Keep independent text from other fonts on a mixed page. PDF display
+          // uses outlines and stays intact even when a text item cannot be cited.
+          for (const item of items) {
+            const face = page.commonObjs.has(item.fontName) && page.commonObjs.get(item.fontName);
+            if (!face || fonts.has("") || fonts.has(face.name)) item.str = "\ufffd";
+          }
+        }
         layers.push({ page, items });
       } catch {
         pages.push({ page: pageNumber, text: "", status: "unreadable" });

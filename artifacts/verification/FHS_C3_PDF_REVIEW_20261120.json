@@ -5918,5 +5918,518 @@
       }
     ],
     "confirmation": "The released receipt accepted the mounted comic index and read the original terminal result. The unchanged original attachments and all 36 parent pages were opened locally through the pinned reader; the held work has no independent review, family version or published citation to verify. The two larger source-specific packs have been reopened locally; their original jobs remain unstarted at the last scoped ledger read."
+  },
+  "fontMapBoundPdfInputs": {
+    "scope": {
+      "originals": 116,
+      "physicalPages": 1471,
+      "familyEnabled": 34,
+      "withActiveVersion": 35,
+      "longOriginals": 12,
+      "longEnabled": 0,
+      "familyEnabledByLane": {
+        "C": 18,
+        "C1": 1,
+        "C2": 10,
+        "C3": 5
+      }
+    },
+    "grossMicros": {
+      "held": 4872192,
+      "spent": 10944124,
+      "limit": 30000000
+    },
+    "producerCommit": "69d458641d872ff48fcd0c899c9007ab3719635c",
+    "parser": "4e5d2d51168172b6567198645cadbde6016d77bce1985662fb76871106a1194e",
+    "oldParserRejected": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "newProviderCalls": 0,
+    "productionWrites": 0,
+    "archiveDirectory": ".cache/fhs-preflight/c3-font-map-packets",
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "owner": "C3",
+        "pages": 4,
+        "sourceSha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "originalOperation": "087edc22f8959f5c80522ec9c087315ed05b84272ad8ef00a188f680f3d3d4fa",
+        "observationHash": "82a0bea4fd603a2538f9715177a18e99ede52ccc2fc650b1fce5741c84afc49d",
+        "indexSha256": "53bed66df8ceeb5028c9e749f53db7f4003e9a147f0330a9352a209bde7332a7",
+        "records": 5,
+        "archive": "pdf-1d48962862d76b3ffc07490b.tar.gz",
+        "archiveSha256": "f65a30b32d0c87a0decb5baf1a7be729965450b229aca622988b03a836b70405",
+        "archiveBytes": 2202998,
+        "originalTickets": 2,
+        "active": false,
+        "readbackSha256": "d6540fabcc589467ffbf4fc3b82826c8eeb82573b252300a131ca1b78e36c34b",
+        "coveredPhysicalPages": [
+          1,
+          4
+        ],
+        "core": [
+          1,
+          4
+        ],
+        "recordedAttachmentSha256": "685fe2d9987bf83074e4131daa5610e7e2cb4c7400c15f3271a1081ecd1ec2d8",
+        "freshAttachmentSha256": "27ff99f2a141e1c8df43c77d1ea7685aeffb8a67aaa4a502bdd7117145623bf1",
+        "organizerStage": "09ef4cdb1158ae937c305ad35a17e22e64aa5d7fa1edc8ebcec866fc82362d2c",
+        "settledGenerationStages": [
+          "09ef4cdb1158ae937c305ad35a17e22e64aa5d7fa1edc8ebcec866fc82362d2c",
+          "50d1b19d9cb991dd6679676a281eb47098ca38fa0731a242e7b14c9d08e88f4c"
+        ],
+        "registeredQuoteReadback": [
+          {
+            "page": 2,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "c9b8341230b4a7e001482206ef154d889f01dd8f8740562377a1a3dd8a2a82ca",
+            "retained": true
+          },
+          {
+            "page": 3,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "1b5bc49a688b893712322d6de8af03fcedc3ebb1b93fad2ef46c92fa64ec5845",
+            "retained": true
+          },
+          {
+            "page": 4,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "2deea3c16113f11ba7a59e360460797256ce0ef7247fbd95be913c08d030f9e1",
+            "retained": true
+          }
+        ],
+        "matchesPriorObservation": true
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "owner": "C3",
+        "pages": 4,
+        "sourceSha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "originalOperation": "ec8b8dd5c42c99cfcc6cae1354123592b287d94f2aedc248b6b259618dfb464d",
+        "observationHash": "489754d082370c2b269c6516d3a7d915bebaa457e57ff2d68c4971f53ba889ae",
+        "indexSha256": "5dfcf6a7d51f52dd8f7055865d81971234a70dae83401f55a8254ac5ae4f3bd2",
+        "records": 5,
+        "archive": "pdf-a251b7696c8d6660d7aad77e.tar.gz",
+        "archiveSha256": "10ca224e546040663c6a12268587bee7f85f3e565ea7bbbbddb2a75a55d5eb05",
+        "archiveBytes": 2337940,
+        "originalTickets": 2,
+        "active": false,
+        "readbackSha256": "c90d4569bd65030bdeddfb5db86ddaecaafe08d18639529f08ea260223886fa3",
+        "coveredPhysicalPages": [
+          1,
+          4
+        ],
+        "core": [
+          1,
+          4
+        ],
+        "recordedAttachmentSha256": "bff90208035edf5664adf9c916f181bb8206583d89e5fe983f86b2db2aac9a37",
+        "freshAttachmentSha256": "9cd1baf52ec0d5a105f0d5439ae516912a94eec5e737cc40cb4f95364659a763",
+        "organizerStage": "597e1707da73873b1b64f462e1b5cf62e04853c0cbacf6cfcbb7ecbfb018725b",
+        "settledGenerationStages": [
+          "597e1707da73873b1b64f462e1b5cf62e04853c0cbacf6cfcbb7ecbfb018725b",
+          "46cf743ef6113029ad6457075f0d632d6d9ee7c5a60c750d30f3ab697fc9b8c4"
+        ],
+        "registeredQuoteReadback": [
+          {
+            "page": 2,
+            "status": "text",
+            "proof": "printed",
+            "registeredSha256": "555fafba3caa200a407467e0811e8234ac7310bff155b7ebc989178b6120ce11",
+            "retained": true
+          },
+          {
+            "page": 3,
+            "status": "text",
+            "proof": "printed",
+            "registeredSha256": "3ccea9631b1478e42dacf45558573d84ea2d0bba8c8db2b8ccebfb25c60c772d",
+            "retained": true
+          },
+          {
+            "page": 4,
+            "status": "text",
+            "proof": "printed",
+            "registeredSha256": "1171d774fddaffba218fc8f3b11a07c0328743cd749f5999eb0e5eba88c14859",
+            "retained": true
+          }
+        ],
+        "matchesPriorObservation": true
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "owner": "C3",
+        "pages": 8,
+        "sourceSha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "originalOperation": "053975a27113c4f564e3440ee1279944b2bcaf20f4e31ea5ed3e1e78f9489e9c",
+        "observationHash": "ec13832e46f5dd82039c7fabe06151e53625f697e1c4b70fbdbfe8340c091e9b",
+        "indexSha256": "d46ee862e0fad20f3df6b2aa42eebdfa4fa966b479fdee6024f547a66d0cc1fe",
+        "records": 4,
+        "archive": "pdf-27dda724b8a16c0794cd0ffe.tar.gz",
+        "archiveSha256": "a86a956d34a449509e8be9c89b7ec8b15c34898371d52965746e2effcb645f0e",
+        "archiveBytes": 4741651,
+        "originalTickets": 2,
+        "active": false,
+        "readbackSha256": "2071a12405ab29ad5b2b4b210237b798b720b885b52015610ae306d4e54385da",
+        "coveredPhysicalPages": [
+          1,
+          8
+        ],
+        "core": [
+          1,
+          8
+        ],
+        "recordedAttachmentSha256": "66173dca2af40bf60930299db4806793563a25c6ef895bdfd2159ca1ad4c09ae",
+        "freshAttachmentSha256": "c798c8f69ef7be4f3366f55722f9525b16ab3f094fd389d13a753868c19600a8",
+        "organizerStage": "0c4d9cd980bffa4e67ef678c3332f4662620be573bc98cdd6ebd45cee9beba6c",
+        "settledGenerationStages": [
+          "0c4d9cd980bffa4e67ef678c3332f4662620be573bc98cdd6ebd45cee9beba6c",
+          "99ee7d14a29b6acf657f04623823c8c09059dbe89ab9c3f175d8c22d51ec99e3"
+        ],
+        "registeredQuoteReadback": [
+          {
+            "page": 2,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "f1511515ff38061ab111856b53d9adda9dd9097b310a3b3277a6e6505caa5345",
+            "retained": true
+          },
+          {
+            "page": 3,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "69b0b468d6d8e0bb20e8a44c003c21fd1ee55f9978675904d1a765e77027c960",
+            "retained": true
+          },
+          {
+            "page": 4,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "f30ccdf851d0a13436c5f27591e74581f0cedaee27d01b4396e075021a3b1e9d",
+            "retained": true
+          },
+          {
+            "page": 5,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "73889bdf368dba8200718163bc1ac4d09a2d1b11d4a96f2e28e3f955a4a110f7",
+            "retained": true
+          },
+          {
+            "page": 6,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "6a6fa1409560675dc60b176dd0458b0125a88d1450a60ed1c24d3271980f896f",
+            "retained": true
+          },
+          {
+            "page": 7,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "11f19c947515050103db5323b6c716f39a8cd4432ee41e098f7ea86db7d0aceb",
+            "retained": true
+          },
+          {
+            "page": 8,
+            "status": "text",
+            "proof": "text_layer",
+            "registeredSha256": "7f07a1140c7818b694e07f2d5b81adea6a9d97082fc2fdd78c49a4e9ab45f6b8",
+            "retained": true
+          }
+        ],
+        "matchesPriorObservation": true
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "owner": "C3",
+        "pages": 8,
+        "sourceSha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "originalOperation": "0e53006aae167996589f71ee76fdec69efd5235e0f2a2d41b903c40e2100c580",
+        "observationHash": "d7293e06acc48fe60fbdfdc1cc1b699fbfc77da75ca1fd8f7ea401d06fb77d5a",
+        "indexSha256": "b38d9d005ce06a8475b7d3d854915cd946a81a43cac6ebe09ea166eb6de81e74",
+        "records": 4,
+        "archive": "pdf-65148c48ab4b294035fb977a.tar.gz",
+        "archiveSha256": "57bb3278b714b2119e46891de0f57d8006ddca68bcac63012725d6bea3fa6330",
+        "archiveBytes": 3562553,
+        "originalTickets": 2,
+        "active": false,
+        "readbackSha256": "d96ab7a28736c1b43b9b89c09a157255db21cdd37d5186a65c046f50e9d27979",
+        "coveredPhysicalPages": [
+          1,
+          8
+        ],
+        "core": [
+          1,
+          8
+        ],
+        "recordedAttachmentSha256": "f119c9191640c603a419d7df7bc5517cf635c176d6d5afeff05740ca4496ffba",
+        "freshAttachmentSha256": "1f47e195efe8da7a150e65d440410a5446b4e6119170fd55cdc96ffffb6fff10",
+        "organizerStage": "3a6c209d6742ef00f90f5cd6266b3ca1d3fb1d09c89c0b57b8963cabf8baf516",
+        "settledGenerationStages": [
+          "13549094b522df13fe8cce7c047e965f712c84b976daa56ee6c94e011e9f386f",
+          "3a6c209d6742ef00f90f5cd6266b3ca1d3fb1d09c89c0b57b8963cabf8baf516"
+        ],
+        "registeredQuoteReadback": [
+          {
+            "page": 2,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "474d9acb80d2a52b0064eef4c32fbe0b0cddecc42ece17aa863f91ca0fbfede3",
+            "retained": true
+          },
+          {
+            "page": 3,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "821106df6063d98a5f3c14d5090cbd320a9b58dffa415ab2b674ea80d5a9ffc0",
+            "retained": true
+          },
+          {
+            "page": 4,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "f939d3033cb3db628f824b2aa41e41ac41faaf0e05c236318b9e081656ff4ed1",
+            "retained": true
+          },
+          {
+            "page": 5,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "a2854fde6c73a656125d5d3ce42f5abec6f6e170ed21980db3d5027d20acaca1",
+            "retained": true
+          },
+          {
+            "page": 6,
+            "status": "text",
+            "proof": "printed",
+            "registeredSha256": "669884beac54d863c4806de4c00302f38e86f8764698a8d16a260def846489a3",
+            "retained": true
+          },
+          {
+            "page": 7,
+            "status": "unreadable",
+            "proof": "printed",
+            "registeredSha256": "431593ee57397636b8cf37e546acad565f3dbbb85d0eefefba85e933336e14a3",
+            "retained": true
+          },
+          {
+            "page": 8,
+            "status": "text",
+            "proof": "printed",
+            "registeredSha256": "95c99a2e69f65c0c7ea1fd3e09ff2d9dd47f6cf60da52d53a21d5ef7aa44190a",
+            "retained": true
+          }
+        ],
+        "matchesPriorObservation": true
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "owner": "C2",
+        "pages": 36,
+        "sourceSha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+        "originalOperation": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+        "observationHash": "b73aecabc4cad735502392694454d35c75b560a2f4818ffeb138ecb14e87f082",
+        "indexSha256": "fe620e276feb0d91daa92aa7cf019f744465c0a984a443a5eccf23dd287bf240",
+        "records": 20,
+        "archive": "pdf-48e37ddf27a8864e98362fa9.tar.gz",
+        "archiveSha256": "79df945f0990de72c404b72dc34b9d73505ee5ef09ebaf9c99425a2ce83d4160",
+        "archiveBytes": 3964518,
+        "originalTickets": 0,
+        "active": false,
+        "readbackSha256": "5167ddf1c810156e1e6009d1013fc62fbec4f558156d71a175236bc757b1e081",
+        "priorIndexSha256": "ef54488275aa4bc80837daa8f99bf3e9804921e022c11a33852596dc554613e3",
+        "coveredPhysicalPages": [
+          1,
+          36
+        ],
+        "windows": 3,
+        "changedSliceHashes": 3,
+        "physicalPagesWithTextChanges": [],
+        "pageStatuses": {
+          "empty": 1,
+          "text": 3,
+          "unreadable": 32
+        },
+        "matchesPriorObservation": true,
+        "persistedFirstWindow": {
+          "physical": [
+            1,
+            15
+          ],
+          "sha256": "854e46c29de11cac4f2facf674e38861056102f232a0e7ed7e16128f007e53b7",
+          "stageHash": "36b957bf045d2452e27cb7b425489d5eedb57689451fbb227fd27e3cfe64252b",
+          "knownProviderTickets": 0
+        },
+        "retainedAttachmentReads": 6
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "owner": "C3",
+        "pages": 84,
+        "sourceSha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "originalOperation": "51cc61f246c83fbd20cccdf05f4f657a0e5fd4da24bcd45baf4b05ae05a55c55",
+        "observationHash": "e4ca92fe3c3fdbd5b6f210cb4fc2ad10660d953dd78fd2047fba72b1d67817b5",
+        "indexSha256": "fddbf341a940df826a172f7bb448b8ebf8cb7620004524e648367bca0c4ee24e",
+        "records": 7,
+        "archive": "pdf-b061777e96a27e5124285ba5.tar.gz",
+        "archiveSha256": "57308e5a7d0ed468641edce246e42dd3117c357ab8c8dda717c15626416b9aac",
+        "archiveBytes": 3897569,
+        "originalTickets": 2,
+        "active": false,
+        "readbackSha256": "d3adacc2e6f98d876cd74f7d176c7dbdfa489f54ae7616e77623b664c67652c5",
+        "coveredPhysicalPages": [
+          1,
+          13
+        ],
+        "core": [
+          1,
+          12
+        ],
+        "recordedAttachmentSha256": "3c776f1a1bd64baad10367a2793c986ca44e0f196925d808d22d99f6b8015668",
+        "freshAttachmentSha256": "f518c947d7ec10b9a6edeeceb06bf59a3840b7a717c1e56e2d26ee37b944b814",
+        "organizerStage": "bd6010a8ef342b528b1490e083b498b4f1ec73edb15821af8910f82af6f4cb0f",
+        "settledGenerationStages": [
+          "57a7def9ec3327b0e0b7633bd361165cb715ceab5bc58d4d278a632808de5a56",
+          "bd6010a8ef342b528b1490e083b498b4f1ec73edb15821af8910f82af6f4cb0f"
+        ],
+        "registeredQuoteReadback": [
+          {
+            "page": 3,
+            "status": "empty",
+            "kind": "text_layer",
+            "organizerAndReviewerEqual": false,
+            "exactTextLayerSupportsBoth": false
+          },
+          {
+            "page": 6,
+            "status": "empty",
+            "kind": "text_layer",
+            "organizerAndReviewerEqual": false,
+            "exactTextLayerSupportsBoth": false
+          },
+          {
+            "page": 7,
+            "status": "empty",
+            "kind": "text_layer",
+            "organizerAndReviewerEqual": false,
+            "exactTextLayerSupportsBoth": false
+          },
+          {
+            "page": 12,
+            "status": "empty",
+            "kind": "text_layer",
+            "organizerAndReviewerEqual": true,
+            "exactTextLayerSupportsBoth": false
+          }
+        ],
+        "matchesPriorObservation": true,
+        "physicalReview": {
+          "originalSha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+          "range": [
+            4,
+            6
+          ],
+          "declaredPhysicalPage": 6,
+          "organizerTopicPhysicalPage": 6,
+          "reviewerPassagePhysicalPage": 4,
+          "reviewerPassagePrintedPage": 2,
+          "organizerExcerptSha256": "e66da8e1d190b6d04326e873954d2bac31c6743d15b413e9593cb26adf318ff2",
+          "reviewerExcerptSha256": "6928e02e929ebd80da258ba9a306d8f5501e86bc1ed8708b11b4068b93f9e6c5",
+          "reviewerPassageLocator": "The third question on physical page 4 concerns what happens if the child has a developmental problem. The visit and referral paragraph appears below it.",
+          "page6Locator": "Physical page 6 has the basic principles of development and a six-area illustration. The two inputs cite different material.",
+          "visualReadback": {
+            "3": "6dbcf766ba22c066de3d6df1e7e640392f44d6dd5dadd846e1d88e452003f219",
+            "4": "47f5f021b70f2e80df9673ca36025a0ddcffe09376552ae7e1286ca0bf8a0e4c",
+            "6": "3debbcb80c33c478b5e8798fb51620ff1ca6a2b7367f2e9114f5e07306fcf2fc"
+          }
+        }
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "owner": "C2",
+        "pages": 112,
+        "sourceSha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+        "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+        "observationHash": "a6598a8a40ee0d9c0298b73a03a81292e00f2fab389a48306bf86f336b3cb4b8",
+        "indexSha256": "bec34ea42d8b2d8d227d385a7dff6e798768ca7a4d90a2815f614ade5b57703e",
+        "records": 43,
+        "archive": "pdf-836e9d989e83046a43059df7.tar.gz",
+        "archiveSha256": "3fd66c73cb7e41591d74d845c1f04c8b19627a177d7fe52ccc738fb89a219887",
+        "archiveBytes": 65089073,
+        "originalTickets": 0,
+        "active": false,
+        "readbackSha256": "8dfa383e73679d68abdb21af7e505b0e5320d09a40df30424543cb17e690cb17",
+        "priorIndexSha256": "2a82c01ea443569aa6c635e8744b99bd45808f15031f55fb4a6511290372813a",
+        "coveredPhysicalPages": [
+          1,
+          112
+        ],
+        "windows": 10,
+        "changedSliceHashes": 10,
+        "physicalPagesWithTextChanges": [],
+        "pageStatuses": {
+          "unreadable": 58,
+          "text": 52,
+          "empty": 2
+        },
+        "matchesPriorObservation": true
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "owner": "C1",
+        "pages": 192,
+        "sourceSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+        "originalOperation": "125245f585eeaf703109aea65cabee42c92edee169617a7c2e4aaa647a58de41",
+        "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
+        "indexSha256": "aad35df1f310456fa1b6b71edcc596d5f3d73ef24c3d43a83a41d5c41dd1b16a",
+        "records": 72,
+        "archive": "pdf-63e7d5463521682636a066e5.tar.gz",
+        "archiveSha256": "b0bb2f663cdfe629a3566fb45a4014b67e83f35abc887715e1ece415fa5967e6",
+        "archiveBytes": 77883140,
+        "originalTickets": 0,
+        "active": false,
+        "readbackSha256": "f9e3fd459eafa113b97a8c54bd4fe84acdacefb0d26154f8ed905933c4a7a6f5",
+        "priorIndexSha256": "249dc8030ced36ed5a69156116ede3a52d923a80d20696b67b53a220402b9ab1",
+        "coveredPhysicalPages": [
+          1,
+          192
+        ],
+        "windows": 16,
+        "changedSliceHashes": 16,
+        "physicalPagesWithTextChanges": [
+          68,
+          70,
+          104,
+          119
+        ],
+        "pageStatuses": {
+          "unreadable": 77,
+          "text": 113,
+          "empty": 2
+        },
+        "matchesPriorObservation": true,
+        "visualReadback": {
+          "68": "92f378a25f730c585a9869b5e797804eb0ebc3b7a55e94b6e69a5093a12800fc",
+          "70": "cd50f1121aa56c914fc85b0f7fe1b1665f2259c6cebb6d289103764fd7c24613",
+          "104": "848095d39288a403b4293519aa9d2afe001978502050b9fd3168a7d1c015bd7c",
+          "119": "19e7291ad2d7b953e66dc08fe7379346ce2997438dfc8c816845385c31b02b5d"
+        }
+      }
+    ],
+    "inputProbeAt": "2026-11-21T12:45:18.260855Z",
+    "sourceSnapshot": "2026-11-21T13:04:33.566377Z",
+    "grossMicrosAvailable": 14183684,
+    "disabledVersionSourceIds": [
+      "resource-af8c3e8cc813be"
+    ],
+    "productionScopeReadbackChangedSourceIds": [
+      "resource-af8c3e8cc813be"
+    ],
+    "archiveMembers": "Each archive contains only the pinned index.json and its content-addressed read records.",
+    "selection": "Three complete long-source inputs, one previously paid first window of an 84-page original and four registered short-source inputs.",
+    "sourceReaderSupport": "Existing stored windows use their saved bytes. A fresh cut can have a different digest. New packages include fresh text reads for the retained 84-page first window, all four registered short windows and the three saved candidate slices of the comic.",
+    "priorLongReadback": "The 36-page production receipt and 112-/192-page offline readbacks recorded before the font map release used the previous parser. Opening those indexes with the current worker fails fhs_pdf_index_integrity.",
+    "paidShortPassagesVerified": 20,
+    "derivativePdfWindowsRecreated": 29
   }
 }

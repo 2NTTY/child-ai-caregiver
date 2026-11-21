@@ -9,6 +9,7 @@ import {
 } from "../src/shared/background-knowledge-maintenance.ts";
 import { publicMaintenanceWatch, SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
 import { observationHash } from "./knowledge-observation.ts";
+import { publisherCurrentText } from './fhs-leaflet-editions.ts';
 import type { ObservedContent, SourceFetchResult, SourceFetcher, SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 
 export {
@@ -27,6 +28,8 @@ export const BACKGROUND_KNOWLEDGE_RESERVED_UNITS = 2;
 export const BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS = 360_000;
 
 export interface BackgroundKnowledgeMaintenanceConfig {
+  /** An independently commissioned question about the printed page can still use its own original. */
+  printedPageReview?: boolean;
   enabled: boolean;
   /** Live HTTPS fetch against reviewed hosts. Default false for this slice. */
   liveFetch: boolean;
@@ -539,6 +542,10 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "fetch_url_mismatch", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
     const hash = observationHash(observed);
+    if (!config.printedPageReview && publisherCurrentText(observed.url, observed.extraction)) {
+      return finish({ status: 'candidate_held', code: 'publisher_current_web_text', watchId: request.watchId,
+        observationHash: hash, published: false, publishMode: request.publishMode });
+    }
     const candidate: BackgroundKnowledgeCandidate = {
       watchId: request.watchId, definition, observed, observationHash: hash,
       previousObservationHash: previous?.contentHash ?? null,

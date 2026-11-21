@@ -36,6 +36,7 @@ export interface KnowledgeExtraction {
   totalPages?: number; pageStart?: number; pageEnd?: number; complete: boolean;
 }
 export interface KnowledgeChunkInput {
+  scriptPassage?: import('./platform-media.ts').ScriptPassage;
   mediaClip?: import('./platform-media.ts').PlatformMediaClip;
   treatment?: import('./source-series.ts').ChunkTreatment;
   key: string;
@@ -123,6 +124,7 @@ export interface KnowledgeResult {
   degradationReason: "embedding_unavailable" | null;
   chunks: KnowledgeEvidence[];
   queryContext?: KnowledgeQueryContext;
+  videoListScope?: 'named_material_reviewed_passages' | 'matching_materials_reviewed_passages';
   complete?: boolean;
   omittedChunks?: number;
   returned?: number;

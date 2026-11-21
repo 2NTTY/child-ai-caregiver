@@ -155,6 +155,10 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
         reservations, balance: row };
     }, {readOnly:true});
   }
+  async function hasGenerationCapacity(tx: Transaction, maxOutputTokens: number) {
+    const row = balance.parse((await tx.get(ref)).data());
+    return !row.reconciliationRequired && row.spent + row.held + ceilingFor('generation',maxOutputTokens) <= row.limit;
+  }
   async function reserveShared(kind: CampaignKind, binding: CampaignDispatch, maxOutputTokens: number) {
     const sourceId = attempt.shape.sourceId.parse(binding.sourceId);
     const operationFingerprint = hash.parse(binding.operationFingerprint);
@@ -270,5 +274,5 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       },
     };
   }
-  return { status, initialize, reserve, canAdvance, sourceStatus, retainInspected, reserveShared, settleRejectedGeneration, meter };
+  return { status, initialize, reserve, canAdvance, sourceStatus, hasGenerationCapacity, retainInspected, reserveShared, settleRejectedGeneration, meter };
 }

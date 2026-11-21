@@ -88,6 +88,26 @@ function setup(params = {}) {
     cleanup() { for (const state of slots) state?.cleanup?.(); }, text: () => JSON.stringify(tree) };
 }
 
+test('only a current private gap offers the existing assistant draft and a dismissible request', async () => {
+  const s = setup({ sourceCard: cardId });
+  const gap = { url: card.url, reason: 'unreadable', skipped: false, checkId: '00000000-0000-4000-8000-000000000005' };
+  const blocked = { ...card, lastResult: { status: 'failed' }, gap };
+  const drafts = [];
+  s.production.actions = { prepareQuestion: text => drafts.push(text) };
+  s.env.childId = 'child';
+  s.respond(url => Response.json(String(url).endsWith(cardId) ? { card: blocked } : { items: [blocked], nextCursor: null }));
+  await s.flush();
+  assert.match(s.text(), /未能從這個位置讀到可引用的原文/);
+  s.button('在助手對話跟進').onPress(); s.render();
+  assert.equal(drafts.length, 1); assert.ok(drafts[0].includes(card.url));
+  s.openCard();
+  s.respond(() => Response.json({ card: { ...blocked, gap: { ...gap, skipped: true } } }));
+  s.button('跳過這次求助').onPress(); await s.flush();
+  assert.equal(JSON.parse(s.calls.at(-1).init.body).checkId, gap.checkId);
+  assert.doesNotMatch(s.text(), /在助手對話跟進|跳過這次求助/);
+  s.cleanup();
+});
+
 test('no-child account management creates minute-based source settings through the production transport', async () => {
   const s = setup(); await s.flush();
   assert.ok(s.scoped, 'No selected child is required');
