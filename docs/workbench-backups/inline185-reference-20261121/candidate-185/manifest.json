@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-185-image-count",
+  "base": {
+    "artifact": "candidate-183/out",
+    "htmlSha256": "765dd2fe0ba5fbf9837717d85fde16787c65eedf4ee5cdd780ae14d4f70a060f",
+    "rawRecordsSha256": "5765509f094cbb516d27f5627a42a93cbdc7cb645b9c086ddbdceba50cfc5325",
+    "rawArtworkSha256": "6c861218e19c21fc01c0645fbb253b5d1a3f316d8a21c84fe5d6657893121888",
+    "topics": 90,
+    "choices": 183,
+    "images": 183
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-guide-action/assets.json",
+      "sha256": "c8f80d393afdb21e2a1e2346ac9cbef59e4a8d1508d5cb79945a6191238bf9ab"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "2b331cce6407d621c902dd3bda02127826706f1f5ce2615651e88af85b327473",
+    "PROVENANCE.md": "d4e856a7ba34fd0c30a9144d4b0c27db41d023eab09f55eacb2395e0283a8f80"
+  },
+  "topics": [
+    {
+      "number": 91,
+      "title": "說明：繼續閱讀，還是直接開啟核對？",
+      "choices": [
+        {
+          "name": "翻閱章節，另行開啟功能",
+          "note": "Plasma 歡迎中心以底部圓點標示目前章節，中央圖示另行開啟 Discover，並不會安裝應用程式。育伴港的閱讀步驟亦與「開啟核對」分開；後者只帶你到核對頁，不會代你確認。",
+          "links": [
+            {
+              "label": "Plasma 歡迎中心 6.6.0：完整視窗及頁腳",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/qml/Main.qml#L16-L43"
+            },
+            {
+              "label": "同版：章節標題與說明",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/public/qml/Page.qml#L22-L42"
+            },
+            {
+              "label": "同版：應用程式章節及置中的圖示",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/qml/pages/Discover.qml#L17-L53"
+            },
+            {
+              "label": "同版：獨立圖示開啟 Discover",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/public/qml/ApplicationIcon.qml#L17-L55"
+            },
+            {
+              "label": "同版：下方推薦應用程式入口",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/qml/pages/Discover.qml#L84-L104"
+            },
+            {
+              "label": "同版：上一步、目前閱讀位置與下一步",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/qml/footers/FooterDefault.qml#L17-L89"
+            },
+            {
+              "label": "同版：QML 提供的源碼授權選項",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/src/qml/Main.qml#L1-L7"
+            },
+            {
+              "label": "採用的 QML 源碼授權選項：GPL-2.0-only",
+              "url": "https://github.com/KDE/plasma-welcome/blob/ee1b65b1b26c52e0b8b38353d7240c03e5d8a35b/LICENSES/GPL-2.0-only.txt#L1-L10"
+            }
+          ],
+          "asset": {
+            "input": "draft-guide-action/guide-action-a.png",
+            "sha256": "eafc7b23103c5031b0ad995624584cf6ab79d818218586b26711b1832555325b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Plasma 歡迎中心非官方重繪：置中的應用程式章節有一個 Discover 圖示及六個原創推薦類別圖示；底部有「上一步」、六個圓點和「下一步」，第四個圓點標示目前章節。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "閱讀步驟和開啟功能分開",
+          "note": "Code–OSS 的引導可先展開「自訂快捷鍵」閱讀，另按「鍵盤快捷鍵」才在旁邊開啟功能。育伴港只參考閱讀和跳頁分開：「開啟核對」只帶你到核對頁，不會替你完成核對，也不記錄引導完成進度。",
+          "links": [
+            {
+              "label": "Code–OSS 1.147.0：導覽章節與步驟列表",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1576-L1605"
+            },
+            {
+              "label": "內容、步驟與插圖並排",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1680-L1703"
+            },
+            {
+              "label": "自訂快捷鍵與獨立功能入口",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts#L567-L573"
+            },
+            {
+              "label": "另開編輯區並執行該項功能",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1423-L1449"
+            },
+            {
+              "label": "真正執行功能的程式分支",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1474-L1488"
+            },
+            {
+              "label": "重新開啟導覽頁或指定步驟",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts#L69-L100"
+            },
+            {
+              "label": "程式來源授權：MIT",
+              "url": "https://github.com/microsoft/vscode/blob/8a14f0cc1b08d531eb83255ea3764ae22aa932b5/LICENSE.txt#L1-L21"
+            }
+          ],
+          "asset": {
+            "input": "draft-guide-action/guide-action-b.png",
+            "sha256": "897a8b5df5b18e766f64a560ef22843f99c379e975b4e54142a94d5e74bc85b9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Code–OSS 深色桌面操作指南重繪。左欄展開尚未完成的「自訂快捷鍵」，可見尚未按下的「鍵盤快捷鍵」按鈕；右欄是原創快捷鍵插圖，不是已開啟的功能頁。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 91 題 · 導覽步驟與功能入口的兩幅自製示意",
+      "input": "draft-guide-action/DECLARATION.txt",
+      "sha256": "2b331cce6407d621c902dd3bda02127826706f1f5ce2615651e88af85b327473"
+    }
+  ]
+}
