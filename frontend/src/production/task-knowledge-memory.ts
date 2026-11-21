@@ -152,7 +152,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
   }, reads: {
     exportLibraryArchive: personalHistory?.actions.exportLibraryArchive,
     setLibraryPreference: personalHistory?.actions.setLibraryPreference,
-    loadMoreReferences: personalHistory?.actions.moreReferences, loadMoreWork: personalHistory?.actions.moreWork,
+    loadAllReferences: personalHistory?.actions.allReferences, loadMoreReferences: personalHistory?.actions.moreReferences, loadMoreWork: personalHistory?.actions.moreWork,
     readWorkMessage: personalHistory?.actions.readMessage, loadMoreWorkMessage: personalHistory?.actions.moreMessage,
     closeWorkMessage: personalHistory?.actions.closeMessage, refreshContext: personalHistory?.actions.refresh,
     workBusy: personalHistory?.busy.work, messageBusy: personalHistory?.busy.message, referencesBusy: personalHistory?.busy.references,

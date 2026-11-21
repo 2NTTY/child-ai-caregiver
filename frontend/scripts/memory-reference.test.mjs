@@ -34,8 +34,8 @@ function freeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); for (const next of Object.values(value)) freeze(next); }
   return value;
 }
-function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion, tabActions, width = 1440 } = {}) {
-  const buttons = [], panels = [], tabLists = [], toolbars = [];
+function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion, tabActions, width = 1440, params = {} } = {}) {
+  const buttons = [], controls = [], panels = [], tabLists = [], toolbars = [];
   const nativeElement = tag => ({ children, accessibilityRole, accessibilityLabel }) => React.createElement(tag, { role: accessibilityRole === 'header' ? 'heading' : undefined, 'aria-label': accessibilityLabel }, children);
   const ui = {
     AppButton: props => { buttons.push(props); return React.createElement('button', null, props.label); },
@@ -44,16 +44,17 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     SectionHeader: ({ title, subtitle }) => React.createElement('header', null, title, subtitle),
     UnderlineTabs: props => { tabLists.push(props); return React.createElement('nav', null, props.items.map(item => item.label).join(' / ')); },
   };
-  const api = compile('../src/components/memory/MemoryReferenceView.tsx', name => {
+  const dependencies = name => {
     if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : expanded && initial === false ? true : initial) };
     if (name === 'react/jsx-runtime') return require(name);
-    if (name === 'react-native') return { View: nativeElement('div'), Pressable: nativeElement('button'), StyleSheet: { create: value => value } };
+    if (name === 'react-native') return { View: nativeElement('div'), ScrollView: nativeElement('div'), Pressable: props => { controls.push(props); return nativeElement('button')(props); }, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
-    if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}), useFocusEffect() {} };
+    if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => params, useFocusEffect() {} };
+    if (name === './SourceLibrary') return compile('../src/components/memory/SourceLibrary.tsx', dependencies);
     if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
     if (name === './PlatformCardJoin') return { PlatformCardJoin: () => null };
     if (name === '../AppRadioItem') return { AppRadioItem: nativeElement('button') };
-    if (name === '../AppDialog') return { AppDialog: nativeElement('dialog') };
+    if (name === '../AppDialog') return { AppDialog: Object.assign(nativeElement('dialog'), { ScrollArea: nativeElement('div') }) };
     if (name === '../../../../src/shared/source-series') return sourceSeries;
     if (name === '../../../../src/shared/personal-library') return library;
     if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package'].includes(name)) return {};
@@ -73,9 +74,28 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === '../ui') return ui;
     if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) };
     assert.fail(`Unexpected view dependency ${name}`);
-  });
-  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, panels, tabLists, toolbars };
+  };
+  const api = compile('../src/components/memory/MemoryReferenceView.tsx', dependencies);
+  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, controls, panels, tabLists, toolbars };
 }
+
+test('the store joins an unowned series and re-enables a disabled fixed series without selecting new editions', () => {
+  const workspace = snapshot(), writes = [];
+  const first = { sourceId: 'test-leaflet', versionId: 'cc2440f0-4d11-4004-91df-27da0c42d666', publisher: 'Test publisher',
+    classification: 'official_guidance', series: { id: 'test-series', name: '測試資料' } };
+  const reference = { audience: 'public', items: [], hasMore: false };
+  workspace.reads = { setLibraryPreference: command => writes.push(command) };
+  for (const mode of ['platform', 'fixed']) {
+    const preference = { mode, revision: 3, enabled: mode === 'platform' };
+    workspace.model.references = { scopeKey, state: 'ready', revision: '3', asOf: null, data: { ...reference, catalog: [{ ...first, preference }] } };
+    const { controls } = renderView(workspace, { tab: 'references', params: { catalog: 'platform' } });
+    const join = controls.find(control => control.accessibilityLabel === '加入測試資料');
+    assert.ok(join && !join.disabled);
+    join.onPress();
+  }
+  const fence = { seriesId: first.series.id, expectedRevision: 3, editions: [{ sourceId: first.sourceId, versionId: first.versionId }], wholeSeries: true };
+  assert.deepEqual(writes, [{ ...fence, action: 'join' }, { ...fence, mode: 'fixed', enabled: true, adopt: false }]);
+});
 
 test('only narrow Memory toolbars stack actions after the full-width tabs without changing their semantics', () => {
   const value = freeze(snapshot()), action = React.createElement('button', null, '管理記憶');
@@ -98,7 +118,7 @@ test('memory tabs replace duplicate introductions but keep real content headings
     const { html, panels, tabLists } = renderView(freeze(value), { tab, tabActions: React.createElement('button', null, '重讀') });
     assert.doesNotMatch(html, /Test child的記憶與參考|查看已保存記憶及來源|Agent 已保存的工作、待答問題及相關訊息|已保存的事實、來源及對話摘要|查看目前可查閱的公共來源目錄|查看資料出處、日期及適用範圍/);
     assert.equal((html.match(/長期記憶/g) ?? []).length, 1);
-    assert.equal((html.match(/參考資料/g) ?? []).length, 1);
+    assert.equal((html.match(/參考資料/g) ?? []).length, tab === 'references' ? 2 : 1);
     assert.match(html, /<button>重讀<\/button>/);
     assert.equal(tabLists.length, 1); assert.equal(tabLists[0].label, '記憶與參考分類');
     assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
@@ -109,7 +129,7 @@ test('memory tabs replace duplicate introductions but keep real content headings
     } else if (tab === 'short') {
       assert.match(html, /Synthetic saved context/); assert.doesNotMatch(html, /工作是 Agent 的整理內容，供核對及接續；不代表已確認的事實。/);
     } else {
-      assert.match(html, /暫無可讀來源/);
+      assert.match(html, /尚未加入來源卡/);
       assert.doesNotMatch(html, /官方指引|近期資訊/);
     }
   }
@@ -122,19 +142,19 @@ test('the source deck groups editions by series and keeps version details off it
   value.model.references = { scopeKey, state: 'ready', data: { audience: 'public', items: [], hasMore: false,
     catalog: [{ ...item, sourceId: 'file-a' }, { ...item, sourceId: 'file-b', title: '文件乙' }] } };
   const { html } = renderView(freeze(value), { tab: 'references' });
-  assert.equal((html.match(/aria-label="餵食指南，2 份文件，使用中"/g) ?? []).length, 1);
+  assert.equal((html.match(/aria-label="餵食指南，2 份文件"/g) ?? []).length, 1);
   assert.match(html, /合成機構/);
   assert.doesNotMatch(html, /文件甲|文件乙|private-test-version|匯出版本參照/);
 });
 
 test('the personal deck shows one partially adopted health card across native series and categories', () => {
   const value = snapshot();
-  const childHealth = { total: 3, adopted: 1, enabled: 0, fixed: 1, categories: ['兒童發展', '視力'] };
+  const childHealth = { total: 3, adopted: 1, enabled: 1, fixed: 1, categories: ['兒童發展', '視力'] };
   const items = ['vision', 'feeding'].map(sourceId => ({ sourceId, title: sourceId, publisher: '家庭健康服務', classification: 'official_guidance',
     series: { id: sourceId, institutionId: 'www.fhs.gov.hk', name: sourceId }, childHealth }));
   value.model.references = { scopeKey, state: 'ready', data: { audience: 'public', items: [], hasMore: true, catalog: items } };
   const { html } = renderView(freeze(value), { tab: 'references' });
-  assert.equal((html.match(/aria-label="衛生署 兒童健康，3 份文件，已採用 1／3 份"/gu) ?? []).length, 1);
+  assert.equal((html.match(/aria-label="衛生署 兒童健康，3 份教材"/gu) ?? []).length, 1);
   assert.doesNotMatch(html, /aria-label="(?:vision|feeding)，/u);
 });
 
@@ -293,8 +313,8 @@ test('successful empty lists are cards, while stale and offline memory snapshots
   value.model.longTerm.data.summary = null;
   value.model.shortTerm = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { runId: 'synthetic', messages: [] } };
   value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], hasMore: true } };
-  for (const tab of ['long', 'short', 'references']) assert.match(renderView(value, { tab }).html, /data-empty="true"/);
-  assert.match(renderView(value, { tab: 'references' }).html, /仍有來源未載入/);
+  for (const tab of ['long', 'short']) assert.match(renderView(value, { tab }).html, /data-empty="true"/);
+  assert.match(renderView(value, { tab: 'references' }).html, /正在讀取其餘平台卡/);
   for (const state of ['stale', 'loading', 'error', 'unavailable']) {
     const copy = structuredClone(value);
     for (const key of ['longTerm', 'shortTerm', 'references']) copy.model[key] = state === 'stale' ? { ...copy.model[key], state } : { scopeKey, state, revision: null, data: null, asOf: null };
@@ -311,7 +331,7 @@ test('A07 work-only context is not empty and catalog emptiness is online-ready o
   value.model.shortTerm.data.works = [];
   assert.match(renderView(value, { tab: 'short' }).html, /data-empty="true"/);
   value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], catalog: [], hasMore: true } };
-  assert.match(renderView(value, { tab: 'references' }).html, /仍有來源未載入/);
+  assert.match(renderView(value, { tab: 'references' }).html, /正在讀取其餘平台卡/);
   for (const state of ['stale', 'error', 'unavailable']) {
     value.model.references.state = state;
     assert.doesNotMatch(renderView(value, { tab: 'references' }).html, /data-empty="true"/);

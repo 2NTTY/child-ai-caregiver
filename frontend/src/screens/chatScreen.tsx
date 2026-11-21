@@ -22,7 +22,7 @@ import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
 import { ChatAction } from "../components/chat/ChatAction";
-import { ChatToolbarCompanion } from "../components/companion/SiteCompanion";
+import { CompanionSlot } from "../components/companion/CompanionViewport";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
@@ -253,7 +253,7 @@ function ChatContents({ compact }: { compact: boolean }) {
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
       <View style={styles.headerIdentity}>
-        {compact && <ChatToolbarCompanion compact />}
+        {compact && <CompanionSlot quietHeight={78} />}
         <View><Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.headingTitle}>育有方助手</Text>
           {child && <Text style={styles.meta}>{child.displayName}的私人對話</Text>}</View>
       </View>
@@ -385,7 +385,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     </BackgroundSurface>
     {!compact && <View style={styles.companionAside}><View style={styles.companionStage}>
-      <View pointerEvents="none" style={styles.companionBackdrop} /><ChatToolbarCompanion compact={false} />
+      <View pointerEvents="none" style={styles.companionBackdrop} /><CompanionSlot quietHeight={214} />
     </View></View>}
     </View>
     <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}

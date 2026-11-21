@@ -1,4 +1,4 @@
-import { SiteCompanion } from './companion/SiteCompanion';
+import { CompanionSlot } from './companion/CompanionViewport';
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "expo-router";
@@ -142,7 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <View style={styles.body}>
         <View style={styles.content}>
           <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
-          <SiteCompanion />
+          <CompanionSlot />
         </View>
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
