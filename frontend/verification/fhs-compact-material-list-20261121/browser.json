@@ -1,0 +1,71 @@
+{
+  "browser": "158.0.4370.33",
+  "date": "2026-11-21",
+  "baseCommit": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
+  "fixture": "Ordinary parent, loopback Web and API with Firebase emulators. Registry titles, categories and media URLs, synthetic structured editions for layout. No model calls.",
+  "materialCount": 10,
+  "screen": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+      "titleLines": 1,
+      "listedDocuments": 10,
+      "filteredDocuments": 5,
+      "category": "營養及健康生活習慣",
+      "mediaLinks": 4,
+      "mediaLines": 1,
+      "titleHeight": 67.1875,
+      "disclosureSize": [
+        67.1875,
+        67.1875
+      ],
+      "minMediaHeight": 67.1875,
+      "titleKeyboardOpensOriginal": true,
+      "disclosureAndFilterKeyboard": true,
+      "maintenanceButtons": 0,
+      "screenshot": "wide-list.png"
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+      "titleLines": 2,
+      "listedDocuments": 10,
+      "filteredDocuments": 5,
+      "category": "營養及健康生活習慣",
+      "mediaLinks": 4,
+      "mediaLines": 1,
+      "titleHeight": 67.1875,
+      "disclosureSize": [
+        57.59375,
+        57.59375
+      ],
+      "minMediaHeight": 57.59375,
+      "titleKeyboardOpensOriginal": true,
+      "disclosureAndFilterKeyboard": true,
+      "maintenanceButtons": 0,
+      "screenshot": "narrow-details.png"
+    }
+  ],
+  "maintenance": {
+    "ordinaryParentButtons": 0,
+    "authorizedAdministrator": "Selected the published fhs-12146 material in platform card management and opened its document treatment page."
+  },
+  "citationAfterRemoval": {
+    "page": 3,
+    "sha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+    "bytes": 7944671
+  },
+  "seriesAdoption": {
+    "initiallyAdopted": 1,
+    "adopted": 10,
+    "followed": 9,
+    "preservedDisabledFixed": 1,
+    "fixtureReset": true
+  }
+}

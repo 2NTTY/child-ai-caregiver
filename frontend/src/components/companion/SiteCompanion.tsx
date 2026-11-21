@@ -19,24 +19,9 @@ function characterSource(apiBaseUrl: string) {
   return Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
 }
 
-export function ChatToolbarCompanion({ compact }: { compact: boolean }) {
-  const { identityKey, apiBaseUrl } = useProduction();
-  const foreground = useChatForeground(), pathname = usePathname();
-  const height = compact ? 78 : 214;
-  if (!identityKey || pathname !== '/chat') return null;
-  return <View style={{ width: Math.ceil(height * .71), height, flexShrink: 0 }}>
-    <CharacterDock key={identityKey} src={characterSource(apiBaseUrl)} page="/chat" foreground={foreground} inToolbar />
-  </View>;
-}
+type Panel = { page: string; scope: string | null; chosenChild?: string; privateChild?: string; includeItem: boolean; reminderId?: string; focusRequest?: number };
 
-export function SiteCompanion() {
-  const { identityKey } = useProduction();
-  return identityKey ? <Companion key={identityKey} /> : null;
-}
-
-type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean; reminderId?: string; focusRequest?: number };
-
-function Companion() {
+export function SiteCompanion({ authorised, visible }: { authorised: boolean; visible: boolean }) {
   const pathname = usePathname(), foreground = useChatForeground();
   const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState, online } = useProduction();
   const childId = !sharedChild.target && scopeKey && selectedChildId === chatState.selectedChildId ? selectedChildId : null;
@@ -44,21 +29,22 @@ function Companion() {
   const unread = childId && online && !chatState.error ? chatState.messages.find(m => m.childId === childId && m.proactive && m.proactiveUnread === true)?.id : undefined;
   const [panel, setPanel] = useState<Panel | null>(null);
   const quiet = pathname === '/chat';
-  const open = !quiet && panel?.page === pathname && panel.scope === scope;
+  const open = authorised && !quiet && panel?.page === pathname && panel.scope === scope &&
+    (!panel.privateChild || panel.privateChild === childId);
   useLayoutEffect(() => {
     setPanel(current => {
-      if (!current || current.page !== pathname) return null;
+      if (!authorised || !current || current.page !== pathname || (current.privateChild && current.privateChild !== childId)) return null;
       if (current.scope === scope) return current;
       // Only the explicitly chosen private conversation may follow a scope switch.
       if (current.chosenChild && !sharedChild.target && current.chosenChild === selectedChildId)
-        return { page: pathname, scope, includeItem: false };
+        return { page: pathname, scope, includeItem: false, privateChild: childId ?? undefined };
       return null;
     });
-  }, [pathname, scope, selectedChildId, sharedChild.target]);
+  }, [authorised, pathname, scope, childId, selectedChildId, sharedChild.target]);
   return <>
-    <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground} panelOpen={open}
+    <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground && visible} panelOpen={open} inToolbar={quiet}
       onChat={() => setPanel(current => open && current ? { ...current, focusRequest: (current.focusRequest ?? 1) + 1 }
-        : { page: pathname, scope, includeItem: !!childId, reminderId: unread || undefined })} />
+        : { page: pathname, scope, privateChild: childId ?? undefined, includeItem: !!childId, reminderId: unread || undefined })} />
     {open && <CompanionPopover>{childId
       ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} reminderId={panel.reminderId} focusRequest={panel.focusRequest ?? 1} close={() => setPanel(null)} />
       : <ConversationChoices close={() => setPanel(null)} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} />}</CompanionPopover>}
