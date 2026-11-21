@@ -27,12 +27,12 @@ try {
    await page.getByRole('button',{name:'收起資訊側欄',exact:true}).click();
    await page.getByRole('link',{name:'照顧記錄',exact:true}).click();
    assert.equal(await page.getByTestId('context-rail').count(),0,'Workspace starts with its general rail closed');
-   await page.getByRole('link',{name:'助手',exact:true}).click();
+   await page.getByRole('link',{name:'與 Agent 對話',exact:true}).click();
    assert.equal(await page.getByTestId('context-rail').count(),0,'Manual route choice survives navigation');
   }
   if(width===900) {
    const sidebar=page.getByTestId('web-sidebar');
-   for(const name of ['家庭協調','記憶與話題','設定','助手']) {
+   for(const name of ['家庭協調','記憶與話題','設定','與 Agent 對話']) {
     const item=sidebar.getByRole('link',{name,exact:true});await item.scrollIntoViewIfNeeded();
     const [bounds,frame]=await Promise.all([item.boundingBox(),sidebar.boundingBox()]);
     assert.ok(bounds.y>=frame.y-1&&bounds.y+bounds.height<=frame.y+frame.height+1,`${name} remains reachable in a short window`);

@@ -46,12 +46,23 @@ function setup(width = 1440) {
   return { h, theme, owner, calls, render, composer, navigationItems, desktopNavigationGroups, moreNavigationGroups };
 }
 
-test('the common navigation group contains one assistant entry using the mobile destination', () => {
-  const {navigationItems, desktopNavigationGroups} = harness({}).load('src/components/navigation/app-navigation.ts');
+test('the fixed desktop assistant uses the guarded chat destination shared with the mobile tab', () => {
+  const h = harness({
+    'react-native': { StyleSheet: { create: value => value, flatten }, View: 'View' },
+    'react-native-paper': { Text: 'Text', TouchableRipple: 'TouchableRipple' },
+    '../theme': { colors: {}, spacing: {}, radius: {}, typeScale: {} },
+    '../preview/PreviewNavigationGuard': { PreviewLink: 'PreviewLink' },
+    './AppIcon': { AppIcon: 'AppIcon' },
+  });
+  const { navigationItems, desktopNavigationGroups } = h.load('src/components/navigation/app-navigation.ts');
+  assert.ok(desktopNavigationGroups.every(group => !group.keys.includes('chat')));
+  const { AgentEntryButton } = h.load('src/components/AgentEntryButton.tsx');
+  h.render(h.jsx(AgentEntryButton, { active: true }));
   assert.equal(navigationItems.chat.label, '助手');
   assert.equal(navigationItems.chat.href, '/chat');
-  assert.deepEqual(desktopNavigationGroups.find(group => group.label === '常用').keys, ['home', 'chat']);
-  assert.equal(desktopNavigationGroups.flatMap(group => group.keys).filter(key => key === 'chat').length, 1);
+  assert.equal(h.hosts().find(node => node.type === 'PreviewLink').props.href, navigationItems.chat.href);
+  assert.equal(h.node('agent-entry').props.accessibilityLabel, '與 Agent 對話');
+  assert.equal(h.node('agent-entry').props['aria-current'], 'page');
 });
 
 test('the initial prompt requires a confirmed empty selected-child history, not a loading/error/older-page gap', () => {

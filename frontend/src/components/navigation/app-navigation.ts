@@ -27,7 +27,7 @@ export const navigationItems = {
 } as const satisfies Record<NavigationKey, NavigationItem>;
 
 export const desktopNavigationGroups = [
-  { label: "常用", keys: ["home", "chat"] },
+  { label: "常用", keys: ["home"] },
   { label: "行動", keys: ["tasks", "growth"] },
   { label: "回顧", keys: ["summary", "history"] },
   { label: "管理", keys: ["care", "memory", "profile", "more"] },
