@@ -5547,5 +5547,373 @@
         ]
       }
     ]
+  },
+  "originalAgeScopeReadback": {
+    "readTime": "2026-11-21T09:22:11.641332Z",
+    "sourceCount": 9,
+    "settledOriginalOrganizers": 9,
+    "independentReviewTickets": 0,
+    "verifiedFamilyEditions": 0,
+    "limits": "The printed-page observations identify scope and source-layer differences. They do not identify the exact model unit that triggered the original hold. No age endpoint, retained revision or new model request was registered.",
+    "entries": [
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "sha256": "e8813172e165c25a1d0112334aaaad3e59b40b7873de592c6a8a4fe5fa0afc5b",
+        "pages": 4,
+        "originalOperation": "c4632aa0f23ccbb6312b4413c3a1cce15270ecadffe42cc62a5f90559fab5fb1",
+        "observationHash": "b34f298e55cc36a2fc48ab3d0b425e60108962eefa4a4b2e6e7af750af91325b",
+        "terminalCode": "knowledge_age_uncertain",
+        "settledOriginalOrganizerStage": "0b55562d2d9b5743de9f7aeb3f2e3b0ed7c3aa5a111b0a5f57eafc7099372f85",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          4
+        ],
+        "firstAttachmentPages": 4,
+        "selectedPrintedPages": [
+          {
+            "page": 2,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "53de9837d1d033927d7e8a5d3dc69ac6793e1e6738768ec423ca27fc581a64db"
+          }
+        ],
+        "printedScope": "The birth-to-five interval identifies a clinic service. The same paragraph describes a separate school service for primary pupils."
+      },
+      {
+        "sourceId": "pdf-7d1aab663a0d1e17c4e6b5d1",
+        "sha256": "82fc5465ca77726dcb6efd652d8920679811c0ff5e2d52161a616be899880346",
+        "pages": 6,
+        "originalOperation": "f035ed7ce721ce251045e7a538e746ca1210acaf41317dcd2103ef6c559135bc",
+        "observationHash": "247ce225fc1a4f656dc71b34cada25b5f127f4f25d57ab2de326513f9e913489",
+        "terminalCode": "knowledge_age_one_sided",
+        "settledOriginalOrganizerStage": "f89e1eb2424b1e81ff398a9abf8a5863ea8d0d05ad8e6627cf0fcad3730d11d0",
+        "organizerRoute": "whole_original",
+        "organizerCorePages": [
+          1,
+          6
+        ],
+        "firstAttachmentPages": 6,
+        "selectedPrintedPages": [
+          {
+            "page": 4,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "c4066a104804e3a34baacccbd084a8d76b19cb7c8aa328e920a0e9b51c682922"
+          }
+        ],
+        "printedScope": "The number of days or weeks describes the duration of a newborn care event. It supplies no upper age bound for the audience of the care instructions."
+      },
+      {
+        "sourceId": "pdf-72a78af063b2df4ff8d129a3",
+        "sha256": "e9f1a02b50e3fed0af1c8eefb1725f22d4945ca25f17d72e4e5fa0880b8668ac",
+        "pages": 7,
+        "originalOperation": "77c1730bba362cec335544533a8303362044e71360bcc7acb68c922b4d593c49",
+        "observationHash": "f950cdebf7b15103849d0da26f44b20b6d5bda429f6b395ab6fcd0b52ad5abcc",
+        "terminalCode": "knowledge_age_uncertain",
+        "settledOriginalOrganizerStage": "c70122e34b6a582b753175f41f62ef55b3f38872d0772b92f6287d348e967189",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          7
+        ],
+        "firstAttachmentPages": 7,
+        "selectedPrintedPages": [
+          {
+            "page": 3,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "7cf89736136968aa3579d03fa8d6434a5b93acb85a8e03473da6a5682c71dca6"
+          }
+        ],
+        "printedScope": "The registered text layer includes a three-to-five-year qualifier in a linked leaflet title. The corresponding printed reference describes preschool children. It is a related resource."
+      },
+      {
+        "sourceId": "pdf-110b0452a51c2bc488fbe7f5",
+        "sha256": "80d0ae8ad0b446d46281bde34e93a82e41e6d49824cb05e220e8d8dc2119e9e2",
+        "pages": 8,
+        "originalOperation": "a450cef9ed35709bbeed53e08af82b695189b35f1d1362f5c0bfd4630b7991d6",
+        "observationHash": "138c266c7cee4612f962f46f1aa418a1636e8526eae2de75f8a7abc078c18b29",
+        "terminalCode": "knowledge_age_uncertain",
+        "settledOriginalOrganizerStage": "c67eed0c45a63c7cafc07819e622b1739cac9ab63788a31bb09ee24a99baa508",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          8
+        ],
+        "firstAttachmentPages": 8,
+        "selectedPrintedPages": [
+          {
+            "page": 4,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "24696f41b378b33df7b4219e00b84832e3dfecb59594e418a401b62338c7d99c"
+          }
+        ],
+        "printedScope": "The printed page addresses consequences for preschool children. The numeric examples on this page measure waiting time in minutes."
+      },
+      {
+        "sourceId": "pdf-75f4948b23d797f1e6883149",
+        "sha256": "c62c723285ba62ed7b692edf67b4e1f97ffda6de6885bb9d199436790614b98d",
+        "pages": 8,
+        "originalOperation": "8802d37f28eaabb827e73a4362cba652b55c674fae33ff4f5a63f610d045f1d0",
+        "observationHash": "dd4b01cf7c9605886699483984234c888d33a3f4c2667618520d55f371de6a1b",
+        "terminalCode": "knowledge_age_uncertain",
+        "settledOriginalOrganizerStage": "0217b210f85dc6ded47558b9dc2a2e78a21364761a83a5da53479908f2d26a9b",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          8
+        ],
+        "firstAttachmentPages": 8,
+        "selectedPrintedPages": [
+          {
+            "page": 1,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "7eabaafb896837e976537bd018dc7801e1ef402aa3e842dd687a1d2eab3050e9"
+          },
+          {
+            "page": 2,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "c708db4cd3e5dcc340f6f4797c5586824e014436be0d43747be37f841a8168e2"
+          },
+          {
+            "page": 3,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "c882bf7c9ca4af268a2784987913b3afb8f6958b63577da26974fc90c9515b3f"
+          },
+          {
+            "page": 4,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "ad3acd2d617400dc29f28ba32e5c93f498f03f70007cbcf7b91fe81730df0ed0"
+          },
+          {
+            "page": 5,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "179afd9581494b085d1c9e96ab37e6b53c917dae901dd3a72bb42228d09765d8"
+          },
+          {
+            "page": 6,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "7f9ff1e525e2644f7bdc793c59cd919a13e87b1076e903da2e37ac7e9a8966f3"
+          },
+          {
+            "page": 7,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "35d4b3d0f487d7c4c8aeec2d914950df496d6381cc6c24cb98a460b265ee1a86"
+          },
+          {
+            "page": 8,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "992ff5833e7f26b4c4f75d408daa3161d89100b5e841774739d7a5bee7d89f2a"
+          }
+        ],
+        "printedScope": "The printed checklists on pages 4, 5 and 6 address children already attending the named kindergarten class for some time, with approximate ages 3–4, 4–5 and 5–6 respectively. Page 8 specifies preschool children aged two or above for a separate parenting course. All eight page text layers are empty."
+      },
+      {
+        "sourceId": "pdf-83ee5bc5318ca28cbbf5598a",
+        "sha256": "28c72ca8a6fe4a840325e274b2b918504035e2b6960997f9f807b889482d13d7",
+        "pages": 8,
+        "originalOperation": "ca72ca001f065e07e1960c88f342adf8a075b71c04f49ab692a14a0742698d49",
+        "observationHash": "f385a85d4804d5ee3d879b2e19c9aa985309d8dec1a72e1e10f4c9ec61fbda52",
+        "terminalCode": "knowledge_age_one_sided",
+        "settledOriginalOrganizerStage": "0030513084c396e3f21763c215db643b33c610eb28edf0eaa0d4faf21d32a946",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          8
+        ],
+        "firstAttachmentPages": 8,
+        "selectedPrintedPages": [
+          {
+            "page": 1,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "58a394b18130e61c0fe15c81f785df10ca54038a66740fa4d82d35cb14507cbd"
+          }
+        ],
+        "printedScope": "The cover addresses parents of infants under one year of age. The cover states an upper limit."
+      },
+      {
+        "sourceId": "pdf-942362fc743b07c81abe9109",
+        "sha256": "0539ef75708cae9ee99ce7ea196e2eeea0e8a219b0a5f7fd57f14b8d7bc15e58",
+        "pages": 8,
+        "originalOperation": "907da1c6a96e6487dd2c0c43a4f0bec84e8183b08c8b20c7f647a7d89c386658",
+        "observationHash": "59aa1a2dc6e88d9cd847a6ce3bf8b494a64bbb92a47056091aafeca2d265dc7c",
+        "terminalCode": "knowledge_age_uncertain",
+        "settledOriginalOrganizerStage": "5fad0fe9e0649f6ab95a7ee5601b121cb08f0349d9cd6a6699756030e7902d9a",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          8
+        ],
+        "firstAttachmentPages": 8,
+        "selectedPrintedPages": [
+          {
+            "page": 4,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "083bcf023b76c28ba4337fdde2fed33bae4406456222a2a451591cb4632da407"
+          }
+        ],
+        "printedScope": "The registered text layer includes a three-to-five-year qualifier in a linked leaflet title. The corresponding printed reference describes preschool children. It is a related resource."
+      },
+      {
+        "sourceId": "pdf-db6902edaf415c9e24a2438a",
+        "sha256": "5ec13c649aed1b6f0eb73a84c16389c18392db69aae2949a1cd695abbdbd0b8c",
+        "pages": 8,
+        "originalOperation": "1009bf885784841baaaf3b03c35b761052cc81d6999d6af83fc8a9a982faa3bc",
+        "observationHash": "bfa9c600894b69a7bb8cc24f962bf646362e9fbc3a9ee0752d5f95fdbdefc687",
+        "terminalCode": "knowledge_age_one_sided",
+        "settledOriginalOrganizerStage": "9a46cb8f568b79f3c4e736d2e0ecee00426e30b2cec132416d1a3bc7de208cdf",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          8
+        ],
+        "firstAttachmentPages": 8,
+        "selectedPrintedPages": [
+          {
+            "page": 1,
+            "originalLayerStatus": "empty",
+            "checkedRenderingSha256": "8e208037b607aa5301fc58672619e8ce72629b8409179b755f8ef6e69ac24e1c"
+          },
+          {
+            "page": 2,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "49e64a850e3290cfeb952d9c184c70f52a186fe561729f6375d39b9d8ba77581"
+          }
+        ],
+        "printedScope": "Page 2 describes changes in a toddler beginning at about one year and continuing until kindergarten entry. The end condition is a school-entry stage."
+      },
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "sha256": "8971dc31be66bdacc393f1ecdce46114bdb86bf0393d2e1abcd07db8d508b308",
+        "pages": 96,
+        "originalOperation": "4e88c4e2c9a1e205344fdad8fd0f3cef945020865b5cfd119209eae5853f70cb",
+        "observationHash": "44acff5c3aaecda423ff98892529caceb6641581226aeee1dc795b1ed5575668",
+        "terminalCode": "knowledge_age_one_sided",
+        "settledOriginalOrganizerStage": "8be4c93544f4f6afbb64edbb9c3803153fd33530d6f64232dc2e4b750831b61a",
+        "organizerRoute": "native_window",
+        "organizerCorePages": [
+          1,
+          12
+        ],
+        "firstAttachmentPages": 13,
+        "selectedPrintedPages": [
+          {
+            "page": 5,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "52c58bd85ba24dc9c7b7f2e07911bbda5fdbdd2ce8a984d0c39fa5af02be0a7b"
+          },
+          {
+            "page": 12,
+            "originalLayerStatus": "text",
+            "checkedRenderingSha256": "7cc4f46455f85ef3055ad9853cb8a0212ad3a26e7a92cd8b03abdc7015efd236"
+          }
+        ],
+        "printedScope": "The opening window mixes infant-feeding phases on physical page 5 with prenatal development at roughly 20 gestational weeks on physical page 12. The age of two years on page 5 is expressly open-ended."
+      }
+    ]
+  },
+  "longSourceReceiptInputs": {
+    "preparationCommit": "4ba79938549b161bda2f140255c461ba733dd6f0",
+    "workerSource": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
+    "readTime": "2026-11-21T09:22:11.641332Z",
+    "originalReceiptCheckedAt": "2026-11-20T16:57:19.302Z",
+    "parserBinding": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "comic": {
+      "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+      "sourceSha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+      "originalOperation": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+      "observationHash": "b73aecabc4cad735502392694454d35c75b560a2f4818ffeb138ecb14e87f082",
+      "priorInputIndexSha256": "266f54297aba508d8f6b8f93a92464037113164ed60ba291c2e956804e19436d",
+      "priorInputRecords": 10,
+      "newInputRecords": 14,
+      "previouslyMissingParentRanges": [
+        [
+          9,
+          16
+        ],
+        [
+          17,
+          24
+        ],
+        [
+          25,
+          32
+        ],
+        [
+          33,
+          36
+        ]
+      ],
+      "parentPageStatuses": {
+        "emptyPages": [
+          1
+        ],
+        "textPages": [
+          2,
+          35,
+          36
+        ],
+        "unreadablePageRanges": [
+          [
+            3,
+            34
+          ]
+        ]
+      },
+      "indexSha256": "4b42b2f92f5f1e461752e694f1e28421b00a5dee6428dc095704cd2b02b461cf",
+      "rebuiltCliIndexSha256": "ef54488275aa4bc80837daa8f99bf3e9804921e022c11a33852596dc554613e3",
+      "originalAttachmentRecordsUnchanged": 3,
+      "originalDerivativeTextRecordsUnchanged": 6,
+      "archiveSha256": "288ab4e7ad4609b028a3a4b5f7b2e5012b293741e0ffd71fa658f91628482796",
+      "archiveBytes": 3962306,
+      "operatorDirectory": "fhs-c3-ready-pdf-48e37ddf27a8864e98362fa9-4b42b2f92f5f",
+      "mountedIndexFormalReadback": "awaiting_host_capacity",
+      "officialReceiptSha256": "7b2454412257e2e63b4c4c469291f1f61ef53dbbdb242da2521d70877f5e5459",
+      "officialOutcome": "candidate_held",
+      "officialCode": "unavailable",
+      "providerTicketsAtLatestLedgerRead": 0,
+      "activeEdition": null
+    },
+    "unstartedSources": [
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "owner": "C2",
+        "sourceSha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+        "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+        "observationHash": "a6598a8a40ee0d9c0298b73a03a81292e00f2fab389a48306bf86f336b3cb4b8",
+        "physicalPages": 112,
+        "physicalPageStatuses": {
+          "unreadable": 58,
+          "text": 52,
+          "empty": 2
+        },
+        "parentTextBlocks": 14,
+        "previouslyMissingParentBlocks": 13,
+        "verifiedNativeAttachments": 10,
+        "allOpenedRecords": 43,
+        "localArchiveBytes": 65074991,
+        "localArchiveSha256": "f938db11e4c44a52036bdfc1dd1f9b087155d960dc907e35f0be8a8b5468c352",
+        "indexSha256": "2a82c01ea443569aa6c635e8744b99bd45808f15031f55fb4a6511290372813a"
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "owner": "C1",
+        "sourceSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+        "originalOperation": "125245f585eeaf703109aea65cabee42c92edee169617a7c2e4aaa647a58de41",
+        "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
+        "physicalPages": 192,
+        "physicalPageStatuses": {
+          "unreadable": 77,
+          "text": 113,
+          "empty": 2
+        },
+        "parentTextBlocks": 24,
+        "previouslyMissingParentBlocks": 23,
+        "verifiedNativeAttachments": 16,
+        "allOpenedRecords": 72,
+        "localArchiveBytes": 77871518,
+        "localArchiveSha256": "ba8eba65eedf3b94f2f6c61299bd7418f39c9a5eff42a0f67e644772da55c850",
+        "indexSha256": "249dc8030ced36ed5a69156116ede3a52d923a80d20696b67b53a220402b9ab1"
+      }
+    ],
+    "confirmation": "The staged comic index and each of its 14 records were verified in the operator volume. The unchanged original attachments and all 36 parent pages were opened locally through the pinned reader; the held work has no independent review, family version or published citation to verify. The two larger source-specific packs have been reopened locally; their original jobs remain unstarted at the last scoped ledger read."
   }
 }
