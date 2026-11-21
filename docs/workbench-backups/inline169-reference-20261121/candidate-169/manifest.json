@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-169-image-count",
+  "base": {
+    "artifact": "candidate-167/out",
+    "htmlSha256": "77244809655bbc8e999180aefd7db04ca078fa2c50cda13edf957dfd84fc3d9c",
+    "rawRecordsSha256": "e706962d921df1a6326fce3cb46d5003ddb2968754b495cc639ef50d962bc3ff",
+    "rawArtworkSha256": "cc8bac8f841e37f565db152f26515ef594044b60de02a1a5a88a9424c4b5cca1",
+    "topics": 82,
+    "choices": 167,
+    "images": 167
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-revision/assets.json",
+      "sha256": "99df76a1d271a50649c27f752c7049280f491f44896b2860cc38ed2b266d408c"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "e79649d80304cd34f7c6987f0504258ef0be619243048133b5584ecbbf679361",
+    "PROVENANCE.md": "cc32438f69b5e0e7f3d51848fbf992027d12110f85f37ba6dc9d831e7ba5b0ff"
+  },
+  "topics": [
+    {
+      "number": 83,
+      "title": "更正已保存的照顧記錄：先核對原因和擬共享內容",
+      "choices": [
+        {
+          "name": "編輯表單下方顯示未儲存預覽",
+          "note": "DokuWiki 在同一頁保留編輯表單，並在下方顯示預覽；即使已自動儲存恢復用草稿，現行頁面仍未改動。育伴港更正記錄須填原因並另行確認；這裏只比較先看預覽、後儲存。",
+          "links": [
+            {
+              "label": "DokuWiki 2026-07-14 Mort：全頁介面與頁面工具",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/lib/tpl/dokuwiki/main.php#L35-L69"
+            },
+            {
+              "label": "同版：儲存、預覽、取消與編輯摘要",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/inc/Ui/Editor.php#L105-L123"
+            },
+            {
+              "label": "同版：保留編輯表單，再顯示渲染預覽",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/inc/Action/Preview.php#L19-L46"
+            },
+            {
+              "label": "同版：預覽標示及渲染未儲存內容",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/inc/Ui/PageView.php#L42-L60"
+            },
+            {
+              "label": "DokuWiki 程式碼授權聲明：GPL v2",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/composer.json#L1-L8"
+            },
+            {
+              "label": "DokuWiki 開源授權全文：GNU GPL v2",
+              "url": "https://github.com/dokuwiki/dokuwiki/blob/70c54a601cfa85941896cff7a15014a9af4872dc/COPYING"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-revision/care-revision-a.png",
+            "sha256": "94b094543a2deb2ee00c2884341c80c9f66f90aecaa702ce6a1b914ed81f02fa",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "DokuWiki 的非官方桌面介面重繪。上方保留 Wiki 語法編輯框、儲存、預覽、取消及編輯摘要，右側有草稿存檔時間；下方以粗體標明頁面尚未儲存，並顯示已排版的虛構展板說明。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "先看完整閱讀預覽，再返回編輯",
+          "note": "預覽以暫存資料顯示完整頁面，這一步不會正式儲存。返回內容編輯會保留剛填寫的欄位及修訂說明；如要儲存，須在編輯頁另行操作。",
+          "links": [
+            {
+              "label": "Drupal 11.3.0：完整頁面預覽",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/modules/node/src/Controller/NodePreviewController.php#L53-L63"
+            },
+            {
+              "label": "同版：返回內容編輯與檢視模式",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/modules/node/src/Form/NodePreviewForm.php#L77-L94"
+            },
+            {
+              "label": "同版：暫存預覽獨立於正式儲存",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/modules/node/src/Form/NodeForm.php#L231-L274"
+            },
+            {
+              "label": "同版：正式儲存處理",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/modules/node/src/Form/NodeForm.php#L280-L285"
+            },
+            {
+              "label": "同版測試：返回後仍保留編輯值及修訂說明",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/modules/node/tests/src/Functional/PagePreviewTest.php#L459-L492"
+            },
+            {
+              "label": "同版：文章類型的修訂及預覽設定",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/profiles/standard/config/install/node.type.article.yml#L1-L10"
+            },
+            {
+              "label": "同版：Olivero 的預覽頂列樣式",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/themes/olivero/css/components/node-preview-container.css#L11-L39"
+            },
+            {
+              "label": "同版：正式版本號",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/lib/Drupal.php#L75-L81"
+            },
+            {
+              "label": "同版：核心程式的 GPL-2.0-or-later 聲明",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/composer.json#L1-L6"
+            },
+            {
+              "label": "Drupal 核心程式授權：GPL-2.0-or-later（非圖像授權）",
+              "url": "https://github.com/drupal/drupal/blob/ac5da07ad88571dbb31dfb52f055bb0d4063f598/core/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-revision/care-revision-b.png",
+            "sha256": "25a7d052e54cd1862a65b0896a7dc9e1f80011f976e6c87917f55c6c221bbcfe",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Drupal 桌面示例：頂列左側是「返回內容編輯」，右側檢視模式是「完整」。下方用閱讀版面顯示「紙上小港：繪本展板筆記」標題、原創紙藝繪本插圖及正文。預覽頁沒有儲存按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 83 題 · 更正尚未保存的兩幅自製示意",
+      "input": "draft-care-revision/DECLARATION.txt",
+      "sha256": "e79649d80304cd34f7c6987f0504258ef0be619243048133b5584ecbbf679361"
+    }
+  ]
+}
