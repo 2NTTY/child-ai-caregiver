@@ -398,6 +398,11 @@ test("retained official PDF endpoints survive storage while the original organiz
   const proposed = reviseRetainedDraft(raw, revision, []);
   assert.throws(() => original.parse(proposed));
   const parsed = pdfOrganizationContract(units, [], [], undefined, false, true).parse(proposed).units[0]!.applicability;
+  const updatedEdition = pdfOrganizationContract(units, [], [], undefined, true, true);
+  assert.equal(updatedEdition.parse(proposed).units[0]!.applicability.maxAgeMonths, 216);
+  const uncertain = structuredClone(raw);
+  Object.assign(uncertain.ranges[key]!, {ageRange:{requiresAgeReview:'uncertain'}});
+  assert.throws(() => updatedEdition.parse(uncertain), {code:'knowledge_age_uncertain'});
   const watch = candidate().definition;
   const document = {sourceId: watch.id, url: watch.url, title: 'Fixture', publisher: watch.publisher, termsUrl: watch.termsUrl,
     classification: 'official_guidance', sourcePublishedAt: null, sourceUpdatedAt: null, fetchedAt,

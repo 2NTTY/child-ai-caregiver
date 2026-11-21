@@ -6,6 +6,7 @@ import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraft
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
 import { physicalPdfQuote } from "./knowledge-pdf-physical-quote.ts";
+import { reviewedExternalEdition } from "./platform-materials.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION, backgroundKnowledgeReviewBindingSchema,
@@ -252,8 +253,11 @@ export async function prepareKnowledgeMaintenance(input: {
       reject("knowledge_native_read_incomplete");
     return report;
   }
+  const externalEdition = sha ? reviewedExternalEdition(candidate.observed.url, sha) : undefined;
   const nativeScope = pdf ? { readScope: { contentHash: sha, firstPage: 1,
     lastPage: candidate.observed.extraction!.totalPages }, layoutQuestion,
+    ...(externalEdition ? { edition: externalEdition.dateText, sourceAgeDefinitionToVerify: externalEdition.sourceAgeDefinition,
+      pageFindingsInstruction: "Report each physical page in a complete finding of at most 240 characters, including spaces. Verify the definition and its applicability against the actual page." } : {}),
     textLayerWarnings: candidate.observed.pages!.filter(p => damagedPdfText.test(p.text)).map(p => p.page),
     quantityLocators: pdfQuantityLocators(candidate.observed.pages!),
     ...(sample ? { physicalPage: sample.physicalPage } : {}) } : {};
@@ -268,7 +272,8 @@ export async function prepareKnowledgeMaintenance(input: {
     || held.prepared.versionHash !== sourceVersionHash(held.prepared.source) || held.prepared.assessment.observationHash !== candidate.observationHash))
     reject("knowledge_pdf_revision_binding_mismatch");
   const output = input.explicitAgeScope ? explicitAgeOrganization : organizedSchema;
-  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys, priorTopics, priorReading?.organize, input.explicitAgeScope) : null;
+  const pdfContract = pdf ? pdfOrganizationContract(units, sample?.factKeys, priorTopics, priorReading?.organize,
+    input.explicitAgeScope, Boolean(externalEdition?.sourceAgeDefinition)) : null;
   const samePages = (unit: OriginalUnit) => priorRanges.filter(chunk => chunk.pageStart && chunk.pageEnd
     && chunk.pageStart >= unit.page! && chunk.pageEnd <= unit.pageEnd! && chunk.originalText
     && unit.originalText.includes(chunk.originalText));
