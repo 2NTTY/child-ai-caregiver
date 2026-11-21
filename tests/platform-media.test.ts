@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPlatformMediaStore } from '../server/firestore-platform-media.ts';
 import { createPlatformMediaProcessor } from '../server/platform-media-processing.ts';
-import { readWebVtt } from '../server/platform-media-evidence.ts';
+import { loadMediaOriginals, readWebVtt } from '../server/platform-media-evidence.ts';
 import { createKnowledgeSourceFetcher } from '../server/knowledge-source-fetch.ts';
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { fhsMaterialWatches } from '../server/platform-materials.ts';
@@ -70,6 +70,32 @@ test('published WebVTT timecodes outrank audio analysis and malformed times are 
   await createPlatformMediaProcessor(store,'test',async () => assert.fail('Captions should not use a model'),
     async () => [{url, hash: knowledgeHash(captions), captions, transcript:''}])(id,new AbortController().signal);
   assert.equal((await database.runTransaction(tx => store.read(tx,id))).clips?.[0]?.end, 3.5);
+});
+
+test('an official page and its direct video link bind captions to the same player after a second video is added', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html';
+  const first = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
+  const second = 'https://www.fhs.gov.hk/tc_chi/mulit_med/second.mp4';
+  const track = new URL('second.vtt', page).href;
+  const signal = new AbortController().signal;
+  let html = '<iframe src="https://www.youtube.com/embed/zKcYlmle4gI"></iframe><div id="transcript">Official script</div>';
+  const fetcher: NonNullable<Parameters<typeof loadMediaOriginals>[2]> = async url => {
+    assert.ok(url === page || url === track);
+    const body = url === page ? html : 'WEBVTT\n\n00:01.000 --> 00:02.000\nSecond video only\n';
+    return { status: 'response', response: { status: 200, contentType: url === page ? 'text/html' : 'text/vtt', body: Buffer.from(body) } };
+  };
+  const read = (url: string) => loadMediaOriginals(url, signal, fetcher);
+  const single = await read(first);
+  assert.equal(single[0]?.transcript, 'Official script');
+  assert.deepEqual(await read(page), single);
+
+  html += '<video><source src="' + second + '"><track kind="captions" srclang="zh" src="second.vtt"></video>';
+  const byPage = await read(page), byDirect = await read(first);
+  assert.deepEqual(byDirect, byPage.filter(original => original.url === first));
+  assert.equal(byDirect[0]?.transcript, '');
+  assert.deepEqual(byDirect[0]?.captions, []);
+  assert.deepEqual(byPage.find(original => original.url === second)?.captions,
+    [{ start: 1, end: 2, text: 'Second video only' }]);
 });
 
 test('an unresolved shared original keeps its previous clip while sibling streams and later links update', async () => {
