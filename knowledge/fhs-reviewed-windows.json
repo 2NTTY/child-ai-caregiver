@@ -692,5 +692,41 @@
         "proof": "printed"
       }
     ]
+  },
+  {
+    "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+    "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+    "pages": 4,
+    "bindingHash": "c4bf0a272cd55b19b6c39f040811bff78d98fb08edf50264ff04da64f2a7bc61",
+    "action": "retain_window_quotes",
+    "passages": [
+      {
+        "page": 2,
+        "originalKind": "page_transcription",
+        "organizerStart": 7,
+        "reviewerStart": 0,
+        "length": 26,
+        "sha256": "555fafba3caa200a407467e0811e8234ac7310bff155b7ebc989178b6120ce11",
+        "proof": "printed"
+      },
+      {
+        "page": 3,
+        "originalKind": "page_transcription",
+        "organizerStart": 6,
+        "reviewerStart": 0,
+        "length": 44,
+        "sha256": "3ccea9631b1478e42dacf45558573d84ea2d0bba8c8db2b8ccebfb25c60c772d",
+        "proof": "printed"
+      },
+      {
+        "page": 4,
+        "originalKind": "page_transcription",
+        "organizerStart": 0,
+        "reviewerStart": 0,
+        "length": 68,
+        "sha256": "1171d774fddaffba218fc8f3b11a07c0328743cd749f5999eb0e5eba88c14859",
+        "proof": "printed"
+      }
+    ]
   }
 ]
