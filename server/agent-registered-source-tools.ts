@@ -96,7 +96,7 @@ export function createRegisteredSourceTools(store: AgentSourceCards, owner: stri
         seen.add(card.seriesId);
         listed.set(card.seriesId, card);
         const { seriesId, name, publisher, mode, enabled } = card;
-        return [{ seriesId, name, publisher, mode, enabled }];
+        return [{ seriesId, name, publisher, mode, enabled, ...(card.childHealth ? { adopted: card.childHealth.adopted, documents: card.childHealth.total } : {}) }];
       });
       const nextCursor = page.next ? identity('platform-page', page.next, url ?? '') : null;
       if (nextCursor && page.next) cursors.set(nextCursor, { after: page.next, url, seen });
