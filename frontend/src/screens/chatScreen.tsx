@@ -365,7 +365,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
       onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
       queueAction={childScopedChat && chatWritesAllowed && chat.online && !stopPending && phase === "replying" && activeReplyId && draft?.savedUserMessageId === activeReplyId && !!composerText.trim() && composerText.length <= 10_000
-        ? { queued: chat.queuedTextAfter === activeReplyId, press: () => chat.queuedTextAfter === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}
+        ? { queued: chat.queuedText?.afterMessageId === activeReplyId, press: () => chat.queuedText?.afterMessageId === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}
       stopDisabled={stopPending || !chat.online} stopTarget={activeReplyId ?? undefined}
       attachments={submittedDraft ? [] : agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat}

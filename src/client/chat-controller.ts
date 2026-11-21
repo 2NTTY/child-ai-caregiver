@@ -45,7 +45,7 @@ export interface ChatState {
   loadingOlder: boolean;
   cancelling: boolean;
   cancelAcceptedFor?: string;
-  queuedTextAfter?: string;
+  queuedText?: { afterMessageId: string; pageContext?: ChatPageContext };
   cancelNotice: string | null;
   loadedAt: string | null;
   error: string | null;
@@ -191,7 +191,7 @@ export class ChatController {
   }
 
   private abortRequests(): void {
-    if (this.state.queuedTextAfter || this.state.cancelAcceptedFor) this.update({ queuedTextAfter: undefined, cancelAcceptedFor: undefined });
+    if (this.state.queuedText || this.state.cancelAcceptedFor) this.update({ queuedText: undefined, cancelAcceptedFor: undefined });
     this.view += 1;
     for (const controller of this.requests) controller.abort();
     this.requests.clear();
@@ -323,7 +323,7 @@ export class ChatController {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.busy === "save") return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
-    if (this.state.queuedTextAfter) this.update({ queuedTextAfter: undefined });
+    if (this.state.queuedText) this.unqueueNextText();
     if (draft.phase === "reply_failed" && this.state.busy === null && this.state.remoteReply?.status !== "running") {
       this.startNewMessage();
       this.updateDraft(childId, { text, notice: null });
@@ -577,26 +577,27 @@ export class ChatController {
     } finally { if (this.current(scope)) this.update({ loadingOlder: false }); this.release(scope); }
   }
 
-  queueNextText(): void {
+  queueNextText(pageContext?: ChatPageContext): void {
     const { selectedChildId, replyingMessageId, busy, online } = this.state;
     const draft = selectedChildId ? this.state.drafts[selectedChildId] : null;
-    if (!online || busy !== "reply" || !replyingMessageId || draft?.phase !== "replying"
+    if (!online || busy !== "reply" || this.state.queuedText || !replyingMessageId || draft?.phase !== "replying"
         || draft.savedUserMessageId !== replyingMessageId || !draft.nextText?.trim() || draft.nextText.length > 10_000) return;
-    this.update({ queuedTextAfter: replyingMessageId });
+    this.update({ queuedText: { afterMessageId: replyingMessageId, pageContext } });
   }
 
   unqueueNextText(): void {
-    this.update({ queuedTextAfter: undefined });
+    this.update({ queuedText: undefined });
   }
 
   private finishTextQueue(scope: RequestScope, messageId: string | null): void {
-    if (!messageId || !this.current(scope) || this.state.queuedTextAfter !== messageId) return;
+    const queued = this.state.queuedText;
+    if (!messageId || !this.current(scope) || queued?.afterMessageId !== messageId) return;
     this.unqueueNextText();
     const draft = scope.childId ? this.state.drafts[scope.childId] : null;
     if (this.state.online && !this.state.busy && draft?.phase === "draft" && draft.text.trim()
         && !this.state.replyError && !this.state.remoteReply && this.state.cancelAcceptedFor !== messageId
         && this.state.messages.some(row => row.role === "model" && row.inReplyTo === messageId && !isIncompleteModelReplyText(row.text))) {
-      void this.send();
+      void this.send(undefined, undefined, undefined, { pageContext: queued.pageContext });
     }
   }
 
@@ -605,7 +606,7 @@ export class ChatController {
     const replyingMessageId = this.state.replyingMessageId ?? (this.state.remoteReply?.status === "running" ? this.state.remoteReply.messageId : null);
     if (!childId || !replyingMessageId || this.state.busy !== "reply" && this.state.remoteReply?.status !== "running" || this.state.cancelling || this.state.cancelAcceptedFor === replyingMessageId || !this.state.online || !this.api.cancelReply) return;
     const scope = this.scope();
-    this.update({ cancelling: true, cancelNotice: null, queuedTextAfter: undefined });
+    this.update({ cancelling: true, cancelNotice: null, queuedText: undefined });
     try {
       if (!await this.verifyIdentity(scope)) return;
       const accepted = await this.api.cancelReply(childId, replyingMessageId, scope.controller.signal, scope.userId);
@@ -703,7 +704,7 @@ export class ChatController {
     let replyCompleted = false;
     let activeRunId: string | null = null;
     try {
-      if (!await this.verifyIdentity(scope)) return;
+      if (!this.current(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
         if (activeRunId !== null && activeRunId !== event.runId) return;
@@ -860,7 +861,7 @@ export class ChatController {
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
         feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelAcceptedFor: undefined, cancelNotice: null });
       savedId = saved.id;
-      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: "聊天已保存，正在等候 AI 回覆。" });
+      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: null });
       await this.performReply(scope, saved.id);
     } catch (error) {
       if (!this.current(scope)) return;
@@ -942,9 +943,10 @@ export class ChatController {
         this.update({ busy: null, replyingMessageId: null });
         await this.reloadMessages(); return;
       }
+      if (!await this.verifyIdentity(scope)) return;
       this.update({ remoteReply: null });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { phase: "replying", notice: "聊天已保存，正在等候 AI 回覆。" });
+        this.updateDraft(childId, { phase: "replying", notice: null });
       }
       await this.performReply(scope, messageId);
     } catch (error) {
