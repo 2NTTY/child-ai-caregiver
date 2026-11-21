@@ -137,7 +137,7 @@ try {
     if (resuming && !prior) throw Error('knowledge_campaign_resume_binding_changed');
     if (repairing && (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit'
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
-    const reviewedWindow = invocation === 'resume-approved' && lane === 'C2' ? bindReviewedWindow(manual,original,prior) : undefined;
+    const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
     const operationFingerprint = reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
