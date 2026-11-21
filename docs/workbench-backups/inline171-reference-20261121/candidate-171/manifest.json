@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-171-image-count",
+  "base": {
+    "artifact": "candidate-169/out",
+    "htmlSha256": "67e1487c338be02d53d12f3fbb9f5f25ed5eac69b23a55db6849f6829652bedf",
+    "rawRecordsSha256": "37d1543cdb1adbe2a7f633c92547a420ac60b4aae9e02595f80083e94899b6ff",
+    "rawArtworkSha256": "22428932d02409b3b62a7a0cbe14dfafd761e5c0c8e4d33906981e8cececf90a",
+    "topics": 83,
+    "choices": 169,
+    "images": 169
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-prep-ticks/assets.json",
+      "sha256": "411d54f20ffd49c5dbd023b942058f98d6e1555e456440e90fb2b7d8ad229d45"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "f008c2a377671b179b290bd66e02a85f91b2a50d978ab64a882ed5e9e02c497a",
+    "PROVENANCE.md": "d2a9c5b90f5de5abc7c35d52a444783fd58c7631ec32e267af81240584b586f3"
+  },
+  "topics": [
+    {
+      "number": 84,
+      "title": "直接在準備單勾選，未同步不等於已保存",
+      "choices": [
+        {
+          "name": "在閱讀畫面直接勾選核對項目",
+          "note": "Joplin 可在筆記閱讀畫面直接勾選 Markdown 清單，同時保留正文和問題。育伴港只在符合條件時開放勾選，並另外標示未同步或背景保存中；不能單憑剔號判斷已保存。",
+          "links": [
+            {
+              "label": "Joplin Android 3.7.10：閱讀畫面保留筆記標題及正文",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/packages/app-mobile/components/screens/Note/Note.tsx#L1912-L1941"
+            },
+            {
+              "label": "同版：閱讀筆記時可勾選正文清單",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/packages/app-mobile/components/screens/Note/Note.tsx#L1718-L1742"
+            },
+            {
+              "label": "同版：勾選切換 Markdown 項目的狀態",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/packages/app-mobile/components/NoteBodyViewer/hooks/useOnMessage.ts#L36-L46"
+            },
+            {
+              "label": "同版：把勾選變更寫入筆記正文欄位",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/packages/app-mobile/components/screens/Note/Note.tsx#L1621-L1623"
+            },
+            {
+              "label": "Joplin 手機程式碼授權：AGPL-3.0-or-later",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/packages/app-mobile/package.json#L1-L5"
+            },
+            {
+              "label": "同版：Joplin 倉庫授權及圖標權利聲明（AGPL-3.0-or-later 程式）",
+              "url": "https://github.com/laurent22/joplin/blob/57b2f3082f8229e55382edb66d9c2458d7df18f5/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-prep-ticks/prep-ticks-a.png",
+            "sha256": "eafc556421a19e1519b9b66c279ec17ebf6c702b9e8fc3a8634c6ffa83e22092",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Joplin Android 的非官方手機介面重繪，深灰工具列下顯示「紙藝小展準備」筆記。正文夾有一項已勾選、兩項未勾選的核對清單，下方仍可閱讀兩條問題和一段備註。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "逐項勾選，同頁看分組進度",
+          "note": "TREK 把逐項勾選、分組小計和整體進度放在同一頁。育伴港只參考在同一張準備單辨認已勾選與未勾選，並保留原有的未同步提示；不照搬百分比、數量或批量操作。",
+          "links": [
+            {
+              "label": "TREK v5.1.3：桌面準備清單原圖",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/wiki/assets/PackingList.png"
+            },
+            {
+              "label": "分組、進度、篩選和逐項勾選",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/wiki/Packing-Lists.md#L23-L66"
+            },
+            {
+              "label": "總覽進度與已勾選項目",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/client/src/components/Packing/PackingListPanelHeader.tsx#L104-L179"
+            },
+            {
+              "label": "分組清單與小計",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/client/src/components/Packing/PackingListPanelCategoryGroup.tsx#L252-L265"
+            },
+            {
+              "label": "逐項勾選控制",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/client/src/components/Packing/PackingListPanelItemRow.tsx#L178-L191"
+            },
+            {
+              "label": "勾選的本地更新及失敗還原",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/client/src/store/slices/packingSlice.ts#L62-L81"
+            },
+            {
+              "label": "TREK 來源授權說明",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/README.md#L445-L451"
+            },
+            {
+              "label": "AGPL v3 授權",
+              "url": "https://github.com/liketrek/TREK/blob/6fbe10fe6383b18f9cbdb97fe55b8993de951dea/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-prep-ticks/prep-ticks-b.png",
+            "sha256": "9cd9198df17e9d29f0fa97b2a97fb134cbcfb45ea0985110c570edfe071f19d5",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "TREK 桌面準備清單重繪：上方顯示 20 項中已有 12 項備妥，下方按展板、工具等分組。已備妥項目有深色勾號和刪除線，待備項目保留空框；右側另列收納袋重量。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 84 題 · 在已就緒準備單勾選的兩幅自製示意",
+      "input": "draft-prep-ticks/DECLARATION.txt",
+      "sha256": "f008c2a377671b179b290bd66e02a85f91b2a50d978ab64a882ed5e9e02c497a"
+    }
+  ]
+}
