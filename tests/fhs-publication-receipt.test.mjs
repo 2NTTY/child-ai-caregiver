@@ -71,7 +71,7 @@ test('a separate active edition cannot turn a held operation into a publication'
   }),/operation_binding/);
 });
 
-test('a published receipt binds the committed observation, family edition and every required vector', async () => {
+test('a published receipt binds the committed observation, family edition and every required vector', async t => {
   const input = { sourceId: metadata.sourceId, originalOperation: sha('operation') };
   const observationHash = sha('observation');
   const work = { budget: { modelCalls: 2 }, receipt: { state: 'committed', observationHash },
@@ -87,6 +87,38 @@ test('a published receipt binds the committed observation, family edition and ev
   assert.equal(result.readback, 'verified');
   assert.equal(result.vectors.exported, 1);
   assert.equal(result.pdf.pages[0].proof, 'text_exact');
+  await t.test('long whole-PDF receipts identify the original organizer and reviewer and every physical page', async () => {
+    const totalPages = 24;
+    const findings = Array.from({length: totalPages}, (_, i) => ({page: i + 1, finding: 'Checked page ' + (i + 1)}));
+    const coverage = { pages: findings, unreadablePages: [] };
+    const provenance = { organizeAttemptKey: 'knowledge-organize:' + sha('organizer'), reviewAttemptKey: 'knowledge-review:' + sha('reviewer'),
+      nativePdf: { contentHash: digest, organize: coverage, review: { ...coverage, pages: findings.map(f => ({ ...f, finding: `Independent check ${f.page}` })) } } };
+    const longSource = { ...source, extraction: { ...source.extraction, totalPages } };
+    const longPorts = { ...ports, pin: { ...ports.pin, pages: totalPages },
+      active: async () => ({ ...edition, source: longSource }), exportEdition: async () => ({ ...archive, source: longSource }),
+      extract: async (...args) => ({ ...await ports.extract(...args), totalPages }),
+      inspect: async () => ({ ...work, prepared: { ...work.prepared, provenance } }) };
+    const longReceipt = await readFhsDelivery(input, longPorts);
+    assert.deepEqual(longReceipt.pdf.recordedReadings.organize.physicalPages, findings.map(f => f.page));
+    assert.deepEqual(longReceipt.pdf.recordedReadings.review.physicalPages, findings.map(f => f.page));
+    assert.equal(longReceipt.pdf.recordedReadings.organize.stageHash, sha(JSON.stringify(provenance.organizeAttemptKey)));
+    assert.equal(longReceipt.pdf.recordedReadings.review.stageHash, sha(JSON.stringify(provenance.reviewAttemptKey)));
+    assert.notEqual(longReceipt.pdf.recordedReadings.organize.pageFindingsSha256, longReceipt.pdf.recordedReadings.review.pageFindingsSha256);
+    assert(!JSON.stringify(longReceipt.pdf.recordedReadings).includes('Checked page'));
+    for (const change of [
+      { reviewAttemptKey: provenance.organizeAttemptKey },
+      { retainedDraft: { priorWork: 'other' } },
+      { nativePdf: { ...provenance.nativePdf, contentHash: sha('another original') } },
+      { nativePdf: { ...provenance.nativePdf, review: { ...coverage, pages: [...findings.slice(0,-1),findings[0]] } } },
+      { nativePdf: { ...provenance.nativePdf, review: { ...coverage, unreadablePages: [3] } } },
+    ]) {
+      const partial = await readFhsDelivery(input, { ...longPorts, inspect: async () =>
+        ({ ...work, prepared: { ...work.prepared, provenance: { ...provenance, ...change } } }) });
+      assert.equal(partial.pdf.recordedReadings, undefined);
+    }
+    const repaired = await readFhsDelivery({ ...input, deliveryOperation: sha('repair') }, { ...longPorts, verifyRepair: async () => true });
+    assert.equal(repaired.pdf.recordedReadings, undefined);
+  });
   await assert.rejects(readFhsDelivery(input, { ...ports, inspect: async () => ({ ...work, receipt: null }) }), /publication_mismatch/);
   await assert.rejects(readFhsDelivery(input, { ...ports, exportEdition: async () => ({ ...archive, embeddings: [] }) }), /export_mismatch/);
   assert.equal((await readFhsDelivery(input, { ...ports, active: async () => ({ ...edition, current: false }) })).readback, 'edition_not_current');
