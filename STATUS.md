@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-21 香港 16:54**　回答後討論已在本機 Edge 以同一合成家庭、普通政策及真 Vertex 驗通。家長從已保存的原答開討論，四次模型呼叫取得三席、主答及獨立核對。收合重開後本人及平台用量同為 4 → 4；下一條廣東話普通問題正常回覆，兩邊用量均為 5。正式舊截圖仍未能配對原單，發布由主對話處理。[分項收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [家長畫面](artifacts/verification/REQ009_PARENT_BUDGET_THREE_20261121.png)
+
 **2026-11-21 香港**　家長平台卡庫及本人參考資料以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。系列已發布，手機實際點按待驗。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026)
 
 **2026-11-21 香港 16:37**　09:00 清單的 116 份 PDF 已有 34 份正式教材、76 個文件向量及 76 處原頁引用。《玩出創意來》及《四至六歲大兒童發展》已在「衛生署 兒童健康」系列讀回，各有 7 個向量，引用可回到第 2–8 頁。另有四份 C3 教材共 20 處引文已核回兩份原稿及 PDF，待原 C 發布。12 份超過 20 頁的教材仍未有完整生效版本。[全批逐份結果及原單](PLAN.md#active)

@@ -122,10 +122,10 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       return { ...pages[pages.length - 1], items };
     }, !before);
   };
-  const readReferences = (more = false, change?: import('../../../src/shared/source-series').LibrarySelectionCommand) => {
+  const readReferences = (more = false, change?: import('../../../src/shared/source-series').LibrarySelectionCommand, all = false) => {
     const before = latest.current.references.data, cursor = more ? referenceCursor.current : null;
     if (more && !cursor) return;
-    const depth = more ? 1 : pageDepth.current.references;
+    const depth = all ? Infinity : more ? 1 : pageDepth.current.references;
     read("references", setReferences, async (signal, current) => {
       if (change) {
         if (!api.setLibraryPreference || !env.owner.canStartDomainWrite()) throw new Error('Library preference unavailable');
@@ -222,7 +222,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       refresh, searchHistory: (query: string) => searchHistory(query), moreHistory: () => { const query = latest.current.history.data?.query; if (query !== undefined) searchHistory(query, true); },
       readMessage: (id: string) => readMessage(id), moreMessage: () => { const id = latest.current.message.data?.id; if (id) readMessage(id, true); },
       closeMessage, loadWork: () => readWork(), moreWork: () => readWork(true), loadNotifications: () => readNotifications(),
-      moreNotifications: () => readNotifications(true), moreReferences: () => readReferences(true),
+      moreNotifications: () => readNotifications(true), moreReferences: () => readReferences(true), allReferences: () => readReferences(true, undefined, true),
       exportLibraryArchive: (selection: import('../../../src/shared/source-series').LibraryArchiveSelection) => runtime.request(async (signal, current) => {
         if (!current() || !env.childId || !env.userId || !env.online || !env.allows('private')) throw Error('請重新確認登入及目前的孩子。');
         return shareLibraryArchive({ baseUrl: env.apiBaseUrl, fetcher: env.owner.fetcher, childId: env.childId, userId: env.userId, selection, signal, current }, exportLibraryPackage);

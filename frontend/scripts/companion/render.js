@@ -93,6 +93,10 @@ async function show() {
       bottom = Math.min(bottom, xy[j + 1]); top = Math.max(top, xy[j + 1]);
     }
   }
+  // The wave lifts the ears above the rest pose, then extends the hand to the
+  // viewer's left. Fit that motion envelope once so the feet and camera stay still.
+  top += (top - bottom) * .08;
+  left -= (right - left) * .12;
   const matrix = new CubismMatrix44();
   function draw(delta, idleTime = 0) {
     const ratio = Math.min(devicePixelRatio || 1, 2);
@@ -125,7 +129,6 @@ async function show() {
     if (event.data === 'status') { notify('ready'); return; }
     if (['idle', 'quiet', 'hidden'].includes(event.data)) {
       mode = event.data;
-      if (mode !== 'idle') { activeUntil = 0; avatar._motionManager.stopAllMotions(); }
     } else if (['nod', 'wave', 'arrive'].includes(event.data) && mode !== 'hidden') {
       avatar.play(event.data);
       if (reduced.matches) { avatar.advance(0); avatar.advance(.35); }

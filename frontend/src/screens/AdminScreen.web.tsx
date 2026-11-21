@@ -1,4 +1,4 @@
-import { SiteCompanion } from '../components/companion/SiteCompanion';
+import { CompanionSlot } from '../components/companion/CompanionViewport';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -486,7 +486,7 @@ export default function AdminScreen() {
       </View>
       </AppTabPanel>
     </>}
-  </PageFrame>{visible && <SiteCompanion />}</View>;
+  </PageFrame>{visible && focused && <CompanionSlot admin />}</View>;
 }
 const styles = StyleSheet.create({ card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
   masthead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.ink, borderRadius: 18 },
