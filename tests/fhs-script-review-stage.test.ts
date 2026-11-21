@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
-import { recordedBcgReview, commissionedWebChapter } from '../server/fhs-web-reading.ts';
+import { recordedWebReviewStage, commissionedWebChapter, webChapterWorkId } from '../server/fhs-web-reading.ts';
 import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
 import { normalizeRecordedComparison, recordedExplanationKey, referenceRecordedExplanation } from '../server/fhs-script-comparison-stage.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
@@ -32,14 +32,24 @@ test('replay removes only repeated structural labels and preserves the independe
   assert.equal(normalizeRecordedComparison(JSON.stringify(expected), user), JSON.stringify(expected));
 });
 
-for (const [label,pin] of [['script',recordedScriptReviewStage('fhs-12196')!],['web chapter',recordedBcgReview]] as const)
+const bcgChapter = commissionedWebChapter('fhs-481')!;
+const bcgWork = webChapterWorkId(bcgChapter);
+test('only the registered chapter and its exact failed operation can be inspected', () => {
+  assert.ok(recordedWebReviewStage(bcgChapter.sourceId, bcgWork));
+  assert.equal(recordedWebReviewStage(bcgChapter.sourceId, bcgChapter.operationFingerprint),undefined);
+  const other = commissionedWebChapter('fhs-30006')!;
+  assert.equal(recordedWebReviewStage(other.sourceId,webChapterWorkId(other)),undefined);
+  assert.equal(recordedWebReviewStage(other.sourceId,bcgWork),undefined);
+});
+
+for (const [label,pin] of [['script',recordedScriptReviewStage('fhs-12196')!],['web chapter',recordedWebReviewStage(bcgChapter.sourceId,bcgWork)!]] as const)
 test(`a terminal ${label} review exposes only the stage bound to its work and observation`, async () => {
   const { database, records } = firestoreDomainFixture();
   const projectId = 'fixture', namespace = 'script_review', workerGeneration = randomUUID();
   const cipher = createStorageCipher(Buffer.alloc(32, 1));
   const work = createFirestoreKnowledgeWork({ database, projectId, namespace, cipher,
     readControl: async () => ({enabled:true,generation:workerGeneration}) });
-  const inspect = label === 'script' ? work.inspectScriptReview : work.inspectBcgReview;
+  const inspect = label === 'script' ? work.inspectScriptReview : work.inspectWebChapterReview;
   const request = { watchId:pin.sourceId, operationFingerprint:pin.operationFingerprint, workerGeneration, publishMode:'live' as const };
   function store(kind: string, suffix: string, value: unknown) {
     const path = namespace + '_knowledge_work/' + knowledgeReviewHash([kind, pin.operationFingerprint, suffix]);

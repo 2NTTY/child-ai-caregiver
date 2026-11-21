@@ -20,7 +20,7 @@ import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type Ret
 import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
 import { firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
 import { campaign, campaignRecoverySchemas, campaignTicketId } from './knowledge-campaign-budget.ts';
-import { commissionedWebChapter, recordedBcgReview, webChapterWorkId } from './fhs-web-reading.ts';
+import { recordedWebReviewStage } from './fhs-web-reading.ts';
 import { recordedScriptReviewStage } from './fhs-script-edition.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
@@ -131,16 +131,14 @@ export function createFirestoreKnowledgeWork(options: Options) {
       if (!pin) reject('knowledge_script_review_stage_binding');
       return readFailedScriptStage(raw,pin);
     },
-    async inspectBcgReview(raw: BackgroundKnowledgeRunRequest) {
-      const pin = recordedBcgReview, chapter = commissionedWebChapter(raw.watchId);
-      if (chapter?.sourceId !== pin.sourceId || chapter.observationHash !== pin.observationHash
-        || webChapterWorkId(chapter) !== pin.operationFingerprint || knowledgeReviewHash(pin.attemptKey) !== pin.stageHash)
-        reject('knowledge_web_chapter_review_binding');
-      const id = campaignTicketId('generation', pin.sourceId, chapter.operationFingerprint, pin.stageHash);
+    async inspectWebChapterReview(raw: BackgroundKnowledgeRunRequest) {
+      const pin = recordedWebReviewStage(raw.watchId, raw.operationFingerprint);
+      if (!pin) reject('knowledge_web_chapter_review_binding');
+      const id = campaignTicketId('generation', pin.sourceId, pin.originalOperation, pin.stageHash);
       const ticket = database.collection(namespace + '_knowledge_campaigns').doc(campaign).collection('attempts').doc(id);
       return readFailedScriptStage(raw, pin, async tx => {
         const row = campaignRecoverySchemas.attempt.parse((await tx.get(ticket)).data());
-        if (row.kind !== 'generation' || row.sourceId !== pin.sourceId || row.operationFingerprint !== chapter.operationFingerprint
+        if (row.kind !== 'generation' || row.sourceId !== pin.sourceId || row.operationFingerprint !== pin.originalOperation
           || row.stageHash !== pin.stageHash || row.state !== 'settled' || row.rejection)
           reject('knowledge_web_chapter_review_ticket');
       });

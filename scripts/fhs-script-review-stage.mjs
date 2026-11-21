@@ -7,16 +7,16 @@ import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { normalizeRecordedComparison, recordedCommunicationComparison, recordedExplanationKey } from '../server/fhs-script-comparison-stage.ts';
-import { recordedBcgReview } from '../server/fhs-web-reading.ts';
+import { recordedWebReviewStage } from '../server/fhs-web-reading.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
 export async function inspectFailedScriptReview({ script, chapter, request, job, definition, checkId, refresh, work, knowledge, normalize = false }) {
-  const pin = chapter ? recordedBcgReview : recordedScriptReviewStage(script.sourceId);
-  if (chapter && (chapter.sourceId !== pin.sourceId || normalize)) return undefined;
+  const pin = chapter ? recordedWebReviewStage(chapter.sourceId, request.operationFingerprint) : recordedScriptReviewStage(script.sourceId);
+  if (chapter && normalize) return undefined;
   const comparison = request.operationFingerprint === recordedCommunicationComparison.work && script?.sourceId === recordedCommunicationComparison.sourceId;
   if (!pin || !comparison && request.operationFingerprint !== pin.operationFingerprint) return undefined;
-  let saved = chapter ? await work.inspectBcgReview(request) : comparison ? undefined : await work.inspectScriptReview(request);
+  let saved = chapter ? await work.inspectWebChapterReview(request) : comparison ? undefined : await work.inspectScriptReview(request);
   const receipt = { stageHash: comparison?recordedCommunicationComparison.stageHash:pin.stageHash,
     requestHash: comparison?null:pin.requestHash, state:saved?.state, modelCalls:0 };
   if (saved && saved.state !== 'ready') return { ...receipt, retainedText: false };
