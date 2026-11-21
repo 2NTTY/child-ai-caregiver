@@ -158,7 +158,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const credentialBinding = sponsor && personal
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
-      const scriptRevision = options.reviseHeldScript && script ? await verifiedScriptReading(script,operationFingerprint=>work.inspect({...request,operationFingerprint})) : undefined;
+      const scriptRevision = options.reviseHeldScript && script ? await verifiedScriptReading(script,
+        operationFingerprint=>work.inspect({...request,operationFingerprint}),request.operationFingerprint,
+        operationFingerprint=>work.inspectScriptReview({...request,operationFingerprint})) : undefined;
       const recovery = options.truncatedOutput;
       if (retained && (sponsor || recovery || reusedOrganizationFrom || !expectedRevision
         || request.publishMode !== 'live' || definition.kind !== (retained.action === 'review_age_draft' ? 'page' : 'pdf') || request.watchId !== retained.sourceId

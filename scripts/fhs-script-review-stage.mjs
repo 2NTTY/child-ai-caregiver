@@ -5,6 +5,7 @@ import { GROWTH_RULES } from '../server/growth-rules.ts';
 import { knowledgeOperationId, knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
+import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
 export async function inspectFailedScriptReview({ script, request, job, definition, checkId, refresh, work, knowledge }) {
@@ -55,19 +56,24 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
 /** Match the original campaign reservation to its independently recorded daily embedding result. */
 export async function inspectReservedScriptEmbedding({script, work, reservations, usage, policy}) {
   if (script.sourceId !== 'fhs-20000' || !reservations.length) return undefined;
-  const stageHash = 'eca7199facdd774d986b2b388bce5d9841f65a2945ca24a7a5674e0cc77353df';
-  const versionHash = '710259827ad27d429d8e3ce4040e0ee19fffd32f4026b518d902b8ff271e3bf8';
-  const ticket = reservations.find(r => r.kind === 'embedding' && r.stageHash === stageHash && r.operationFingerprint === scriptEditionWorkId(script));
-  if (!ticket || work?.request.operationFingerprint !== publisherScriptWork(script) || work.prepared?.versionHash !== versionHash
+  const pin = rejectedScriptEmbedding;
+  const ticket = reservations.find(r => r.kind === 'embedding' && r.stageHash === pin.stageHash && r.operationFingerprint === scriptEditionWorkId(script));
+  if (ticket?.at !== pin.at || ticket.ceiling !== pin.ceiling) throw Error('knowledge_script_embedding_receipt_binding');
+  return readOriginalScriptEmbedding({script,work,policy,read:request=>usage.read(request)});
+}
+export async function readOriginalScriptEmbedding({script,work,policy,read}) {
+  const {stageHash,versionHash,chunkKey,at} = rejectedScriptEmbedding;
+  if (script.sourceId !== rejectedScriptEmbedding.sourceId || script.observationHash !== rejectedScriptEmbedding.observationHash
+    || work?.request.operationFingerprint !== publisherScriptWork(script) || work.prepared?.versionHash !== versionHash
     || work.prepared.review.decision !== 'approve_candidate' || work.receipt) throw Error('knowledge_script_embedding_receipt_binding');
   const source = work.prepared.source;
-  const chunk = source.chunks.find(c => c.key === 'p0-3a7f52510e99b4daa07c');
+  const chunk = source.chunks.find(c => c.key === chunkKey);
   const document = chunk && embeddingForChunk(source.title,chunk);
   if (!document || knowledgeReviewHash(document.hash) !== stageHash) throw Error('knowledge_script_embedding_receipt_binding');
   const operationId = knowledgeOperationId('knowledge-embedding/1', knowledgeReviewHash([work.request.operationFingerprint,document.hash]));
   const actor = {kind:'corpus_maintenance',actorId:'operator:knowledge-maintenance',operationId};
   const request = operatorEmbeddingRequest(actor,1,work.deadlineAtMs,Math.min(policy.dailyUserAttempts,policy.dailyGlobalAttempts),policy.dailyGlobalAttempts,script);
-  const result = await usage.read(request);
-  return { stageHash, documentHash:document.hash, operationId, versionHash, ticketAt:ticket.at,
+  const result = await read(request);
+  return { stageHash, documentHash:document.hash, operationId, versionHash, ticketAt:at,
     reservedAtMs:result?.reservedAtMs ?? null, record:result?.record ?? null };
 }

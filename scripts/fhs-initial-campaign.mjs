@@ -25,9 +25,10 @@ import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork } from '../server/fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
+import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
-import { inspectFailedScriptReview, inspectReservedScriptEmbedding } from './fhs-script-review-stage.mjs';
+import { inspectFailedScriptReview, readOriginalScriptEmbedding } from './fhs-script-review-stage.mjs';
 
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
 const reviseHeldScript = invocation === 'revise-script-edition' || invocation === 'inspect-script-revision';
@@ -111,9 +112,10 @@ try {
   }
   if (handlesSource) await handleSource();
   async function handleSource() {
-    const admissionState = await gate.sourceStatus(id);
-    const reservations = admissionState.reservations.map(({kind, ceiling}) => ({kind, ceiling}));
-    if (!inspecting && !admissionState.admissible) throw Error('knowledge_campaign_reconcile_before_next_source');
+    let admissionState = await gate.sourceStatus(id);
+    const reconcileEmbedding = reviseHeldScript && id === rejectedScriptEmbedding.sourceId;
+    if (!inspecting && !admissionState.admissible && !reconcileEmbedding) throw Error('knowledge_campaign_reconcile_before_next_source');
+    let reservations = admissionState.reservations.map(({kind, ceiling}) => ({kind, ceiling}));
     const base = readAiConfig(process.env);
     if (base.location !== 'global' || !base.enabled || !base.backgroundKnowledgeMaintenanceEnabled
       || !base.backgroundKnowledgeLiveFetch || !base.backgroundKnowledgeLivePublish) throw Error('knowledge_campaign_route_unavailable');
@@ -153,6 +155,22 @@ try {
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
     const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', scriptEdition ? scriptEditionWorkId(scriptEdition) : original);
+    let embeddingStage;
+    if (reconcileEmbedding) {
+      const prior = await work.inspect({...request,operationFingerprint:publisherScriptWork(scriptEdition)});
+      const policy = await createFirestoreAdmin(domain,base).readPolicy();
+      const usage = new FirestoreAiUsage({...domain,namespace:domain.namespace+'_ai_usage',billingSource:'platform',manualPublication:scriptEdition});
+      const receipt = read => readOriginalScriptEmbedding({script:scriptEdition,work:prior,policy,read});
+      if (inspecting) embeddingStage = await receipt(input=>usage.read(input));
+      else {
+        if (prior?.lease?.untilMs > Date.now() || prior?.prepared?.assessment.observationHash !== scriptEdition.observationHash)
+          throw Error('knowledge_script_embedding_receipt_binding');
+        await gate.settleScriptEmbeddingRejection(tx=>receipt(input=>usage.readInTransaction(input,tx)));
+        admissionState = await gate.sourceStatus(id);
+        if (!admissionState.admissible) throw Error('knowledge_campaign_reconcile_before_next_source');
+        reservations = admissionState.reservations.map(({kind, ceiling}) => ({kind, ceiling}));
+      }
+    }
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
@@ -168,12 +186,9 @@ try {
       } });
     if (inspecting) {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
-      const reviewStage = reviseHeldScript && saved?.result?.status === 'candidate_held'
-        ? await inspectFailedScriptReview({script:scriptEdition,request,job,definition,checkId,refresh,work,knowledge}) : undefined;
-      const embeddingStage = reviseHeldScript && id === 'fhs-20000' && reservations.length
-        ? await inspectReservedScriptEmbedding({script:scriptEdition,work:saved,reservations:admissionState.reservations,
-          policy:await createFirestoreAdmin(domain,base).readPolicy(),
-          usage:new FirestoreAiUsage({...domain,namespace:domain.namespace+'_ai_usage',billingSource:'platform',manualPublication:scriptEdition})}) : undefined;
+        const failedStage = reviseHeldScript && recordedScriptReviewStage(id);
+        const reviewStage = failedStage && !saved?.receipt ? await inspectFailedScriptReview({script:scriptEdition,
+          request:{...request,operationFingerprint:failedStage.operationFingerprint},job,definition,checkId,refresh,work,knowledge}) : undefined;
       const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
       let recordedWindow;
       if (command === 'inspect' && reads && !active && !reservations.length && saved?.windowed) {
