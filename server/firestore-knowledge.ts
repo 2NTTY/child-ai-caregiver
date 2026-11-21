@@ -5,7 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { FieldPath, FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
-import { personalLibraryItemSchema, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
+import { personalLibraryItemSchema, type PublisherOriginal, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
 import { embeddingForChunk, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash, treatmentContentHash } from "./knowledge-inputs.ts";
 import { firstHitPerSource, knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
@@ -67,7 +67,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
-  catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
+  catalogForUser(owner: string, afterSourceId: string | null, includeOriginals?: boolean): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[]; publisherOriginals?: PublisherOriginal[] }>;
   saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
   platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
   joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
@@ -470,7 +470,24 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
   }
-  async function catalog(afterSourceId: string | null = null, owner?: string) {
+  async function publisherOriginals(tx: Transaction) {
+    const ids = ['fhs-20033', 'fhs-30012', 'fhs-30006', 'fhs-30143', 'fhs-14838', 'fhs-14851', 'fhs-15672', 'fhs-30108', 'fhs-481'];
+    const links = await Promise.all(ids.map(async (id): Promise<PublisherOriginal | null> => {
+      const material = options.platformMaterials?.get(id);
+      if (!material) return null;
+      const source = await readSource(tx, id);
+      if (source && (source.activeVersionId || source.disabledReason || source.url !== material.url)) return null;
+      const local = await options.observations?.read(tx, id);
+      const watch = local?.watch, observed = local?.observation;
+      if (!local?.catalogMatches || !watch?.enabled || !watch.manualOnly || watch.confirmedGone || !observed || observed.unavailable
+        || watch.id !== id || observed.watchId !== id || observed.url !== material.url || watch.definition.url !== material.url
+        || watch.definition.kind !== 'page' || watch.definition.audience !== 'public_noncommercial' || !watch.definition.title) return null;
+      const categories = childHealthCategories({ sourceId: id, url: material.url });
+      return categories ? { sourceId: id, title: watch.definition.title, url: material.url, categories } : null;
+    }));
+    return links.filter((link): link is PublisherOriginal => link !== null);
+  }
+  async function catalog(afterSourceId: string | null = null, owner?: string, includeOriginals = false) {
     if (afterSourceId !== null && !sourceId.safeParse(afterSourceId).success) reject('knowledge_catalog_cursor_invalid', 400);
     return database.runTransaction(async tx => {
       const preferences = await readSelections(tx, owner);
@@ -532,7 +549,9 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           lastCheckedAt: local?.watch.lastAttemptAt ?? null, lastSuccessfulCheckAt: local?.observation?.lastSuccessfulCheckAt ?? null,
           live: false });
       }
-      return { items, ...(registered.length ? { registered } : {}), nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
+      const originals = includeOriginals && owner && afterSourceId === null ? await publisherOriginals(tx) : [];
+      return { items, ...(registered.length ? { registered } : {}), ...(originals.length ? {publisherOriginals: originals} : {}),
+        nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
     }, { readOnly: true });
   }
   const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
@@ -1093,7 +1112,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (withdrawn) tx.set(versionRef(withdrawn.versionId), withdrawn); tx.set(sourceRef(id), next);
       });
     },
-    catalog: after => catalog(after), catalogForUser: (owner, after) => catalog(after, owner),
+    catalog: after => catalog(after), catalogForUser: (owner, after, includeOriginals) => catalog(after, owner, includeOriginals),
     async platformCards(tx, owner, after, url) {
       // Ordinary private sites cannot appear in the public catalogue.
       if (url && !personalLibraryItemSchema.shape.url.safeParse(url).success) return { cards: [], next: null };

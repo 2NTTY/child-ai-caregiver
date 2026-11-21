@@ -67,6 +67,7 @@ export interface KnowledgeReferencesView {
   readonly items: readonly KnowledgeReferenceView[];
   readonly catalog?: readonly PersonalLibraryItem[];
   readonly registered?: readonly import('../../src/shared/personal-library').RegisteredLibrarySource[];
+  readonly publisherOriginals?: readonly import('../../src/shared/personal-library').PublisherOriginal[];
   readonly hasMore: boolean;
 }
 export interface MemoryReferenceModel {

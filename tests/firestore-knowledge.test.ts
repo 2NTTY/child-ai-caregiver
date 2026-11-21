@@ -111,6 +111,27 @@ function fixture(sourceIds = ["synthetic-guidance"], audience?: "public" | "inte
   }
   return { ...fake, database, options, store, publish, nearestCalls, onNearest: (hook: () => Promise<void>) => { nearestHook = hook; } };
 }
+test('pending publisher links require a current observation and never become a selectable edition', async () => {
+  const id = 'fhs-30012', definition = publicMaintenanceWatch(id)!;
+  const f = fixture(['fhs-child-vision'], undefined, new Map([[id, platformMaterials.get(id)!]]));
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition],
+    async readControl() { return {enabled: true, generation: 'f3457654-6524-4c99-bf56-d26dfb9f4dbd'}; } });
+  const store = createFirestoreKnowledgeStore({...f.options, observations: refresh.gate});
+  const list = () => store.catalogForUser('reader', null, true);
+  await refresh.register(id, 'fixture', true);
+  assert.equal((await list()).publisherOriginals, undefined);
+  const job = (await refresh.jobs(id))[0]!.data;
+  await refresh.process(job, crypto.randomUUID(), async () => ({status: 'ok', items: [{url: definition.url, title: definition.title!,
+    text: 'Synthetic cup article for testing the catalogue.', sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null}]}), new AbortController().signal);
+  const page = await list();
+  assert.deepEqual(page.publisherOriginals, [{sourceId: id, title: definition.title, url: definition.url, categories: childHealthCategories({sourceId:id, url:definition.url})}]);
+  assert.equal(page.items.length, 0);
+  assert.equal((await store.catalogForUser('reader', null)).publisherOriginals, undefined);
+  assert.equal((await store.catalogForUser('reader', id, true)).publisherOriginals, undefined);
+  assert.equal(await store.mayReadLivePage('reader', id), false);
+  await refresh.disable(id);
+  assert.equal((await list()).publisherOriginals, undefined);
+});
 test('one group command handles more than one archive of editions and fixes a previously moved document explicitly', () => {
   const members = [...platformMaterials.values()].filter(m => childHealthCategories({ sourceId: m.id, url: m.url })).slice(0, 110)
     .map(m => ({ sourceId: m.id, versionId: crypto.randomUUID(), seriesId: 'native-series', scopeHash: '1'.repeat(64) }));
