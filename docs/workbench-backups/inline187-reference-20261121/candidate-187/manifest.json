@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-187-image-count",
+  "base": {
+    "artifact": "candidate-185/out",
+    "htmlSha256": "1ad7330a31459b95f47f58339349c54f92a85a3f41e87c96715f2663471468d7",
+    "rawRecordsSha256": "63874b68e5f7787aa0f2a02fb09094abca79859d2e6f8c2f771521646d665aa3",
+    "rawArtworkSha256": "a9646d6790a7b4c3eba84f595e707f2f887bd30d28c94257d9f84759d841702d",
+    "topics": 91,
+    "choices": 185,
+    "images": 185
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-chat-follow/assets.json",
+      "sha256": "30feecfac9e4bb803c34bf086466d5a26398b1f371e6ac13ffc5765b2a4bc053"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "113ed4bb5576589de37ad2158be5fdf9f32fb82dd098c55bc22aa08815e7861e",
+    "PROVENANCE.md": "422f7e35e025ed7b99123b2318a0a6f8820d312c1c09a13a591e89556661d8cc"
+  },
+  "topics": [
+    {
+      "number": 92,
+      "title": "助手對話：回看舊訊息，何時回到最新？",
+      "choices": [
+        {
+          "name": "右側圓形箭嘴",
+          "note": "LibreChat v0.8.9 預發版在閱讀舊訊息時，可用輸入框右上方的圓形按鈕回到底部。育伴港在向上閱讀時暫停跟隨，新回覆可在畫面外繼續更新；按「回到最新」或自行捲近底部都可恢復跟隨。",
+          "links": [
+            {
+              "label": "LibreChat v0.8.9 預發版：側欄與對話全頁",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/client/src/routes/Root.tsx#L190-L222"
+            },
+            {
+              "label": "同版：現有對話的訊息、頁首與輸入區",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/components/pane/Screen.tsx#L115-L141"
+            },
+            {
+              "label": "同版：訊息區與底部輸入框",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/components/pane/ChatPane.tsx#L117-L148"
+            },
+            {
+              "label": "同版：輸入欄右端的圓形向下按鈕",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/components/messages/ScrollToBottom.tsx#L39-L73"
+            },
+            {
+              "label": "同版：離開底部才顯示回到底部按鈕",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/components/messages/ScrollButton.tsx#L98-L132"
+            },
+            {
+              "label": "同版：舊訊息閱讀及返回底部的處理",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/react/messages/useMessageScrolling.ts#L129-L200"
+            },
+            {
+              "label": "同版：右側獨立的訊息導覽",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/packages/chat/src/components/messages/MessageNav.tsx#L1700-L1759"
+            },
+            {
+              "label": "LibreChat v0.8.9 程式碼授權：MIT",
+              "url": "https://github.com/LibreChat-AI/LibreChat/blob/d4e85d2205c78413ee27d631d7e3b7313556f21d/LICENSE#L1-L21"
+            }
+          ],
+          "asset": {
+            "input": "draft-chat-follow/chat-follow-a.png",
+            "sha256": "2e4d0526caf5ea16d0027d3332be17bd5887a16bd558e94720aa89d4f1a33f7e",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "LibreChat 桌面非官方重繪：左側是虛構對話列表，中央停在較早的紙藝展討論，最下方的輸入框空白；輸入框右上方顯示尚未按下的圓形向下按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "底部舊訊息提示列",
+          "note": "Stoat 載入的訊息還未到最新時，底部會顯示「回到最新訊息」。育伴港只借用這個返回入口：你往上翻閱時，畫面暫停跟隨回覆；按「回到最新」或捲回接近底部，都可以重新跟隨。",
+          "links": [
+            {
+              "label": "Stoat for Web 0.16.0：桌面網頁版的完整介面",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/packages/client/src/Interface.tsx#L90-L133"
+            },
+            {
+              "label": "頻道標題、訊息列表與輸入列",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/packages/client/src/interface/channels/text/TextChannel.tsx#L179-L224"
+            },
+            {
+              "label": "查看舊訊息時顯示底部返回列",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/packages/client/components/app/interface/channels/text/Messages.tsx#L959-L990"
+            },
+            {
+              "label": "舊訊息提示與回到最新按鈕",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/packages/client/components/ui/components/features/messaging/bars/JumpToBottom.tsx#L18-L39"
+            },
+            {
+              "label": "回到最新時讀取最新訊息",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/packages/client/components/app/interface/channels/text/Messages.tsx#L459-L483"
+            },
+            {
+              "label": "程式來源授權：AGPLv3",
+              "url": "https://github.com/stoatchat/for-web/blob/6425e83f54d6a87c10d023b696dc8d74a51621dc/LICENSE#L1-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-chat-follow/chat-follow-b.png",
+            "sha256": "36caa5e6cb15b19fd5495f713c2a77b6e4ef661456d71284974bb6badda38f40",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Stoat 網頁版深色頻道重繪。左邊是伺服器和頻道列表，右邊是虛構紙藝展的較早訊息。空白輸入列上方有一條橫跨訊息區的提示，左寫「正在查看較早的訊息」，右寫「回到最新訊息」及箭嘴。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 92 題 · 回看與接回最新訊息的兩幅自製示意",
+      "input": "draft-chat-follow/DECLARATION.txt",
+      "sha256": "113ed4bb5576589de37ad2158be5fdf9f32fb82dd098c55bc22aa08815e7861e"
+    }
+  ]
+}
