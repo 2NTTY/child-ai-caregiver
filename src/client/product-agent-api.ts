@@ -36,6 +36,8 @@ export interface ProductAgentApi {
   getRun(childId: string, runId: string, signal: AbortSignal, userId: string): Promise<ProductAgentResult>;
   decideProposal(childId: string, runId: string, proposalId: string, input: AgentDecision, signal: AbortSignal, userId: string): Promise<AgentProposal>;
   editProposal?(childId: string, runId: string, proposalId: string, input: AgentProposalEdit, signal: AbortSignal, userId: string): Promise<AgentProposal>;
+  specialistArtifactUrl?(childId: string, runId: string, artifactId: string): string;
+  readSpecialistArtifact?(childId: string, runId: string, artifactId: string, signal: AbortSignal, userId: string): Promise<{ bytes: Uint8Array; contentType: string | null }>;
 }
 
 const uuid = z.uuid();
@@ -180,5 +182,51 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
       pending = null;
       return proposal.data;
     },
+    specialistArtifactUrl(childId, runId, artifactId) {
+      checkScope(childId, runId, userIdPlaceholder(artifactId));
+      return `${apiUrl}${path(childId, runId)}/artifacts/${encodeURIComponent(artifactId)}`;
+    },
+    async readSpecialistArtifact(childId, runId, artifactId, signal, userId) {
+      checkScope(childId, runId, userId);
+      if (!uuid.safeParse(artifactId).success) throw new ProductAgentApiError(400, "invalid_input");
+      const controller = new AbortController();
+      const abort = () => controller.abort();
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) controller.abort();
+      const timeout = setTimeout(abort, 15_000);
+      try {
+        const response = await fetcher(`${apiUrl}${path(childId, runId)}/artifacts/${encodeURIComponent(artifactId)}`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "x-expected-user-id": userId },
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          let code: ProductAgentErrorCode | null = null;
+          try {
+            const value: unknown = await response.json();
+            if (object(value) && object(value.error) && typeof value.error.code === "string" && knownCodes.has(value.error.code as ProductAgentErrorCode)) {
+              code = value.error.code as ProductAgentErrorCode;
+            }
+          } catch { /* Keep status code */ }
+          throw new ProductAgentApiError(response.status, code);
+        }
+        return {
+          bytes: new Uint8Array(await response.arrayBuffer()),
+          contentType: response.headers.get("content-type"),
+        };
+      } catch (error) {
+        if (error instanceof ProductAgentApiError) throw error;
+        throw new ProductAgentApiError();
+      } finally {
+        clearTimeout(timeout);
+        signal.removeEventListener("abort", abort);
+      }
+    },
   };
+}
+function userIdPlaceholder(artifactId: string) {
+  if (!uuid.safeParse(artifactId).success) throw new ProductAgentApiError(400, "invalid_input");
+  return "artifact";
 }

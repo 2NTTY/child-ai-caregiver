@@ -111,10 +111,13 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     const documentReceipts = await documents.read(b, run.id);
     value.tools = value.tools.filter(tool => !['generate_family_document', 'change_family_document'].includes(tool.name));
     for (const receipt of documentReceipts.receipts) value.tools.push({ name: receipt.toolName, status: 'succeeded', reference: receipt.documentId });
+    const specialistArtifacts = await documents.readDrafts(b, run.id);
+    if (specialistArtifacts.length) value.specialistArtifacts = specialistArtifacts;
+    else delete value.specialistArtifacts;
     value.tools = value.tools.filter(tool => tool.name !== 'contact_caregiver');
     for (const reference of await options.contact?.recorded(b, run.id) ?? []) value.tools.push({ name: 'contact_caregiver', status: 'succeeded', reference });
     if (!value.text && (receipts.length || confirmation)) value.text = '已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排不代表已通知或照護已完成。';
-    if (value.outcome && (value.text || value.proposals.length || value.tools.some(tool => tool.reference))) delete value.outcome;
+    if (value.outcome && (value.text || value.proposals.length || value.specialistArtifacts?.length || value.tools.some(tool => tool.reference))) delete value.outcome;
     return value;
   }
   const store: ProductAgentStore = {
@@ -130,6 +133,9 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
       return project(b, run, result);
     } }, true),
     writeDocument: documents.writeDocument, documentReceipts: documents.documentReceipts,
+    stageSpecialistDraft: documents.stageSpecialistDraft,
+    readSpecialistDraft: documents.readSpecialistDraft,
+    specialistDrafts: documents.specialistDrafts,
   };
   return { store, actions, runs, continuation, resourceBasis };
 }

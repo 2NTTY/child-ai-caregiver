@@ -40,6 +40,18 @@ export interface AgentProposalView {
   result: { kind: "care_record" | "private_note" | "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
 }
 export type AgentCitationView = ChatCitationView;
+export interface AgentSpecialistArtifactView {
+  id: string;
+  title: string;
+  format: "pdf" | "html";
+  formatLabel: string;
+  fileName: string;
+  pageCountLabel: string;
+  statusLabel: string;
+  verificationLabel: string;
+  boundaryLabel: string;
+  contentState: "ready" | "invalidated";
+}
 export interface AgentRunView {
   discussion?: import('../../src/shared/chat-discussion.ts').DiscussionTranscript;
   sourceCardReadings?: import('../../src/shared/source-card-reading.ts').SourceReading[];
@@ -54,6 +66,7 @@ export interface AgentRunView {
   tools: { id: string; nameLabel: string; status: "succeeded" | "rejected" | "conflict" | "failed" | "unknown"; savesCandidate: boolean }[];
   proposals: AgentProposalView[]; citations: AgentCitationView[];
   privateSourceCitations?:import("../../src/shared/product-agent.ts").PrivateSourceCitation[];
+  specialistArtifacts?: AgentSpecialistArtifactView[];
 }
 /** Undefined hides the knowledge panel; an empty list shows the result of a knowledge search. */
 export function publicAnswerSources(run: Pick<AgentRunView, "retrievalMode" | "citations">) {
@@ -76,6 +89,7 @@ export interface AgentRunActions {
   decide(id: string, decision: AgentDecisionKind): void; retryOriginal(): void;
   editProposal?(id: string, input: AgentProposalDraftEditInput): Promise<boolean> | void;
   openSource(id: string): void;
+  openSpecialistArtifact?(id: string, runId: string): void;
 }
 export interface AgentInboxModel {
   online: boolean; locked: boolean; state: AgentReadState; loadedAt: string | null;

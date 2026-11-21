@@ -10,7 +10,7 @@ import { FirestoreDomainData, firestoreReminderOutboxSchema } from '../server/fi
 import { FirestoreDeviceSessions } from '../server/firestore-device-sessions.ts';
 import { createFirestoreRestoreCodec, type FirestoreRestoreDecoded } from '../server/firestore-restore-codec.ts';
 import { prepareFirebaseRestore, firebaseRestoreEpoch, firebaseRestoreGeneration, type FirebaseRestoreInput } from '../server/firestore-restore.ts';
-import { setFirebaseBackupControl, type FirebaseBackupDocument } from '../server/firestore-backup.ts';
+import { inspectFirebaseBackupSnapshot, setFirebaseBackupControl, type FirebaseBackupDocument } from '../server/firestore-backup.ts';
 import { firestoreOnlineConfirmedSchema, firestoreOnlineErasureBarrierSchema } from '../server/firestore-online-receipts.ts';
 import { firebaseErasureIntentHash, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from '../server/firebase-erasure-journal.ts';
 import { FirebasePhotoObjectError, type FirebasePhotoObjectDescriptor, type FirebasePhotoObjects } from '../server/firebase-photo-objects.ts';
@@ -20,6 +20,7 @@ import type { OnlineSubmission } from '../src/shared/online.ts';
 import type { PhotoMetadata } from '../src/shared/photos.ts';
 import type { WorkRecoveryScope } from '../server/firestore-work-continuation-recovery.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+import { specialistDraftFixture } from './helpers/specialist-draft-fixture.ts';
 
 const OWNER = 'synthetic-restore-owner', EMAIL = 'synthetic-restore@example.test';
 const AT = '2026-10-11T12:00:00.000Z', TARGET = 'synthetic-target-db';
@@ -387,4 +388,62 @@ test('restore retains cleanup for a post-backup child after journal success with
   assert.equal(restored.filter(row => row.context.kind === 'account').length, 1);
   assert.equal(restored.filter(row => row.context.kind === 'workspace').length, 1);
   assertNoMutation(f, source, input, original);
+});
+
+
+test('native snapshot inventories encrypted specialist drafts but the logical restore plans their deletion, not reuse', async () => {
+  const { createFirestoreChatStore } = await import('../server/firestore-chat.ts');
+  const { createFirestoreCareStore } = await import('../server/firestore-care.ts');
+  const { createFirestoreMemoryStore } = await import('../server/firestore-memory.ts');
+  const { createFirestoreAgentRuns, firestoreAgentRunSchema } = await import('../server/firestore-agent-runs.ts');
+  const f = fixture(), binding = await f.initialize(), childId = binding.scope.childId;
+  const chat = createFirestoreChatStore(f.options), care = createFirestoreCareStore(f.options);
+  const memory = createFirestoreMemoryStore({ ...f.options, chat, care });
+  const runs = createFirestoreAgentRuns({ ...f.options, chat, memory });
+  const source = await chat.createUserMessageForUser(OWNER, childId, '合成預覽請求');
+  assert.ok(source);
+  const claim = await runs.claim(OWNER, childId, { kind: 'interactive', reference: source.id }, 'product-interactive');
+  const draft = specialistDraftFixture(f.data, binding.scope, claim.runId);
+  f.fake.records.set(draft.path, draft.data);
+  assert.equal(await runs.finish(claim.scope, { runId: claim.runId, provenance: null, status: 'completed', stopReason: null,
+    text: 'Preserve ordinary reply.', citations: [], retrievalMode: 'not_used', tools: [], proposals: [],
+    counts: { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 } }), true);
+  const saved = await f.authority.runTransaction(OWNER, childId, b => runs.read(b, claim.runId));
+  assert.ok(saved.result);
+  const runRef = f.data.ref('agent_runs', 'agent-run', claim.runId);
+  const existing = f.fake.records.get(runRef.path);
+  assert.ok(existing);
+  // Simulate a pre-release native snapshot where the durable run redundantly carried the draft's private summary.
+  f.fake.records.set(runRef.path, { ...existing, ...f.data.seal('agent-run', claim.runId, binding.scope, firestoreAgentRunSchema, {
+    ...saved, result: { ...saved.result, specialistArtifacts: [draft.summary] },
+  }) });
+  await f.switchControl(false);
+  const snapshot = f.documents();
+  const input = f.input(snapshot, randomUUID(), new Map());
+  const options = { ...f.options, database: {
+    ...f.options.database,
+    async listCollections() {
+      return [...new Set(snapshot.map(row => row.path.split('/')[0]!))].map(id => ({ ...f.options.database.collection(id), id }));
+    },
+  } as unknown as Firestore };
+  const snapshotTime = new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString();
+  const inventory = await inspectFirebaseBackupSnapshot(options, { snapshotTime, generation: input.sourceGeneration });
+  assert.ok(inventory.inventory.documents.some(row => row.path === draft.path));
+  assert.equal(inventory.documents.find(row => row.path === draft.path)?.data.ciphertext, draft.data.ciphertext);
+  const liveOnlyDraft = specialistDraftFixture(f.data, binding.scope);
+  const result = prepareFirebaseRestore(f.options, { ...input, liveDocuments: [...input.liveDocuments, liveOnlyDraft] });
+  assert.deepEqual(result.removePaths.filter(path => path === draft.path), [draft.path]);
+  assert.equal(result.records.some(row => row.path === draft.path || row.path === liveOnlyDraft.path), false);
+  const restoredRun = firestoreAgentRunSchema.parse(find(f.decoded(result.records), 'agent-run', claim.runId).value);
+  assert.equal(restoredRun.result?.text, 'Preserve ordinary reply.');
+  assert.equal(restoredRun.result?.specialistArtifacts, undefined, 'Legacy draft summaries are not logical restore content');
+
+  assert.throws(() => prepareFirebaseRestore(f.options, { ...input, documents: snapshot.map(row => row.path === draft.path
+    ? { ...draft, data: { ...draft.data, ciphertext: 'tampered-input' } } : row),
+  }), 'A matching path alone must not bypass authenticated native envelope validation');
+
+  const invalidPath = draft.path + '/unexpected/nested';
+  assert.throws(() => prepareFirebaseRestore(f.options, { ...input,
+    documents: [...input.documents, { ...draft, path: invalidPath }],
+  }), 'Unknown nested paths must fail closed rather than being silently discarded');
 });

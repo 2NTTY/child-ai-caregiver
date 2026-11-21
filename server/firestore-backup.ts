@@ -9,6 +9,8 @@ import { openRecoveryEnvelope, sealRecoveryLocator } from './firestore-recovery-
 const NIL = '00000000-0000-0000-0000-000000000000';
 const scope = { ownerUserId: 'control', workspaceId: NIL, childId: NIL, storageEpoch: NIL };
 const MAX_DOCUMENTS = 2000, MAX_BYTES = 32 * 1024 * 1024;
+/** Native operator snapshots inventory encrypted preview cache; logical restore always discards it. */
+export const FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX = '_agent_specialist_drafts';
 export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions', '_children', '_tasks', '_task_revisions', '_changes',
   '_task_outbox', '_online_operations', '_documents', '_document_snapshots', '_document_chunks', '_document_operations',
   '_photos', '_photo_ops', '_photo_quota', '_photo_cleanup', '_task_reminders', '_task_reminder_batches', '_notification_preferences',
@@ -31,7 +33,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_knowledge_index_batches', '_knowledge_index_receipts', '_knowledge_transfers',
   '_private_summary_works', '_private_summary_revisions', '_private_summary_attempts', '_private_summary_scans', '_private_summary_usage',
   '_mixed_rooms', '_mixed_messages', '_proactive_state', '_agent_metrics', '_agent_budget_alerts', '_ai_usage_detail', '_knowledge_original_manifests', '_library_preferences', '_knowledge_work', '_knowledge_budget',
-  '_source_cards', '_source_card_ops', '_source_credentials', '_source_card_documents', '_knowledge_campaigns', '_platform_card_media', '_platform_media_editions']);
+  '_source_cards', '_source_card_ops', '_source_credentials', '_source_card_documents', '_knowledge_campaigns', '_platform_card_media', '_platform_media_editions', FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX]);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

@@ -915,6 +915,11 @@ export function createProductAgent(options: {
         result.tools.push({ name: "confirmed_proposal", callId: "persisted-confirmation", status: "succeeded", reference: confirmationResult.id });
       const presentation = result.status === "completed" && !documentReceiptUnavailable && !documentSourceUnavailable ? rendered.value : null;
       const retained = retainedSourcesForStoppedReview(result.status, result.stopReason ?? null, rendered.value);
+      const specialistArtifacts = conversationMode !== "assistant"
+        ? []
+        : options.store.specialistDrafts && await isCurrentUser()
+          ? await options.store.specialistDrafts(claim.scope, claim.runId)
+          : tools?.specialistArtifacts() ?? [];
       const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null,
         ...(discussion ? { discussion: review.value && presentation?.discussion || [] } : {}),
         status: documentReceiptUnavailable ? "unknown" : documentSourceUnavailable && result.status === "completed" ? "stopped" : result.status,
@@ -929,7 +934,8 @@ export function createProductAgent(options: {
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         ...(presentation?.liveCitations?.length ? { liveCitations: presentation.liveCitations } : {}),
         ...(result.status === 'completed' && presentation?.sourceCardReadings?.length ? { sourceCardReadings: presentation.sourceCardReadings } : {}),
-        countsKnown: true, counts: result.counts, proposals: [] }, review);
+        countsKnown: true, counts: result.counts, proposals: [],
+        ...(specialistArtifacts.length ? { specialistArtifacts } : {}) }, review);
       // Receipt reads, terminal settlement and readback may outlive a source even after the runtime finished.
       // Reuse the original run and its separate receipt ledger; an expired draft is never a new operation.
       const withholdIfExpired = (candidate: ProductAgentResult | null, fromStore: boolean): ProductAgentResult | null => {

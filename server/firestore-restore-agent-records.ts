@@ -53,7 +53,10 @@ export function restoreAgentRecord(context: FirestoreRecoveryContext & { kind: A
         && row.storageEpoch === scope.storageEpoch && row.dataVersion.startsWith(scope.storageEpoch + ':')
         && /^\d+$/u.test(row.dataVersion.slice(scope.storageEpoch.length + 1)) && (!row.result || row.result.runId === id)
         && (row.trigger.kind === 'interactive' ? row.sourceMessageId === row.trigger.reference : row.sourceMessageId === null));
-      value = targetScope ? { ...row, storageEpoch: targetScope.storageEpoch,
+      // Keep business history, not an obsolete specialist preview excerpt copied by an older writer.
+      const result = row.result ? { ...row.result } : null;
+      if (result) delete result.specialistArtifacts;
+      value = targetScope ? { ...row, result, storageEpoch: targetScope.storageEpoch,
         dataVersion: targetScope.storageEpoch + row.dataVersion.slice(scope.storageEpoch.length),
         state: row.state === 'running' ? 'unknown' : row.state,
         stopReason: row.state === 'running' ? 'interrupted' : row.stopReason } : row;

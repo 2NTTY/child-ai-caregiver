@@ -9,6 +9,9 @@ export const SPECIALIST_ARTIFACT_POLICY_VERSION = "req008-specialist-artifact/1"
 /** Server-enforced ceiling for automated rebuild-and-reverify repair loops. */
 export const SPECIALIST_ARTIFACT_MAX_REPAIR_ITERATIONS = 2;
 
+/** Base64 plus encrypted draft metadata must fit the Firestore domain envelope's 192 KiB plaintext limit. */
+export const SPECIALIST_DRAFT_MAX_BYTES = 128 * 1024;
+
 /** Reported whenever no isolated pixel/screenshot renderer ran on the artifact. */
 export const PIXEL_SCREENSHOT_UNVERIFIED_CHECK = "pixel_screenshot_render";
 
@@ -102,3 +105,28 @@ export const specialistArtifactResultSchema = z.object({
   verification: specialistArtifactVerificationReportSchema.nullable(),
 }).strict();
 export type SpecialistArtifactResult = z.infer<typeof specialistArtifactResultSchema>;
+
+export const specialistArtifactSummarySchema = z.object({
+  artifactId: z.uuid(),
+  runId: z.uuid(),
+  documentId: z.uuid(),
+  expectedVersion: z.number().int().min(1),
+  authorityVersion: z.string().min(1).max(128),
+  artifactVersion: z.number().int().min(1),
+  artifactHash: sha256Hex,
+  format: specialistArtifactFormatSchema,
+  mimeType: z.enum(["application/pdf", "text/html"]),
+  fileName: z.string().trim().min(1).max(160),
+  title: z.string().trim().min(1).max(200),
+  byteLength: z.number().int().positive(),
+  pageCount: z.number().int().min(1),
+  status: specialistArtifactStatusSchema,
+  stopReason: specialistArtifactResultSchema.shape.stopReason,
+  repairIterations: z.number().int().min(0).max(SPECIALIST_ARTIFACT_MAX_REPAIR_ITERATIONS),
+  verification: specialistArtifactVerificationReportSchema,
+  formalSave: z.literal(false),
+  published: z.literal(false),
+  requiresFormalConfirmation: z.literal(true),
+  contentState: z.enum(["ready", "invalidated"]).optional(),
+}).strict();
+export type SpecialistArtifactSummary = z.infer<typeof specialistArtifactSummarySchema>;

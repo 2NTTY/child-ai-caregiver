@@ -41,7 +41,7 @@ TEST_FILES=(
   tests/data-compose.test.ts
   tests/cross-domain-snapshots.test.ts
 )
-TEST_CASES=(10 34 2 1 6 1 8 1 17 14 5)
+TEST_CASES=(10 34 2 1 7 1 8 1 17 14 5)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \

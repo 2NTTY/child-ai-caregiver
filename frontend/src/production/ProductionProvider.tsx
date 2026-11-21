@@ -2,6 +2,9 @@ import type { ChatSendOptions } from '../../../src/shared/chat';
 import type { ChatAttachmentUpload } from '../../../src/client/chat-controller';
 import { readCitationPdf } from '../../../src/client/citation-original';
 import { openCitationPdf } from '../platform/file-export';
+import { openSpecialistArtifactPreview } from "../platform/specialist-artifact-preview";
+import type { SpecialistPreviewSession } from "../platform/specialist-artifact-preview-contract";
+import { createProductAgentApi, ProductAgentApiError } from "../../../src/client/product-agent-api.ts";
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useNativeChatPresence } from "./useNativeChatPresence";
 import { useWebChatPresence } from "./useWebChatPresence";
@@ -55,6 +58,11 @@ function useProductionValue(owner: ProductionOwner) {
   const current = useRef({ scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname });
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
   const previousPath = useRef(pathname);
+  const specialistPreview = useRef<SpecialistPreviewSession | null>(null);
+  useLayoutEffect(() => () => {
+    specialistPreview.current?.close();
+    specialistPreview.current = null;
+  }, [owner, pathname, snapshot.scopeKey, snapshot.identityKey, snapshot.sessionGeneration]);
   useNativeChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
     pathname === "/chat" && !snapshot.sharedChild.target && snapshot.scopeKey ? snapshot.chat.selectedChildId : null, snapshot.records.online);
   useWebChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
@@ -187,6 +195,36 @@ function useProductionValue(owner: ProductionOwner) {
     void openCitationPdf(load, citation.excerptPage ?? citation.pageStart, currentScope).then(message => { if (currentScope()) setLocalNotice(message); },
       error => { if (currentScope()) setLocalNotice(error instanceof Error && /[\u3400-\u9fff]/u.test(error.message) ? error.message : '未能開啟當時的 PDF。'); });
   };
+  const openSpecialistArtifact = (id: string, runId: string) => {
+    const childId = snapshot.activeChild?.id, userId = snapshot.records.user?.id;
+    const active = () => {
+      const latest = owner.getSnapshot();
+      return currentScope() && current.current.pathname === pathname
+        && latest.identityKey === snapshot.identityKey && latest.sessionGeneration === snapshot.sessionGeneration
+        && latest.activeChild?.id === childId && !latest.sharedChild.target && latest.records.online;
+    };
+    if (!active() || !childId || !userId) return;
+    const run = owner.agentOwner.getSnapshot().runs[runId];
+    const item = run?.specialistArtifacts?.find(artifact => artifact.id === id && artifact.contentState === "ready");
+    if (!item) { setLocalNotice("未能核對這份草稿，請更新原活動後再試。"); return; }
+    const { readSpecialistArtifact } = createProductAgentApi(owner.apiBaseUrl, owner.fetcher);
+    if (!readSpecialistArtifact) return;
+    const load = (signal: AbortSignal) => readSpecialistArtifact(childId, runId, id, signal, userId);
+    specialistPreview.current?.close();
+    const preview = openSpecialistArtifactPreview(item.format, item.fileName, load, active);
+    specialistPreview.current = preview;
+    void preview.ready.then(message => {
+      if (specialistPreview.current === preview && active()) setLocalNotice(message);
+    }, error => {
+      if (specialistPreview.current !== preview || !active()) return;
+      specialistPreview.current = null;
+      if (error instanceof ProductAgentApiError && error.code === "document_changed") {
+        setLocalNotice("原文件已更改，這份草稿已失效。請更新原活動。");
+        return;
+      }
+      setLocalNotice(error instanceof Error && /[㐀-鿿]/u.test(error.message) ? error.message : "未能開啟草稿預覽。");
+    });
+  };
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
@@ -284,7 +322,8 @@ function useProductionValue(owner: ProductionOwner) {
       decide: (id: string, decision: "accept" | "dismiss") => { if (currentScope()) owner.agentOwner.decide(id, decision); },
       retryOriginal: () => { if (currentScope()) owner.agentOwner.retryOriginal(); },
       editProposal: (id: string, input: AgentProposalDraftEditInput) => currentScope() ? owner.agentOwner.editProposal(id, input) : Promise.resolve(false),
-      openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id) },
+      openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id),
+      openSpecialistArtifact },
     selectAgentRun: (id: string) => { if (currentScope()) owner.agentOwner.selectRun(id); },
     openAgentSource: openOriginal,
     agentInboxActions: { refresh: () => { if (currentScope()) void owner.agentOwner.readInbox(); },

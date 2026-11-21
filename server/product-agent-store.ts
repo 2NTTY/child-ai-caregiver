@@ -756,6 +756,15 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     },
   };
 }
+export interface StagedSpecialistDraftInput {
+  artifactId: string;
+  summary: import("../src/shared/specialist-artifact.ts").SpecialistArtifactSummary;
+  bytes: Uint8Array;
+  sourceQuote: string;
+}
 export type ProductAgentStore = ReturnType<typeof createProductAgentStore> & {
   replyState?(userId: string, childId: string, messageId: string): Promise<import("../src/shared/chat.ts").ChatReplyState | null>;
+  stageSpecialistDraft?(scope: AgentScope, runId: string, input: StagedSpecialistDraftInput): Promise<import("../src/shared/specialist-artifact.ts").SpecialistArtifactSummary>;
+  readSpecialistDraft?(userId: string, childId: string, runId: string, artifactId: string): Promise<{ summary: import("../src/shared/specialist-artifact.ts").SpecialistArtifactSummary; bytes: Buffer } | null>;
+  specialistDrafts?(scope: AgentScope, runId: string): Promise<import("../src/shared/specialist-artifact.ts").SpecialistArtifactSummary[]>;
 };

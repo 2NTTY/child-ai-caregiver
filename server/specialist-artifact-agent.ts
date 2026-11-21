@@ -1,13 +1,16 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { projectDocumentExport } from "../src/shared/document-export-view.ts";
 import {
   SPECIALIST_ARTIFACT_MAX_REPAIR_ITERATIONS,
+  SPECIALIST_DRAFT_MAX_BYTES,
   SPECIALIST_ARTIFACT_POLICY_VERSION,
   specialistArtifactInputSchema,
   specialistArtifactResultSchema,
   type SpecialistArtifactInput,
   type SpecialistArtifactMetadata,
   type SpecialistArtifactResult,
+  type SpecialistArtifactSummary,
   type SpecialistArtifactVerificationReport,
 } from "../src/shared/specialist-artifact.ts";
 import { AgentStopped, agentBudgetFingerprint, type AgentBudget } from "./agent-budget.ts";
@@ -292,9 +295,19 @@ export function createSpecialistArtifactTools(options: {
   visualRenderer?: VisualArtifactRendererPort;
   initialFaultMode?: ArtifactFaultMode;
   repairFaultMode?: ArtifactFaultMode;
+  stageDraft?: (draft: {
+    artifactId: string;
+    result: SpecialistArtifactResult;
+    bytes: Uint8Array;
+    input: SpecialistArtifactInput;
+  }) => Promise<SpecialistArtifactSummary>;
 }): AgentTool[] {
   const authorize = options.run.authorize ?? options.authorize;
   const noDraft = { draftAvailable: false, formalSave: false, published: false, requiresFormalConfirmation: true } as const;
+  const tooLarge = (): AgentToolResult => ({ status: "rejected", data: {
+    code: "specialist_draft_too_large", maxBytes: SPECIALIST_DRAFT_MAX_BYTES,
+    message: "這份草稿太大，未能開啟預覽。可改為預覽較短的內容。", ...noDraft,
+  } });
   const guard = async (action: () => Promise<AgentToolResult>): Promise<AgentToolResult> => {
     if (!await authorize()) return { status: "rejected", data: noDraft };
     try {
@@ -308,6 +321,7 @@ export function createSpecialistArtifactTools(options: {
         return { status: "rejected", data: { code: error.reason, ...noDraft } };
       }
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) {
+        if (error.code === "specialist_draft_too_large") return tooLarge();
         return {
           status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected",
           data: { code: error.code, ...noDraft },
@@ -323,11 +337,12 @@ export function createSpecialistArtifactTools(options: {
     authorize,
     parameters: specialistArtifactInputSchema,
     execute: args => guard(async () => {
+      const parsedInput = specialistArtifactInputSchema.parse(args);
       const outcome = await runSpecialistArtifactLoop({
         documents: options.documents,
         run: options.run,
         trustedUserMessage: options.trustedUserMessage,
-        input: args,
+        input: parsedInput,
         visualRenderer: options.visualRenderer,
         initialFaultMode: options.initialFaultMode,
         repairFaultMode: options.repairFaultMode,
@@ -339,6 +354,30 @@ export function createSpecialistArtifactTools(options: {
           data: {
             code: outcome.blockedCode ?? outcome.result.stopReason,
             ...noDraft,
+          },
+        };
+      }
+
+      if (options.stageDraft && outcome.bytes && outcome.bytes.byteLength > 0
+        && (outcome.result.status === "verified" || outcome.result.status === "partial")) {
+        if (outcome.bytes.byteLength > SPECIALIST_DRAFT_MAX_BYTES) return tooLarge();
+        const artifactId = randomUUID();
+        const summary = await options.stageDraft({
+          artifactId,
+          result: outcome.result,
+          bytes: outcome.bytes,
+          input: parsedInput,
+        });
+        return {
+          status: "succeeded",
+          reference: summary.artifactId,
+          data: {
+            draftAvailable: true,
+            artifactId: summary.artifactId,
+            summary,
+            formalSave: false,
+            published: false,
+            requiresFormalConfirmation: true,
           },
         };
       }

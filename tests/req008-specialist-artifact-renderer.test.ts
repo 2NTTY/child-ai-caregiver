@@ -15,6 +15,7 @@ import {
 import {
   buildFamilyArtifactHtml,
   buildFamilyArtifactPdf,
+  createSharpVisualArtifactVerifier,
   inspectHtmlArtifactIsolated,
   inspectPdfArtifactIsolated,
 } from "../server/specialist-artifact-renderer.ts";
@@ -688,5 +689,150 @@ test("10. document_compose loads the existing compose action but does not offer 
     ["load_capabilities", "succeeded"],
     ["present_answer", "succeeded"],
   ]);
+  assert.equal(getMutationCalls(), 0);
+});
+
+test("11. embedded subsetted TC font, Sharp raster visual verifier, and staged ProductAgent draft end-to-end", async () => {
+  const doc = makeFamilyDocument();
+  const view = projectDocumentExport(doc.current!, {
+    snapshotId: doc.current!.id,
+    snapshotVersion: doc.current!.version,
+    authorityVersion,
+    purpose: "appointment",
+    includeSources: true,
+    includeRevision: true,
+  });
+
+  // Embedded FontFile2 + CIDToGIDMap /Identity present in generated PDF.
+  const builtPdf = buildFamilyArtifactPdf(view);
+  const rawPdf = Buffer.from(builtPdf.bytes).toString("latin1");
+  assert.ok(rawPdf.includes("/FontFile2"), "PDF should embed subsetted TrueType FontFile2 stream");
+  assert.ok(rawPdf.includes("/CIDToGIDMap /Identity"), "PDF should declare CIDToGIDMap /Identity");
+
+  // Sharp raster visual verifier catches injected overflow and passes clean PDF & HTML with zero unverified checks.
+  const visualRenderer = createSharpVisualArtifactVerifier();
+  const overflowPdf = buildFamilyArtifactPdf(view, { faultMode: "inject_overflow_and_unsafe_link" });
+  const overflowReport = await inspectPdfArtifactIsolated(overflowPdf.bytes, {
+    artifactVersion: 1,
+    expectedHash: overflowPdf.hash,
+    expectedTitle: view.title,
+    visualRenderer,
+  });
+  assert.equal(overflowReport.passed, false);
+  assert.deepEqual(overflowReport.unverifiedChecks, []);
+  assert.ok(overflowReport.defects.some(d => d.kind === "overflow" || d.kind === "clipping"));
+
+  const cleanHtmlReport = await inspectHtmlArtifactIsolated(buildFamilyArtifactHtml(view).bytes, {
+    artifactVersion: 1,
+    expectedTitle: view.title,
+    visualRenderer,
+  });
+  assert.equal(cleanHtmlReport.passed, true);
+  assert.deepEqual(cleanHtmlReport.unverifiedChecks, []);
+
+  // ProductAgent with stageSpecialistDraft exposes prepare_family_artifact and attaches draft summary without mutating family_documents.
+  const staged = new Map<string, { summary: any; bytes: Buffer }>();
+  let claimed = false;
+  let saved: ProductAgentResult | null = null;
+  let turn = 0;
+  const { store, getMutationCalls } = createFakeDocumentStore(doc);
+  const call = (name: string, args: Record<string, unknown>, id: string) => ({
+    content: { role: "model", parts: [{ functionCall: { name, args, id }, thoughtSignature: "opaque-original" }] },
+    finishReason: FinishReason.STOP,
+  });
+
+  const agent = createProductAgent({
+    runtime: createAgentRuntime({
+      config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+      usage: { reserve: async () => true, record: async () => {} },
+      provider: {
+        generate: async request => {
+          const text = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+          if (text.includes("chat-delivery-review")) {
+            const body = JSON.parse(text.slice(text.indexOf("{")));
+            return {
+              content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: body.draftHash, decision: "pass", issues: [] }) }] },
+              finishReason: FinishReason.STOP,
+            };
+          }
+          turn += 1;
+          if (turn === 1) {
+            return call("load_capabilities", { capabilities: ["document_compose"] }, "load-doc-compose");
+          }
+          if (turn === 2) {
+            const declarations = (request.config?.tools ?? []).flatMap(tool =>
+              "functionDeclarations" in tool ? tool.functionDeclarations?.map(decl => decl.name) ?? [] : []);
+            assert.ok(declarations.includes(SPECIALIST_ARTIFACT_TOOL_NAME), "staged stores expose prepare_family_artifact");
+            return call(SPECIALIST_ARTIFACT_TOOL_NAME, {
+              documentId,
+              expectedVersion: 3,
+              authorityVersion,
+              format: "pdf",
+              sourceQuote: "請幫我整理兒科覆診準備單的PDF預覽。",
+              intent: "產生綁定當前版本的覆診 PDF 草稿預覽",
+              includeRevision: true,
+              includeSources: true,
+            }, "prep-pdf");
+          }
+          return call("present_answer", {
+            kind: "operation",
+            paragraphs: [{ text: "已為兒科覆診準備單產生第 3 版 PDF 草稿預覽（僅供核對，尚未正式保存或發布）。", citationIds: [] }],
+          }, "present-draft");
+        },
+      },
+    }),
+    store: {
+      claim: async () => {
+        const created = !claimed;
+        claimed = true;
+        return { runId, scope: baseScope, created, expiresAt: new Date(Date.now() + 90_000).toISOString() };
+      },
+      authorize: async () => true,
+      finish: async (_scope: unknown, result: ProductAgentResult) => {
+        saved = productAgentResultSchema.parse(JSON.parse(JSON.stringify(result)));
+        return true;
+      },
+      get: async () => saved,
+      stageSpecialistDraft: async (_scope: unknown, _runId: string, input: { artifactId: string; summary: any; bytes: Uint8Array }) => {
+        staged.set(input.artifactId, { summary: input.summary, bytes: Buffer.from(input.bytes) });
+        return input.summary;
+      },
+      specialistDrafts: async () => [...staged.values()].map(item => item.summary),
+    },
+    memory: {
+      context: async () => ({
+        profile: { childId, version: 0, data: null },
+        profileApplicable: false,
+        facts: [],
+        topics: [],
+        summary: null,
+        recentMessages: [],
+        conflictingKeys: [],
+        unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false },
+      }),
+    },
+    chat: {
+      listForUser: async () => ({
+        messages: [{ id: messageRef, role: "user", text: "請幫我整理兒科覆診準備單的PDF預覽。" }],
+      }),
+    },
+    tasks: {
+      list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }),
+    },
+    knowledge: {
+      createRun: () => ({}),
+    },
+    documents: store,
+  } as unknown as Parameters<typeof createProductAgent>[0]);
+
+  const result = await agent.reply(userId, childId, messageRef, async () => true);
+  assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.equal(result.specialistArtifacts?.length, 1);
+  assert.equal(result.specialistArtifacts?.[0]?.formalSave, false);
+  assert.equal(result.specialistArtifacts?.[0]?.published, false);
+  assert.equal(result.specialistArtifacts?.[0]?.verification.passed, true);
+  assert.deepEqual(result.specialistArtifacts?.[0]?.verification.unverifiedChecks, []);
+  assert.equal(staged.size, 1);
   assert.equal(getMutationCalls(), 0);
 });

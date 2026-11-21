@@ -20,6 +20,7 @@ const toolNames: Record<string, string> = {
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
   read_family_document_content: "續讀文件固定版本", list_family_document_versions: "讀取文件版本目錄", propose_family_document_change: "保存文件修改候選",
   read_family_documents: "讀取家庭文件", generate_family_document: "整理及保存家庭文件", change_family_document: "更新家庭文件",
+  compose_family_data: "委派資料編製", prepare_family_artifact: "產生專家文件預覽草稿",
   read_private_instructions: "讀取本人普通交代", execute_ordinary_instruction: "執行已授權的本人普通交代",
   save_ordinary_record: "保存普通照護記錄", revise_ordinary_record: "更正普通照護記錄", read_care_records: "讀取照護記錄及原版本", save_private_instruction: "保存本人私人備註", revise_private_instruction: "更正本人私人備註",
   create_ordinary_reminder: "安排本人普通提醒", change_ordinary_reminder: "更新本人普通提醒",
@@ -243,5 +244,21 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
       status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change","propose_concern","propose_concern_change"].includes(tool.name) })),
-    proposals: result.proposals.map(projectAgentProposal), citations: [...result.citations.map(projectAgentCitation), ...(result.liveCitations ?? []).map(projectLiveCitation)],privateSourceCitations:result.privateSourceCitations };
+    proposals: result.proposals.map(projectAgentProposal), citations: [...result.citations.map(projectAgentCitation), ...(result.liveCitations ?? []).map(projectLiveCitation)],privateSourceCitations:result.privateSourceCitations,
+    ...(result.specialistArtifacts?.length ? {
+      specialistArtifacts: result.specialistArtifacts.map(item => ({
+        id: item.artifactId,
+        title: item.title,
+        format: item.format,
+        formatLabel: item.format === "pdf" ? "PDF A4 草稿" : "隔離 HTML 草稿",
+        fileName: item.fileName,
+        pageCountLabel: `共 ${item.pageCount} 頁`,
+        statusLabel: item.contentState === "invalidated" ? "來源已更新，須重新產生" : item.status === "verified" ? "已完成視覺核對" : "部分完成（仍須人工覆核）",
+        verificationLabel: item.verification.unverifiedChecks.length
+          ? `未完成檢查：${item.verification.unverifiedChecks.join("、")}`
+          : item.verification.passed ? "已通過格式與像素檢查" : `發現 ${item.verification.defects.length} 項提醒`,
+        boundaryLabel: "草稿預覽 · 尚未正式保存或發布",
+        contentState: item.contentState ?? "ready",
+      })),
+    } : {}) };
 }

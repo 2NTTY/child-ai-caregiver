@@ -328,6 +328,20 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       {!proposalOnly && !targetUnavailable ? <RunAnswer key={`answer-${run.id}`} run={run}
         activity={activity && (!activityHeaderVisible || run.status !== "completed" || run.proposals.length > 0)}
         actions={actions} onLocateSource={onLocateSource} /> : null}
+      {!proposalOnly && !targetUnavailable && run.specialistArtifacts?.length ? <View testID="agent-specialist-artifacts" style={styles.section}>
+        <Text accessibilityRole="header" style={styles.title}>專家文件草稿預覽</Text>
+        {run.specialistArtifacts.map(item => <View key={item.id} style={styles.entry}>
+          <View style={styles.top}>
+            <Text style={styles.title}>{item.title}</Text>
+            <AppStatusBadge label={item.statusLabel} tone={item.contentState === "invalidated" ? "warning" : "neutral"} />
+          </View>
+          <Text style={styles.meta}>{item.formatLabel} · {item.pageCountLabel} · {item.verificationLabel}</Text>
+          <StateNote tone={item.contentState === "invalidated" ? "warning" : "neutral"}>{item.boundaryLabel}</StateNote>
+          <AppButton label="開啟預覽" accessibilityLabel={`開啟草稿預覽：${item.title}`} variant="secondary" density="compact"
+            disabled={!model.online || item.contentState === "invalidated" || !actions.openSpecialistArtifact}
+            onPress={() => actions.openSpecialistArtifact?.(item.id, run.id)} style={styles.inlineButton} />
+        </View>)}
+      </View> : null}
       {!proposalOnly && !targetUnavailable ? <RunDetails key={run.id} run={run} /> : null}
     </View> : null}
   </View>;

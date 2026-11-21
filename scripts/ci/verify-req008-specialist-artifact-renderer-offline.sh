@@ -42,7 +42,7 @@ TEST_FILES=(
   tests/product-agent-execution-contract.test.ts
   tests/chat-delivery-review.test.ts
 )
-TEST_CASES=(10 14 18 1 1 1 1 9 21 17 8 44)
+TEST_CASES=(11 14 18 1 1 1 1 9 21 17 8 44)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
