@@ -212,13 +212,14 @@ export interface AgentRunInput {
   contextCompactors?: import("@google/adk").BaseContextCompactor[];
   /** Declarative in-run context compaction configuration (§4.2). */
   contextCompaction?: boolean | InRunCompactionConfig;
-  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null | { outcome: "no_action" }>;
+  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit" | "model_output_limit") => Promise<string | null | { outcome: "no_action" }>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
   /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
   presentationRepair?: "present_answer";
   /** Server-authored current speaker, only for an explicitly requested question discussion. */
-  discussionInstruction?: () => string;
+  discussion?: { dailyAttemptsAtStart?: number; beginTurn: () => void; instruction: (finishing: boolean) => string; remainingSpeakers: () => number; readyToClose: () => boolean;
+    hasContributions: () => boolean; toolAvailable: (name: string) => boolean; isDraftRejection: (tool: string, code: unknown) => boolean };
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
@@ -520,9 +521,19 @@ export function createAgentRuntime(options: {
           const loader = capabilitySelection?.loader(async ids => { await budget.wait(() => getPrompt(ids)); budget.check(); });
           if (loader) configuredTools.push(loader);
           const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
+          const visibleToolNames = (ids?: readonly string[]) => {
+            const names = capabilitySelection?.visibleToolNames(ids) ?? new Set(definitions.keys());
+            return input.discussion ? new Set([...names].filter(input.discussion.toolAvailable)) : names;
+          };
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
           const observer = createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: fixedOptions.diagnostics, observe: input.onDiagnostic });
+          // Only a local draft rejection may leave preceding contributions eligible for independent review.
+          const rejectedDrafts = new WeakSet<AgentRunResult["tools"][number]>();
           const terminalToolNames = new Set(configuredTools.filter(tool => tool.terminal).map(tool => tool.name));
+          const dailySlots = (plan: ReturnType<AgentBudget['planningSnapshot']>) => (input.discussion?.dailyAttemptsAtStart ?? Infinity)
+            - plan.usedBeforeThisCall.modelCalls - plan.usedBeforeThisCall.queryEmbeddings;
+          const shouldPresent = (plan: ReturnType<AgentBudget['planningSnapshot']>) => terminalToolNames.size > 0
+            && (plan.phase === 'finish' || dailySlots(plan) <= 2 || input.discussion?.readyToClose() === true);
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
           const prompt = await getPrompt();
@@ -694,6 +705,8 @@ export function createAgentRuntime(options: {
                 const response = await budget.wait(() => tool.execute(args, { scope, runId, callId, signal: budget.signal, ...(embeddingKey ? { queryEmbeddingAttemptKey: embeddingKey } : {}) }));
                 if (!["succeeded", "rejected", "conflict", "failed", "unknown"].includes(response.status)) throw new Error("Invalid tool result");
                 progress.status = response.status;
+                if (response.status === 'rejected' && input.discussion?.isDraftRejection(tool.name, response.data?.code))
+                  rejectedDrafts.add(progress);
                 if (response.reference) progress.reference = response.reference;
                 observer.recordToolRejection(tool.name, "execution", response);
                 finish(response.status === "succeeded" ? "tool_end" : "tool_rejection", response.status,
@@ -731,9 +744,9 @@ export function createAgentRuntime(options: {
         role: runRole,
         ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
       });
-            const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
+            const visible = [...visibleToolNames(ids)];
             const instruction = (projected: typeof planning, projectedScope: Readonly<AgentScope> = scope) => {
-              const finishing = terminalToolNames.size > 0 && projected.phase === 'finish';
+              const finishing = shouldPresent(projected);
               const modelBudget = input.fitInitialInput ? {
                 usedBeforeThisCall: projected.usedBeforeThisCall,
                 remaining: projected.remaining,
@@ -742,7 +755,7 @@ export function createAgentRuntime(options: {
                 reserveForDeliveryReview: projected.reserveForDeliveryReview,
                 softRemaining: projected.softRemaining,
               } : projected;
-              const speaker = input.discussionInstruction?.();
+              const speaker = input.discussion?.instruction(finishing);
               return `${currentPrompt.text}${speaker ? '\n\n' + speaker : ''}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope: projectedScope, trigger: input.trigger,
                 now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
                 recipeId: currentPrompt.recipeId, capabilities: finishing ? visible.filter(name => terminalToolNames.has(name)) : visible,
@@ -803,12 +816,12 @@ export function createAgentRuntime(options: {
               const sys = projectSystemInstruction(request.config?.systemInstruction, previous, next);
               let config = { ...request.config, systemInstruction: sys };
               if (terminalToolNames.size && request.config?.tools && request.toolsDict) {
-                const finishingNow = budget.planningSnapshot(true, {
+                const finishingNow = shouldPresent(budget.planningSnapshot(true, {
                   modelCallAlreadyReserved,
                   reserveDeliveryReview,
                   role: runRole,
                   ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
-                }).phase === "finish";
+                }));
                 if (finishingNow && !request.config.toolConfig?.functionCallingConfig?.allowedFunctionNames?.length) {
                   const declarations = request.config.tools.flatMap(tool =>
                     "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
@@ -843,7 +856,7 @@ export function createAgentRuntime(options: {
               }
               const ids = capabilitySelection.projectedIds(requested);
               if (JSON.stringify(ids) === JSON.stringify(capabilitySelection.loadedIds())) return undefined;
-              const futureNames = capabilitySelection.visibleToolNames(ids);
+              const futureNames = visibleToolNames(ids);
               const currentNames = new Set((request.config?.tools ?? []).flatMap(tool =>
                 "functionDeclarations" in tool ? tool.functionDeclarations?.map(declaration => declaration.name) ?? [] : []));
               const additions = tools.filter(tool => futureNames.has(tool.name) && !currentNames.has(tool.name))
@@ -862,7 +875,7 @@ export function createAgentRuntime(options: {
             } : undefined });
           runContext.completeText = request => model.completeText(request);
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
-            budget.check(); return capabilitySelection.visibleToolNames();
+            budget.check(); return visibleToolNames();
           })] : tools;
           const agentName = "yuban_agent";
           const compactionAnchors = new WeakMap<LlmRequest, string>();
@@ -895,9 +908,10 @@ export function createAgentRuntime(options: {
                   signal: budget.signal,
                   canCompact: () => {
                     if (!terminalToolNames.size) return true;
-                    const { reserveForFinish } = budget.planningSnapshot(true, { reserveDeliveryReview });
+                    const plan = budget.planningSnapshot(true, { reserveDeliveryReview });
                     // Even a retried compaction must leave room for presentation and its independent review.
-                    return budget.remainingModelCalls - reserveForFinish.modelCalls >= 1 + (selected.config.agentMaxRetries ?? 0);
+                    const separateSpeakerTurns = Math.max(0, (input.discussion?.remainingSpeakers() ?? 0) - 1);
+                    return Math.min(budget.remainingModelCalls, dailySlots(plan)) - plan.reserveForFinish.modelCalls - separateSpeakerTurns >= 1 + (selected.config.agentMaxRetries ?? 0);
                   },
                   tokenThreshold: typeof input.contextCompaction === "object" ? input.contextCompaction.tokenThreshold : undefined,
                   eventRetentionSize: typeof input.contextCompaction === "object" ? input.contextCompaction.eventRetentionSize : undefined,
@@ -924,6 +938,7 @@ export function createAgentRuntime(options: {
             tools: runtimeTools,
             ...(effectiveCompactors.length ? { contextCompactors: effectiveCompactors } : {}),
             beforeModelCallback: ({ context, request }) => {
+              input.discussion?.beginTurn();
               if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
               // ADK adds this exact label after this callback. Measure it before
               // preserving the unmodified native work/finish configuration below.
@@ -943,11 +958,11 @@ export function createAgentRuntime(options: {
               };
               // Per-attempt admission remains in the gateway. Keep the native pre-lock
               // configuration so a future work request is never inferred from a smaller finish request.
-              if (terminalToolNames.size && budget.planningSnapshot(true, {
+              if (shouldPresent(budget.planningSnapshot(true, {
       reserveDeliveryReview,
       role: runRole,
       ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
-    }).phase === "finish") {
+    }))) {
                 request.config = finishConfig(originalNativeConfig);
                 const names = request.config.toolConfig!.functionCallingConfig!.allowedFunctionNames!;
                 request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
@@ -1028,7 +1043,11 @@ export function createAgentRuntime(options: {
                   nextAction: "Stop this operation. Do not retry with another identity or resource." } };
                 observer.recordToolRejection(tool.name, "authorization", response);
               }
-              if (response) result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: response.status });
+              if (response) {
+                const progress = { name: tool.name, callId: context.functionCallId ?? "", status: response.status };
+                result.tools.push(progress);
+                if (input.discussion?.isDraftRejection(tool.name, response.data?.code)) rejectedDrafts.add(progress);
+              }
               budget.check();
               return response ? { ...response } : undefined;
             },
@@ -1116,7 +1135,7 @@ export function createAgentRuntime(options: {
             const runner = new Runner({ appName, agent, sessionService, plugins: [observer] });
             const runnerModelLimit = durable ? budget.remainingModelCalls : budget.limits.modelCalls;
             if (runnerModelLimit < 1) throw new AgentStopped("model_limit");
-            let finalizeAfterModelLimit = false;
+            let finishReason: 'normal' | 'model_limit' | 'model_output_limit' = 'normal';
             let confirmedFrameworkModelLimit = false;
             try {
               for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
@@ -1142,15 +1161,18 @@ export function createAgentRuntime(options: {
               const modelLimit = error instanceof AgentStopped
                 ? error.reason === "model_limit" && (confirmedFrameworkModelLimit || model.failure?.reason === "model_limit" || compactionModel?.failure?.reason === "model_limit")
                 : error instanceof Error && /LlmCallsLimit/u.test(error.name);
-              if (!input.finalizeOnModelLimit || !input.finalize || !modelLimit || toolFailure
-                || result.tools.some(tool => tool.status !== "succeeded")) throw error;
-              finalizeAfterModelLimit = true;
+              const truncatedDiscussion = error instanceof AgentStopped && error.reason === 'model_output_limit'
+                && model.failure?.reason === 'model_output_limit' && input.discussion?.hasContributions()
+                && budget.remainingModelCalls > 0;
+              if (!input.finalizeOnModelLimit || !input.finalize || !(modelLimit || truncatedDiscussion) || toolFailure
+                || result.tools.some(tool => tool.status !== "succeeded" && !rejectedDrafts.has(tool))) throw error;
+              finishReason = modelLimit ? 'model_limit' : 'model_output_limit';
               result.text = null;
             }
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             // Keep finalize outside the Runner catch so its errors can never invoke it twice.
             if (input.finalize) {
-              const finalized = await budget.wait(() => input.finalize!(result, runContext, finalizeAfterModelLimit ? "model_limit" : "normal"));
+              const finalized = await budget.wait(() => input.finalize!(result, runContext, finishReason));
               if (typeof finalized === "object" && finalized?.outcome === "no_action") {
                 if (input.trigger.kind !== "worker" || !result.tools.some(tool => terminalToolNames.has(tool.name) && tool.status === "succeeded")) throw new AgentStopped("invalid_response");
                 result.outcome = "no_action"; result.text = null;
@@ -1158,8 +1180,8 @@ export function createAgentRuntime(options: {
               else throw new AgentStopped("invalid_response");
             }
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-            if (result.outcome !== "no_action" && (!result.text || finalizeAfterModelLimit && !result.text.trim())) throw new AgentStopped("invalid_response");
-            if (finalizeAfterModelLimit) {
+            if (result.outcome !== "no_action" && (!result.text || finishReason !== 'normal' && !result.text.trim())) throw new AgentStopped("invalid_response");
+            if (finishReason !== 'normal') {
               if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
               budget.check();
             }

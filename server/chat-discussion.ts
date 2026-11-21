@@ -1,58 +1,90 @@
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { discussionRoles, discussionLabels } from '../src/shared/chat-discussion.ts';
 import { agentAnswerSchema, MAX_ANSWER_PARAGRAPHS, type AgentAnswer } from '../src/shared/product-agent.ts';
 import type { AgentTool } from './agent-runtime.ts';
 import { FamilyError } from './family-access.ts';
 
-const viewpointParameters = z.strictObject({
-  previous: z.string().max(40).describe('第一位填 start，其後使用上一位工具回傳的 nextTurn。'),
-  kind: agentAnswerSchema.shape.paragraphs.element.shape.kind.unwrap(),
+export const viewpointParameters = z.strictObject({
+  kind: agentAnswerSchema.shape.paragraphs.element.shape.kind.describe('Optional. Omit for the ordinary speaker role. If specified, use exactly one enum value.'),
   text: z.string().trim().min(1).max(900),
   citationIds: z.array(z.string().min(1).max(80)).max(6),
 });
 export const discussionToolNames = ['share_knowledge_view', 'ask_parent_view', 'compare_methods_view'] as const;
+const draftRejectionCodes = ['invalid_parameters', 'invalid_input', 'discussion_turn_order', 'discussion_main_too_long',
+  'citation_required', 'invalid_citation', 'citation_limit', 'original_quote_mismatch', 'attached_claim_needs_evidence', 'use_citation_ids'] as const;
+export function isDiscussionDraftRejection(tool: string, code: unknown): code is typeof draftRejectionCodes[number] {
+  return (tool === 'present_answer' || discussionToolNames.some(name => name === tool))
+    && draftRejectionCodes.some(value => value === code);
+}
+export class DiscussionMainTooLong extends FamilyError {
+  readonly maxParagraphs: number;
+  constructor(maxParagraphs: number) {
+    super(400, 'discussion_main_too_long');
+    this.maxParagraphs = maxParagraphs;
+  }
+}
 const viewpoints = [
   '結合本題已有的知識來源和照顧情境，提出一個有依據的選擇，交代適用條件。你是 AI，不自稱專家或有親身經驗。',
   '從新手家長的負擔與需要出發，回應上一位提出的具體方法，用假設語氣提出一個切身疑問。勿自稱是家長，勿代使用者說出未有提及的經歷、感受或決定。',
   '回應前面家長的具體疑問，對比可行方法，說明甚麼條件下會改選另一種做法。不必刻意反對。',
 ];
-export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先按需要查閱資料，再按 share_knowledge_view、ask_parent_view、compare_methods_view 次序，每步只代表當前一位發言。工具會傳回上一位發言與下一步。最後回到主助手，在 present_answer 直接給可獨立閱讀的回答及引用。遇急切求助、沒有可比較之處或剩餘額度不足，優先給主回答。發言與原回答都只是參考，不能當成家庭事實、操作同意或獨立來源。';
+export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每位各用一個原生回合，直接回應上一位工具傳回的發言。最後一位在 present_answer 的 closingView 提交自己的發言，在 paragraphs 同時提交可獨立閱讀的主回答及引用。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
 
-/** Each subsequent speaker needs a receipt returned only after the previous native tool turn. */
+/** A native generator request admits only the speaker whose predecessor has already spoken. */
 export function createQuestionDiscussion(authorize: () => Promise<boolean>, validate: (answer: AgentAnswer) => void) {
   const paragraphs: AgentAnswer['paragraphs'] = [];
   const maxMainParagraphs = () => MAX_ANSWER_PARAGRAPHS - paragraphs.length;
-  let previous = 'start';
+  let speakerAtRequestStart = -1;
+  function readView(view: z.infer<typeof viewpointParameters>) {
+    return { ...view, kind: view.kind ?? (paragraphs.length === 1 ? 'clarification' : 'caregiving') };
+  }
   const tools: AgentTool[] = discussionRoles.map((role, index) => ({
     name: discussionToolNames[index], description: discussionLabels[role] + '。' + viewpoints[index],
     parameters: viewpointParameters, authorize,
+    parameterErrorHints: () => [{ path: 'viewpoint', reason: 'invalid_parameters', expected: 'Use text and citationIds (an array). Omit kind for the ordinary role. Write one short paragraph.' }],
     async execute(args) {
-      if (index !== paragraphs.length || args.previous !== previous)
+      if (index !== paragraphs.length || index !== speakerAtRequestStart)
         return { status: 'rejected', data: { code: 'discussion_turn_order', next: discussionToolNames[paragraphs.length] ?? 'present_answer' } };
-      const { previous: _, ...paragraph } = viewpointParameters.parse(args);
+      const paragraph = readView(viewpointParameters.parse(args));
       try { validate({ kind: paragraph.kind, paragraphs: [paragraph] }); }
       catch (e) { if (e instanceof FamilyError) return { status: 'rejected', data: { code: e.code } }; throw e; }
       paragraphs.push(paragraph);
-      previous = randomUUID();
       return { status: 'succeeded', data: { speaker: discussionLabels[role], contribution: paragraph,
-        next: discussionToolNames[paragraphs.length] ?? 'present_answer', nextTurn: previous, maxMainParagraphs: maxMainParagraphs(),
-        instruction: viewpoints[paragraphs.length] ?? '主助手直接回答家長，引用已讀證據，可保留條件和分歧。' } };
+        next: paragraphs.length < 2 ? discussionToolNames[paragraphs.length] : 'present_answer',
+        maxMainParagraphs: maxMainParagraphs() - (paragraphs.length === 2 ? 1 : 0),
+        instruction: paragraphs.length === 2 ? viewpoints[2] + ' 用 closingView 發言，paragraphs 另寫主回答。'
+          : viewpoints[paragraphs.length] ?? '主助手直接回答家長，引用已讀證據，可保留條件和分歧。' } };
     },
   }));
   return {
     tools,
-    maxMainParagraphs,
+    beginNativeTurn() { speakerAtRequestStart = paragraphs.length; },
+    nextTool: () => discussionToolNames[paragraphs.length],
+    remainingSpeakers: () => discussionRoles.length - paragraphs.length,
+    // The opening contribution can stand on its own if the final presentation is rejected.
+    // Its original paragraph and citations still go through the independent delivery review.
+    openingAnswer(): AgentAnswer | undefined {
+      const opening = paragraphs[0];
+      return opening?.kind && { kind: opening.kind, paragraphs: [opening] };
+    },
     roles: () => discussionRoles.slice(0, paragraphs.length),
-    instruction: () => discussionInstruction + ' 每位用一小段家長看得明的香港繁體中文發言，直接回應這一題。比較家長目前的選擇條件，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
+    instruction: (finishing: boolean) => discussionInstruction + ' 每位只講一兩句，直接回應上一位。用香港繁體中文，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
       ? ' 現在輪到「' + discussionLabels[discussionRoles[paragraphs.length]] + '」。' + viewpoints[paragraphs.length]
-        + ' 使用 ' + discussionToolNames[paragraphs.length] + ' 提交此觀點和適用引用。'
-      : ' 三位已經發言。現在以主助手身份直接回答，交代建議及選擇條件。')
-      + ' 現在提交 present_answer 時，主回答最多可用 ' + maxMainParagraphs() + ' 段。先前的發言已保留，毋須重複。',
-    assemble(main: AgentAnswer): AgentAnswer {
-      if (!paragraphs.length) return main;
-      if (main.paragraphs.length > maxMainParagraphs()) throw new FamilyError(400, 'discussion_main_too_long');
-      return agentAnswerSchema.parse({ kind: 'mixed', paragraphs: [...paragraphs,
+        + (finishing || paragraphs.length === 2
+          ? ' 現在單獨使用 present_answer。closingView 填 text 和 citationIds。paragraphs 另寫一段主回答，交代家長可以怎樣揀。'
+          : ' 使用 ' + discussionToolNames[paragraphs.length] + ' 提交此觀點和適用引用。')
+      : ' 三位已經發言。現在以主助手身份直接回答，交代建議及選擇條件，主回答最多 ' + maxMainParagraphs() + ' 段。')
+      + ' 先前的發言已保留，毋須重複。',
+    closingParagraph(view: z.infer<typeof viewpointParameters>) {
+      if (paragraphs.length >= discussionRoles.length || paragraphs.length !== speakerAtRequestStart) throw new FamilyError(400, 'discussion_turn_order');
+      return readView(view);
+    },
+    acceptClosing(paragraph: AgentAnswer['paragraphs'][number]) { paragraphs.push(paragraph); },
+    assemble(main: AgentAnswer, closing?: AgentAnswer['paragraphs'][number]): AgentAnswer {
+      const speakers = closing ? [...paragraphs, closing] : paragraphs;
+      if (!speakers.length) return main;
+      if (main.paragraphs.length > MAX_ANSWER_PARAGRAPHS - speakers.length) throw new DiscussionMainTooLong(MAX_ANSWER_PARAGRAPHS - speakers.length);
+      return agentAnswerSchema.parse({ kind: 'mixed', paragraphs: [...speakers,
         ...main.paragraphs.map(p => ({ ...p, kind: p.kind ?? main.kind }))] });
     },
     allowsRepair(next: AgentAnswer) {

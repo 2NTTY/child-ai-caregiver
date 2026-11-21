@@ -45,6 +45,8 @@ const stopReasons: Record<string, string> = {
   embedding_limit: "知識查詢次數已到上限", input_limit: "本次輸入已達服務容量上限，請縮短訊息或分次傳送附件", unauthorized: "存取權已改變",
   quota_exceeded: "今日 AI 用量已達上限", busy: "AI 正忙碌，這次未開始處理，也沒有排隊", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
   delivery_review_incomplete: "尚未通過獨立核對，未成為正式回覆",
+  discussion_budget: "本次可用的 AI 調用不足以完成討論及核對。你可以返回原回答，或關閉討論再提出普通問題。",
+  discussion_daily_budget: "今日剩餘的 AI 次數不足以完成討論及核對。你可以重看原回答，日額更新後再開新問題。",
   delivery_review_rejected: "獨立核對未接納這次整理，未成為正式回覆",
   delivery_review_no_sources: "缺少可核對的來源依據，未成為正式回覆",
   delivery_review_budget: "這次核對步驟已用盡可用的 AI 調用，未成為正式回覆",

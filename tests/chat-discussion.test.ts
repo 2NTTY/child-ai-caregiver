@@ -29,6 +29,12 @@ test('a question binds three successive native turns, the main reply and one ind
     sourceId: 'sample-reading', versionId: 'e7d04db3-65ab-4d67-85ac-57cde623124a', contentHash: 'a'.repeat(64), title: '合成例子', section: '一起玩' };
   let discussion = true, claimed = false, calls = 0, allowed = true, saved: ProductAgentResult | null = null;
   let followup = false, interrupt: AbortController | undefined;
+  let modelLimit = 7;
+  let invalidClosing = false;
+  let truncateClosing = false;
+  let dailySlots: number | undefined;
+  const earlierRunId = '9a3c4c60-d3e6-42b1-98ad-91bc539f6b7a';
+  let earlierRun: ProductAgentResult | null = null;
   const task = { kind: 'task', id: '6dd5227c-0b41-46a3-98ff-12156dc387fe', version: 2 } as const;
   let taskReads = 0;
   let changeTaskDuringReview = false, taskChanged = false;
@@ -46,6 +52,28 @@ test('a question binds three successive native turns, the main reply and one ind
   const usage = { reserve: async () => true, record: async () => {}, getForUser: unused };
   const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
+      if (modelLimit !== 7) {
+        const review = inputs.find(p => p.text?.startsWith('Server evidence payload for chat-delivery-review.'))?.text;
+        const previous = inputs.map(p => p.functionResponse?.response?.data as { contribution?: { text: string } } | undefined)
+          .findLast(p => p?.contribution);
+        if (review) {
+          const payload = JSON.parse(review.slice(review.indexOf('{')));
+          const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (invalidClosing || truncateClosing ? 1 : 0);
+          assert.deepEqual(payload.discussionRoles, ['knowledge','parent','methods'].slice(0, expected));
+          assert.deepEqual(payload.paragraphs.slice(0,expected).map((p: { text: string }) => p.text), turns.slice(0,expected));
+          return { content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash:payload.draftHash, decision:'pass', issues:[], claimedAppChanges:[] }) }] }, finishReason:FinishReason.STOP };
+        }
+        if (i > 0) assert.equal(previous?.contribution?.text, turns[i - 1]);
+        const view = { text:turns[i], citationIds:[chunkId] };
+        const finish = i === Math.min(2, (dailySlots ?? modelLimit) - 2);
+        const name = finish ? 'present_answer' : discussionToolNames[i];
+        if (finish) assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
+        if (finish && truncateClosing) return { content: { role: 'model', parts: [{text:'truncated output'}] }, finishReason: FinishReason.MAX_TOKENS };
+        if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
+        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0],citationIds:[chunkId]}],
+          closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
+        return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP};
+      }
       if (inputs.some(p => p.text?.includes('Please summarize the interactions concisely'))) {
         return { content: { role: 'model', parts: [{ text: 'The three speakers have contributed.' }] }, finishReason: FinishReason.STOP };
       }
@@ -85,12 +113,12 @@ test('a question binds three successive native turns, the main reply and one ind
           ? { code: 'original_quote_mismatch', chunkId, originalExcerpt: chunk.sourceExcerpt }
           : { code: 'discussion_main_too_long', maxParagraphs: 3 });
       }
-      const previous = inputs.map(p => p.functionResponse?.response?.data).filter(Boolean).at(-1) as { nextTurn?: string; contribution?: { text: string }; maxMainParagraphs?: number } | undefined;
+      const previous = inputs.map(p => p.functionResponse?.response?.data).filter(Boolean).at(-1) as { contribution?: { text: string }; maxMainParagraphs?: number } | undefined;
       if (i === 2 || i === 3) assert.equal(previous?.contribution?.text, turns[i - 2]);
-      if (i >= 2 && i <= 4) assert.equal(previous?.maxMainParagraphs, 7 - i);
+      if (i >= 2 && i <= 4) assert.equal(previous?.maxMainParagraphs, i === 2 ? 5 : 3);
       const name = i === 0 ? 'search_knowledge' : i <= 3 ? discussionToolNames[i - 1] : 'present_answer';
       const args = i === 0 ? { query: '親子共讀童謠', classification: 'official_guidance' }
-        : i <= 3 ? { previous: previous?.nextTurn ?? 'start', kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
+        : i <= 3 ? { kind: 'caregiving', text: turns[i - 1], citationIds: [chunkId] }
         : { kind: followup ? 'mixed' : 'caregiving',
             ...(followup && { originalQuotes: [{ chunkId, text: i === 4 ? paraphrase : chunk.sourceExcerpt }] }),
             paragraphs: (i === 4 && !followup ? [...main, '可以遲些再揀。'] : main).map((text, n) =>
@@ -105,9 +133,12 @@ test('a question binds three successive native turns, the main reply and one ind
     } };
   const runtime = createAgentRuntime({ config, usage, provider, resolve: async () => ({
     config, provider, usage, authorize: async () => true, model: { generate: unused }, embeddings: { embed: unused },
-    runLimits: { modelCalls: 7, queryEmbeddings: 1 },
+    runLimits: { modelCalls: modelLimit, queryEmbeddings: 1 },
   }) });
-  const service = createProductAgent({ runtime,
+  const service = createProductAgent({ runtime: { run(input: Parameters<typeof runtime.run>[0]) {
+    return runtime.run(input.discussion && dailySlots !== undefined
+      ? { ...input, discussion: { ...input.discussion, dailyAttemptsAtStart: dailySlots } } : input);
+  } },
     readPageItem: async (userId: string, childId: string, item: unknown) => {
       assert.equal(userId, scope.userId);
       assert.equal(childId, scope.childId);
@@ -116,16 +147,18 @@ test('a question binds three successive native turns, the main reply and one ind
       return taskChanged ? { status: 'unavailable' } : { title: 'Prepare the picture book', details:taskDetails };
     },
     store: { claim: async () => { const created = !claimed; claimed = true; return { runId, scope, created, state: 'running', expiresAt: new Date(Date.now()+90000).toISOString() }; },
-      authorize: async () => allowed, get: async () => allowed ? saved : null, finish: async (_scope: unknown, result: ProductAgentResult) => { saved = result; return true; } },
+      authorize: async () => allowed, get: async (_user: string, _child: string, id: string) => allowed ? id === earlierRunId ? earlierRun : saved : null, finish: async (_scope: unknown, result: ProductAgentResult) => { saved = result; return true; } },
     chat: { listForUser: async (_u: string, child: string) => child === base.childId ? { messages: followup ? [linkedQuestion] : [{ ...base, text: discussion ? base.text : '你好', ...(discussion && { discussion }) }] } : null,
       getOriginalMessageForUser: async (_u: string, child: string, id: string, purpose: string) => {
         assert.equal(purpose, 'memory');
-        return allowed && child === base.childId ? [{ ...base, pageContext: { page: '/tasks', item: task } }, previousAnswer].find(item => item.id === id) ?? null : null;
+        return allowed && child === base.childId ? [{ ...base, pageContext: { page: '/tasks', item: task } },
+          { ...previousAnswer, ...(earlierRun && { agentRunId: earlierRunId }) }].find(item => item.id === id) ?? null : null;
       } },
     memory: { context: async () => ({ profile: { childId: base.childId, version: 0, data: null }, profileApplicable: false,
       facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
-    knowledge: { createRun: () => ({ search: async () => ({ mode: 'keyword_degraded', chunks: [chunk] }), revalidateCitations: async () => true }) },
+    knowledge: { createRun: () => ({ search: async () => ({ mode: 'keyword_degraded', chunks: [chunk] }), revalidateCitations: async () => true,
+      supportsScopedEvidenceReuse: true, revalidateAndSeedEvidence: async () => ({valid:[chunk],invalidated:[]}) }) },
   } as unknown as Parameters<typeof createProductAgent>[0]);
   const reply = (childId = base.childId) => service.reply('parent', childId, followup ? linkedQuestion.id : base.id, async () => true, interrupt?.signal);
   const result = await reply();
@@ -157,6 +190,45 @@ test('a question binds three successive native turns, the main reply and one ind
   assert.deepEqual(await reply(), later);
   assert.equal(calls, 7, 'Reopening the completed follow-up reads its receipt');
   assert.ok(taskReads >= 2);
+  earlierRun = { ...later, runId:earlierRunId };
+  modelLimit = 4; claimed = false; calls = 0;
+  const capped = await reply();
+  assert.equal(capped?.status, 'completed', JSON.stringify({stop:capped?.stopReason, tools:capped?.tools}));
+  assert.deepEqual(capped.discussion?.map(t => t.text), turns.map(text => text+' [1]'));
+  assert.equal(capped.counts.modelCalls, 4);
+  assert.deepEqual(await reply(), capped);
+  assert.equal(calls, 4);
+  for (const rejected of [false, true]) {
+    invalidClosing = rejected; modelLimit = 3; claimed = false; calls = 0;
+    const partial = await reply();
+    assert.equal(partial?.status, 'completed', JSON.stringify({stop:partial?.stopReason, tools:partial?.tools}));
+    assert.deepEqual(partial.discussion?.map(t => t.text), capped.discussion?.slice(0, rejected ? 1 : 2).map(t => t.text));
+    assert.equal(partial.deliveryReview?.decision, 'pass');
+    assert.equal(partial.counts.modelCalls, 3);
+    assert.deepEqual(await reply(), partial);
+    assert.equal(calls, 3);
+  }
+  invalidClosing = false;
+  truncateClosing = true; modelLimit = 8; claimed = false; calls = 0;
+  const truncated = await reply();
+  assert.equal(truncated?.status, 'completed', JSON.stringify(truncated));
+  assert.deepEqual(truncated.discussion, capped.discussion?.slice(0,2));
+  assert.equal(truncated.text, capped.discussion?.[0].text);
+  assert.equal(truncated.deliveryReview?.decision, 'pass');
+  assert.deepEqual(await reply(), truncated);
+  assert.equal(calls, 4);
+  truncateClosing = false;
+  dailySlots = 3; claimed = false; calls = 0;
+  const dailyLimited = await reply();
+  assert.equal(dailyLimited?.status, 'completed');
+  assert.deepEqual(dailyLimited.discussion, capped.discussion?.slice(0,2));
+  assert.equal(calls, 3);
+  dailySlots = undefined;
+  modelLimit = 1; claimed = false; calls = 0;
+  const insufficient = await reply();
+  assert.equal(insufficient?.stopReason, 'discussion_budget');
+  assert.equal(calls, 0);
+  modelLimit = 7;
   changeTaskDuringReview = true; claimed = false; calls = 0;
   const changed = await reply();
   assert.equal(changed?.status, 'stopped');
@@ -171,9 +243,14 @@ test('a question binds three successive native turns, the main reply and one ind
 
 test('a parallel or out-of-order viewpoint cannot observe a fabricated predecessor', async () => {
   const discussion = createQuestionDiscussion(async () => true, () => {});
-  const parallel = await discussion.tools[1].execute({ previous:'start', kind:'clarification', text:'哪一種？', citationIds:[] }, {} as never);
-  assert.equal(parallel.status,'rejected');
-  assert.deepEqual(discussion.render(['主回答']), { text:'主回答', discussion:[] });
+  const view = { kind:'clarification', text:'哪一種？', citationIds:[] };
+  discussion.beginNativeTurn();
+  assert.equal((await discussion.tools[1].execute(view, {} as never)).status,'rejected');
+  assert.equal((await discussion.tools[0].execute(view, {} as never)).status,'succeeded');
+  assert.equal((await discussion.tools[1].execute(view, {} as never)).status,'rejected');
+  assert.throws(() => discussion.closingParagraph(view as never), /discussion_turn_order/);
+  discussion.beginNativeTurn();
+  assert.equal((await discussion.tools[1].execute(view, {} as never)).status,'succeeded');
 });
 
 test('replays the reviewed Web discussion and rejects unsupported app changes in either a role or the main reply', async () => {

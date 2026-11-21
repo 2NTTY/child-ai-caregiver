@@ -35,7 +35,7 @@ import {
   type TurnConversationMode,
 } from "./agent-context-assembly.ts";
 import { discoverDailyNeeds } from "./daily-needs-discovery.ts";
-import { discussionInstruction, discussionToolNames } from './chat-discussion.ts';
+import { discussionInstruction, discussionToolNames, isDiscussionDraftRejection } from './chat-discussion.ts';
 
 const EPHEMERAL_ALLOWED_TOOL_NAMES = new Set([
   "search_knowledge",
@@ -499,7 +499,8 @@ export function createProductAgent(options: {
       let seededOfficialEvidence: { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[] = [];
       let reusedEvidenceInvalidated = false;
       if (!pureGreetingTurn && conversationMode !== "ephemeral") {
-        const priorRunIds = [...new Set([...recent.messages, ...(priorAnswer ? [priorAnswer] : [])]
+        const evidenceMessages = discussion && priorAnswer ? [priorAnswer] : recent.messages;
+        const priorRunIds = [...new Set(evidenceMessages
           .filter((item): item is typeof item & { agentRunId: string } => item.role === "model" && typeof item.agentRunId === "string" && item.agentRunId !== claim.runId)
           .map(item => item.agentRunId))].slice(-3);
         if (priorRunIds.length && typeof options.knowledge?.createRun === "function") {
@@ -635,7 +636,15 @@ export function createProductAgent(options: {
           return { image: await options.photos.agentImage(userId, childId, reference),
             authorize: () => options.photos!.authorizeImage(userId, childId, reference) };
         } } : {}),
-        ...(discussion ? { discussionInstruction: () => tools?.discussionInstruction?.() ?? discussionInstruction } : {}),
+        ...(discussion ? { discussion: {
+          beginTurn: () => tools?.beginDiscussionTurn?.(),
+          instruction: (finishing: boolean) => tools?.discussionInstruction?.(finishing) ?? discussionInstruction,
+          remainingSpeakers: () => tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length,
+          readyToClose: () => seededOfficialEvidence.length > 0 && (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) <= 1,
+          hasContributions: () => (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) < discussionToolNames.length,
+          toolAvailable: name => !discussionToolNames.some(tool => tool === name) || name === tools?.nextDiscussionTool?.(),
+          isDraftRejection: isDiscussionDraftRejection,
+        } } : {}),
         context: { ...(priorAnswer && !reusedEvidenceInvalidated ? { originalAnswer: priorAnswer.text } : {}), recentConversationCoverage: { ...recent.coverage,
           ...(available.length !== currentPage.messages.length ? { complete: false, retiredSourcesOmitted: true } : {}),
           messageTopology: recent.coverage.messageTopology.map(item =>
@@ -678,6 +687,7 @@ export function createProductAgent(options: {
         compactToolCatalog: discussion ? { ...COMPACT_PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...COMPACT_PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames, 'search_knowledge', 'read_knowledge_context'],
           groups: COMPACT_PRODUCT_AGENT_TOOL_CATALOG.groups.filter(group => group.id !== 'knowledge') } : COMPACT_PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
+          if (discussion && run.budget.remainingModelCalls < 2) throw new AgentStopped('discussion_budget');
           const modeToolOptions = conversationMode === "ephemeral"
             ? {
                 memory: {
@@ -752,6 +762,8 @@ export function createProductAgent(options: {
           return tools.tools;
         }, authorize, signal: replySignal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {
+          if (discussion && reason !== 'normal' && _context.budget.remainingModelCalls > 0)
+            await tools!.preparePartialDiscussion();
           rendered.value = await tools!.presentation();
           // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
           // Server finishes confirmation text on model_limit without a fifth present_answer call.
@@ -781,7 +793,7 @@ export function createProductAgent(options: {
             }
           }
           if (!rendered.value && reason === "model_limit" && _context.deliveryReview?.required && _context.budget.remainingModelCalls <= 1) {
-            throw new AgentStopped("delivery_review_budget");
+            throw new AgentStopped(discussion ? 'discussion_budget' : 'delivery_review_budget');
           }
           try {
             const revalidatedBackground = revalidateTurnBackground(turnBackground, { ..._context.scope, mode: conversationMode });

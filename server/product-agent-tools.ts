@@ -31,7 +31,7 @@ import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
-import { createQuestionDiscussion } from './chat-discussion.ts';
+import { createQuestionDiscussion, DiscussionMainTooLong, viewpointParameters } from './chat-discussion.ts';
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
@@ -55,6 +55,9 @@ const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kin
     originalQuotes: z.array(z.strictObject({ chunkId: z.uuid(), text: z.string().trim().min(1).max(300) })).max(6).optional()
       .describe('Optional. Omit for a paraphrase. To quote a library original, copy a contiguous span exactly as returned, including its conditions and units.'),
     paragraphs: z.array(z.union([agentAnswerSchema.shape.paragraphs.element, historyQuoteParagraph])).min(1).max(MAX_ANSWER_PARAGRAPHS) });
+const discussionPresentationInput = chatPresentationInput.extend({
+  closingView: viewpointParameters.optional().describe('Submit the current speaker’s short contribution here alongside the separate main answer. The server assigns the speaker.'),
+});
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -537,9 +540,9 @@ export function createProductAgentTools(options: {
   async function guard<T>(operation: () => Promise<T>): Promise<import("./agent-runtime.ts").AgentToolResult> {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
-      if (error instanceof FamilyError && error.code === 'discussion_main_too_long' && discussion) return { status: 'rejected', data: {
-        code: error.code, maxParagraphs: discussion.maxMainParagraphs(),
-        nextAction: '先前的角色發言已保留。請把主回答整合至 ' + discussion.maxMainParagraphs() + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
+      if (error instanceof DiscussionMainTooLong) return { status: 'rejected', data: {
+        code: error.code, maxParagraphs: error.maxParagraphs,
+        nextAction: '先前的角色發言已保留。請把主回答整合至 ' + error.maxParagraphs + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
       } };
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
       if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
@@ -997,18 +1000,20 @@ export function createProductAgentTools(options: {
       }) },
 { name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；帳戶名冊或對話範圍的讀取結果會帶 presentation.kind 和 citationIds，用它們配上你自己撰寫的正文。回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
-      parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
-      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : chatPresentationInput, authorize: permitted, terminal: true,
+      parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs.' + (discussion ? ' Optional closingView takes {text,citationIds,kind?} for the current speaker.' : '') }],
+      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : discussion ? discussionPresentationInput : chatPresentationInput, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
         // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
         // and generator fields such as approved or skipReview are not in this schema.
         let raw = args;
+        let closing: AgentAnswer['paragraphs'][number] | undefined;
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
-          const wire = chatPresentationInput.parse(args);
+          const wire = discussion ? discussionPresentationInput.parse(args) : { ...chatPresentationInput.parse(args), closingView: undefined };
+          if (wire.closingView) closing = discussion!.closingParagraph(wire.closingView);
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
-            if (!source || quotes.has(quote.chunkId) || !wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId)))
+            if (!source || quotes.has(quote.chunkId) || !(closing?.citationIds.includes(quote.chunkId) || wire.paragraphs.some(p => 'citationIds' in p && p.citationIds.includes(quote.chunkId))))
               throw new FamilyError(400, 'invalid_citation');
             const spans = citedOriginalSpans(source);
             if (!spans.some(span => span.includes(quote.text)))
@@ -1044,7 +1049,7 @@ export function createProductAgentTools(options: {
         }
         const main = options.background ? agentBackgroundAnswerSchema.parse(raw) : agentAnswerSchema.parse(raw);
         const parsedRaw = discussion && main.kind !== 'no_action'
-          ? discussion.assemble({ ...main, kind: main.kind }) : main;
+          ? discussion.assemble({ ...main, kind: main.kind }, closing) : main;
         const parsed = parsedRaw.kind === "no_action" ? parsedRaw : {
           ...parsedRaw,
           paragraphs: parsedRaw.paragraphs.map(paragraph => ({
@@ -1077,6 +1082,7 @@ export function createProductAgentTools(options: {
         }
         if (parsed.kind !== "no_action") {
           acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
+          if (closing) discussion!.acceptClosing(closing);
           originalQuotes = quotes;
         }
         answer = parsed;
@@ -1345,6 +1351,17 @@ export function createProductAgentTools(options: {
   );
   return {
     discussionInstruction: discussion?.instruction,
+    beginDiscussionTurn: discussion?.beginNativeTurn,
+    nextDiscussionTool: discussion?.nextTool,
+    remainingDiscussionSpeakers: discussion?.remainingSpeakers,
+    async preparePartialDiscussion() {
+      const opening = discussion?.openingAnswer();
+      if (!discussion || !opening || answer) return;
+      const partial = discussion.assemble(opening);
+      await ensureConfirmedMemoryGrounding();
+      acceptPresentedAnswer(partial);
+      answer = partial;
+    },
     recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
     tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
       : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
