@@ -7204,3 +7204,9 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 ### 2026-11-21 · 劇本出版者受眾及原文審核
 
 從 `bc9edcd6` 核回正式收據。兩份教材新增八套；整卡逐名定位共 38 套，相關 40 筆片名及內容命中已在正式索引核實。學前兒童片段及新生嬰兒用品片段的獨立審核指出年齡欄未能反映原文；較長母乳教材在獨立審核派送前遇到輸入上限。修訂保留出版者對象、未知月齡及分段原句。以六份實際教材、46 個劇本範圍作隔離核對，並以母乳教材核對原工作保留、刊登及再開零新增呼叫。六份新版仍待正式獨立審核。[原單範圍](knowledge/fhs-publisher-script-editions.json) · [正式部署](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44917772478)
+
+## 2026-11-22 香港 · REQ-004／006 已登記網站的文件分類
+
+由 C 承接卡片目錄，主模型從 `3bdad234` 開包，再於 `2e8225c0` 核對整合。沿本人來源排程保存出版者分類、按原文用詞歸類，以及核對現行正文與逐份列印版連結。家長卡可篩選、預覽及開啟原網站，目錄與內容採獨立身份。
+
+普通合成家長的兩張卡各有兩次正式 worker 巡查及一次索引工作。NHS 的兩個網站分類開啟同一份教材；香港生長圖表的 8,499,482 位元組 PDF 核對全檔雜湊後讀回首頁。受控來源核實跨目錄只下載一次、移分類保留舊版本、正文轉版及保留獨立附件。改版測例首次因少列一個項目觸發完整性保障，補回該項後既有斷言通過。35 項檢查及兩端 TypeScript 通過；兩項 Unix socket 測例未在 Windows 執行。零付費模型呼叫，未經真人驗收。正式發布交主聊天，批次與金額交 C。[逐站收據](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json) · [NHS 窄屏畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/nhs.png) · [生長圖表畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/growth.png)

@@ -15,13 +15,14 @@ import { knowledgeIndexTokens } from './knowledge-ranking.ts';
 import { sourceCardFrontier, scanCounts, type SourceScanBatch } from './source-card-frontier.ts';
 import { observeMethods, readingReport } from './source-reading-evidence.ts';
 import { parsePersonalPage } from './personal-source-fetch.ts';
+import { documentCategories } from './source-card-categories.ts';
 import {
   SOURCE_CARD_PART_BYTES, sourceCardDocumentRecord, sourceDocumentKey, sourceDocumentUrl, sourceDocumentMetadata,
   sourceDocumentRecordId, type SourceCardDocumentRecord, type SourceCardEdition, type SourceCardHead
 } from './source-card-document-record.ts';
 
 type CardAccess = Pick<RegisteredSourceJob, 'cardId' | 'kind' | 'url' | 'allowedPath' | 'credentialRef'>;
-interface Original { url: string; mimeType: string; bytes: Buffer; sha256: string; preview?: string | null }
+interface Original { url: string; mimeType: string; bytes: Buffer; sha256: string; preview?: string | null; sections?: string[] }
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 const grantFor = (card: CardAccess) => firestoreDomainHash([card.kind, card.url, card.allowedPath ?? null, card.credentialRef]);
 const authorityTagFor = (b: FirestoreAuthorityTransaction) => firestoreDomainHash([b.scope, b.generation, b.authorizationVersion]);
@@ -34,7 +35,8 @@ const corrupt = () => domainReject('source_document_integrity', 503);
 const collection = 'source_card_documents', family = 'source-card-document';
 function itemView(row: SourceCardEdition | Extract<SourceCardDocumentRecord, { kind: 'head' }>) {
   const { cardId, documentId, version, title, url, mimeType, preview, capturedAt, originalHash, indexCoverage } = row;
-  return { cardId, documentId, version, title, url, mimeType, preview: preview.slice(0, 360), capturedAt, originalHash, indexCoverage };
+  return { cardId, documentId, version, title, url, mimeType, preview: preview.slice(0, 360), capturedAt, originalHash, indexCoverage,
+    categories: row.categories ?? documentCategories([], mimeType === 'text/html' ? title : '', preview) };
 }
 function materialize(job: RegisteredSourceJob, original: Original) {
   if (!Buffer.isBuffer(original.bytes) || !original.bytes.length || original.bytes.length > KNOWLEDGE_PDF_MAX_BYTES
@@ -52,7 +54,8 @@ function materialize(job: RegisteredSourceJob, original: Original) {
     kind: 'edition', cardId: job.cardId, grant, documentId, version,
     url: locator.href, title: title.slice(0, 300), mimeType: original.mimeType, originalHash: original.sha256,
     bytes: bytes.length, storedHash, preview: preview.slice(0, 2400), indexText: preview.slice(0, 12000), indexTerms: [],
-    indexCoverage: 'original_only', capturedAt: new Date().toISOString()
+    indexCoverage: 'original_only', capturedAt: new Date().toISOString(),
+    categories: documentCategories(original.sections ?? [], original.mimeType === 'text/html' ? title : '', preview)
   };
   sourceCardDocumentRecord.parse(edition);
   return { bytes, edition };
@@ -214,7 +217,21 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
       if (recorded && recorded.kind !== 'receipt') return corrupt();
       const prior = recorded?.checkId === job.checkId && recorded.revision === job.revision ? recorded : null;
       if (prior && prior.sequence > batch.sequence) return { pending: prior.pending, result: scanCounts(prior), reading: readingReport(prior) };
-      const queue = await frontier.plan(b, job, grant, prior, batch);
+      const originalUrls = new Set(ready.map(r => r.edition.url));
+      const queue = await frontier.plan(b, job, grant, prior, batch, originalUrls);
+      function browse(categories: SourceCardHead['categories'], sections: string[] = []) {
+        if (!sections.length) return categories;
+        const labels = [...new Set([...(categories?.basis === 'publisher' ? categories.labels : []), ...sections])].sort().slice(0, 12);
+        return { basis: 'publisher' as const, labels };
+      }
+      // A later catalogue page may list an already downloaded original under another heading.
+      const later = await Promise.all([...queue.memberships].filter(([url]) => !originalUrls.has(url)).map(async ([url, sections]) => {
+        const documentId = sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'url', url);
+        const id = sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'head', documentId);
+        const head = open(b, id, await b.transaction.get(ref(id)));
+        if (head?.kind !== 'head') return corrupt();
+        return { ...head, categories: browse(head.categories, sections) };
+      }));
       const authorityTag = authorityTagFor(b);
       const rows = await Promise.all(ready.map(async ({ edition }) => {
         const id = sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'head', edition.documentId), editionId = sourceDocumentRecordId(b.scope, edition);
@@ -223,7 +240,9 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
         const previous = open(b, id, h!), saved = open(b, editionId, v!), counted = counter ? open(b, counterId, counter) : null;
         if (previous && previous.kind !== 'head' || saved && saved.kind !== 'edition' || counted && counted.kind !== 'scan-document') return corrupt();
         const current = saved ?? edition;
-        const head: SourceCardHead = { ...current, kind: 'head', rag: previous?.version === edition.version && previous.rag?.accessRevision === accessRevision && previous.rag.authorityTag === authorityTag
+        const sections = queue.memberships.get(edition.url) ?? [];
+        if (counted && previous?.categories?.basis === 'publisher') sections.push(...previous.categories.labels);
+        const head: SourceCardHead = { ...current, kind: 'head', categories: browse(edition.categories, sections), rag: previous?.version === edition.version && previous.rag?.accessRevision === accessRevision && previous.rag.authorityTag === authorityTag
           ? previous.rag : { accessRevision, incarnation: job.checkId, authorityTag } };
         const work = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'source-card-index', scope: b.scope,
           resourceId: job.cardId, basis: JSON.stringify([head.documentId, head.version, head.rag!.incarnation, accessRevision]),
@@ -240,12 +259,14 @@ export function createFirestoreSourceCardDocuments(options: FirestoreAuthorityOp
         const current = saved ?? edition, indexed = current.indexCoverage !== 'original_only';
         if (!counted) savedDocumentCount++;
         indexedDocumentCount += Number(indexed) - Number(counted?.indexed === true);
+        const categoriesChanged = JSON.stringify(previous?.categories) !== JSON.stringify(head.categories);
         if (previous?.version !== edition.version) changed = true;
-        if (previous?.version !== edition.version || previous.rag?.accessRevision !== accessRevision || previous.rag.authorityTag !== authorityTag) save(b, head);
+        if (categoriesChanged || previous?.version !== edition.version || previous.rag?.accessRevision !== accessRevision || previous.rag.authorityTag !== authorityTag) save(b, head);
         work.commit();
         if (queue.multi && counted?.indexed !== indexed)
           save(b, { kind: 'scan-document', cardId: job.cardId, grant, revision: job.revision, checkId: job.checkId, documentId: edition.documentId, indexed });
       }
+      for (const head of later) save(b, head);
       for (const row of queue.updates) save(b, row);
       if (queue.multi) save(b, {
         kind: 'scan-cleanup', cardId: job.cardId, grant, checkId: job.checkId, revision: job.revision,

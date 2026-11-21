@@ -1,5 +1,7 @@
 # STATUS
 
+**2026-11-22 香港，本機家長驗收。** 個人來源卡可依網站原有分類找文件。NHS 嬰兒餵哺教材沿兩個網站分類開啟同一原件；香港生長圖表按 PDF 首頁用詞分類。兩站再次巡查均沿用原版本。正式站待整合發布。[巡查收據及卡內畫面](PLAN.md#registered-source-categories)
+
 **2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
 
 **2026-11-21 香港 23:43 查庫**　61 套官方劇本共 1,695 段已全部保存。今輪兩份教材新增 8 套，家長已可在整卡按片名定位 38 套並展開同版原段。餘下 23 套集中在六份教材，出版者受眾及分齡原句修訂待核。[劇本驗收](PLAN.md#fhs-official-source-forms) · [上一輪逐套收據](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)

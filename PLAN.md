@@ -56,6 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="registered-source-categories"></a>
+**REQ-004／006 已登記網站的文件分類。** 本人來源巡查沿用出版者的文件分類、導覽路徑及分組目錄；欠分類時用文件可核實的詞句歸入日常照護等主題，線索不足則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。已在本機普通家長帳戶驗 NHS 教材及香港生長圖表，兩站各巡查兩次、各保留一份文件和一項索引工作。受控目錄另驗只改分類、正文換版及現行頁的列印副本／獨立附件。待主聊天整合發布，正式批次及金額由 C 統籌。[逐站收據及限制](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json)
+
 <a id="assistant-discussion-companion-catalogue"></a>
 ### 三方討論、頁內助手與平台卡庫
 
