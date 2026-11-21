@@ -7319,6 +7319,18 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 
 香港 02:28，正式版 `375243d6` 的睡眠教材已取得獨立批准及已提交的收據。61 套共 1,695 段原稿逐段驗證，42 套、1,286 段按片名查回；睡前常規內容問題首位命中 1–48 段，換尿片待驗。首個建置因 Docker 忽略新腳本失敗，補回規則後建置及發布通過。兩筆原審核按請求指紋復核，親子溝通的一項分類無效，嬰兒用品沒有保存回應。母乳的日額原單確認輸入被拒，活動帳本保留 308 微美元待結算。隔離測試驗明原票證據不符時仍保留預留、重做結算只生效一次；首次測試讀取使用了記憶體 adapter 不支援的捷徑，改回交易讀取，三檔 20 項通過。[正式原單及睡眠查回](artifacts/verification/FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json)
 
+### 2026-11-20　REQ-001 收束與 B 類一般新聞免擾守衛（`codex/req001-acceptance-closeout`）
+
+完成 REQ-001 跨 A／B／C 三類搜尋之 Stage 5 離線收束與逐項驗收對照：
+
+1. **B 類一般滾動新聞免打擾守衛（`server/knowledge-timely-policy.ts`、`server/proactive-event-sources.ts`）**：新增 `shouldAutoNotifyTimelyEvent` 並接入 `createProactiveEventSources().prepareGlobal`，使標記為 `timelyEvent.kind === "news"` 的時效新聞繼續保留於 7 日對話檢索視窗（`within_recent_window`），但不再自動產生主動推送候選，僅保留召回／安全警報與運維顯式選取之重要公告，並維持 `fingerprint` 未更新重用及 `semanticId`/`assessmentId` 去重。
+2. **跨類離線綜合驗收與門檻（`tests/req001-acceptance-closeout.test.ts`、`.github/workflows/req001-acceptance-closeout-offline.yml`、`scripts/ci/verify-req001-acceptance-closeout-offline.sh`）**：10 項零外網綜合測試逐項對應 REQ-001 §7 全部 15 項情境（`R001-S01`–`R001-S15`）及 §8 全數 8 項待決事項（`R001-D01`–`R001-D08`），連同既有 A／B／C 離線測試清單及 3 份嚴格 TypeScript 檢查通過。
+3. **文件同步與誠實邊界（`PLAN.md#req001-closeout01`、`docs/REQUIREMENTS_BACKLOG.md`）**：明確記錄 C 類線上外部搜尋連接器、REQ-003 待合併 PR（`#690`–`#701`）、真實付費 Gemini `--live` 基準與 Web／Android／iOS 實體機無障礙驗收均仍未在本次離線 PR 宣稱完成。
+
+### 2026-11-22｜REQ-001 #733 推播節制覆核
+
+以 master `8f94b86f` 整合；普通或未標記新聞仍可搜尋，但不會自動推播，明確公告及召回撤回沿用。舊版推播名單在首次新版檢查時重建，不改儲存結構。離線 12 檔 94 項通過，網絡守衛 0 次；未驗真通知或正式發布。
+
 ### 2026-11-22 · C2 母乳向量原票結算及餘下九套劇本
 
 香港 03:09，正式版 `8f94b86f` 已將 `fhs-20000` 原票按已記錄的向量拒絕結算 US$0，解除 US$0.000308 預留。十套母乳劇本共 26 段、11 個索引範圍獲獨立批准並上架。隔離家長用正式公開庫快照按片名查回 52 套、1,312 段，六個內容問題命中五個；57 個命中已對回正式查找索引。六次一般照護查詢均無純原文片段。查詢向量不可用，這次採用關鍵詞，模型呼叫及正式家庭寫入均為零。[逐套及逐票結果](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json)
