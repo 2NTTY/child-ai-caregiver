@@ -57,7 +57,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 當前工作
 
 <a id="parent-assistant-walkthrough"></a>
-**A｜家長連續使用助手。** 同一普通合成家庭已用真 Web 及 Vertex 查子女、轉問助手身份、補問家庭語言及更正私人記憶。帳戶工具按本輪問題核對範圍，選錯發話者或名冊均受同一檢查。家長確認私人記憶後，聊天顯示交易版本。家長在同一手作班待辦重問「呢個要準備啲咩？」時，助手曾只覆述舊問句；修後首次提交已引用待辦原文，獨立審核通過，主聊天顯示借書證、藍色圍裙及報到地點。較早兩次無效引用的原參數未有留存。正式部署及真人手機操作待驗。[修前修後的原訊息及收據](artifacts/verification/PARENT_ASSISTANT_WALKTHROUGH_20261122.json)
+**A｜家長連續使用助手。** 同一普通合成家庭已用真 Web 及 Vertex 查子女、轉問助手身份、補問家庭語言及更正私人記憶。帳戶工具按本輪問題核對範圍，選錯發話者或名冊均受同一檢查。家長確認私人記憶後，聊天顯示交易版本。家長在同一手作班待辦重問「呢個要準備啲咩？」時，助手曾只覆述舊問句；修後首次提交已引用待辦原文，獨立審核通過，主聊天顯示借書證、藍色圍裙及報到地點。較早兩次無效引用的原參數未有留存。修正已於香港 04:26 在原站發布。真人家長及手機操作待驗。[修前修後的原訊息及收據](artifacts/verification/PARENT_ASSISTANT_WALKTHROUGH_20261122.json)
 
 <a id="registered-source-categories"></a>
 **REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
@@ -150,7 +150,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 首批未索引的 31 套沿原單處理。正式版 `7e41cf5c` 讓家長按題名或內容找教材，純原文片段保留原對象、條件及未知月齡。一般照護、建議及主動提醒排除這類片段。香港 11 月 22 日 01:05 查回 41 套、1,238 段，較首批增加 11 套、386 段。以整張卡的正式快照逐名測試，41 套均可展開同版原段；6 條內容查找有 4 條命中所問劇本。6 條一般照護查詢傳回純原文片段 0 個。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44926747284) · [逐套收據](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
 
-香港 04:29，61／61 套、1,695／1,695 段均有獨立批准、生效版本及完整索引範圍。親子溝通完整保留原回應的 167 字變更說明，核得獨立批准；新增十張索引票共 US$0.001156，零張生成票。六個內容問題全部命中，換尿片及睡前常規均首位命中。發布時的讀取器逐套片名命中 60／61，完整版多段佔去原有短片的位置。沿相同家庭選擇、適用條件及向量核對其他教材後，修正讀取器在同一正式快照命中 61／61。待修正發布後覆核。[原票及先後查找結果](artifacts/verification/FHS_SCRIPT_RECORDED_REVIEW_20261122.json) · [嬰兒用品分齡](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json) · [母乳原票](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json)
+香港 04:58，正式版 `r44948282945-1` 的隔離家長驗收完成。61／61 個片名查回，覆蓋全部 1,695 段；六個內容問題全中，其中換尿片及睡前常規均首位命中、全文 17 及 48 段。完整版和 1 至 4 個月短片分別首位命中，67 個結果已核對 47 個正式索引位置。親子溝通沿原票保留 167 字說明及獨立批准，嬰兒用品按原段分齡、睡眠按原表及場景分齡，母乳向量原票以 US$0 結算。嬰兒用品最初的供應商回應仍無原文可取。[最終逐套收據](artifacts/verification/FHS_SCRIPT_FINAL_PARENT_LOOKUP_20261122.json) · [親子溝通原票](artifacts/verification/FHS_SCRIPT_RECORDED_REVIEW_20261122.json) · [嬰兒用品分齡](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json) · [母乳原票](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json) · [睡眠及原票缺口](artifacts/verification/FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json)
 
 普通文字問題使用發行者明示的現行網頁。《飲奶知多少？》的印刷本和網頁已按原件核對。34 組範本中，31 組是單張正文，3 組是分章目錄。查問印本、圖表或獨立附件時保留所問版本。兩個同範圍的合成矛盾段落已在一次實際工具回應中各自帶回原文。正式環境於香港 18:31 有上述兩個網頁生效版，共 4 個段落及 4 個向量。[出版者版本證據](knowledge/fhs-leaflet-editions.json)
 

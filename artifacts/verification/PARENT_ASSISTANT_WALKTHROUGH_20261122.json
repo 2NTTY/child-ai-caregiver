@@ -3,6 +3,14 @@
   "walkthroughBase": "1bef029bd6734656a3aefe529cd53f13c1b4c6ea",
   "lastLiveTestBase": "710321e7",
   "deliveryBase": "736d5a1b",
+  "productionRelease": {
+    "revision": "be8df544e74f99457ecf54c9acf4ee4de3a8bbed",
+    "receipt": "r44945460410-1",
+    "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44945460410",
+    "observedAt": "2026-11-22T04:26:45+08:00",
+    "result": "deployed",
+    "verification": "The VM matched the service identities and same-origin probes. The public API and Web version endpoints both returned this revision."
+  },
   "environment": {
     "browser": "Isolated headless Edge 158.0.4370.33, 1120 x 850, zh-HK",
     "runtime": "Node 24.22.1, production Web, Server and ADK entry points with local Firebase emulators and real Vertex gemini-3.1-flash-lite",
