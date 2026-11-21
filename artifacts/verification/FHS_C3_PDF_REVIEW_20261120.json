@@ -8229,5 +8229,40 @@
     "nextAction": "112 頁合訂本的正式工位已確認可沿原單開始；原 C 決定派送時可沿部署手冊載入已核實的單冊封裝，C1 核算共用額度。36 頁漫畫的原單仍保留。兩冊均待核對自身的付費閱讀、獨立審核、向量、家長版本及原頁引用。",
     "additionalProviderCalls": 0,
     "productionDataWrites": 0
+  },
+  "longOriginalHandoff": {
+    "campaignReadTime": "2026-11-21T17:53:29.842458Z",
+    "comparedWith": "2026-11-21T16:31:57.919358Z",
+    "identicalOriginalRows": 116,
+    "activePdfEditions": 35,
+    "pendingPdfEditions": 81,
+    "pendingOver20Pages": 12,
+    "observedGrossMicros": { "limit": 30000000, "spent": 12899163, "held": 3268916, "available": 13831921 },
+    "comic": {
+      "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+      "lane": "C2",
+      "originalOperation": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+      "firstDispatchWorkId": "cd3ed1b6c2581ae7647beefe55e8b7ef8c4360f021081488e722824d7e213feb",
+      "registrationCommitment": "a4fc42a26b57d0d33994dadaad0dac19ea36d2ce98a12248e4d06c5050670c3d",
+      "knownProviderTickets": 0,
+      "prepared": false,
+      "activeVersionId": null,
+      "verifiedArchiveRecords": 20,
+      "archiveSha256": "79df945f0990de72c404b72dc34b9d73505ee5ef09ebaf9c99425a2ce83d4160",
+      "physicalAcceptancePage": 16,
+      "printedAcceptancePage": 14
+    },
+    "collection4": {
+      "sourceId": "pdf-836e9d989e83046a43059df7",
+      "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+      "knownProviderTickets": 0,
+      "originalWorkExists": false,
+      "activeVersionId": null,
+      "verifiedArchiveRecords": 43,
+      "archiveSha256": "3fd66c73cb7e41591d74d845c1f04c8b19627a177d7fe52ccc738fb89a219887"
+    },
+    "nextAction": "原 C 統籌，C1 核額。先由原 C2 工位沿漫畫原單及已保存的首窗附件派送，查回三窗六筆閱讀的結算、向量、家長版本及實頁 16。一般照護可沿已審章節，第四冊先補《正面親職（二）》。需要整冊頁碼時，112 頁第四冊先於 192 頁第三冊。",
+    "additionalProviderCalls": 0,
+    "productionDataWrites": 0
   }
 }

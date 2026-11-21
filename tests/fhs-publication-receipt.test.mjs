@@ -5,6 +5,7 @@ import { confirmOriginalGenerations, verifyFhsPdfPages, readFhsDelivery } from '
 import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { campaignTicketId } from '../server/knowledge-campaign-budget.ts';
+import { firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const blob = Buffer.from('official test file');
@@ -119,11 +120,11 @@ test('a published receipt binds the committed observation, family edition and ev
       assert(options.fieldMask.includes('outputTokens'));
       return refs.map(({id}) => ({id, data:() => tickets.get(id)}));
     }}};
-    const read = (proof = provenance, delivery = input) => readFhsDelivery(delivery,
+    const read = (proof = provenance, delivery = input, firstDispatchFrom) => readFhsDelivery(delivery,
       { ...ports, pin: { ...ports.pin, pages: totalPages }, active: async () => ({ ...edition, source: longSource }),
         extract: async (...args) => ({ ...await ports.extract(...args), totalPages }),
         exportEdition: async () => ({ ...archive, source: longSource }), verifyRepair: async () => true,
-        inspect: async () => ({ ...work, windowed: true, prepared: { ...work.prepared, provenance: proof } }),
+        inspect: async () => ({ ...work, windowed: true, firstDispatchFrom, prepared: { ...work.prepared, provenance: proof } }),
         confirmOriginalGenerations: (id, original, stages) => confirmOriginalGenerations(attempts, id, original, stages) });
     const { pdf } = await read();
     assert.deepEqual(pdf.recordedWindowReadings.map(w => [w.first, w.last, w.firstRead, w.lastRead]), [[1,14,1,15],[15,28,14,29],[29,36,28,36]]);
@@ -144,6 +145,10 @@ test('a published receipt binds the committed observation, family edition and ev
       {...provenance, retainedDraft:{priorWork:'earlier'}},
     ]) assert.equal((await read(changed)).pdf.recordedWindowReadings, undefined);
     assert.equal((await read(provenance,{...input,deliveryOperation:sha('repair')})).pdf.recordedWindowReadings, undefined);
+    const firstDispatch = {...input, deliveryOperation:firstDispatchWorkId(input.originalOperation)};
+    assert.deepEqual((await read(provenance, firstDispatch, input.originalOperation)).pdf.recordedWindowReadings, pdf.recordedWindowReadings);
+    assert.equal((await read(provenance, firstDispatch, sha('other parent'))).pdf.recordedWindowReadings, undefined);
+    assert.equal((await read(provenance, {...input, deliveryOperation:sha('repair')}, input.originalOperation)).pdf.recordedWindowReadings, undefined);
     const [lastId, lastTicket] = [...tickets].at(-1);
     for (const replacement of [{...lastTicket,state:'reserved'}, {...lastTicket,outputTokens:0}, {...lastTicket,sourceId:'another-source'},
       {...lastTicket,operationFingerprint:sha('other operation')}, {...lastTicket,rejection:{httpStatus:504}}, undefined]) {
@@ -151,6 +156,7 @@ test('a published receipt binds the committed observation, family edition and ev
       const receipt = await read();
       assert.equal(receipt.readback, 'verified');
       assert.equal(receipt.pdf.recordedWindowReadings, undefined);
+      assert.equal((await read(provenance, firstDispatch, input.originalOperation)).pdf.recordedWindowReadings, undefined);
     }
   });
   await t.test('long whole-PDF receipts identify the original organizer and reviewer and every physical page', async () => {

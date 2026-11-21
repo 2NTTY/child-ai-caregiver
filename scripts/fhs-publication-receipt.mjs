@@ -189,6 +189,10 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
   if (originalOperation === deliveryOperation) {
     const readings = recordedWholePdfReadings(pdf, prepared.provenance);
     if (readings) pdf.recordedReadings = readings;
+  }
+  // A registered first dispatch bills every window to the original commission.
+  if (originalOperation === deliveryOperation
+    || (work.firstDispatchFrom === originalOperation && deliveryOperation === firstDispatchWorkId(originalOperation))) {
     const windowReadings = await recordedWindowReadings(pdf, work, sourceId, originalOperation, ports.confirmOriginalGenerations);
     if (windowReadings) pdf.recordedWindowReadings = windowReadings;
   }
