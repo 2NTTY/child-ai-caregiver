@@ -22,32 +22,48 @@ class Companion extends CubismUserModel {
       motion.setLoop(false);
       return [name, motion];
     }));
-    this.faces = ['smile', 'laugh'].map(name => {
-      const face = bytes(name);
-      return this.loadExpression(face, face.byteLength, name);
-    });
-    this.taps = 0;
-    this.modelIds = Object.fromEntries(['ParamBreath', 'ParamAngleZ', 'ParamEyeLOpen', 'ParamEyeROpen'].map(
+    this.expression = null;
+    this.look = 0;
+    this.modelIds = Object.fromEntries(['ParamBreath', 'ParamAngleX', 'ParamAngleY', 'ParamAngleZ',
+      'ParamEyeBallX', 'ParamEyeBallY', 'ParamEyeLOpen', 'ParamEyeROpen', 'ParamMouthForm', 'ParamMouthOpenY'].map(
       id => [id, CubismFramework.getIdManager().getId(id)]));
     this.getModel().saveParameters();
   }
   play(action) {
-    const motion = action === 'wave' ? this.motions.wave : this.motions.nod;
-    this._motionManager.startMotionPriority(motion, false, 3);
-    if (action !== 'arrive') this._expressionManager.startMotion(this.faces[this.taps++ % 2], false);
+    this.expression = { action, elapsed: 0 };
+    if (action === 'answer' || action === 'acknowledge') return;
+    this._motionManager.startMotionPriority(action === 'wave' ? this.motions.wave : this.motions.nod, false, 3);
   }
-  advance(delta, idleTime = 0) {
+  advance(delta, idleTime = 0, listen = 0) {
     const model = this.getModel(), ids = this.modelIds;
     model.loadParameters();
     this._motionManager.updateMotion(model, delta);
-    this._expressionManager.updateMotion(model, delta);
+    this.look += (listen - this.look) * (1 - Math.exp(-5 * delta));
     if (idleTime) {
       const breath = (1 - Math.cos(idleTime * 1.5)) / 2;
-      model.setParameterValueById(ids.ParamBreath, breath * 0.65);
-      model.addParameterValueById(ids.ParamAngleZ, Math.sin(idleTime * .85) * 2);
+      model.setParameterValueById(ids.ParamBreath, breath * .65);
+      model.addParameterValueById(ids.ParamAngleX, this.look * 9);
+      model.addParameterValueById(ids.ParamAngleZ, Math.sin(idleTime * .85) * 1.8 - this.look * 6);
+      model.addParameterValueById(ids.ParamEyeBallX, this.look * .49 + Math.sin(idleTime * .72) * .09);
+      model.addParameterValueById(ids.ParamEyeBallY, -.12 * Math.abs(this.look));
       const blink = Math.min(1, Math.abs((idleTime % 4.8) - 3.6) / .15);
       model.multiplyParameterValueById(ids.ParamEyeLOpen, blink);
       model.multiplyParameterValueById(ids.ParamEyeROpen, blink);
+    }
+    const face = this.expression;
+    if (face) {
+      face.elapsed += delta;
+      const answering = face.action === 'answer', nodding = face.action === 'acknowledge';
+      const duration = answering ? 1.55 : nodding ? .72 : 1.15;
+      const t = Math.min(1, face.elapsed / duration), warmth = Math.sin(Math.PI * t);
+      model.addParameterValueById(ids.ParamMouthForm, warmth * .75);
+      if (nodding) model.addParameterValueById(ids.ParamAngleY, -17 * Math.sin(Math.PI * t) ** 2);
+      if (answering) {
+        const syllable = Math.max(0, Math.sin(t * 5.5 * Math.PI));
+        model.setParameterValueById(ids.ParamMouthOpenY, .5 * warmth * syllable);
+        model.addParameterValueById(ids.ParamAngleZ, 4 * warmth);
+      }
+      if (t === 1) this.expression = null;
     }
     this._physics.evaluate(model, delta);
     model.update();
@@ -98,7 +114,7 @@ async function show() {
   top += (top - bottom) * .08;
   left -= (right - left) * .12;
   const matrix = new CubismMatrix44();
-  function draw(delta, idleTime = 0) {
+  function draw(delta, idleTime = 0, listen = 0) {
     const ratio = Math.min(devicePixelRatio || 1, 2);
     const width = Math.max(1, Math.round(innerWidth * ratio)), height = Math.max(1, Math.round(innerHeight * ratio));
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
@@ -106,7 +122,7 @@ async function show() {
     const sx = sy * height / width;
     matrix.scale(sx, sy);
     matrix.translate(-(left + right) * sx / 2, -(bottom + top) * sy / 2);
-    avatar.advance(delta, idleTime);
+    avatar.advance(delta, idleTime, listen);
     gl.viewport(0, 0, width, height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -120,18 +136,24 @@ async function show() {
     clearTimeout(timer);
     if (document.hidden || mode === 'hidden') return;
     const now = performance.now(), playing = now < activeUntil;
-    draw(Math.max(0, Math.min(.1, (now - last) / 1000)), mode === 'idle' && !reduced.matches ? now / 1000 : 0);
+    const ambient = mode === 'idle' || mode.startsWith('listen-');
+    draw(Math.max(0, Math.min(.15, (now - last) / 1000)), ambient && !reduced.matches ? now / 1000 : 0,
+      mode === 'listen-left' ? -1 : mode === 'listen-right' ? 1 : 0);
     last = now;
-    if (!reduced.matches && (playing || mode === 'idle')) timer = setTimeout(schedule, playing ? 33 : 80);
+    if (!reduced.matches && (playing || ambient)) timer = setTimeout(schedule, playing ? 33 : 80);
   }
   addEventListener('message', event => {
     if (event.source !== parent) return;
     if (event.data === 'status') { notify('ready'); return; }
-    if (['idle', 'quiet', 'hidden'].includes(event.data)) {
+    if (['idle', 'quiet', 'hidden', 'listen-left', 'listen-right'].includes(event.data)) {
       mode = event.data;
-    } else if (['nod', 'wave', 'arrive'].includes(event.data) && mode !== 'hidden') {
+      if (mode === 'quiet' || mode === 'hidden') {
+        avatar.expression = null; avatar.look = 0;
+        avatar._motionManager.stopAllMotions(); activeUntil = 0;
+      }
+    } else if (['nod', 'wave', 'arrive', 'acknowledge', 'answer'].includes(event.data) && mode !== 'hidden') {
+      if (reduced.matches) return;
       avatar.play(event.data);
-      if (reduced.matches) { avatar.advance(0); avatar.advance(.35); }
       activeUntil = performance.now() + (event.data === 'wave' ? 4700 : 3900);
     } else return;
     schedule();

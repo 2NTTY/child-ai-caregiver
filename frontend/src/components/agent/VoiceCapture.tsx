@@ -15,7 +15,7 @@ import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTi
 
 const options = { ...RecordingPresets.HIGH_QUALITY, numberOfChannels: 1, bitRate: 64_000,
   android: { ...RecordingPresets.HIGH_QUALITY.android, maxFileSize: VOICE_LIMITS.bytes } };
-export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
+export function VoiceCapture({ onPick, visible, onDismiss, onListening, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onListening?(active: boolean): void; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
   const recorder = useAudioRecorder(options);
   const [state, setState] = useState<"idle" | "permission" | "recording" | "stopping" | "ready">("idle");
   const [error, setError] = useState<string>(), [recording, setRecording] = useState<AssistantAttachment | null>(null);
@@ -92,6 +92,12 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = 
   function pick(attachment: AssistantAttachment) {
     discard(true, attachment); onPick(attachment);
   }
+  useEffect(() => {
+    if (visible && state === 'recording') {
+      onListening?.(true);
+      return () => onListening?.(false);
+    }
+  }, [visible, state, onListening]);
   if (!visible) return null;
   if (sendRecording) return <CompanionVoiceControls state={state} uri={recording?.localUri} error={error} confirmDisabled={confirmDisabled}
     start={() => void start()} stop={() => void finish(true, generation.current)} cancel={() => discard()}
