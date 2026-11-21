@@ -1,0 +1,1188 @@
+[
+  {
+    "link": "https://github.com/assistant-ui/assistant-ui/blob/3e04e44f33f8313356305f0b01e2321133228632/.github/assets/generative-ui-light.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/PC01/reference/generative-ui-light.pinned.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/PC01/reference/LICENSE",
+    "sha256": "5eec1d863f074a18cb19776b5db85833dc9a734b0519a2e5eb6576b445087efd",
+    "alt": "assistant-ui 官方示意：天氣工具卡在對話內",
+    "credit": "assistant-ui · © 2026 AgentbaseAI Inc. · MIT"
+  },
+  {
+    "link": "https://github.com/hbtabi/ai-chat-ui/blob/ea31b09ee3eb8eaeb156911e180c47309093d1db/docs/screenshot.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/PC03/PC03-original.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/PC03/LICENSE.upstream-MIT.txt",
+    "sha256": "999b863af70f68c27558171c3890a87c951938cb7272bf040271debd17a974c6",
+    "alt": "AI Chat UI 的深色對話，展示程式碼和回覆",
+    "credit": "AI Chat UI · © 2026 Mohammed Hassan bin Tayyeb · MIT"
+  },
+  {
+    "link": "https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/app/examples/forms/appearance/appearance-form.tsx",
+    "original": "https://github.com/shadcn-ui/ui/blob/4ccff13f9c68cd12bca289faa8d513b3f748ea37/apps/www/public/examples/forms-light.png",
+    "file": "../workbench-page-reference12-20261111/public/candidates/S-01/reference/forms-light.png",
+    "license": "../workbench-page-reference12-20261111/public/candidates/S-01/reference/LICENSE.md",
+    "sha256": "15450ff7b8d5904d6c801acc6d7f2e33e267dcdc8ea2e101f9a18ffc65b3b3cd",
+    "alt": "shadcn/ui 範例：獨立外觀設定頁可選淺色與深色",
+    "credit": "shadcn/ui · © 2023 shadcn · MIT"
+  },
+  {
+    "link": "https://github.com/itsDNNS/tribu/blob/d10c0aff47ccda3b7060aaaef85461b75efd97de/frontend/components/settings/index.js",
+    "original": "https://github.com/itsDNNS/tribu/blob/d10c0aff47ccda3b7060aaaef85461b75efd97de/docs/assets/settings-1440-light.png",
+    "file": "next-appearance/settings-1440-light.png",
+    "license": "next-appearance/LICENSE-Tribu-MIT.txt",
+    "sha256": "c9220b86e1eacc1681bc16b6f3ac0bd659895285dff0b9b2dc48a662d328a2ea",
+    "alt": "Tribu 合成示例：外觀和其他選項同列在設定總覽",
+    "credit": "Tribu · © 2026 Dennis Braun · MIT",
+    "additionalNotices": [
+      {
+        "name": "Tribu 圖示：Lucide 1.44.0 及 Feather",
+        "file": "next-appearance/LICENSE-Lucide-1.44.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/super-productivity/super-productivity/blob/108534af2939cb93660f9ab6cdc0463e40a3a682/fastlane/metadata/android/en-US/images/phoneScreenshots/2_task-list-light.png",
+    "file": "next-todo/super-productivity.png",
+    "license": "next-todo/super-productivity-MIT.txt",
+    "sha256": "e545d2bd5f527b3fb9ce0d6e3b7d7c3bade00b2f013209a31c3beb6c81377609",
+    "alt": "Super Productivity 手機版「Today」：上方是今日待辦，下方另有「Completed Tasks」，此例顯示尚無已完成事項。",
+    "credit": "Super Productivity · Johannes Millan · MIT"
+  },
+  {
+    "link": "https://github.com/MushiSenpai/komorebi/blob/154d27cb0f3ff961d4c269efcfb1b796642c8ed5/docs/screenshots/phase1-tasks-today.png",
+    "file": "next-todo/komorebi.png",
+    "license": "next-todo/komorebi-MIT.txt",
+    "sha256": "4e79dd6ec2809e9a5f732d4eb414532be196096264a6a8dd20389e7dd5cec5af",
+    "alt": "Komorebi Phase 1 桌面版「Today」：上方有新增和篩選，清單列出晨跑及澆花兩項待辦。",
+    "credit": "Komorebi · Madhan Kumar Reddy (Mushi) · MIT"
+  },
+  {
+    "link": "https://github.com/theakhinabraham/doable-todo-list-app/blob/1dbd62ca3bb5c5021ea375c2850470127152eb48/img/home-preview.png",
+    "file": "next-todo/doable.png",
+    "license": "next-todo/doable-MIT.txt",
+    "sha256": "c16ed691a734abccf9d91ebe732858e8054a49042d01a44c87151b4d309bbf8c",
+    "alt": "Doable 官方手機宣傳圖：藍色背景配「Today」清單，兩項未完成待辦和兩項已勾選的待辦分開顯示。",
+    "credit": "Doable · Akhin Abraham · MIT"
+  },
+  {
+    "link": "https://github.com/alex-shpak/hugo-book/blob/d7742624e734836fc2a93f90b30a34c38b6ec174/images/screenshot.png",
+    "file": "next-guide/hugo-book-introduction.png",
+    "license": "next-guide/LICENSE-Hugo-Book-MIT.txt",
+    "sha256": "7ce4dfa28ab3dbb6f6d97d1691d1708791a213fc4afd517bede51c971475dc00",
+    "alt": "Hugo Book 的 Introduction 頁，左邊有文件導覽，右邊有本文目錄，下方有下一節連結。",
+    "credit": "Hugo Book · © 2018 Alex Shpak · MIT；示例內容 CC BY 4.0",
+    "additionalNotices": [
+      {
+        "name": "閱讀指南圖中文字：Creative Commons 姓名標示 4.0 國際",
+        "file": "next-guide/LICENSE-Creative-Commons-BY-4.0.txt",
+        "sha256": "6f9997b6f85f473f853aeef19b5f16504dd228ba99cee70e5a19211df947a2b3"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/docsy/docsy/blob/c4007ce2a2cde2dbcca5ac4d4550b60933656ad8/images/screenshot.png",
+    "file": "next-guide/docsy-welcome.png",
+    "license": "next-guide/LICENSE-Docsy-Apache-2.0.txt",
+    "sha256": "28cff1426196ff2a7814ad4fed2d4396e37350a25a847208a3ba3023af7db144",
+    "alt": "Docsy 的 Welcome to Docsy 文件首屏，左邊有文件導覽，中間是歡迎文字和 What is Docsy?，右邊是本頁目錄。",
+    "credit": "Docsy Authors · Apache-2.0；文件內容 CC BY 4.0",
+    "additionalNotices": [
+      {
+        "name": "閱讀指南圖中文字：Creative Commons 姓名標示 4.0 國際",
+        "file": "next-guide/LICENSE-Creative-Commons-BY-4.0.txt",
+        "sha256": "6f9997b6f85f473f853aeef19b5f16504dd228ba99cee70e5a19211df947a2b3"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/nextcloud/documentation/blob/4290071b5ee1addf6ee9e563dbf7f2b3e307eda5/user_manual/images/activity-stream-all.png",
+    "file": "next-history/nextcloud-all-activities.png",
+    "license": "next-history/LICENSE-Nextcloud-CC-BY-3.0.txt",
+    "sha256": "4cceded73d2f8930bb9a4254b276dc0e7c7fad2300abe615cd2be6f099348d97",
+    "alt": "Nextcloud「所有活動」：左側是活動分類，右側按時間排列今日新增和修改的示例事件。",
+    "credit": "Nextcloud developers · Nextcloud User Manual · Activity stream showing all recent activities · CC BY 3.0 · 原圖未修改"
+  },
+  {
+    "link": "https://github.com/FankChen/tracecrate/blob/534da067199b519725ed1387db8d23d3b4dca78b/docs/screenshots/tracecrate-v0.2-desktop.png",
+    "file": "next-history/tracecrate-timeline.png",
+    "license": "next-history/LICENSE-TraceCrate-MIT.txt",
+    "sha256": "92b45aa7cd647009328804b5bf3d5a5921b7462301ca6951c9b65b3650413c40",
+    "alt": "TraceCrate「時間線」整頁：上方是合成流程摘要，下方串起十四個事件和一項示例錯誤，右側顯示所選工具事件的詳情。",
+    "credit": "TraceCrate · Timeline · © 2026 TraceCrate contributors · MIT · 原圖未修改；合成示例，非效能測試",
+    "additionalNotices": [
+      {
+        "name": "TraceCrate 圖示：Lucide 1.44.0 及 Feather",
+        "file": "next-history/LICENSE-Lucide-1.44.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/LibreChat-AI/docs/blob/421720dede84f185b0614a487a3a6753e45068eb/components/home/img/demo_light.png",
+    "file": "synthetic-chat-c/synthetic-chat-c.png",
+    "license": "synthetic-chat-c/DECLARATION.txt",
+    "sha256": "169835fa64243d803501675da942a4d3e4aed438b5d9aa6d9d5cb7da9698d97c",
+    "alt": "空白新對話示意：左側對話導覽，中央輸入框，尚未送出訊息。非官方原圖。",
+    "credit": "參考 LibreChat 的空白新對話版式",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/JVarhol/HA-Family-Hub/blob/3b71b7aaf8e5fe12ee233f99db9c3728b2312fc7/images/readme/view-month.webp",
+    "original": "https://github.com/JVarhol/HA-Family-Hub/blob/3b71b7aaf8e5fe12ee233f99db9c3728b2312fc7/images/readme/view-month.webp",
+    "replacement": "https://github.com/schedule-x/schedule-x/blob/471eea6e17166e7c77e481832e7e78591a50c717/website/assets/calendar-month.png",
+    "replacementLabel": "Schedule-X 月曆（替代參考）",
+    "file": "next-calendar/schedule-x-month.png",
+    "license": "next-calendar/LICENSE-Schedule-X-MIT.txt",
+    "sha256": "40c5f02faad91dab707cb216f7e3e8109313a3cdabf6e7cba7201369f87d1494",
+    "alt": "Schedule-X 月曆替代參考：日期格以色條顯示活動，空間不足時顯示其餘活動的數量。",
+    "credit": "替代參考：Schedule-X · Month grid · © 2023 Tom Österlund · MIT · 原圖未修改；並非 HA-Family-Hub 截圖",
+    "additionalNotices": [
+      {
+        "name": "Schedule-X 文件網站：Shu Ding · MIT",
+        "file": "next-calendar/LICENSE-Schedule-X-Website-MIT.txt",
+        "sha256": "08dc24211bdf6e7d2362cef4630bfbc0d52ec60ef50978f0a67121ebcf1aef23"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/Dvorinka/cal/blob/acfe5efef52f214991bd46e6c9461d7bbc38eddf/docs/screenshots/month.png",
+    "original": "https://github.com/Dvorinka/cal/blob/acfe5efef52f214991bd46e6c9461d7bbc38eddf/docs/screenshots/month.png",
+    "replacement": null,
+    "file": "next-calendar/cal-month.png",
+    "license": "next-calendar/LICENSE-Cal-MIT.txt",
+    "sha256": "39d5d81e1956222212d13dfd498125b5f35551bf58e0c727556ac3f5f608e15c",
+    "alt": "Cal 桌面月覽：月曆格與左側導航並列，日期格內的色條顯示排得下的活動文字。",
+    "credit": "Cal · Month view · © 2026 Cal contributors · MIT · 原圖未修改；畫面使用示例資料",
+    "additionalNotices": [
+      {
+        "name": "Cal 圖示：Lucide 0.553.0",
+        "file": "next-calendar/LICENSE-Cal-Lucide-0.553.0.txt",
+        "sha256": "3c57143f22dac950efebf84002e360bba5458c7b90fe583b0667aaaef1a7256e"
+      },
+      {
+        "name": "Cal 圖示：Lucide 沿用的 Feather",
+        "file": "next-calendar/LICENSE-Feather-MIT.txt",
+        "sha256": "308028e93fcf84972523cdf6e616f73168546b4953895f516d01287f16fe7bee"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/mpoapostolis/numa-baby/tree/75aae453b4b879ec30999edd0ffbc5f5aae8e427",
+    "original": "https://github.com/mpoapostolis/numa-baby/blob/75aae453b4b879ec30999edd0ffbc5f5aae8e427/public/screenshots/timeline.png",
+    "file": "next-timeline/numalog-timeline.png",
+    "license": "next-timeline/LICENSE-Numalog-MIT.txt",
+    "sha256": "e3710f40538352a084ad3ad927e0c7df0805ae15cb365599e064481d03bd5d57",
+    "alt": "Numalog 手機照顧時間線，上方可按事件類型篩選，下方由新至舊列出換尿片、餵奶和睡眠等今日記錄。",
+    "credit": "Numalog · © 2026 mpoapostolis · MIT",
+    "additionalNotices": [
+      {
+        "name": "Numalog 圖示：Lucide 1.29.0 及 Feather",
+        "file": "next-timeline/LICENSE-Lucide-1.29.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      },
+      {
+        "name": "Numalog 字體：Geist · SIL Open Font License 1.1",
+        "file": "next-timeline/LICENSE-Geist-OFL-1.1.txt",
+        "sha256": "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"
+      }
+    ],
+    "choice": "C-04 · Numalog"
+  },
+  {
+    "link": "https://github.com/mojoaar/icloud-mailflow/blob/fb0b8119e8f48e8a48699ec0dca9d2c0d87c7a6a/docs/screenshots/activity.webp",
+    "file": "next-history-synthetic/synthetic-activity-table.png",
+    "license": "next-history-synthetic/DECLARATION.txt",
+    "sha256": "923ddba652f141b7adb416acd59603a1d34cb43ef8a42de37c0442033fb9a7f2",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "自製活動記錄示意：頂部導覽與搜尋篩選，下方以緊密表格排列時間、主旨、寄件者、規則、動作和狀態。畫面所列均為虛構資料。",
+    "credit": "本工作台自製 · 合成示意，非 iCloud Mailflow 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/83b68d74f9671784500ceaa6168f5e8ffd7e2f34/core/templates/core/child_detail.html",
+    "file": "next-timeline-synthetic/synthetic-baby-buddy-timeline.png",
+    "license": "next-timeline-synthetic/DECLARATION.txt",
+    "sha256": "fb602e3019ee57d7bee06e0aea38b91cf7cc30ba51608507aabb22245d7af5f6",
+    "alt": "合成單日時間線：示例日下方左右交錯列出四筆照顧事件，分別標示睡眠起訖及事件時間。",
+    "credit": "參考 Baby Buddy 固定版本版式；四筆記錄均為合成資料",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/mpoapostolis/numa-baby/tree/75aae453b4b879ec30999edd0ffbc5f5aae8e427",
+    "original": "https://github.com/mpoapostolis/numa-baby/blob/75aae453b4b879ec30999edd0ffbc5f5aae8e427/public/screenshots/insights.png",
+    "file": "next-insights-meal/numalog-insights.png",
+    "license": "next-insights-meal/LICENSE-Numalog-MIT.txt",
+    "sha256": "4ea703e81b6974c62c7cf0ac8489d65cf4b0d9604cd5b72917dfcf8420398a67",
+    "alt": "Numalog 近七日的分析頁，把奶量與體重比較、尿片記錄分開成卡。畫面為合成記錄。",
+    "credit": "Numalog · Insights · © 2026 mpoapostolis · MIT · 原圖未修改。圖中為合成記錄，只作介面比較，不是健康建議。",
+    "additionalNotices": [
+      {
+        "name": "Numalog 圖示：Lucide 1.29.0 及 Feather",
+        "file": "next-insights-meal/LICENSE-Lucide-1.29.0.txt",
+        "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+      },
+      {
+        "name": "Numalog 字體：Geist · SIL Open Font License 1.1",
+        "file": "next-insights-meal/LICENSE-Geist-OFL-1.1.txt",
+        "sha256": "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"
+      }
+    ],
+    "choice": "INS01 · Numalog"
+  },
+  {
+    "link": "https://github.com/ulsklyc/yuvomi/blob/acacd5595c9a55e07c786a739aa12480c3700b49/docs/screenshots/meals-light-web.png",
+    "file": "next-insights-meal/yuvomi-meals-light-web.png",
+    "license": "next-insights-meal/LICENSE-Yuvomi-MIT.txt",
+    "sha256": "fc47c0af781d56c7c80b6edbc9b3f2398ceecf4224ebb9b937879a5ab13f08d0",
+    "alt": "Yuvomi 把七天排成橫向欄位，各有早餐、午餐、晚餐和小食，右側同時顯示食譜清單。",
+    "credit": "Yuvomi v1.22.1 · © 2026 ulsklyc · MIT · 官方週餐單，原圖未修改。",
+    "additionalNotices": [
+      {
+        "name": "Yuvomi 圖示：Lucide 0.469.0",
+        "file": "next-insights-meal/LICENSE-Lucide-0.469.0.txt",
+        "sha256": "1e7290b35280a048667bbf0ebabac1c7fd52a75300e8b2946ac165715997f2bc"
+      },
+      {
+        "name": "Yuvomi 圖示：Lucide 沿用的 Feather",
+        "file": "next-insights-meal/LICENSE-Feather-MIT.txt",
+        "sha256": "308028e93fcf84972523cdf6e616f73168546b4953895f516d01287f16fe7bee"
+      },
+      {
+        "name": "Yuvomi 字體：Plus Jakarta Sans · SIL Open Font License 1.1",
+        "file": "next-insights-meal/LICENSE-Plus-Jakarta-Sans-OFL-1.1.txt",
+        "sha256": "995c7199cab65954f545996326755daee7b63cc6b42b06c13da1f9502ab08a99"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/83b68d74f9671784500ceaa6168f5e8ffd7e2f34/reports/templates/reports/sleep_totals.html",
+    "file": "next-insights-meal-synthetic/synthetic-sleep-daily.png",
+    "license": "next-insights-meal-synthetic/DECLARATION.txt",
+    "sha256": "66ce2d7f40656855a67f9dda7d9d0c3b3989a45b3c7d37bb6aca2751eec24ae5",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "合成睡眠報表：七個日期各以一根直柱顯示當日合計睡眠時數，圖上標出時數和日期；不設健康門檻。",
+    "credit": "本工作台自製 · 合成示意，非 Baby Buddy 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/hardynetworks/FamilyHub/blob/0cd85848beba71b3c98bb408a9f0c26e49e3465c/docs/screenshots/meals.png",
+    "file": "next-insights-meal-synthetic/synthetic-meal-week-rows.png",
+    "license": "next-insights-meal-synthetic/DECLARATION.txt",
+    "sha256": "92b404fcb7aa2a15ced47d69e6466540128c44863b0ef0f57cbb250a456ada85",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "合成家庭週餐單：由週日至週六排列七列；每列分早餐、午餐、晚餐和小食，顯示虛構菜式或未安排。",
+    "credit": "本工作台自製 · 合成示意，非 FamilyHub 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/TNAziz/RosterCaller/blob/df169868a6e8f3db1e72316c921e82fbabaa312b/index.html#L694-L734",
+    "original": "https://github.com/TNAziz/RosterCaller/blob/df169868a6e8f3db1e72316c921e82fbabaa312b/docs/screenshots/04-roster.png",
+    "file": "next-roster/roster-caller-original.png",
+    "license": "next-roster/LICENSE-RosterCaller-MIT.txt",
+    "sha256": "40dc4d1eb932140c6007f78d703cb7eaf445b30f81b6bd9d490d39e394d144d5",
+    "alt": "手機版班級名冊，虛構學員逐行排列，右側各有出席狀態按鈕。",
+    "credit": "Roster Caller · 官方手機原圖（虛構班級）· MIT",
+    "additionalNotices": [
+      {
+        "name": "Roster Caller 圖示：Feather MIT",
+        "file": "next-roster/LICENSE-Feather-MIT.txt",
+        "sha256": "308028e93fcf84972523cdf6e616f73168546b4953895f516d01287f16fe7bee"
+      }
+    ]
+  },
+  {
+    "link": "https://github.com/hndfaw/app-2026-w32-rollcall/blob/08723ceecb0f5db1cd1ccbf2630e33c24cea1181/src/RosterPage.tsx",
+    "file": "next-roster/rollcall-roster-synthetic.png",
+    "license": "next-roster/DECLARATION-Rollcall.txt",
+    "sha256": "099363b4918aef1d1760e47ea8767be00665b23c9d353e3d5299230d60b45ada",
+    "alt": "無品牌的班級名冊示意：左側選擇班級，右側的示例成員可逐列編輯或封存，新增成員在名單下方。",
+    "credit": "自製示意 · 依 Rollcall 固定原碼繪製（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Rollcall 版式參考原碼：Hindreen Abdullah · MIT",
+        "file": "next-roster/LICENSE-Rollcall-MIT.txt",
+        "sha256": "0dff7712bd700dd0c7bf08e39277be304874e44d36f8287126ff632c447b0707"
+      }
+    ],
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/JAKimball/poc-pwa-share-target/blob/773cc455f4f5d72a134fac2237e6738e72d18442/index.html",
+    "file": "next-sharing/link-to-md-synthetic.png",
+    "license": "next-sharing/LICENSE-Link-to-MD-MIT.txt",
+    "sha256": "fd67ce015125f50e0918c1cdacf7308b28eda18a8460efa19ffd7fadaf583611",
+    "alt": "Link to MD 合成重現，上方顯示轉成 Markdown 的示例連結，中間是複製、轉發、匯出和清理選項，下方保留原本收到的標題、文字和網址。",
+    "credit": "Link to MD · 按固定版本原碼重現，合成資料，非官方截圖 · © 2025 Jonathan Kimball · MIT"
+  },
+  {
+    "link": "https://github.com/mmrahmanbappi/100-vanilla-javascript-projects/blob/4028dc58b8b375532ad196b5ff3484ff49dbd63c/03-pwa-and-offline/025-share-target-link-saver/demo.html",
+    "original": "https://github.com/mmrahmanbappi/100-vanilla-javascript-projects/blob/4028dc58b8b375532ad196b5ff3484ff49dbd63c/03-pwa-and-offline/025-share-target-link-saver/preview.png",
+    "file": "next-sharing/link-saver-original.png",
+    "license": "next-sharing/LICENSE-Link-Saver-MIT.txt",
+    "sha256": "2228955eca40072cb81a43b6215e6c971c356fa4efb8c7ec74fb59af91ca0734",
+    "alt": "Share Target Link Saver 的原方示例，左邊是連結、標題和標籤欄位，右邊是閱讀清單及分享入口。",
+    "credit": "Share Target Link Saver · 官方原圖 · © 2026 mmrahmanbappi · MIT"
+  },
+  {
+    "link": "https://github.com/ulsklyc/yuvomi/blob/aee847b3decae891bcbf2f7061a4962e2c85316f/public/settings/pages/admin-family.js",
+    "file": "next-family-settings/yuvomi-family-synthetic.png",
+    "license": "next-family-settings/DECLARATION-Yuvomi.txt",
+    "sha256": "b06ab9888cd27a14c2a8764f11c5c957cbde9dd4689d8e7e6b61a3ba1a07f164",
+    "alt": "家庭設定示意：左側為設定導覽，右側依次排列成員、開放邀請與各成員雙重驗證狀態。",
+    "credit": "自製示意 · 參考 Yuvomi 家庭設定原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Yuvomi 版式參考原碼：ulsklyc · MIT",
+        "file": "next-family-settings/LICENSE-Yuvomi-MIT.txt",
+        "sha256": "871787f0f8b598ff1dbfc8ad22da277d25a47ca939787752f67fd9c145f82e72"
+      }
+    ],
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/itsDNNS/tribu/blob/37fab23264e57a175e3bfb511006b3dbff07fce8/docs/assets/admin/desktop.png",
+    "file": "next-family-settings/tribu-family-synthetic.png",
+    "license": "next-family-settings/DECLARATION-Tribu.txt",
+    "sha256": "13bcffc1f2338b2390b2af8df7fc77fb01acb76265bb2533bd50aad0cf3f7afa",
+    "alt": "管理家庭示意：成人與子女並列分組，分別顯示成員角色，每列有個別的編輯入口。",
+    "credit": "自製示意 · 參考 Tribu 家庭成員分組原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Tribu 版式參考原碼：Dennis Braun · MIT",
+        "file": "next-family-settings/LICENSE-Tribu-MIT.txt",
+        "sha256": "8151cf8a692b171441424cfcbc97bc44f7a79b1cdd7d351bbc9ae81fff2addce"
+      }
+    ],
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/f02f28b7f96f8bb1b9a0212a377c327ce33e7699/dashboard/templates/dashboard/child.html",
+    "file": "next-child-overview/baby-buddy-overview-synthetic.png",
+    "license": "next-child-overview/LICENSE-Baby-Buddy-BSD-2-Clause.txt",
+    "sha256": "357d814be6335bb5dcca40edb4d250c137a3f51f520241c8513773f30c11b697",
+    "alt": "Baby Buddy 概況合成重現：三欄並排呈現餵奶、睡眠、換尿片及其他摘要卡，沒有載入孩子檔案或照顧記錄。",
+    "credit": "Baby Buddy · 按固定版本原碼重現 · 合成資料 · 非官方原圖 · © 2017 Baby Buddy’s Contributors · BSD 2-Clause",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/mbentancour/baby-buddy-dashboard/blob/5e78a332a2857eea9be6fa956858f2b4da49ca36/baby-buddy-dashboard/frontend/src/tabs/OverviewTab.jsx",
+    "file": "next-child-overview/baby-buddy-addon-overview-synthetic.png",
+    "license": "next-child-overview/LICENSE-Baby-Buddy-Dashboard-MIT.txt",
+    "sha256": "e3131d7e7be69b6fe3d2d894149f95f09ef7d7abfeb51956e0ab6dab6cd81e8c",
+    "alt": "Baby Buddy Dashboard add-on 概況合成重現：上方四張摘要卡，下方是近期列和僅演示版式的七日圖表；沒有個人資料或健康數值。",
+    "credit": "Baby Buddy Dashboard add-on · 按固定版本原碼重現 · 合成資料 · 非官方原圖 · © 2025 Baby Buddy Dashboard Contributors · MIT",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/indrarahul/explain-me/blob/bfe436611fb9b294f4ae519db48e9286473e6613/options.html",
+    "file": "next-model-settings/explain-me-synthetic.png",
+    "license": "next-model-settings/LICENSE-Explain-Me-MIT.txt",
+    "sha256": "9188155326e9313c8a306e398aa373c7a448cdd5d4c744036ef54eac09d27fac",
+    "alt": "Explain Me 合成重現：供應商、未填寫的 API 密鑰欄、模型、提示詞和快捷鍵全放在同一頁。",
+    "credit": "Explain Me · 按固定版本原碼重現 · 合成資料 · 非官方原圖 · © 2026 z3r0 · MIT",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/bharatnanda/page-summariser/blob/18f6f8408a741e4fc6f42290bca430d8d06c12c2/core/options.html",
+    "file": "next-model-settings/page-summarizer-synthetic.png",
+    "license": "next-model-settings/LICENSE-Page-Summarizer-MIT.txt",
+    "sha256": "a90d0f3b2a3ee7db60bb3268bad028d6973205b14c02d0f5a8b16ff3f0b95afe",
+    "alt": "Page Summarizer 合成重現：先選供應商與模型，進階設定另行展開，最下方是重設及儲存。API 密鑰欄未填寫。",
+    "credit": "Page Summarizer · 按固定版本原碼重現 · 合成資料 · 非官方原圖 · © 2026 Page Summarizer · MIT",
+    "previewLabel": "自製示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/mrvladus/Errands/blob/a586fc7ef8bb755d4b01ebdcef25e4e53c19d460/screenshots/main.png",
+    "file": "next-shopping/errands-shopping.png",
+    "license": "next-shopping/LICENSE-Errands-MIT.txt",
+    "sha256": "e965a4888408fc2e8b50baba8ce88ab74f995472597a7071b30e78c762a1bf4f",
+    "alt": "Errands 購物清單：按早餐和午餐分組，已勾選的項目仍留在原組。",
+    "credit": "Errands · Shopping List · © 2023 Vlad Krupinskii · MIT · 原圖未修改"
+  },
+  {
+    "link": "https://github.com/mdn/learning-area/blob/21973263ba859ff3477919087b488157f9d618a6/javascript/apis/document-manipulation/shopping-list-finished.html",
+    "file": "next-shopping/synthetic-shopping-list.png",
+    "license": "next-shopping/DECLARATION.txt",
+    "sha256": "6b1340d1d340dcbc661f855a3831ef584ae5e0d27be0607a4c0a203cd8849ba7",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "自製購物清單示意：一個輸入欄可新增項目，每列只有移除按鈕，沒有勾選或完成狀態。",
+    "credit": "本工作台自製 · 依固定 MDN 範例展示新增後的狀態，非 MDN 官方截圖"
+  },
+  {
+    "link": "https://github.com/mahdiyazdani/hourly-beep/blob/aaa4606423f80f10b6e5557001b8a55f063139ba/options.html",
+    "file": "next-quiet/hourly-quiet-synthetic.png",
+    "license": "next-quiet/DECLARATION.txt",
+    "sha256": "e3e5249f82d264604dec7c11f9289573043871b15461d36ea8b7109865c8960c",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "自製報時設定示意：安靜時段已啟用，開始和結束都是 09:00。相同的起訖時間代表全天不自動報時。",
+    "credit": "本工作台自製 · 依固定 Hourly Beep 程式邏輯示意全天安靜 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/CosmosChiang/MewMewNotification/blob/eba9ff9e20677f97dde3c4a651ea0dc9a8f27d6c/options.html",
+    "file": "next-quiet/notification-quiet-synthetic.png",
+    "license": "next-quiet/DECLARATION.txt",
+    "sha256": "ca824d58b3394a734a8ca8b150ac545c234c0b9721f6bb93d683050d1a9c384f",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "自製通知設定示意：通知分頁的安靜時段已啟用，開始和結束都是 09:00；按儲存後，畫面顯示起訖不可相同，未儲存。",
+    "credit": "本工作台自製 · 依固定 MewMewNotification 程式與測試示意不接受相同時間 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/dracory/auth/blob/fb832888cfb9564f1e4f050e82e77b619fc13997/dev/prototypes/v2/password-restore.html",
+    "file": "next-password-export/dracory-password-synthetic.png",
+    "license": "next-password-export/DECLARATION-Dracory.txt",
+    "sha256": "02bf0f8fb955ebfef795cdac7cd906f10ae5b52a9d57faa8a72e27a54193b785",
+    "alt": "忘記密碼請求示意：置中的白色卡片只有空白電郵欄和傳送重設連結按鈕，下方可見登入提示。",
+    "credit": "自製示意 · 參考 dracory/auth 電郵重設請求原碼（非官方原圖）",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/django/django/blob/9e7cc2b628fe8fd3895986af9b7fc9525034c1b0/django/contrib/admin/templates/registration/password_reset_form.html",
+    "file": "next-password-export/django-password-synthetic.png",
+    "license": "next-password-export/DECLARATION-Django.txt",
+    "sha256": "4f23ad0152db19fdb29380d6af5f257e514e44f70565144cd6f40c862490087a",
+    "alt": "密碼重設示意：左側為只含空白電郵欄的請求畫面，右側為送出後的條件式提示，不表示帳戶存在或郵件送達。",
+    "credit": "自製示意 · 參考 Django 分頁的重設請求和後續提示（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Django 版式參考原碼：Django Software Foundation and individual contributors · BSD 3-Clause",
+        "file": "next-password-export/LICENSE-Django-BSD-3-Clause.txt",
+        "sha256": "b846415d1b514e9c1dff14a22deb906d794bc546ca6129f950a18cd091e2a669"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/ock666/Kin-CRM/blob/469db7000e1308778dcc52553eb30b7704cca080/app/templates/export.html",
+    "file": "next-password-export/kin-export-synthetic.png",
+    "license": "next-password-export/DECLARATION-Kin.txt",
+    "sha256": "f3f427e3a57decb7a3710e6ef85a49d8ea07aba1ac5e0fe7db22bcfde7d5ca35",
+    "alt": "資料匯出示意：左側為導覽，右側三張卡分別下載完整 JSON、聯絡人 CSV、日誌記錄 CSV。",
+    "credit": "自製示意 · 參考 Kin CRM 分類匯出原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Kin 版式參考原碼：Skye · MIT",
+        "file": "next-password-export/LICENSE-Kin-MIT.txt",
+        "sha256": "460833a84cb481803da578655a55f0a1031af423248f5e33d2402ed89c11cc38"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/followG/todo-tauri/blob/399807827c82ed74de143cb8faa30f5f0a9aa196/src/Export.vue",
+    "file": "next-password-export/todo-export-synthetic.png",
+    "license": "next-password-export/DECLARATION-Todo.txt",
+    "sha256": "a1ec9e115ffe5263b1e50c0066021b73f2ecee78bc4244cb170e90be2debada7",
+    "alt": "待辦匯出示意：獨立深色視窗內，格式預設 Markdown、時間範圍預設全部，右下為取消和確認匯出。",
+    "credit": "自製示意 · 參考 Todo 的獨立匯出視窗原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Todo 版式參考原碼：G · MIT",
+        "file": "next-password-export/LICENSE-Todo-MIT.txt",
+        "sha256": "b2b260bafe69c478c13b8868466bfab6ca38a7c50f6003e0547fb47ab089c1c5"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/mbentancour/baby-buddy-dashboard/blob/5e78a332a2857eea9be6fa956858f2b4da49ca36/baby-buddy-dashboard/frontend/src/tabs/GrowthTab.jsx",
+    "file": "next-growth-offline/growth-dashboard-synthetic.png",
+    "license": "next-growth-offline/LICENSE-Baby-Buddy-Dashboard-MIT.txt",
+    "sha256": "7a61cb50aad780edbaad65f9582dea5b6461e8b0bedc0b32b982d4114ae2809e",
+    "alt": "Baby Buddy Dashboard 成長頁合成重現：上方四項摘要均以破折號顯示，下方四個並排的餵奶、睡眠、體重及身高面板不含任何量度。",
+    "credit": "Baby Buddy Dashboard · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © 2025 Baby Buddy Dashboard Contributors · MIT",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/83b68d74f9671784500ceaa6168f5e8ffd7e2f34/core/templates/core/weight_list.html",
+    "file": "next-growth-offline/weight-list-synthetic.png",
+    "license": "next-growth-offline/LICENSE-Baby-Buddy-BSD-2-Clause.txt",
+    "sha256": "057086587d687b46fb9eedd2ca8f8f787d60b4cf1523c4c7f720af3240c82868",
+    "alt": "Baby Buddy 體重表合成重現：上方是孩子篩選和重設，下方按孩子、體重、日期及操作分欄，示例體重與日期全部留空。",
+    "credit": "Baby Buddy · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © 2017 Baby Buddy’s Contributors · BSD 2-Clause",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/GoogleChrome/samples/blob/228e6e56581105bb55cab0d9ff6212d408ccc7dd/service-worker/custom-offline-page/offline.html",
+    "file": "next-growth-offline/offline-message-synthetic.png",
+    "license": "next-growth-offline/LICENSE-Google-Chrome-Samples-Apache-2.0.txt",
+    "sha256": "eb135c3befa3fe144907c19744dd07a2baab3eaa1a0a3044bba21e1ae2f7257c",
+    "alt": "Google Chrome Samples 離線頁合成重現：白底左上顯示未能載入和檢查網絡的文字，背後有淡色斷線圖示，沒有重試按鈕。",
+    "credit": "Google Chrome Samples · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © 2015 Google Inc. · Apache-2.0",
+    "additionalNotices": [
+      {
+        "name": "#19–#20 來源、畫面修改與素材說明",
+        "file": "next-growth-offline/NOTICE-Reconstructions.txt",
+        "sha256": "db4e8299610d5daa7297380fea7c40fd026f08bf17a37c0b81d04669b0cd28de"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/forem/forem/blob/73125c07950aa1a9bb60a38f1a4c2399a69eb357/public/offline.html",
+    "file": "next-growth-offline/offline-canvas-synthetic.png",
+    "license": "next-growth-offline/LICENSE-Forem-AGPL-3.0-or-later.txt",
+    "sha256": "26e4198446446eb242399838341594cf866802869d6752effaf4bdea8056d883",
+    "alt": "Forem 歷史離線頁合成重現：中央說明可邊等候邊塗畫，下方有六個色點、色盤選單和清除按鈕，旁邊是一筆自製示意線。",
+    "credit": "Forem · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · 歷史版 · 上游程式 AGPL-3.0-or-later",
+    "additionalNotices": [
+      {
+        "name": "#19–#20 來源、畫面修改與素材說明",
+        "file": "next-growth-offline/NOTICE-Reconstructions.txt",
+        "sha256": "db4e8299610d5daa7297380fea7c40fd026f08bf17a37c0b81d04669b0cd28de"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/83b68d74f9671784500ceaa6168f5e8ffd7e2f34/core/templates/core/child_form.html",
+    "file": "next-child-invite/child-dedicated.png",
+    "license": "next-child-invite/DECLARATION.txt",
+    "sha256": "ff59bc320ba78c8950fd4a4e1b53f806cfb916f7c6680bf62bcd7a1bbb065068",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "獨立的新增孩子頁面：名字、姓氏和出生日期必填；允許上傳時另有選填照片。所有欄位留空。",
+    "credit": "本工作台自製 · 依固定 Baby Buddy 表單示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/mbentancour/babytracker/blob/bcc0513567c2fba7c935bd61886ce998a2bf1fab/frontend/src/components/OnboardingScreen.jsx",
+    "file": "next-child-invite/child-first-run.png",
+    "license": "next-child-invite/DECLARATION.txt",
+    "sha256": "29febd8051ec0ad1c151d26f45c47166908a9b4494faf4d132b6b7900c730d9c",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "首次設定的短表單：名字和出生日期必填，姓氏選填，沒有照片欄位。所有欄位留空。",
+    "credit": "本工作台自製 · 依固定 BabyTracker 首次設定分支示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/ulsklyc/yuvomi/blob/aee847b3decae891bcbf2f7061a4962e2c85316f/public/pages/join.js",
+    "file": "next-child-invite/invite-signup.png",
+    "license": "next-child-invite/DECLARATION.txt",
+    "sha256": "e610a88feb99e24d2a622efd97021ef04c4e1d5f7864e929aff0ce1f33631148",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "家庭邀請示意：開戶前先顯示邀請，下方是空白的使用者名稱、顯示名稱和兩個密碼欄位。",
+    "credit": "本工作台自製 · 依固定 Yuvomi 邀請開戶分支示意（需要密碼的情況） · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/alexandervashurin/semaphore/blob/e21a404bfba3ed14a34a2eae8bef983fa65a4b8e/web/public/accept_invite.html",
+    "file": "next-child-invite/invite-existing.png",
+    "license": "next-child-invite/DECLARATION.txt",
+    "sha256": "2dc089d007ffb24063c5cad176d949e1514ef116dbe75fa6e7d6c68698521820",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "已登入者收到專案邀請：可接受或返回首頁，沒有開戶欄位；離開不等於拒絕。",
+    "credit": "本工作台自製 · 依固定 Velum 已登入專案邀請分支示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/danihodovic/django-allauth-ui/blob/449f50c6ac3d9a8340d4a1305a614203e3c14a53/allauth_ui/templates/account/verification_sent.html",
+    "file": "next-verification-albums/synthetic-email-link.png",
+    "license": "next-verification-albums/DECLARATION.txt",
+    "sha256": "f7142e07a3eac4463efc95b40c2341460d0ba8c5d8ab1a1d27688b55bb73e958",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "等待電郵驗證示意：提示打開收件箱的驗證連結，找不到時查看垃圾郵件；下方有返回登入和返回註冊。",
+    "credit": "本工作台自製 · 合成示意，非 django-allauth-ui 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/GabeKL22/flask_accounts/blob/3c69e5cc52707d2e43aefbf03f1814eb2d4d9f4f/flask_accounts/auth/templates/auth/verify_email.html",
+    "file": "next-verification-albums/synthetic-email-code.png",
+    "license": "next-verification-albums/DECLARATION.txt",
+    "sha256": "21dff6cd8472b03f55c029038b057a20bb588610c0d444fee5b68af568cfdfd5",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "頁內驗證示意：有空白的六位數驗證碼欄位，以及分開的「確認驗證」和「重寄驗證碼」。",
+    "credit": "本工作台自製 · 合成示意，非 Flask Accounts 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/RealKHFan/lumen/blob/2914bc139792140fb6cc7cdfc0d59033b2522ddb/app/src/test/screenshots/folders.png",
+    "file": "next-verification-albums/synthetic-albums-cover-grid.png",
+    "license": "next-verification-albums/DECLARATION.txt",
+    "sha256": "9e06d16dfc7732e39ca1cff5b5bcea800e60f28bc44b177db0fb5617fe8f85fc",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "相簿封面示意：四個資料夾排成兩欄，以不同的手繪風景區分；每張下方列出名稱和項目數。",
+    "credit": "本工作台自製 · 合成示意，非 Lumen 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/kcng0/privi/blob/afc8f5f8b70d4fa664a0c3ecb8dc80cc3ae575bf/assets/screenshots/02_visible_list.png",
+    "file": "next-verification-albums/synthetic-albums-folder-list.png",
+    "license": "next-verification-albums/DECLARATION.txt",
+    "sha256": "7450979c0b00c02f9ea4357e9a4d7ac0b75915b5608b97317b240fb0a565e347",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "相簿清單示意：同一組四個資料夾各佔一列，使用一致的資料夾圖示、名稱、項目數及右箭嘴，沒有照片封面。",
+    "credit": "本工作台自製 · 合成示意，非 Privi 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/MyMemoAI/openmymemo/blob/39827ff7b61c238cbf05d9dda9f369d9201de8f7/web/src/views/MemoriesView.vue",
+    "choice": "OpenMyMemo · 逐筆清單",
+    "file": "next-memory-changes/synthetic-memory-list.png",
+    "license": "next-memory-changes/DECLARATION.txt",
+    "sha256": "830ffb3d65763bcae24b5aaa6fb2123b9fbe15abcf4c34157771824346acfb29",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌的記憶清單示意：按主題分組，每列直接標注來源、更新時間及版本。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/yantrikos/yantrikdb/blob/e0978f5f02366a0ffc9f65738505da3d03bce09d/src/yantrikdb/atlas/index.html",
+    "choice": "YantrikDB Memory Atlas · 單筆詳情",
+    "file": "next-memory-changes/synthetic-memory-inspector.png",
+    "license": "next-memory-changes/DECLARATION.txt",
+    "sha256": "cbb123b0d2431edeb7c2178a175a7dbd3410100aa1ca123b0e50476eb6a6485f",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌的記憶詳情示意：左邊顯示共用標籤的記錄，右邊檢視有來源的主張、修訂時間、原因和上一版文字。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/originchaindb/agent-action-inbox/blob/569822bf86b8bcd01933544a0eee0cb33b744b6d/internal/inbox/web/app.js",
+    "choice": "Agent Action Inbox",
+    "file": "next-memory-changes/synthetic-proposal-queue.png",
+    "license": "next-memory-changes/DECLARATION.txt",
+    "sha256": "16d6d65d8f566a286a97b072a875b872e21c0de47817bafe69c8e3b7fa67d007",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌的待核草稿示意：左列選草稿，右側對照虛構原報告與草稿內容；儲存修改、批准草稿與拒絕三個按鈕分開。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/MyMemoAI/openmymemo/blob/39827ff7b61c238cbf05d9dda9f369d9201de8f7/web/src/views/ChangesView.vue",
+    "choice": "OpenMyMemo · Changes",
+    "file": "next-memory-changes/synthetic-change-card.png",
+    "license": "next-memory-changes/DECLARATION.txt",
+    "sha256": "e33a55c4d2fa49ce4ecea8b92a99d1b40cc17e2faade77a446feec32c10f8c3c",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌的變更卡示意：同卡疊列舊文與新文，再顯示理由和虛構出處，以及接受、修改後接受、拒絕。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/83b68d74f9671784500ceaa6168f5e8ffd7e2f34/core/templates/core/sleep_form.html",
+    "file": "next-27-28/babybuddy-sleep-page-synthetic.png",
+    "license": "next-27-28/DECLARATION-BabyBuddy.txt",
+    "sha256": "98d6628b39394e05578a905b0ff63109d24096df7d1295726a809dea15ec2307",
+    "alt": "新增睡眠示意：獨立頁在睡眠麵包屑下依次顯示孩子、開始時間、結束時間，並提供提交按鈕。",
+    "credit": "自製示意 · 參考 Baby Buddy 獨立新增睡眠原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "BabyBuddy 版式參考原碼：Baby Buddy's Contributors · BSD 2-Clause",
+        "file": "next-27-28/LICENSE-BabyBuddy-BSD-2-Clause.txt",
+        "sha256": "2e74203a15b0bac428d2b5962f3289df30c92a8a782f04a5e13cfa9d17cf6b17"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/mbentancour/baby-buddy-dashboard/blob/5e78a332a2857eea9be6fa956858f2b4da49ca36/baby-buddy-dashboard/frontend/src/components/forms/SleepForm.jsx",
+    "file": "next-27-28/babybuddy-dashboard-sleep-modal-synthetic.png",
+    "license": "next-27-28/DECLARATION-BabyBuddyDashboard.txt",
+    "sha256": "2b143135607f85fa1de5e8bcc11a480fb84789ca55c669c03ea064e362acd6ff",
+    "alt": "記錄睡眠示意：睡眠浮層覆蓋在概況頁上，含起訖日期時間及儲存按鈕；背景仍可辨認。",
+    "credit": "自製示意 · 參考 Baby Buddy Dashboard 概況浮層原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "BabyBuddyDashboard 版式參考原碼：Baby Buddy Dashboard Contributors · MIT",
+        "file": "next-27-28/LICENSE-BabyBuddyDashboard-MIT.txt",
+        "sha256": "dc1ae8a08db7c62ecf0a148d561ccd744470acae4af395c7af21a5762aecf4bd"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/twbs/bootstrap/blob/1a6fdfae6be09b09eaced8f0e442ca6f7680a61e/site/static/docs/5.1/assets/img/examples/sign-in@2x.png",
+    "file": "next-27-28/bootstrap-signin-synthetic.png",
+    "license": "next-27-28/DECLARATION-Bootstrap.txt",
+    "sha256": "08eed3703df167cdf40fc3a702ed0e27f1eb6ac4336ef5e178d8c7bdd172a20b",
+    "alt": "單欄登入示意：淺灰背景、置中白色電郵與密碼欄、未勾選的記住我及藍色登入按鈕。",
+    "credit": "自製示意 · 參考 Bootstrap 單欄登入原方參考圖（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Bootstrap 版式參考原碼：Twitter, Inc. and The Bootstrap Authors · MIT",
+        "file": "next-27-28/LICENSE-Bootstrap-MIT.txt",
+        "sha256": "5b30317c9c35bb6f05101c501de866cc6852ab9b655dcf5941733f6644c3ebd0"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/coreui/coreui-free-bootstrap-admin-template/blob/2d15de5eecd14e04f24aba367c3e96d2ab7c1a6b/src/views/login.html",
+    "file": "next-27-28/coreui-login-synthetic.png",
+    "license": "next-27-28/DECLARATION-CoreUI.txt",
+    "sha256": "7bc61f15e720fa5b25bfc109b445d8bf3cc3dabe5d150525652345045fb83213",
+    "alt": "登入與註冊示意：左邊寬版並列白色登入及紫色註冊區；右邊窄版則上下排列兩區。",
+    "credit": "自製示意 · 參考 CoreUI 登入及註冊原碼（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "CoreUI 版式參考原碼：creativeLabs Łukasz Holeczek · MIT",
+        "file": "next-27-28/LICENSE-CoreUI-MIT.txt",
+        "sha256": "2284f0b371c6773e1dce193d35942f70dcecee81486cd2ee299b5a14063ddc5d"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/drkokorev/Planly/blob/ffa05c88740bde16261cc61e50c665fcea0f6ab5/index.html",
+    "file": "next-29-30/planly-timeline-original.png",
+    "license": "next-29-30/LICENSE-Planly-MIT.txt",
+    "sha256": "42ee23d9f7bd98a9530ab7acbbd57d496ae8069f499462deaff4e2b39cdb0608",
+    "alt": "Planly 手機版今日時間軸：日期列下按小時顯示安排，方塊高度對應長短，空白時段仍留在同一條時間軸上。",
+    "credit": "Planly · 官方文件原圖（合成行程） · © 2026 Daniil Kokorev · MIT",
+    "original": "https://github.com/drkokorev/Planly/blob/ffa05c88740bde16261cc61e50c665fcea0f6ab5/docs/screens/timeline.png"
+  },
+  {
+    "link": "https://github.com/arazgray/doto/blob/95ec963ee3b83c98f842cfe0f5dcf4b3b61e3a68/app.js#L1537-L1600",
+    "file": "next-29-30/doto-synthetic.png",
+    "license": "next-29-30/LICENSE-DoTo-MIT.txt",
+    "sha256": "892f457420c15a085d8dc23ee4ead859c78169f5ec096718bb02726ef2aca97e",
+    "alt": "DoTo 首頁合成重現：上方是今日摘要，下面分成逾期、今日工作、按優先度排列和較繁重工作四區，全部為示例。",
+    "credit": "DoTo · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © 2026 Araz Gray · MIT",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/EazyHood/visitslate/blob/fd20e626781edadba6fd029c57fa39552c2fcde0/dist/index.html",
+    "file": "next-29-30/visitslate-synthetic.png",
+    "license": "next-29-30/LICENSE-VisitSlate-MIT.txt",
+    "sha256": "a480a74d17c42a1d40c27f974c428574ae7cd761b3331b8bdbec39a70642f0d7",
+    "alt": "VisitSlate 準備單合成重現：左面可分頁記下問題與觀察、標記和排列重點；右面預覽準備單，重點問題在其他問題及備忘之前。",
+    "credit": "VisitSlate · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © 2026 VisitSlate contributors · MIT",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/cstate/cstate/blob/1f53d60257d32f9ec981846eb55e55de3051de71/layouts/issues/issue.html",
+    "file": "next-29-30/cstate-synthetic.png",
+    "license": "next-29-30/LICENSE-cState-MIT.txt",
+    "sha256": "30198ccdcdd6e1133981af54757eba390d7c90f5b08a20eb413e08f3539c5ed4",
+    "alt": "cState 事件詳情合成重現：先見目前狀態和受影響分類，再在同一頁從最新更新往回讀監察與調查進度。",
+    "credit": "cState · 按固定版本原碼重現 · 合成示意 · 非官方原圖 · © Mantas Vilčinskas · MIT",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/developer-badhan/KnowledgeDock/blob/8d2f8ee789d69d935aec8d95528c857c4a59345d/src/knowledgedock/templates/dashboard.html",
+    "file": "next-31-32/workspace-documents.png",
+    "license": "next-31-32/DECLARATION.txt",
+    "sha256": "6108adfdfe91f63db421eb31a20ba8866ad6ffe4e1d73a80264c092eb653ed47",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "工作區文件表顯示四筆虛構文件的名稱、狀態、大小及備註，分別示意已就緒、處理中、失敗與待處理。",
+    "credit": "本工作台自製 · 依固定 KnowledgeDock 工作區及文件列原碼示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/pavelblank/ResearchNotebookLLM/blob/7bbc14ffa5b35bbeb665e51c6579edc422683366/webapp/templates/notebook.html",
+    "file": "next-31-32/notebook-source-scope.png",
+    "license": "next-31-32/DECLARATION.txt",
+    "sha256": "9fd842d958443c1be5e0f044c9634eded751eb105820342ca322707e9ff7e1f6",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "三欄筆記簿：左欄三份示例來源已選兩份，中欄研究對話留空，右欄標示目前範圍是所選的兩份來源。",
+    "credit": "本工作台自製 · 依固定 ResearchNotebookLLM 來源選取及範圍原碼示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/MyMemoAI/openmymemo/blob/39827ff7b61c238cbf05d9dda9f369d9201de8f7/web/src/views/WelcomeView.vue",
+    "file": "next-31-32/welcome-guide.png",
+    "license": "next-31-32/DECLARATION.txt",
+    "sha256": "f9b248bc9602b8a64e67bb5a41206519bb5b31d384758f6f28bf96329edeb3e9",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "初次使用導覽的第一頁：共五步，先解釋本機記憶、連接應用與檢查變更，再顯示不含真實路徑的資料夾示例，可跳過或繼續。",
+    "credit": "本工作台自製 · 依固定 OpenMyMemo 首頁導覽及文案原碼示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/mbentancour/babytracker/blob/bcc0513567c2fba7c935bd61886ce998a2bf1fab/frontend/src/components/SetupChoiceScreen.jsx",
+    "file": "next-31-32/choose-start.png",
+    "license": "next-31-32/DECLARATION.txt",
+    "sha256": "bdfc5f5347ee49d108bfea22f3b9c2fe342c7036758496a5bb1efbc5c81c8826",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "首次啟動顯示四個起點：從頭開始、還原備份、從另一套照顧工具匯入，或從育兒日誌匯入。所有選項僅為靜態示意。",
+    "credit": "本工作台自製 · 依固定 BabyTracker 起點選擇頁四條分支示意 · 非官方截圖"
+  },
+  {
+    "link": "https://github.com/yannicschuller/flowplan/blob/221240237429a2d8cb71dd2618e1058ffc016a52/lib/emergency-deny-page.ts",
+    "file": "next-33-34/synthetic-deny-or-end.png",
+    "license": "next-33-34/DECLARATION.txt",
+    "sha256": "3bf070ca7cea6b30da294b47e0b470f170ceec2dfe252fedab8d369d52a21494",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "兩種權限狀態示意：左邊拒絕正在等候的新申請，右邊終止對方已有的讀取權限；按鈕和後果分開。",
+    "credit": "本工作台自製 · 合成示意，非 Flowplan 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/spring-attic/spring-authorization-server/blob/428397367038618d84181f80255edb5a45de69a9/samples/demo-authorizationserver/src/main/resources/templates/consent.html",
+    "file": "next-33-34/synthetic-consent-scopes.png",
+    "license": "next-33-34/DECLARATION.txt",
+    "sha256": "3a75cf3fa01daacc3554cdbdb9c9aef2362da26a62664b8661ce443b3a2a5819",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "授權示意：兩個新要求的空白選框在上方，先前同意的一項另列並顯示不能編輯；最下方有取消、確認同意。",
+    "credit": "本工作台自製 · 合成示意，非 Spring Authorization Server 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/jtarchie/topbanana/blob/d2c825d4a18f99a1fb7e1ef5c678d024281b1cbe/internal/server/templates/photo_queue.html",
+    "file": "next-33-34/synthetic-attachment-display.png",
+    "license": "next-33-34/DECLARATION.txt",
+    "sha256": "8356584308a58997db6176d01955bb5585c2116948fb401786bba1c348c2c7e2",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "附件待審示意：先看自繪海報，再按拒絕或准許展示；圖中沒有修改附件內容的入口。",
+    "credit": "本工作台自製 · 合成示意，非 Top Banana 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/julowe/ocr-proofread/blob/2d0199cb1abe884494062266838e31e181ad48bc/ocr_proofread/web/templates/viewer.html",
+    "file": "next-33-34/synthetic-attachment-ocr.png",
+    "license": "next-33-34/DECLARATION.txt",
+    "sha256": "aab84f5984e16fefed16a50d7db41f283f5caa3c99133da6d36339c25bea3d93",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "文字核對示意：左邊原件標出『海風小展』，右邊並列兩項候選文字；目前採用的候選把『展』辨認成了『屋』。",
+    "credit": "本工作台自製 · 合成示意，非 OCR Proofread 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/stevensalve/offline-office-toolkit/blob/d232101f95dec670d74dd58ea702272005a2640a/index.html",
+    "file": "next-35-36/35a-office-catalog.png",
+    "license": "next-35-36/DECLARATION.txt",
+    "sha256": "d08c91ff2dd1c6f32a52ffafa84b3e3765df6246773f14dea35b3e9e335ea6c5",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "辦公工具入口節錄：寬窗先顯示搜尋，再以三欄列出用途卡；相同卡片在窄窗垂直排成單欄。",
+    "credit": "本工作台自製 · 參考固定版本版式 · 非官方原圖"
+  },
+  {
+    "link": "https://github.com/Stirling-Tools/Stirling-PDF/blob/5275866f092c415e0ab44df801bcbc653680ca5a/src/main/resources/templates/home.html",
+    "file": "next-35-36/35b-pdf-grid.png",
+    "license": "next-35-36/DECLARATION.txt",
+    "sha256": "dc25ae69071ba95ee71c562a1aba69c7986a1fe1ef60474103e60366c19fba2b",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "PDF 工具首頁前兩列：合併、拆分、旋轉及轉換等工具各有短說明和開啟按鈕；窄窗仍以三欄呈現。",
+    "credit": "本工作台自製 · 參考固定版本版式 · 非官方原圖"
+  },
+  {
+    "link": "https://github.com/babybuddy/babybuddy/blob/f02f28b7f96f8bb1b9a0212a377c327ce33e7699/core/templates/core/child_detail.html",
+    "file": "next-35-36/36a-detail-update.png",
+    "license": "next-35-36/DECLARATION.txt",
+    "sha256": "bd4d18497de617e9e3ce7c64746e3977734636fb088556f8c44cbc006c9f2df3",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "基本資料更正流程：左側先核對既有詳情，右側另一步預填更正表；姓名、出生日期及年齡值全部省略。",
+    "credit": "本工作台自製 · 參考固定版本版式 · 非官方原圖"
+  },
+  {
+    "link": "https://github.com/garethflowers/nms/blob/364bf24b523062c976ab018b636c2ad5cd36c62b/src/child/amend.php",
+    "file": "next-35-36/36b-nursery-amend.png",
+    "license": "next-35-36/DECLARATION.txt",
+    "sha256": "1f214d966acb1e0f5751402c4c0048289b86d8a95d0cdbf3ee0798eaad9b293e",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "幼兒園行政用的既有檔案更新表：左右兩欄同頁核對基本資料、出生和入園欄位，底部有備註及更新按鈕；沒有真實欄位值。",
+    "credit": "本工作台自製 · 參考固定版本版式 · 非官方原圖"
+  },
+  {
+    "link": "https://github.com/kanboard/kanboard/blob/695a07fc3efd4ce2c3e9aebe22236fb0d30c19fb/app/Template/task/public.php",
+    "file": "next-37-38/synthetic-task-readonly.png",
+    "license": "next-37-38/DECLARATION.txt",
+    "sha256": "65b50f12a96bc721b29c8f95cbf18665ad0affe06d1fa50d4bf1e2da48bca2d0",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "單項待辦唯讀詳情：狀態、示例負責人和截止日期在上方，下方分列說明、相關連結、子任務和留言。",
+    "credit": "本工作台自製 · 合成示意，非 Kanboard 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/mohammad-hussein-dev/django-task-manager/blob/af1e88142258e412ee2676de08908d9e2b3082a1/templates/tasks/task_detail.html",
+    "file": "next-37-38/synthetic-task-personal.png",
+    "license": "next-37-38/DECLARATION.txt",
+    "sha256": "1384b282c794193daa6b0bd0a0d8bd006e68f583b23c8fc5b0e115e2ddc191f3",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "個人待辦卡：頂部是同一筆任務與進行中狀態，下方列出分類、優先級、期限和建立及更新時間，不設單項負責人欄。",
+    "credit": "本工作台自製 · 合成示意，非 Django Task Manager 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/MicrosoftDocs/azure-dev-docs/blob/23c7affbcccfefc49ee410506a2d45e1584f78a0/articles/python/media/get-started-app-chat-template/browser-chat-document-tabs.png",
+    "file": "next-37-38/synthetic-chat-citation-page.png",
+    "license": "next-37-38/DECLARATION.txt",
+    "sha256": "677a8a3fdef276a0340280dda3e0f56afdfde6e2c2fb69367952d313e505f317",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "雙欄引用示意：左方保留虛構提問、回覆及引用，右方打開被引用的虛構 PDF 第 4 頁。",
+    "credit": "本工作台自製 · 合成示意，非 Azure RAG Chat 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://github.com/whats2000/PaperHub/blob/411c743709ed956ad9537dd82397a177863586d6/docs/screenshots/05-citation-canvas-pdf.png",
+    "file": "next-37-38/synthetic-chat-reference-highlight.png",
+    "license": "next-37-38/DECLARATION.txt",
+    "sha256": "0b68a7aaf51382d85f8bc3f2f91aeb5ab7f093676144366d22bfac821c46e60c",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "三欄引用示意：左方列文獻，中間保持聊天，右方的虛構 PDF 用淺黃色高亮對應的原文段落。",
+    "credit": "本工作台自製 · 合成示意，非 PaperHub 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://community.instructure.com/en/instructure/kb/articles/660659-how-do-i-use-the-assignments-index-page",
+    "choice": "作業-01｜Canvas LMS",
+    "file": "next-39-40/synthetic-assignment-index.png",
+    "license": "next-39-40/DECLARATION.txt",
+    "sha256": "c869df20a99e00c6950a24ebad96b1e3048610982757a72f3f57c0208b40486b",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌作業索引示意：搜尋作業名稱後分群顯示結果，每則列出名稱及期限。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://docs.moodle.org/500/en/File:ActivitiesTeacher.png",
+    "choice": "作業-02｜Moodle LMS",
+    "file": "next-39-40/synthetic-activity-overview.png",
+    "license": "next-39-40/DECLARATION.txt",
+    "sha256": "58680d99fbd64a50fa666423655fd19385eac59b0618cdff04d80f4f4eabaefb",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌課程活動總覽示意：展開作業區，在表格同一列核對作業名稱、期限和示例提交統計。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/daveonkels/centralchat/blob/440108fdad69de849990172017ab027879979128/docs/screenshots/reader-light.png",
+    "choice": "封存-01｜Central Chat",
+    "file": "next-39-40/synthetic-archive-reader.png",
+    "license": "next-39-40/DECLARATION.txt",
+    "sha256": "bf4ef01fd9b3d5a8079b1af89a448b977815e65d77e3d6d30e518b00471e0f5a",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌封存閱讀示意：左側選取對話，右側依次閱讀角色標記的三則虛構問答。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/chchaoo/gpt-notebook/blob/bf94254ae7df01e2ea83c965da69ddd68f74e714/docs/images/en/reading.png",
+    "choice": "封存-02｜GPT Notebook",
+    "file": "next-39-40/synthetic-outline-reader.png",
+    "license": "next-39-40/DECLARATION.txt",
+    "sha256": "da7658b77b1acf60a5bc5d33ea92a124326fcdc73aafb979c3eb22db2b6d0019",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌長對話大綱示意：閱讀區側邊以刻度定位第二段，正文顯示相鄰虛構訊息的角色與時間。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://github.com/gitify-app/gitify/blob/825b17787cfc4708682372317c8cc6df282d67da/src/renderer/components/notifications/__screenshots__/NotificationRow.visual.test.tsx/notifications-read-row-light-classic-chromium-linux.png",
+    "file": "next-41-42/gitify-notification-list-synthetic.png",
+    "license": "next-41-42/DECLARATION-Gitify.txt",
+    "sha256": "729197fd6b322e3537313c758dcc409b973625c97aeefb7698393d9a29505507",
+    "alt": "緊密通知列表示意：深色側欄，示例專案下排列兩則通知，分別顯示已讀和未讀訊息，不需要打開其他面板。",
+    "credit": "自製示意 · 參考 Gitify 已讀／未讀列表（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Gitify 參考原碼：Emmanouil Konstantinidis · MIT",
+        "file": "next-41-42/LICENSE-Gitify-MIT.txt",
+        "sha256": "e3583a920d79b28287ca8bf4b021c6cbeba746a75073c0c68b0aa64ff0b38961"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/hcengineering/huly-docs/blob/60ea044092478375b34223cbbffdeb79225f1cd9/src/assets/screenshots/huly/inbox-peek.png",
+    "file": "next-41-42/huly-notification-preview-synthetic.png",
+    "license": "next-41-42/DECLARATION-Huly.txt",
+    "sha256": "223e3cf08566180e17543a6cc8d09748287931de1e56c78faa754be817614a80",
+    "alt": "收件箱示意：左邊仍顯示所選項目和鄰近通知，右邊預覽來源內文；浮在清單上的短預覽只顯示同一則示例。",
+    "credit": "自製示意 · 參考 Huly 收件箱與來源預覽（非官方原圖）",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://design-histories.education.gov.uk/early-years-child-development-training/helping-users-to-delete-their-accounts",
+    "file": "next-41-42/dfe-account-closure-review-synthetic.png",
+    "license": "next-41-42/DECLARATION-DfE.txt",
+    "sha256": "47ca1e27662128189ee6676c37a27d4981d7464609abd35ef19e7bf92a39bccd",
+    "alt": "兩個關閉帳戶前的示例畫面：先分列會移除的身分聯絡資料及會保留的匿名化學習資料，最終確認再重述，未申請或刪除。",
+    "credit": "自製示意 · 參考英國教育部關閉帳戶設計紀錄（非官方原圖）",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://mozilla.github.io/fxa/storybooks/main/fxa-settings/iframe.html?id=pages-settings-deleteaccount--default&viewMode=story",
+    "file": "next-41-42/mozilla-account-delete-checklist-synthetic.png",
+    "license": "next-41-42/DECLARATION-Mozilla.txt",
+    "sha256": "65c232b9304c70b0b24a3762d745a199e7aaed722d0449a46f0443b1b5d7a4cb",
+    "alt": "刪除帳戶第一步示意：付費訂閱、產品儲存資訊、重新啟用限制及已發佈內容分成四個未勾選項，繼續停用。",
+    "credit": "自製示意 · 參考 Mozilla Accounts 逐項核對刪戶影響（非官方原圖）",
+    "additionalNotices": [
+      {
+        "name": "Mozilla Accounts 參考原碼：MPL 2.0",
+        "file": "next-41-42/LICENSE-Mozilla-MPL-2.0.txt",
+        "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://osmand.net/assets/images/profile_actions_import_ios-0aa9763f30b428a06982c0d6a3602a4e.png",
+    "file": "next-43-44/osmand-synthetic.png",
+    "license": "next-43-44/LICENSE-OsmAnd-Web-Apache-2.0.txt",
+    "sha256": "ddf4f030512d008e0c903fc794ccb9af0a9c9538510b8ec84138e7a958c15dad",
+    "alt": "OsmAnd 匯入核對的合成示意：手機版按設定與資源兩類列出已選數量，先核對範圍，再見繼續按鈕。",
+    "credit": "OsmAnd · 依固定參考畫面重現 · 合成示意 · 非官方原圖 · OsmAnd Web 參考程式 Apache-2.0；未使用 iOS 原圖",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://github.com/JabRef/user-documentation/blob/e1b8e3fb48b83f703e3ef1f923c6a1c790a8223e/en/.gitbook/assets/inspectionwindow.png",
+    "file": "next-43-44/jabref-synthetic.png",
+    "license": "next-43-44/LICENSE-JabRef-Docs-CC-BY-SA-4.0.txt",
+    "sha256": "aee45a63f33ee58c1b12ef56ecd1b19f0feb7f3ff647e63d09fcbed945518be0",
+    "alt": "JabRef 匯入檢查的合成示意：左邊是批量選擇，右上逐筆核對保留和疑似重複，選中條目在下方預覽。",
+    "credit": "JabRef · 依固定參考畫面重現 · 合成示意 · 非官方原圖 · JabRef 文件貢獻者 · 本合成改作 CC BY-SA 4.0",
+    "additionalNotices": [
+      {
+        "name": "#43–44 合成改作與原始來源授權說明",
+        "file": "next-43-44/NOTICE.txt",
+        "sha256": "aedf6901c5d0cb64dbc3a9f7de7e68759fb589679549b1be5ce875b58c552251"
+      }
+    ],
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://dagster.io/docs/assets/images/backfills-tab-b3ac9d2ad492162ca6c63bf2c065d707.png",
+    "file": "next-43-44/dagster-synthetic.png",
+    "license": "next-43-44/LICENSE-Dagster-Apache-2.0.txt",
+    "sha256": "8fdfe56ce8d1345148c46c86736f3cf518755d5609616938c50d62b48ca179fc",
+    "alt": "Dagster 回填總表的合成示意：每批一列，並列請求分區數與整體批次狀態；分區數沒有按完成、等待、失敗拆開。",
+    "credit": "Dagster · 依固定參考畫面重現 · 合成示意 · 非官方原圖 · 參考程式 Apache-2.0；沒有重發原圖 · 原參考圖每批只顯示請求分區總數與一個整體狀態，沒有分列完成、等待、失敗數量。",
+    "previewLabel": "自製合成示意（非官方原圖） · 請求分區總數＋單一批次狀態"
+  },
+  {
+    "link": "https://raw.githubusercontent.com/felixmosh/bull-board/0c602c9e5042f0285c3d66733b005123178bbfd1/website/docs/public/screenshots/queue-detail-info-icon.png",
+    "file": "next-43-44/bull-board-synthetic.png",
+    "license": "next-43-44/LICENSE-Bull-Board-MIT.txt",
+    "sha256": "ff54a5525abf0f6d5871af20a92ee5a725f9f54a0ffb292e198de8760d9aed90",
+    "alt": "Bull-Board 隊列詳情的合成示意：左邊選隊列，上方按狀態篩選，中間看趨勢，下方選中單一工作的日誌分頁。",
+    "credit": "Bull-Board · 依固定參考畫面重現 · 合成示意 · 非官方原圖 · 參考程式 MIT；沒有重發原圖",
+    "previewLabel": "自製合成示意（非官方原圖）"
+  },
+  {
+    "link": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/3eb2d039ec7b5b3caf752eb5f3c5abb6f4f52941/articles/cost-management-billing/understand/media/plan-manage-costs/cost-analysis.png",
+    "file": "next-45-46/cumulative-cost.png",
+    "license": "next-45-46/DECLARATION.txt",
+    "sha256": "d28e626e1c86a3ff214051994e0ec9a77ccce59583920b94e27444f32d810ac6",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "月度累計圖：已入帳費用用實線，月底預測用虛線；下方按服務和地區顯示虛構點數的拆分。",
+    "credit": "本工作台自製 · 依 Microsoft 官方成本分析示例之設計結構繪畫 · 非官方截圖"
+  },
+  {
+    "link": "https://docs.cloud.google.com/static/billing/docs/images/cost-breakdown-list.png",
+    "file": "next-45-46/invoice-waterfall.png",
+    "license": "next-45-46/DECLARATION.txt",
+    "sha256": "497498798cd73331ed26c61d015b4886a3edbfe4b894cec9be05a969179513aa",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "帳單月份的費用瀑布圖以虛構點數示意：用量標價減折扣和抵免，得出小計，再加稅項得出總額。",
+    "credit": "本工作台自製 · 依 Google Cloud 官方費用拆解示例之設計結構繪畫 · 非官方截圖"
+  },
+  {
+    "link": "https://www.unicef.org/reports/state-of-worlds-children",
+    "file": "next-45-46/publication-series.png",
+    "license": "next-45-46/DECLARATION.txt",
+    "sha256": "6e01df4b09c11ec548431292555a6c687ff863c56954a1174bd3b3432d0b536b",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "公共出版系列的左欄列出虛構年度冊次，選取後右欄顯示該冊的語言版本、摘要和全文入口。",
+    "credit": "本工作台自製 · 依 UNICEF 系列至個別冊次的導覽結構繪畫 · 非官方截圖"
+  },
+  {
+    "link": "https://www.w3.org/TR/wcag/all/",
+    "file": "next-45-46/version-index.png",
+    "license": "next-45-46/DECLARATION.txt",
+    "sha256": "fffdb9bd847cc3d383ef1fca96d76f2c945cd176a342a1e57f595f4bccecb68e",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "同一示例規格的版本索引分列版號、工作草案或正式建議、虛構發布日期、固定版本及歷史。",
+    "credit": "本工作台自製 · 依 W3C 版本索引的狀態和日期結構繪畫 · 非官方截圖"
+  },
+  {
+    "link": "https://www.pushengage.com/wp-content/uploads/2023/09/iphone_optin_homescreen-1.png",
+    "file": "next-47-48/47a-store-permission.png",
+    "license": "next-47-48/DECLARATION.txt",
+    "sha256": "b02d93bacf56ed05e7086b7ffa2167cff11d6202db0f12df8b4ab93da0e0a37e",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "主畫面網頁程式的推播開通示意：先從主畫面開啟、再看店內用途提示，最後才由系統另行詢問是否允許；沒有開通或送出通知。",
+    "credit": "本工作台自製 · 依原方公開流程示意 · 非官方原圖"
+  },
+  {
+    "link": "https://kira.id/images/docs/inbox-profile-notifications-en.webp",
+    "file": "next-47-48/47b-device-settings.png",
+    "license": "next-47-48/DECLARATION.txt",
+    "sha256": "b0a73fd0f5d8e8fe4870266eff9b245be6a39689bda8e77189f2d222d12dbabe",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "本機推播設定示意：左側未開通可點開啟，右側是假設已開通後同一位置可試發或停用。沒有發送或驗證通知送達。",
+    "credit": "本工作台自製 · 依原方公開流程示意 · 非官方原圖"
+  },
+  {
+    "link": "https://blog.google/products-and-platforms/products/gemini/temporary-chats-privacy-controls/",
+    "file": "next-47-48/48a-separate-mobile-entry.png",
+    "license": "next-47-48/DECLARATION.txt",
+    "sha256": "151eeb5a141d597c2d8b9e1ad95ba81699b10cc2c6f47f4c2773281df2251ad5",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "手機對話選單的「新對話」右側有獨立臨時聊天入口；新畫面在空白輸入框之前說明不會顯示於最近聊天或活動紀錄。",
+    "credit": "本工作台自製 · 依原方公開流程示意 · 非官方原圖"
+  },
+  {
+    "link": "https://assets.claude.com/6b32914222225ea9a486840d892105052f03a78b.png",
+    "file": "next-47-48/48b-new-chat-toggle.png",
+    "license": "next-47-48/DECLARATION.txt",
+    "sha256": "3c222a8df03d3225d31ab426c8974a52bca1d7c2eb72ea4f8415bd6ae593de82",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "同一個新對話切換前後的示意：普通新對話右上有臨時模式按鈕，啟用後用黑色外框和左上臨時聊天標籤辨認；沒有輸入任何對話。",
+    "credit": "本工作台自製 · 依原方公開流程示意 · 非官方原圖"
+  },
+  {
+    "link": "https://support.plaud.ai/hc/article_attachments/63430515782297",
+    "file": "next-49-50/synthetic-mobile-signin-methods.png",
+    "sha256": "3e57fed391084b31661c406e245c4f6d74782cd83942d69b3d42da363c10d9a7",
+    "license": "next-49-50/DECLARATION.txt",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "手機登入方式示意：同一個清單列出已連結和可新增的登入方式，並提示先保留可用入口。",
+    "credit": "本工作台自製 · 合成示意，非 Plaud 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://vpsdime.com/knowledgebase/client-area/account/images/signin-methods-linked.png",
+    "file": "next-49-50/synthetic-desktop-signin-methods.png",
+    "sha256": "b5aa32ed033e00357961a30bebc3400f714ce2f3410096efe82310e9e65a0b5e",
+    "license": "next-49-50/DECLARATION.txt",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "桌面登入方式示意：依次分成已連結、可新增與最近活動；活動日期和登入方式均為虛構。",
+    "credit": "本工作台自製 · 合成示意，非 VPSDime 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://distill.io/docs/web-monitor/feed-monitor/images/036-add-feed-url.jpg",
+    "file": "next-49-50/synthetic-feed-preview-schedule.png",
+    "sha256": "e196dd5eea315b17f559fc965b9b8191f95e0cc455561f5bd74865704e4e53ab",
+    "license": "next-49-50/DECLARATION.txt",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "訂閱來源示意：輸入虛構的 RSS 網址並預覽項目，選定後在另一步設定檢查頻率。",
+    "credit": "本工作台自製 · 合成示意，非 Distill 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://changedetection.io/sites/changedetection.io/files/inline-images/image_106.png",
+    "file": "next-49-50/synthetic-page-region-schedule.png",
+    "sha256": "5b324377a33712ccd0e21558cb259fbd3dba342558da2209b4a670595fdb3fd9",
+    "license": "next-49-50/DECLARATION.txt",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "網站區域示意：在虛構網頁上框住最新消息，頁面其他部分在範圍外；檢查頻率另置於一般分頁。",
+    "credit": "本工作台自製 · 合成示意，非 changedetection.io 官方截圖 · 僅供版式比較"
+  },
+  {
+    "link": "https://help.ovice.com/hc/article_attachments/24921129422105",
+    "choice": "邀請-01｜ovice 每列操作",
+    "file": "next-51-52/synthetic-invite-row-actions.png",
+    "license": "next-51-52/DECLARATION.txt",
+    "sha256": "0563f9271157897066ef452c064cb1a9ab681308b63a8fc04862bb82ae26fdce",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌逐列邀請示意：每列有待接受或已過期狀態、寄送時間及角色，並展開其中一列的重寄與移除。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://help.zoho.com/portal/en/kb/workdrive/admin-console/manage-users/articles/manage-team-members",
+    "choice": "邀請-02｜Zoho WorkDrive 選取工具列",
+    "file": "next-51-52/synthetic-invite-selection-toolbar.png",
+    "license": "next-51-52/DECLARATION.txt",
+    "sha256": "ba2fbcd90b86ddf0975813ae278289fcbc475b880e81e96b7c38f4fa94680e37",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌邀請工具列示意：先篩出已邀請的成員，勾選兩個示例後從上方重寄，更多操作內有撤銷。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://slack.com/help/articles/27452748828179-Use-lists-in-Slack",
+    "choice": "來源卡-01｜Slack 清單與同項側欄",
+    "file": "next-51-52/synthetic-chat-list-item.png",
+    "license": "next-51-52/DECLARATION.txt",
+    "sha256": "3fc4093d0fe91dd107ee9da96dfe21dbc5c0910509fde5116d34614983317b66",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌資料清單示意：左側從虛構聊天加入清單；選中的清單列和右側詳情使用同一活動說明卡標題。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://support.microsoft.com/en-us/planner/media/getting-started-with-planner-screenshot-four-version-two-png.png",
+    "choice": "來源卡-02｜Teams 儲存位置與 Planner 回查",
+    "file": "next-51-52/synthetic-chat-task-destination.png",
+    "license": "next-51-52/DECLARATION.txt",
+    "sha256": "491664b85b6a0cc50f55cf7ce761ccde6aae0439fa468bc3cc6b57df65898e5c",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "無品牌任務回查示意：建立時選私人任務，之後在我的任務開啟同一標題，從備註查回示例來源。",
+    "credit": "本工作台自製 · 無品牌合成示意 · 僅供版式參考"
+  },
+  {
+    "link": "https://docs.feedly.com/article/806-how-to-follow-sources",
+    "file": "next-53/source-search-preview.png",
+    "license": "next-53/DECLARATION.txt",
+    "sha256": "79215c65bf4d49f9d0a43501e5824e58d051d6b2c511f7050cbd4c5bdf092af9",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "搜尋結果選中一個虛構來源，預覽網站、每週更新量和近期文章，尚未跟隨；可再選擇跟隨至資料夾。",
+    "credit": "本工作台自製 · 依 Feedly 公開來源搜尋與跟隨流程示意 · 非官方截圖"
+  },
+  {
+    "link": "https://books.libreoffice.org/en/WG24/WG2410-WorkingWithTemplates-img/WG2410-WorkingWithTemplates-img006.png",
+    "file": "next-53/catalog-default-restore.png",
+    "license": "next-53/DECLARATION.txt",
+    "sha256": "d317562f5407ea02b24b984644da193cc7a86a8539038cdf91f16f03c5e50c60",
+    "previewLabel": "自製合成示意（非官方原圖）",
+    "alt": "公共範本目錄和本機管理分開：先搜尋及選取範本，再辨認目前自訂預設；重設恢復內建空白文件，自訂範本仍保留。",
+    "credit": "本工作台自製 · 依 Writer Guide 24.2 目錄、目前預設及重設示意 · 非官方截圖"
+  }
+]
