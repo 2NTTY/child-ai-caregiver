@@ -422,7 +422,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       usageScope: internalKnowledgeSource(document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial" ? "internal_noncommercial" : "public_noncommercial",
       reviewState: "reviewed", ...(document.extraction ? { extraction: document.extraction } : {}),
       originalCoverage: chunk.document.originalText && !chunk.document.originalKind ? "chunk_original" : "excerpt_only",
-      applicabilityStatus: chunk.document.applicability.ageBasis === "any" ? "applicable"
+      applicabilityStatus: chunk.document.applicability.use === 'original_lookup' ? 'requires_clarification' : chunk.document.applicability.ageBasis === "any" ? "applicable"
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
   }
   function selectionEdition(edition: Edition) {
