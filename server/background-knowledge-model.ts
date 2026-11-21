@@ -2,6 +2,7 @@ import { amendedPdfChunks, pdfAmendmentSchema, type PdfAmendment } from "./knowl
 import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from "./knowledge-pdf-layout.ts";
 import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
+import { scriptReadingContract, scriptScopeInstruction, scriptReviewInstruction } from './knowledge-script-reading.ts';
 import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
@@ -201,6 +202,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
  */
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
+  scriptRevision?: { priorWork: string; reason: string; notes: readonly string[] };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -237,6 +239,8 @@ export async function prepareKnowledgeMaintenance(input: {
       reject("knowledge_maintenance_baseline_mismatch");
   } else if (candidate.previousObservationHash !== null) reject("knowledge_maintenance_baseline_missing");
   const units = originalUnits(candidate);
+  if (input.scriptRevision && (candidate.definition.kind !== 'page' || !candidate.observed.scripts?.length || !input.explicitAgeScope))
+    reject('knowledge_script_revision_scope');
   const sha = candidate.definition.leafletPage ? candidate.observed.extraction!.contentHash : null;
   if (sha && !input.readPdf) reject("knowledge_original_missing");
   const sample = sha && input.pdfQuestion?.contentHash === sha && input.pdfQuestion.factKeys?.length
@@ -332,7 +336,11 @@ export async function prepareKnowledgeMaintenance(input: {
     if (!sampleChunk || claims.some(claim => !sampleChunk.text.includes(claim))) reject("knowledge_focus_binding_mismatch");
   }
   const pending = units.filter(unit => !reusable.has(unit.id));
-  const organized = pending.length ? await complete("organize", organize.text, {
+  const scriptReading = input.scriptRevision && pending.length ? scriptReadingContract(pending, candidate.observed.title) : null;
+  const organized = scriptReading ? await complete('organize', organize.text, {
+    role:'background-knowledge-maintenance', task:scriptScopeInstruction, materialTitle:candidate.observed.title,
+    priorHold:input.scriptRevision, observationHash:candidate.observationHash, units:scriptReading.inputs,
+  }, nativeResponseSchema(scriptReading.schema)) : pending.length ? await complete("organize", organize.text, {
     role: "background-knowledge-maintenance", watch: candidate.definition,
     ...(input.explicitAgeScope ? { ageScope: ageScopeInstruction } : {}),
     observationHash: candidate.observationHash,
@@ -352,7 +360,7 @@ export async function prepareKnowledgeMaintenance(input: {
   const organizedCoverage = parsedDraft ? coverage(parsedDraft.nativeCoverage) : amendments ? coverage(priorReading!.organize) : null;
   if (sample && input.acceptance && !input.acceptance(sha!,sample.physicalPage!,"organize",organizedCoverage!.layoutFacts!))
     reject("knowledge_native_visual_sample_mismatch");
-  const drafted = parsedDraft ?? (organized ? output.parse(organized.value) : { units: [] });
+  const drafted = scriptReading && organized ? { units:scriptReading.parse(organized.value) } : parsedDraft ?? (organized ? output.parse(organized.value) : { units: [] });
   if (held && drafted.units.some(unit => !/\p{Script=Han}/u.test(unit.section) || !/\p{Script=Han}/u.test(unit.text)))
     reject("knowledge_pdf_revision_language_mismatch");
   const byId = new Map(drafted.units.map(unit => [unit.unitId, unit]));
@@ -382,8 +390,9 @@ export async function prepareKnowledgeMaintenance(input: {
       const applicability = pdf ? includePriorRetrieval(draft.applicability, samePages(unit).map(chunk => chunk.applicability))
         : draft.applicability;
       const script = unit.scriptPassage;
-      const section = script ? `影片《${script.title}》劇本第 ${script.firstParagraph}–${script.lastParagraph} 段 · ${draft.section}`.slice(0, 240).toWellFormed() : draft.section;
-      return { key: unit.id, section, ...evidence, ...(script ? { scriptPassage: script } : {}),
+      const scriptHeading = script ? `影片《${script.title}》劇本第 ${script.firstParagraph}–${script.lastParagraph} 段` : '';
+      const section = script ? (scriptReading ? scriptHeading : scriptHeading + ' · ' + draft.section).slice(0, 240).toWellFormed() : draft.section;
+      return { key: unit.id, section, ...evidence, ...('treatment' in draft ? {treatment:draft.treatment} : {}), ...(script ? { scriptPassage: script } : {}),
         text, keywords: draft.keywords, applicability,
         ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.pageEnd! } : {}) };
     }),
@@ -432,6 +441,7 @@ export async function prepareKnowledgeMaintenance(input: {
   }) : null;
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
+    ...(input.scriptRevision ? {scriptReading:scriptReviewInstruction, priorHold:input.scriptRevision} : {}),
     ...(input.explicitAgeScope || retained ? { ageScopeCheck: independentAgeCheck } : {}),
     ...(retained?.revision.action === 'review_age_draft' ? { editorialAgeProposal: { change: 'Only the numeric bounds were cleared in the listed units. Check the full original audience, exceptions and conditions. Hold if this broadens the intended audience.', reason: retained.revision.reason, originalScopes: retained.revision.units } } : {}),
     ...(retained?.revision.action === 'review_pdf_region' ? { editorialRegionProposal: { edits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),
@@ -441,7 +451,9 @@ export async function prepareKnowledgeMaintenance(input: {
     ...(amendments ? { proposedAmendments: amendments } : {}),
     ...(priorConditions.length ? { priorConditions: priorConditions.map(({ conditions, ...row }) => ({ ...row,
       currentConditions: Object.fromEntries(conditions.map((condition, i) => ["condition" + (i + 1), condition])) })) } : {}),
-    candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) } : source,
+    candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) }
+      : input.scriptRevision ? { ...source, chunks:source.chunks.map(({ originalText, ...chunk }) =>
+        originalText === chunk.text ? {...chunk, textIsOriginal:true} : {...chunk, originalText}) } : source,
     baseline: baseline?.source ?? null, ...nativeScope,
     ...(pdf ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
   }, nativeResponseSchema(pdfReviewSchema ?? modelAssessmentSchema));
@@ -527,6 +539,7 @@ export async function prepareKnowledgeMaintenance(input: {
 /** No memory fallback: the durable caller must store evidence before returning approval. */
 export function createModelKnowledgeReviewPort(options: {
   explicitAgeScope?: boolean;
+  scriptRevision?: Parameters<typeof prepareKnowledgeMaintenance>[0]['scriptRevision'];
   retainedDraft?: Parameters<typeof prepareKnowledgeMaintenance>[0]['retainedDraft'];
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
   growthRules: readonly KnowledgeGrowthRuleBinding[];
@@ -548,7 +561,7 @@ export function createModelKnowledgeReviewPort(options: {
         reject("knowledge_destination_baseline_conflict");
       const comparedCandidate = comparison ? { ...candidate, previousObservationHash: comparison.baseline.observationHash } : candidate;
       const prepared = await prepareKnowledgeMaintenance({ candidate: comparedCandidate, baseline: comparison?.baseline ?? local,
-        explicitAgeScope: options.explicitAgeScope, retainedDraft: options.retainedDraft, previousVisual: await options.previousVisual?.(candidate),
+        explicitAgeScope: options.explicitAgeScope, scriptRevision:options.scriptRevision, retainedDraft: options.retainedDraft, previousVisual: await options.previousVisual?.(candidate),
         heldDraft: await options.heldDraft?.(),
         fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
       if (comparison) {
