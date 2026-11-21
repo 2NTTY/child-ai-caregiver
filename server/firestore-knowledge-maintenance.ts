@@ -7,7 +7,8 @@ import { communicationReplayWork,normalizeRecordedComparison,recordedCommunicati
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
 import { campaignMaterialWatches } from "./platform-materials.ts";
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, verifiedScriptReading, type ScriptEdition } from './fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, registeredChapterReading, verifiedScriptReading, type ScriptEdition } from './fhs-script-edition.ts';
+import { checkChapterReading } from './knowledge-web-chapter.ts';
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import type { Transaction } from "@google-cloud/firestore";
@@ -168,6 +169,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const scriptRevision = options.reviseHeldScript && script ? await verifiedScriptReading(script,
         operationFingerprint=>work.inspect({...request,operationFingerprint}),request.operationFingerprint,
         operationFingerprint=>work.inspectScriptReview({...request,operationFingerprint})) : undefined;
+      const chapterScope = script && scriptRevision ? registeredChapterReading(script) : undefined;
       const recovery = options.truncatedOutput;
       if (retained && (sponsor || recovery || reusedOrganizationFrom || !expectedRevision
         || request.publishMode !== 'live' || definition.kind !== (retained.action === 'review_age_draft' || web ? 'page' : 'pdf') || request.watchId !== retained.sourceId
@@ -523,9 +525,10 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 if (!prepared || !await authorize()) reject("knowledge_work_publication_mismatch");
                 assertPreparedKnowledgePdfLayout(prepared, options.pdfQuestion, options.acceptance);
                 if (script) {
-                  if (prepared.source.chunks.length !== script.chunkCount || prepared.assessment.comparedVersionId !== script.baselineId || prepared.assessment.comparedHash !== script.baselineHash
+                  if (prepared.source.chunks.length !== (chapterScope?.chapter?.headings.length ?? script.chunkCount) || prepared.assessment.comparedVersionId !== script.baselineId || prepared.assessment.comparedHash !== script.baselineHash
                     || candidate.observationHash !== script.observationHash) reject('knowledge_script_edition_baseline_changed');
-                  scriptEditionCoverage(candidate.observed, prepared.source);
+                  if (chapterScope) checkChapterReading(candidate.observed.text, chapterScope.chapter, prepared.source.chunks, chapterScope.audiences);
+                  else scriptEditionCoverage(candidate.observed, prepared.source);
                 }
                 const imported = await options.knowledge.importSource(prepared.source);
                 const reviewed = await options.knowledge.review(imported.versionId, imported.hash, "agent-knowledge-maintenance",

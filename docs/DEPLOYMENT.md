@@ -117,6 +117,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 對[12 份已登記的保留原單](../knowledge/fhs-held-script-editions.json)，用 `script inspect` 查原來的保留原因及審核意見。`script revise SOURCE_ID OBSERVATION_SHA256` 從原先已保存的文字開始，沿同一帳本逐筆預留，用精簡欄位整理原文適用條件，並把原意見交獨立審核。`script inspect-revision SOURCE_ID OBSERVATION_SHA256` 查修訂收據。重開相同修訂沿用已完成的步驟。原單不明、觀測或基線改變時停止。[首次上架及覆蓋](../artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)
 
+第四冊《正面親職（二）》用同一 `script revise` 接續 `2357ad13` 的網頁連影片觀測。獨立審核讀取網頁九節，按出版者原文保留「學前兒童」及三歲洗手例子。發布後 `listedCard.chapter` 核對 3,010 字全文、完整末句及各節向量。影片沿用已上架版本。[原單與分節核對](../artifacts/verification/FHS_POSITIVE_PARENTING_CHAPTER_20261122.json)
+
 已登記[出版者受眾修訂](../knowledge/fhs-publisher-script-editions.json)的教材沿用上述兩個修訂入口。worker 核實原單，以及前次修訂的終態和候選指紋；尚未派修訂的教材須查無前次工作。Server 從已核的段落建立純原文片段，直接送獨立審核，保留先前的保留意見。審核通過才沿原帳本建向量及上架。
 
 五份已有獨立保留決定的教材另登記了[候選版本及原文查閱條件](../knowledge/fhs-script-lookup-reviews.json)。上述入口會核對該次保留及之前各份收據，把新閱讀入口的實際用途連同原意見送審。母乳教材已有審核決定，向量費用仍待原票據確認，維持該工作指紋。

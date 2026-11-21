@@ -25,7 +25,8 @@ import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { commissionedWebOriginal, retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage, registeredChapterReading } from '../server/fhs-script-edition.ts';
+import { checkChapterReading } from '../server/knowledge-web-chapter.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { communicationReplayWork, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
@@ -292,7 +293,13 @@ try {
           if (scriptEdition) {
             const snapshot = await refresh.resumeCheck(job.data, checkId);
             assertScriptObservation(scriptEdition, definition, snapshot);
-            listedCard.scripts = scriptEditionCoverage(snapshot.items[0], edition.source, edition.embeddings);
+            const reading = reviseHeldScript && registeredChapterReading(scriptEdition);
+            if (reading) {
+              checkChapterReading(snapshot.items[0].text, reading.chapter, edition.source.chunks, reading.audiences);
+              if (edition.embeddings.length !== edition.source.chunks.length) throw Error('knowledge_web_chapter_readback_mismatch');
+              listedCard.chapter = { originalLength: snapshot.items[0].text.length, audiences: reading.audiences,
+                finalSentence: reading.chapter.finalSentence, headings: reading.chapter.headings };
+            } else listedCard.scripts = scriptEditionCoverage(snapshot.items[0], edition.source, edition.embeddings);
           }
         }
         readback = { ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint } : {}),
