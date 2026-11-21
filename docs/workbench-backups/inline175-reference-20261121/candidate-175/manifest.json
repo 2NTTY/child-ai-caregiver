@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-175-image-count",
+  "base": {
+    "artifact": "candidate-173/out",
+    "htmlSha256": "e1ce24e00cf7eb3ac376cdbadeab24411400e5f160aa44e20bd8e2dcd9a3267d",
+    "rawRecordsSha256": "8346ec993d6ed93de43809df9896c80966da6bc1d36aca7e14c97fbb837f5a3f",
+    "rawArtworkSha256": "6547ed19f78f3185ab709f03b74d393a5ed95193d5d84dabf07878f897ecf5cf",
+    "topics": 85,
+    "choices": 173,
+    "images": 173
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-growth-export/assets.json",
+      "sha256": "6a5173d4b20cfe78ba91c2ea77467b5b71f9eca19c3a55eac502e72cf0c74bf3"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "86ecf7db3f0c47407ffd2592dee99bef65ac6161d1c6178457dc9596ab6aa853",
+    "PROVENANCE.md": "a5ed586adf02368e38506923ab708288a20b1108c333c5089ef80e58740b171c"
+  },
+  "topics": [
+    {
+      "number": 86,
+      "title": "導出成長報告前，先核對期間、版次和附錄",
+      "choices": [
+        {
+          "name": "先看整頁，再另存 PDF",
+          "note": "Chromium 把文件整頁預覽和 PDF 設定並排，圖中的「儲存」尚未按下。育伴港預覽的是所選報告期間、版本及附加內容，並非逐頁排版；選擇用途只會改變副標題。",
+          "links": [
+            {
+              "label": "Chromium 141.0.7390.108：文件預覽與右側設定",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/chrome/browser/resources/print_preview/ui/app.html.ts#L25-L53"
+            },
+            {
+              "label": "同版：選擇目的地、頁面及版面配置",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/chrome/browser/resources/print_preview/ui/sidebar.html.ts#L12-L44"
+            },
+            {
+              "label": "同版：「另存為 PDF」是本機目的地",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/chrome/browser/resources/print_preview/data/destination.ts#L420-L426"
+            },
+            {
+              "label": "同版：PDF 使用儲存鍵，明確按下才提交",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/chrome/browser/resources/print_preview/ui/button_strip.ts#L53-L76"
+            },
+            {
+              "label": "同版：明確提出儲存要求才進入處理",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/chrome/browser/resources/print_preview/ui/app.ts#L365-L394"
+            },
+            {
+              "label": "Chromium 程式碼授權：BSD-3-Clause",
+              "url": "https://github.com/chromium/chromium/blob/79abd1fdb9fb181f228c16000a90806ceaa09fc5/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-growth-export/growth-export-a.png",
+            "sha256": "c5a0ed0e73e269858ffcf8ce1ac9a89ec2896f6d556f13d27e444872272d0599",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Chromium 列印預覽非官方重繪。左側灰底顯示一頁虛構的紙藝小展籌備報告和幾何海岸插圖；右側已選「另存為 PDF」，下方藍色「儲存」按鈕尚未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "先選清楚哪些內容要匯出",
+          "note": "OpenRefine 只匯出在「內容」分頁勾選的欄位；「下載」分頁的預覽會另開，與下載分開。育伴港只參考先選期間及附加內容、核對相應版本，再預覽或下載，不照搬表格欄位選擇。",
+          "links": [
+            {
+              "label": "OpenRefine 3.10.0：表格、篩選與匯出入口",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/project.js#L148-L175"
+            },
+            {
+              "label": "匯出工具各分頁與欄位選擇",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/dialogs/custom-tabular-exporter-dialog.html#L1-L19"
+            },
+            {
+              "label": "「內容」分頁的輸出選項",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/dialogs/custom-tabular-exporter-dialog.html#L74-L92"
+            },
+            {
+              "label": "僅納入已勾選欄位",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/dialogs/custom-tabular-exporter-dialog.js#L417-L437"
+            },
+            {
+              "label": "「下載」分頁的 HTML、預覽及下載",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/dialogs/custom-tabular-exporter-dialog.html#L120-L140"
+            },
+            {
+              "label": "預覽另開，最多十列",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/main/webapp/modules/core/scripts/dialogs/custom-tabular-exporter-dialog.js#L289-L338"
+            },
+            {
+              "label": "BSD 3-Clause 授權（BSD-3-Clause 程式）",
+              "url": "https://github.com/OpenRefine/OpenRefine/blob/457290dbda77d8c5ed5776ac2b3cee8517934aa6/LICENSE.txt#L1-L12"
+            }
+          ],
+          "asset": {
+            "input": "draft-growth-export/growth-export-b.png",
+            "sha256": "db33f5f2c98685fc4f724072d76c4ebd94d3740c1bf6930cac70069d090f1435",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "OpenRefine 桌面重繪：紙藝展品資料表上打開自訂表格匯出的「內容」分頁。展品名稱、展區、核對狀態與展示日期已勾選，附錄備註仍是空框；上方另有「下載」分頁，沒有開啟預覽。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 86 題 · 導出前核對內容的兩幅自製示意",
+      "input": "draft-growth-export/DECLARATION.txt",
+      "sha256": "86ecf7db3f0c47407ffd2592dee99bef65ac6161d1c6178457dc9596ab6aa853"
+    }
+  ]
+}
