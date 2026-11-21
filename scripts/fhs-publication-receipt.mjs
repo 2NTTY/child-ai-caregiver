@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
 import { bindReviewedWindow, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -80,6 +81,24 @@ export async function verifyFhsPdfPages(metadata, source, identities, windows, p
   return { sha256: pin.sha256, bytes: pin.bytes, totalPages: pin.pages, pages };
 }
 
+function recordedWholePdfReadings(pdf, provenance) {
+  const native = provenance.nativePdf;
+  if (pdf.totalPages <= 20 || native?.contentHash !== pdf.sha256 || native.revision || provenance.retainedDraft || provenance.windows?.length)
+    return undefined;
+  const readings = {};
+  for (const role of ['organize', 'review']) {
+    const key = provenance[role + 'AttemptKey'], prefix = 'knowledge-' + role + ':';
+    const coverage = native[role];
+    if (typeof key !== 'string' || !key.startsWith(prefix) || !digest.test(key.slice(prefix.length))
+      || coverage?.unreadablePages?.length !== 0 || coverage.pages?.length !== pdf.totalPages
+      || !coverage.pages.every((entry, index) => entry?.page === index + 1 && typeof entry.finding === 'string' && entry.finding.trim()))
+      return undefined;
+    readings[role] = { stageHash: knowledgeReviewHash(key), physicalPages: coverage.pages.map(entry => entry.page),
+      pageFindingsSha256: knowledgeReviewHash(coverage.pages) };
+  }
+  return readings;
+}
+
 export async function readFhsDelivery({ sourceId, originalOperation, deliveryOperation = originalOperation }, ports) {
   if (!digest.test(originalOperation) || !digest.test(deliveryOperation) || originalOperation !== ports.originalOperation)
     throw Error('fhs_receipt_operation_binding');
@@ -118,6 +137,10 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
   const currentCard = await ports.familyCard(metadata.url, sourceId, metadata.versionId);
   if (!currentCard?.enabled || currentCard.seriesId !== card.seriesId || currentCard.versionId !== metadata.versionId)
     return { ...row, readback: 'edition_not_current', versionHash: active.versionHash };
+  if (originalOperation === deliveryOperation) {
+    const readings = recordedWholePdfReadings(pdf, prepared.provenance);
+    if (readings) pdf.recordedReadings = readings;
+  }
   return { ...row, readback: pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
     card: { ...metadata, seriesId: card.seriesId }, vectors: { required: expected.length, exported: actual.length, chunkKeys: actual }, pdf };
 }
@@ -134,7 +157,6 @@ async function main() {
   const { campaignMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { platformSourceWatches } = await import('../server/knowledge-source-catalog.ts');
   const { campaignCredentials } = await import('../server/knowledge-campaign-budget.ts');
-  const { knowledgeReviewHash } = await import('../server/knowledge-review-assessment.ts');
   const { retainedDraftWorkId } = await import('../server/knowledge-retained-draft.ts');
   const { extractKnowledgePdf } = await import('../server/knowledge-pdf.ts');
   const { openFhsPdfReads } = await import('./fhs-pdf-reads.ts');
