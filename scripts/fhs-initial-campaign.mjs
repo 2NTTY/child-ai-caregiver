@@ -25,11 +25,12 @@ import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId } from '../server/fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, scriptRevisionWorkId } from '../server/fhs-script-edition.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
 
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
-const scriptCommand = invocation === 'publish-script-edition' || invocation === 'inspect-script-edition';
+const reviseHeldScript = invocation === 'revise-script-edition' || invocation === 'inspect-script-revision';
+const scriptCommand = reviseHeldScript || invocation === 'publish-script-edition' || invocation === 'inspect-script-edition';
 const scriptEdition = scriptCommand ? approvedScriptEdition(id) : undefined;
 if (scriptCommand && (!scriptEdition || expected !== scriptEdition.observationHash)) throw Error('knowledge_script_edition_scope');
 // Only the operator CLI selects the commissioned edition. Existing timers retain their own admission.
@@ -37,7 +38,8 @@ const commissioned = invocation === 'publish-approved' || invocation === 'resume
 const manual = commissioned ? manualPublicationPin(id) : undefined;
 if (commissioned && (!manual || manual.resumeOnly && invocation !== 'resume-approved'))
   throw Error('knowledge_manual_publication_scope');
-const command = invocation === 'publish-script-edition' ? 'process-sized' : invocation === 'inspect-script-edition' ? 'inspect'
+const command = invocation === 'publish-script-edition' || invocation === 'revise-script-edition' ? 'process-sized'
+  : invocation === 'inspect-script-edition' || invocation === 'inspect-script-revision' ? 'inspect'
   : invocation === 'publish-approved' ? 'process-age-checked' : invocation === 'resume-approved' ? 'resume-age-checked' : invocation;
 const recovering = command === 'recover';
 const recoveryCommand = recovering || command === 'inspect-recovery';
@@ -145,18 +147,18 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
     const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior) : undefined;
-    const operationFingerprint = scriptEdition ? scriptEditionWorkId(scriptEdition) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
+    const operationFingerprint = scriptEdition ? (reviseHeldScript ? scriptRevisionWorkId(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
-    const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', scriptEdition ? operationFingerprint : original);
+    const checkId = laneObservation?.checkId ?? knowledgeOperationId('knowledge-observation/1', scriptEdition ? scriptEditionWorkId(scriptEdition) : original);
     const sized = recovering || repairing || command === 'process-sized' || explicitAgeScope;
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
     const runAdmission = !manual && !scriptEdition && (explicitAgeScope || draftRevision) ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
-      explicitAgeScope, retainedDraft: draftRevision, reviewedWindow, firstDispatch, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual, scriptEdition,
+      explicitAgeScope, retainedDraft: draftRevision, reviewedWindow, firstDispatch, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual, scriptEdition, reviseHeldScript,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
@@ -178,6 +180,7 @@ try {
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
         leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations, recordedWindow,
+        ...(scriptEdition ? { reviewNotes:saved?.prepared?.review.notes ?? [], observationHash:saved?.result?.observationHash ?? null } : {}),
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
           activeVersionHash: active?.versionHash ?? null,
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
@@ -196,7 +199,7 @@ try {
           if (!saved?.prepared && !await database.runTransaction(tx => gate.hasGenerationCapacity(tx, maxOutputTokens), { readOnly: true }))
             throw Error('knowledge_campaign_budget_exhausted');
           let snapshot = await refresh.resumeCheck(job.data, checkId);
-          if (!snapshot && !saved) {
+          if (!snapshot && !saved && !reviseHeldScript) {
             const fetched = await fetchSource(definition, signal);
             assertScriptObservation(scriptEdition, definition, fetched);
             const check = await refresh.process(job.data, checkId, async () => fetched, signal);
@@ -252,7 +255,8 @@ try {
           receiptState: recorded?.receipt?.state ?? null, listedCard,
           candidateVersionHash: recorded?.prepared?.versionHash ?? null, activeVersionId: active?.versionId ?? null,
           activeVersionHash: active?.versionHash ?? null, observationHash: recorded?.result?.observationHash ?? recorded?.prepared?.review.observationHash ?? null,
-          reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}) };
+          reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering || scriptEdition ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}),
+          ...(reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
         ...(manual || scriptEdition ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),

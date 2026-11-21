@@ -639,7 +639,15 @@ export function createProductAgentTools(options: {
       })) throw new FamilyError(400, "citation_required");
       if (kind === 'public_information') {
         const quantitative = /\p{Decimal_Number}|[零〇一二兩三四五六七八九十百千萬半]+(?:個月|小時|分鐘|毫升|毫克|公斤|克|歲|日|次|度|年|月)/u.test(paragraph.text);
-        if (!paragraph.citationIds.some(id => liveEvidence.has(id) || evidence.has(id) && (!quantitative || evidence.get(id)!.chunk.treatment?.kind !== 'overview')))
+        if (!paragraph.citationIds.some(id => {
+          if (liveEvidence.has(id)) return true;
+          const source = evidence.get(id)?.chunk;
+          if (!source) return false;
+          if (!quantitative) return true;
+          if (source.applicability?.use !== 'original_lookup') return source.treatment?.kind !== 'overview';
+          const quote = quotes.get(id);
+          return Boolean(quote && paragraph.text === `《${source.scriptPassage?.title ?? source.title}》原文：「${quote}」`);
+        }))
           throw new FamilyError(400, 'citation_required');
       }
       if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id) || selectedEvidence.has(id) && !liveEvidence.has(id)) && !run.images?.references().length && !run.voice) {
@@ -658,7 +666,8 @@ export function createProductAgentTools(options: {
         if (selectedEvidence.has(id) && !official) continue;
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
         const item = evidence.get(id);
-        if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
+        if (!item || official && (item.chunk.classification !== "official_guidance" || item.chunk.applicability?.use === 'original_lookup'))
+          throw new FamilyError(400, "invalid_citation");
       }
     }
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");

@@ -7,9 +7,10 @@ import { AppButton } from "../ui";
 import { LocalAudioPreview } from "./LocalAudioPreview";
 import { createLocalVoiceCapture, type VoiceCaptureState } from "./local-voice-capture";
 import { AssistantAttachmentPicker } from "./AssistantAttachmentPicker";
+import { CompanionVoiceControls } from "./CompanionVoiceControls";
 import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
-export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; ref?: Ref<VoiceCaptureHandle> }) {
+export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
   const [state, setState] = useState<VoiceCaptureState>("idle"), [error, setError] = useState<string>();
   const [recording, setRecording] = useState<AssistantAttachment | null>(null);
   const current = useRef<AssistantAttachment | null>(null), active = useRef(true), engaged = useRef(false);
@@ -38,7 +39,7 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
   const available = typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia && globalThis.isSecureContext;
   const busy = state === "permission" || state === "recording" || state === "stopping";
   function start() { engaged.current = true; setError(undefined); void controller.start(); }
-  useImperativeHandle(ref, () => ({ start() {
+  useImperativeHandle(ref, () => ({ cancel: () => discard(false), start() {
     if (!active.current || engaged.current) return;
     engaged.current = true;
     if (available) start();
@@ -48,6 +49,8 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
     discard(); onPick(attachment);
   }
   if (!visible) return null;
+  if (sendRecording) return <CompanionVoiceControls state={state} uri={recording?.localUri} error={error} available={available} confirmDisabled={confirmDisabled}
+    start={start} stop={() => controller.stop()} cancel={() => discard()} confirm={() => { if (current.current) pick(current.current); }} />;
   return <View testID="voice-capture" style={styles.stack}>
     {state === "permission" || state === "stopping" ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等候咪高峰權限…" : "正在準備錄音…"}</Text> : null}
     {state === "recording" ? <VoiceRecordingTimer /> : null}

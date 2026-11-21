@@ -39,6 +39,16 @@ function namedVideoMaterial(query: string, ranked: KnowledgeEvidence[]) {
   return named.size === 1 ? [...named.values()][0] : undefined;
 }
 
+/** Put the requested title inside the response budget even when similar material names scored higher. */
+function preferRequestedScript(query: string, ranked: KnowledgeEvidence[]) {
+  const quoted = [...query.matchAll(/《([^《》]+)》/gu)];
+  if (quoted.length > 1) return ranked;
+  const normalize = (value: string) => value.normalize('NFKC').toLowerCase().replace(/\s+/gu, '');
+  const title = normalize(quoted[0]?.[1] ?? query);
+  const index = ranked.findIndex(row => row.scriptPassage && normalize(row.scriptPassage.title) === title);
+  return index > 0 ? [ranked[index]!, ...ranked.slice(0,index), ...ranked.slice(index+1)] : ranked;
+}
+
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates"> & { readonly enforcesPersonalLibrarySelection?: boolean }, embeddings: EmbeddingGateway) {
   return {
     /** One instance per authorized Agent run; never share queries or caches between families. */
@@ -100,6 +110,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now)
             && includeLeafletInSearch(query, candidate.url, candidate.extraction));
           let ranked = rankKnowledge(query, candidates), omittedScripts = 0;
+          if (!videoList) ranked = preferRequestedScript(query, ranked);
           const anchor = videoList ? namedVideoMaterial(query, ranked) : undefined;
           if (anchor) {
             // Expand only a uniquely named material, through the same family and applicability gates.

@@ -24,17 +24,18 @@ export const nativeCoverageSchema = z.strictObject({
 /** The response grammar requires every server-assigned range, including image/table pages. */
 export function pdfOrganizationContract(units: readonly { id: string; page: number | null; pageEnd: number | null }[],
   factKeys: readonly string[] = [], priorTopics: readonly string[] = [], inheritedCoverage?: z.infer<typeof nativeCoverageSchema>, explicitAgeScope = false,
-  retainedSourceAge = false) {
+  extendedSourceAge = false) {
   const ranges = units.map((unit, i) => {
     const first = unit.page!, last = unit.pageEnd!;
     const pages = Array.from({length:last - first + 1}, (_, offset) => "physicalPage" + (first + offset));
     return { key: "fromPage" + first + "Through" + last + "Unit" + (i + 1), unitId: unit.id, first, last, pages };
   });
-  const scopedGroup = retainedSourceAge ? group.extend({ ageRange: group.shape.ageRange.unwrap().extend({
+  const sourceGroup = extendedSourceAge ? group.extend({ ageRange: group.shape.ageRange.unwrap().extend({
     maxMonths: applicability.shape.maxAgeMonths.unwrap(),
-  }).nullable() }) : explicitAgeScope ? group.extend({
-    ageRange: z.union([group.shape.ageRange, ageReviewRequired]),
-  }) : group;
+  }).nullable() }) : group;
+  const scopedGroup = explicitAgeScope ? sourceGroup.extend({
+    ageRange: z.union([sourceGroup.shape.ageRange, ageReviewRequired]),
+  }) : sourceGroup;
   const shape = z.strictObject({ ranges: z.strictObject(Object.fromEntries(ranges.map(r => [r.key, scopedGroup.extend({
     pageText: z.strictObject(Object.fromEntries(r.pages.map(key => [key, text]))),
     ...(priorTopics.length ? { priorTopicMatches: z.strictObject(Object.fromEntries(priorTopics.map(key => [key, z.boolean()]))) } : {}),

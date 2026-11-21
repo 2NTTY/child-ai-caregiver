@@ -36,7 +36,7 @@ export function chatTurnStatus(chat: ChatState, draft: ChatDraft | undefined, ac
   const progress = (text: string): TurnStatus => ({ kind: 'progress', text });
   const notice = (text: string): TurnStatus => ({ kind: 'notice', text: replyNotices.get(text) ?? text });
   if (draft?.notice && (draft.phase === 'checked' || draft.phase === 'save_unknown')) return notice(draft.notice);
-  if (chat.busy === 'save') return progress('正在保存…');
+  if (chat.busy === 'save') return null;
   if (replyRunning && chat.cancelNotice) return notice(chat.cancelNotice);
   if (replyRunning && stopPending) return progress('正在停止…');
 

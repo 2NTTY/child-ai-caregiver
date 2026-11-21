@@ -8,10 +8,10 @@ export type ChatComposerInputHandle = { focus(options?: { preventScroll?: boolea
 export type ChatComposerInputProps = {
   onAttachment?(attachment: import("../../assistant-draft").AssistantAttachment): void;
   onAttachmentError?(message: string): void;
-  autoFocus?: boolean;
+  autoFocus?: boolean; placeholder?: string;
   onStop?(): void; stopTarget?: string;
   value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
-  onFocus(): void; onBlur(): void;
+  onFocus?(): void; onBlur?(): void;
 };
 
 // Native multiline input keeps Enter as a newline; the send control is explicit.
@@ -21,7 +21,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
   useEffect(() => { if (!props.value) setHeight(chatLayout.inputMinHeight); }, [props.value]);
   useImperativeHandle(ref, () => ({ focus: () => input.current?.focus(), blur: () => input.current?.blur() }), []);
   return <AppTextField autoFocus={props.autoFocus} ref={input} mode="flat" dense multiline disabled={props.disabled}
-    accessibilityLabel="撰寫對話問題" placeholder="補充情況，或加入附件…" placeholderTextColor={chatColors.secondary}
+    accessibilityLabel="撰寫對話問題" placeholder={props.placeholder ?? "補充情況，或加入附件…"} placeholderTextColor={chatColors.secondary}
     value={props.value} onChangeText={props.onChangeText} onFocus={props.onFocus} onBlur={props.onBlur}
     underlineColor="transparent" activeUnderlineColor="transparent" underlineStyle={styles.underline}
     onContentSizeChange={event => setHeight(!props.value ? chatLayout.inputMinHeight
