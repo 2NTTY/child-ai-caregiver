@@ -109,11 +109,13 @@ function QuickConversation({ page, childId, includeItem, reminderId, focusReques
   const exposedIds = useMemo(() => exposed && reminder ? [reminder.id] : [], [exposed, reminder?.id]);
   useChatExposure(foreground && exposed, exposedIds);
   const validPage = assistantPages.find(p => p === page);
-  const send = () => {
-    if (!editable || !validPage) return;
-    const context: ChatPageContext = { page: validPage, ...(item ? { item } : {}) };
-    return sendChat({ pageContext: context });
-  };
+  const pageContext: ChatPageContext | undefined = validPage ? { page: validPage, ...(item ? { item } : {}) } : undefined;
+  const send = () => { if (editable && pageContext) return sendChat({ pageContext }); };
+  const composerText = submitted ? draft.nextText ?? '' : chatDraft;
+  const queued = !!activeReply && chat.queuedText?.afterMessageId === activeReply;
+  const canQueue = !!pageContext && chatWritesAllowed && chat.online && !chat.cancelling && !chat.cancelAcceptedFor
+    && chat.busy === 'reply' && phase === 'replying' && !!activeReply && draft?.savedUserMessageId === activeReply
+    && !!composerText.trim() && composerText.length <= 10_000;
   const turnStatus = chatTurnStatus(chat, draft, activity, reason && question ? { questionId: question.id, reason: reason.reason } : undefined, chatWritesAllowed);
   const notice = upload?.notice || chat.error;
   const childName = privateChatChildName(recordsState.children, childId, !includeItem);
@@ -138,8 +140,10 @@ function QuickConversation({ page, childId, includeItem, reminderId, focusReques
     </ScrollView>}
     {!question && !reminder && !turnStatus && !notice && <Text style={styles.prompt}>想問甚麼？</Text>}
     {item && <Text style={styles.context}>{({ task: '待辦', record: '記錄', document: '文件' })[item.kind]} · {selected?.label || '目前選取的項目'}</Text>}
-    <AgentComposer embedded compact={compact} enabled={editable} allowTyping={submitted && chatWritesAllowed && !chat.busy && !activeReply}
-      focusRequest={focusRequest} draft={submitted ? draft.nextText ?? '' : chatDraft} attachments={submitted ? [] : agentAttachments}
+    <AgentComposer embedded compact={compact} enabled={editable}
+      allowTyping={chatWritesAllowed && chat.busy !== 'save' && (submitted || !!activeReply && phase === 'draft')}
+      queueAction={canQueue ? { queued, press: () => queued ? chatController.unqueueNextText() : chatController.queueNextText(pageContext) } : undefined}
+      focusRequest={focusRequest} draft={composerText} attachments={submitted ? [] : agentAttachments}
       onChangeDraft={setChatDraft} onPreview={send} submitLabel="送出" suggestionsAvailable={false}
       onStop={activeReply ? () => void chatController.cancelReply() : undefined} stopTarget={activeReply ?? undefined}
       stopDisabled={chat.cancelling || chat.cancelAcceptedFor === activeReply || !chat.online}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ChatApiError, type ChatApi } from "../src/client/chat-api.ts";
+import { ChatApiError, createChatApi, type ChatApi } from "../src/client/chat-api.ts";
 import { ChatController } from "../src/client/chat-controller.ts";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
 
@@ -23,6 +23,51 @@ function deferred<T>() {
   const promise = new Promise<T>(done => { resolve = done; });
   return { promise, resolve };
 }
+
+test("a terminal reply is available while transport cleanup is still pending", async () => {
+  const cleanup = deferred<void>();
+  const frame = { type: "result", status: 200, body: { message: modelMessage() } };
+  const response = new Response(new ReadableStream<Uint8Array>({
+    start(stream) { stream.enqueue(new TextEncoder().encode("data: " + JSON.stringify(frame) + "\n\n")); },
+    cancel() { return cleanup.promise; },
+  }), { headers: { "content-type": "text/event-stream" } });
+  const api = createChatApi("", async () => alice, async () => response);
+  const pending = api.requestReply(firstChild, "message-1", new AbortController().signal, alice.id, () => {});
+  try {
+    assert.deepEqual(await Promise.race([pending, settle().then(() => null)]), modelMessage());
+  } finally { cleanup.resolve(); await pending; }
+});
+
+test("a silent reply channel detaches after missed heartbeats while live heartbeats keep it open", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let emit!: (frame: string) => void;
+  const listening = deferred<void>();
+  let transportSignal!: AbortSignal;
+  const api = createChatApi("", async () => alice, async (_url, init) => {
+    transportSignal = init!.signal!;
+    return new Response(new ReadableStream<Uint8Array>({
+      start(controller) {
+        emit = frame => controller.enqueue(new TextEncoder().encode(frame));
+        transportSignal.addEventListener("abort", () => controller.error(new Error("aborted")), { once: true });
+        listening.resolve();
+      },
+    }), { headers: { "content-type": "text/event-stream" } });
+  });
+  const request = api.requestReply(firstChild, "message-1", new AbortController().signal, alice.id, () => {});
+  await listening.promise; await new Promise<void>(resolve => setImmediate(resolve));
+  for (let i = 0; i < 5; i++) {
+    t.mock.timers.tick(15_000);
+    assert.equal(transportSignal.aborted, false);
+    emit(": keepalive\n\n");
+    await new Promise<void>(resolve => setImmediate(resolve));
+  }
+  t.mock.timers.tick(46_000);
+  try { assert.equal(transportSignal.aborted, true); }
+  finally {
+    if (!transportSignal.aborted) emit('data: {"type":"result","status":503,"body":{}}\n\n');
+    await assert.rejects(request, ChatApiError);
+  }
+});
 
 async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -53,16 +98,21 @@ test("an explicitly queued next question is sent once after the first reply; wit
     const { values, controller, api } = fixture();
     const started = deferred<void>(), finish = deferred<void>();
     const reply = api.requestReply;
+    const savedContexts: unknown[] = [];
+    const save = api.saveMessage;
+    api.saveMessage = (...args) => { savedContexts.push(args[7]?.pageContext); return save(...args); };
     api.requestReply = async (...args) => { started.resolve(); await finish.promise; return reply(...args); };
     controller.syncContext(alice.id, true, firstChild); await settle();
     controller.setText("第一句");
     const run = controller.send(); await started.promise;
-    controller.setText("第二句"); controller.queueNextText(); controller.queueNextText();
+    const task = { page: "/tasks" as const, item: { kind: "task" as const, id: firstChild, version: 1 } };
+    controller.setText("第二句"); controller.queueNextText(task); controller.queueNextText({ page: "/care" });
     if (withdraw) controller.unqueueNextText();
     assert.equal(values.saves, 1);
     finish.resolve(); await run; await settle();
     assert.equal(values.saves, withdraw ? 1 : 2);
     assert.equal(values.replies, withdraw ? 1 : 2);
+    assert.deepEqual(savedContexts, withdraw ? [undefined] : [undefined, task]);
     assert.equal(controller.getSnapshot().drafts[firstChild].text, withdraw ? "第二句" : "");
     controller.dispose();
   }
