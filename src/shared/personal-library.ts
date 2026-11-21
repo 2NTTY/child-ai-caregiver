@@ -13,6 +13,7 @@ export const librarySeriesV3MediaType = 'application/vnd.yuyoufang.library-serie
 export const librarySeriesV4MediaType = 'application/vnd.yuyoufang.library-series.v4+json';
 export const librarySeriesV5MediaType = 'application/vnd.yuyoufang.library-series.v5+json';
 export const librarySeriesMediaType = 'application/vnd.yuyoufang.library-series.v6+json';
+export const libraryCatalogPageSize = 10;
 const legacyLibraryItem = z.object({
   sourceId, versionId: z.uuid(), title: z.string().min(1).max(300), publisher: z.string().min(1).max(160),
   url: z.url().refine(value => {
@@ -42,11 +43,14 @@ const publisherOriginal = z.strictObject({ sourceId, title: legacyLibraryItem.sh
   categories: z.array(z.string().min(1).max(200)).max(100) });
 export type PublisherOriginal = z.infer<typeof publisherOriginal>;
 export const personalLibraryPageSchema = z.object({
-  items: z.array(personalLibraryItemSchema).max(10), registered: z.array(registeredLibrarySourceSchema).max(10).optional(),
-  publisherOriginals: z.array(publisherOriginal).max(9).optional(),
+  items: z.array(personalLibraryItemSchema).max(libraryCatalogPageSize), registered: z.array(registeredLibrarySourceSchema).max(10).optional(),
+  publisherOriginals: z.array(publisherOriginal).max(libraryCatalogPageSize).optional(),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,2048}$/).nullable(), complete: z.boolean(),
-}).strict().refine(page => page.complete === (page.nextCursor === null)
-  && new Set(page.items.map(item => item.sourceId)).size === page.items.length);
+}).strict().refine(page => {
+  const rows = [...page.items, ...(page.publisherOriginals ?? [])];
+  return page.complete === (page.nextCursor === null) && rows.length <= libraryCatalogPageSize
+    && new Set(rows.map(row => row.sourceId)).size === rows.length;
+});
 export type PersonalLibraryItem = z.infer<typeof personalLibraryItemSchema>;
 export type PersonalLibraryPage = z.infer<typeof personalLibraryPageSchema>;
 export const libraryDocumentChoice = (item: PersonalLibraryItem) => item.childHealth?.previousChoice ?? item.preference;

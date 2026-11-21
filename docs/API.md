@@ -171,7 +171,7 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 <a id="platform-source-follow"></a>
 家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v6+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
 
-v6 首頁可附 `publisherOriginals`。每項有 `sourceId`、官方題名 `title`、原文 `url` 及官方 `categories`。它供家長點讀首批已觀測、仍待收錄的九份網頁。發布版生效、來源停用或觀測失效時移除入口。採用、固定、助手引用及 ZIP 匯出繼續使用已發布版本。
+v6 的 `publisherOriginals` 與已發布文件 `items` 共用目錄游標，每頁合共最多 10 份。每項原文有 `sourceId`、官方題名 `title`、原文 `url` 及官方 `categories`。屬於兒童健康卡、符合公開分享條件的網頁，登記及觀測有效後便可點讀。當頁若只有未觀測或已撤回的來源，客戶端按 `nextCursor` 繼續。發布生效後，同一來源移入 `items`；停用及撤回會移除原文入口。採用、固定、助手引用及 ZIP 匯出繼續使用已發布版本。
 
 v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項對應同一筆 `media.links` 網址。題名取自已讀官方頁，該頁有可定位劇本才提供 `transcriptUrl`。文件的 `sourceDateText?` 沿用發布版所載的官方修訂字樣及精度。v4 保留分類及原連結，v1 至 v3 沿用各自欄位。回應以 `Vary: Accept` 區分版本。
 

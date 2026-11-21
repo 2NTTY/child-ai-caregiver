@@ -43,6 +43,46 @@
       ],
       "viewportWidth": 390,
       "screenshot": "../../frontend/verification/parent-material-reading-20261121/pending-originals-390.png"
+    },
+    "dynamicCatalogue": {
+      "id": "fhs-13041",
+      "title": "嬰兒的啼哭",
+      "officialUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/13041.html",
+      "at": "2026-11-21T14:13:06.825Z",
+      "environment": "Ordinary parent, localhost Firebase Auth and Firestore, Edge 390px; official stored HTML, synthetic one-chunk review and vector. Zero provider calls.",
+      "before": {
+        "pages": 14,
+        "pending": 9,
+        "published": 12,
+        "targetOriginalPage": null,
+        "targetPublishedPage": null
+      },
+      "officialHtmlSha256": "00eec37d16b5a2c386fddf31d179a2bd6ce713aa0194aa50a2cb96cb276e1da5",
+      "observationHash": "b7443befb51b32596826a7adc7129f0c825e5100cb56cdb7d3e5d006464af1a4",
+      "discovered": {
+        "pages": 14,
+        "pending": 10,
+        "published": 12,
+        "targetOriginalPage": 3,
+        "targetPublishedPage": null
+      },
+      "published": {
+        "pages": 14,
+        "pending": 9,
+        "published": 13,
+        "targetOriginalPage": null,
+        "targetPublishedPage": 3,
+        "versionId": "fcdd08d1-6898-595a-8b18-a8837e42228d"
+      },
+      "categories": [
+        "親子溝通",
+        "親職教育",
+        "一至十二個月",
+        "嬰兒期親職教育",
+        "初生至一個月",
+        "共享育兒樂小冊子 1 - 5"
+      ],
+      "modelAndEmbeddingRequests": 0
     }
   },
   "versionEvidence": {
