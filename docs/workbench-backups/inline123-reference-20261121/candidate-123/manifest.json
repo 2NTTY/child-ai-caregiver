@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-123-image-count",
+  "base": {
+    "artifact": "candidate-121/out",
+    "htmlSha256": "5997b5f0a49d9fa146fdff4aecd373a0800dc935d70b0f2f90bf1f5ef0862a81",
+    "rawRecordsSha256": "96d1a7f10213dd09af1b73c4ab40e57f005268b093143b7dab79d79478ff17c5",
+    "rawArtworkSha256": "582e818f880b61d7d17d2f3d6da5d514ecfcc3016573f847d7c088dcbac760b4",
+    "topics": 59,
+    "choices": 121,
+    "images": 121
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-admin-write-recovery/assets.json",
+      "sha256": "50223c09bb877a76172fc8747090d47178b11373da5bdf2e1ba4700d6e1a5e71"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "7ad17a4f38c1d91e41923766300c07f4cec973e155ee03f580608451653e6da2",
+    "PROVENANCE.md": "8006e96ad3fe34b20e1c02c5f3e005afa7ee013ed31786a9e3acc354d3d5d273"
+  },
+  "topics": [
+    {
+      "number": 60,
+      "title": "管理提交未明：先查原執行或既有工作",
+      "choices": [
+        {
+          "name": "按原執行查已記錄結果",
+          "note": "按同一執行查看已記錄狀態、事件和輸出。這個虛構執行已完成且沒有輸出；這不等於核實管理提交結果。",
+          "links": [
+            {
+              "label": "固定版本原始碼：執行歷史詳頁",
+              "url": "https://github.com/temporalio/ui/blob/32edd95c5d2e09d5fceaecbe9d4277c794b6df48/src/routes/%28app%29/namespaces/%5Bnamespace%5D/workflows/%5Bworkflow%5D/%5Brun%5D/history/%2Bpage.svelte#L8-L13"
+            },
+            {
+              "label": "同一版本：歷史詳頁組成",
+              "url": "https://github.com/temporalio/ui/blob/32edd95c5d2e09d5fceaecbe9d4277c794b6df48/src/lib/layouts/workflow-history-layout.svelte#L217-L258"
+            },
+            {
+              "label": "同一版本：輸入與結果區",
+              "url": "https://github.com/temporalio/ui/blob/32edd95c5d2e09d5fceaecbe9d4277c794b6df48/src/lib/components/workflow/input-and-results.svelte#L19-L58"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/temporalio/ui/blob/32edd95c5d2e09d5fceaecbe9d4277c794b6df48/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-admin-write-recovery/admin-recovery-a-run-history.png",
+            "sha256": "6184f867e8e67b10b12f9ecb90a2858d7409fcfb833e3222caf3e9736bfe545b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "虛構執行的歷史詳情：同一工作流程及執行 ID 下，標示已完成、沒有輸出，並列出開始、步驟完成和執行完成的事件。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作自製，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "從重試佇列定位原工作",
+          "note": "從佇列定位同一既有的失敗工作，查看已列出的重試時間。這個例子不重新排隊，也不證明已去重、等冪或取得收據。",
+          "links": [
+            {
+              "label": "固定提交原始碼：重試工作詳頁",
+              "url": "https://github.com/sidekiq/sidekiq/blob/7976065b7e27efbb9a1f7fa842d1e74adcf2103c/web/views/retry.html.erb#L1-L37"
+            },
+            {
+              "label": "同一提交：工作 ID 與重試時間",
+              "url": "https://github.com/sidekiq/sidekiq/blob/7976065b7e27efbb9a1f7fa842d1e74adcf2103c/web/views/_job_info.html.erb#L31-L89"
+            },
+            {
+              "label": "同一提交：既有工作詳情路由",
+              "url": "https://github.com/sidekiq/sidekiq/blob/7976065b7e27efbb9a1f7fa842d1e74adcf2103c/lib/sidekiq/web/application.rb#L229-L253"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/sidekiq/sidekiq/blob/7976065b7e27efbb9a1f7fa842d1e74adcf2103c/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-admin-write-recovery/admin-recovery-b-existing-job.png",
+            "sha256": "0980f06f6082a1d50a4b24a3d8e6187bc854ff83fc28edb9c892313df4dee5b5",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "由重試佇列進入既有工作的詳情。畫面保留虛構 JID、最後及下次重試時間和失敗原因，沒有重新排隊；這不是操作收據。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作自製，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 60 題 · 管理提交未明兩幅自製合成示意",
+      "text": "兩幅均為自製合成示意（非官方原圖），沒有使用原方畫素、品牌、第三方素材或正式紀錄；工作、代號、錯誤和時間均虛構。Temporal UI v2.58.1（MIT）與 Sidekiq OSS 8.1.8 原碼版本（LGPL-3.0）是兩個獨立版式參考，不是同一次操作的階段。A 的完成事件及沒有輸出不等於核實管理提交結果；B 的原工作識別碼及重試時間不證明已去重、等冪或取得收據。圖中沒有管理提交、重播、重試、重新排隊或改權限的功能，不是已核證的產品管理頁或操作指引。"
+    }
+  ]
+}
