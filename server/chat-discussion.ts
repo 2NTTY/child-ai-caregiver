@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { FunctionDeclaration } from '@google/genai';
 import { discussionRoles, discussionLabels } from '../src/shared/chat-discussion.ts';
 import { agentAnswerSchema, MAX_ANSWER_PARAGRAPHS, type AgentAnswer } from '../src/shared/product-agent.ts';
 import type { AgentTool } from './agent-runtime.ts';
@@ -11,6 +12,18 @@ export const viewpointParameters = z.strictObject({
 });
 export const discussionToolNames = ['share_knowledge_view', 'ask_parent_view', 'compare_methods_view'] as const;
 export type DiscussionPresentationStage = 'speaker' | 'closing';
+export function closingDiscussionDeclaration(declaration: FunctionDeclaration): FunctionDeclaration {
+  const fields = declaration.parameters?.properties;
+  if (declaration.name !== 'present_answer' || !fields?.closingView) return declaration;
+  const paragraphs = fields.paragraphs;
+  // Text paragraphs in a mixed main answer need individual kinds. Verbatim history quotes keep their own shape.
+  const forms = paragraphs?.items?.anyOf?.map(form => form.properties?.kind
+    ? { ...form, required: [...new Set([...(form.required ?? []), 'kind'])] } : form);
+  return { ...declaration, parameters: { ...declaration.parameters,
+    required: [...new Set([...(declaration.parameters?.required ?? []), 'closingView'])],
+    properties: { ...fields, ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
+  } };
+}
 const speakerParameters = viewpointParameters.extend({
   endDiscussion: z.literal('no_tradeoff').optional().describe('Only when there is genuinely no choice to compare. Explain why in your contribution. Omit for ordinary trade-offs.'),
 });

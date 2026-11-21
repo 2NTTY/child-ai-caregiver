@@ -544,7 +544,11 @@ export function createProductAgentTools(options: {
         code: error.code, maxParagraphs: error.maxParagraphs,
         nextAction: '先前的角色發言已保留。請把主回答整合至 ' + error.maxParagraphs + ' 段以內，保留相關引用，再單獨呼叫 present_answer。',
       } };
-      if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input",
+        ...(error.issues.some(issue => issue.message === 'Mixed paragraphs require individual kinds') && {
+          nextAction: 'kind=mixed 時，主答 paragraphs 的每一段均須填 kind。育兒建議段用 caregiving，保留該段適用的官方 citationIds，再提交。',
+        }),
+      } };
       if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId, ...(error.originalExcerpt && { originalExcerpt: error.originalExcerpt }),
         nextAction: '這個片段 ID 有效，但所填引句與已讀原文不符。若主回答是改述，省略 originalQuotes，保留各段的 citationIds。若要逐字引用，只選已讀原句。請刪去原件未支持的推論，再單獨呼叫 present_answer。',

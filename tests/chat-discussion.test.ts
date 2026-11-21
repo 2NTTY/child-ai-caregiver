@@ -74,6 +74,9 @@ test('a question binds three successive native turns, the main reply and one ind
           assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
           const declaration = request.config?.tools?.flatMap(t => 'functionDeclarations' in t ? t.functionDeclarations ?? [] : []).find(d=>d.name==='present_answer');
           assert.ok(declaration?.parameters?.required?.includes('closingView'));
+          const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
+          assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
+          assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
         } else {
           assert.ok(allowed.includes(name));
           assert.ok(allowed.includes('show_official_help'));
