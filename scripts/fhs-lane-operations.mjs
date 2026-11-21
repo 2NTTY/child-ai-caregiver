@@ -16,6 +16,7 @@ import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { bindReviewedWindow } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { bindFirstDispatch, firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
 import { retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 
 export function classifyLaneOperation(source, check, saved, active, tickets) {
@@ -84,6 +85,15 @@ export function createLaneOperations(persistence, fetchSource, lane) {
     const revision = pin && lane === 'C2' && matchesFhsPdfObservation(source, check)
       && bindReviewedWindow(manualPublicationPin(id),operationFingerprint,saved);
     let repair;
+    const firstDispatch = pin && matchesFhsPdfObservation(source,check) && bindFirstDispatch(manualPublicationPin(id),operationFingerprint,saved);
+    if (firstDispatch && firstDispatch.observation===observationHash(check.items[0])) {
+      const deliveryOperation=firstDispatchWorkId(operationFingerprint);
+      const child=await work.inspect({...request,operationFingerprint:deliveryOperation});
+      repair={deliveryOperation,originalCode:saved.result.code,deliveryModelCalls:child?.budget.modelCalls ?? 0};
+      if (child?.firstDispatchFrom===operationFingerprint) operation=classifyLaneOperation(source,check,child,active,tickets);
+      else if (!child && !active && !tickets.length) operation={state:'ready',started:true,observationHash:firstDispatch.observation};
+      else operation={state:'reconciliation_required',code:'fhs_lane_unbound_or_unsettled_charge'};
+    }
     if (revision && observationHash(check.items[0]) === revision.observationHash) {
       const deliveryOperation = retainedDraftWorkId(operationFingerprint);
       const child = await work.inspect({...request,operationFingerprint:deliveryOperation});
