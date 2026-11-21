@@ -7050,3 +7050,9 @@ B 單作者交付。沿用原 Cubism 模型、私人聊天及已保存項目。�
 四份原件的獨立程序均留下單一 SDK HTTP 400。各自以原 PDF、操作、階段、唯一票據、錯誤輸出及終態輸出對回帳本。正式 Gemini 3.8 Flash 請求各限一次 SDK 嘗試和 8,192 個輸出 tokens。Google 列明 4xx 的輸入及輸出均不收費，11 月 13 日的逾時條款適用於 Gemini 4 超過 32K tokens 的長輸出。四筆預留合共 US$6.537216，未有實測 token 數。結算交 C1。24 頁餵哺指引缺少供應商回應，續保留原票。此次查核的正式操作全屬唯讀，查核時帳本餘額為 US$0.531586。[Google Cloud 計費條款](https://cloud.google.com/model-garden/pricing) · [逐份票據及執行收據指紋](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 主線其後確認，四筆預留的正式對帳及寫入由原 C 接手，C3 負責查核原請求及修正 PDF 分窗。
+
+### 2026-11-21　C3 四宗 HTTP 400 的原頁分窗
+
+用原附件、提示及輸出格式重建首窗整理請求，再以階段指紋對回 01:08 的正式帳本。28 宗有已結算回應的整理各有 4 至 8 個段落。四宗 HTTP 400 各需 10 至 14 個段落，最小的失敗附件只有 882,159 bytes，另有 9,723,714 bytes 的成功附件。Google 說明輸出格式過於複雜可引致 HTTP 400。四宗錯誤均缺少被拒欄位的供應商診斷，所以這是首要成因判斷。[官方格式限制](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/control-generated-output) · [模型文件輸入規格](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)
+
+新的逐頁工作每窗最多整理八個段落，保留相鄰原頁及獨立審核。四份原件的新首窗格式逐位相同，過往已有 15 宗同模型整理按這個格式結算。10、12、12 頁三份的完整整理與審核由各兩次變為四次，16 頁一份維持四次。舊工作和沿用既有讀稿的接續仍按原分窗。以四份原件實測存檔、重開及再打包，新舊兩套分窗共 39 筆，重開同一封存包後的完整索引相同。單獨重新切割時 PDF.js 會產生帶時間的檔案識別，所以交付按已保存附件的 SHA-256 核對。12 項定向檢查及 Server 型別檢查通過。這次沒有再次派送正式模型請求。[原請求、逐份實頁、費用次數及封存指紋](artifacts/verification/FHS_INITIAL_PDF_READS_20261120.json)
