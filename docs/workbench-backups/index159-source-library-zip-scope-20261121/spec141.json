@@ -1,0 +1,77 @@
+{
+  "group": {
+    "id": "library-export-reference-vs-published-content",
+    "title": "兩個 ZIP 都寫着教材名稱，哪一個有收錄的原文片段？",
+    "index": "external-comparison",
+    "readerNote": "合成教材案例，只比較來源庫的兩種匯出，不涉及孩子檔案。版本參照 ZIP 只有來源識別、固定版本識別及校驗清單，沒有原文片段。來源庫 ZIP 會帶符合分享條件的、已收錄的版本內容，可包含原文片段；不是原網站、原版 PDF 或全冊保證。分享原文須註明出處並限非商業用途。讀入參照只核對；只有明確選用、且版本及授權可核實時才採用固定版本，不會發布未公開材料。A 同頁比較，B 按用途分步核對。本工作台不實際匯出教材、不匯入、不分享。",
+    "choices": [
+      {
+        "name": "A｜同一頁先比較兩種 ZIP 裝了甚麼",
+        "note": "先並排看清楚：「版本參照 ZIP」只帶固定版本識別，不帶原文片段；「來源庫 ZIP」才有允許分享的已收錄內容，不是原網站或原版 PDF。每款單獨匯出，不預選、不自動分享。Pressbooks 的官方匯出頁內容區同時列出書籍檔案及章節連結格式；只比較選項排列，不搬批量勾選或背景匯出。",
+        "source": "https://pressbooks.pub/app/uploads/sites/4748/2025/07/Export.png",
+        "sourceNotes": [
+          {
+            "label": "Pressbooks 官方指南：Export 頁、書籍檔案及章節連結格式",
+            "url": "https://guide.pressbooks.com/chapter/export/"
+          },
+          {
+            "label": "育伴港：來源庫 ZIP 與版本參照 ZIP 是不同選項",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/memory/MemoryReferenceView.tsx#L250-L271"
+          },
+          {
+            "label": "育伴港：參照包只寫清單、來源識別與固定版本識別",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/library-package.ts#L29-L38"
+          },
+          {
+            "label": "育伴港：原文包限可分享的已發佈來源版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-knowledge.ts#L542-L571"
+          },
+          {
+            "label": "育伴港：選取參照包只核對，另按選用才採用版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/memory/MemoryReferenceView.tsx#L277-L306"
+          }
+        ],
+        "linkLabel": "查看 Pressbooks 匯出頁原圖（需連網）",
+        "version": "Pressbooks User Guide「Export」原圖 Export.png（2467×1325），發布者資產路徑含 2025/07；沒有標明 App 版號或拍攝日期。圖為匯出中頁面內容區，不含網站全域導覽。2026-11-21 核對。",
+        "rights": "Pressbooks 官方教材原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜先選用途，再確認包內範圍",
+        "note": "先問你要「讓對方選用同一已發布版本」，還是「帶走獲准分享的收錄內容」。下一步列清包內和不包含的項目，再由你確認匯出。版本參照不保證接收方目錄有相同版本；上載參照包先核對，另按選用才採用固定版本。Veeam 的完整備份精靈視窗以用途解釋不同備份範圍；只借分步與確認，不搬完整備份預設、媒體及目的地設定。",
+        "source": "https://helpcenter.veeam.com/docs/agentforwindows/userguide/images/ep_backup_job_mode.png",
+        "sourceNotes": [
+          {
+            "label": "Veeam 官方手冊：選擇備份模式及適用範圍",
+            "url": "https://helpcenter.veeam.com/docs/agentforwindows/userguide/backup_job_mode.html"
+          },
+          {
+            "label": "育伴港：來源庫 ZIP 與版本參照 ZIP 是不同選項",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/memory/MemoryReferenceView.tsx#L250-L271"
+          },
+          {
+            "label": "育伴港：參照包只寫清單、來源識別與固定版本識別",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/production/library-package.ts#L29-L38"
+          },
+          {
+            "label": "育伴港：原文包限可分享的已發佈來源版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/firestore-knowledge.ts#L542-L571"
+          },
+          {
+            "label": "育伴港：選取參照包只核對，另按選用才採用版本",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/memory/MemoryReferenceView.tsx#L277-L306"
+          }
+        ],
+        "linkLabel": "查看 Veeam 備份精靈原圖（需連網）",
+        "version": "Veeam Agent for Microsoft Windows 官方 User Guide「Select Backup Mode」圖 ep_backup_job_mode.png（754×537）。文件標示更新 2025-04-28、適用 build 13.1.2.812；不把文件適用 build 當截圖 build。2026-11-21 核對。",
+        "rights": "Veeam 官方原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "588dab3fbd5df174122046e2524dad7435e9aa2168756e1772565c40d3ad3ad1"
+}
