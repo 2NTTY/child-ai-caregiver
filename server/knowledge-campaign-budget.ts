@@ -26,14 +26,15 @@ const balance = z.strictObject({ campaign: z.literal(campaign), limit: z.literal
   reconciliationRequired: z.literal(true).optional() }).refine(row => row.held + row.spent <= row.limit && row.settled <= row.attempts);
 const attempt = z.strictObject({ kind: z.enum(['generation','embedding']), sourceId: z.string().regex(/^[a-z0-9-]{1,80}$/u),
   ceiling: count, state: z.enum(['reserved','settled']), at: z.iso.datetime(), inputTokens: count.optional(), outputTokens: count.optional(), cost: count.optional(),
-  operationFingerprint: hash.optional(), stageHash: hash.optional(), rejection: nativeRejection.optional(),
+  operationFingerprint: hash.optional(), stageHash: hash.optional(),
+  rejection: nativeRejection.extend({ legacyReceiptHash: hash.optional() }).optional(),
 }).refine(row => row.rejection
-  ? row.kind === 'generation' && !!row.operationFingerprint && !!row.stageHash && row.state === 'settled'
+  ? row.kind === 'generation' && !!row.operationFingerprint && (Boolean(row.stageHash) !== Boolean(row.rejection.legacyReceiptHash)) && row.state === 'settled'
     && row.cost === 0 && row.inputTokens === undefined && row.outputTokens === undefined
   : (!row.stageHash || !!row.operationFingerprint) && (row.state === 'settled'
   ? row.cost !== undefined && row.cost <= row.ceiling && row.inputTokens !== undefined && row.outputTokens !== undefined : row.cost === undefined));
 const rejectedGeneration = z.strictObject({ ticketId: z.uuid(), sourceId: attempt.shape.sourceId,
-  operationFingerprint: hash, stageHash: hash, at: attempt.shape.at, ceiling: count.positive(), rejection: nativeRejection });
+  operationFingerprint: hash, stageHash: hash.optional(), at: attempt.shape.at, ceiling: count.positive(), rejection: nativeRejection });
 const publicationBinding = z.strictObject({ sourceId: attempt.shape.sourceId, lane: z.enum(['C1', 'C2', 'C3']), sha256: hash,
   pages: z.int().positive(), operationFingerprint: hash, revision: z.uuid(), workerGeneration: z.uuid() });
 export const campaignRecoverySchemas = { balance, attempt, publicationBinding };
@@ -61,6 +62,14 @@ export interface CampaignDispatch {
 export function campaignTicketId(kind: CampaignKind, sourceId: string, operationFingerprint: string, stageHash: string) {
   return knowledgeOperationId('fhs-campaign-attempt/1', knowledgeReviewHash([kind, sourceId, operationFingerprint, stageHash]));
 }
+function legacyReceiptHash(ticketId: string, entry: Pick<RetainedReceipt, 'sourceId' | 'at' | 'ceiling'> & { operationFingerprint?: string }) {
+  return knowledgeReviewHash(['fhs-inspected-generation/1', ticketId, entry.sourceId, entry.operationFingerprint, entry.at, entry.ceiling]);
+}
+export function matchesCampaignAttempt(ticketId: string, entry: z.infer<typeof attempt>) {
+  if (entry.stageHash) return ticketId === campaignTicketId(entry.kind, entry.sourceId, entry.operationFingerprint!, entry.stageHash);
+  if (entry.rejection) return z.uuidv4().safeParse(ticketId).success && entry.rejection.legacyReceiptHash === legacyReceiptHash(ticketId, entry);
+  return z.uuid().safeParse(ticketId).success;
+}
 function ceilingFor(kind: CampaignKind, maxOutputTokens: number) {
   return kind === 'embedding' ? Math.ceil(2048 * prices.embedding)
     : Math.ceil(1_048_576 * prices.input + count.max(65536).parse(maxOutputTokens) * prices.output);
@@ -72,22 +81,26 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
   const excluded = new Set(retained.map(receipt => receipt.sourceId));
   if (new Set(retained.map(receipt => receipt.ticketId)).size !== retained.length || excluded.size !== retained.length)
     throw Error('knowledge_campaign_retained_receipt_mismatch');
-  const retainedCeiling = retained.reduce((sum, receipt) => sum + receipt.ceiling, 0);
   const tickets = retained.map(receipt => ref.collection('attempts').doc(receipt.ticketId));
-  function canAdvance(row: z.infer<typeof balance> | null, sourceId: string) {
-    return Boolean(row && !row.reconciliationRequired && !excluded.has(sourceId) && row.held === retainedCeiling
-      && row.attempts === row.settled + retained.length);
+  function canAdvance(row: z.infer<typeof balance> | null, sourceId: string, pending = retained) {
+    return Boolean(row && !row.reconciliationRequired && !excluded.has(sourceId) && row.held === pending.reduce((sum, item) => sum + item.ceiling, 0)
+      && row.attempts === row.settled + pending.length);
   }
   async function verifyRetained(tx: Transaction) {
-    if (!tickets.length) return;
+    const pending: RetainedReceipt[] = [];
+    if (!tickets.length) return pending;
     const docs = await tx.getAll(...tickets);
     for (const [index, receipt] of retained.entries()) {
       const saved = attempt.safeParse(docs[index]?.data());
-      if (!saved.success || saved.data.state !== 'reserved' || saved.data.sourceId !== receipt.sourceId
+      if (!saved.success || saved.data.sourceId !== receipt.sourceId
         || saved.data.kind !== receipt.kind || saved.data.at !== receipt.at || saved.data.ceiling !== receipt.ceiling
         || saved.data.operationFingerprint && saved.data.operationFingerprint !== receipt.operationFingerprint)
         throw Error('knowledge_campaign_retained_receipt_mismatch');
+      if (saved.data.state === 'reserved') pending.push(receipt);
+      else if (!saved.data.rejection?.legacyReceiptHash || !matchesCampaignAttempt(receipt.ticketId, saved.data))
+        throw Error('knowledge_campaign_retained_receipt_mismatch');
     }
+    return pending;
   }
   async function status() {
     const doc = await database.runTransaction(async tx => {
@@ -138,7 +151,7 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       await verifyRetained(tx);
       const { row, open } = await openReservations(tx);
       const reservations = open.filter(item => item.sourceId === sourceId);
-      return { admissible: !row.reconciliationRequired && !reservations.length && open.every(item => item.operationFingerprint),
+      return { admissible: !row.reconciliationRequired && !excluded.has(sourceId) && !reservations.length && open.every(item => item.operationFingerprint),
         reservations, balance: row };
     }, {readOnly:true});
   }
@@ -154,7 +167,7 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       const { row, open } = await openReservations(tx);
       if ((await tx.get(ticket)).exists) throw Error('knowledge_campaign_attempt_recorded');
       if (row.reconciliationRequired || open.some(item => !item.operationFingerprint)) throw Error('knowledge_campaign_reconcile_before_next_attempt');
-      if (open.some(item => item.sourceId === sourceId)) throw Error('knowledge_campaign_source_reserved');
+      if (excluded.has(sourceId) || open.some(item => item.sourceId === sourceId)) throw Error('knowledge_campaign_source_reserved');
       if (row.spent + row.held + ceiling > row.limit) throw Error('knowledge_campaign_budget_exhausted');
       tx.update(ref, { held: row.held + ceiling, attempts: row.attempts + 1 });
       tx.create(ticket, { kind, sourceId, operationFingerprint, stageHash, ceiling, state: 'reserved', at: new Date().toISOString() });
@@ -167,8 +180,8 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
     const ceiling = ceilingFor(kind, maxOutputTokens);
     await database.runTransaction(async tx => {
       const row = balance.parse((await tx.get(ref)).data());
-      await verifyRetained(tx);
-      if (!canAdvance(row, sourceId)) throw Error('knowledge_campaign_reconcile_before_next_attempt');
+      const pending = await verifyRetained(tx);
+      if (!canAdvance(row, sourceId, pending)) throw Error('knowledge_campaign_reconcile_before_next_attempt');
       if (row.held + row.spent + ceiling > row.limit) throw Error('knowledge_campaign_budget_exhausted');
       tx.update(ref, { held: row.held + ceiling, attempts: row.attempts + 1 });
       tx.create(ticket, { kind, sourceId, ceiling, state: 'reserved', at: new Date().toISOString() });
@@ -196,8 +209,17 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
   // Operator reconciliation of reviewed, attributable native HTTP evidence. No provider call or work lease is started.
   async function settleRejectedGeneration(raw: unknown) {
     const proof = rejectedGeneration.parse(raw);
-    if (proof.ticketId !== campaignTicketId('generation', proof.sourceId, proof.operationFingerprint, proof.stageHash))
-      throw Error('knowledge_campaign_attempt_changed');
+    let legacyHash: string | undefined;
+    if (proof.stageHash) {
+      if (proof.ticketId !== campaignTicketId('generation', proof.sourceId, proof.operationFingerprint, proof.stageHash))
+        throw Error('knowledge_campaign_attempt_changed');
+    } else {
+      const pin = retained.find(receipt => receipt.ticketId === proof.ticketId);
+      if (!pin || pin.kind !== 'generation' || !z.uuidv4().safeParse(proof.ticketId).success
+        || pin.sourceId !== proof.sourceId || pin.operationFingerprint !== proof.operationFingerprint || pin.at !== proof.at || pin.ceiling !== proof.ceiling)
+        throw Error('knowledge_campaign_retained_receipt_mismatch');
+      legacyHash = legacyReceiptHash(proof.ticketId, pin);
+    }
     const ticket = ref.collection('attempts').doc(proof.ticketId);
     await database.runTransaction(async tx => {
       const { row, open } = await openReservations(tx);
@@ -206,7 +228,8 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
         || entry.stageHash !== proof.stageHash || entry.at !== proof.at || entry.ceiling !== proof.ceiling)
         throw Error('knowledge_campaign_attempt_changed');
       if (entry.state === 'settled') {
-        if (entry.rejection?.httpStatus === proof.rejection.httpStatus && entry.rejection.evidenceSha256 === proof.rejection.evidenceSha256) return;
+        if (entry.rejection?.httpStatus === proof.rejection.httpStatus && entry.rejection.evidenceSha256 === proof.rejection.evidenceSha256
+          && entry.rejection.legacyReceiptHash === legacyHash) return;
         throw Error('knowledge_campaign_attempt_changed');
       }
       if (row.reconciliationRequired || entry.inputTokens !== undefined || entry.outputTokens !== undefined)
@@ -214,7 +237,8 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       if (open.some(item => item.sourceId === proof.sourceId && item.ticketId !== proof.ticketId))
         throw Error('knowledge_campaign_source_reserved');
       tx.update(ref, { held: row.held - entry.ceiling, settled: row.settled + 1 });
-      tx.update(ticket, { state: 'settled', cost: 0, rejection: proof.rejection });
+      const rejection = legacyHash ? { ...proof.rejection, legacyReceiptHash: legacyHash } : proof.rejection;
+      tx.update(ticket, { state: 'settled', cost: 0, rejection });
     });
   }
   function meter(binding: Omit<CampaignDispatch, 'stageKey'>, maxOutputTokens: number) {
