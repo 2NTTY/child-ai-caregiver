@@ -6,6 +6,7 @@ import { scriptReadingContract, scriptScopeInstruction, scriptReviewInstruction,
 import type { AgeExampleRegistration } from './knowledge-age-examples.ts';
 import { chapterOriginalUnits, type ChapterReading } from './knowledge-web-chapter.ts';
 import { reviseRetainedDraft, type RetainedOrganizerRevision, type ReviewedWebOriginal, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
+import type { CommissionedWebChapter } from './fhs-web-reading.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
 import { physicalPdfQuote } from "./knowledge-pdf-physical-quote.ts";
@@ -210,7 +211,8 @@ export async function prepareKnowledgeMaintenance(input: {
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
     publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true;procedureLookup?:true;chapter?:ChapterReading} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
-  webOriginal?: ReviewedWebOriginal;
+  webOriginal?: ReviewedWebOriginal | CommissionedWebChapter;
+  webReviewNotes?: string[];
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
   growthRules: readonly KnowledgeGrowthRuleBinding[];
@@ -245,12 +247,14 @@ export async function prepareKnowledgeMaintenance(input: {
       || baseline.observationHash !== candidate.previousObservationHash)
       reject("knowledge_maintenance_baseline_mismatch");
   } else if (candidate.previousObservationHash !== null) reject("knowledge_maintenance_baseline_missing");
-  const chapter = input.scriptRevision?.publisherScope?.chapter;
-  const units: OriginalUnit[] = chapter ? chapterOriginalUnits(candidate.observed.text, chapter) : originalUnits(candidate);
   const web = input.webOriginal;
+  const reading = web && 'chapterReading' in web ? web.chapterReading : undefined;
+  const chapter = reading?.chapter ?? input.scriptRevision?.publisherScope?.chapter;
+  const units: OriginalUnit[] = chapter ? chapterOriginalUnits(candidate.observed.text, chapter) : originalUnits(candidate);
   if (web && (baseline || retained || input.scriptRevision || candidate.definition.kind !== 'page' || candidate.observed.scripts?.length
     || candidate.watchId !== web.sourceId || candidate.observationHash !== web.observationHash || candidate.observed.url !== web.url
-    || units.length !== 1 || units[0]!.originalText !== candidate.observed.text))
+    || (reading ? units.map(u => u.originalText).join('') !== candidate.observed.text
+      : units.length !== 1 || units[0]!.originalText !== candidate.observed.text)))
     reject('knowledge_web_original_changed');
   if (input.scriptRevision && (candidate.definition.kind !== 'page' || !candidate.observed.scripts?.length || !input.explicitAgeScope))
     reject('knowledge_script_revision_scope');
@@ -353,7 +357,8 @@ export async function prepareKnowledgeMaintenance(input: {
     if (!sampleChunk || claims.some(claim => !sampleChunk.text.includes(claim))) reject("knowledge_focus_binding_mismatch");
   }
   const publisherScope: NonNullable<NonNullable<typeof input.scriptRevision>['publisherScope']> | undefined = web
-    ? {audiences:[{audience:web.audience}],amendUnits:[],exclusiveLookup:true,sourceComparison:true} : input.scriptRevision?.publisherScope;
+    ? {audiences:('chapterReading' in web ? web.chapterReading.audiences : [web.audience]).map(audience => ({audience})),
+      amendUnits:[],exclusiveLookup:true,sourceComparison:true} : input.scriptRevision?.publisherScope;
   for(const key of publisherScope?.amendUnits??[]) {
     if(!units.some(u=>u.id===key))reject('knowledge_script_amendment_missing');
     reusable.delete(key);
@@ -482,7 +487,9 @@ export async function prepareKnowledgeMaintenance(input: {
   const reviewPayload = {
     role: "knowledge-semantic-review",
     ...(input.scriptRevision ? {scriptReading:publisherScope?publisherReviewInstruction:scriptReviewInstruction, priorHold:input.scriptRevision} : {}),
-    ...(web ? {publisherReading:publisherReviewInstruction, priorOutcome:'The earlier provider request timed out. Independently verify this complete publisher chapter for reference use.', originalOperation:web.operationFingerprint} : {}),
+    ...(web ? {publisherReading:publisherReviewInstruction, originalOperation:web.operationFingerprint,
+      priorOutcome:'chapterReading' in web ? {reason:web.reason, reviewNotes:input.webReviewNotes ?? []}
+        : 'The earlier provider request timed out. Independently verify this complete publisher chapter for reference use.'} : {}),
     ...(publisherScope?.exclusiveLookup ? {accessForOriginalLookup:{
       publishedSourceTool:'find_official_material (parent requests a publication, original passage or citation check)',
       ordinaryCareSearch:'excluded in storage before ranking', adjacentCareContext:'excluded', personalAdvice:'excluded', proactive:'excluded',
@@ -612,7 +619,8 @@ export function createModelKnowledgeReviewPort(options: {
   replayCommunication?: boolean;
   scriptRevision?: Parameters<typeof prepareKnowledgeMaintenance>[0]['scriptRevision'];
   retainedDraft?: Parameters<typeof prepareKnowledgeMaintenance>[0]['retainedDraft'];
-  webOriginal?: ReviewedWebOriginal;
+  webOriginal?: ReviewedWebOriginal | CommissionedWebChapter;
+  webReviewNotes?: string[];
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
   growthRules: readonly KnowledgeGrowthRuleBinding[];
   baseline(candidate: BackgroundKnowledgeCandidate): Promise<KnowledgeMaintenanceBaseline | null>;
@@ -634,7 +642,7 @@ export function createModelKnowledgeReviewPort(options: {
       const comparedCandidate = comparison ? { ...candidate, previousObservationHash: comparison.baseline.observationHash } : candidate;
       const prepared = await prepareKnowledgeMaintenance({ candidate: comparedCandidate, baseline: comparison?.baseline ?? local,
         explicitAgeScope: options.explicitAgeScope, replayCommunication: options.replayCommunication,
-        scriptRevision: options.scriptRevision, retainedDraft: options.retainedDraft, webOriginal: options.webOriginal,
+        scriptRevision: options.scriptRevision, retainedDraft: options.retainedDraft, webOriginal: options.webOriginal, webReviewNotes: options.webReviewNotes,
         previousVisual: await options.previousVisual?.(candidate),
         heldDraft: await options.heldDraft?.(),
         fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
