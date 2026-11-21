@@ -10,7 +10,23 @@ const binding = z.object({
 const pdf = binding.extend({ sha256: hash, sections: z.array(z.string()).min(1) });
 const regionEdit = z.strictObject({range: z.string().min(1), from: z.enum(['hk', '香港']), to: z.literal('HK')});
 const sourceRange = z.strictObject({basis: z.literal('actual'), minMonths: z.literal(0), maxMonths: z.literal(216), exclusiveEnd: z.boolean()});
-export const retainedDraftRevisionSchema = z.discriminatedUnion('action', [binding.extend({
+const webOriginal = binding.omit({ organizerRequestHash: true }).extend({
+  action: z.literal('review_web_original'), url: z.url(), ticketId: z.uuid(),
+  rejectionHash: hash, audience: z.string().trim().min(1).max(80),
+});
+export type ReviewedWebOriginal = z.infer<typeof webOriginal>;
+const manifestUrl = new URL('../knowledge/fhs-initial-recovery.json', import.meta.url);
+const recovery = JSON.parse(readFileSync(manifestUrl, 'utf8'));
+const webOriginals = new Map<string, ReviewedWebOriginal>();
+for (const row of recovery.entries) {
+  if (row.action !== 'review_web_original') continue;
+  const pin = Object.freeze(webOriginal.parse(row));
+  if (recovery.campaign !== 'fhs-child-initial-20261120' || webOriginals.has(pin.sourceId))
+    throw Error('knowledge_campaign_recovery_manifest');
+  webOriginals.set(pin.sourceId, pin);
+}
+export const commissionedWebOriginal = (id: string) => webOriginals.get(id);
+export const retainedDraftRevisionSchema = z.discriminatedUnion('action', [webOriginal,binding.extend({
   action: z.literal('review_age_draft'), units: z.array(z.strictObject({
     unitId: z.string().regex(/^p0-[a-f0-9]{20}$/u), ageBasis: z.literal('any'),
     minAgeMonths: z.number().nullable(), maxAgeMonths: z.number().nullable(),
@@ -24,7 +40,7 @@ pdf.extend({ action: z.literal('retain_pdf_transcription'), pages: z.literal(1),
   excerpt: z.string().trim().min(1).max(150), organizerStart: z.number().int().nonnegative(), reviewerStart: z.number().int().nonnegative() })]);
 export type RetainedDraftRevision = z.infer<typeof retainedDraftRevisionSchema>;
 export type RetainedTranscription = Extract<RetainedDraftRevision, {action:'retain_pdf_transcription'}>;
-export type RetainedOrganizerRevision = Exclude<RetainedDraftRevision, RetainedTranscription>;
+export type RetainedOrganizerRevision = Exclude<RetainedDraftRevision, RetainedTranscription | ReviewedWebOriginal>;
 export const retainedDraftProvenanceSchema = z.strictObject({ priorWork: hash, organizerRequestHash: hash, reviewerRequestHash: hash.optional(), revisionHash: hash });
 export const retainedDraftWorkId = (prior: string) => knowledgeReviewHash(['fhs-retained-page-review/1', hash.parse(prior)]);
 
@@ -32,9 +48,8 @@ export const retainedDraftWorkId = (prior: string) => knowledgeReviewHash(['fhs-
 export function matchesRegisteredRetainedDraft(revision: RetainedDraftRevision, registeredOperation: string, recoveryOperation: string): boolean {
   if ((revision.priorOperationFingerprint ?? revision.operationFingerprint) !== registeredOperation
     || recoveryOperation !== retainedDraftWorkId(revision.operationFingerprint)) return false;
-  const manifest = JSON.parse(readFileSync(new URL('../knowledge/fhs-initial-recovery.json', import.meta.url), 'utf8'));
-  if (manifest.campaign !== 'fhs-child-initial-20261120') return false;
-  const entry = manifest.entries.find((row: {sourceId: string}) => row.sourceId === revision.sourceId);
+  if (recovery.campaign !== 'fhs-child-initial-20261120') return false;
+  const entry = recovery.entries.find((row: {sourceId: string}) => row.sourceId === revision.sourceId);
   const bound = retainedDraftRevisionSchema.safeParse(entry);
   return bound.success && knowledgeReviewHash(bound.data) === knowledgeReviewHash(revision);
 }

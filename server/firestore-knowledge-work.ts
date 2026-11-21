@@ -134,7 +134,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
         return {state:reading.state, text:reading.text};
       }, {readOnly:true});
     },
-    async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision | BoundReviewedWindow, attemptKey: string, requestHash: string) {
+    async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: Exclude<RetainedDraftRevision,{action:'review_web_original'}> | BoundReviewedWindow, attemptKey: string, requestHash: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
       const registered = revision.action === 'commissioned_window';

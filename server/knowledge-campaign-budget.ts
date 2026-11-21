@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { knowledgeOperationId, knowledgeReviewHash } from './knowledge-review-assessment.ts';
 import type { ManualPublicationPin } from './fhs-manual-publication.ts';
 import { rejectedScriptEmbedding } from './fhs-script-embedding-receipt.ts';
+import { commissionedWebOriginal, type ReviewedWebOriginal } from './knowledge-retained-draft.ts';
 
 export const campaign = 'fhs-child-initial-20261120';
 export const campaignModel = 'gemini-3.8-flash';
@@ -79,10 +80,14 @@ function ceilingFor(kind: CampaignKind, maxOutputTokens: number) {
     : Math.ceil(1_048_576 * prices.input + count.max(65536).parse(maxOutputTokens) * prices.output);
 }
 
-export function createKnowledgeCampaignBudget(database: Firestore, namespace: string, inspected: RetainedReceipt[] = []) {
+export function createKnowledgeCampaignBudget(database: Firestore, namespace: string, inspected: RetainedReceipt[] = [], webOriginal?: ReviewedWebOriginal) {
   const ref = database.collection(namespace + '_knowledge_campaigns').doc(campaign);
   const retained = inspected.map(receipt => retainedReceipt.parse(receipt));
   const excluded = new Set(retained.map(receipt => receipt.sourceId));
+  if (webOriginal && (commissionedWebOriginal(webOriginal.sourceId) !== webOriginal
+    || !retained.some(row => row.sourceId === webOriginal.sourceId && row.ticketId === webOriginal.ticketId
+      && row.operationFingerprint === webOriginal.operationFingerprint && row.kind === 'generation')))
+    throw Error('knowledge_web_original_rejection_changed');
   if (new Set(retained.map(receipt => receipt.ticketId)).size !== retained.length || excluded.size !== retained.length)
     throw Error('knowledge_campaign_retained_receipt_mismatch');
   const tickets = retained.map(receipt => ref.collection('attempts').doc(receipt.ticketId));
@@ -155,7 +160,9 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       await verifyRetained(tx);
       const { row, open } = await openReservations(tx);
       const reservations = open.filter(item => item.sourceId === sourceId);
-      return { admissible: !row.reconciliationRequired && !excluded.has(sourceId) && !reservations.length && open.every(item => item.operationFingerprint),
+      const commissioned = webOriginal?.sourceId === sourceId;
+      if (commissioned) await verifyWebRejection(tx, webOriginal);
+      return { admissible: !row.reconciliationRequired && (!excluded.has(sourceId) || commissioned) && !reservations.length && open.every(item => item.operationFingerprint),
         reservations, balance: row };
     }, {readOnly:true});
   }
@@ -175,7 +182,12 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       const { row, open } = await openReservations(tx);
       if ((await tx.get(ticket)).exists) throw Error('knowledge_campaign_attempt_recorded');
       if (row.reconciliationRequired || open.some(item => !item.operationFingerprint)) throw Error('knowledge_campaign_reconcile_before_next_attempt');
-      if (excluded.has(sourceId) || open.some(item => item.sourceId === sourceId)) throw Error('knowledge_campaign_source_reserved');
+      if (excluded.has(sourceId)) {
+        if (webOriginal?.sourceId !== sourceId || webOriginal.operationFingerprint !== operationFingerprint)
+          throw Error('knowledge_campaign_source_reserved');
+        await verifyWebRejection(tx, webOriginal);
+      }
+      if (open.some(item => item.sourceId === sourceId)) throw Error('knowledge_campaign_source_reserved');
       if (row.spent + row.held + ceiling > row.limit) throw Error('knowledge_campaign_budget_exhausted');
       tx.update(ref, { held: row.held + ceiling, attempts: row.attempts + 1 });
       tx.create(ticket, { kind, sourceId, operationFingerprint, stageHash, ceiling, state: 'reserved', at: new Date().toISOString() });
@@ -296,5 +308,13 @@ export function createKnowledgeCampaignBudget(database: Firestore, namespace: st
       },
     };
   }
-  return { status, initialize, reserve, canAdvance, sourceStatus, hasGenerationCapacity, retainInspected, reserveShared, settleRejectedGeneration, settleScriptEmbeddingRejection, meter };
+  async function verifyWebRejection(tx: Transaction, pin: ReviewedWebOriginal) {
+    const raw = (await tx.get(ref.collection('attempts').doc(pin.ticketId))).data();
+    const row = attempt.parse(raw);
+    if (!matchesCampaignAttempt(pin.ticketId, row) || row.sourceId !== pin.sourceId || row.kind !== 'generation'
+      || row.operationFingerprint !== pin.operationFingerprint || row.state !== 'settled' || row.cost !== 0
+      || row.rejection?.httpStatus !== 504 || row.rejection.evidenceSha256 !== pin.rejectionHash)
+      throw Error('knowledge_web_original_rejection_changed');
+  }
+  return { status, initialize, reserve, canAdvance, sourceStatus, hasGenerationCapacity, retainInspected, reserveShared, settleRejectedGeneration, settleScriptEmbeddingRejection, verifyWebRejection, meter };
 }

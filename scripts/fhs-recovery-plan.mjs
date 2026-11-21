@@ -8,7 +8,8 @@ export function campaignRecoveryPlan(sourceId) {
   const selected = sourceId ? plan.entries.filter(e => e.sourceId === sourceId)
     : plan.entries.filter(e => (e.checkpoint ?? plan.checkpoint) === plan.checkpoint);
   const entries = selected.map(e => ({
-    ...e, ...(['review_age_draft','review_pdf_region','review_pdf_source_age','retain_pdf_transcription'].includes(e.action)
+    ...e, ...((['review_age_draft','review_pdf_region','review_pdf_source_age','retain_pdf_transcription'].includes(e.action)
+      || sourceId && e.action === 'review_web_original')
       ? { campaignArgs: ['recover', e.sourceId, e.operationFingerprint] } : {}),
   }));
   if (sourceId && entries.length !== 1) throw Error('knowledge_campaign_recovery_source');

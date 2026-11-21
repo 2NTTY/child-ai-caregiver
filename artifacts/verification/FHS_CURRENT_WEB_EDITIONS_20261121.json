@@ -5562,5 +5562,88 @@
         "evidence": "FHS_HELD_PUBLICATION_20261120@d16cf056"
       }
     }
-  ]
+  ],
+  "handbookChapterRecovery": {
+    "observedAt": "2026-11-21T19:36:52.953Z",
+    "method": "Production family catalogue read and live in-article publisher link. Full observed text compared with the registered HTML. The two selected chapters used a local hold fixture to verify the independent review request; provider review and chapter publication remain open. No new script commission.",
+    "rows": [
+      {
+        "sourceId": "fhs-14851",
+        "book": "fhs-30033",
+        "bookVersion": "8fed26ee-0c8c-5b2d-92ad-ad60d9b8e2cb",
+        "bookUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30033.html",
+        "link": "常見嬰兒皮膚問題",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14851.html",
+        "title": "常見嬰兒皮膚問題",
+        "htmlSha256": "b6be4c754d1196d321aa076aa58628a3f73cdbcf2d9ba020b3b501f981c910dd",
+        "normalizedTextSha256": "a1707fc1a2ec76e13e4695f6ba30c53d1b49cd4ef0fd94d9aef06fcb05f42a64",
+        "utf16Length": 2618,
+        "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+        "watchHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
+        "activeChapter": null,
+        "controlledReader": {
+          "reviewCalls": 1,
+          "organizerCalls": 0,
+          "decision": "hold_candidate",
+          "audience": "嬰兒",
+          "use": "original_lookup",
+          "minAgeMonths": null,
+          "maxAgeMonths": null,
+          "indexExcerptCodePoints": 150
+        }
+      },
+      {
+        "sourceId": "fhs-15672",
+        "book": "fhs-30036",
+        "bookVersion": "5075d8ff-794b-5e15-b584-9b113e496c3f",
+        "bookUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.html",
+        "link": "兒童發展8（上）- 三至四歲大兒童的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.html",
+        "title": "兒童發展8（上）—— 三至四歲大兒童的發展",
+        "htmlSha256": "e50191f40d3dd935b56e50432948b2cf75236139aff0705348301165c99670c9",
+        "normalizedTextSha256": "f26c0beea1f7b590b37c80eedb9d5608ad92a848dc1cb10b1dc52de16965d411",
+        "utf16Length": 2275,
+        "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+        "watchHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
+        "activeChapter": null,
+        "controlledReader": {
+          "reviewCalls": 1,
+          "organizerCalls": 0,
+          "decision": "hold_candidate",
+          "audience": "三至四歲大兒童",
+          "use": "original_lookup",
+          "minAgeMonths": null,
+          "maxAgeMonths": null,
+          "indexExcerptCodePoints": 150
+        }
+      },
+      {
+        "sourceId": "fhs-14836",
+        "book": "fhs-30035",
+        "bookVersion": "529959e6-8e71-5734-9354-01bd933c4037",
+        "bookUrl": "https://www.fhs.gov.hk/tc_chi/health_info/child/30035.html",
+        "link": "正面親職（二）：學前階段的實踐",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+        "title": "正面親職（二）：學前階段的實踐",
+        "htmlSha256": "6ab174535c453c3af348713eda0e75f4247b0bc4577b9d0ba308b87053af1f2d",
+        "normalizedTextSha256": "87a69dceb01e69cd8208329a10f9fca855c0c777bf9b095b63e5ed54f54d4ca2",
+        "utf16Length": 3010,
+        "observationHash": "fe0c92ed1dcfc4fb6093a9a0b3b80181cf4671597c37f1bfc908952f341f345e",
+        "watchHash": "36b3cbdf13243b681a57d54d0eb73a924d6f461398a1b3f56e191b06e2b15bb0",
+        "activeChapter": null,
+        "finalSentence": "最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+        "publishedSiblingTranscript": {
+          "source": "fhs-14842",
+          "versionId": "800d6021-ce74-5e81-9f3e-d7074c274ff7",
+          "versionHash": "6dabeeb2530c16751befbb7f66437da0f45f463f494356e70913d7bba71dd27e",
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+          "chunks": 2,
+          "title": "「情緒導航」五部曲（學前兒童篇）",
+          "firstParagraph": 1,
+          "lastParagraph": 52
+        },
+        "chapterStatus": "Existing plain HTML review held. The current official observation also includes the video transcript."
+      }
+    ]
+  }
 }

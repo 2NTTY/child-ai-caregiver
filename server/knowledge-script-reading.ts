@@ -31,7 +31,7 @@ export function compactPublisherReview(payload:object,originals:readonly string[
 
 /** Literal-only editions keep each restriction inside its original paragraph. An unconfirmed range never grants advice eligibility. */
 export function publisherScriptReading(units:readonly Unit[],materialTitle:string,labels:readonly PublisherAudience[],materialText='',exclusiveLookup=false,
-  examples:readonly AgeExampleRegistration[] = []) {
+  examples:readonly AgeExampleRegistration[] = [], topic:'official-transcript'|'official-material' = 'official-transcript') {
   const bound = bindPublisherAgeExamples(units,examples);
   for(const label of labels) {
     const evidence = label.title ? units.filter(u=>u.scriptPassage?.title===label.title).flatMap(u=>[u.scriptPassage!.title,u.originalText])
@@ -47,7 +47,7 @@ export function publisherScriptReading(units:readonly Unit[],materialTitle:strin
     const sentences=(unit.originalText.match(/[^。！？；\n]+[。！？；]?/gu)??[]).map(s=>s.trim());
     const conditions=[...new Set(sentences.filter(s=>s.length<=600 &&
       /(?:[\d零〇一二兩三四五六七八九十百半]+\s*(?:個?月|歲|星期大|週大|日大)|學前|初生|新生)/u.test(s)))].slice(0,8);
-    const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:['official-transcript'],conditions,
+    const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:[topic],conditions,
       ...(bound.has(unit.id) ? {ageExamples:bound.get(unit.id)!} : {}),
       use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:before??null,
       ...(before!==undefined?{maxAgeMonthsExclusive:true}:{}),

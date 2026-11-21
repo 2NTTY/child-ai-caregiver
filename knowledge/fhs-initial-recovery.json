@@ -729,7 +729,10 @@
       "code": "knowledge_review_failed",
       "observationHash": "4356b77b67209dda599da03c99dbad4273fcd1ec03afb37b5572d272c1cbe406",
       "priorOperationFingerprint": "e2f043b6991c703ef026fe1427233b0812cc29a85b712286125fcaf4c04c1970",
-      "action": "quarantine_504",
+      "action": "review_web_original",
+      "reason": "第二冊的出版者原章。按完整原文查閱嬰兒皮膚資料，年齡及治療條件留在各原段。",
+      "audience": "嬰兒",
+      "rejectionHash": "f53df100d78b5d2d9996d4629f7a277249e96449f16b8028021ee7c569c9367c",
       "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
       "reservedMicros": 1603584
     },
@@ -740,7 +743,10 @@
       "textHash": "e306c0442ff1aa9690c4bf2bf61e77fa129077bc5f2963d329575719c461d111",
       "operationFingerprint": "a8bc6cd982a772adb34be1a33dee74d63bf5eac4f890828ab658d35be7185d18",
       "code": "knowledge_review_failed",
-      "action": "quarantine_504",
+      "action": "review_web_original",
+      "reason": "第五冊的出版者原章。保留標題所列年齡和各段條件，讀者可按原文查閱。",
+      "audience": "三至四歲大兒童",
+      "rejectionHash": "7a56664d964e1d829e27aae364de5051ced45cdb4ec52d0aa6a9b33ec4c39826",
       "observationHash": "8e4921112d2b7954e90aaeb06bb4c5d6b5a5b83a4473b0afda64688c8d934bd0",
       "ticketId": "667f96bb-5806-47c1-8fb1-f40e82befba2",
       "reservedMicros": 1603584

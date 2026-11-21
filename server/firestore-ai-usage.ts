@@ -11,6 +11,7 @@ import { canonical, isRecord } from './firestore-session-codec.ts';
 import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-campaign-budget.ts';
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
 import { approvedScriptEdition, type ScriptEdition } from './fhs-script-edition.ts';
+import { commissionedWebOriginal, type ReviewedWebOriginal } from './knowledge-retained-draft.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
@@ -57,6 +58,7 @@ function comparable<T extends { kind?: 'model' | 'embedding' }>(value: T) {
   return { ...value, kind: value.kind ?? 'model' };
 }
 
+export type CommissionedKnowledgePublication = ManualPublicationPin | ScriptEdition | ReviewedWebOriginal;
 export interface FirestoreAiUsageOptions {
   /** Already configured client; this adapter never reads credentials or owns its lifecycle. */
   database: Firestore;
@@ -67,7 +69,7 @@ export interface FirestoreAiUsageOptions {
   billingSource: ModelBillingSource;
   serverClock?: () => number;
   campaignAdmission?: CampaignDayAdmission;
-  manualPublication?: ManualPublicationPin | ScriptEdition;
+  manualPublication?: CommissionedKnowledgePublication;
 }
 
 /**
@@ -94,7 +96,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
     this.#source = parse(sourceSchema, billingSource, 'invalid_configuration'); this.#clock = serverClock;
     this.#publication = manualPublication !== undefined;
     if (manualPublication && (billingSource !== 'platform' || campaignAdmission
-      || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication))
+      || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication
+        && commissionedWebOriginal(manualPublication.sourceId) !== manualPublication))
       reject('invalid_configuration');
     if (campaignAdmission) {
       if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');
