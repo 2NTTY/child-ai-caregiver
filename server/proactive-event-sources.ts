@@ -14,7 +14,7 @@ import { firestoreTopicStorageSchema } from './firestore-memory.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
 import { topicMayAsk } from './memory-policy.ts';
 import { isTimelyEventActive } from '../src/shared/knowledge-timely.ts';
-import { proactiveKindForTimelyEvent } from './knowledge-timely-policy.ts';
+import { proactiveKindForTimelyEvent, shouldAutoNotifyTimelyEvent } from './knowledge-timely-policy.ts';
 
 const selectionSchema = proactiveManagedPublicDaySchema.shape.events.element.omit({ versionHash: true, contentHash: true });
 /** Operator deployment configuration, never model arguments or a family request. */
@@ -63,7 +63,7 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
       return [row.sourceId, row.activeVersionId, row.enabled, row.revision];
     });
   };
-  const fingerprint = (rows: unknown) => firestoreDomainHash(['proactive-public-discovery-v1', sources, configured, managed, rows]);
+  const fingerprint = (rows: unknown) => firestoreDomainHash(['proactive-public-discovery-v2', sources, configured, managed, rows]);
   const unavailable = (reason: ProactiveEventCandidates['reason'], at: string, coverage: string[] = []): ProactiveEventCandidates => ({
     state: 'unavailable', reason, day: hkDay(at), preparedAt: null, complete: false, candidates: [], excluded: [], coverage,
   });
@@ -96,9 +96,10 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
       const before = await options.database.runTransaction(async transaction => {
         if (!(await authority.readControl(transaction)).enabled) return null;
         const row = await transaction.get(stateRef), prior = row.exists ? checkpointSchema.parse(row.data()) : null;
-        if (!input.force && prior?.day === day && prior.nextCheckAt && prior.nextCheckAt > asOf) return { reuse: prior };
         const currentFingerprint = fingerprint(await pointers(transaction));
         if (!input.force && prior?.day === day && prior.fingerprint === currentFingerprint) {
+          // Check the policy-bearing fingerprint even inside the persisted reuse window after a restart.
+          if (prior.nextCheckAt && prior.nextCheckAt > asOf) return { reuse: prior };
           transaction.set(stateRef, { ...prior, nextCheckAt });
           return { reuse: { ...prior, nextCheckAt } };
         }
@@ -119,6 +120,10 @@ export function createProactiveEventSources(options: ProactiveEventSourceOptions
         const recent = edition.source.classification === 'recent_information';
         if (recent && !edition.source.sourcePublishedAt) { coverage.push('publication_date_unconfirmed:' + sourceId); continue; }
         if (edition.source.chunks.length > 8) coverage.push('bounded_projection_truncated');
+        // General rolling news remains searchable in 7-day chat without generating proactive push noise.
+        if (recent && !shouldAutoNotifyTimelyEvent(edition.source.classification, edition.source.timelyEvent)) {
+          continue;
+        }
         // Reviewed recent editions can generate ordinary notices; importance comes only from an explicit selection.
         for (const chunk of edition.source.chunks.slice(0, 8)) {
           const kind = proactiveKindForTimelyEvent(edition.source.classification, edition.source.timelyEvent);
