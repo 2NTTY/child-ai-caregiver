@@ -29,6 +29,11 @@ class Companion extends CubismUserModel {
       id => [id, CubismFramework.getIdManager().getId(id)]));
     this.getModel().saveParameters();
   }
+  rest() {
+    this.expression = null;
+    this.look = 0;
+    this._motionManager.stopAllMotions();
+  }
   play(action) {
     this.expression = { action, elapsed: 0 };
     if (action === 'answer' || action === 'acknowledge') return;
@@ -148,8 +153,7 @@ async function show() {
     if (['idle', 'quiet', 'hidden', 'listen-left', 'listen-right'].includes(event.data)) {
       mode = event.data;
       if (mode === 'quiet' || mode === 'hidden') {
-        avatar.expression = null; avatar.look = 0;
-        avatar._motionManager.stopAllMotions(); activeUntil = 0;
+        avatar.rest(); activeUntil = 0;
       }
     } else if (['nod', 'wave', 'arrive', 'acknowledge', 'answer'].includes(event.data) && mode !== 'hidden') {
       if (reduced.matches) return;
@@ -160,7 +164,10 @@ async function show() {
   });
   addEventListener('resize', schedule);
   document.addEventListener('visibilitychange', schedule);
-  reduced.addEventListener('change', schedule);
+  reduced.addEventListener('change', () => {
+    if (reduced.matches) { avatar.rest(); activeUntil = 0; }
+    schedule();
+  });
   canvas.addEventListener('webglcontextlost', () => { clearTimeout(timer); mode = 'hidden'; notify('failed'); });
   draw(1 / 60);
   if (gl.getError() !== gl.NO_ERROR) throw Error('draw');

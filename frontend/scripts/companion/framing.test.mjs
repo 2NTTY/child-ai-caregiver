@@ -48,3 +48,36 @@ test('the packaged character keeps its ears, hands and shoes inside the canvas d
     await browser.close();
   }
 });
+
+test('enabling reduced motion during a reply closes the mouth before the model rests', async () => {
+  const browser = await chromium.launch({
+    ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : { channel: 'msedge' }),
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  });
+  try {
+    const page = await browser.newPage({ viewport: { width: 152, height: 214 }, reducedMotion: 'no-preference' });
+    await page.addInitScript(() => addEventListener('message', event => {
+      if (event.data?.companion === 'ready') document.documentElement.dataset.ready = 'yes';
+    }));
+    await page.goto(new URL('../../public/companion/zundamon.html', import.meta.url).href);
+    await page.waitForFunction(() => document.documentElement.dataset.ready === 'yes');
+    await page.evaluate(() => {
+      const prototype = Live2DCubismCore.Model.prototype, update = prototype.update;
+      window.sample = { mouth: 0, updates: 0 };
+      prototype.update = function () {
+        const { ids, values } = this.parameters;
+        window.sample = { mouth: values[ids.indexOf('ParamMouthOpenY')], updates: window.sample.updates + 1 };
+        return update.call(this);
+      };
+      window.postMessage('answer', '*');
+    });
+    await page.waitForFunction(() => window.sample.mouth > .08);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.waitForFunction(() => window.sample.mouth === 0);
+    const resting = await page.evaluate(() => window.sample.updates);
+    await page.waitForTimeout(450);
+    assert.equal(await page.evaluate(() => window.sample.updates), resting);
+  } finally {
+    await browser.close();
+  }
+});

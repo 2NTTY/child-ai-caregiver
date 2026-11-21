@@ -4,7 +4,7 @@
 
 <a id="active"></a>
 
-**Zundamon 對話表情及臉旁氣泡（2026-11-22）。** 送出時點頭，等候小點在臉頰旁原位換成短答或長答開首。空白輸入列和有字時的送出共用同一按鈕位置。桌面 1280 × 800 及觸控 390 × 844 各以連續 20 幀驗收，窄屏把可視區收至 510 px。兩端從等候到長答，輸入列及角色位置均無位移；角色靠左右兩邊、實際錄音時的聆聽、保留下一句及返回安靜助手頁均已核對。每端兩則文字及一段直接送出的語音保存到原孩子和原待辦，試聽後捨棄為零上傳。回覆來自本機合成資料，咪高峰及鍵盤可視區以 Edge 模擬，真機待驗。發布交主聊天。[桌面連續畫面](verification/zundamon-dialogue-2026-11-22/desktop.webp) · [窄屏連續畫面](verification/zundamon-dialogue-2026-11-22/touch.webp) · [桌面量度](verification/zundamon-dialogue-2026-11-22/desktop.json) · [窄屏量度](verification/zundamon-dialogue-2026-11-22/touch.json)
+**Zundamon 對話表情及臉旁氣泡（2026-11-22）。** 送出時點頭，等候小點在臉頰旁原位換成短答或長答開首。空白輸入列和有字時的送出共用同一按鈕位置。桌面 1280 × 800 及觸控 390 × 844 各以連續 20 幀驗收，窄屏把可視區收至 510 px。兩端從等候到長答，輸入列及角色位置均無位移；角色靠左右兩邊、實際錄音時的聆聽、保留下一句及返回安靜助手頁均已核對。角色說話中途切換系統「減少動畫」時，實際嘴形參數回到零並停止更新。每端兩則文字及一段直接送出的語音保存到原孩子和原待辦，試聽後捨棄為零上傳。回覆來自本機合成資料，咪高峰及鍵盤可視區以 Edge 模擬，真機待驗。發布交主聊天。[桌面連續畫面](verification/zundamon-dialogue-2026-11-22/desktop.webp) · [窄屏連續畫面](verification/zundamon-dialogue-2026-11-22/touch.webp) · [桌面量度](verification/zundamon-dialogue-2026-11-22/desktop.json) · [窄屏量度](verification/zundamon-dialogue-2026-11-22/touch.json)
 
 **角色旁輸入及語音（2026-11-21）。** 工作頁點角色展開單一輸入框；本輪回答留在身旁，開啟助手頁可讀回同一則全文。咪高峰一次點按即開始，錄製中可直接送出，亦可按耳機先試聽或捨棄。桌面和窄屏觸控均以本地登入測試孩子及已保存待辦驗收；每端各保存一則文字和一段語音。兩端實測暫緩原保存期間即時回顯、清空輸入並保留下一題草稿；回答出現後移除問題副本。取消及試聽期間零上傳，錄製中直接送出只上傳一次。長文來自本地測試資料，錄音經 Edge 模擬咪高峰、正式上傳及保存流程。原生裝置待驗，正式發布由主聊天整合。[桌面氣泡](verification/companion-speech-2026-11-21/desktop-reply.png) · [觸控試聽](verification/companion-speech-2026-11-21/touch-preview.png) · [桌面紀錄](verification/companion-speech-2026-11-21/desktop.json) · [窄屏紀錄](verification/companion-speech-2026-11-21/touch.json)
 
