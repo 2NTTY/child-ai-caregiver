@@ -204,7 +204,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
-    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[]} };
+    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -347,7 +347,7 @@ export async function prepareKnowledgeMaintenance(input: {
     reusable.delete(key);
   }
   const pending = units.filter(unit => !reusable.has(unit.id));
-  const publisherDraft=publisherScope?publisherScriptReading(pending,candidate.observed.title,publisherScope.audiences,candidate.observed.text):null;
+  const publisherDraft=publisherScope?publisherScriptReading(pending,candidate.observed.title,publisherScope.audiences,candidate.observed.text,publisherScope.exclusiveLookup):null;
   const scriptReading = input.scriptRevision && !publisherDraft && pending.length ? scriptReadingContract(pending, candidate.observed.title) : null;
   const organized = publisherDraft ? null : scriptReading ? await complete('organize', organize.text, {
     role:'background-knowledge-maintenance', task:scriptScopeInstruction, materialTitle:candidate.observed.title,
@@ -461,6 +461,11 @@ export async function prepareKnowledgeMaintenance(input: {
   const reviewPayload = {
     role: "knowledge-semantic-review",
     ...(input.scriptRevision ? {scriptReading:publisherScope?publisherReviewInstruction:scriptReviewInstruction, priorHold:input.scriptRevision} : {}),
+    ...(publisherScope?.exclusiveLookup ? {accessForOriginalLookup:{
+      publishedSourceTool:'find_official_material (parent requests a publication, original passage or citation check)',
+      ordinaryCareSearch:'excluded in storage before ranking', adjacentCareContext:'excluded', personalAdvice:'excluded', proactive:'excluded',
+      oneSidedAge:'Only a bound explicitly stated for the whole publication may be recorded. The other endpoint remains unknown. A single bound grants no advice eligibility.',
+      conditions:'Quoted subgroup examples are not eligibility for the whole unit. A qualitative heading establishes the audience only as written. Check the effect of these enforced access rules on each former hold.'}} : {}),
     ...(input.explicitAgeScope || retained ? { ageScopeCheck: independentAgeCheck } : {}),
     ...(retained?.revision.action === 'review_age_draft' ? { editorialAgeProposal: { change: 'Only the numeric bounds were cleared in the listed units. Check the full original audience, exceptions and conditions. Hold if this broadens the intended audience.', reason: retained.revision.reason, originalScopes: retained.revision.units } } : {}),
     ...(retained?.revision.action === 'review_pdf_region' ? { editorialRegionProposal: { edits: retained.revision.regionEdits, reason: retained.revision.reason, sections: retained.revision.sections } } : {}),

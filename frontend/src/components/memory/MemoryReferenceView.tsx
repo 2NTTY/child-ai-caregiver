@@ -152,7 +152,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
       {readingScope
         ? <Metadata label="原文對象">{source.applicability.publisherAudiences?.join('、') ?? '未有指明'}</Metadata>
         : <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>}
-      {readingScope ? <><Metadata label="月齡範圍">未確定</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
+      {readingScope ? <><Metadata label="月齡範圍">{source.applicability.maxAgeMonths===null?'未確定':`少於 ${source.applicability.maxAgeMonths} 個月，下限未指明`}</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
         : <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>}
       {source.applicability.conditions.length ? <Metadata label="適用條件">{source.applicability.conditions.join("；")}</Metadata> : null}
       <AppButton label={technical ? "收起版本識別" : "查看版本識別"} expanded={technical} variant="quiet" density="compact" onPress={() => setTechnical(value => !value)} />
@@ -236,7 +236,9 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
   const [exporting, setExporting] = useState(false), [fingerprint, setFingerprint] = useState('');
   const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
   const first = items[0]!, managed = first.childHealth, series = managed ? childHealthSeries : first.series ?? sourceSeries(first), preference = first.preference;
-  const categories = managed?.categoryCounts?.map(row => row.name) ?? [...new Set(items.flatMap(item => item.childHealth?.categories ?? []))];
+  const publisherOriginals = managed && workspace.model.references.state === 'ready' ? workspace.model.references.data?.publisherOriginals ?? [] : [];
+  const categories = [...new Set([...(managed?.categoryCounts?.map(row => row.name) ?? items.flatMap(item => item.childHealth?.categories ?? [])),
+    ...publisherOriginals.flatMap(link => link.categories)])];
   const selected = section === 'settings' ? selectedLibraryEditions(items) : [];
   const parts = Math.ceil(selected.length / libraryArchiveMaxEditions);
   const start = Math.min(Number(archivePart), Math.max(0, parts - 1)) * libraryArchiveMaxEditions;
@@ -259,6 +261,8 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
   const firstDocument = requestedDocument && items.find(item => item.sourceId === requestedDocument);
   const documents = (firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items)
     .filter(item => !managed || category === 'all' || item.childHealth?.categories.includes(category));
+  const originals = publisherOriginals.filter(link => (category === 'all' || link.categories.includes(category)) && !items.some(item => item.sourceId === link.sourceId));
+  const [showOriginals, setShowOriginals] = useState(false), [failedOriginal, setFailedOriginal] = useState('');
   const requiresSelection = managed ? items.some(item => { const choice = libraryDocumentChoice(item); return choice?.selectedVersionId && !choice.eligible; })
     : preference?.mode !== 'platform' && items.some(item => item.preference?.eligible === false);
   const enabled = managed ? managed.enabled > 0 : preference?.enabled !== false;
@@ -286,8 +290,15 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
         {managed && categories.length > 0 ? <CatalogChoice label="分類" value={category} onChange={setCategory}
           options={[{ value: 'all', label: '全部' }, ...categories.map(value => ({ value, label: value }))]}
           action={!onJoin && !busy && managed.adopted < managed.total ? <PlatformCardJoin seriesId={series.id} compact /> : undefined} /> : null}
-        <View style={styles.materialList}>{documents.map(item =>
-          <CatalogDocument key={item.sourceId} item={item} onRead={() => setSettingsSource(item.sourceId)} />)}</View>
+        {originals.length ? <View style={styles.section}>
+          <AppButton label={`待收錄的官方原文（${originals.length}）`} variant="quiet" density="compact" expanded={showOriginals} onPress={() => setShowOriginals(!showOriginals)} />
+          {showOriginals ? originals.map(link => <View key={link.sourceId} style={styles.materialRow}>
+            <View style={styles.materialHeading}><MaterialLink url={link.url} label={link.title} kind="document" onFailure={setFailedOriginal} /></View>
+            {failedOriginal === link.url ? <Text selectable style={styles.warning}>{link.url}</Text> : null}
+          </View>) : null}
+        </View> : null}
+        {documents.length ? <View style={styles.materialList}>{documents.map(item =>
+          <CatalogDocument key={item.sourceId} item={item} onRead={() => setSettingsSource(item.sourceId)} />)}</View> : null}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
       {preference ? <Metadata label="我的設定">{managed ? `${state}，${managed.enabled} 份已啟用` : state + ' · ' + (preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版')}</Metadata> : null}

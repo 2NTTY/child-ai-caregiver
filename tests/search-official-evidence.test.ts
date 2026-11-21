@@ -697,11 +697,19 @@ test('a transcript restricted to original lookup can quote a number without endo
     treatment:{kind:'overview',policyVersion:1}});
   item.applicability={...item.applicability,use:'original_lookup'};
   const budget=new AgentBudget();t.after(()=>budget.close());
-  const tools=createProductAgentTools({authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
+  const options = {authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
     memory:{context:async()=>emptyMemoryContext()} as any,tasks:{} as any,store:{} as any,
-    knowledge:createKnowledgeRetriever({candidates:async()=>[item]},fakeEmbeddingGateway())});
+    knowledge:createKnowledgeRetriever({candidates:async()=>[item]},fakeEmbeddingGateway())};
+  const tools=createProductAgentTools(options);
+  const background=createProductAgentTools({...options,background:true});
+  assert.ok(!background.tools.some(tool=>tool.name==='find_official_material'));
   const find=tools.tools.find(tool=>tool.name==='search_knowledge')!;
-  assert.equal((await find.execute({query:'玩具',classification:'official_guidance'},{callId:'find'} as any)).status,'succeeded');
+  const ordinary=await find.execute({query:'玩具',classification:'official_guidance'},{callId:'find'} as any);
+  assert.equal(ordinary.status,'succeeded');
+  assert.deepEqual((ordinary.data?.result as any).chunks,[]);
+  const original=tools.tools.find(tool=>tool.name==='find_official_material')!;
+  const found=await original.execute({query:'玩具'},{callId:'original'} as any);
+  assert.equal(found.status,'succeeded');assert.equal((found.data?.result as any).chunks[0].chunkId,item.chunkId);
   const present=tools.tools.find(tool=>tool.name==='present_answer')!;
   const answer=(kind:string,text:string)=>present.execute({kind,paragraphs:[{text,citationIds:[item.chunkId]}],
     originalQuotes:[{chunkId:item.chunkId,text:quote}]},{callId:'show'+text.length} as any);

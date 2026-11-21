@@ -5,7 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { FieldPath, FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeCandidate, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
-import { personalLibraryItemSchema, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
+import { libraryCatalogPageSize, personalLibraryItemSchema, type PublisherOriginal, type RegisteredLibrarySource } from "../src/shared/personal-library.ts";
 import { embeddingForChunk, internalKnowledgeSource, knowledgeChunkInputSchema, knowledgeExtractionSchema, knowledgeHash, parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash, treatmentContentHash } from "./knowledge-inputs.ts";
 import { firstHitPerSource, knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./knowledge-ranking.ts";
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
@@ -19,7 +19,7 @@ import { fullBookletDefinitionHash, matchesPriorPdfRevision, priorBookletWatch, 
 import type { FirestoreKnowledgeObservation, FirestoreKnowledgeObservationPort } from "./firestore-knowledge-refresh.ts";
 import type { CitedPdf, SavedCitationIdentity } from "./knowledge-cited-pdf.ts";
 
-import { publicMaintenanceWatch, SOURCE_WATCHES } from './knowledge-source-catalog.ts';
+import { platformSourceWatches, publicMaintenanceWatch, SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { healthServiceDirectory, serviceProfile } from './official-service-directory.ts';
 import { childHealthSeries, needsKnowledgeVector, sourceSeries, sourceSeriesSchema, type SourceSeries, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 import { childHealthSelection, createLibrarySelections, explicitlyDisabled, selectedEdition, type ListedPlatformCard } from './knowledge-library-selection.ts';
@@ -31,7 +31,7 @@ import type { StorageCipher } from './storage-crypto.ts';
 import { childHealthCategories, externalMaterialAllowed, isChildHealthSourceId } from './platform-materials.ts';
 
 export interface FirestoreKnowledgeOptions { database: Firestore; projectId: string; namespace: string; sourceIds: readonly string[]; cipher?: StorageCipher;
-  platformMaterials?: ReadonlyMap<string, { url: string; mediaLinks: string[] }>;
+  platformMaterials?: ReadonlyMap<string, { url: string; mediaLinks: string[]; title?: string }>;
   media?: PlatformMediaStore;
   observations?: FirestoreKnowledgeObservationPort; audience?: "public" | "internal" }
 export interface FirestoreKnowledgeEmbedding {
@@ -67,7 +67,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   citedPdf(citation: SavedCitationIdentity): Promise<CitedPdf | null>;
   mayReadLivePage(userId: string, sourceId: string): Promise<boolean>;
   publishedLiveSeries(sourceId: string, url: string): Promise<SourceSeries | null>;
-  catalogForUser(owner: string, afterSourceId: string | null): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[] }>;
+  catalogForUser(owner: string, afterSourceId: string | null, includeOriginals?: boolean): Promise<Awaited<ReturnType<KnowledgeStore['catalog']>> & { registered?: RegisteredLibrarySource[]; publisherOriginals?: PublisherOriginal[] }>;
   saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
   platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
   joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
@@ -153,6 +153,7 @@ function writeBudget(values: unknown[]): void {
     reject("knowledge_document_too_large", 413);
 }
 function applies(a: KnowledgeChunkInput["applicability"], filter: KnowledgeFilter): boolean {
+  if (a.use === 'original_lookup' && filter.purpose !== 'read_originals') return false;
   if (a.region !== filter.region || filter.topics.length && !filter.topics.some(topic => a.topics.includes(topic))) return false;
   if (a.use === 'original_lookup' && (a.ageBasis === 'publisher' || a.ageBasis === 'unconfirmed')) return true;
   if (a.ageBasis === "any" || filter.ageMatch === "unknown") return true;
@@ -190,6 +191,14 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     || options.sourceIds.length > 10 || options.sourceIds.some(id => !sourceId.safeParse(id).success)
     || new Set(options.sourceIds).size !== options.sourceIds.length) reject("knowledge_configuration_invalid", 400);
   const sourceIds = [...options.sourceIds].sort(compareId), allowed = new Set(sourceIds), scope = { schemaVersion: 1 as const, projectId, namespace };
+  const publisherPages = new Map<string, PublisherOriginal>();
+  for (const watch of platformSourceWatches) {
+    const material = options.platformMaterials?.get(watch.id);
+    if (!material || material.url !== watch.url || watch.kind !== 'page' || watch.audience !== 'public_noncommercial'
+      || watch.classification !== 'official_guidance') continue;
+    const categories = childHealthCategories({ sourceId: watch.id, url: watch.url }), title = watch.title ?? material.title;
+    if (categories && title) publisherPages.set(watch.id, { sourceId: watch.id, url: watch.url, title, categories });
+  }
   const allowedId = (id: string) => allowed.has(id) || options.platformMaterials?.has(id) || Boolean(options.observations && sourceIds.some(watchId =>
     id.startsWith(watchId + "-") && /^[a-f0-9]{32}$/u.test(id.slice(watchId.length + 1))));
   const selections = options.cipher ? createLibrarySelections({ database, projectId, namespace, cipher: options.cipher }) : null;
@@ -339,15 +348,19 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   const isPublicEdition = (edition: Edition) => !internalKnowledgeSource(edition.document.url)
     && edition.observed?.watch.definition.audience !== 'internal_noncommercial';
-  async function activeHeads(tx: Transaction, ids: string[]) {
+  async function sourceHeads(tx: Transaction, ids: string[]) {
     if (!ids.length) return [];
     const snapshots = await tx.getAll(...ids.map(sourceRef));
     return snapshots.flatMap(snap => {
       if (!snap.exists) return [];
       const source = scoped(parse(sourceSchema, snap.data()));
       if (source.sourceId !== snap.id) reject('knowledge_binding_invalid', 503);
-      return source.enabled && source.activeVersionId && !internalKnowledgeSource(source.url) ? [source] : [];
+      return [source];
     });
+  }
+  const isActivePublicHead = (source: Source) => source.enabled && !!source.activeVersionId && !internalKnowledgeSource(source.url);
+  async function activeHeads(tx: Transaction, ids: string[]) {
+    return (await sourceHeads(tx, ids)).filter(isActivePublicHead);
   }
   async function publicEdition(tx: Transaction, source: Source) {
     const edition = await metadata(tx, source.activeVersionId!, source);
@@ -471,27 +484,49 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       return writeSearchPageIn(tx, edition, version.search?.completed ?? 0, false);
     });
   }
-  async function catalog(afterSourceId: string | null = null, owner?: string) {
+  async function publisherOriginal(tx: Transaction, id: string, source?: Source) {
+    const link = publisherPages.get(id);
+    if (!link || source && (source.activeVersionId || source.disabledReason || source.url !== link.url)) return null;
+    const local = await options.observations?.read(tx, id);
+    const watch = local?.watch, observed = local?.observation;
+    return local?.catalogMatches && watch?.enabled && !(watch.confirmedGone ?? watch.lastStatus === 'unavailable') && observed && !observed.unavailable
+      && watch.id === id && observed.watchId === id && observed.url === link.url && watch.definition.url === link.url
+      && watch.definition.kind === 'page' && watch.definition.audience === 'public_noncommercial'
+      && familySharingAllowed({ sourceId: id, ...watch.definition }) ? link : null;
+  }
+  async function catalog(afterSourceId: string | null = null, owner?: string, includeOriginals = false) {
     if (afterSourceId !== null && !sourceId.safeParse(afterSourceId).success) reject('knowledge_catalog_cursor_invalid', 400);
     return database.runTransaction(async tx => {
       const preferences = await readSelections(tx, owner);
       const downloaded = new Set(preferences.filter(row => row.mode !== 'platform').flatMap(row => row.editions.map(pin => pin.sourceId)));
       const catalogueOrder = (a: string, b: string) => Number(downloaded.has(b)) - Number(downloaded.has(a)) || compareId(a, b);
-      const allIds = (await catalogIds(tx)).sort(catalogueOrder);
-      const ids = allIds.filter(id => afterSourceId === null || catalogueOrder(id, afterSourceId) > 0);
+      const allIds = await catalogIds(tx);
+      const withOriginals = !!(includeOriginals && owner && options.observations && publisherPages.size);
+      const ordered = (withOriginals ? [...new Set([...allIds, ...publisherPages.keys()])] : allIds).sort(catalogueOrder);
+      const remaining = ordered.filter(id => afterSourceId === null || catalogueOrder(id, afterSourceId) > 0);
+      // Unobserved or withdrawn members still advance the shared cursor without reading beyond this page.
+      const ids = withOriginals ? remaining.slice(0, libraryCatalogPageSize) : remaining;
       const visible: Edition[] = [];
-      for (let offset = 0; offset < ids.length && visible.length <= 10; offset += 11) {
-        const heads = await activeHeads(tx, ids.slice(offset, offset + 11));
-        const editions = await Promise.all(heads.map(source => publicEdition(tx, source)));
+      const originals: PublisherOriginal[] = [];
+      const batchSize = libraryCatalogPageSize + 1;
+      for (let offset = 0; offset < ids.length && visible.length <= libraryCatalogPageSize; offset += batchSize) {
+        const batch = ids.slice(offset, offset + batchSize), heads = await sourceHeads(tx, batch);
+        const editions = await Promise.all(heads.filter(isActivePublicHead).map(source => publicEdition(tx, source)));
         visible.push(...editions.filter((edition): edition is Edition => edition !== null));
+        if (withOriginals) {
+          const byId = new Map(heads.map(source => [source.sourceId, source]));
+          const links = await Promise.all(batch.map(id => publisherOriginal(tx, id, byId.get(id))));
+          originals.push(...links.filter((link): link is PublisherOriginal => link !== null));
+        }
       }
-      const hasChildHealth = owner && visible.slice(0, 10).some(e => managedCategories(e.document));
+      const onPage = visible.slice(0, libraryCatalogPageSize);
+      const hasChildHealth = owner && onPage.some(e => managedCategories(e.document));
       const members = hasChildHealth ? await childHealthEditions(tx, allIds) : [];
       const counts = new Map<string, number>();
       for (const edition of members) for (const label of childHealthCategories(edition.document) ?? []) counts.set(label, (counts.get(label) ?? 0) + 1);
       const managed = members.length ? { ...childHealthSelection(preferences, members.map(selectionEdition)),
         categoryCounts: [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => compareId(a.name, b.name)) } : null;
-      const items = await Promise.all(visible.slice(0, 10).map(async edition => {
+      const items = await Promise.all(onPage.map(async edition => {
         const { document, version, observed } = edition, extraction = document.extraction;
         const { view: preference, previousChoice } = selectedEdition(preferences, selectionEdition(edition));
         const pinnedVersion = preference.selectedVersionId && preference.mode === 'fixed'
@@ -533,7 +568,9 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           lastCheckedAt: local?.watch.lastAttemptAt ?? null, lastSuccessfulCheckAt: local?.observation?.lastSuccessfulCheckAt ?? null,
           live: false });
       }
-      return { items, ...(registered.length ? { registered } : {}), nextSourceId: visible.length > 10 ? items.at(-1)!.sourceId : null };
+      const nextSourceId = withOriginals ? (remaining.length > ids.length ? ids.at(-1)! : null)
+        : visible.length > libraryCatalogPageSize ? items.at(-1)!.sourceId : null;
+      return { items, ...(registered.length ? { registered } : {}), ...(originals.length ? {publisherOriginals: originals} : {}), nextSourceId };
     }, { readOnly: true });
   }
   const livePage = (id: string) => (allowed.has(healthServiceDirectory.id) && serviceProfile(id))
@@ -1094,7 +1131,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         if (withdrawn) tx.set(versionRef(withdrawn.versionId), withdrawn); tx.set(sourceRef(id), next);
       });
     },
-    catalog: after => catalog(after), catalogForUser: (owner, after) => catalog(after, owner),
+    catalog: after => catalog(after), catalogForUser: (owner, after, includeOriginals) => catalog(after, owner, includeOriginals),
     async platformCards(tx, owner, after, url) {
       // Ordinary private sites cannot appear in the public catalogue.
       if (url && !personalLibraryItemSchema.shape.url.safeParse(url).success) return { cards: [], next: null };
