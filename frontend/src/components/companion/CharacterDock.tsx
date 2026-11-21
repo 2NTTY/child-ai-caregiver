@@ -67,22 +67,14 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen = false
     const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(false));
     return () => { show.remove(); hide.remove(); };
   }, []);
-  const displayed = !quiet || inToolbar;
-  useEffect(() => { if (!displayed) setReady(false); }, [displayed]);
   const covered = panelOpen && small;
-  const paused = !foreground || covered || keyboard || collapsed || !displayed;
-  const previousPage = useRef(page);
-  useEffect(() => {
-    if (previousPage.current !== page && !quiet && !paused && ready && !unread) play('arrive');
-    previousPage.current = page;
-  }, [page, quiet, paused, ready, unread, play]);
+  const paused = !foreground || covered || keyboard || collapsed;
   useEffect(() => {
     if (!unread || !ready || paused || quiet || panelOpen) return;
     play('wave');
     const repeat = setInterval(() => play('wave'), 18000);
     return () => clearInterval(repeat);
   }, [unread, ready, paused, quiet, panelOpen, play]);
-  if (!displayed) return null;
   return <View ref={surface} pointerEvents="box-none" style={StyleSheet.absoluteFill} onLayout={({ nativeEvent: { layout } }) =>
     setBounds(b => b.width === layout.width && b.height === layout.height ? b : { width: layout.width, height: layout.height })}>
     <View testID="companion-dock" pointerEvents={keyboard || covered ? 'none' : 'box-none'} style={[s.dock, {

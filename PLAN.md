@@ -71,7 +71,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - A 核對家長在已收回答按「討論」時觸及模型次數上限的原操作。按實際帳戶政策驗一題能看見三方交流和主答，再問普通問題。遇到預算不足時保留已交付的發言，給一個可行的下一步。
 - B 以 assistant-ui 的 [Base demo](https://www.assistant-ui.com/demos/base) 及 [Floating Modal Chat](https://www.assistant-ui.com/examples/modal) 作全頁與頁內聊天的視覺基準。共用輸入列、圖示按鈕及送出／停止位置。討論附在原回答，失敗只提示一次。角色在桌面和窄屏均清楚可辨，點身體能留在待辦頁提問。驗收從一筆待辦問「這個」、讀答、接回主頁、展開討論及恢復輸入，以實際操作和畫面核對。本地桌面及窄屏已用青綠、暖黃版面走通問答、討論、來源及失敗恢復。普通回覆用本地 Agent 核對，完整畫面流程使用受控回應。[動圖及驗收邊界](artifacts/verification/ASSISTANT_CONVERSATION_20261121/verification.md)
-  角色現可直接按頭或身體拖動；輕點頭仍能玩，輕點身體開小窗。笑臉揮手和伸展雙手已補足取景空間，桌面及 390px 觸控模擬已驗，助手頁維持固定。真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
+  同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。助手頁固定，真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
 - C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。既有單項選擇和固定版本沿用。
 
   `codex/fhs-child-health-series` 已接回原有文件及個人訂閱。本機 Edge 以三份已發布教材核對局部採用、整卡採用、同範圍跟隨及移除。移除後新召回為零，原聊天仍可開啟同版 PDF 第 3 頁。正式站待主對話整合發布。[家長操作及原頁收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json)

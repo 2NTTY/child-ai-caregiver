@@ -129,7 +129,6 @@ async function show() {
     if (event.data === 'status') { notify('ready'); return; }
     if (['idle', 'quiet', 'hidden'].includes(event.data)) {
       mode = event.data;
-      if (mode !== 'idle') { activeUntil = 0; avatar._motionManager.stopAllMotions(); }
     } else if (['nod', 'wave', 'arrive'].includes(event.data) && mode !== 'hidden') {
       avatar.play(event.data);
       if (reduced.matches) { avatar.advance(0); avatar.advance(.35); }
