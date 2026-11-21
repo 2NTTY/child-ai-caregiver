@@ -73,6 +73,58 @@ async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
+test("send immediately displays the submitted turn while the receipt is pending", async () => {
+  const { values, controller, api } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  const receipt = deferred<void>();
+  const save = api.saveMessage;
+  api.saveMessage = async (...args) => { await receipt.promise; return save(...args); };
+  controller.setText(original);
+  const sending = controller.send();
+  assert.equal(controller.getSnapshot().outgoing?.text, original);
+  assert.equal(controller.getSnapshot().messages.length, 0);
+  controller.setText("下一句");
+  assert.equal(controller.getSnapshot().drafts[firstChild].nextText, "下一句");
+  await controller.send();
+  receipt.resolve(); await sending;
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  assert.equal(values.saves, 1);
+  assert.deepEqual(values.messages.filter(row => row.role === "user").map(row => row.text), [original]);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, "下一句");
+  controller.dispose();
+});
+
+test("an attachment appears at tap time and a late upload cannot send into a different conversation", async () => {
+  const { values, controller } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  const upload = deferred<{ id: string; version: number }>();
+  const sending = controller.send(undefined, undefined, undefined, {}, {
+    kind: "voice", label: "語音訊息", prepare: () => upload.promise,
+  });
+  assert.equal(controller.getSnapshot().outgoing?.attachmentLabel, "語音訊息");
+  controller.setText("下一句");
+  controller.syncContext(alice.id, true, secondChild);
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  upload.resolve({ id: "voice", version: 1 }); await sending;
+  assert.equal(values.saves, 0);
+  assert.equal(controller.getSnapshot().drafts[secondChild]?.text ?? "", "");
+  controller.dispose();
+});
+
+test("a failed upload restores the editable caption before any chat write", async () => {
+  const { values, controller } = fixture();
+  controller.syncContext(alice.id, true, firstChild); await settle();
+  controller.setText(original);
+  await controller.send(undefined, undefined, undefined, {}, {
+    kind: "file", label: "作息表.pdf", prepare: async () => null,
+  });
+  assert.equal(controller.getSnapshot().outgoing, undefined);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, original);
+  assert.equal(controller.getSnapshot().drafts[firstChild].phase, "draft");
+  assert.equal(values.saves, 0);
+  controller.dispose();
+});
+
 test("editing the next draft and stopping twice targets only the original saved message", async () => {
   const { values, api, controller } = fixture();
   const started = deferred<void>(), finish = deferred<void>();

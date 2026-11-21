@@ -10,7 +10,7 @@ const savedDraft = { phase: 'replying', savedUserMessageId: question, notice: '�
 const line = (chat, draft, failure) => chatTurnStatus(chat, draft, chatReplyActivity(chat), failure);
 
 test('one line follows the original question through save, progress, stopping and completion', () => {
-  assert.equal(line({ messages: [], busy: 'save' }, savedDraft).text, '正在保存…');
+  assert.equal(line({ messages: [], busy: 'save' }, savedDraft), null);
   assert.deepEqual(line(replying, savedDraft), { kind: 'progress', text: '正在回覆…' });
   const reading = { ...replying, feedback: { messageId: question, phase: 'reading' } };
   assert.equal(line(reading, savedDraft).text, '正在讀取相關資料');
