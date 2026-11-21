@@ -22,7 +22,7 @@ import { createVertexEmbeddingProvider } from '../server/vertex-embedding.ts';
 import { canResumeRetainedPromptFailure, createFirestoreKnowledgeWork, knowledgeTruncatedOutputRepairId } from '../server/firestore-knowledge-work.ts';
 import { AGENT_OUTPUT_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
-import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
+import { commissionedWebOriginal, retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
@@ -74,7 +74,8 @@ try {
   const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS || (recoveryCommand || scriptEdition
     ? new URL('../artifacts/verification/FHS_INITIAL_RETAINED_UNKNOWN_20261120.json', import.meta.url) : undefined);
   const retained = retainedFile ? retainedCampaignReceipts.parse(JSON.parse(readFileSync(retainedFile, 'utf8'))).retained : [];
-  const gate = createKnowledgeCampaignBudget(database, config.namespace, retained);
+  const webOriginal = draftRevision?.action === 'review_web_original' ? commissionedWebOriginal(id) : undefined;
+  const gate = createKnowledgeCampaignBudget(database, config.namespace, retained, webOriginal);
   const selected = selectCampaignDayAdmission(process.env.FHS_CAMPAIGN_DAY_ADMISSION);
   const admission = selected?.day === new Date().toISOString().slice(0, 10) ? selected : undefined;
   const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
@@ -176,7 +177,7 @@ try {
     // Every provider dispatch reserves this same ceiling on the existing gross ledger.
     const maxOutputTokens = sized ? AGENT_OUTPUT_LIMITS.default * (definition.kind === 'pdf' ? 2 : 1) : base.maxOutputTokens;
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
-    const runAdmission = !manual && !scriptEdition && (explicitAgeScope || draftRevision) ? admission : undefined;
+    const runAdmission = !manual && !scriptEdition && !webOriginal && (explicitAgeScope || draftRevision) ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
       explicitAgeScope, retainedDraft: draftRevision, reviewedWindow, firstDispatch, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual, scriptEdition, reviseHeldScript,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
@@ -276,6 +277,18 @@ try {
           const edition = await knowledge.exportPublishedEdition(id, active.versionHash, card.seriesId);
           if (edition.versionHash !== active.versionHash || edition.source.url !== sourceUrl) throw Error('knowledge_campaign_recovery_card_mismatch');
           listedCard = { seriesId: card.seriesId, versionId: card.versionId, chunks: edition.source.chunks.length, vectors: edition.embeddings.length };
+          if (webOriginal) {
+            const snapshot = await refresh.resumeCheck(job.data, checkId);
+            const item = snapshot?.status === 'ok' && snapshot.items.length === 1 ? snapshot.items[0] : null;
+            const [chunk] = edition.source.chunks;
+            if (!item || observationHash(item) !== webOriginal.observationHash || edition.source.chunks.length !== 1
+              || edition.embeddings.length !== 1 || chunk.originalText !== item.text || chunk.applicability.use !== 'original_lookup'
+              || chunk.applicability.publisherAudiences?.length !== 1 || chunk.applicability.publisherAudiences[0] !== webOriginal.audience
+              || chunk.applicability.minAgeMonths !== null || chunk.applicability.maxAgeMonths !== null)
+              throw Error('knowledge_campaign_web_original_readback_mismatch');
+            listedCard.publisherAudience = webOriginal.audience;
+            listedCard.originalLength = item.text.length;
+          }
           if (scriptEdition) {
             const snapshot = await refresh.resumeCheck(job.data, checkId);
             assertScriptObservation(scriptEdition, definition, snapshot);
@@ -292,7 +305,7 @@ try {
           ...(reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
-        ...(manual || scriptEdition ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),
+        ...(manual || scriptEdition || webOriginal ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),
         ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), ...(runAdmission ? { campaignDayAdmission: runAdmission } : {}), maxOutputTokens,
         status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {

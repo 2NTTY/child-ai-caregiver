@@ -26,6 +26,14 @@ def commands(args, manifest):
     if args.action == "accounting":
         yield ["scripts/fhs-initial-campaign.mjs", "status"]
         return
+    if args.action == "web-original":
+        match = next((row for row in manifest["entries"] if row["sourceId"] == args.source
+                      and row["action"] == "review_web_original" and row["operationFingerprint"] == args.original), None)
+        if args.reads or not match:
+            raise ValueError("Unassigned web original")
+        verb = "inspect-recovery" if args.mode == "inspect" else "recover"
+        yield ["scripts/fhs-initial-campaign.mjs", verb, args.source, args.original]
+        return
     if args.action == "script":
         if args.reads or not any(row["sourceId"] == args.source and row["observationHash"] == args.observation for row in manifest):
             raise ValueError("Unassigned script edition")
@@ -197,6 +205,10 @@ def main():
     lane.add_argument("mode", choices=["status", "prepare", "run"])
     lane.add_argument("source", nargs="?")
     sub.add_parser("accounting")
+    web = sub.add_parser("web-original")
+    web.add_argument("mode", choices=["inspect", "run"])
+    web.add_argument("source")
+    web.add_argument("original")
     script = sub.add_parser("script")
     script.add_argument("mode", choices=["inspect", "run", "revise", "inspect-revision"])
     script.add_argument("source")
@@ -221,6 +233,8 @@ def main():
         if not HASH.fullmatch(args.observation) or not re.fullmatch(r"fhs-[0-9]{5}", args.source):
             parser.error("Invalid script source or observation")
         manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-script-editions.json"]))
+    elif args.action == "web-original":
+        manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-initial-recovery.json"]))
     elif args.action != "accounting":
         manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-initial-publication-lanes.json"]))
     if args.action == "lane" and args.mode == "run":

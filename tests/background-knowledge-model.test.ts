@@ -3,7 +3,7 @@ import { pdfOrganizationContract } from "../server/knowledge-pdf-output.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { assembleAgentPrompt } from "../server/agent-prompt.ts";
-import { retainedDraftRevisionSchema, retainedDraftWorkId } from "../server/knowledge-retained-draft.ts";
+import { commissionedWebOriginal, retainedDraftRevisionSchema, retainedDraftWorkId } from "../server/knowledge-retained-draft.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { canResumeRetainedPromptFailure, createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
@@ -107,6 +107,46 @@ test("knowledge preparation preserves original evidence and stores a separate mo
   assert.equal(held.review.decision, "hold_candidate", "no executable rule does not override an evidence hold");
   assert.equal(held.assessment.growthRuleImpact, "none");
   assert.match(held.review.notes[0]!, /does not resolve/u);
+});
+
+test('a commissioned web chapter retains its whole original and literal audience for independent lookup review', async () => {
+  const c = candidate();
+  const pin = commissionedWebOriginal('fhs-14851')!;
+  const observed = {...c.observed, title: '嬰兒閱讀原件', text: '嬰兒章節。'.repeat(65) + '最後一句也要保存。'};
+  const current = {...c, observed, observationHash: observationHash(observed)};
+  const webOriginal = {...pin, sourceId: current.watchId, url: observed.url, observationHash: current.observationHash};
+  async function run(decision: 'hold' | 'approve') {
+    const roles: string[] = [];
+    const prepared = await prepareKnowledgeMaintenance({candidate: current, webOriginal, baseline: null, fetchedAt, growthRules: [],
+      async completeText(input) {
+        assert.equal(input.role, 'knowledge_review');
+        roles.push(input.role);
+        const p = JSON.parse(input.user);
+        assert.equal(p.role, 'knowledge-semantic-review');
+        assert.equal(p.originalOperation, pin.operationFingerprint);
+        assert.ok(p.repeatedText.includes(observed.text));
+        const [key] = Object.keys(p.sourceComparison.facts);
+        assert.equal(p.sourceComparison.facts[key!], 'new');
+        return JSON.stringify({changes:{[key!]:{explanation:'The complete original was compared.'}},
+          checks:{age:'Publisher wording retained.', numbersAndUnits:'Unchanged.', timing:'Unchanged.', conditions:'Same.',
+            exceptions:'Same.', prohibitions:'Same.', withdrawal:'First edition.'},
+          questions:[{query:'如何查回本章？', expectedKeys:[key], reason:'Complete source.'}],
+          decisionReason:'Independent fixture decision.', decision});
+      }});
+    assert.deepEqual(roles, ['knowledge_review']);
+    const [chunk] = prepared.source.chunks;
+    assert.equal(chunk!.originalText, observed.text);
+    assert.equal(chunk!.text, [...observed.text].slice(0,150).join(''));
+    assert.deepEqual(chunk!.applicability.publisherAudiences, [pin.audience]);
+    assert.equal(chunk!.applicability.use, 'original_lookup');
+    assert.deepEqual([chunk!.applicability.minAgeMonths, chunk!.applicability.maxAgeMonths], [null, null]);
+    assert.equal(chunk!.scriptPassage, undefined);
+    return prepared.review.decision;
+  }
+  assert.equal(await run('hold'), 'hold_candidate');
+  assert.equal(await run('approve'), 'approve_candidate');
+  await assert.rejects(prepareKnowledgeMaintenance({candidate:current, webOriginal:{...webOriginal, observationHash:'0'.repeat(64)},
+    baseline:null, fetchedAt, growthRules:[], completeText:async () => assert.fail('Unexpected model call')}), /knowledge_web_original_changed/u);
 });
 
 test("the initial corpus age grammar couples bounds and holds one-sided evidence before independent review", async () => {

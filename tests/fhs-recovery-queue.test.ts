@@ -43,9 +43,18 @@ test('the held recovery queue dispatches only bound checkpoint drafts and stops 
   assert.deepEqual(completed.args.toSorted(), expected.map((r: {campaignArgs: string[]}) => r.campaignArgs).toSorted());
   const deferred = queue(4);
   assert.deepEqual(deferred, {args: [completed.args[0]], status: 4});
-  const quarantined = plan.entries.filter((r: {action: string}) => r.action === 'quarantine_504');
-  assert.equal(quarantined.length, 2);
-  assert.ok(quarantined.every((r: {campaignArgs?: string[]}) => !r.campaignArgs));
+  const originals = plan.entries.filter((r: {action: string}) => r.action === 'review_web_original');
+  assert.deepEqual(originals.map((r: {sourceId: string}) => r.sourceId).sort(), ['fhs-14851', 'fhs-15672']);
+  for (const item of originals) {
+    assert.equal(item.campaignArgs, undefined);
+    const manual = spawnSync(process.execPath, ['scripts/fhs-recovery-plan.mjs', item.sourceId], {cwd: root, encoding: 'utf8'});
+    assert.equal(manual.status, 0, manual.stderr);
+    assert.deepEqual(JSON.parse(manual.stdout).entries[0].campaignArgs, ['recover', item.sourceId, item.operationFingerprint]);
+    const revision = retainedDraftRevisionSchema.parse(item);
+    const original = revision.priorOperationFingerprint ?? revision.operationFingerprint;
+    assert.ok(matchesRegisteredRetainedDraft(revision, original, retainedDraftWorkId(item.operationFingerprint)));
+    assert.equal(matchesRegisteredRetainedDraft({...revision, observationHash: 'f'.repeat(64)}, original, retainedDraftWorkId(item.operationFingerprint)), false);
+  }
 });
 
 test('later PDF holds are recoverable only by explicit ID and original receipt', () => {

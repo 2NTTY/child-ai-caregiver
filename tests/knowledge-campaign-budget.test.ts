@@ -10,6 +10,7 @@ import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { bindFirstDispatch, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { commissionedWebOriginal } from '../server/knowledge-retained-draft.ts';
 
 test('the first-dispatch registration binds the comic to its held observation and original commission', () => {
   const sourceId = 'pdf-48e37ddf27a8864e98362fa9';
@@ -267,6 +268,35 @@ test('only the inspected original can release a legacy rejection and its histori
   assert.equal(entry.stageHash, undefined);
   assert.equal(entry.inputTokens, undefined);
   assert.equal(entry.cost, 0);
+});
+
+test('only the original settled 504 grants the selected chapter a metered stage on its original operation', async () => {
+  const {database} = firestoreDomainFixture();
+  const web = commissionedWebOriginal('fhs-14851')!;
+  const pin = {sourceId:web.sourceId, operationFingerprint:web.operationFingerprint,
+    ticketId:web.ticketId, kind:'generation' as const, at:'2026-11-20T00:03:11.096Z', ceiling:1603584};
+  const ordinary = createKnowledgeCampaignBudget(database, 'test', [pin]);
+  const selected = createKnowledgeCampaignBudget(database, 'test', [pin], web);
+  await createKnowledgeCampaignBudget(database, 'test').initialize();
+  const root = database.collection('test_knowledge_campaigns').doc('fhs-child-initial-20261120');
+  const ticket = root.collection('attempts').doc(pin.ticketId);
+  const binding = {sourceId:pin.sourceId, operationFingerprint:pin.operationFingerprint, stageKey:'independent-review', assertLease:async () => {}};
+  await database.runTransaction(async tx => {
+    tx.update(root, {held:pin.ceiling, attempts:1});
+    const {ticketId:_, ...row} = pin;
+    tx.create(ticket, {...row, state:'reserved'});
+  });
+  await assert.rejects(selected.reserveShared('generation', binding, 4096));
+  const {kind:_, ...proof} = pin;
+  await ordinary.settleRejectedGeneration({...proof, rejection:{httpStatus:504, evidenceSha256:web.rejectionHash}});
+  assert.equal((await ordinary.sourceStatus(pin.sourceId)).admissible, false);
+  assert.equal((await selected.sourceStatus(pin.sourceId)).admissible, true);
+  await assert.rejects(selected.reserveShared('generation', {...binding, operationFingerprint:'f'.repeat(64)}, 4096));
+  const settle = await selected.reserveShared('generation', binding, 4096);
+  assert.equal((await selected.sourceStatus(pin.sourceId)).admissible, false);
+  await settle(100, 40);
+  await assert.rejects(selected.reserveShared('generation', binding, 4096), /attempt_recorded/);
+  assert.deepEqual([(await selected.status())?.attempts, (await selected.status())?.settled], [2,2]);
 });
 
 test('campaign admission serializes attempts, survives lost acknowledgement, and enforces the gross cap', async () => {

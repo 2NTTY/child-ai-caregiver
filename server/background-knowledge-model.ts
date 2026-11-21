@@ -4,7 +4,7 @@ import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
 import { scriptReadingContract, scriptScopeInstruction, scriptReviewInstruction, publisherScriptReading, compactPublisherReview, publisherReviewInstruction, type PublisherAudience } from './knowledge-script-reading.ts';
 import type { AgeExampleRegistration } from './knowledge-age-examples.ts';
-import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
+import { reviseRetainedDraft, type RetainedOrganizerRevision, type ReviewedWebOriginal, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
 import { physicalPdfQuote } from "./knowledge-pdf-physical-quote.ts";
@@ -209,6 +209,7 @@ export async function prepareKnowledgeMaintenance(input: {
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
     publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true;procedureLookup?:true} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
+  webOriginal?: ReviewedWebOriginal;
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
   growthRules: readonly KnowledgeGrowthRuleBinding[];
@@ -244,6 +245,11 @@ export async function prepareKnowledgeMaintenance(input: {
       reject("knowledge_maintenance_baseline_mismatch");
   } else if (candidate.previousObservationHash !== null) reject("knowledge_maintenance_baseline_missing");
   const units = originalUnits(candidate);
+  const web = input.webOriginal;
+  if (web && (baseline || retained || input.scriptRevision || candidate.definition.kind !== 'page' || candidate.observed.scripts?.length
+    || candidate.watchId !== web.sourceId || candidate.observationHash !== web.observationHash || candidate.observed.url !== web.url
+    || units.length !== 1 || units[0]!.originalText !== candidate.observed.text))
+    reject('knowledge_web_original_changed');
   if (input.scriptRevision && (candidate.definition.kind !== 'page' || !candidate.observed.scripts?.length || !input.explicitAgeScope))
     reject('knowledge_script_revision_scope');
   const sha = candidate.definition.leafletPage ? candidate.observed.extraction!.contentHash : null;
@@ -344,14 +350,15 @@ export async function prepareKnowledgeMaintenance(input: {
     const claims = [priorVisual.layoutQuestion!, ...Object.values(focus.review.layoutFacts)];
     if (!sampleChunk || claims.some(claim => !sampleChunk.text.includes(claim))) reject("knowledge_focus_binding_mismatch");
   }
-  const publisherScope=input.scriptRevision?.publisherScope;
+  const publisherScope: NonNullable<NonNullable<typeof input.scriptRevision>['publisherScope']> | undefined = web
+    ? {audiences:[{audience:web.audience}],amendUnits:[],exclusiveLookup:true,sourceComparison:true} : input.scriptRevision?.publisherScope;
   for(const key of publisherScope?.amendUnits??[]) {
     if(!units.some(u=>u.id===key))reject('knowledge_script_amendment_missing');
     reusable.delete(key);
   }
   const pending = units.filter(unit => !reusable.has(unit.id));
   const publisherDraft=publisherScope?publisherScriptReading(pending,candidate.observed.title,publisherScope.audiences,candidate.observed.text,
-    publisherScope.exclusiveLookup,publisherScope.ageExamples):null;
+    publisherScope.exclusiveLookup,publisherScope.ageExamples,web ? 'official-material' : 'official-transcript'):null;
   const scriptReading = input.scriptRevision && !publisherDraft && pending.length ? scriptReadingContract(pending, candidate.observed.title) : null;
   const organized = publisherDraft ? null : scriptReading ? await complete('organize', organize.text, {
     role:'background-knowledge-maintenance', task:scriptScopeInstruction, materialTitle:candidate.observed.title,
@@ -473,6 +480,7 @@ export async function prepareKnowledgeMaintenance(input: {
   const reviewPayload = {
     role: "knowledge-semantic-review",
     ...(input.scriptRevision ? {scriptReading:publisherScope?publisherReviewInstruction:scriptReviewInstruction, priorHold:input.scriptRevision} : {}),
+    ...(web ? {publisherReading:publisherReviewInstruction, priorOutcome:'The earlier provider request timed out. Independently verify this complete publisher chapter for reference use.', originalOperation:web.operationFingerprint} : {}),
     ...(publisherScope?.exclusiveLookup ? {accessForOriginalLookup:{
       publishedSourceTool:'find_official_material (parent requests a publication, original passage or citation check)',
       ordinaryCareSearch:'excluded in storage before ranking', adjacentCareContext:'excluded', personalAdvice:'excluded', proactive:'excluded',
@@ -492,7 +500,7 @@ export async function prepareKnowledgeMaintenance(input: {
     ...(priorConditions.length ? { priorConditions: priorConditions.map(({ conditions, ...row }) => ({ ...row,
       currentConditions: Object.fromEntries(conditions.map((condition, i) => ["condition" + (i + 1), condition])) })) } : {}),
     candidate: pdf ? { ...source, chunks: source.chunks.map(({ originalText: _, ...chunk }) => chunk) }
-      : input.scriptRevision ? { ...source, chunks:source.chunks.map(({ originalText, ...chunk }) =>
+      : input.scriptRevision || web ? { ...source, chunks:source.chunks.map(({ originalText, ...chunk }) =>
         originalText === chunk.text ? {...chunk, textIsOriginal:true} : {...chunk, originalText}) } : source,
     baseline: baseline?.source ?? null, ...nativeScope,
     ...(pdf || publisherScope ? {} : { outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }) }),
@@ -602,6 +610,7 @@ export function createModelKnowledgeReviewPort(options: {
   replayCommunication?: boolean;
   scriptRevision?: Parameters<typeof prepareKnowledgeMaintenance>[0]['scriptRevision'];
   retainedDraft?: Parameters<typeof prepareKnowledgeMaintenance>[0]['retainedDraft'];
+  webOriginal?: ReviewedWebOriginal;
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
   growthRules: readonly KnowledgeGrowthRuleBinding[];
   baseline(candidate: BackgroundKnowledgeCandidate): Promise<KnowledgeMaintenanceBaseline | null>;
@@ -622,7 +631,9 @@ export function createModelKnowledgeReviewPort(options: {
         reject("knowledge_destination_baseline_conflict");
       const comparedCandidate = comparison ? { ...candidate, previousObservationHash: comparison.baseline.observationHash } : candidate;
       const prepared = await prepareKnowledgeMaintenance({ candidate: comparedCandidate, baseline: comparison?.baseline ?? local,
-        explicitAgeScope: options.explicitAgeScope, replayCommunication: options.replayCommunication, scriptRevision:options.scriptRevision, retainedDraft: options.retainedDraft, previousVisual: await options.previousVisual?.(candidate),
+        explicitAgeScope: options.explicitAgeScope, replayCommunication: options.replayCommunication,
+        scriptRevision: options.scriptRevision, retainedDraft: options.retainedDraft, webOriginal: options.webOriginal,
+        previousVisual: await options.previousVisual?.(candidate),
         heldDraft: await options.heldDraft?.(),
         fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
       if (comparison) {

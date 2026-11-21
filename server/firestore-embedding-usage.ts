@@ -1,6 +1,5 @@
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER } from "./firestore-ai-usage.ts";
-import type { ManualPublicationPin } from './fhs-manual-publication.ts';
-import type { ScriptEdition } from './fhs-script-edition.ts';
+import type { CommissionedKnowledgePublication } from './firestore-ai-usage.ts';
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { EmbeddingActor, EmbeddingUsage } from "./embedding-gateway.ts";
@@ -10,7 +9,7 @@ import type { CampaignDayAdmission } from "./knowledge-campaign-budget.ts";
 
 type Sponsor = { userId: string; dailyLimit: number; binding: string };
 export function operatorEmbeddingRequest(actor: EmbeddingActor, sequence: number, deadlineAtMs: number, userLimit: number,
-  globalLimit: number, manualPublication: ManualPublicationPin | ScriptEdition | undefined, sponsor?: Sponsor): DurableAiUsageRequest {
+  globalLimit: number, manualPublication: CommissionedKnowledgePublication | undefined, sponsor?: Sponsor): DurableAiUsageRequest {
   const key = knowledgeHash(actor);
   return { kind: 'embedding', rootRunId: actor.operationId, attemptKey: 'operator-embedding:' + sequence,
     bindingFingerprint: sponsor ? knowledgeHash([key, sponsor.binding]) : key, requestFingerprint: knowledgeHash([actor, sequence]),
@@ -22,7 +21,7 @@ export function operatorEmbeddingRequest(actor: EmbeddingActor, sequence: number
 /** Host-operator gateway adapter, using the exact shared platform daily counters. */
 export function createFirestoreOperatorEmbeddingUsage(options: FirestoreDomainOptions, deadlineAtMs: number,
   sponsor?: Sponsor, campaignAdmission?: CampaignDayAdmission,
-  manualPublication?: ManualPublicationPin | ScriptEdition): EmbeddingUsage {
+  manualPublication?: CommissionedKnowledgePublication): EmbeddingUsage {
   const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: sponsor ? "personal" : "platform", campaignAdmission, manualPublication });
   let sequence = 0, current: { key: string; request: DurableAiUsageRequest } | null = null;
   return {
