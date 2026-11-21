@@ -1,0 +1,56 @@
+{
+  "dateHongKong": "2026-11-22",
+  "walkthroughBase": "1bef029bd6734656a3aefe529cd53f13c1b4c6ea",
+  "lastLiveTestBase": "710321e7",
+  "deliveryBase": "736d5a1b",
+  "environment": {
+    "browser": "Isolated headless Edge 158.0.4370.33, 1120 x 850, zh-HK",
+    "runtime": "Node 24.22.1, production Web, Server and ADK entry points with local Firebase emulators and real Vertex gemini-3.1-flash-lite",
+    "account": "One synthetic non-administrator parent, one child and one saved task. The bootstrap operator issued the fixture invitation. Session admission, role and all parent actions were checked separately.",
+    "policy": "Platform mode, policy v0, 8 model calls per run, ordinary daily limits 20 per user and 100 globally. One separately approved isolated dialogue had up to 5 additional daily attempts for this parent only."
+  },
+  "directory": {
+    "message": "5d8e5b08-2303-4fb7-b388-8d980fcd3820",
+    "run": "702f30c8-5fdb-4da4-868b-e869989565e9",
+    "answer": "c2130f48-0266-4f0d-8012-5604ec1304c4",
+    "observed": "A colloquial roster question returned the single registered child's name."
+  },
+  "stopAndContinue": {
+    "message": "2d382094-5c75-4a80-bd9e-43d912bf4196",
+    "run": "da6a36cc-5b64-49b7-9cb7-c35ee244778e",
+    "observed": "After a local development watcher interruption, the parent reopened the running turn and pressed Stop. The original run stopped as cancelled. A new message could be sent in the same chat."
+  },
+  "identityAndClarification": {
+    "question": "你係咩助手呀？我想幫佢填返屋企平時講咩語言，未話你知答案。你先問我，唔好儲住。",
+    "before": {"message": "a2565dbb-9b9b-41a9-b1ad-e8b995185811", "run": "d34f50b9-9955-450b-b8cb-952225ec030e", "stop": "delivery_review_rejected", "modelCalls": 5},
+    "fault": "The directory-scope check actually ran. A denied roster query registered the signed-in speaker as successful evidence. The original native draft was not retained.",
+    "after": {"message": "2109b05d-88ff-45db-a6e2-a406f454ef86", "run": "4f0443d5-7d92-40fc-b8cd-60d8c40f58c4", "answer": "7d89d8ee-8359-40c1-b64d-5d03a298e687", "modelCalls": 1, "accountLookups": 0},
+    "observed": "Same wording and child. The assistant introduced itself and asked which language the child uses at home. Zero pending candidates, zero facts and profile version 0."
+  },
+  "privateMemory": {
+    "correction": {"message": "17c75642-5fec-47be-b4bf-4dc92a0fadf8", "run": "1928fe5d-d22f-4387-9794-11bc4d6032c8", "candidate": "3f19b635-273b-426b-a12d-16c7e39b29c7", "modelCalls": 3},
+    "beforeConfirmation": "A real model proposed only the corrected home and story languages as private. The parent saw the pending question; persistent facts remained empty.",
+    "beforeFix": {"message": "2fe21f4f-6a3c-4faf-868b-42c3d11ad8e2", "run": "8cb2f1c6-1f3c-4631-8ad3-d254ffb21f14", "answer": "291c2fb4-429f-46d1-8645-695e69265ee8", "stop": "delivery_review_no_sources", "modelCalls": 2, "savedFactVersion": 1},
+    "fault": "Confirmation committed. A generated restatement omitted its citation. Independent review passed, but the subsequent source check withheld the wording and displayed failure alongside the saved operation.",
+    "postFixSetup": "The original completed operation was left in place. The scoped business stores prepared a pending correction to the same private fact at version 1, then bound its parent-visible confirmation question. No fact was written during setup.",
+    "afterFix": {"question": "f53f5d9f-ef32-46f4-aa3b-bbd4733e3046", "candidate": "a7be332a-ffb9-4db3-9f42-fca682c78939", "message": "b6836589-0498-4cfb-875f-897708988e58", "run": "9aca35e2-1806-4500-a6fe-835f8f4fc081", "answer": "001a002c-ea44-469d-bcee-2a5bf66ed3d1", "savedFactVersion": 2, "modelCalls": 0},
+    "observed": "The parent typed 確認 in Web. The completed receipt showed version 2. One fact remained private and the profile stayed empty at version 0. Reopening chat showed the same receipt and the long-term memory screen showed the correction."
+  },
+  "companion": {
+    "question": "呢個要準備啲咩？",
+    "selected": {"kind": "task", "id": "9da5fb72-920a-4841-9f52-9409616c23fd", "version": 1},
+    "before": {"message": "db8c4035-3648-4702-8999-3b9431c35d54", "run": "545e0917-fc89-47be-9aee-bfa76293af55", "firstRejection": "invalid_citation", "dailyAttemptsBefore": 18, "dailyAttemptsAfter": 20, "stop": "quota_exceeded"},
+    "fault": "The generic invalid-citation repair omitted the registered selected-item citation. The original rejected arguments were not retained.",
+    "after": {"message": "a4fc3d19-57ff-44eb-a25c-b0ebc6ac4fa7", "run": "105b43a8-3e76-4b58-8d2c-fc09fabde60c", "toolOutcomes": ["invalid_citation", "invalid_citation", "succeeded"], "dailyAttemptsBefore": 20, "dailyAttemptsAfter": 25, "stop": "quota_exceeded"},
+    "observed": "Both live Web attempts bound the same selected version. On the second attempt the draft was accepted on its third submission, then the daily cap stopped final verification. No released answer was observed. Web showed the quota reason. From the submitted question in main chat the parent reopened the original task and read the library card and blue apron in its instructions.",
+    "controlledComparison": "Read the original question, chat and task from the isolated fixture. In a separate in-memory ProductAgent run, a controlled provider first supplied an invalid citation, then submitted the exact registered citation from the rejection. Controlled independent review saw the task original and the paragraph. The completed answer named the library card and blue apron. No provider calls or writes to the family's chat.",
+    "existingDeliveredWebAnswer": {"file": "THREE_LINE_INTEGRATION_20261120.json", "section": "companionToChat", "run": "231199e6-532f-48ac-85b8-319a9e1114c0", "scope": "Same saved-task-to-main-chat path with different synthetic materials. Two recorded generator steps, live retrieval and independent review."}
+  },
+  "verification": {
+    "tests": ["agent-context-topology", "chat-workspace-view", "chat-page-evidence", "agent-confirmation-retry", "product-agent-confirmation-budget"],
+    "passed": 33,
+    "serverTypecheck": "tsc --project tsconfig.server.json",
+    "budget": {"localReservationUSD": 0.30, "shared12hLimitUSD": 5, "sharedMeterReadAtUtc": "2026-11-21T19:28:08.385Z", "parentDayAttempts": 25, "parentDayInputTokens": 257766, "parentDayOutputTokens": 1921, "parentAttemptsWithIncompleteUsage": 25, "billing": "Platform. Counters include background work. The measured token totals are not a settled charge."},
+    "remaining": "A newly delivered live answer naming both materials in this exact household is unverified. Deployment, a real parent account and physical-device interaction were outside the simulation."
+  }
+}

@@ -61,12 +61,46 @@ async function fixture() {
     const u4 = (await chat.createUserMessageForUser('owner', childId, 'Read both omitted original conditions before answering.'))!;
     return { u0, u1, u2, m0, m1, u3, m3, u4 };
   }
-  return { options, authority, chat, services, childId, admit, product, interleaved };
+  return { options, authority, chat, memory, services, childId, admit, product, interleaved };
 }
 function captureRuntime(consume: (input: AgentRunInput) => void): AgentRuntimePort {
   return { run: async input => { consume(input); return { runId: input.runId!, status: 'stopped', stopReason: 'unavailable', text: null,
     tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } }; } };
 }
+
+test('a parent gets the committed memory receipt when confirming a single candidate', async () => {
+  const f = await fixture();
+  const { store } = f.services;
+  const user = 'owner', child = f.childId;
+  const original = await f.chat.createUserMessageForUser(user, child, '平時講廣東話，講故事先用英語。');
+  assert.ok(original);
+  const claim = await store.claim(user, child, { kind: 'interactive', reference: original.id }, 'product-interactive');
+  assert.ok(claim);
+  const candidate = await store.propose(claim.scope, claim.runId, 'language', { kind: 'memory_fact',
+    content: original.text, key: 'home-language', intendedVisibility: 'private', validUntil: null, sourceMessageId: original.id });
+  assert.ok(candidate);
+  const question = await store.requestConfirmation!(claim.scope, claim.runId, {
+    runId: claim.runId, proposalId: candidate.id, expectedVersion: candidate.version, workId: null });
+  assert.ok(question);
+  await store.finish(claim.scope, { runId: claim.runId, provenance: null, status: 'completed', stopReason: null,
+    text: question.question, citations: [], retrievalMode: 'not_used', tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] });
+  const reply = await f.chat.createModelMessageForUser(user, child, original.id, question.question);
+  assert.ok(reply);
+  await store.bindConfirmationQuestion!(user, child, reply.id);
+  const consent = await f.chat.createUserMessageForUser(user, child, '確認');
+  assert.ok(consent);
+  const app = f.product(captureRuntime(() => assert.fail('A committed confirmation does not need model generation')));
+  const receipt = await app.reply(user, child, consent.id, async () => true);
+  assert.equal(receipt?.status, 'completed');
+  assert.deepEqual(receipt.tools, [{ name: 'confirmed_proposal', status: 'succeeded', reference: candidate.id }]);
+  assert.deepEqual(receipt.counts, { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 });
+  assert.match(receipt.text, /記憶.*第 1 版/u);
+  assert.deepEqual(await app.reply(user, child, consent.id, async () => true), receipt);
+  const facts = await f.memory.facts(user, child);
+  assert.ok(facts);
+  assert.deepEqual(facts.items.map(({ content, visibility, version }) => ({ content, visibility, version })),
+    [{ content: original.text, visibility: 'private', version: 1 }]);
+});
 
 test('three successive personal questions use only the data needed for each answer', async () => {
   const f = await fixture();
@@ -84,7 +118,8 @@ test('three successive personal questions use only the data needed for each answ
         const parts = request.contents.flatMap(content => content.parts ?? []);
         if (!Object.keys(request.toolsDict).length && parts[0]?.text?.startsWith('{"current":')) {
           assert.equal(JSON.parse(parts[0]!.text!).current, question);
-          return {finishReason:FinishReason.STOP,content:{role:'model',parts:[{text:index === 0 ? 'READ_DIRECTORY' : 'KEEP_PRIVATE'}]}};
+          const requestedContext = ['READ_DIRECTORY', 'READ_SPEAKER', 'KEEP_PRIVATE'][index];
+          return {finishReason:FinishReason.STOP,content:{role:'model',parts:[{text:requestedContext}]}};
         }
         const review = parts.find(part => part.text?.startsWith('Server evidence payload for chat-delivery-review.'))?.text;
         if (review) {

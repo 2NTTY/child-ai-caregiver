@@ -47,7 +47,7 @@ import { createAgentWorkTools, prepareProposalConfirmation } from "./agent-work-
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 import { citedOriginalSpans } from '../src/shared/knowledge.ts';
-import { currentTurnNeedsDirectory, readDirectoryPage, directoryPageReference, directoryPagesCurrent, type AccountDirectory } from './agent-account-directory.ts';
+import { requestedAccountContext, readDirectoryPage, directoryPageReference, directoryPagesCurrent, type AccountDirectory } from './agent-account-directory.ts';
 import { ACCOUNT_DIRECTORY_ANSWER, CHILD_PROFILES_CHAT_TEXT } from '../src/shared/chat-workspace-view.ts';
 
 const historyQuoteParagraph = z.strictObject({ quoteHistory: z.string().min(1).max(80).describe('Copy this returned chat citation verbatim as the paragraph.') });
@@ -566,6 +566,13 @@ export function createProductAgentTools(options: {
         code: error.code, unsupportedParagraphNumbers: error.paragraphs, selectedItem: options.pageEvidence.source, availableOfficialCitationIds,
         nextAction: '保留有根據的段落，修改列出的段落。所選項目用 private_reference、text 和 citationIds:["page-item"]。查已下載的官方教材用 search_knowledge，照護建議引用其 chunkId。若只欠資料，可直接問一個問題；省略未核實的檔案說明和無關提醒。',
       } };
+      if (options.pageEvidence && !selectedOfficialHelp.size && error instanceof FamilyError &&
+        (error.code === 'invalid_citation' || error.code === 'citation_required')) {
+        return { status: 'rejected', data: { code: error.code,
+          selectedItemCitation: { kind: 'private_reference', citationIds: [options.pageEvidence.source.citationId] },
+          availableOfficialCitationIds,
+          nextAction: '回答家長選取的項目時，只把原文支持的內容寫入該段，再按 selectedItemCitation 填 kind 和 citationIds。其他記錄用相應工具的引用，照護建議另段引用已讀官方片段。' } };
+      }
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
@@ -756,20 +763,20 @@ export function createProductAgentTools(options: {
   const tools: AgentTool[] = [...discussion?.tools ?? []];
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;
-    let permittedForMessage: Promise<boolean> | undefined;
+    let requestedContext: ReturnType<typeof requestedAccountContext> | undefined;
     tools.push({ name: 'read_account_context', effect: 'read',
-      description: '查閱當前提問所需的帳戶資料：speaker 為正在說話的本人，children 為本人帳戶的孩子名冊。兩者不同。只有需要辨認孩子或了解名冊才選 children。可續頁。',
+      description: '按本輪明確要求查閱帳戶資料。speaker 是登入的家長，children 是該帳戶的子女名冊，可續頁。介紹你自己的身份或能力、向家長補問目前孩子的資料，均可直接回應。',
       parameters: z.strictObject({subject:z.enum(['speaker','children']), page:z.number().int().min(1).optional()}), authorize: permitted,
       async execute(args) {
         if (!await permitted()) throw new AgentStopped('unauthorized');
         const speaker = () => ({status:'succeeded' as const,reference:'speaker',data:{result:registerWorkspaceEvidence('workspace:speaker',
           {subject:'speaker',role:'signed_in_account_holder',personalNameProvided:false})}});
         if (args.subject === 'speaker') return speaker();
-        permittedForMessage ??= currentTurnNeedsDirectory(run, options.currentMessageId!, options.trustedUserMessage ?? '');
-        if (!await permittedForMessage) {
-          const result = speaker();
-          return {...result,data:{...result.data,scope:'speaker_only',nextAction:'回應當前訊息即可。若要填資料而欠對象及內容，直接問需要哪位和哪些內容，等家長回答。'}};
-        }
+        requestedContext ??= requestedAccountContext(run, options.currentMessageId!, options.trustedUserMessage ?? '');
+        const subject = await requestedContext;
+        if (subject === 'speaker') return speaker();
+        if (subject === null) return { status:'rejected', data:{ code:'account_context_not_requested',
+          nextAction:'本輪沒有要求查帳戶資料。回到家長當前的問題，沿對話已確定的對象，只補問仍欠的資料。' } };
         let reference: string | undefined;
         const response = await guard(async () => {
           if (!await permitted()) throw new AgentStopped('unauthorized');

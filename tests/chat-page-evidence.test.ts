@@ -17,12 +17,19 @@ test('a companion restatement preserves the original while an unsupported siblin
     const present = surface.tools.find(t => t.name === 'present_answer')!;
     const call = {scope, runId, callId:randomUUID(), signal:budget.signal};
     const item = {kind:'private_reference', text:'這兩樣物件是藍色圖畫書和沙槌。', citationIds:[]};
+    const wrongId = await present.execute({kind:'operation', paragraphs:[{text:item.text, citationIds:[randomUUID()]}]}, call);
+    assert.partialDeepStrictEqual(wrongId, {status:'rejected', data:{code:'invalid_citation',
+      selectedItemCitation:{kind:'private_reference', citationIds:[selected.citationId]}}});
     const unsupported = {kind:'clarification', text:'孩子每次都能專心一小時。', citationIds:[]};
     const bad = await present.execute({kind:'mixed', paragraphs:[item,unsupported]}, call);
     assert.partialDeepStrictEqual(bad, {status:'rejected',data:{code:'attached_claim_needs_evidence',unsupportedParagraphNumbers:[2]}});
-    const result = await present.execute({kind:'private_reference', paragraphs:[item]}, call);
+    const hint = (wrongId.data as {selectedItemCitation:{kind:string;citationIds:string[]}}).selectedItemCitation;
+    const result = await present.execute({kind:hint.kind, paragraphs:[{text:item.text,citationIds:hint.citationIds}]}, call);
     assert.equal(result.status, 'succeeded');
     assert.deepEqual(surface.deliveryDraft()?.sources, [selected]);
+    assert.deepEqual(surface.deliveryDraft()?.paragraphs[0]?.citationIds, ['page-item']);
+    const implicit = await present.execute({kind:'private_reference', paragraphs:[item]}, call);
+    assert.equal(implicit.status, 'succeeded');
     assert.deepEqual(surface.deliveryDraft()?.paragraphs[0]?.citationIds, ['page-item']);
   } finally { budget.close(); }
 });

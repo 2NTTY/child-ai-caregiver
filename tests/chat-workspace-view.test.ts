@@ -29,9 +29,14 @@ test('personal assistant reads workspace data on demand, paginates and composes 
       const reply = await reader.execute({subject:'children',...params},toolCall); assert.equal(reply.status,'succeeded');
       return (reply.data as any).result;
     };
-    const unrelated = make({trustedUserMessage:'我是誰',run:{runId,scope,budget,completeText:async ()=>'KEEP_PRIVATE'}});
+    const speaker = make({trustedUserMessage:'我是誰',run:{runId,scope,budget,completeText:async ()=>'READ_SPEAKER'}});
+    const identity = await speaker.tools.find(t=>t.name==='read_account_context')!.execute({subject:'children'},toolCall);
+    assert.equal(identity.reference,'speaker');
+    const unrelated = make({trustedUserMessage:'你係咩助手？我想填屋企語言，你先問我，唔好儲住。',run:{runId,scope,budget,completeText:async ()=>'KEEP_PRIVATE'}});
     const refused = await unrelated.tools.find(t=>t.name==='read_account_context')!.execute({subject:'children'},toolCall);
-    assert.equal(refused.reference,'speaker');
+    assert.equal(refused.status,'rejected');
+    assert.equal(refused.reference,undefined);
+    assert.ok(!JSON.stringify(refused.data).includes('workspace:speaker'));
     assert.deepEqual(calls,[]);
     const first = await read({});
     assert.equal(first.children.length,1); assert.ok(first.nextPage);
