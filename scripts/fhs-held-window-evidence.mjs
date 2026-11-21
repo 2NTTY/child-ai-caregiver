@@ -70,13 +70,16 @@ export function canInspectHeldWindow(pin, saved) {
   return pin?.lane === 'C3' && code === 'knowledge_window_quote_mismatch' && saved.budget?.modelCalls === 2;
 }
 
+export function hasSettledGenerationOutput(row, sourceId, original, stageHash) {
+  return row?.kind === 'generation' && row.state === 'settled' && row.sourceId === sourceId
+    && row.operationFingerprint === original && row.stageHash === stageHash && !row.rejection
+    && Number.isSafeInteger(row.outputTokens) && row.outputTokens > 0;
+}
+
 export async function verifySettledWindowStage(attempts, sourceId, original, attemptKey) {
   const stageHash = knowledgeReviewHash(attemptKey);
   const ticket = await attempts.doc(campaignTicketId('generation', sourceId, original, stageHash)).get();
-  const row = ticket.data();
-  if (row?.kind !== 'generation' || row.state !== 'settled' || row.sourceId !== sourceId
-    || row.operationFingerprint !== original || row.stageHash !== stageHash || row.rejection
-    || !Number.isSafeInteger(row.outputTokens) || row.outputTokens < 1)
+  if (!hasSettledGenerationOutput(ticket.data(), sourceId, original, stageHash))
     throw Error('fhs_evidence_generation_unconfirmed');
 }
 
