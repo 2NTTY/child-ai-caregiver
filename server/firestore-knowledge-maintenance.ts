@@ -383,7 +383,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 return model.completeText(input);
               }, tx => generationCapacity(tx,quotaReader));
             };
-            const reviewer = createModelKnowledgeReviewPort({ completeText, explicitAgeScope: options.explicitAgeScope, scriptRevision, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
+            const reviewer = createModelKnowledgeReviewPort({ completeText, explicitAgeScope: options.explicitAgeScope, replayCommunication: replaysCommunication, scriptRevision, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               ...(retained && retained.action !== 'retain_pdf_transcription' ? { retainedDraft: { revision: retained,
                 readOrganizer: key => work.readHeldStage(request, retained, key, retained.organizerRequestHash) } } : {}),
               comparison,
