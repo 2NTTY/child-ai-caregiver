@@ -127,6 +127,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const runtime: ReturnType<typeof createAgentRuntime> = {
     async run(input): Promise<AgentRunResult> {
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
+      let dailyAttemptsAtStart: number | undefined;
       let policySync: {
         readPolicyTransition?: () => Promise<AgentPolicyTransition | null>;
         roleSoftBudgetRatios?: Partial<Record<AgentSoftBudgetProfileRole, number>>;
@@ -140,6 +141,12 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
           softBudgetSource: selected.softBudgetSource,
         };
         const limits = ['memory-refresh', 'voice-transcription'].includes(input.recipeId) ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
+        if (input.discussion && limits.modelCalls >= 2) {
+          if (!await input.authorize() || !await selected.authorize()) throw new AgentStopped('unauthorized');
+          dailyAttemptsAtStart = await options.database.runTransaction(tx => selected.dailyUsage.availableModelAttempts(tx, input.scope.userId,
+            selected.config.dailyUserAttempts, selected.config.dailyGlobalAttempts, limits.modelCalls + limits.queryEmbeddings), { readOnly: true });
+          if (dailyAttemptsAtStart < 2) throw new AgentStopped('discussion_daily_budget');
+        }
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
         const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,
@@ -169,6 +176,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
         roleSoftBudgetRatios: policySync.roleSoftBudgetRatios,
         softBudgetSource: policySync.softBudgetSource,
         ...input,
+        ...(input.discussion ? { discussion: { ...input.discussion, dailyAttemptsAtStart } } : {}),
         authorize,
       });
     },

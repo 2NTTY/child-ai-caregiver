@@ -104,7 +104,7 @@ function setPage() {
     { id: 'family-a', members: display.members }];
   family = { model: { families, family: families[0], selfUserId: self, loadState: 'ready' } };
 }
-const pageDisplay = () => nodes(render(MemoryPage).tree).find(item => item.type === 'MemoryReferenceView')?.props.confirmerDisplay;
+const pageDisplay = () => nodes(nodes(render(MemoryPage).tree).find(item => item.type === 'RegisteredSourceCards').props.renderLibrary()).find(item => item.type === 'MemoryReferenceView')?.props.confirmerDisplay;
 
 test('confirmation labels use authenticated identity and named members, with concise missing-name and null fallbacks', () => {
   assert.equal(references.memoryConfirmerLabel(self, display), '你');

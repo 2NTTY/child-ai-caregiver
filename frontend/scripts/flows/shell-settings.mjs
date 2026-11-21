@@ -5,27 +5,37 @@ import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
 
 export async function verifyAgentEntry(browser, failures, directory) {
   for (const width of [1440, 1024, 390, 320]) {
-    const page = await openPreview(browser, "/", width, width >= 1024 ? 992 : 844, failures);
-    const entry = page.getByRole("link", { name: "助手", exact: true });
+    const height = width === 1024 ? 600 : width === 1440 ? 992 : 844;
+    const page = await openPreview(browser, "/", width, height, failures);
+    const entry = page.getByRole("link", { name: width >= 900 ? "與 Agent 對話" : "助手", exact: true });
     assert.equal(await entry.count(), 1, "One Agent navigation entry per layout");
     assert.equal(await entry.getAttribute("href"), "/chat", "Use an actual Expo Router navigation link");
-    if (width >= 1024) {
+    if (width >= 900) {
       const sidebar = page.getByTestId("web-sidebar");
-      assert.equal(await sidebar.getByRole("link", { name: "助手", exact: true }).count(), 1);
+      assert.equal(await sidebar.locator('a[href="/chat"]').count(), 1);
+      const scroll = sidebar.getByTestId("sidebar-navigation");
+      assert.equal(await scroll.locator('a[href="/chat"]').count(), 0);
       const bounds = await entry.boundingBox();
-      const today = await sidebar.getByRole("link", { name: "今日", exact: true }).boundingBox();
-      assert.equal(bounds.height, today.height, "The assistant uses the standard navigation row");
-      assert.ok(bounds.y >= today.y + today.height - 1, "The assistant follows Today");
+      const settings = sidebar.getByRole("link", { name: "設定", exact: true });
+      const settingsBounds = await settings.boundingBox();
+      assert.deepEqual(await sidebar.locator("a[href]").evaluateAll(links => links.slice(-2).map(link => link.getAttribute("href"))), ["/chat", "/settings"]);
+      assert.ok(bounds.height >= 72 && bounds.y + bounds.height <= settingsBounds.y && settingsBounds.y + settingsBounds.height <= height);
+      if (width === 1024) {
+        const scrollTop = await scroll.evaluate(element => { element.scrollTop = element.scrollHeight; return element.scrollTop; });
+        assert.ok(scrollTop > 0, "Short desktop sidebar scrolls");
+        assert.deepEqual(await entry.boundingBox(), bounds);
+        assert.deepEqual(await settings.boundingBox(), settingsBounds);
+      }
       await sidebar.screenshot({ path: resolve(directory, "sidebar-" + width + ".png") });
     } else assert.equal(await page.getByTestId("mobile-bottom-navigation").getByRole("link", { name: "助手", exact: true }).count(), 1);
     await assertFits(page, "Agent entry " + width);
     await entry.focus(); await entry.press("Enter");
     const question = page.getByRole("textbox", { name: "撰寫對話問題", exact: true });
     await question.waitFor();
-    assert.equal(await page.getByRole("link", { name: "助手", exact: true }).getAttribute("aria-current"), "page");
+    assert.equal(await entry.getAttribute("aria-current"), "page");
     await question.fill("保留我的照顧問題");
     await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
-    await page.getByRole("link", { name: "助手", exact: true }).click();
+    await entry.click();
     assert.equal(await question.inputValue(), "保留我的照顧問題");
     await page.screenshot({ path: resolve(directory, "agent-chat-" + width + ".png") });
     await page.close();

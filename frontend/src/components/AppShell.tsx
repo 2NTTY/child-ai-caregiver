@@ -1,4 +1,4 @@
-import { SiteCompanion } from './companion/SiteCompanion';
+import { CompanionSlot } from './companion/CompanionViewport';
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "expo-router";
@@ -11,6 +11,7 @@ import { MotionDrawerOverlay, MotionDrawerRight, MotionEntrance, MotionScopeBoun
 import { BrandLogo } from "./BrandLogo";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
+import { AgentEntryButton } from "./AgentEntryButton";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
@@ -119,6 +120,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           {group.keys.map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
         </View>)}
       </ScrollView>
+      <View style={styles.sidebarBottom}>
+        <AgentEntryButton active={active("/chat")} />
+      </View>
       <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
@@ -142,7 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <View style={styles.body}>
         <View style={styles.content}>
           <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
-          <SiteCompanion />
+          <CompanionSlot />
         </View>
         {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["voice", "text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
@@ -175,6 +179,7 @@ const styles = StyleSheet.create({
   navPressed: { backgroundColor: colors.selectedNav },
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
+  sidebarBottom: { paddingBottom: spacing.sm },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   scopePane: { flex: 1, minWidth: 0, minHeight: 0 }, drawerContent: { flex: 1 },
   topbar: { height: 70, flexShrink: 0, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
