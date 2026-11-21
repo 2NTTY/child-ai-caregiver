@@ -7,6 +7,7 @@ import { largeFhsPdf } from '../server/platform-materials.ts';
 import type { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { knowledgeOperationId } from '../server/firestore-knowledge-maintenance.ts';
 import type { RefreshJob } from '../server/knowledge-refresh-types.ts';
+import type { KnowledgeWorkPdfReader } from '../server/firestore-knowledge-work.ts';
 
 const sha256 = (data: Uint8Array) => createHash('sha256').update(data).digest('hex');
 const digest = /^[a-f0-9]{64}$/u;
@@ -51,9 +52,10 @@ export function fhsPdfReadKey(hash: string, { startPage = 1, pageLimit = 8, incl
 export async function openFhsCampaignPdfReads(command: string, kind: string, env: NodeJS.ProcessEnv) {
   if (kind !== 'pdf' || !['process-age-checked', 'resume-age-checked'].includes(command)) return undefined;
   const directory = env.FHS_CAMPAIGN_PDF_READS, indexHash = env.FHS_CAMPAIGN_PDF_READS_SHA256;
-  if (!directory && !indexHash) return undefined;
+  const stagedOnly = env.FHS_CAMPAIGN_STAGED_WINDOWS === '1';
+  if (!directory && !indexHash && !stagedOnly) return undefined;
   if (!directory || !indexHash) throw Error('fhs_pdf_reads_configuration');
-  return openFhsPdfReads(directory, indexHash);
+  return openFhsPdfReads(directory, indexHash, stagedOnly);
 }
 
 async function pinnedFile(path: string, expected: string, maxBytes: number, error: string) {
@@ -69,20 +71,16 @@ async function pinnedFile(path: string, expected: string, maxBytes: number, erro
 }
 
 /** The locally prepared index digest is delivered separately from the private read-only files. */
-export async function openFhsPdfReads(directory: string, indexSha256: string): Promise<typeof extractKnowledgePdf> {
+export async function openFhsPdfReads(directory: string, indexSha256: string, stagedOnly = false): Promise<KnowledgeWorkPdfReader> {
   const raw = await pinnedFile(join(directory, 'index.json'), indexSha256, 512 * 1024, 'fhs_pdf_index_integrity');
   const index = JSON.parse(raw.toString('utf8'));
   if (index.format !== 'fhs-pdf-reads/1' || index.parser !== await fhsPdfParserBinding()
     || !index.records || Array.isArray(index.records) || typeof index.records !== 'object')
     throw Error('fhs_pdf_index_integrity');
-  return async (data, options = {}) => {
+  async function readRecord(hash: string, options: KnowledgePdfOptions) {
     if (options.signal?.aborted) throw Error('knowledge_pdf_aborted');
-    if (!data.byteLength || (data.byteLength > KNOWLEDGE_PDF_MAX_BYTES && largeFhsPdf(options.expectedHash)?.bytes !== data.byteLength))
-      return extractKnowledgePdf(data, options);
-    const hash = sha256(data);
-    if (options.expectedHash !== undefined && hash !== options.expectedHash) throw Error('knowledge_pdf_hash_mismatch');
     const key = fhsPdfReadKey(hash, options);
-    if (!Object.hasOwn(index.records, key)) return extractKnowledgePdf(data, options);
+    if (!Object.hasOwn(index.records, key)) throw Error('fhs_pdf_prepared_read_missing');
     const record = index.records[key];
     if (typeof record !== 'string' || !digest.test(record)) throw Error('fhs_pdf_read_integrity');
     const bytes = await pinnedFile(join(directory, record), record, KNOWLEDGE_PDF_MAX_BYTES + 2 * 1024 * 1024, 'fhs_pdf_read_integrity');
@@ -91,5 +89,18 @@ export async function openFhsPdfReads(directory: string, indexSha256: string): P
     if (result.fileHash !== hash || result.startPage !== (options.startPage ?? 1) || !!result.pagePdf !== !!options.includePagePdf)
       throw Error('fhs_pdf_read_integrity');
     return result;
+  }
+  const reader: KnowledgeWorkPdfReader = async (data, options = {}) => {
+    if (options.signal?.aborted) throw Error('knowledge_pdf_aborted');
+    if (!data.byteLength || (data.byteLength > KNOWLEDGE_PDF_MAX_BYTES && largeFhsPdf(options.expectedHash)?.bytes !== data.byteLength)) {
+      if (stagedOnly) throw Error('fhs_pdf_read_integrity');
+      return extractKnowledgePdf(data, options);
+    }
+    const hash = sha256(data);
+    if (options.expectedHash !== undefined && hash !== options.expectedHash) throw Error('knowledge_pdf_hash_mismatch');
+    if (stagedOnly || Object.hasOwn(index.records, fhsPdfReadKey(hash, options))) return readRecord(hash, options);
+    return extractKnowledgePdf(data, options);
   };
+  if (stagedOnly) reader.readVerifiedWindow = readRecord;
+  return reader;
 }

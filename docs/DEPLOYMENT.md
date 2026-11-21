@@ -201,9 +201,11 @@ sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAM
 
 第二冊《常見嬰兒皮膚問題》及第五冊《三至四歲大兒童的發展》使用同一主機工位。從[網頁原單](../knowledge/fhs-initial-recovery.json)取該章的 `sourceId` 及 `operationFingerprint`，以 `sudo python3 -I "$tool" web-original inspect SOURCE_ID ORIGINAL_OPERATION` 查原單。正式工位獲分配後，以同一組參數把 `inspect` 改為 `run`。伺服器核實原 HTTP 504 已零費用結算及觀測仍相符，直接把全章及出版者所列對象交獨立審核。通過後查回生效版、家長卡、全文及其索引。若保留或派送結果未明，以 `inspect` 查回同一工作。
 
-三組共用一個主機檔案鎖。鎖涵蓋同一份原件的準備、送審及終態核對，各階段的 Node 程序會先後退出。工具逐次驗證 Compose 版本和家長 API 健康，從可用記憶體預留 384 MiB 給家長服務、64 MiB 給主機啟動工具，餘下按 16 MiB 向下取整。製卡容器以 0.5 CPU、256 至 512 MiB 硬上限、零額外 swap 運行。送審另按原檔大小檢查可用空間，32 MiB 或以上原件保留原有的 512 MiB 上限。可用記憶體短暫跌穿共同門檻 704 MiB 時，主機程序持有原工位及原操作，每五秒重讀記憶體。回升後再驗正式版本、家長 API 及當下餘量，才啟動該階段一次。等候期間不建立新容器或預留模型費用。若其他原件仍能運行，大原件只差一級容量時最多再等 30 秒，之後列出 `capacity_wait` 給同組其他教材繼續。容器沿用已發布的 worker 映像及唯讀 PDF 卷。每次結束會輸出核心記錄的記憶體峰值。SSH 中斷後先查原單。
+三組共用一個主機檔案鎖。鎖涵蓋同一份原件的準備、送審及終態核對，各階段的 Node 程序會先後退出。工具逐次驗證 Compose 版本和家長 API 健康，從可用記憶體預留 384 MiB 給家長服務、64 MiB 給主機啟動工具，餘下按 16 MiB 向下取整。製卡容器以 0.5 CPU、256 至 512 MiB 硬上限、零額外 swap 運行。送審另按原檔大小檢查可用空間，32 MiB 或以上原件一般需 512 MiB 工位。112 頁第四冊及 192 頁第三冊如使用[已實測的單冊索引](../knowledge/fhs-staged-book-indexes.json)，工位會串流核實原件，逐段讀取已綁定的原頁附件。兩冊的容器上限為 384 MiB，連同家長及啟動工具預留，主機須有 832 MiB 可用。索引缺少分段或校驗失敗時，該段會在送審前停止。可用記憶體短暫跌穿共同門檻 704 MiB 時，主機程序持有原工位及原操作，每五秒重讀記憶體。回升後再驗正式版本、家長 API 及當下餘量，才啟動該階段一次。等候期間不建立新容器或預留模型費用。若其他原件仍能運行，大原件只差一級容量時最多再等 30 秒，之後列出 `capacity_wait` 給同組其他教材繼續。容器沿用已發布的 worker 映像及唯讀 PDF 卷。每次結束會輸出核心記錄的記憶體峰值。SSH 中斷後先查原單。
 
 安裝或更新主機工具時，從已核對的提交取出 `deploy/knowledge-worker/publication.py`，核對檔案 SHA-256，再以 root 擁有、0644 安裝至上述位置。日常查帳用 `sudo python3 -I "$tool" accounting`。在同一張四頁原單等候供應商結果期間，用 `sudo python3 -I "$tool" inspect SOURCE_ID` 查租約、預留及生效版。
+
+離線容量驗證使用同版 worker 映像，將同版 `tests/`、原冊、已解封單冊讀取目錄分別唯讀掛載到 `/app/tests`、`/fixture/book.pdf`、`/fixture/reads`。容器使用 `--network none --read-only --cpus 0.5 --memory 384m --memory-swap 384m`，在容器內執行 `node /app/tests/measure-fhs-staged-book.mjs SOURCE_ID /fixture/book.pdf /fixture/reads`。輸出列出核心記憶體峰值、各段實頁、附件指紋和兩次 HTTP 請求大小。[兩冊實測](../artifacts/verification/FHS_LONG_BOOK_CAPACITY_20261122.json)
 
 C2 原單因 `knowledge_window_quote_mismatch` 保留時，可用 `--reads DIR --reads-hash SHA256 inspect SOURCE_ID` 核對引文。讀本須含原 PDF 的引用頁段，每段由第 1、9、17 等頁起，最後一段取實際餘頁。工具讀回原操作最後失敗窗口內的兩份封存回應，核對整理及審核請求指紋，分別比對整理稿所指實頁。操作員可在本機檢視兩段摘錄；公開收據只記核對結果。圖像頁須另開官方原頁核實。這個查核不會送出模型請求或刊登教材。
 
