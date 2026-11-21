@@ -23,3 +23,13 @@ for (const row of manifest.entries) {
 export const commissionedWebChapter = (id: string) => registered.get(id);
 export const webChapterWorkId = (pin: CommissionedWebChapter) =>
   knowledgeReviewHash(['fhs-publisher-web-chapter/1', pin.operationFingerprint, pin.observationHash]);
+
+// The settled independent review of the BCG article, as identified in the family catalogue receipt.
+export const recordedBcgReview = Object.freeze({
+  sourceId: 'fhs-481', code: 'knowledge_review_failed',
+  observationHash: '2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff',
+  operationFingerprint: '7acf97ab245e93bb44cc7784b2afb403d312abb4405a6d8072244bb1c669e943',
+  attemptKey: 'knowledge-review:18c024f9287f8ca554fd4ec4a4f54577a792f1fd3c167627ad7ace3c4f71d51f',
+  stageHash: '7bffe8bb2503a351f6811b37487da8f6dc5cc61c4a7888eaf52419753f59bed5',
+  requestHash: '8ca0ab0f9f1bbae0e00f629b5486e1d286e1f9cc588192744b9fa09d419dd387',
+});

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
+import { recordedBcgReview, commissionedWebChapter } from '../server/fhs-web-reading.ts';
+import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
 import { normalizeRecordedComparison, recordedExplanationKey, referenceRecordedExplanation } from '../server/fhs-script-comparison-stage.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
@@ -30,13 +32,14 @@ test('replay removes only repeated structural labels and preserves the independe
   assert.equal(normalizeRecordedComparison(JSON.stringify(expected), user), JSON.stringify(expected));
 });
 
-test('a terminal public review exposes only the stage bound to its work and observation', async () => {
+for (const [label,pin] of [['script',recordedScriptReviewStage('fhs-12196')!],['web chapter',recordedBcgReview]] as const)
+test(`a terminal ${label} review exposes only the stage bound to its work and observation`, async () => {
   const { database, records } = firestoreDomainFixture();
   const projectId = 'fixture', namespace = 'script_review', workerGeneration = randomUUID();
   const cipher = createStorageCipher(Buffer.alloc(32, 1));
   const work = createFirestoreKnowledgeWork({ database, projectId, namespace, cipher,
     readControl: async () => ({enabled:true,generation:workerGeneration}) });
-  const pin = recordedScriptReviewStage('fhs-12196')!;
+  const inspect = label === 'script' ? work.inspectScriptReview : work.inspectBcgReview;
   const request = { watchId:pin.sourceId, operationFingerprint:pin.operationFingerprint, workerGeneration, publishMode:'live' as const };
   function store(kind: string, suffix: string, value: unknown) {
     const path = namespace + '_knowledge_work/' + knowledgeReviewHash([kind, pin.operationFingerprint, suffix]);
@@ -48,12 +51,22 @@ test('a terminal public review exposes only the stage bound to its work and obse
     budget:{usedUnits:1,maxUnits:3,modelCalls:1,maxModelCalls:2} };
   store('work','',root);
   store('model',pin.attemptKey,{requestHash:pin.requestHash,state:'ready',text:'original response'});
-  assert.deepEqual(await work.inspectScriptReview(request),{state:'ready',text:'original response'});
+  if (label === 'web chapter') {
+    const parent=commissionedWebChapter(pin.sourceId)!.operationFingerprint;
+    const ticket=campaignTicketId('generation',pin.sourceId,parent,pin.stageHash);
+    const path=namespace+'_knowledge_campaigns/'+campaign+'/attempts/'+ticket;
+    const entry={kind:'generation',sourceId:pin.sourceId,operationFingerprint:parent,stageHash:pin.stageHash,
+      ceiling:10,at:new Date().toISOString(),state:'settled',cost:2,inputTokens:1,outputTokens:1};
+    records.set(path,{...entry,operationFingerprint:pin.operationFingerprint});
+    await assert.rejects(inspect(request),/knowledge_web_chapter_review_ticket/u);
+    records.set(path,entry);
+  }
+  assert.deepEqual(await inspect(request),{state:'ready',text:'original response'});
   store('model',pin.attemptKey,{requestHash:pin.requestHash,state:'unknown',text:null});
-  assert.deepEqual(await work.inspectScriptReview(request),{state:'unknown',text:null});
+  assert.deepEqual(await inspect(request),{state:'unknown',text:null});
   store('work','',{...root,result:{...result,observationHash:'b'.repeat(64)}});
-  await assert.rejects(work.inspectScriptReview(request),/knowledge_script_review_stage_binding/u);
-  await assert.rejects(work.inspectScriptReview({...request,watchId:'fhs-20000'}),/knowledge_script_review_stage_binding/u);
+  await assert.rejects(inspect(request),/knowledge_script_review_stage_binding/u);
+  await assert.rejects(inspect({...request,watchId:'fhs-20000'}),/knowledge_(web_chapter_review|script_review_stage)_binding/u);
   await assert.rejects(work.inspectCommunicationComparison(request,{system:'another review', user:'{}', attemptKey:pin.attemptKey}),
     /knowledge_script_review_stage_binding/u);
 });

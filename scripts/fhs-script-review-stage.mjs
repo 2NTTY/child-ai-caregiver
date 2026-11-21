@@ -7,30 +7,39 @@ import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { normalizeRecordedComparison, recordedCommunicationComparison, recordedExplanationKey } from '../server/fhs-script-comparison-stage.ts';
+import { recordedBcgReview } from '../server/fhs-web-reading.ts';
+import { observationHash } from '../server/knowledge-observation.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
-export async function inspectFailedScriptReview({ script, request, job, definition, checkId, refresh, work, knowledge, normalize = false }) {
-  const pin = recordedScriptReviewStage(script.sourceId);
-  const comparison = request.operationFingerprint === recordedCommunicationComparison.work && script.sourceId === recordedCommunicationComparison.sourceId;
+export async function inspectFailedScriptReview({ script, chapter, request, job, definition, checkId, refresh, work, knowledge, normalize = false }) {
+  const pin = chapter ? recordedBcgReview : recordedScriptReviewStage(script.sourceId);
+  if (chapter && (chapter.sourceId !== pin.sourceId || normalize)) return undefined;
+  const comparison = request.operationFingerprint === recordedCommunicationComparison.work && script?.sourceId === recordedCommunicationComparison.sourceId;
   if (!pin || !comparison && request.operationFingerprint !== pin.operationFingerprint) return undefined;
-  let saved = comparison ? undefined : await work.inspectScriptReview(request);
+  let saved = chapter ? await work.inspectBcgReview(request) : comparison ? undefined : await work.inspectScriptReview(request);
   const receipt = { stageHash: comparison?recordedCommunicationComparison.stageHash:pin.stageHash,
     requestHash: comparison?null:pin.requestHash, state:saved?.state, modelCalls:0 };
   if (saved && saved.state !== 'ready') return { ...receipt, retainedText: false };
   const verified = await refresh.resumeCheck(job.data, checkId);
-  assertScriptObservation(script, definition, verified);
-  const baseline = await knowledge.publishedEdition(script.sourceId);
-  assertScriptBaseline(script, baseline);
-  const { observation } = await refresh.inspect(script.sourceId);
+  const baseline = await knowledge.publishedEdition(pin.sourceId);
+  if (chapter) {
+    if (baseline || definition.id !== chapter.sourceId || verified?.status !== 'ok' || verified.items.length !== 1
+      || verified.items[0].url !== chapter.url || observationHash(verified.items[0]) !== pin.observationHash)
+      throw Error('knowledge_web_chapter_review_binding');
+  } else {
+    assertScriptObservation(script, definition, verified);
+    assertScriptBaseline(script, baseline);
+  }
+  const { observation } = await refresh.inspect(pin.sourceId);
   if (observation?.contentHash !== pin.observationHash) throw Error('knowledge_script_review_stage_binding');
-  const scriptRevision = await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),
+  const scriptRevision = script && await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),
     request.operationFingerprint,operationFingerprint=>work.inspectScriptReview({...request,operationFingerprint}));
   let matched = false, reviewedText, facts;
   try {
     const result = await prepareKnowledgeMaintenance({
-      candidate: { watchId: script.sourceId, observed: verified.items[0], definition, observationHash: pin.observationHash,
+      candidate: { watchId: pin.sourceId, observed: verified.items[0], definition, observationHash: pin.observationHash,
         previousObservationHash: baseline?.observationHash ?? null },
-      baseline, fetchedAt: observation.fetchedAt, growthRules: GROWTH_RULES, explicitAgeScope: true, scriptRevision,
+      baseline, fetchedAt: observation.fetchedAt, growthRules: GROWTH_RULES, explicitAgeScope: !chapter, scriptRevision, webOriginal:chapter,
       replayCommunication: comparison && normalize,
       completeText: async ({system, user, attemptKey, role}) => {
         if (matched || role !== 'knowledge_review' || attemptKey !== 'knowledge-review:' + knowledgeReviewHash({system, user}))
@@ -49,6 +58,10 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
         if (saved.state !== 'ready') throw Error('knowledge_script_stage_text_unavailable');
         facts = JSON.parse(user).sourceComparison?.facts;
         reviewedText = comparison && normalize ? normalizeRecordedComparison(saved.text,user) : saved.text;
+        if (chapter) {
+          receipt.responseHash = knowledgeReviewHash(reviewedText);
+          receipt.responseCharacters = reviewedText.length;
+        }
         return reviewedText;
       },
     });
@@ -60,7 +73,8 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
         throw Error('knowledge_script_explanation_changed');
       preservedExplanation = {key:recordedExplanationKey,characters:full.length,hash:knowledgeReviewHash(full)};
     }
-    return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash, preservedExplanation };
+    return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash,
+      ...(chapter ? { reviewNotes:result.review.notes } : {}), preservedExplanation };
   } catch (error) {
     if (!matched) throw error;
     if (saved?.state !== 'ready') return {...receipt,retainedText:false};
@@ -79,7 +93,8 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
           ...(typeof issue.maximum==='number'?{maximum:issue.maximum}:{}),...(typeof issue.minimum==='number'?{minimum:issue.minimum}:{}),
           ...(issue.code==='too_big' && typeof value==='string'?{characters:value.length}: {})};
       });
-      return {...receipt,retainedText:true,validation:'invalid',issues};
+      return {...receipt,retainedText:true,validation:'invalid',issues,
+        ...(chapter && ['approve','hold'].includes(parsed?.decision) ? {unvalidatedDecision:parsed.decision} : {})};
     }
     if (/^knowledge_[a-z_]{1,100}$/u.test(error?.message))
       return { ...receipt, retainedText: true, validation: 'invalid', reason: error.message };
