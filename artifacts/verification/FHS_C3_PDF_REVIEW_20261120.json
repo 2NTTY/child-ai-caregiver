@@ -4005,5 +4005,374 @@
         "reason": "unavailable"
       }
     ]
+  },
+  "rejectionSettlementReadback": {
+    "readTime": "2026-11-21T06:26:08.568653Z",
+    "balanceMicros": {
+      "held": 11378688,
+      "spent": 9919202,
+      "limit": 30000000,
+      "available": 8702110
+    },
+    "verifiedFamilyEditions": 32,
+    "exportedVectors": 62,
+    "citations": 62,
+    "editionsOver20Pages": 0,
+    "originalRejections": [
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "owner": "C3",
+        "stageHash": "e6cdd9bf19ab2f46b39d55148f88e9cd9ea76b680b81e16c04416a711bc27b80",
+        "httpStatus": 400,
+        "evidenceSha256": "1fe94a1942d24e9bd0bc8eaf92fa5e82c407e666724f69b09c21c6dcb46a24ba",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "owner": "C3",
+        "stageHash": "8cbddb2c9b7104c14050bfd612a41568bc9bc047318b6b21cebf1b5b431690d6",
+        "httpStatus": 400,
+        "evidenceSha256": "2f8a1c8b50e7b3a4443df18992a1fe0308ebea939dd34d7a0676aa92f22e6d1f",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "owner": "C2",
+        "stageHash": "2c9972d0b748c2429a0844b290076713325a7dcf4409c45c1bafe084bb056aa5",
+        "httpStatus": 400,
+        "evidenceSha256": "cc2dd12a00c2a44997824b55d482a006c52d9d47f72d72e8135e442196658786",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "owner": "C3",
+        "stageHash": "c0232be52a2dc0ef1e2da2fddbf299dee134e850779551457d8c5e39e38cd435",
+        "httpStatus": 400,
+        "evidenceSha256": "4f52e6dfac9044a9763100f622f2fadef8707d052cd9869028b8cf1c19b22224",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "owner": "C3",
+        "stageHash": "d175200bb0402f75013173c69938eb871f20295979cd79a684339abc0ccd5c7e",
+        "httpStatus": 400,
+        "evidenceSha256": "5b6d0fba458651927267c6607db60f18feaaf38be16bbcaab8b945402d4307d8",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      }
+    ],
+    "readyLongSourceId": "pdf-f3051ac61ad97b50bf629775",
+    "outcomes": {
+      "candidate_held": 65,
+      "family_edition_verified": 32,
+      "work_without_verified_terminal_receipt": 1,
+      "original_request_rejected_before_edition": 5,
+      "reserved_unknown": 2,
+      "no_original_work_record": 11
+    },
+    "verifiedAgainst": "All 116 source heads, original work presence and provider tickets were compared to ownerReceiptReadback. Only the five original reservations listed here changed state. All five returned the stored native HTTP 400 evidence and settled at zero charge with no reported token counts.",
+    "c3BalanceMicros": {
+      "settledTickets": 48,
+      "spent": 1530855,
+      "reservedTickets": 1,
+      "held": 1634304
+    }
+  },
+  "heldWindowInspectionInputs": {
+    "sourceReadTime": "2026-11-21T06:09:03.473123Z",
+    "indexSha256": "944affb50ce17f9bf8cb2328248b81ee5a84feaf9732a81c382c2a7983e03561",
+    "archiveSha256": "69441ec8e67370d57fc97a8b1e9e72b8cedb391d42bc0a435f84cbbb8939e73c",
+    "archiveBytes": 7977,
+    "parser": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "blocks": 7,
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "pages": 4,
+        "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "firstWindow": [
+          1,
+          4
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 67625,
+        "blocks": [
+          [
+            1,
+            4
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 1622,
+        "otherSettledOutputTokens": 1957
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "pages": 8,
+        "sha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "firstWindow": [
+          1,
+          8
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 107310,
+        "blocks": [
+          [
+            1,
+            8
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 3562,
+        "otherSettledOutputTokens": 2349
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "pages": 8,
+        "sha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "firstWindow": [
+          1,
+          8
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 119692,
+        "blocks": [
+          [
+            1,
+            8
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 4383,
+        "otherSettledOutputTokens": 3166
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "pages": 7,
+        "sha256": "1b7ff10371bc9e8ccdac687f434aae288294cd59da535db29f5ec370a245d4ac",
+        "firstWindow": [
+          1,
+          7
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 84326,
+        "blocks": [
+          [
+            1,
+            7
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 2209,
+        "otherSettledOutputTokens": 1582
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "pages": 84,
+        "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "firstWindow": [
+          1,
+          12
+        ],
+        "ranges": [
+          [
+            1,
+            3
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            7,
+            9
+          ],
+          [
+            10,
+            12
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 107640,
+        "blocks": [
+          [
+            1,
+            8
+          ],
+          [
+            9,
+            16
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 2865,
+        "otherSettledOutputTokens": 1666
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "pages": 4,
+        "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "firstWindow": [
+          1,
+          4
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 86573,
+        "blocks": [
+          [
+            1,
+            4
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 4452,
+        "otherSettledOutputTokens": 1586
+      }
+    ],
+    "inspectionPatch": "38364da96c3fd6be1be4a8f8143dee3ecbba042f",
+    "method": "Prepared seven original page-text blocks under the registered parser and verified every record after archive readback. Each of the six failed original first windows has two distinct, settled generation tickets with output. The organizer stage hash matches the normally reconstructed PDF request. The paired excerpts and any publication outcome await the released read-only inspector."
   }
 }
