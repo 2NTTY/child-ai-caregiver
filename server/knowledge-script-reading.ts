@@ -3,7 +3,7 @@ import type { KnowledgeChunkInput } from '../src/shared/knowledge.ts';
 import { originalOrganizerApplicability } from './knowledge-inputs.ts';
 
 type Unit = { id: string; originalText: string; scriptPassage?: { title: string } };
-export type PublisherAudience = {title?:string; audience:string};
+export type PublisherAudience = {title?:string; audience:string; beforeMonths?:number};
 export const publisherReviewInstruction = 'Review this verbatim reference edition for the family library. A source audience, when present, is the publisher’s literal wording. Numeric eligibility is unknown. A reading-only unit cannot authorise advice or proactive use, including when a child’s age is known. Check that the audience wording is faithful, paragraph ranges and age-specific examples remain exact, and no numeric inference or unrestricted eligibility is introduced. The conditions list quotes selected age-specific examples, not a numeric interval for the whole unit. Assess unchanged material and carry forward prior unresolved concerns. A textRef refers to repeatedText by zero-based index; optional start and end select the exact UTF-16 substring, end excluded. textIsOriginal marks a complete verbatim unit.';
 
 /** Repeated originals, excerpts and conditions must reach the reviewer without consuming the input allowance twice. */
@@ -29,7 +29,7 @@ export function compactPublisherReview(payload:object,originals:readonly string[
 }
 
 /** Literal-only editions keep each restriction inside its original paragraph. An unconfirmed range never grants advice eligibility. */
-export function publisherScriptReading(units:readonly Unit[],materialTitle:string,labels:readonly PublisherAudience[],materialText='') {
+export function publisherScriptReading(units:readonly Unit[],materialTitle:string,labels:readonly PublisherAudience[],materialText='',exclusiveLookup=false) {
   for(const label of labels) {
     const evidence = label.title ? units.filter(u=>u.scriptPassage?.title===label.title).flatMap(u=>[u.scriptPassage!.title,u.originalText])
       : [materialTitle,materialText];
@@ -38,14 +38,18 @@ export function publisherScriptReading(units:readonly Unit[],materialTitle:strin
   return units.map(unit=>{
     const title=unit.scriptPassage?.title ?? materialTitle;
     const specific=labels.filter(l=>l.title===title);
-    const audiences=(specific.length?specific:labels.filter(l=>l.title===undefined)).map(l=>l.audience);
+    const applicable=specific.length?specific:labels.filter(l=>l.title===undefined);
+    const audiences=applicable.map(l=>l.audience);
+    const before=applicable.length===1?applicable[0]?.beforeMonths:undefined;
     const sentences=(unit.originalText.match(/[^。！？；\n]+[。！？；]?/gu)??[]).map(s=>s.trim());
     const conditions=[...new Set(sentences.filter(s=>s.length<=600 &&
       /(?:[\d零〇一二兩三四五六七八九十百半]+\s*(?:個?月|歲|星期大|週大|日大)|學前|初生|新生)/u.test(s)))].slice(0,8);
     const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:['official-transcript'],conditions,
-      use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:null,
+      use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:before??null,
+      ...(before!==undefined?{maxAgeMonthsExclusive:true}:{}),
       ...(audiences.length?{publisherAudiences:audiences}:{})};
-    return {unitId:unit.id,section:[...title].slice(0,100).join(''),text:unit.originalText,
+    const searchText=exclusiveLookup && !unit.scriptPassage?[...unit.originalText.trim()].slice(0,150).join(''):unit.originalText;
+    return {unitId:unit.id,section:[...title].slice(0,100).join(''),text:searchText,
       keywords:[title.slice(0,80).toWellFormed()],applicability,treatment:{kind:'overview' as const,policyVersion:1 as const}};
   });
 }

@@ -18,6 +18,7 @@ function canonicalFilterKey(filter: KnowledgeFilter): string {
     classification: filter.classification,
     age: filter.age ? { basis: filter.age.basis, minMonths: filter.age.minMonths, maxMonths: filter.age.maxMonths } : null,
     ageMatch: filter.ageMatch ?? null,
+    ...(filter.purpose?{purpose:filter.purpose}:{}),
     topics: [...filter.topics].sort(),
   });
 }
@@ -55,8 +56,10 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
     createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway }) {
       if (options.actor.kind !== "query_embedding") throw new Error("Invalid knowledge query actor");
       const { actor, budget, authorize } = options;
-      const readCandidates = (filter: KnowledgeFilter, vector: readonly number[] | null, selection: NonNullable<Parameters<KnowledgeStore['candidates']>[2]>) =>
-        store.candidates(filter, vector, { ...selection, libraryUserId: actor.actorId });
+      const readCandidates = async (filter: KnowledgeFilter, vector: readonly number[] | null, selection: NonNullable<Parameters<KnowledgeStore['candidates']>[2]>) => {
+        const candidates=await store.candidates(filter, vector, { ...selection, libraryUserId: actor.actorId });
+        return filter.purpose==='read_originals'?candidates:candidates.filter(chunk=>chunk.applicability?.use!=='original_lookup');
+      };
       const loaded = new Map<string, KnowledgeEvidence>();
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();

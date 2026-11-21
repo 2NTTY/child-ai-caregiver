@@ -11,7 +11,8 @@ export function isKnowledgeEvidenceFresh(chunk: Pick<KnowledgeEvidence, "reviewS
 }
 
 export function sameReviewedEdition(prior: Identity, live: KnowledgeEvidence, filter: KnowledgeFilter, now: number): boolean {
-  return live.chunkId === prior.chunkId && live.versionId === prior.versionId && live.contentHash === prior.contentHash
+  return (live.applicability?.use !== 'original_lookup' || filter.purpose === 'read_originals')
+    && live.chunkId === prior.chunkId && live.versionId === prior.versionId && live.contentHash === prior.contentHash
     && (prior.sourceId === undefined || live.sourceId === prior.sourceId)
     && (prior.versionHash === undefined || live.versionHash === prior.versionHash)
     && (prior.classification === undefined || live.classification === prior.classification)
@@ -46,5 +47,5 @@ export function bindRepairSourceChecks(ids: readonly string[], resolve: (id: str
 }
 
 export function needsQueryEmbeddingKey(durable: boolean, tool: string): boolean {
-  return durable && (tool === "search_knowledge" || tool === "search_source_card_evidence");
+  return durable && (tool === "search_knowledge" || tool === "find_official_material" || tool === "search_source_card_evidence");
 }
