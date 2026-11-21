@@ -6,7 +6,7 @@ import { knowledgeOperationId, knowledgeReviewHash } from '../server/knowledge-r
 import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
-import { normalizeRecordedComparison, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
+import { normalizeRecordedComparison, recordedCommunicationComparison, recordedExplanationKey } from '../server/fhs-script-comparison-stage.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
 export async function inspectFailedScriptReview({ script, request, job, definition, checkId, refresh, work, knowledge, normalize = false }) {
@@ -31,6 +31,7 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
       candidate: { watchId: script.sourceId, observed: verified.items[0], definition, observationHash: pin.observationHash,
         previousObservationHash: baseline?.observationHash ?? null },
       baseline, fetchedAt: observation.fetchedAt, growthRules: GROWTH_RULES, explicitAgeScope: true, scriptRevision,
+      replayCommunication: comparison && normalize,
       completeText: async ({system, user, attemptKey, role}) => {
         if (matched || role !== 'knowledge_review' || attemptKey !== 'knowledge-review:' + knowledgeReviewHash({system, user}))
           throw Error('knowledge_script_review_stage_binding');
@@ -52,7 +53,14 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
       },
     });
     if (!matched) throw Error('knowledge_script_review_stage_binding');
-    return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash };
+    let preservedExplanation;
+    if (comparison && normalize) {
+      const full = JSON.parse(saved.text.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/u,'$1')).changes[recordedExplanationKey].explanation;
+      if (full !== result.assessment.changes.find(change => change.key === recordedExplanationKey)?.explanation)
+        throw Error('knowledge_script_explanation_changed');
+      preservedExplanation = {key:recordedExplanationKey,characters:full.length,hash:knowledgeReviewHash(full)};
+    }
+    return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash, preservedExplanation };
   } catch (error) {
     if (!matched) throw error;
     if (saved?.state !== 'ready') return {...receipt,retainedText:false};
@@ -68,7 +76,8 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
           ...(labels.includes(classification)?{received:classification}:{}),
           ...(Array.isArray(issue.values)?{expected:issue.values.filter(v=>labels.includes(v))}:{}),
           ...(fact===null || labels.includes(fact)?{structuralFact:fact}:{}),
-          ...(typeof issue.maximum==='number'?{maximum:issue.maximum}:{}),...(typeof issue.minimum==='number'?{minimum:issue.minimum}:{})};
+          ...(typeof issue.maximum==='number'?{maximum:issue.maximum}:{}),...(typeof issue.minimum==='number'?{minimum:issue.minimum}:{}),
+          ...(issue.code==='too_big' && typeof value==='string'?{characters:value.length}: {})};
       });
       return {...receipt,retainedText:true,validation:'invalid',issues};
     }

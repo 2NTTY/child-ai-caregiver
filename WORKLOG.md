@@ -7365,3 +7365,9 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 - 在分支 `codex/req003-acceptance-closeout`（基於 PR 4 最新同步版本 `5013853b`）新增跨 PR 合成驗收測試 `tests/req003-acceptance-closeout.test.ts`（6 項案例：PR 1＋PR 2 草稿確認編輯與七類操作撤銷邊界、PR 3 純聊天與 REQ-009 三角色討論正交性、切換回助手引用「把剛才那份記下來」、PR 4 臨時聊天隔離與 `server/firebase-runtime.ts`／`server/index.ts` 雙運行環境接線、`PLAN.md#req003-closeout01` 二十一項場景與七項待決結構檢查，以及 `docs/REQUIREMENTS_BACKLOG.md` 同步與清潔度檢查）。
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
 - 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
+
+### 2026-11-22 · C2 嬰兒用品正式查回及親子溝通原票定位
+
+香港 03:52，正式版 `736d5a1b` 已提交嬰兒用品審核，八套共 50 段首次上架。隔離家長逐套查回 60 套、1,362 段。換尿片首位查到全文 17 段，睡前常規首位查到全文 48 段。六個內容問題全數命中，66 個命中對回 46 個正式索引位置。耳溫計逐段查找在 3 個月、17 個月及年齡未確認三種情況下，依次顯示「一歲以下」、「一歲以上」及兩組；同版原文均保留兩組。正式共用帳本結算 US$13.165279、預留 US$3.268608。[正式收據](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json)
+
+首次本機比對在已提交收據的工作指紋不符時停止。證實中文字鍵在本機和工位的預設排序不同，沿工位既有排序已重建同一付費工作。親子溝通第二次已付回應的結構校驗只報單張說明超出 160 字。合成長說明已在原物料上驗證可按內容雜湊保留完整文字及獨立保留決定。正式原回應的決定仍待驗，這次診斷沒有模型費用。

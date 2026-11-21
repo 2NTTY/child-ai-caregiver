@@ -1,4 +1,5 @@
-import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
+import { z } from 'zod';
+import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from './knowledge-review-assessment.ts';
 // The provider has already settled this public comparison. Reconstruct its request before reading its sealed response.
 export const recordedCommunicationComparison = Object.freeze({
   sourceId:'fhs-12196', observationHash:'90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772',
@@ -6,6 +7,21 @@ export const recordedCommunicationComparison = Object.freeze({
   stageHash:'26ca4883045046fc7b725c419c63c5ae68841e3cfe4ed94906854fdce402df22',
 });
 export const communicationReplayWork = knowledgeReviewHash(['fhs-recorded-comparison/1', recordedCommunicationComparison]);
+export const recordedExplanationKey = 'p0-fb6716d05520055ed5ba';
+export const recordedComparisonRequestHash = 'd6f65af5327ab93117d19fc4e6a396b00ac5a84dfb3b3df7c4da383de53cfbfb';
+
+/** Present a content-addressed note to the compact transport decoder and retain its entire reviewed wording for the assessment. */
+export function referenceRecordedExplanation(raw: unknown) {
+  const record = z.looseObject({changes:z.record(z.string(),z.unknown())}).safeParse(raw);
+  if (!record.success) return null;
+  const entry = z.looseObject({explanation:knowledgeReviewAssessmentSchema.shape.changes.element.shape.explanation})
+    .safeParse(record.data.changes[recordedExplanationKey]);
+  if (!entry.success || entry.data.explanation.length <= 160) return null;
+  const explanation = entry.data.explanation;
+  const reference = 'sealed-note:' + knowledgeReviewHash(explanation);
+  const value = {...record.data,changes:{...record.data.changes,[recordedExplanationKey]:{...entry.data,explanation:reference}}};
+  return {value,reference,explanation};
+}
 
 /** Drop a repeated structural label only when it exactly equals the independently recomputed fact. */
 export function normalizeRecordedComparison(text: string, user: string) {
