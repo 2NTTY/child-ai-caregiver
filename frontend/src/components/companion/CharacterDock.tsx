@@ -63,25 +63,26 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen = false
   }, []);
   const displayed = !quiet || inToolbar;
   useEffect(() => { if (!displayed) setReady(false); }, [displayed]);
-  const paused = !foreground || panelOpen || keyboard || collapsed || !displayed;
+  const covered = panelOpen && small;
+  const paused = !foreground || covered || keyboard || collapsed || !displayed;
   const previousPage = useRef(page);
   useEffect(() => {
     if (previousPage.current !== page && !quiet && !paused && ready && !unread) play('arrive');
     previousPage.current = page;
   }, [page, quiet, paused, ready, unread, play]);
   useEffect(() => {
-    if (!unread || !ready || paused || quiet) return;
+    if (!unread || !ready || paused || quiet || panelOpen) return;
     play('wave');
     const repeat = setInterval(() => play('wave'), 18000);
     return () => clearInterval(repeat);
-  }, [unread, ready, paused, quiet, play]);
+  }, [unread, ready, paused, quiet, panelOpen, play]);
   if (!displayed) return null;
   const openChat = () => { if (!moving.current) onChat?.(); };
   return <View pointerEvents="box-none" style={StyleSheet.absoluteFill} onLayout={({ nativeEvent: { layout } }) =>
     setBounds(b => b.width === layout.width && b.height === layout.height ? b : { width: layout.width, height: layout.height })}>
-    <View testID="companion-dock" pointerEvents={keyboard ? 'none' : 'box-none'} style={[s.dock, {
+    <View testID="companion-dock" pointerEvents={keyboard || covered ? 'none' : 'box-none'} style={[s.dock, {
       width: dockWidth, height: dockHeight, left: quiet ? 0 : margin + position.x * travelX,
-      top: quiet ? 0 : margin + position.y * travelY, opacity: keyboard || !bounds.width ? 0 : 1,
+      top: quiet ? 0 : margin + position.y * travelY, opacity: keyboard || covered || !bounds.width ? 0 : 1,
     }]} {...(!quiet ? responder.panHandlers : {})}>
       <View pointerEvents="none" style={[s.ground, { width: width * .42, height: width * .42, transform: [{ scaleY: .12 }], bottom: trayHeight + height * .027 - width * .21 }, collapsed && s.invisible]} />
       <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[s.frame, { width, height }, (!ready || collapsed) && s.invisible]}>

@@ -30,7 +30,6 @@ function setup(width = 1440) {
   const h = harness(mocks);
   const theme = h.load('src/theme.ts'); mocks['../theme'] = theme; mocks['../../theme'] = theme;
   const { default: ChatPage } = h.load('src/screens/chatScreen.tsx');
-  const { AgentEntryButton } = h.load('src/components/AgentEntryButton.tsx');
   const { navigationItems, desktopNavigationGroups, moreNavigationGroups } = h.load('src/components/navigation/app-navigation.ts');
   const calls = [], action = name => (...args) => calls.push([name, ...args]);
   const owner = { scopeKey: 'user:child-a', model: { selectedChildId: 'child-a', children: [{ id: 'child-a' }, { id: 'child-b' }] },
@@ -44,21 +43,15 @@ function setup(width = 1440) {
     voiceUpload: {}, fileUpload: {}, authorization: {}, chatWritesAllowed: true, selectAgentRun: action('run'), openAgentSource: action('source') };
   const render = () => { h.production(owner); h.render(h.jsx(ChatPage, {})); return h.hosts().find(node => node.type === 'ChatTimeline'); };
   const composer = () => h.hosts().find(node => node.type === 'AgentComposer');
-  return { h, theme, owner, calls, render, composer, AgentEntryButton, navigationItems, desktopNavigationGroups, moreNavigationGroups };
+  return { h, theme, owner, calls, render, composer, navigationItems, desktopNavigationGroups, moreNavigationGroups };
 }
 
-test('desktop primary entry restores both lines and the original guarded link, icon, chevron and focus treatment', () => {
-  const s = setup(); s.h.render(s.h.jsx(s.AgentEntryButton, { active: false }));
-  const link = s.h.hosts().find(node => node.type === 'PreviewLink'), entry = s.h.node('agent-entry');
-  assert.equal(link.props.href, '/chat'); assert.equal(entry.props.accessibilityRole, 'link');
-  assert.equal(entry.props.accessibilityLabel, '與 Agent 對話');
-  assert.equal(text(entry), '與 Agent 對話提問・整理・規劃');
-  assert.deepEqual(s.h.hosts().filter(node => node.type === 'AppIcon').map(node => node.props.name), ['star-four-points', 'chevron-right']);
-  assert.equal(entry.props.style.backgroundColor, s.theme.colors.accent);
-  assert.equal(entry.props.style.borderRadius, s.theme.radius.medium); assert.equal(entry.props.style.borderWidth, 2);
-  entry.props.onFocus(); s.h.render(); assert.equal(s.h.node('agent-entry').props.style.outlineWidth, 2);
-  s.h.render(s.h.jsx(s.AgentEntryButton, { active: true })); assert.equal(s.h.node('agent-entry').props['aria-current'], 'page');
-  assert.equal(s.navigationItems.chat.short, '助手'); assert.equal(s.navigationItems.chat.href, '/chat');
+test('the common navigation group contains one assistant entry using the mobile destination', () => {
+  const {navigationItems, desktopNavigationGroups} = harness({}).load('src/components/navigation/app-navigation.ts');
+  assert.equal(navigationItems.chat.label, '助手');
+  assert.equal(navigationItems.chat.href, '/chat');
+  assert.deepEqual(desktopNavigationGroups.find(group => group.label === '常用').keys, ['home', 'chat']);
+  assert.equal(desktopNavigationGroups.flatMap(group => group.keys).filter(key => key === 'chat').length, 1);
 });
 
 test('the initial prompt requires a confirmed empty selected-child history, not a loading/error/older-page gap', () => {
@@ -106,8 +99,8 @@ test('the chat toolbar keeps activity but no duplicate memory shortcut at compac
   for (const width of [320, 390, 1024, 1440]) {
     const s = setup(width); s.render();
     const toolbar = () => s.h.node('chat-top-toolbar');
-    const activity = () => toolbar().props.children[1].props.children;
-    assert.equal(activity().props.label, '活動');
+    const activity = () => toolbar().props.children[1].props.children[0];
+    assert.equal(activity().props.label, width < s.theme.mobileLayout.breakpoint ? '活動' : '對話活動');
     assert.equal(activity().props.compact, width < s.theme.mobileLayout.breakpoint);
     assert.doesNotMatch(text(toolbar()), /記憶與參考/);
     assert.equal(s.h.hosts().some(node => node.props.accessibilityLabel === '記憶與參考'), false);

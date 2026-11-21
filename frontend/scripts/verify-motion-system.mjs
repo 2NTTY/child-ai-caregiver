@@ -182,7 +182,7 @@ async function navigation() {
   const keepSidebar = await preserveNode(page.getByTestId('web-sidebar'));
   const keepHeader = await preserveNode(page.getByTestId('header-actions'));
   await startTrace(page, 'top-level-navigation');
-  for (const [path, label] of [['/care', '照顧記錄'], ['/tasks', '任務與預約'], ['/summary', '照顧摘要'], ['/chat', '與 Agent 對話']]) {
+  for (const [path, label] of [['/care', '照顧記錄'], ['/tasks', '任務與預約'], ['/summary', '照顧摘要'], ['/chat', '助手']]) {
     const link = page.getByRole('link', { name: label, exact: true });
     await link.click();
     await page.waitForURL(url => url.pathname === path);

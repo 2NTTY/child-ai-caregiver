@@ -125,7 +125,7 @@ test("production domains read one real Care correction across pages without a mo
     await expect(page.getByText(correctedText, { exact: true }).first()).toBeVisible();
     await expect(page.getByText(originalText, { exact: true })).toHaveCount(0); careConfirmed = true;
     phase = "shared_owner_chat_context";
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).first().click();
+    await page.getByRole("link", { name: "助手", exact: true }).first().click();
     await expect(page).toHaveURL(web + "/chat");
     await page.getByRole("button", { name: "開啟資訊側欄", exact: true }).click();
     const rail = page.getByTestId("context-rail");
