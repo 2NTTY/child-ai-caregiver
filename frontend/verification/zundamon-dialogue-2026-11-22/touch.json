@@ -1,0 +1,159 @@
+{
+  "device": "touch",
+  "browser": "158.0.4370.33",
+  "width": 390,
+  "height": 844,
+  "keyboardViewport": 510,
+  "geometry": [
+    {
+      "label": "open",
+      "d": {
+        "x": 240,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 17.203125,
+        "y": 367.75,
+        "width": 256.796875,
+        "height": 45.1875
+      },
+      "b": null
+    },
+    {
+      "label": "waiting",
+      "d": {
+        "x": 240,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 17.203125,
+        "y": 367.75,
+        "width": 256.796875,
+        "height": 45.1875
+      },
+      "b": {
+        "x": 215.65625,
+        "y": 289.734375,
+        "width": 58.34375,
+        "height": 36.78125
+      }
+    },
+    {
+      "label": "short",
+      "d": {
+        "x": 240,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 17.203125,
+        "y": 367.75,
+        "width": 256.796875,
+        "height": 45.1875
+      },
+      "b": {
+        "x": 101.625,
+        "y": 282.53125,
+        "width": 172.375,
+        "height": 43.984375
+      }
+    },
+    {
+      "label": "long",
+      "d": {
+        "x": 240,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 17.203125,
+        "y": 367.75,
+        "width": 256.796875,
+        "height": 45.1875
+      },
+      "b": {
+        "x": 9.59375,
+        "y": 202.125,
+        "width": 264.40625,
+        "height": 124.390625
+      }
+    },
+    {
+      "label": "other-edge",
+      "d": {
+        "x": 9.59375,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 110.3125,
+        "y": 367.75,
+        "width": 256.796875,
+        "height": 45.1875
+      },
+      "b": {
+        "x": 110.3125,
+        "y": 202.125,
+        "width": 270.078125,
+        "height": 124.390625
+      }
+    },
+    {
+      "label": "recording",
+      "d": {
+        "x": 9.59375,
+        "y": 267.96875,
+        "width": 130.796875,
+        "height": 232.796875
+      },
+      "e": {
+        "x": 115.109375,
+        "y": 367.75,
+        "width": 247.203125,
+        "height": 52.796875
+      },
+      "b": null
+    }
+  ],
+  "sameChildAndTask": true,
+  "textsSaved": 2,
+  "voiceUploads": 1,
+  "gestures": [
+    "acknowledge",
+    "answer",
+    "acknowledge",
+    "answer",
+    "listen-right",
+    "idle",
+    "listen-right",
+    "idle",
+    "acknowledge"
+  ],
+  "quietAssistant": true,
+  "fixture": "Saved synthetic short and long replies, local emulator, synthetic microphone",
+  "assets": {
+    "base": "f3a6636758652a5b68ee2cbef7361bbf92b72884",
+    "runtimeSha256": "c66eab47dc6f8473ec797b30f89ec621e22a5d4450d804a1ae75a367fc92747c"
+  },
+  "sequence": {
+    "frames": 20,
+    "face": {
+      "short": {
+        "frames": 4,
+        "distinctFaceCrops": 4
+      },
+      "listen": {
+        "frames": 5,
+        "distinctFaceCrops": 5
+      }
+    },
+    "quietCanvas": "Same live iframe; zero further WebGL draws over an 800 ms interval after toolbar placement"
+  }
+}
