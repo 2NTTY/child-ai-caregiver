@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-119-image-count",
+  "base": {
+    "artifact": "candidate-115/out",
+    "htmlSha256": "e5e78dccfc27db3d83bbfc60f1adce74ea93e19e10efa92f8c8d33d44ed18279",
+    "rawRecordsSha256": "ea543f7c61d035a61670afc3fcb8d3c0f01536ac9f6ff855b4ca7bb4e9ba9c69",
+    "rawArtworkSha256": "4efd53c3a20b0d994ad4b92e9ba40ff112782f3196e9d047483f85ecc7b3b084",
+    "topics": 56,
+    "choices": 115,
+    "images": 115
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-family-sharing/rows.json",
+      "sha256": "439d4ae0b33bea6f448835eed46e5e8f12ca205db6c8f6344b93267b580563a9"
+    },
+    {
+      "input": "draft-admin-approval/assets.json",
+      "sha256": "5ae5718bebfdf5c060078ba7a335b21f588478414aa3527f794d3bba5f65f234"
+    }
+  ],
+  "topics": [
+    {
+      "number": 57,
+      "title": "家庭共享範圍：按成員或孩子核對",
+      "choices": [
+        {
+          "name": "BookStack：先選成員，再核對可見範圍",
+          "note": "先查家庭角色，再核對家庭已共享孩子的模組。唯讀角色只讀已共享的模組；這不是逐人成員授權，也沒有切換成該成員身分。",
+          "links": [
+            {
+              "label": "固定版本原始碼：獨立的成員角色頁",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/resources/views/users/edit.blade.php#L1-L51"
+            },
+            {
+              "label": "同一版本：成員清單",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/resources/views/users/index.blade.php#L1-L45"
+            },
+            {
+              "label": "同一版本：讀回成員角色",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/resources/views/form/role-checkboxes.blade.php#L2-L14"
+            },
+            {
+              "label": "同一版本：角色情境測試",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/tests/Permissions/Scenarios/EntityRolePermissionsTest.php#L8-L37"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-family-sharing/a-member-effective-access.png",
+            "sha256": "e9ec63b2143258d935a067d52be9c1106e98ad4f2139fd56d93b9a0ac4859501",
+            "dimensions": [
+              1440,
+              900
+            ],
+            "alt": "自製合成示意，非官方原圖。左側列出示例家庭 A 的成員甲（照顧者）和所選成員乙（唯讀成員）。右側分開顯示成員角色和示例孩子 A 目前於家庭可見的範圍：待辦可讀、不可寫入；文件及其他六個模組未共享，沒有逐人權限控制。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "BookStack v26.09.3 固定程式參考（MIT）；自製合成示意，未重用上游素材。非官方原圖。"
+          }
+        },
+        {
+          "name": "Paperless-ngx：先選孩子，再核對已存範圍",
+          "note": "先核對來源孩子與接收家庭，再看已存的共享模組及接收者可見範圍。撤回只停止這份共享，來源保留孩子和原件。",
+          "links": [
+            {
+              "label": "固定版本原始碼：文件權限頁籤",
+              "url": "https://github.com/paperless-ngx/paperless-ngx/blob/35b0439195bbdb87a6d519152e6782abe0720c3b/src-ui/src/app/components/document-detail/document-detail.component.html#L390-L399"
+            },
+            {
+              "label": "同一版本：文件頁路由",
+              "url": "https://github.com/paperless-ngx/paperless-ngx/blob/35b0439195bbdb87a6d519152e6782abe0720c3b/src-ui/src/app/app-routing.module.ts#L69-L92"
+            },
+            {
+              "label": "同一版本：讀回已存資源權限",
+              "url": "https://github.com/paperless-ngx/paperless-ngx/blob/35b0439195bbdb87a6d519152e6782abe0720c3b/src-ui/src/app/components/document-detail/document-detail.component.ts#L487-L508"
+            },
+            {
+              "label": "同一版本：單一資源權限測試",
+              "url": "https://github.com/paperless-ngx/paperless-ngx/blob/35b0439195bbdb87a6d519152e6782abe0720c3b/src/documents/tests/test_api_permissions.py#L353-L402"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/paperless-ngx/paperless-ngx/blob/35b0439195bbdb87a6d519152e6782abe0720c3b/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-family-sharing/b-child-saved-scope.png",
+            "sha256": "27a09c807134d485d8676eec9db464a73099c4fa977d9a490216b07cdd744af2",
+            "dimensions": [
+              1440,
+              900
+            ],
+            "alt": "自製合成示意，非官方原圖。以示例孩子 A 給示例家庭 A 的分享為主：八個模組只有待辦已共享，文件及其餘未共享。右側以成員乙的唯讀角色說明待辦可讀、文件不可讀；撤回只停止這份家庭分享，不刪除孩子或來源原件，沒有執行撤回。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "Paperless-ngx v3.5.1 固定程式參考（GNU GPL v3）；自製合成示意，未重用上游素材。非官方原圖。"
+          }
+        }
+      ]
+    },
+    {
+      "number": 58,
+      "title": "平台知識版本批准：逐欄差異或流程階段",
+      "choices": [
+        {
+          "name": "平台知識版本比較 A｜先核對現行與候審差異",
+          "note": "同頁逐欄核對現行版與候審版。畫面唯讀，不提交批准、不發布，也不是目前產品管理頁。",
+          "links": [
+            {
+              "label": "固定版本原始碼：版本比較頁路由",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/wagtail/admin/urls/pages.py#L240-L247"
+            },
+            {
+              "label": "同一版本：逐欄差異模板",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/wagtail/admin/templates/wagtailadmin/generic/revisions/compare.html#L1-L27"
+            },
+            {
+              "label": "同一版本：現行和候審版本來源",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/wagtail/admin/views/generic/models.py#L1415-L1455"
+            },
+            {
+              "label": "同一版本：比較欄的生成",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/wagtail/admin/views/generic/models.py#L1487-L1548"
+            },
+            {
+              "label": "同一版本：待覆核列表入口",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/wagtail/admin/templates/wagtailadmin/home/workflow_objects_to_moderate.html#L71-L90"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/wagtail/wagtail/blob/99924bbfbfd5075f9d603771981111ffd9e4a1c1/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-admin-approval/admin-a-field-diff.png",
+            "sha256": "5803d983d9c842ec72b20f44fdc2373163db045c0b253e9bbaca30d2c74d37ec",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "示例文件 A 的版本比較合成示意。版本 1 是現行、版本 2 是候審，表格逐欄標示開頭、組織方式與結尾的舊文及新文。畫面唯讀，沒有批准或發布按鈕。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "工作台自製，依 Wagtail 8.1 固定版本實作重畫。非官方原圖；上游程式 © 2014–present Torchbox Ltd and individual contributors，BSD-3-Clause。"
+          }
+        },
+        {
+          "name": "平台知識版本比較 B｜先看草稿、待覆核與發布階段",
+          "note": "由草稿、待覆核、可進入發布流程三欄掌握版本位置。Ready 不等於獨立批准或已發布。",
+          "links": [
+            {
+              "label": "固定版本原始碼：三欄工作流程頁",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/packages/decap-cms-core/src/components/Workflow/Workflow.js#L86-L143"
+            },
+            {
+              "label": "同一版本：工作流程路由",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/packages/decap-cms-core/src/components/App/App.js#L211-L256"
+            },
+            {
+              "label": "同一版本：草稿、覆核及 Ready 欄",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/packages/decap-cms-core/src/components/Workflow/WorkflowList.js#L140-L188"
+            },
+            {
+              "label": "同一版本：Ready 後的發布條件",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/packages/decap-cms-core/src/components/Workflow/WorkflowList.js#L229-L270"
+            },
+            {
+              "label": "同一版本：工作流程與發布的資料邊界",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/packages/decap-cms-backend-github/src/API.ts#L1245-L1253"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/decaporg/decap-cms/blob/4589962560fcff888596cce6ee9cf6bcfa339764/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-admin-approval/admin-b-stage-board.png",
+            "sha256": "e382de0c905e530318541280f16b666c60491822d5f41bcb57c643643ff347ad",
+            "dimensions": [
+              1280,
+              840
+            ],
+            "alt": "同一示例文件 A 的三欄工作流程合成示意。草稿和可進入發布階段欄都空白，版本 2 在待覆核，版本 1 仍是現行。Ready 只指流程階段，不表示已批准或已發布。",
+            "previewLabel": "自製合成示意（非官方原圖）",
+            "credit": "工作台自製，依 Decap CMS 3.18.0 固定版本實作重畫。非官方原圖；上游程式 © 2016 Netlify，MIT。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 57 題 · 家庭共享範圍兩幅自製合成示意",
+      "text": "兩幅為從空白畫布自製合成示意（非官方原圖）。BookStack v26.09.3 與 Paperless-ngx v3.5.1 只供固定程式流程參考；沒有使用原方截圖、品牌、原碼、資料或字型檔。兩圖共用同一虛構家庭、孩子和成人角色。角色與全家庭共用的模組範圍是兩件事，沒有逐人設定或身分切換。撤回說明遵照產品原碼：停止此共享，保留來源孩子和原件，不是成員移除，也不主張收回已有副本。這是既有家庭工作流程的靜態比較，不是新頁面、新權限或實際操作。"
+    },
+    {
+      "heading": "第 58 題 · 平台知識版本批准兩幅自製合成示意",
+      "text": "兩幅為從空白畫布自製合成示意（非官方原圖）。Wagtail 8.1 與 Decap CMS 3.18.0 只供固定程式流程參考；沒有使用原方截圖、品牌、原碼、資料或字型檔。文件和版次均虛構：版本 1 現行、版本 2 候審。逐欄比較是唯讀，工作流程階段不是批准或發布；沒有已批准或已發布聲明，也無真實角色、文件、核准、發布或部署操作。上游程式授權不等於官方原圖授權。"
+    }
+  ]
+}
