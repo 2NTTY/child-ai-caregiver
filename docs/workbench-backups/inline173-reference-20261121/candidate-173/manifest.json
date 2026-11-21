@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-173-image-count",
+  "base": {
+    "artifact": "candidate-171/out",
+    "htmlSha256": "36a0bcc2ad16b7895ab8e49234a0f88fabaf24db88c34840c48097c807b2b3d2",
+    "rawRecordsSha256": "d33254d83339447cf86fa00f67b9802705b6d634e77c8fd6d1dde56dbdb0a5e8",
+    "rawArtworkSha256": "8da158693892542dfa0ef3f8a52508706a1ab08c32a99ed8b61b093a6ffb9354",
+    "topics": 84,
+    "choices": 171,
+    "images": 171
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-history-return/assets.json",
+      "sha256": "762584749ff633cb8c1240f04cf096ad16a15b1dce8b6e38a397bcae15659c06"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "3f474d225f96dda64bf09e9cebfcf2ac59a09219f8322aef10ed1973c8bcc5f3",
+    "PROVENANCE.md": "454bde517f886b7e45bc8da829e88ed618f396c5fb889b9d2b8593831e26a660"
+  },
+  "topics": [
+    {
+      "number": 85,
+      "title": "關閉照顧記錄詳情，回到原來那張卡",
+      "choices": [
+        {
+          "name": "窄版獨立閱讀，返回可找回原郵件",
+          "note": "Roundcube 窄版讀信時隱藏清單；若返回清單時帶回原郵件識別碼，而且重新載入後仍找得到，程式可再次選取並把它帶入視野，不等於恢復原捲動位置。育伴港則保留同一歷史清單，關閉詳情後可把焦點還給仍可用的原項目。",
+          "links": [
+            {
+              "label": "Roundcube 1.6.15 Elastic：窄版預覽的返回鍵和主旨",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/skins/elastic/templates/message.html#L1-L26"
+            },
+            {
+              "label": "同版：返回郵件清單時可帶回搜尋及原郵件識別碼",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/program/js/app.js#L2722-L2782"
+            },
+            {
+              "label": "同版：載入後有原郵件才選回該列",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/program/js/app.js#L9251-L9275"
+            },
+            {
+              "label": "同版：捲動至該列，而非恢復原捲動位置",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/program/js/list.js#L1118-L1125"
+            },
+            {
+              "label": "Elastic 介面授權：CC BY-SA 3.0（部分依賴另有授權）",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/skins/elastic/README.md#L12-L24"
+            },
+            {
+              "label": "Roundcube 程式碼授權：GPL-3.0-or-later（含指定例外）",
+              "url": "https://github.com/roundcube/roundcubemail/blob/9d18d524f3cc211003fc99e2e54eed09a2f3da88/README.md#L44-L71"
+            }
+          ],
+          "asset": {
+            "input": "draft-history-return/history-return-a.png",
+            "sha256": "d27af8fef4ff09e3940b4fd2a954956b1220c7c1d6651e62f6c7ae7532a2d038",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Roundcube Elastic 的非官方窄版手機郵件預覽。淺灰工具列左上有返回箭嘴，白底正文顯示虛構的紙藝小展展板安排；畫面沒有郵件清單或已選取的列表項目。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "查完詳情，回到原來清單",
+          "note": "calibre 把目前選取的書籍詳情放在獨立視窗，書庫和搜尋結果仍留在後面。育伴港只參考關閉詳情後仍見同一份結果，原本的卡片仍可用時以它作為返回位置，不照搬浮動視窗或逐本切換。",
+          "links": [
+            {
+              "label": "Calibre v8.16.2：書庫、標籤瀏覽器與詳情面板",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/init.py#L550-L572"
+            },
+            {
+              "label": "官方手冊：獨立書籍詳情視窗",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/manual/gui.rst#L660-L689"
+            },
+            {
+              "label": "以目前選取的書籍開啟詳情",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/actions/show_book_details.py#L38-L81"
+            },
+            {
+              "label": "左右分欄的封面與書目",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/dialogs/book_info.py#L201-L249"
+            },
+            {
+              "label": "上一本、下一本與視窗設定",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/dialogs/book_info.py#L251-L271"
+            },
+            {
+              "label": "目前選取書籍的詳情標題",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/dialogs/book_info.py#L502-L531"
+            },
+            {
+              "label": "關閉詳情視窗的處理",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/dialogs/book_info.py#L396-L408"
+            },
+            {
+              "label": "原始碼 GPL v3 聲明",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/src/calibre/gui2/dialogs/book_info.py#L1-L3"
+            },
+            {
+              "label": "GPL v3 授權",
+              "url": "https://github.com/kovidgoyal/calibre/blob/77587e4bb585e228920ce18d208171c825fd432d/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-history-return/history-return-b.png",
+            "sha256": "c463800bdecc83f4f570ad4cd6533431481fd93a96a443882977db51d6a44bf8",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "calibre 桌面書庫重繪：搜尋結果中的《摺紙展台筆記》整列呈藍色，下面疊着同一本書的獨立詳情視窗。左有幾何摺紙封面，右有書目、上一本及下一本；右上有關閉鍵，背後書庫沒有變暗。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 85 題 · 關閉詳情前的兩幅自製示意",
+      "input": "draft-history-return/DECLARATION.txt",
+      "sha256": "3f474d225f96dda64bf09e9cebfcf2ac59a09219f8322aef10ed1973c8bcc5f3"
+    }
+  ]
+}
