@@ -11,9 +11,10 @@ export type PersonalCardRows = {
 export function LibraryAction({ label, name = label, onPress, disabled, tone = 'plain', icon, buttonRef, expanded }: {
   label?: string; name?: string; onPress(): void; disabled?: boolean; tone?: 'plain' | 'shop' | 'join'; icon?: AppIconName; buttonRef?: Ref<View>; expanded?: boolean;
 }) {
+  const content = <>{icon ? <AppIcon name={icon} size={18} color={colors.deepTeal} /> : null}{label ? <Text style={s.actionText}>{label}</Text> : null}</>;
   return <Pressable ref={buttonRef} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ disabled: !!disabled, expanded }} disabled={disabled}
-    onPress={onPress} style={({ pressed }) => [s.action, tone === 'shop' && s.shop, tone === 'join' && s.join, disabled && s.disabled, pressed && s.pressed]}>
-    {icon ? <AppIcon name={icon} size={18} color={colors.deepTeal} /> : null}{label ? <Text style={s.actionText}>{label}</Text> : null}
+    onPress={onPress} style={({ pressed }) => [s.action, tone === 'plain' && s.plain, disabled && s.disabled, pressed && (tone === 'plain' ? s.pressed : s.tintPressed)]}>
+    {tone === 'plain' ? content : <View style={[s.tint, tone === 'shop' ? s.shop : s.join]}>{content}</View>}
   </Pressable>;
 }
 export function LibraryRow({ title, subtitle, art, action, onOpen, label, rowRef, testID, disabled }: {
@@ -61,7 +62,10 @@ const s = StyleSheet.create({
   bulletin: { backgroundColor: '#F9D99D' }, document: { backgroundColor: '#CFDFEC' },
   copy: { flex: 1, minWidth: 0, gap: 2 }, name: { fontFamily: chineseFont, fontSize: 16, lineHeight: 22, fontWeight: '700', color: '#173C3A' },
   meta: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, color: '#526862' }, empty: { paddingVertical: 16, color: colors.muted },
-  action: { minHeight: 44, minWidth: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 5, borderRadius: 8, maxWidth: '100%' },
+  action: { minHeight: 44, minWidth: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', maxWidth: '100%' },
+  plain: { gap: 4, paddingHorizontal: 5, borderRadius: 8 },
+  tint: { minHeight: 26, maxWidth: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 8 },
+  tintPressed: { opacity: 0.8 },
   actionText: { fontFamily: chineseFont, fontWeight: '600', fontSize: 13, lineHeight: 19, color: colors.ink, flexShrink: 1 },
   shop: { backgroundColor: '#D7EEE4', paddingHorizontal: 9 }, join: { backgroundColor: '#F5D65E', paddingHorizontal: 12 },
   disabled: { opacity: 0.52 }, pressed: { backgroundColor: colors.pressedOverlay },
