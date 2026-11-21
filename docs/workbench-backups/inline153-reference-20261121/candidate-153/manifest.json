@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-153-image-count",
+  "base": {
+    "artifact": "candidate-151/out",
+    "htmlSha256": "8a3be885baa9affd0cf4a590fbfe0330b31a83a661b441a146ac4cd3af280b8c",
+    "rawRecordsSha256": "b140d422aee10630d02f11d187017d1e701601d917f308507c093ad98b5efef8",
+    "rawArtworkSha256": "6d5632924695f78c2874b08b7eb66e5c9219acf7fd25e8d28f65c372625d2bd2",
+    "topics": 74,
+    "choices": 151,
+    "images": 151
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-batch-continue/assets.json",
+      "sha256": "c4d998a3f144f834418700a765c76283b49e1bdda69e474db0ce7a8b61aa0af6"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "7f233b548e73840a3ef585d2f8a5a31449137ba3ac7cf16a4d1b5ce8e7a19ece",
+    "PROVENANCE.md": "785e3cafe30b4548f2c4f464dd4cf806fd0d336f2490bfcb3f1c9840646803db"
+  },
+  "topics": [
+    {
+      "number": 75,
+      "title": "多人待辦批次：已保存的保留，只接續未執行",
+      "choices": [
+        {
+          "name": "保留已完成節點，從暫停處繼續",
+          "note": "綠色剔號標示已完成的步驟。選中黃色暫停節點後，可在右側摘要按「繼續節點」，再確認才會接續流程。上方「停止」針對整個 Argo 工作流程，不等於育伴港只停止尚未執行的項目。",
+          "links": [
+            {
+              "label": "Argo Workflows v3.7.3：工作流程詳情及節點圖",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/ui/src/workflows/components/workflow-details/workflow-details.tsx#L487-L529"
+            },
+            {
+              "label": "選取節點後顯示右側詳情",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/ui/src/workflows/components/workflow-details/workflow-details.tsx#L550-L574"
+            },
+            {
+              "label": "暫停節點摘要下的「繼續」按鈕",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/ui/src/workflows/components/workflow-node-info/workflow-node-info.tsx#L178-L193"
+            },
+            {
+              "label": "確認後才繼續所選節點",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/ui/src/workflows/components/workflow-details/workflow-details.tsx#L471-L480"
+            },
+            {
+              "label": "步驟暫停時，不會安排新步驟",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/docs/walk-through/suspending.md#L19-L44"
+            },
+            {
+              "label": "圖上的暫停狀態與節點本身的執行階段",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/ui/src/workflows/components/workflow-dag/workflow-dag.tsx#L95-L110"
+            },
+            {
+              "label": "Argo Workflows 程式授權：Apache-2.0",
+              "url": "https://github.com/argoproj/argo-workflows/blob/bded09fe4abd37cb98d7fc81b4c14a6f5034e9ab/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-batch-continue/batch-a.png",
+            "sha256": "18d60607de6370f413a06fc1c99d1ff5261ab48b85b2dc5b2203068cf9ba469d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方示例：左側垂直工作流程中，「整理圖說」和「編排展板」各有綠色剔號，最下方「校對展板」有黃色暫停符號。右側摘要顯示所選節點的類型、階段及「繼續節點」按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在同一流程逐項查看及執行",
+          "note": "同一流程保留三項已通過的工作，另一項仍待人手核對。該列右端的三角鍵只啟動這一項；不是重試，亦不是育伴港的「繼續原批次未執行項目」。",
+          "links": [
+            {
+              "label": "GitLab v18.5.0：單一流程的工作分頁",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/pipeline_details/jobs/jobs_app.vue#L120-L145"
+            },
+            {
+              "label": "同版：逐項狀態、工作、階段及靠右操作",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/jobs_page/components/jobs_table.vue#L58-L102"
+            },
+            {
+              "label": "同版：手動工作的執行鍵與另一分支的重試鍵",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/jobs_page/components/job_cells/actions_cell.vue#L252-L267"
+            },
+            {
+              "label": "同版：工作分頁的欄序，不重複顯示流程",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/jobs_page/constants.js#L33-L70"
+            },
+            {
+              "label": "同版：流程、工作及測試分頁",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/pipeline_details/tabs/pipeline_tabs.vue#L102-L150"
+            },
+            {
+              "label": "同版：流程名稱、狀態及工作數目",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/ci/pipeline_details/header/pipeline_header.vue#L342-L419"
+            },
+            {
+              "label": "同版說明（CC BY-SA 4.0）：需要人手執行的阻塞工作",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/doc/ci/jobs/job_control.md#L35-L65"
+            },
+            {
+              "label": "GitLab 程式授權：MIT Expat；說明文件另按 CC BY-SA 4.0 授權",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/LICENSE#L3-L10"
+            }
+          ],
+          "asset": {
+            "input": "draft-batch-continue/batch-b.png",
+            "sha256": "0e5113d77c26915d96b5467420cc240a456f4be4c820ebfec844d123eea01ea9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 GitLab 流程詳情示例：「海濱展板校樣」的工作分頁列出四項工作。首列「核對展板校樣」待人手執行，最右是三角形執行鍵；下方三列均已通過，沒有執行鍵。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 75 題 · 多人待辦批次的兩幅自製示意",
+      "input": "draft-batch-continue/DECLARATION.txt",
+      "sha256": "7f233b548e73840a3ef585d2f8a5a31449137ba3ac7cf16a4d1b5ce8e7a19ece"
+    }
+  ]
+}
