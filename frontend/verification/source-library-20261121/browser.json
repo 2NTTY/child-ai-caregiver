@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-21",
+  "environment": "Production Expo Web and application API on localhost with Firebase emulators, using an isolated parent account",
+  "node": "24.22.3",
+  "browser": "Microsoft Edge",
+  "viewports": [
+    "1280 x 850",
+    "390 x 844"
+  ],
+  "fixture": "12 published material records over two catalogue pages, two enabled personal sources and one disabled personal source",
+  "runs": {
+    "wide": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "singleJoinAndReload": true,
+      "laterPageDocument": "fhs-toddler-development",
+      "partialReadRejected": 1,
+      "writeOperations": [
+        "join"
+      ]
+    },
+    "narrow": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "disabledReturnedToStore": true,
+      "rejoined": true,
+      "personalTogglePersisted": true,
+      "filteredMaterials": 6,
+      "mediaLinks": 4,
+      "writeOperations": [
+        "disable",
+        "enable"
+      ]
+    },
+    "final": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "singleFixedEditionPreserved": true,
+      "failedJoinReadBackBeforeRetry": true,
+      "focusAfterDisableAndJoin": true,
+      "companionMinimizedForScreenshots": true,
+      "writeOperations": [
+        "fixed",
+        "disable",
+        "enable"
+      ]
+    },
+    "pictures": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "screenshots": [
+        "current-390.png",
+        "current-1280.png",
+        "store-390.png",
+        "store-1280.png"
+      ],
+      "verifiedImportLocation": true,
+      "writeOperations": [
+        "disable",
+        "enable"
+      ]
+    }
+  },
+  "actionSizing": {
+    "browser": "158.0.4370.33",
+    "method": "Bounding rectangles after site zoom; hit-tested both transparent edges. Opened the store on touch at the top edge; inspected Join without activating it. Separate existing joined and unjoined fixture accounts.",
+    "libraryOrSourceCardWrites": 0,
+    "measurements": {
+      "current-390": {
+        "zoom": 1.2,
+        "faceHeight": 31.1875,
+        "hitHeight": 52.796875,
+        "hitWidth": 125.984375,
+        "transparentOuter": true,
+        "topEdgeHits": true,
+        "bottomEdgeHits": true
+      },
+      "current-1280": {
+        "zoom": 1.4,
+        "faceHeight": 36.390625,
+        "hitHeight": 61.59375,
+        "hitWidth": 146.921875,
+        "transparentOuter": true,
+        "topEdgeHits": true,
+        "bottomEdgeHits": true
+      },
+      "store-390": {
+        "zoom": 1.2,
+        "faceHeight": 31.1875,
+        "hitHeight": 52.796875,
+        "hitWidth": 59.984375,
+        "transparentOuter": true,
+        "topEdgeHits": true,
+        "bottomEdgeHits": true
+      },
+      "store-1280": {
+        "zoom": 1.4,
+        "faceHeight": 36.390625,
+        "hitHeight": 61.59375,
+        "hitWidth": 69.984375,
+        "transparentOuter": true,
+        "topEdgeHits": true,
+        "bottomEdgeHits": true
+      }
+    }
+  }
+}
