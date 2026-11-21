@@ -1,0 +1,24 @@
+{
+  "baseline": "4043b60b",
+  "browser": "158.0.4370.33",
+  "device": "touch",
+  "viewport": [
+    390,
+    844
+  ],
+  "touch": true,
+  "realLocalSession": true,
+  "usersSaved": 2,
+  "replyRequests": 2,
+  "scope": "Same selected private child and saved task for both questions",
+  "media": "Chromium synthetic microphone device with actual getUserMedia, MediaRecorder, audio playback and local upload",
+  "micRequests": 2,
+  "allTracksEnded": true,
+  "cancelledWrites": 0,
+  "uploadBeforeExplicitSend": 0,
+  "voiceSavedOnce": true,
+  "reply": "Local text fixture read the selected task and persisted a long answer through the real chat store. Voice used the local no-model reply endpoint.",
+  "clampedHeight": 88,
+  "fullTextHeight": 132,
+  "readOriginalInFullChat": true
+}

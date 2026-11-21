@@ -9,7 +9,7 @@ import { createLocalVoiceCapture, type VoiceCaptureState } from "./local-voice-c
 import { AssistantAttachmentPicker } from "./AssistantAttachmentPicker";
 import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
-export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; ref?: Ref<VoiceCaptureHandle> }) {
+export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
   const [state, setState] = useState<VoiceCaptureState>("idle"), [error, setError] = useState<string>();
   const [recording, setRecording] = useState<AssistantAttachment | null>(null);
   const current = useRef<AssistantAttachment | null>(null), active = useRef(true), engaged = useRef(false);
@@ -38,7 +38,7 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
   const available = typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia && globalThis.isSecureContext;
   const busy = state === "permission" || state === "recording" || state === "stopping";
   function start() { engaged.current = true; setError(undefined); void controller.start(); }
-  useImperativeHandle(ref, () => ({ start() {
+  useImperativeHandle(ref, () => ({ cancel: () => discard(false), start() {
     if (!active.current || engaged.current) return;
     engaged.current = true;
     if (available) start();
@@ -55,10 +55,10 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => controller.stop()} /> :
-      !recording ? <AppButton label="開始錄音" disabled={!available || busy} onPress={start} /> :
-      <AppButton label="使用錄音" onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
+      !recording ? (!sendRecording || !busy) && <AppButton label="開始錄音" disabled={!available || busy} onPress={start} /> :
+      <AppButton label={sendRecording ? "送出語音" : "使用錄音"} disabled={confirmDisabled} onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
       <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
-    </View>{!recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} /> : null}
+    </View>{!sendRecording && !recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} /> : null}
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

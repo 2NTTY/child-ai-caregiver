@@ -14,7 +14,7 @@ import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTi
 
 const options = { ...RecordingPresets.HIGH_QUALITY, numberOfChannels: 1, bitRate: 64_000,
   android: { ...RecordingPresets.HIGH_QUALITY.android, maxFileSize: VOICE_LIMITS.bytes } };
-export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; ref?: Ref<VoiceCaptureHandle> }) {
+export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
   const recorder = useAudioRecorder(options);
   const [state, setState] = useState<"idle" | "permission" | "recording" | "stopping" | "ready">("idle");
   const [error, setError] = useState<string>(), [recording, setRecording] = useState<AssistantAttachment | null>(null);
@@ -84,7 +84,7 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
       }
     }
   }
-  useImperativeHandle(ref, () => ({ start() {
+  useImperativeHandle(ref, () => ({ cancel: () => discard(false), start() {
     if (!active.current || engaged.current) return;
     engaged.current = true; void start();
   } }));
@@ -98,10 +98,10 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attac
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => { void finish(true, generation.current); }} /> :
-      recording ? <AppButton label="使用錄音" disabled={state !== "ready"} onPress={() => { const item = current.current; if (item) pick(item); }} /> :
-      <AppButton label="開始錄音" disabled={state !== "idle"} onPress={() => { void start(); }} />}
+      recording ? <AppButton label={sendRecording ? "送出語音" : "使用錄音"} disabled={confirmDisabled || state !== "ready"} onPress={() => { const item = current.current; if (item) pick(item); }} /> :
+      (!sendRecording || state === "idle") && <AppButton label="開始錄音" disabled={state !== "idle"} onPress={() => { void start(); }} />}
       <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
-    </View>{!recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={false} onPick={pick} onError={setError} /> : null}
+    </View>{!sendRecording && !recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={false} onPick={pick} onError={setError} /> : null}
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
