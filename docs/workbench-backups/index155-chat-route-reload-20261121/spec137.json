@@ -1,0 +1,89 @@
+{
+  "group": {
+    "id": "chat-route-reload-no-resubmit",
+    "title": "聊天頁暫時顯示不出來，重新載入會把剛才的操作再送一次嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成示例：聊天頁顯示失敗。A 先把「重新載入畫面」放在眼前；B 先區分畫面故障、已提交事項和參考碼，再提供同樣的操作。重新載入只重開畫面，不會再送出、重試原操作，也不證明那次操作成功或失敗。載入中按鈕不可用，聊天頁可以返回首頁。未送出的內容以本裝置的草稿為準，不保證找回。合成參考碼 UI · TypeError · 312:8 只供選取；格式只含允許的錯誤類型與最多三組數字行列，不顯示原錯誤內容、路徑、網址、帳戶或草稿，也不是收據或客服票號。工作台只比較整頁，不觸發故障或傳送診斷資料。",
+    "choices": [
+      {
+        "name": "先給下一步｜只重新載入聊天畫面",
+        "note": "「聊天頁暫時顯示不出來。」把「重新載入畫面」緊接在一句說明後：只重開聊天頁，不會再送一次訊息，也不能由此判斷剛才的操作成功或失敗。載入中不能連按；若這一次仍未能顯示，保留「返回首頁」，不帶家長反覆重試。未送出的內容以本裝置現有草稿為準，不保證找回。頁末另列可選取的合成參考碼 UI · TypeError · 312:8，不是操作收據。",
+        "source": "https://design-history.nhsapp.service.nhs.uk/design-system/2026/01/error-guidance-update/updated-error-examples.png",
+        "sourceNotes": [
+          {
+            "label": "NHS App 官方可開啟的完整示例：標題、簡短說明和重試按鈕",
+            "url": "https://design-system.nhsapp.service.nhs.uk/examples/error-pages/test-results/"
+          },
+          {
+            "label": "NHS App 設計歷史：更新版錯誤頁原圖、按鈕位置及研究發現（2026-01-23）",
+            "url": "https://design-history.nhsapp.service.nhs.uk/design-system/2026/01/error-guidance-update/"
+          },
+          {
+            "label": "NHS App 錯誤頁指引：一次重試後仍失敗，就提供其他出路",
+            "url": "https://design-system.nhsapp.service.nhs.uk/patterns/error-page/"
+          },
+          {
+            "label": "育伴港原碼：聊天頁專用的畫面故障提示",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/app/(dashboard)/chat.tsx#L3"
+          },
+          {
+            "label": "育伴港原碼：只重新掛載畫面，載入時不能連按，聊天可返回首頁",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/RouteFeedback.tsx#L6-L29"
+          },
+          {
+            "label": "育伴港原碼：參考碼只保留允許的錯誤類型與最多三組行列號",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/route-error-reference.ts#L1-L8"
+          }
+        ],
+        "version": "NHS App design history〈Updating our error page guidance〉，2026-01-23 發表；外連該次更新所刊「Updated examples」原始 PNG 組圖。另附官方 Test results 完整 HTML 示例，不把它當成圖片，也不聲稱它與組圖逐像素相同。2026-11-20 核對；來源未標明截圖日期或 NHS App 版號。",
+        "rights": "原圖由 NHS App 設計團隊在官方設計歷史文章刊出。本工作台只外連；沒有下載、內嵌、重刊、重畫或製作替代截圖，離線包不包含這張圖。未據此認定圖片或標誌可以再利用，也不代表 NHS 背書。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 NHS App 官方原圖：更新後的錯誤頁整屏示例（需連網）↗"
+      },
+      {
+        "name": "先分清畫面與操作｜參考資料獨立顯示",
+        "note": "聊天頁暫時顯示不出來，不表示剛才送出的操作失敗或成功。「重新載入聊天頁」只重開畫面，不會再送一次；載入時不能連按，仍可返回首頁。沒送出的內容能否找回，要看這部裝置有沒有留下草稿。把「畫面參考資料」獨立放在說明下方：合成文字 UI · TypeError · 312:8 可以選取，不是收據或客服案件編號，不會自動傳送。Cloudflare 原圖只參考完整錯誤頁；獨立參考資料區另取自 ONS 官方網頁，不沿用兩者的故障原因、追蹤方式或聯絡流程。工作台只讀。",
+        "source": "https://blog.cloudflare.com/_image?f=webp&fit=cover&h=485&href=https%3A%2F%2Fblog.cloudflare.com%2F_emdash%2Fapi%2Fmedia%2Ffile%2F01KW46A2BAVX0VJV0ZTS4X81PR.png&position=center&w=715",
+        "sourceNotes": [
+          {
+            "label": "Cloudflare 事故報告：首段後方是訪客實際看到的錯誤頁截圖，不是文章首幅插畫",
+            "url": "https://blog.cloudflare.com/18-november-2025-outage/"
+          },
+          {
+            "label": "英國國家統計局：附獨立參考資料區的官方整頁示例（可開啟的網頁，並非截圖）",
+            "url": "https://service-manual.ons.gov.uk/design-system/patterns/error-status-pages/example-page-not-found-error-with-code"
+          },
+          {
+            "label": "英國國家統計局：示例的 HTML、資訊面板和設計系統版本",
+            "url": "https://service-manual.ons.gov.uk/design-system/patterns/error-status-pages"
+          },
+          {
+            "label": "ONS 文件所列內容授權：Open Government Licence v3.0",
+            "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+          },
+          {
+            "label": "育伴港原碼：聊天頁專用的畫面故障提示",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/app/(dashboard)/chat.tsx#L3"
+          },
+          {
+            "label": "育伴港原碼：只重新掛載畫面，載入時不能連按，聊天可返回首頁",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/RouteFeedback.tsx#L6-L29"
+          },
+          {
+            "label": "育伴港原碼：參考碼只保留允許的錯誤類型與最多三組行列號",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/route-error-reference.ts#L1-L8"
+          }
+        ],
+        "version": "Cloudflare 於 2025-11-18 發表的事故報告，配圖為當次訪客錯誤頁；外連其官網實際刊載的 715 × 485 WebP 顯示版，不是原始 PNG 下載。未標示錯誤頁 build 或擷取時刻。另參考 ONS 官方整頁 HTML 示範，其樣式表標示設計系統 74.0.0。2026-11-20 核對。",
+        "rights": "Cloudflare 官方文章未就這幅截圖另列授權。ONS 指引內容除另有標明外適用 Open Government Licence v3.0；該授權不涵蓋 Cloudflare 原圖。只外連兩家官方來源，不下載、重刊、擷取、嵌入、複製識別資料或仿用商標。",
+        "externalOnly": true,
+        "images": [],
+        "linkLabel": "查看 Cloudflare 官方報告所附的訪客錯誤頁截圖（需連網）↗"
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "67c69bfb27bb7fbf48a6bf181da35a0236d37e2311bc4ffe258829d3d2be4ff6"
+}
