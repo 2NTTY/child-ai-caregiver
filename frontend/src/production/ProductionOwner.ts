@@ -36,7 +36,9 @@ import { AgentAuthorizationOwner } from "./AgentAuthorizationOwner.ts";
 import { ProductAgentOwner } from "./ProductAgentOwner.ts";
 import { AccountServiceOwner, type AccountServiceDependencies, type AccountServiceSnapshot } from "./AccountServiceOwner.ts";
 import { createSharingApi } from '../../../src/client/sharing-api.ts';
+import { createTemporaryChatApi } from '../../../src/client/temporary-chat-api.ts';
 import { SharedChildController, sharedChildScopeKey, type SharedChildState } from '../../../src/client/shared-child-controller.ts';
+import { TemporaryChatOwner } from './TemporaryChatOwner.ts';
 
 export interface ProductionSnapshot {
   records: RecordsState; chat: ChatState; account: AccountServiceSnapshot;
@@ -73,6 +75,7 @@ export class ProductionOwner {
   private unsubscribeVoice: (()=>void)|null=null;
   readonly agentOwner: ProductAgentOwner;
   readonly authorizationOwner: AgentAuthorizationOwner;
+  readonly temporaryChatOwner: TemporaryChatOwner;
   readonly accountOwner: AccountServiceOwner;
   readonly sharedChild: SharedChildController;
   private unsubscribeShared: (()=>void)|null=null;
@@ -170,6 +173,10 @@ export class ProductionOwner {
       else this.denySelectedChild();
     }, this.invalidatePrivateReads, () => createProductAgentApi(this.apiBaseUrl, this.fetcher), this.fetcher);
     this.authorizationOwner = new AgentAuthorizationOwner(this.apiBaseUrl, online, identity => { if (identity) void this.controller.restoreSession(); else this.denySelectedChild(); }, this.invalidatePrivateReads, this.fetcher);
+    this.temporaryChatOwner = new TemporaryChatOwner(
+      createTemporaryChatApi(this.apiBaseUrl, this.fetcher),
+      () => { void this.controller.restoreSession(); },
+    );
     this.avatarOwner = new AvatarOwner(createAvatarApi(this.apiBaseUrl, this.fetcher, photoSha256), error => {
       if (error.code === 'storage_epoch_changed' || error.code === 'identity_changed' || error.code === 'account_scope_changed') {
         this.avatarOwner.syncContext(null, null, this.controller.getSnapshot().online); void this.controller.restoreSession();
@@ -281,6 +288,7 @@ export class ProductionOwner {
         this.chatController.syncContext(null, raw.online, null); this.identity = nextIdentity;
       }
       this.accountOwner.syncContext(userId, raw.online, this.identity);
+      this.temporaryChatOwner.syncContext(this.accountOwner.isReady() ? userId : null, raw.online);
       this.handoverOwner.syncContext(this.accountOwner.isReady() ? userId : null, this.accountOwner.isReady() ? this.identity : null, raw.online);
       this.handoverImportOwner.syncContext(this.accountOwner.isReady() ? userId : null, this.accountOwner.isReady() ? this.identity : null, raw.online);
       this.sharedChild.syncContext(this.identity,userId,raw.online && this.accountOwner.isReady());
@@ -404,7 +412,7 @@ export class ProductionOwner {
     this.avatarOwner.dispose();
     this.handoverOwner.dispose();
     this.handoverImportOwner.dispose();
-    this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
+    this.adminOwner.dispose(); this.accountOwner.dispose(); this.temporaryChatOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }
 }

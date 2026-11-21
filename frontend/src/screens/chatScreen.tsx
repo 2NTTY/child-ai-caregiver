@@ -9,10 +9,12 @@ import {
   OFFICIAL_HELP_ENTRY_COPY,
 } from '../../../src/shared/agent-feedback';
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
+import { CHAT_MODE_COPY, resolveChatMode, type ChatMode } from '../../../src/shared/chat';
 import { failedChatReply } from '../components/chat/failed-reply';
 import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../components/chat/chat-turn-status';
 import { chatDraftIsSubmitted } from '../../../src/client/chat-controller';
 import { ChatTurnStatusLine } from '../components/chat/ChatTurnStatusLine';
+import { ChatModeSwitch } from '../components/chat/ChatModeSwitch';
 import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
@@ -59,12 +61,14 @@ export default function ChatPage() {
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
-  const { model, actions, owner, scopeKey, sharedChild, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, owner, scopeKey, sharedChild, chatState: chat, chatController, chatMode: providedChatMode, setChatMode: providedSetChatMode, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const { height: viewportHeight, fontScale = 1 } = useWindowDimensions();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const childName = privateChatChildName(model.children, child?.id);
+  const chatMode: ChatMode = providedChatMode ?? resolveChatMode(child ? chat.chatModes?.[child.id] : undefined);
+  const setChatMode = providedSetChatMode ?? ((nextMode: ChatMode) => { chatController.setChatMode?.(nextMode); });
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
@@ -229,10 +233,15 @@ function ChatContents({ compact }: { compact: boolean }) {
       && !(remote?.messageId === turnFeedback.messageId && remote.status === "running") && turnFeedback.messageId !== draft?.savedUserMessageId
       ? <AppButton label="收起這次查核提示" variant="quiet" density="compact"
         onPress={() => chatController.dismissRetainedFeedback(turnFeedback.messageId)} /> : null}
-    {authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
+    {chatMode === "assistant" && authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
   </BackgroundSurface> : null;
+  const inflightModeNotice = chat.modeSwitchedDuringReply && (busy || remote?.status === "running")
+    ? (chat.modeSwitchedDuringReply.from === "assistant" && chat.modeSwitchedDuringReply.to === "chat_only"
+      ? CHAT_MODE_COPY.inflightAssistantToChatOnlyNotice
+      : CHAT_MODE_COPY.inflightChatOnlyToAssistantNotice)
+    : null;
   const outgoing = childScopedChat && scopeKey && !sharedChild?.target ? chat.outgoing : undefined;
   const timelineFooter = <View style={styles.feedback}>
     {outgoing && <ChatMessage testID="chat-outgoing" message={{ id: "outgoing", role: "user",
@@ -321,6 +330,7 @@ function ChatContents({ compact }: { compact: boolean }) {
           phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
+            {message.chatMode === "chat_only" ? <Text testID={`chat-message-mode-${message.id}`} style={styles.modeTag}>只是聊天</Text> : null}
             {message.role === 'model' && !failure && <AssistantByline />}
             {message.role === 'user' && message.pageContext?.item && (message.pageContext.item.kind === 'document'
               ? <Text style={styles.meta}>提問時所選的文件 · 版本 {message.pageContext.item.version}</Text>
@@ -363,6 +373,8 @@ function ChatContents({ compact }: { compact: boolean }) {
       }} />}
     {welcome && timelineFooter}
     {officialHelpPanel}
+    <ChatModeSwitch mode={chatMode} disabled={!child || !chat.online} compact={compact} inflightNotice={inflightModeNotice} onChangeMode={setChatMode} />
+    {chatMode === "chat_only" && agentAttachments.length ? <Text style={styles.meta}>目前為「只是聊天」：送出後只作理解與問答，不建立正式記錄或待確認卡片。</Text> : null}
     <AgentComposer centered={welcome} discussionControl={childScopedChat && !replyRunning && phase === 'draft' && <ChatAction label={discussNext ? '只討論本題 ×' : '三方討論'}
       accessibilityLabel={discussNext ? '取消這一題的討論' : '為這一題開啟三個 AI 觀點討論'}
       icon={discussNext ? 'check' : 'account-group-outline'} compact disabled={busy || !chat.online || !chatWritesAllowed}
@@ -419,6 +431,7 @@ const styles = StyleSheet.create({
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
+  modeTag: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, marginBottom: 4 },
   error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
   feedback: { gap: 10, minWidth: 0 }, helpDock: { flexShrink: 0, width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center",
     paddingHorizontal: chatLayout.wideInset, overflow: "hidden", marginBottom: chatLayout.composerOverlap },

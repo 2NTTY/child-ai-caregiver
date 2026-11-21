@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { AgentScope } from './agent-runtime.ts';
-import { agentProposalSchema, agentDecisionSchema, type AgentProposal, type AgentProposalValue, type AgentDecision, type AgentPendingPage } from '../src/shared/product-agent.ts';
+import { agentProposalSchema, agentProposalEditSchema, agentDecisionSchema, proposalTargetKey, type AgentProposal, type AgentProposalValue, type AgentProposalEdit, type AgentDecision, type AgentPendingPage } from '../src/shared/product-agent.ts';
 import { agentSavedProposalSchema } from '../src/shared/product-agent-result.ts';
 import { dataComposeReviewBindingSchema, type DataComposeReviewBinding } from '../src/shared/data-compose.ts';
 import { composeReviewStillAllowsProposal } from './data-compose.ts';
@@ -167,6 +167,27 @@ export function createFirestoreAgentProposals(options: {
     const next = { ...saved, proposal: value };
     return { value, commit() { effect?.commit(); change?.commit(); write(b, next); } };
   }
+  async function normalizeProposalValue(b: Binding, run: FirestoreAgentRun, rawValue: AgentProposalValue): Promise<AgentProposalValue> {
+    let proposalValue = rawValue;
+    if (rawValue.kind === 'memory_fact') {
+      const message = await source(b, run, rawValue.sourceMessageId ?? run.sourceMessageId!, 'memory');
+      const intent = message.id === run.sourceMessageId ? message : await source(b, run, run.sourceMessageId!);
+      requireMemoryFactSource(intent.text, rawValue.content);
+      requireMemoryFactSource(message.text, rawValue.content);
+      proposalValue = { ...rawValue, content: preserveMemoryFactUserWording(message.text, rawValue.content),
+        validUntil: sanitizeDurableMemoryFactValidUntil(rawValue.content, rawValue.validUntil, now(), message.text) };
+    } else if (rawValue.kind === 'memory_fact_revise') {
+      const message = await source(b, run, rawValue.sourceMessageId, 'memory');
+      proposalValue = { ...rawValue, content: preserveMemoryFactUserWording(message.text, rawValue.content) };
+    } else if (rawValue.kind === 'care_record_create' || rawValue.kind === 'care_record_revise'
+      || rawValue.kind === 'private_note_create' || rawValue.kind === 'private_note_revise') {
+      const message = await source(b, run, run.sourceMessageId!);
+      const voice = 'sourceBasis' in rawValue && rawValue.sourceBasis === 'voice_interpretation';
+      if (!voice && !message.text.includes(rawValue.sourceQuote)) domainReject('agent_source_mismatch');
+    }
+    return proposalValue;
+  }
+
   return {
     query, read, visible, inRun, source, target, prepareDecision,
     async propose(scope: AgentScope, runId: string, callId: string, raw: AgentProposalValue, options?: { composeReview?: DataComposeReviewBinding }) {
@@ -175,18 +196,7 @@ export function createFirestoreAgentProposals(options: {
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         const run = await runs.requireLive(b, scope, runId);
         if (run.trigger.kind !== 'interactive') domainReject('confirmation_requires_interactive_scope', 400);
-        let proposalValue = value;
-        if (value.kind === 'memory_fact') {
-          const message = await source(b, run, value.sourceMessageId ?? run.sourceMessageId!, 'memory');
-          const intent = message.id === run.sourceMessageId ? message : await source(b, run, run.sourceMessageId!);
-          requireMemoryFactSource(intent.text, value.content);
-          requireMemoryFactSource(message.text, value.content);
-          proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content),
-            validUntil: sanitizeDurableMemoryFactValidUntil(value.content, value.validUntil, now(), message.text) };
-        } else if (value.kind === 'memory_fact_revise') {
-          const message = await source(b, run, value.sourceMessageId, 'memory');
-          proposalValue = { ...value, content: preserveMemoryFactUserWording(message.text, value.content) };
-        }
+        const proposalValue = await normalizeProposalValue(b, run, value);
         const previous = await inRun(b, runId), fingerprint = firestoreDomainHash(proposalValue);
         for (const item of previous) {
           const same = firestoreDomainHash(item.proposal.value) === fingerprint;
@@ -209,6 +219,36 @@ export function createFirestoreAgentProposals(options: {
           ...(composeReview ? { composeReview } : {}),
         }, true);
         runs.write(b, run); return proposal;
+      });
+    },
+    async editProposal(userId: string, childId: string, runId: string, id: string, rawEdit: AgentProposalEdit): Promise<AgentProposal> {
+      const edit = domainParse(agentProposalEditSchema, rawEdit, 'invalid_input', 400);
+      return authority.runTransaction(userId, childId, async b => {
+        const saved = await read(b, runId, id), p = visible(saved), run = await runs.read(b, runId);
+        if (p.status === 'expired') domainReject('confirmation_expired');
+        if (p.status !== 'pending' || p.version !== edit.expectedVersion) domainReject('version_conflict');
+        if (saved.authorizationVersion !== b.authorizationVersion || !runs.matches(b, runs.current(b), run, false)) {
+          domainReject('confirmation_scope_changed');
+        }
+        if (proposalTargetKey(p.value) !== proposalTargetKey(edit.value)) {
+          domainReject('invalid_input', 400);
+        }
+        const normalized = await normalizeProposalValue(b, run, edit.value);
+        const checked = await target(b, run, normalized);
+        const updated: AgentProposal = {
+          ...p,
+          version: p.version + 1,
+          value: normalized,
+          targetLabel: checked.label,
+          ...(checked.visibility ? { targetVisibility: checked.visibility } : {}),
+          result: null,
+        };
+        write(b, {
+          ...saved,
+          proposal: updated,
+          sourceBasis: checked.sourceBasis,
+        });
+        return updated;
       });
     },
     async decide(userId: string, childId: string, runId: string, id: string, input: AgentDecision) {

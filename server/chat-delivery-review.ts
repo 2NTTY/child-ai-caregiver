@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import type { ChatMode } from "../src/shared/chat.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
 import { agentAnswerSchema } from "../src/shared/product-agent.ts";
 import {
@@ -102,6 +103,10 @@ export interface ChatDeliveryDraft {
   discussionRoles?: readonly import('../src/shared/chat-discussion.ts').DiscussionRole[];
   /** Current authenticated user request only; never model-authored or historical chat. */
   userRequest?: string;
+  /** Server-trusted origin chat mode; never supplied by the model. */
+  chatMode?: ChatMode;
+  /** Server-trusted ephemeral temporary-chat scope; never supplied by the model. */
+  temporaryChat?: true;
   voice?: Readonly<import('../src/shared/voice.ts').VoiceMessageReference>;
   /** Server-loaded originals, independently shown to the reviewer; never generator summaries. */
   images?: import('../src/shared/photos.ts').PhotoMessageReference[];
@@ -873,6 +878,7 @@ export function attributedChatQuote(source: ChatDeliverySource): string | undefi
 
 function hasLiveUnverifiedOperationClaim(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedReceiptText) return false;
+  if (isPureChatOnlyModeBoundaryNotice(draft)) return false;
   const text = draft.paragraphs.filter(p => {
     if ((p.kind ?? draft.kind) !== 'private_reference' || p.citationIds.length !== 1) return true;
     const source = draft.sources.find(s => s.citationId === p.citationIds[0]);
@@ -1398,7 +1404,8 @@ function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean
 function draftHasTaskAnchoredCareObligation(draft: ChatDeliveryDraft, text: string): boolean {
   if (isGroundedHistoricalMilkRestatement(draft)) return false;
   if (isPureClarifyingQuestion(text) || isPureGreetingOrSmallTalk(text)
-    || isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) {
+    || isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)
+    || isPureChatOnlyModeBoundaryNotice(draft)) {
     return false;
   }
   if (CARE_ADVISORY_PATTERN.test(text) || MEDICAL_CLAIM_PATTERN.test(text) || detectHighRiskCareClaims(text).matched) {
@@ -1421,6 +1428,40 @@ export function isPureScopeRefusalOrLimitation(draft: ChatDeliveryDraft): boolea
   if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) return false;
   if (draft.images?.length || draft.voice) return false;
   return isPureScopeRefusalOrLimitationText(joinedDraftText(draft));
+}
+
+/** Narrow Server-bound "chat_only" mode redirection notice containing zero care advice or executed claims. */
+export function isPureChatOnlyModeBoundaryNotice(draft: ChatDeliveryDraft): boolean {
+  if (draft.chatMode !== "chat_only") return false;
+  const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
+  if (!kinds.length || kinds.some(kind => kind !== "clarification" && kind !== "operation")) return false;
+  if (draft.paragraphs.some(paragraph => paragraph.citationIds.length > 0)) return false;
+  if (draft.images?.length || draft.voice || draft.verifiedOperations?.length) return false;
+  const text = joinedDraftText(draft);
+  if (!text || text.length > 240 || /[:：()（）\d]/u.test(text)) return false;
+  if (
+    CARE_DOMAIN_PATTERN.test(text)
+    || CARE_ADVISORY_PATTERN.test(text)
+    || MEDICAL_CLAIM_PATTERN.test(text)
+    || ORIGINAL_EVIDENCE_CLAIM_PATTERN.test(text)
+    || UNSAFE_REFUSAL_TOPIC_PATTERN.test(text)
+    || PRIVATE_ALLERGY_CLAIM_PATTERN.test(text)
+    || EXECUTED_PENDING_LIE_PATTERN.test(text)
+    || CLAUSE_SPECIFIC_FACT_SIGNAL_PATTERN.test(text)
+    || CLAUSE_EMBEDDED_FACT_DISQUALIFIER_PATTERN.test(text)
+    || /(?:已(?:經)?|經已|幫(?:你|您)).{0,8}(?:保存|儲存|建立|記錄|記低|更新|修改|更改|刪除|取消|設定|設置|安排|完成)/iu.test(text)
+    || /\b(?:already|successfully)\b|\bhave\s+been\s+saved\b/iu.test(text)
+  ) {
+    return false;
+  }
+  if (draft.temporaryChat) {
+    return /(?:臨時聊天|臨時對話)/u.test(text)
+      && /(?:不會|無法|未能|不能|未有|不支援|不執行|不建立|不保存|不載入)/u.test(text)
+      && /(?:主聊天|助手模式|退出臨時)/u.test(text);
+  }
+  return /只是聊天/u.test(text)
+    && /(?:不會|無法|未能|不能|未有|不支援|不執行|不建立|不保存)/u.test(text)
+    && /(?:助手模式|切換(?:回|至|到)助手|切回助手)/u.test(text);
 }
 
 const VERIFIED_SUMMARY_BLOCKED_ADVICE_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要|不可|唔好|唔可以|唔准|不准|藥|劑量?|粒|片|丸|滴|蜜糖|蜂蜜|止咳|退燒|抗生素|趴低|瞓覺時|停止|暫停|禁止|切勿|禁食|禁飲|禁飲食|禁飲禁食|停食|停水|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t|do\s+not|avoid|medication|medicine|drugs?|tablet|pill|capsule|drops?|syrup|administer|withhold|discontinue|stop|forbid|prohibit|nil[\s-]+by[\s-]+mouth|\bnpo\b|fasting|aspirin|ibuprofen|paracetamol|honey|measles|wound/iu;
@@ -1504,7 +1545,8 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft, obligatio
 
   if (kinds.some(kind => kind === "caregiving" || kind === "safety_help")) return true;
   if (kinds.includes("private_reference")) return !(draft.images?.length || draft.voice);
-  if (isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)) return false;
+  if (isPureScopeRefusalOrLimitation(draft) || isPureVerifiedOperationSummary(draft)
+    || isPureChatOnlyModeBoundaryNotice(draft)) return false;
   return draftLooksLikeSubstantiveCareAdvice(draft);
 }
 
@@ -1618,7 +1660,7 @@ export function evaluateChatDeliveryReviewPolicy(
     };
   }
 
-  if (isPureScopeRefusalOrLimitation(draft)) {
+  if (isPureScopeRefusalOrLimitation(draft) || isPureChatOnlyModeBoundaryNotice(draft)) {
     return {
       policyVersion: HIGH_RISK_CARE_POLICY_VERSION,
       requiresReview: true,
@@ -1719,6 +1761,8 @@ export function chatDeliveryDraftHash(draft: ChatDeliveryDraft, repairContext?: 
   return sha256({
     ...(draft.discussionRoles?.length ? { discussionRoles: draft.discussionRoles } : {}),
     ...(draft.userRequest !== undefined ? { userRequest: draft.userRequest } : {}),
+    ...(draft.chatMode === "chat_only" ? { chatMode: draft.chatMode } : {}),
+    ...(draft.temporaryChat ? { temporaryChat: true } : {}),
     ...(repairContext ? repairContextPayload(repairContext) : {}),
     ...(draft.voice ? { voice: draft.voice } : {}),
     ...(draft.images?.length ? { images: [...draft.images].sort((a, b) => a.id.localeCompare(b.id)) } : {}),

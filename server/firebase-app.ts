@@ -37,6 +37,8 @@ import { handleMemoryRequest } from "./memory-api.ts";
 import type { MemoryStore } from "./memory.ts";
 import type { createFirestoreProductAgent } from './firestore-product-agent.ts';
 import { handleProductAgentRequest } from './product-agent-api.ts';
+import { handleTemporaryChatRequest } from './temporary-chat-api.ts';
+import type { TemporaryChatService } from './temporary-chat-agent.ts';
 import { handleAgentActionsRequest } from './agent-actions-api.ts';
 import { handleModelSettingsRequest } from './model-settings-api.ts';
 import { handleSharedInputRequest } from './shared-input-api.ts';
@@ -105,6 +107,7 @@ export interface FirebaseRequestHandlerOptions {
   telegram?: { store: FirestoreTelegram; config: TelegramConfig | null; gateway: TelegramGateway };
   sourceService?: SharedInputService;
   product?: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
+  temporaryChat?: TemporaryChatService;
 }
 export type FirebaseRequestHandler = (request: Request) => Promise<Response>;
 
@@ -533,6 +536,16 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           } else response = await handleTaskRequest(request, userId, tasks);
         }
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (options.temporaryChat && (path === '/api/temporary-chat' || path.startsWith('/api/temporary-chat/'))) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id ?? null;
+        const isCurrentUser = async (id: string) => (await auth.getSession({ headers: request.headers }))?.user.id === id;
+        const response = await handleTemporaryChatRequest(request, userId, options.temporaryChat, {
+          isCurrentUser,
+          readJson: req => readJson(req),
+        });
         return uncached(response);
       }
       if (options.product && (path.startsWith('/api/ai/') || /^\/api\/children\/[^/]+\/(?:agent(?:\/|$)|messages\/[^/]+\/reply(?:\/|$))/u.test(path))) {

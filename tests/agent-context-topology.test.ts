@@ -175,7 +175,7 @@ test('provider receives every omitted prompt and reads both through the authoriz
         // Only prior visible user text gets a quote handle, never omitted prompts, model replies or the current request.
         const recentHandles = new Map([[m.u2.id, 'R1'], [m.u3.id, 'R2']]);
         assert.deepEqual(coverage.messageTopology, [m.u2, m.m0, m.m1, m.u3, m.m3, m.u4]
-          .map(({ id, role, inReplyTo }) => ({ id, role, inReplyTo,
+          .map(({ id, role, inReplyTo }) => ({ id, role, inReplyTo, chatMode: 'assistant',
             ...(recentHandles.has(id) ? { quoteHistory: recentHandles.get(id) } : {}) })));
         assert.equal(coverage.omittedTurnPromptMessageId, m.u0.id, 'The legacy field remains the first missing prompt');
         assert.equal(coverage.messageTopology.length, 6, 'Metadata follows the bounded selected window, not the whole page');

@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useRouter } from "expo-router";
+import { resolveAgentExecutionMode } from "../../../src/shared/agent-actions";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { AppDialog } from "../components/AppDialog";
+import { AppRadioItem } from "../components/AppRadioItem";
 import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink } from "../components/ui";
 import { chineseFont, colors, readingType, spacing } from "../theme";
@@ -22,7 +24,8 @@ export function AgentAuthorization({ active = false }: { active?: boolean }) {
   const router = useRouter(), navigate = usePreviewNavigation();
   const policy = state.policy;
   const dirty = !!policy && state.policyState === "ready" && (
-    [...state.draft.recordKinds].sort().join() !== [...policy.recordKinds].sort().join()
+    state.draft.executionMode !== resolveAgentExecutionMode(policy)
+    || [...state.draft.recordKinds].sort().join() !== [...policy.recordKinds].sort().join()
     || state.draft.allowPrivateNotes !== policy.allowPrivateNotes || state.draft.allowSelfTasks !== policy.allowSelfTasks
     || state.draft.allowRecordCorrections !== policy.allowRecordCorrections || state.draft.reminders !== (policy.reminderBindings.length > 0));
   usePreviewLeaveGuard(dirty, !!state.pending || state.busy === "write", "child", {
@@ -47,6 +50,28 @@ export function AgentAuthorization({ active = false }: { active?: boolean }) {
         {state.policyState === "failed" ? <Text style={styles.warning}>目前授權未能讀取，保存已停用。</Text> : null}
         {state.policy ? <>
           <Text style={styles.meta}>目前版本 {state.policy.version} · {state.policy.effective ? "按目前權限生效" : "目前未生效"}</Text>
+          <View testID="agent-execution-mode-selector" style={styles.modeGroup}>
+            <Text style={styles.meta}>執行模式</Text>
+            <AppRadioItem
+              label="預設先草稿確認（確認後才正式保存）"
+              value="confirm_first"
+              checked={state.draft.executionMode === "confirm_first"}
+              disabled={!editing}
+              onPress={() => actions.setDraft({ executionMode: "confirm_first" })}
+            />
+            <AppRadioItem
+              label="授權內自動保存（按已勾選項目直接寫入並附收據）"
+              value="auto_authorized"
+              checked={state.draft.executionMode === "auto_authorized"}
+              disabled={!editing}
+              onPress={() => actions.setDraft({ executionMode: "auto_authorized" })}
+            />
+            <Text style={styles.meta}>
+              {state.draft.executionMode === "confirm_first"
+                ? "預設形成待確認草稿；你可在核對並修改後再正式保存。"
+                : "只對下方已明確勾選的普通項目自動保存並附收據；未勾選、需額外確認或目標不明的項目仍先保留為待確認草稿。"}
+            </Text>
+          </View>
           {recordOptions.map(option => <AppCheckbox key={option.kind} label={`容許保存${option.label}`} checked={state.draft.recordKinds.includes(option.kind)} disabled={!editing}
             onChange={checked => actions.setDraft({ recordKinds: checked ? [...state.draft.recordKinds, option.kind] : state.draft.recordKinds.filter(kind => kind !== option.kind) })} />)}
           <AppCheckbox label="容許保存及修改本人私人備註" checked={state.draft.allowPrivateNotes} disabled={!editing} onChange={allowPrivateNotes => actions.setDraft({ allowPrivateNotes })} />
@@ -66,7 +91,7 @@ export function AgentAuthorization({ active = false }: { active?: boolean }) {
         {state.notice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{state.notice}</Text> : null}
         {state.pending ? <View style={styles.contents}>
           <Text style={styles.body}>原{state.pending.kind === "policy" ? "授權保存" : `刪除「${state.pending.note.title}」`}待查核 · 原版本 {state.pending.input.expectedVersion}</Text>
-          {state.pending.kind === "policy" ? <Text style={styles.meta}>原設定：{state.pending.input.recordKinds.map(kind => recordOptions.find(option => option.kind === kind)!.label).join("、") || "不保存照護記錄"}；私人備註{state.pending.input.allowPrivateNotes ? "開啟" : "關閉"}；本人待辦{state.pending.input.allowSelfTasks ? "開啟" : "關閉"}；到期提示{state.pending.input.reminderBindings.length ? `${channelLabel(state.pending.input.reminderBindings[0]!.channel)}（原通知同意版本 ${state.pending.input.reminderConsentVersion}）` : "關閉"}。</Text> : null}
+          {state.pending.kind === "policy" ? <Text style={styles.meta}>原設定：{resolveAgentExecutionMode(state.pending.input) === "auto_authorized" ? "授權內自動保存" : "預設先草稿確認"}；{state.pending.input.recordKinds.map(kind => recordOptions.find(option => option.kind === kind)!.label).join("、") || "不保存照護記錄"}；私人備註{state.pending.input.allowPrivateNotes ? "開啟" : "關閉"}；本人待辦{state.pending.input.allowSelfTasks ? "開啟" : "關閉"}；到期提示{state.pending.input.reminderBindings.length ? `${channelLabel(state.pending.input.reminderBindings[0]!.channel)}（原通知同意版本 ${state.pending.input.reminderConsentVersion}）` : "關閉"}。</Text> : null}
           <AppButton label="先重新讀取原操作資料" variant="quiet" disabled={locked} onPress={state.pending.kind === "policy" ? actions.readPolicy : () => actions.readNotes()} />
           <AppButton label="明確重試原操作" variant="secondary" disabled={!mayRetryAuthorization(state)} onPress={actions.retryOriginal} />
         </View> : null}
@@ -95,6 +120,7 @@ export function AgentAuthorization({ active = false }: { active?: boolean }) {
   </View>;
 }
 const styles = StyleSheet.create({ root: { minWidth: 0 }, contents: { minWidth: 0, gap: spacing.md, paddingTop: spacing.sm },
+  modeGroup: { gap: spacing.xs, paddingBottom: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   note: { gap: spacing.sm, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

@@ -55,6 +55,7 @@
   },
   "followUp": {
     "initialHead": "f4157efc5d2220f4b4c66b1e36b82034d1993708",
+    "liveFixCommit": "8c870d423bcbd342df076b5a0fbd157586c217c4",
     "accountScope": "Before the follow-up, a direct speaker tool request succeeded on an assistant-identity clarification. Both model-selected subjects now consult the same lazy per-turn scope decision. The regression covers both wrong selections, the valid identity, pagination and zero checks before a lookup.",
     "earlierCitationFailures": {
       "run": "105b43a8-3e76-4b58-8d2c-fc09fabde60c",
@@ -79,6 +80,7 @@
     },
     "controlled": "The tool and delivery gate reject an answer consisting only of the attached question echoed back. The same question can still be quoted when history is explicitly requested; its factual part can also accompany an answer based on the page. The earlier offline comparison remains recorded separately.",
     "verification": {"passed": 58, "files": ["chat-page-evidence", "chat-workspace-view", "agent-context-topology", "chat-delivery-review", "chat-discussion"], "serverTypecheck": "passed"},
+    "integrationVerification": {"codeBase": "dbbad8bdde4e503aa6719dba6c76c0c5481d276a", "passed": 95, "files": ["chat-page-evidence", "chat-workspace-view", "agent-context-topology", "chat-delivery-review", "chat-discussion", "req003-main-chat-mode-switch", "req003-legacy-chat-mode", "agent-confirmation-retry", "product-agent-confirmation-budget"], "serverTypecheck": "passed", "scope": "Offline after merging the main-chat mode changes. The provider assertion now checks the explicit assistant mode for legacy messages. The live walkthrough used the fix commit before integration."},
     "funding": {"ordinaryModelCallsPerRun": 8, "ordinaryQueryEmbeddingsPerRun": 4, "ordinaryUserDailyCap": 20, "dailyAttemptsRetained": 29, "inputTokens": 304300, "outputTokens": 2182, "estimatedGenerationUSDAtUncachedGlobalRates": 0.079348, "reservedUSD": 0.30, "rateSource": "https://cloud.google.com/model-garden/pricing", "billing": "Usage-based estimate, not an invoice. The earlier 25-attempt aggregate matched Cloud Monitoring for Flash-Lite over the fixture window. Both new runs returned individual input and total counts."},
     "remaining": "Production deployment, a real parent on the deployed site and physical-phone interaction were outside this walkthrough."
   }

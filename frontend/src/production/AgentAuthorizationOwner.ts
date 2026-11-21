@@ -1,12 +1,12 @@
 import { AgentActionsApiError, createAgentActionsApi, type AgentNoteDelete } from "../../../src/client/agent-actions-api.ts";
 import { ContactApiError, createContactApi } from "../../../src/client/contact-api.ts";
-import type { AgentActionReceipt, AgentOperationPolicy, AgentPolicyUpdate, AgentPrivateNote, ordinaryRecordKinds } from "../../../src/shared/agent-actions.ts";
+import { resolveAgentExecutionMode, type AgentActionReceipt, type AgentExecutionMode, type AgentOperationPolicy, type AgentPolicyUpdate, type AgentPrivateNote, type ordinaryRecordKinds } from "../../../src/shared/agent-actions.ts";
 import type { ContactPage } from "../../../src/shared/contact.ts";
 import type { AgentReadState } from "../agent-view-model.ts";
 
 type RecordKind = (typeof ordinaryRecordKinds)[number];
 interface Scope { key: string; userId: string; childId: string }
-interface PolicyDraft { recordKinds: RecordKind[]; allowPrivateNotes: boolean; allowSelfTasks: boolean; allowRecordCorrections: boolean; reminders: boolean }
+interface PolicyDraft { executionMode: AgentExecutionMode; recordKinds: RecordKind[]; allowPrivateNotes: boolean; allowSelfTasks: boolean; allowRecordCorrections: boolean; reminders: boolean }
 type PendingOperation = { kind: "policy"; input: AgentPolicyUpdate; reviewed: boolean; reconfirm?: boolean }
   | { kind: "delete"; note: AgentPrivateNote; input: AgentNoteDelete; reviewed: boolean; reconfirm?: boolean };
 export interface AgentAuthorizationSnapshot {
@@ -17,7 +17,7 @@ export interface AgentAuthorizationSnapshot {
   pending: PendingOperation | null; notice: string | null;
   receipts: Readonly<Record<string, { state: AgentReadState; items: AgentActionReceipt[] }>>;
 }
-const emptyDraft = (): PolicyDraft => ({ recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminders: false });
+const emptyDraft = (): PolicyDraft => ({ executionMode: "confirm_first", recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminders: false });
 function initial(online: boolean): AgentAuthorizationSnapshot {
   return { online, busy: null, writesBlocked: false, policyState: "idle", policy: null, draft: emptyDraft(), sharedConfirmed: false,
     contactState: "idle", contact: null, notesState: "idle", notes: [], queryDraft: "", query: "", nextAfterId: null, pending: null, notice: null, receipts: {} };
@@ -105,8 +105,8 @@ export class AgentAuthorizationOwner {
       if (!request.current()) return;
       const original = this.snapshot.pending;
       const pending = original?.kind === "policy" && original.reconfirm ? null : original;
-      this.update({ policy, policyState: "ready", draft: pending?.kind === "policy" ? { recordKinds: [...pending.input.recordKinds], allowPrivateNotes: pending.input.allowPrivateNotes, allowSelfTasks: pending.input.allowSelfTasks, allowRecordCorrections: pending.input.allowRecordCorrections, reminders: pending.input.reminderBindings.length > 0 } : pending ? this.snapshot.draft : {
-        recordKinds: [...policy.recordKinds], allowPrivateNotes: policy.allowPrivateNotes, allowSelfTasks: policy.allowSelfTasks, allowRecordCorrections: policy.allowRecordCorrections, reminders: policy.reminderBindings.length > 0 },
+      this.update({ policy, policyState: "ready", draft: pending?.kind === "policy" ? { executionMode: resolveAgentExecutionMode(pending.input), recordKinds: [...pending.input.recordKinds], allowPrivateNotes: pending.input.allowPrivateNotes, allowSelfTasks: pending.input.allowSelfTasks, allowRecordCorrections: pending.input.allowRecordCorrections, reminders: pending.input.reminderBindings.length > 0 } : pending ? this.snapshot.draft : {
+        executionMode: resolveAgentExecutionMode(policy), recordKinds: [...policy.recordKinds], allowPrivateNotes: policy.allowPrivateNotes, allowSelfTasks: policy.allowSelfTasks, allowRecordCorrections: policy.allowRecordCorrections, reminders: policy.reminderBindings.length > 0 },
         pending: pending?.kind === "policy" ? { ...pending, reviewed: true } : pending,
         notice: pending?.kind === "policy" ? "已讀取目前授權；核對版本及原內容後，只可明確重試原操作。" : original?.kind === "policy" && original.reconfirm ? "原操作已被拒絕；請按目前版本重新核對並明確保存。" : null });
     } catch (error) {
@@ -164,6 +164,7 @@ export class AgentAuthorizationOwner {
     const state = this.snapshot; if (!maySavePolicy(state) || !state.policy) return;
     const bindings = state.draft.reminders ? state.contact!.consent.bindings.map(item => ({ ...item })) : [];
     const input: AgentPolicyUpdate = { operationId: crypto.randomUUID(), expectedVersion: state.policy.version,
+      executionMode: state.draft.executionMode,
       recordKinds: [...state.draft.recordKinds], allowPrivateNotes: state.draft.allowPrivateNotes, allowSelfTasks: state.draft.allowSelfTasks,
       allowRecordCorrections: state.draft.allowRecordCorrections,
       reminderBindings: bindings, reminderConsentVersion: bindings.length ? state.contact!.consent.version : null, confirm: true, confirmShared: state.sharedConfirmed };
@@ -190,7 +191,7 @@ export class AgentAuthorizationOwner {
         try {
           const policy = await this.api.getPolicy(request.scope.childId, request.controller.signal, request.scope.userId);
           if (!request.current()) return;
-          this.update({ policyState: "ready", policy, draft: { recordKinds: [...policy.recordKinds], allowPrivateNotes: policy.allowPrivateNotes, allowRecordCorrections: policy.allowRecordCorrections,
+          this.update({ policyState: "ready", policy, draft: { executionMode: resolveAgentExecutionMode(policy), recordKinds: [...policy.recordKinds], allowPrivateNotes: policy.allowPrivateNotes, allowRecordCorrections: policy.allowRecordCorrections,
             allowSelfTasks: policy.allowSelfTasks, reminders: policy.reminderBindings.length > 0 }, notice: "原保存已確認；以下是重新讀取的目前授權。" });
         } catch (error) {
           if (!request.current()) return;

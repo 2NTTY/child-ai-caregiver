@@ -5,10 +5,13 @@ import type { ContactBinding } from "./contact.ts";
 import { importProvenanceSchema } from './import-provenance.ts';
 
 export const ordinaryRecordKinds = ["note", "feeding", "sleep", "diaper"] as const;
+export const agentExecutionModes = ["confirm_first", "auto_authorized"] as const;
+export type AgentExecutionMode = (typeof agentExecutionModes)[number];
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
 const version = z.number().int().min(0).max(2147483646);
 export const agentPolicyUpdateSchema = z.object({
   operationId: z.uuid(), expectedVersion: version,
+  executionMode: z.enum(agentExecutionModes).optional(),
   recordKinds: z.array(z.enum(ordinaryRecordKinds)).max(4).refine(values => new Set(values).size === values.length),
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(),
   allowRecordCorrections: z.boolean().default(false),
@@ -19,7 +22,9 @@ export const agentPolicyUpdateSchema = z.object({
     : value.allowSelfTasks && value.reminderConsentVersion !== null);
 export type AgentPolicyUpdate = z.infer<typeof agentPolicyUpdateSchema>;
 export interface AgentOperationPolicy {
-  version: number; effective: boolean; recordKinds: (typeof ordinaryRecordKinds)[number][];
+  version: number; effective: boolean;
+  executionMode?: AgentExecutionMode;
+  recordKinds: (typeof ordinaryRecordKinds)[number][];
   allowPrivateNotes: boolean; allowSelfTasks: boolean;
   allowRecordCorrections: boolean;
   reminderConsentVersion: number | null; reminderBindings: ContactBinding[];
@@ -34,6 +39,7 @@ const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
     timeZone: taskTimeZoneSchema, precision: z.enum(["exact", "approximate", "unknown"]) }).strict()
     .refine(value => value.precision === "exact" ? value.at !== null && Boolean(value.rawText.trim()) : value.at === null),
 }).strict();
+export const ordinaryRecordDetailsSchema = ordinaryDetails;
 /** These actions express user statements and ordinary instructions, never diagnoses or inferred facts. */
 export const agentDirectActionSchema = z.discriminatedUnion("kind", [
   z.object({ ...evidence, kind: z.literal("save_record"), text: text(2000), details: ordinaryDetails,
@@ -76,4 +82,111 @@ export interface AgentActionReceipt {
   createdAt: string;
   memoryOutcome?: "created" | "updated" | "duplicate";
   quantityGrounding?: { status: "source_supported" | "removed" | "absent" | "unchanged" };
+}
+
+export function hasOrdinaryAutoPermission(
+  policy: Pick<AgentOperationPolicy, "recordKinds" | "allowPrivateNotes" | "allowSelfTasks" | "allowRecordCorrections">,
+): boolean {
+  return policy.recordKinds.length > 0
+    || policy.allowPrivateNotes
+    || policy.allowSelfTasks
+    || policy.allowRecordCorrections;
+}
+
+/** Explicit executionMode wins; legacy policies infer auto_authorized only when permissions are enabled. */
+export function resolveAgentExecutionMode(
+  policy: { executionMode?: AgentExecutionMode } & Pick<AgentOperationPolicy, "recordKinds" | "allowPrivateNotes" | "allowSelfTasks" | "allowRecordCorrections">,
+): AgentExecutionMode {
+  if (policy.executionMode === "confirm_first" || policy.executionMode === "auto_authorized") {
+    return policy.executionMode;
+  }
+  return hasOrdinaryAutoPermission(policy) ? "auto_authorized" : "confirm_first";
+}
+
+export function allowsDirectActionByPolicy(
+  policy: AgentOperationPolicy,
+  action: AgentDirectAction,
+): { allowed: true } | { allowed: false; reason: "policy_inactive" | "confirm_first_mode" | "category_not_authorized" } {
+  const mode = resolveAgentExecutionMode(policy);
+  if (policy.version > 0 && !policy.effective) {
+    return { allowed: false, reason: "policy_inactive" };
+  }
+  if (mode === "confirm_first" || policy.version === 0) {
+    return { allowed: false, reason: "confirm_first_mode" };
+  }
+  if (!policy.effective) {
+    return { allowed: false, reason: "policy_inactive" };
+  }
+  switch (action.kind) {
+    case "save_record":
+      return policy.recordKinds.includes(action.details.kind)
+        ? { allowed: true }
+        : { allowed: false, reason: "category_not_authorized" };
+    case "revise_record":
+      return policy.allowRecordCorrections && policy.recordKinds.includes(action.details.kind)
+        ? { allowed: true }
+        : { allowed: false, reason: "category_not_authorized" };
+    case "save_private_note":
+    case "revise_private_note":
+      return policy.allowPrivateNotes
+        ? { allowed: true }
+        : { allowed: false, reason: "category_not_authorized" };
+    case "create_self_task":
+    case "change_self_task":
+      return policy.allowSelfTasks
+        ? { allowed: true }
+        : { allowed: false, reason: "category_not_authorized" };
+  }
+}
+
+export interface FormalSaveGateInput {
+  contentCheck: {
+    passed: boolean;
+    expectedDraftVersion?: number;
+    actualDraftVersion?: number;
+    expectedTargetVersion?: number;
+    actualTargetVersion?: number;
+    reason?: string;
+  };
+  actionAuthorization: {
+    authorized: boolean;
+    mode: AgentExecutionMode | "explicit_proposal_accept";
+    expectedPolicyVersion?: number;
+    actualPolicyVersion?: number;
+    reason?: string;
+  };
+}
+
+/**
+ * Separates content verification from user action authorization:
+ * passing content review never grants write approval, and auto_authorized never bypasses content checks.
+ */
+export function evaluateFormalSaveGate(input: FormalSaveGateInput):
+  | { allowed: true }
+  | { allowed: false; code: "content_check_failed" | "action_authorization_required" | "version_mismatch"; reason: string } {
+  if (
+    input.contentCheck.expectedDraftVersion !== undefined
+    && input.contentCheck.expectedDraftVersion !== input.contentCheck.actualDraftVersion
+  ) {
+    return { allowed: false, code: "version_mismatch", reason: "草稿版本已更新，須重新核對目前內容後再保存。" };
+  }
+  if (
+    input.contentCheck.expectedTargetVersion !== undefined
+    && input.contentCheck.expectedTargetVersion !== input.contentCheck.actualTargetVersion
+  ) {
+    return { allowed: false, code: "version_mismatch", reason: "原資料版本已改變，不可沿用舊版草稿覆蓋。" };
+  }
+  if (
+    input.actionAuthorization.expectedPolicyVersion !== undefined
+    && input.actionAuthorization.expectedPolicyVersion !== input.actionAuthorization.actualPolicyVersion
+  ) {
+    return { allowed: false, code: "version_mismatch", reason: "目前授權設定版本已改變，請先讀取最新授權。" };
+  }
+  if (!input.contentCheck.passed) {
+    return { allowed: false, code: "content_check_failed", reason: input.contentCheck.reason ?? "內容依據或格式審核尚未通過。" };
+  }
+  if (!input.actionAuthorization.authorized) {
+    return { allowed: false, code: "action_authorization_required", reason: input.actionAuthorization.reason ?? "尚未取得目前動作的有效使用者授權或確認。" };
+  }
+  return { allowed: true };
 }

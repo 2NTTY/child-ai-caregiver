@@ -1,6 +1,12 @@
 import type { ChildProfile } from "./care.ts";
-import type { ChatMessage } from "./chat.ts";
+import type { ChatMessage, ChatMode } from "./chat.ts";
 import type { ImportProvenance } from "./import-provenance.ts";
+
+export interface SummarySourceMessageMeta {
+  messageId: string;
+  version: number;
+  chatMode: ChatMode;
+}
 
 export type MemoryVisibility = "private" | "family";
 export type FactStatus = "candidate" | "confirmed" | "inactive";
@@ -36,6 +42,8 @@ export interface TopicReopen { expectedVersion: number; reason: string }
 export interface ConversationSummary {
   id: string; childId: string; version: number; text: string; createdAt: string;
   previousId: string | null; coveredMessageIds: string[]; lastCoveredMessageId: string;
+  /** Origin mode and version metadata per covered source message. */
+  sourceMessages?: SummarySourceMessageMeta[];
   /** Imported history keeps source message IDs; it never advances local summary coverage. */
   coverageScope?: 'imported_source'; importedFrom?: ImportProvenance;
   sourcePeriod?: { from: string; to: string };

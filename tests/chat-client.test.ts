@@ -152,7 +152,7 @@ test("an explicitly queued next question is sent once after the first reply; wit
     const reply = api.requestReply;
     const savedContexts: unknown[] = [];
     const save = api.saveMessage;
-    api.saveMessage = (...args) => { savedContexts.push(args[7]?.pageContext); return save(...args); };
+    api.saveMessage = (...args) => { savedContexts.push(typeof args[7] === "object" ? args[7].pageContext : undefined); return save(...args); };
     api.requestReply = async (...args) => { started.resolve(); await finish.promise; return reply(...args); };
     controller.syncContext(alice.id, true, firstChild); await settle();
     controller.setText("第一句");

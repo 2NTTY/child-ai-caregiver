@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import type { ChatMessage } from "../src/shared/chat.ts";
-import type { ConversationSummary, SummaryInput } from "../src/shared/memory.ts";
+import type { ConversationSummary, SummaryInput, SummarySourceMessageMeta } from "../src/shared/memory.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { FamilyError } from "./family-access.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
@@ -17,7 +17,7 @@ export interface InitialConversationSummary {
   batchProjection?: HistoricalSummaryProjection;
 }
 export interface HistoricalSummaryProjection {
-  batches: { id: string; sourceMessageIds: string[]; text: string; validUntil: string | null }[];
+  batches: { id: string; sourceMessageIds: string[]; sourceMessages?: SummarySourceMessageMeta[]; text: string; validUntil: string | null }[];
   omittedOrInvalidatedBatches: number;
 }
 const aad = (childId: string, userId: string, id: string) => `memory-summary:${childId}:${userId}:${id}`;
