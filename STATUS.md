@@ -8,7 +8,7 @@
 
 **2026-11-22 香港 01:05 查庫**　61 套官方劇本的 1,695 段已保存。41 套、1,238 段已上架，逐套按片名可查回同版原文，較首批增加 11 套。餘下 20 套中，母乳 10 套待一筆向量原單結算，嬰兒用品 8 套及親子溝通 1 套未取得有效審核決定，睡眠常規 1 套因分齡條件保留。[逐套收據](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
 
-**2026-11-21 香港 16:54**　回答後討論已在本機 Edge 以同一合成家庭、普通政策及真 Vertex 驗通。家長從已保存的原答開討論，四次模型呼叫取得三席、主答及獨立核對。收合重開後本人及平台用量同為 4 → 4；下一條廣東話普通問題正常回覆，兩邊用量均為 5。正式舊截圖仍未能配對原單，發布由主對話處理。[分項收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [家長畫面](artifacts/verification/REQ009_PARENT_BUDGET_THREE_20261121.png)
+**2026-11-22 香港，回答後討論。** 01:00 正式發布收據確認 Web、API 及 worker 已包含 #749。隔離家庭從原答開討論，四次真模型呼叫完成三席及主答，收合重開用量維持不變。正式站獨立瀏覽器停在登入頁，指定測試帳號按當時預算發起及收合仍待點按。舊截圖可辨認單次模型呼叫上限，未能配對原單。[正式站及舊單查核](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json) · [家長操作收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json)
 
 **2026-11-21 香港**　家長平台卡庫及本人參考資料以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。系列已發布，手機實際點按待驗。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026)
 
