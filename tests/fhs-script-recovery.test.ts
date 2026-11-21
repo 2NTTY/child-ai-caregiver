@@ -6,12 +6,13 @@ import { approvedScriptEdition, heldScriptRevision, scriptRevisionWorkId, verify
 test('a held script keeps its one-sided publisher wording as searchable original text', () => {
   const unit = { id: 'p0-12345678901234567890', originalText: '六個月以後。按原文所列條件閱讀。', scriptPassage: { title: '起步篇' } };
   const reading = scriptReadingContract([unit], '原教材');
-  const [chunk] = reading.parse({ u1: { audience: 'lookup', conditions: ['六個月以後'], topics: ['feeding'] } });
+  assert.equal(Object.entries(reading.inputs[0]!.wording).filter(([k]) => /^s\d+$/u.test(k)).map(([,v])=>v).join(''),unit.originalText);
+  const [chunk] = reading.parse({ u1: { audience: 'lookup', conditions: ['s1'], topics: ['feeding'] } });
   assert.equal(chunk!.unitId, unit.id);
   assert.equal(chunk!.text, unit.originalText);
   assert.equal(chunk!.treatment?.kind, 'overview');
   assert.equal(chunk!.applicability.use, 'original_lookup');
-  assert.ok(chunk!.applicability.conditions.includes('六個月以後'));
+  assert.ok(chunk!.applicability.conditions.includes('六個月以後。'));
   assert.throws(() => reading.parse({ u1: { audience: 'lookup', conditions: ['直至三歲'], topics: ['feeding'] } }), /scope_quote/u);
 });
 
