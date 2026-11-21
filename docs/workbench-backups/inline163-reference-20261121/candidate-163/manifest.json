@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-163-image-count",
+  "base": {
+    "artifact": "candidate-161/out",
+    "htmlSha256": "9b74cfca8aaf5df1b5d1f4461fe295c34c19d472bf8d68ba9810f3826aa825c1",
+    "rawRecordsSha256": "a1d46479320841a7ce03fb0bb8a9a1e6110147e9c3b0c5aa7edc86a0a4e3dd5d",
+    "rawArtworkSha256": "3393737498aeb2f7b3ca800039f88c95ca3cd277bd6e9a7cc770021a680ae13c",
+    "topics": 79,
+    "choices": 161,
+    "images": 161
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-telegram-identity/assets.json",
+      "sha256": "9cf6c8847c0e08b66309937af1603354db1f6dfd9cb09ea5bf77038e852c52f2"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "8f5bb46786b71059a2cc620806ac7049f6b4a46d7df5ff29412bf0510c8944ee",
+    "PROVENANCE.md": "b352dbdbe379800ca1b9e304f7976eb3de6baaff0b9b80573b213928cdcfc5d5"
+  },
+  "topics": [
+    {
+      "number": 80,
+      "title": "開啟 Telegram 綁定步驟後，先核對，再確認",
+      "choices": [
+        {
+          "name": "先核對已有帳戶，再選擇如何繼續",
+          "note": "Keycloak 找到相符的現有帳戶後，讓你回看個人資料，或明確選擇加入現有帳戶並繼續驗證。此時尚未完成連結。",
+          "links": [
+            {
+              "label": "Keycloak 26.5.1：全頁登入外框與標題",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/themes/src/main/resources/theme/base/login/template.ftl#L86-L124"
+            },
+            {
+              "label": "同版：提示放在表單前，錯誤狀態用 danger 樣式",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/themes/src/main/resources/theme/base/login/template.ftl#L158-L175"
+            },
+            {
+              "label": "同版：檢視個人資料及加入現有帳戶",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/themes/src/main/resources/theme/base/login/login-idp-link-confirm.ftl#L1-L15"
+            },
+            {
+              "label": "同版：顯示相符帳戶及明確選擇後的分支",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/services/src/main/java/org/keycloak/authentication/authenticators/broker/IdpConfirmLinkAuthenticator.java#L54-L85"
+            },
+            {
+              "label": "同版：此選擇之後仍須繼續驗證",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/docs/documentation/server_admin/topics/identity-broker/first-login-flow.adoc#L40-L53"
+            },
+            {
+              "label": "Keycloak 程式碼授權：Apache-2.0",
+              "url": "https://github.com/keycloak/keycloak/blob/228bc50913aaf8778aeb05c33b67c3fe4f5817e9/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-telegram-identity/telegram-id-a.png",
+            "sha256": "bb359203caa2ac34004aadc05cab2a7623b3ddcb5deaabf0152e777b101fc0bd",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Keycloak 的非官方帳戶核對示例。深色全頁上的白色卡片標題是「帳戶已存在」，紅色提示只顯示虛構使用者名稱「示例工作帳號」。下方有「檢視個人資料」和「加入現有帳戶」兩個按鈕，並無完成提示。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在同一裝置頁先核對，再決定是否配對",
+          "note": "畫面只顯示「展板展示機」的待處理配對請求。核對值已略去，「接受」和「拒絕」都未按；這不是通知權限設定。",
+          "links": [
+            {
+              "label": "KDE Connect Android v1.37.3：選定裝置的配對待處理畫面",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/ui/compose/screen/device/DevicePairingScreen.kt#L67-L132"
+            },
+            {
+              "label": "同版：未配對與已配對畫面分開",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/ui/DeviceFragment.kt#L219-L239"
+            },
+            {
+              "label": "同版：來自另一部裝置的配對接受與拒絕動作",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/ui/DeviceFragment.kt#L274-L297"
+            },
+            {
+              "label": "同版：所選裝置名稱顯示在頁首",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/ui/DeviceFragment.kt#L163-L175"
+            },
+            {
+              "label": "同版：傳入請求的待處理狀態",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/PairingHandler.kt#L87-L96"
+            },
+            {
+              "label": "同版：只在有待處理傳入請求時接受配對",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/PairingHandler.kt#L176-L194"
+            },
+            {
+              "label": "同版：說明與接受／拒絕按鈕原文",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/res/values/strings.xml#L258-L264"
+            },
+            {
+              "label": "同版：版本號",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/build.gradle.kts#L41-L47"
+            },
+            {
+              "label": "同版：配對畫面作者及 SPDX 授權選項",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/src/main/java/org/kde/kdeconnect/ui/compose/screen/device/DevicePairingScreen.kt#L1-L4"
+            },
+            {
+              "label": "KDE Connect Android 程式授權：此處選用 GPL-3.0-only（非圖像授權）",
+              "url": "https://github.com/KDE/kdeconnect-android/blob/f82d035ddc93d41aa45bea3988a6db4265c5554f/LICENSES/GPL-3.0-only.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-telegram-identity/telegram-id-b.png",
+            "sha256": "838aa630315c42fd4f683296d21a222f69b8086d0409f084f16679002c9357c7",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方直向手機示例：頁首是虛構裝置「展板展示機」。畫面顯示「已收到配對請求」，提示只配對自己的裝置，鑰匙圖示旁寫着「核對值略去」。下方有並排的「接受」及「拒絕」按鈕，均未操作。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 80 題 · 核對候選對象的兩幅自製示意",
+      "input": "draft-telegram-identity/DECLARATION.txt",
+      "sha256": "8f5bb46786b71059a2cc620806ac7049f6b4a46d7df5ff29412bf0510c8944ee"
+    }
+  ]
+}
