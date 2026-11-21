@@ -4,6 +4,8 @@
 
 <a id="active"></a>
 
+**小助手及完整對話的回覆狀態（2026-11-21）。** 兩個入口共用一行狀態。普通提問顯示「正在回覆…」，收到同一題的具體進度才換字，已保存的失敗原因留在該則回答。單一孩子省去副題，多孩或從共享空間選定私人對話時顯示孩子稱呼。本機 Edge 從待辦小窗送出「你是誰」，桌面和窄屏查看同一原題，重開後查回失敗結果。正式發布交主聊天。[桌面小窗](verification/chat-turn-status-2026-11-21/desktop-companion.png) · [窄屏小窗](verification/chat-turn-status-2026-11-21/compact-companion.png) · [驗收紀錄](verification/chat-turn-status-2026-11-21/receipt.json)
+
 **桌面助手入口（2026-11-21）。** 已復原齒輪設定正上方的黃色「與 Agent 對話」。本機 Edge 在 1280 × 600 捲動側欄後，兩個入口的位置保持固定。390 × 844 由底部「助手」返回同一段對話，桌面及窄屏均保留未送出的草稿。正式發布交主聊天。[短視窗畫面](verification/desktop-agent-entry-2026-11-21/desktop-1280x600.png) · [座標及驗收](verification/desktop-agent-entry-2026-11-21/receipt.json)
 
 **記憶頁與聊天引用（2026-11-19）。** 短期脈絡以待續事項呈現，長期記憶按事實逐條核對。回答下每項引用各有一張小卡，顯示文件、已知頁碼及能與已讀原文對上的摘錄。點卡開啟當時版本，可再開同版 PDF。
