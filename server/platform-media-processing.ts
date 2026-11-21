@@ -39,6 +39,11 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
       const clips: NonNullable<typeof card.clips> = [];
       const pendingUrls = new Set<string>();
       for (const original of originals) {
+        // Untimed publisher dialogue is reviewed in the text edition. Retain only existing clips bound to this original.
+        if (!original.captions.length && original.transcript.trim()) {
+          clips.push(...(before.clips ?? []).filter(clip => clip.link === link && clip.url === original.url && clip.evidenceHash === original.hash));
+          continue;
+        }
         const ref = database.collection(namespace + '_platform_media_editions').doc(original.hash);
         const claim = await database.runTransaction(async tx => {
           const state = await store.read(tx, id), snap = await tx.get(ref);
@@ -65,7 +70,7 @@ export function createPlatformMediaProcessor(store: PlatformMediaStore, namespac
             await database.runTransaction(async tx => {
               const current = await tx.get(ref);
               if (current.get('state') !== 'reserved') throw Error('knowledge_media_binding_invalid');
-              tx.update(ref, { state: 'ready', cues: result, method: original.captions.length ? 'captions' : original.transcript ? 'aligned_script' : 'media' });
+              tx.update(ref, { state: 'ready', cues: result, method: original.captions.length ? 'captions' : 'media' });
             });
           } catch (error) {
             // These failures happen before provider dispatch. An ambiguous request remains reserved.

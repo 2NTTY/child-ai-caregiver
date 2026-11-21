@@ -31,7 +31,7 @@ import { createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, Kno
 import { observationHash } from "./knowledge-observation.ts";
 import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion, type KnowledgePdfAcceptance } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
-import { embeddingDocument, sourceVersionHash } from "./knowledge-inputs.ts";
+import { embeddingForChunk, sourceVersionHash } from "./knowledge-inputs.ts";
 import { knowledgeOperationId, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { publicMaintenanceWatch } from "./knowledge-source-catalog.ts";
 import { GROWTH_RULES } from "./growth-rules.ts";
@@ -285,6 +285,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({
         enabled: true, liveFetch: base.backgroundKnowledgeLiveFetch, livePublish: base.backgroundKnowledgeLivePublish,
+        printedPageReview: Boolean(options.pdfQuestion || focus),
         isolatedFixturePublish: options.isolatedFixturePublish,
       }, {
         fetch: fetchThroughObservation(options.fetch),
@@ -475,7 +476,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 const predecessor = focusProof && (await work.inspect({ ...request, operationFingerprint: focusProof.priorWork }))?.prepared;
                 if (focusProof && predecessor?.versionHash !== focusProof.priorVersionHash) reject("knowledge_focus_binding_mismatch");
                 const priorInputs = new Set(predecessor?.source.chunks.map(chunk =>
-                  embeddingDocument(predecessor.source.title, chunk.section, chunk.text).hash));
+                  embeddingForChunk(predecessor.source.title, chunk).hash));
                 for (const document of pending) {
                   const origin = priorInputs.has(document.hash) ? focusProof!.priorWork : request.operationFingerprint;
                   await session.reserveWorkUnit("embedding:" + document.hash);

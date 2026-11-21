@@ -10,6 +10,7 @@ import { adminKnowledgeStatusSchema, knowledgeCheckStatus, pdfEditionReviewSchem
 import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 import { createPlatformMediaStore } from './firestore-platform-media.ts';
+import { officialScript } from './fhs-source-forms.ts';
 import { campaignMaterialWatches } from './platform-materials.ts';
 
 const campaignSources = new Set(campaignMaterialWatches.map(source => source.id));
@@ -25,6 +26,7 @@ const definitionSchema = z.strictObject({ id, url: z.url(), kind: z.enum(["page"
 const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), title: z.string().min(1).max(300),
   text: z.string().max(256020).refine(text => text.isWellFormed()), nativeWindowMethod: z.literal("native-pdf-window/1").optional(), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
+  scripts: z.array(officialScript).min(1).max(128).optional(),
   rssItem: z.strictObject({ xml: z.string().min(1).max(48000), copyright: z.string().min(1).max(160) }).optional(),
   pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() }).refine(doc => doc.nativeWindowMethod
     ? !doc.pages && doc.text === "" && doc.extraction?.format === "text_pdf" && doc.extraction.complete === false
@@ -489,7 +491,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
               revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
         }
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
-        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks);
+        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks, fetched.mediaPages);
         for (const write of writes) tx.set(write.ref, write.value);
         return { status, items: nextCheck.itemCount, changed };
       });

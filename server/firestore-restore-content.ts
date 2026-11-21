@@ -18,7 +18,7 @@ import { assertDocumentCapacity } from './family-document-edits.ts';
 import { copiedDocumentSource } from './family-document-copy.ts';
 import { firestoreKnowledgeSchemas } from './firestore-knowledge.ts';
 import { knowledgeLexicalIndex, emptyLexicalHash } from './knowledge-lexical-index.ts';
-import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from './knowledge-inputs.ts';
+import { embeddingForChunk, internalKnowledgeSource, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from './knowledge-inputs.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { handoverImportItemId, handoverImportItemSchema, handoverImportMappingSchema, handoverSourceIdentitySchema } from './handover-import-records.ts';
 
@@ -183,7 +183,7 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
       if (claimedChunks.has(chunk.chunkId)) fail('restore_content_duplicate'); claimedChunks.add(chunk.chunkId);
       if (!sameKnowledgeScope(source, chunk) || chunk.versionId !== version.versionId || chunk.chunkId !== listed.chunkId || listed.order !== index + 1
         || chunk.order !== listed.order || chunk.document.key !== listed.key || chunk.contentHash !== knowledgeHash(chunk.document)
-        || chunk.embeddingHash !== embeddingDocument(version.header.title, chunk.document.section, chunk.document.text).hash) fail();
+        || chunk.embeddingHash !== embeddingForChunk(version.header.title, chunk.document).hash) fail();
       return chunk;
     });
     let document: ReturnType<typeof parseKnowledgeSource>;

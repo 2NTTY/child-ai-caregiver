@@ -5,9 +5,10 @@ import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { knowledgeTokens } from "./knowledge-ranking.ts";
+import { omittedLeafletPrints } from "./fhs-leaflet-editions.ts";
 import { reviewKnowledgeVersion, publishKnowledgeVersion } from "./knowledge-version-review.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
-import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { embeddingForChunk, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { sqlTimelyEligibilityClause } from "./knowledge-timely-policy.ts";
 
 interface VersionRow { id: string; source_id: string; version_hash: string; document: KnowledgeSourceInput; review_state: "draft" | "reviewed" | "withdrawn"; checked_at: Date | null }
@@ -55,7 +56,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         const versionId = randomUUID();
         await client.query("INSERT INTO knowledge_versions (id,source_id,version_hash,document) VALUES ($1,$2,$3,$4)", [versionId, document.sourceId, hash, document]);
         for (const chunk of document.chunks) {
-          const embedding = embeddingDocument(document.title, chunk.section, chunk.text);
+          const embedding = embeddingForChunk(document.title, chunk);
           await client.query("INSERT INTO knowledge_chunks (id,version_id,section_key,document,content_hash,embedding_hash) VALUES ($1,$2,$3,$4,$5,$6)",
             [randomUUID(), versionId, chunk.key, chunk, knowledgeHash(chunk), embedding.hash]);
         }
@@ -102,7 +103,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          WHERE c.version_id = $4 AND COALESCE(c.document->'treatment'->>'kind','detailed') NOT IN ('structured','excluded') AND NOT EXISTS (SELECT 1 FROM knowledge_vectors e
          WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)
          ORDER BY c.embedding_hash`, [...embeddingKey, versionId]);
-      return result.rows.map(chunk => embeddingDocument(row.document.title, chunk.document.section, chunk.document.text));
+      return result.rows.map(chunk => embeddingForChunk(row.document.title, chunk.document));
     },
     async embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>) {
       if (document.hash !== knowledgeHash([document.title, document.text])) throw new Error("Embedding document hash mismatch");
@@ -137,12 +138,13 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       const items = result.rows.slice(0, 10).map(row => personalLibraryItemSchema.parse({
         sourceId: row.source_id, series: sourceSeries(row.source_document), versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
         url: row.source_document.url, classification: row.source_document.classification, checkedAt: row.checked_at.toISOString(),
+        ...(row.source_document.sourceDateText ? { sourceDateText: row.source_document.sourceDateText } : {}),
         sourceUpdatedAt: row.source_document.sourceUpdatedAt, validUntil: row.source_document.validUntil ?? null,
       }));
       return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
     },
     async candidates(input: KnowledgeFilter, vector: readonly number[] | null, selection: {
-      libraryUserId?: string; query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
+      libraryUserId?: string; query?: string; preferDistinctSources?: boolean; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
     } = {}): Promise<KnowledgeCandidate[]> {
       const filter = parseKnowledgeFilter(input);
       const values = vector === null ? null : vectorLiteral(vector);
@@ -167,7 +169,9 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
           WHERE score>0 ORDER BY score DESC,id LIMIT 60),
         fused AS (SELECT id,sum(1.0/(60+r)) AS rank_score,min(r) AS best_rank
           FROM (SELECT * FROM vector_top UNION ALL SELECT * FROM keyword_top) ranks GROUP BY id)
-        SELECT eligible.*,fused.rank_score FROM fused JOIN eligible USING(id) ORDER BY fused.rank_score DESC,fused.best_rank,id LIMIT $15`
+        SELECT eligible.*,fused.rank_score FROM fused JOIN eligible USING(id) ORDER BY
+        ${selection.preferDistinctSources ? '(row_number() OVER (PARTITION BY eligible.source_id ORDER BY fused.rank_score DESC,fused.best_rank,id)>1),' : ''}
+        fused.rank_score DESC,fused.best_rank,id LIMIT $15`
         : `SELECT *,NULL::numeric AS rank_score FROM eligible ORDER BY chunk_order,id LIMIT $15`;
       const rows = await transaction(pool, client => client.query<{ id: string; source_id: string; version_id: string; version_hash: string; content_hash: string;
         source_document: KnowledgeSourceInput; document: KnowledgeChunkInput; checked_at: Date; last_successful_check_at: Date | null;
@@ -194,6 +198,9 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
                ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
            AND $16::text[] IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM jsonb_to_recordset($18::jsonb) AS counterpart(url text, hash text)
+             WHERE v.document->'extraction'->>'format'='text_pdf' AND v.document->>'url'=counterpart.url
+               AND v.document->'extraction'->>'contentHash'=counterpart.hash)
            AND ($13::uuid[] IS NULL OR c.id=ANY($13::uuid[]))
            AND ($14::uuid IS NULL OR v.id=$14)
            AND ($17::text IS NULL OR ord.chunk_order>(SELECT listed.chunk_order
@@ -202,7 +209,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          ) ${ranked}`,
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
           filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal, filter.ageMatch ?? "contained",
-          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null]));
+          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null, omittedLeafletPrints(selection.query)]));
       return rows.rows.map(row => ({ ...row.document, series: sourceSeries(row.source_document), chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
         versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, termsUrl: row.source_document.termsUrl, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,

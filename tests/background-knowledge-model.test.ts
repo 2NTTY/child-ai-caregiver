@@ -13,8 +13,8 @@ import test from "node:test";
 import { createModelKnowledgeReviewPort, includePriorRetrieval, prepareKnowledgeMaintenance, type PreparedKnowledgeMaintenance } from "../server/background-knowledge-model.ts";
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
-import { observationHash } from "../server/knowledge-observation.ts";
-import { knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
+import { checkKnowledgeObservation, observationHash } from "../server/knowledge-observation.ts";
+import { embeddingForChunk, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
 import { reviseRetainedDraft } from '../server/knowledge-retained-draft.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
@@ -53,6 +53,28 @@ function provider(calls: { system: string; user: string; attemptKey: string }[],
     }) + "\n```";
   };
 }
+
+test('official script paragraphs bind to their own original page across organization, review and citation', async () => {
+  const c = candidate(), url = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html';
+  const paragraphs = ['第一段文字。', '第二段文字。'];
+  c.observed.scripts = [{ page: { url, title: '原頁題名', transcriptUrl: url + '#transcript' }, paragraphs }];
+  c.observationHash = observationHash(c.observed);
+  const calls: Parameters<Completion>[0][] = [];
+  const { source } = await prepareKnowledgeMaintenance({ candidate: c, baseline: null, fetchedAt, growthRules: [], completeText: provider(calls) });
+  const chunk = source.chunks.find(row => row.scriptPassage)!;
+  assert.deepEqual(chunk.scriptPassage, { url: url + '#transcript', title: '原頁題名', firstParagraph: 1, lastParagraph: 2,
+    originalHash: knowledgeHash(paragraphs.join('\n')) });
+  assert.deepEqual(embeddingForChunk('Material A', chunk), embeddingForChunk('Material B', { ...chunk, text: 'A second reviewed synopsis' }));
+  assert.throws(() => embeddingForChunk('Material A', { ...chunk, originalText: 'Changed script' }), /knowledge_script_original_mismatch/);
+  assert.equal(chunk.originalText, paragraphs.join('\n'));
+  assert.equal(chunk.mediaClip, undefined);
+  assert.deepEqual(JSON.parse(calls[1]!.user).candidate.chunks.at(-1).scriptPassage, chunk.scriptPassage);
+  const verify = () => checkKnowledgeObservation(source, { enabled: true, definition: c.definition },
+    { content_hash: c.observationHash, unavailable: false, document: c.observed, url: source.url }, c.observationHash);
+  verify();
+  chunk.scriptPassage!.firstParagraph = 2;
+  assert.throws(verify, /knowledge_script_original_mismatch/);
+});
 
 test("knowledge preparation preserves original evidence and stores a separate model review before returning approval", async () => {
   const source = candidate(), calls: Parameters<Completion>[0][] = [];
