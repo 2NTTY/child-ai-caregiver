@@ -2,6 +2,7 @@ import { load } from "cheerio";
 import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
 import { readLinkedOfficialPages } from './fhs-source-forms.ts';
+import { oralPrint,verifiedOralExcerpts } from './fhs-verified-oral-excerpts.ts';
 import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
@@ -46,6 +47,11 @@ export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition,
     const sha256 = createHash('sha256').update(original).digest('hex');
     if (large.bytes !== original.length || large.sha256 !== sha256)
       return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'new_fingerprint', sha256, bytes: original.length } };
+  }
+  if (definition.id === oralPrint.sourceId) {
+    const printed = verifiedOralExcerpts(definition,createHash('sha256').update(original).digest('hex'),oralPrint.totalPages,title,revision);
+    if (printed) return {status:'ok',readMethod:'fhs-independent-printed-excerpts/1',
+      original:{mimeType:'application/pdf',bytes:original},items:[printed]};
   }
   let batch = await reader(original, { startPage: 1, pageLimit: 8, ...(large ? { expectedHash: large.sha256 } : {}), signal });
   const { fileHash, totalPages } = batch;

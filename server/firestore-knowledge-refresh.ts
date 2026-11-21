@@ -389,7 +389,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },
-    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string) {
+    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string,
+      beforeRecord?: (tx:Transaction)=>Promise<void>) {
       if (scheduledFor !== undefined) date.parse(scheduledFor);
       const job = refreshJobSchema.parse(raw); z.uuid().parse(jobId);
       const token = randomUUID(), now = new Date().toISOString();
@@ -439,6 +440,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted
           && (!scheduledFor || !row.manualOnly || await publishedCard(tx, row));
         const previous = new Map<string, Observation | null>();
+        if (eligible) await beforeRecord?.(tx);
         if (eligible) for (const item of prepared) {
           const snapshot = await tx.get(observationRef(item.sourceId));
           const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;

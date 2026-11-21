@@ -7,7 +7,7 @@ import { AgentGatewayModel, createVertexAgentProvider, originalKnowledgePdf } fr
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { FirestoreAiUsage, KNOWLEDGE_PUBLICATION_PAYER } from '../server/firestore-ai-usage.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
-import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
+import { createFirestoreKnowledgeRefresh,parseKnowledgeObservation } from '../server/firestore-knowledge-refresh.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { requireDurableUsage } from '../server/firestore-model-routing.ts';
@@ -16,15 +16,19 @@ import { bindFirstDispatch, firstDispatchWorkId } from '../server/fhs-undispatch
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { campaign, campaignCredentials, campaignModel, createKnowledgeCampaignBudget, matchesCampaignPublicationBinding } from '../server/knowledge-campaign-budget.ts';
 import { sourceVersionHash } from '../server/knowledge-inputs.ts';
-import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { knowledgeReviewHash,knowledgeOperationId } from '../server/knowledge-review-assessment.ts';
+import { observationHash } from '../server/knowledge-observation.ts';
+import { observeKnowledgeLeaflet } from '../server/knowledge-source-fetch.ts';
+import { verifiedOralExcerpts } from '../server/fhs-verified-oral-excerpts.ts';
+import { KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_BATCH } from '../server/knowledge-lexical-index.ts';
 import { platformSourceWatches } from '../server/knowledge-source-catalog.ts';
 import { platformMaterials } from '../server/platform-materials.ts';
-import { printedCorrection, copyPrintedPages, checkPrintedTranscription, makePrintedCorrectionRequest } from './fhs-printed-correction.mjs';
+import { printedCorrection, copyPrintedPages, checkPrintedTranscription, makePrintedCorrectionRequest, correctedPrintedEdition } from './fhs-printed-correction.mjs';
 
 const [action,sourceId,versionId,original,confirmation,...extra] = process.argv.slice(2);
-if (!['status','review'].includes(action) || sourceId !== printedCorrection.sourceId || !/^[a-f0-9]{64}$/u.test(original ?? '')
-  || !/^[0-9a-f-]{36}$/u.test(versionId ?? '') || extra.length || (action === 'review' ? confirmation !== '--operator-confirmed' : confirmation !== undefined))
-  throw Error('Use status|review SOURCE WITHDRAWN_VERSION ORIGINAL [--operator-confirmed]');
+if (!['status','review','restore'].includes(action) || sourceId !== printedCorrection.sourceId || !/^[a-f0-9]{64}$/u.test(original ?? '')
+  || !/^[0-9a-f-]{36}$/u.test(versionId ?? '') || extra.length || (action === 'status' ? confirmation !== undefined : confirmation !== '--operator-confirmed'))
+  throw Error('Use status|review|restore SOURCE WITHDRAWN_VERSION ORIGINAL [--operator-confirmed]');
 
 const p = await openFirebasePersistence(process.env);
 try {
@@ -59,15 +63,22 @@ try {
   }
   const commission = database.collection(config.namespace+'_knowledge_campaigns').doc(campaign).collection('publicationBindings').doc(sourceId);
   const sourceRef = database.collection(config.namespace+'_knowledge_sources').doc(sourceId);
-  async function checkOrigin(tx) {
-    const [{base},flag,stored,head] = await Promise.all([knowledge.platformEditions(sourceId,versionId,tx),authority.readControl(tx),tx.get(commission),tx.get(sourceRef)]);
+  const sample = parseKnowledgeObservation(verifiedOralExcerpts(job.definition,pin.sha256,pin.pages,prev.source.title,prev.source.sourceDateText ?? null));
+  const sampleHash = observationHash(sample);
+  async function checkOrigin(tx, acceptableObservations=[grant.observation], correctedHash) {
+    const [{base,selected},flag,stored,head] = await Promise.all([knowledge.platformEditions(sourceId,versionId,tx),authority.readControl(tx),tx.get(commission),tx.get(sourceRef)]);
     assert.ok(flag.enabled && flag.generation === workerGeneration && matchesCampaignPublicationBinding(stored.data(),pin,original,revision,workerGeneration));
+    assert.ok(selected.state === 'withdrawn' && selected.versionId === versionId && selected.versionHash === prev.versionHash);
+    assert.equal(sourceVersionHash(selected.source),prev.versionHash);
+    assert.ok(acceptableObservations.includes(selected.observationHash));
+    if (correctedHash && head.get('enabled') === true && base?.versionHash === correctedHash && base.state === 'reviewed') {
+      assert.equal(base.observationHash,sampleHash);
+      return 'restored';
+    }
     assert.ok(head.get('enabled') === false && head.get('activeVersionId') === versionId);
-    assert.ok(base?.state === 'withdrawn' && base.versionId === versionId && base.versionHash === prev.versionHash);
-    assert.equal(base.observationHash,grant.observation);
-    assert.equal(sourceVersionHash(base.source),sourceVersionHash(prev.source));
+    return 'withdrawn';
   }
-  await database.runTransaction(checkOrigin,{readOnly:true});
+  if (action === 'review') await database.runTransaction(tx=>checkOrigin(tx),{readOnly:true});
   const sourceBytes = await refresh.originals.readPdf(sourceId,pin.sha256);
   const packet = await copyPrintedPages(sourceBytes);
   // A changed prompt or proposed excerpt cannot allocate another revision for this edition.
@@ -128,6 +139,53 @@ try {
       result.reason = /^fhs_printed_transcription_mismatch_page_\d+$/u.test(error.message) ? error.message : 'fhs_printed_output_invalid';
       process.exitCode = 2;
     }
+  }
+  if (action === 'status') {
+    const checkedHash = result.verified && correctedPrintedEdition(prev,versionId,sample,sampleHash,
+      checkPrintedTranscription(JSON.parse(saved.text))).versionHash;
+    await database.runTransaction(tx=>checkOrigin(tx,[grant.observation,sampleHash],checkedHash),{readOnly:true});
+  }
+  if (action === 'restore') {
+    assert.ok(result.verified && saved?.state === 'ready','An independently verified stage is required');
+    const ai = readAiConfig(process.env), policy = await createFirestoreAdmin(domain,ai).readPolicy();
+    assert.ok(ai.backgroundKnowledgeMaintenanceEnabled && ai.backgroundKnowledgeLivePublish && policy.enabled);
+    const quotes = checkPrintedTranscription(JSON.parse(saved.text));
+    const candidate = correctedPrintedEdition(prev,versionId,sample,sampleHash,quotes);
+    const allowed = [grant.observation,sampleHash];
+    const baseline = await database.runTransaction(tx=>checkOrigin(tx,allowed,candidate.versionHash),{readOnly:true});
+    if (baseline === 'withdrawn') {
+      const checkId = knowledgeOperationId('fhs-verified-printed-observation/1',operationFingerprint);
+      const observed = await refresh.process(job.data,checkId,async (definition,signal)=>{
+        assert.equal(definition.url,prev.source.url);
+        const result = await observeKnowledgeLeaflet(definition,sourceBytes,prev.source.title,prev.source.sourceDateText ?? null,
+          'catalogue-pdf-original/1',signal);
+        assert.ok(result.status === 'ok' && result.readMethod === 'fhs-independent-printed-excerpts/1');
+        assert.equal(observationHash(parseKnowledgeObservation(result.items[0])),sampleHash);
+        return result;
+      },AbortSignal.timeout(80000),undefined,async tx=>{await checkOrigin(tx,allowed)});
+      assert.ok(['changed','unchanged','already_recorded'].includes(observed.status));
+      const guard = async tx=>{await checkOrigin(tx,[sampleHash]);};
+      const edition = await knowledge.importSource(candidate.source,guard);
+      assert.equal(edition.hash,candidate.versionHash);
+      assert.notEqual(edition.versionId,versionId);
+      assert.equal((await knowledge.review(edition.versionId,edition.hash,'fhs-independent-print-review',candidate.assessment,
+        {sourceId,contentHash:sampleHash},guard)).status,'reviewed');
+      assert.deepEqual(await knowledge.missingDocuments(edition.versionId),[]);
+      let index;
+      for (let n=0; n<Math.ceil(KNOWLEDGE_LEXICAL_BUCKETS/KNOWLEDGE_LEXICAL_BATCH); n++) {
+        index = await knowledge.prepareSearch(edition.versionId,edition.hash,guard);
+        if (index.complete) break;
+      }
+      assert.ok(index?.complete);
+      await knowledge.publish(edition.versionId,edition.hash,undefined,{syncReviewedObservation:true,async prepare(tx,publishing){
+        await guard(tx);
+        assert.ok(publishing.previousVersionId === versionId && !publishing.sourceEnabled && publishing.observationHash === sampleHash);
+        return ()=>{};
+      }});
+    }
+    const published = await knowledge.publishedEdition(sourceId);
+    assert.ok(published?.enabled && published.current && published.versionHash === candidate.versionHash && published.observationHash === sampleHash);
+    result.restoration = {versionId:published.versionId,versionHash:published.versionHash,observationHash:sampleHash};
   }
   console.log(JSON.stringify(result));
 } finally {await p.close();}

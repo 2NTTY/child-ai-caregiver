@@ -1,20 +1,20 @@
 import { createHash } from 'node:crypto';
 import { PDFDocument } from 'pdf-lib';
 import { z } from 'zod';
-import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { knowledgeReviewHash, validateKnowledgeAssessment } from '../server/knowledge-review-assessment.ts';
+import { oralPrint } from '../server/fhs-verified-oral-excerpts.ts';
+import { embeddingForChunk, parseKnowledgeSource, sourceVersionHash } from '../server/knowledge-inputs.ts';
 import { nativeResponseSchema } from '../server/structured-output-schema.ts';
 
+const locations = ['封面右半頁上方，彩色的大字冊名。','右側粉紅色「發燒」欄，從欄題以下轉錄第一句，至第一個句號。',
+  '左上粉紅「6個月以下」之下，藍字第一段的第一句，由段首至第一個句號。',
+  '印刷頁26，第一幅牙齒照片正右方的三行紅字說明，由段首至第一個句號。'];
 export const printedCorrection = {
-  sourceId: 'resource-af8c3e8cc813be',
-  pdfHash: '79ff818d17f7da0898a2dfeb52330caca99ae51818026cddb97c9413444b7998',
+  sourceId:oralPrint.sourceId,
+  pdfHash:oralPrint.pdfHash,
   packetHash: 'a761a002dda69cc5ae7c074d6cd14798b20d53a67335ae2be11e610c4f2f818f',
-  totalPages: 18,
-  passages: [
-    {page:1, where:'封面右半頁上方，彩色的大字冊名。', quote:'幼兒口腔護理全接觸'},
-    {page:6, where:'右側粉紅色「發燒」欄，從欄題以下轉錄第一句，至第一個句號。', quote:'寶寶不會因出牙而發燒。'},
-    {page:12, where:'左上粉紅「6個月以下」之下，藍字第一段的第一句，由段首至第一個句號。', quote:'6個月以下的寶寶，由於年紀太小，仍未建立固定的飲食模式，尤其初生嬰兒，主要的營養來源是奶。'},
-    {page:15, where:'印刷頁26，第一幅牙齒照片正右方的三行紅字說明，由段首至第一個句號。', quote:'開始時在上排門牙的表面會出現很大範圍的蛀牙洞。'},
-  ],
+  totalPages:oralPrint.totalPages,
+  passages:oralPrint.passages.map(({page,quote},i)=>({page,where:locations[i],quote})),
 };
 const response = z.strictObject(Object.fromEntries(printedCorrection.passages.map(p => ['page' + p.page, z.string().min(1).max(240)])));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -48,4 +48,25 @@ export function checkPrintedTranscription(raw) {
     if (actual !== quote) throw Error('fhs_printed_transcription_mismatch_page_' + page);
     return actual;
   });
+}
+
+export function correctedPrintedEdition(prior, versionId, observation, observationHash, quotes) {
+  const old = prior.source, pages = observation.pages;
+  if (prior.versionHash !== sourceVersionHash(old) || prior.assessment.decision !== 'approve'
+      || old.extraction?.contentHash !== oralPrint.pdfHash || pages.length !== 4 || old.chunks.length !== pages.length)
+    throw Error('fhs_printed_baseline_changed');
+  const source = parseKnowledgeSource({...old,extraction:observation.extraction,chunks:old.chunks.map((chunk,i)=>{
+    const {page,text} = pages[i];
+    if ((chunk.excerptPage ?? chunk.pageStart) !== page || quotes[i] !== text || text !== oralPrint.passages[i].quote)
+      throw Error('fhs_printed_passage_changed');
+    const corrected = {...chunk,originalText:text,sourceExcerpt:text,originalKind:'page_excerpt',excerptPage:page};
+    if (embeddingForChunk(old.title,chunk).hash !== embeddingForChunk(old.title,corrected).hash)
+      throw Error('fhs_printed_embedding_changed');
+    return corrected;
+  })});
+  const assessment = {...prior.assessment,comparedVersionId:versionId,comparedHash:prior.versionHash,observationHash,
+    changes:source.chunks.map((chunk,i)=>({key:chunk.key,oldQuote:old.chunks[i].sourceExcerpt,newQuote:chunk.sourceExcerpt,meaning:'unchanged',
+      explanation:'修正印本引文的字形映射。原有適用年齡、條件、數據、整理文字及實頁範圍沿用原先兩份已核讀稿。'}))};
+  validateKnowledgeAssessment(assessment,source,old);
+  return {source,assessment,versionHash:sourceVersionHash(source)};
 }
