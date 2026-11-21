@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-143-image-count",
+  "base": {
+    "artifact": "candidate-141/out",
+    "htmlSha256": "8f7c6829275cafd4e2fb68983038b5daaa8ef14908114d33248bf5700aae0e61",
+    "rawRecordsSha256": "bf0dc034e574d73b745a03e2f962aac58fc0915c72e2a1c8c946d1b42083b377",
+    "rawArtworkSha256": "69c2ba41e27a587033524dfff1f302a44c640dc526165fd384b1a0d2be7c707c",
+    "topics": 69,
+    "choices": 141,
+    "images": 141
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-contextual-item-question/assets.json",
+      "sha256": "81bcfd2471413ba649fdc4cf76eeb761d83c8f5239137a63ff3681d1aa84cc92"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "8b099796498a448668c1635782eefef33908b875ba1c0a0774d0386b111f68e3",
+    "PROVENANCE.md": "0a06945b2ea3c77b007d45148bf7a013779a3cd208d0da1277655f45163cee7b"
+  },
+  "topics": [
+    {
+      "number": 70,
+      "title": "留在工作頁，問這一項",
+      "choices": [
+        {
+          "name": "在選取段落上方提問",
+          "note": "提問欄留在編輯區，位於選取文字正上方。這張圖只展示尚未送出的草稿；選區不保證是唯一會用的資料。",
+          "links": [
+            {
+              "label": "Code – OSS 1.107.1：在選取範圍上方定位提問",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/inlineChat/browser/inlineChatSessionServiceImpl.ts#L399-L409"
+            },
+            {
+              "label": "同一版本：把輸入放入編輯區",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/inlineChat/browser/inlineChatController.ts#L1429-L1455"
+            },
+            {
+              "label": "同一版本：編輯區內的提問區域",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/inlineChat/browser/inlineChatZoneWidget.ts#L30-L43"
+            },
+            {
+              "label": "同一版本：選區之外仍可有檔案上下文",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/inlineChat/browser/inlineChatSessionServiceImpl.ts#L336-L352"
+            },
+            {
+              "label": "Code – OSS 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/LICENSE.txt#L1-L21"
+            }
+          ],
+          "asset": {
+            "input": "draft-contextual-item-question/question-a-inline-range.png",
+            "sha256": "841d05a0698c7828433046fd21a7a9c6eef0a2731b772e351eb8e736e512e05d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構文件編輯器仍顯示檔案與原文。選取的兩行已高亮，編輯區內的提問草稿在其正上方，未送出；不代表只會使用這兩行。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "附上單元格，並排提問",
+          "note": "工作頁與左側提問同時保留。手動附上所選單元格後，附件顯示筆記本檔名。這是未送出的草稿；介面參考 Jupyter Chat，附加方式另參照 Jupyter AI 文件。",
+          "links": [
+            {
+              "label": "Jupyter Chat v0.23.0：手動附上單元格及檔名標籤測試",
+              "url": "https://github.com/jupyterlab/jupyter-chat/blob/5d74c49baf56c1e1ee59a0912dd4a6a096f84a9b/ui-tests/tests/attachments.spec.ts#L150-L198"
+            },
+            {
+              "label": "Jupyter Chat 同一版本：左側提問面板",
+              "url": "https://github.com/jupyterlab/jupyter-chat/blob/5d74c49baf56c1e1ee59a0912dd4a6a096f84a9b/packages/jupyterlab-chat-extension/src/index.ts#L1378-L1387"
+            },
+            {
+              "label": "另參考 Jupyter AI v3.1.0 官方文件：提問面板預設位置",
+              "url": "https://github.com/jupyterlab/jupyter-ai/blob/00c1fa5809f08c9c0a6d41553119a8aaae6bc528/docs/source/users/index.md#L7-L24"
+            },
+            {
+              "label": "Jupyter AI 同一版文件：手動拖入筆記本單元格",
+              "url": "https://github.com/jupyterlab/jupyter-ai/blob/00c1fa5809f08c9c0a6d41553119a8aaae6bc528/docs/source/users/index.md#L133-L144"
+            },
+            {
+              "label": "Jupyter AI 同一版本：與 Jupyter Chat 的相容版本",
+              "url": "https://github.com/jupyterlab/jupyter-ai/blob/00c1fa5809f08c9c0a6d41553119a8aaae6bc528/pyproject.toml#L25-L38"
+            },
+            {
+              "label": "Jupyter AI 程式及文件授權：BSD-3-Clause（非圖像授權）",
+              "url": "https://github.com/jupyterlab/jupyter-ai/blob/00c1fa5809f08c9c0a6d41553119a8aaae6bc528/LICENSE"
+            },
+            {
+              "label": "Jupyter Chat 同一版本：套件版本與授權聲明",
+              "url": "https://github.com/jupyterlab/jupyter-chat/blob/5d74c49baf56c1e1ee59a0912dd4a6a096f84a9b/packages/jupyterlab-chat-extension/package.json#L11-L16"
+            },
+            {
+              "label": "Jupyter Chat 程式授權：BSD-3-Clause（非圖像授權）",
+              "url": "https://github.com/jupyterlab/jupyter-chat/blob/5d74c49baf56c1e1ee59a0912dd4a6a096f84a9b/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-contextual-item-question/question-b-attached-cell.png",
+            "sha256": "c00746fccbff720e5fd12fd65890514527158216694358e403f234472a9352b7",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構筆記本仍顯示所選第二個單元格。左側助理的未送出提問有手動附件，標籤只顯示筆記本檔名，沒有單元格編號或回答。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 70 題 · 留在工作頁提問的兩幅自製合成示意",
+      "input": "draft-contextual-item-question/DECLARATION.txt",
+      "sha256": "8b099796498a448668c1635782eefef33908b875ba1c0a0774d0386b111f68e3"
+    }
+  ]
+}
