@@ -1,0 +1,77 @@
+{
+  "group": {
+    "id": "tasks-detail-close-return-narrow-wide",
+    "title": "看完清單中段的一筆待辦，怎樣接着看下一筆？",
+    "index": "external-comparison",
+    "readerNote": "合成例：在已篩選的待辦清單中段打開「帶彩筆」。A 窄版用整頁看詳情，關閉後嘗試回原捲動位置。B 寬版保留清單與詳情並排，直接選下一列。這是原碼已有的兩種版面行為，不是兩個可切換的設定；想比較的是各版面的續看方式。切換孩子或權限後不還原舊位置；清單重排後不保證回到同一筆。沒有完成、修改或取消待辦，也沒有實測產品。",
+    "choices": [
+      {
+        "name": "A｜單頁詳情，關閉回清單",
+        "note": "容器窄於 840 時，列表暫時收起，詳情由頂端開始。仍在同一孩子與權限範圍內時，關閉詳情會嘗試回到原捲動位置；Web 焦點優先回到仍可聚焦的原列，否則嘗試清單。Sunflower 原圖只參考整屏詳情和返回入口，不代表來源有待辦或還原行為。",
+        "source": "https://raw.githubusercontent.com/android/sunflower/99eb59417bf8a95999d2334eb5dc320627b9304e/screenshots/phone_plant_detail.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://github.com/android/sunflower/blob/99eb59417bf8a95999d2334eb5dc320627b9304e/README.md#screenshots"
+          },
+          {
+            "label": "育伴港：按容器闊度保留或收起清單",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L51-L68"
+          },
+          {
+            "label": "育伴港：同一孩子與權限範圍的焦點和捲動還原",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L92-L112"
+          },
+          {
+            "label": "育伴港：點選一列時記錄原列和位置",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L175-L179"
+          },
+          {
+            "label": "育伴港：詳情內的關閉入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TaskDetail.tsx#L26-L29"
+          }
+        ],
+        "linkLabel": "查看 Android Sunflower 手機整屏原圖（需連網）",
+        "version": "Google Android Sunflower 歷史 Views 範例提交 99eb59417bf8a95999d2334eb5dc320627b9304e，原圖 240×501，畫面是向日葵詳情。沒有以新版本替代。2026-11-21 目視核對。",
+        "rights": "Android 開源範例官方截圖，僅外連，不內嵌或轉載圖片與第三方素材。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜清單與詳情並排，直接選下一列",
+        "note": "容器闊度達 840 時，清單與詳情同時可見。看完「帶彩筆」可直接按左邊另一列，不用先關閉詳情。Zeal 原圖只參考左方選擇與右方閱讀相對照，並不是待辦、產品畫面或焦點實測。",
+        "source": "https://raw.githubusercontent.com/zealdocs/media/1867a2d01a51ef1eaad05cba4fa377d316ae9633/screenshots/windows/readme-light.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://github.com/zealdocs/zeal#zeal"
+          },
+          {
+            "label": "育伴港：按容器闊度保留或收起清單",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L51-L68"
+          },
+          {
+            "label": "育伴港：同一孩子與權限範圍的焦點和捲動還原",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L92-L112"
+          },
+          {
+            "label": "育伴港：點選一列時記錄原列和位置",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TasksView.tsx#L175-L179"
+          },
+          {
+            "label": "育伴港：詳情內的關閉入口",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/tasks/TaskDetail.tsx#L26-L29"
+          }
+        ],
+        "linkLabel": "查看 Zeal Windows 完整視窗原圖（需連網）",
+        "version": "Zeal 官方媒體倉庫提交 1867a2d01a51ef1eaad05cba4fa377d316ae9633 的 Windows 淺色原圖 1657×1064。圖中未標出軟件版本。2026-11-21 目視核對。",
+        "rights": "Zeal 專案官方圖，含文件內容與標記，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "836519f5efb1b08ddd9813e41d84fa2def2f5cddcc69241e5f0d139c2a759d11"
+}
