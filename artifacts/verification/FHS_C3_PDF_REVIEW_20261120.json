@@ -5078,5 +5078,81 @@
     "outcome": "candidate_held",
     "code": "knowledge_window_quote_mismatch",
     "newFamilyEdition": false
+  },
+  "unstartedLargeOriginalReadback": {
+    "readTime": "2026-11-21T07:39:14.905431Z",
+    "workerSource": "d24a98eae934cf810efb1fb3dd9920debebf35ec",
+    "indexSha256": "17c8bbb58a156479bbb98c2d1224a70c660edab55ddfee72b8b9dce7c7de2978",
+    "runtime": "Local Linux x64 Node 24.19.0, one fresh network-disabled 512 MiB cgroup per complete title, 0.5 CPU, no swap, no credentials.",
+    "method": "Read only named manifest and descriptor fields in production. Within the local fixture stream the exact original through the storage response length, generation and SHA-256 checks. Use the released worker code, the registered reads packet, and the real gateway and Google SDK to serialize both native PDF requests per window. Firestore, the object transport and model replies are local fixtures. Derivative bytes are discarded after each window. Report the kernel cgroup high-water mark and process maximum RSS separately.",
+    "control": {
+      "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+      "physicalPages": 36,
+      "presentWindowDescriptors": 1
+    },
+    "sources": [
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "sourceSha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+        "physicalPages": 112,
+        "parentBytes": 53090252,
+        "originalManifestPresent": true,
+        "storedWindowDescriptors": 0,
+        "windows": 10,
+        "organizerAndReviewerPayloads": 20,
+        "parentObjectReads": 10,
+        "parentBytesRead": 530902520,
+        "cgroupPeakBytes": 334536704,
+        "rssPeakKiB": 351348,
+        "largestSlice": {
+          "core": [
+            97,
+            108
+          ],
+          "attached": [
+            96,
+            109
+          ],
+          "sha256": "81d8a421a4d5a32c215d71e9af14baa5b03248576ad33477ad065ed9dff2f932",
+          "bytes": 11733365,
+          "serializedBytes": [
+            15671871,
+            15673884
+          ]
+        }
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "sourceSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+        "physicalPages": 192,
+        "parentBytes": 63746648,
+        "originalManifestPresent": true,
+        "storedWindowDescriptors": 0,
+        "windows": 16,
+        "organizerAndReviewerPayloads": 32,
+        "parentObjectReads": 16,
+        "parentBytesRead": 1019946368,
+        "cgroupPeakBytes": 329793536,
+        "rssPeakKiB": 371008,
+        "largestSlice": {
+          "core": [
+            1,
+            12
+          ],
+          "attached": [
+            1,
+            13
+          ],
+          "sha256": "94ea46c81a92227da61e121965aa4316b48f020ccd1a7b2c920e21e9699987af",
+          "bytes": 8893948,
+          "serializedBytes": [
+            11885820,
+            11887819
+          ]
+        }
+      }
+    ],
+    "productionModelCalls": 0,
+    "limits": "Synthetic draft size, local I/O, no actual model, durable daily usage, accepted reviewer verdict, embedding, publication or family-traffic load. These measurements do not establish a smaller safe production limit. The current launcher requires 512 MiB for the job and 448 MiB of headroom."
   }
 }
