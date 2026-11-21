@@ -27,7 +27,7 @@ import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork } from '../server/fhs-script-edition.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
-import { inspectFailedScriptReview } from './fhs-script-review-stage.mjs';
+import { inspectFailedScriptReview, inspectReservedScriptEmbedding } from './fhs-script-review-stage.mjs';
 
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
 const reviseHeldScript = invocation === 'revise-script-edition' || invocation === 'inspect-script-revision';
@@ -170,6 +170,10 @@ try {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
       const reviewStage = reviseHeldScript && saved?.result?.status === 'candidate_held'
         ? await inspectFailedScriptReview({script:scriptEdition,request,job,definition,checkId,refresh,work,knowledge}) : undefined;
+      const embeddingStage = reviseHeldScript && id === 'fhs-20000' && reservations.length
+        ? await inspectReservedScriptEmbedding({script:scriptEdition,work:saved,reservations:admissionState.reservations,
+          policy:await createFirestoreAdmin(domain,base).readPolicy(),
+          usage:new FirestoreAiUsage({...domain,namespace:domain.namespace+'_ai_usage',billingSource:'platform',manualPublication:scriptEdition})}) : undefined;
       const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
       let recordedWindow;
       if (command === 'inspect' && reads && !active && !reservations.length && saved?.windowed) {
@@ -179,7 +183,7 @@ try {
             reads, indexHash: process.env.FHS_CAMPAIGN_PDF_READS_SHA256 });
         }
       }
-      console.log(JSON.stringify({ id, registered: true, operationFingerprint, reviewStage, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
+      console.log(JSON.stringify({ id, registered: true, operationFingerprint, reviewStage, embeddingStage, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
         leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations, recordedWindow,
