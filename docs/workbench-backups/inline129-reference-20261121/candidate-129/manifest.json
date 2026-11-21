@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-129-image-count",
+  "base": {
+    "artifact": "candidate-127/out",
+    "htmlSha256": "f6953f6e3c815c454349ffeaa10b81291c67fa2333049f4a880292a0d8cde30f",
+    "rawRecordsSha256": "fe9ca0b30fd38a2c38219b0f78c417c25e09a493879be7f884307bae03d36789",
+    "rawArtworkSha256": "84abbd4a5ac6b4020b4ed7d4b88fcc9621bda2b8ed26768884887367885ce227",
+    "topics": 62,
+    "choices": 127,
+    "images": 127
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-account-notice/assets.json",
+      "sha256": "a85314b1f1fb8644f8b1a680c2d908bb01e5b7f648ab94bcf248ad3f9a0e0db8"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "6e8bd3568c9c69e65d0448b03d4dad2e2beac2b95c56d5b50969e10bb5b60593",
+    "PROVENANCE.md": "d100a2c118ed50fd9c888db8c07df7e16e5b17a4ac42bf2658f970cf35abd11d"
+  },
+  "topics": [
+    {
+      "number": 63,
+      "title": "帳戶通知與舊介面：兩種不同的提示",
+      "choices": [
+        {
+          "name": "登入後查看說明",
+          "note": "已登入的虛構帳戶看到獨立說明頁，帳戶標記不能編輯，選項未勾選。圖上的繼續按鈕只是外觀，非條款、實際同意或認證。",
+          "links": [
+            {
+              "label": "固定版本原始碼：登入後的獨立帳戶說明頁",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/templates/zerver/accounts_accept_terms.html#L13-L58"
+            },
+            {
+              "label": "同一版本：現有帳戶入口條件",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/zerver/views/home.py#L98-L126"
+            },
+            {
+              "label": "同一版本：未勾選的表單欄位",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/templates/zerver/create_user/terms_of_service_form_field.html#L10-L19"
+            },
+            {
+              "label": "同一版本：帳戶更新情境測試",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/zerver/tests/test_home.py#L778-L787"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/LICENSE"
+            },
+            {
+              "label": "固定版本上游權利告示",
+              "url": "https://github.com/zulip/zulip/blob/026ca3f0219575999e5c132331a1fbe40da789d4/NOTICE"
+            }
+          ],
+          "asset": {
+            "input": "draft-account-notice/notice-a-current-account.png",
+            "sha256": "a48c3a835cec74500627fdf3e265a9a525759f2ae59cb865f313c2161839f33b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "實作結構重繪：登入後的完整說明頁中央顯示不可編輯的虛構帳戶、示例說明、尚未勾選的選項及正常外觀的繼續按鈕。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "舊介面暫停編輯",
+          "note": "原筆記仍顯示於不相容提示後方，編輯器已離線及唯讀。關閉提示不會恢復編輯；重新載入是另一步，也不保證恢復。這是技術提示，不是同意流程。",
+          "links": [
+            {
+              "label": "固定版本原始碼：可關閉的相容性提示",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/views/shared/refresh-modal.ejs#L2-L28"
+            },
+            {
+              "label": "同一版本：整頁編輯器",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/views/hedgedoc.ejs#L8-L11"
+            },
+            {
+              "label": "同一版本：雙欄編輯器",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/views/hedgedoc/body.ejs#L1-L7"
+            },
+            {
+              "label": "同一版本：不相容的處理分支",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/js/index.js#L2265-L2275"
+            },
+            {
+              "label": "同一版本：離線與唯讀狀態",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/js/index.js#L581-L594"
+            },
+            {
+              "label": "同一版本：提示顯示及編輯器狀態",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/js/index.js#L2239-L2252"
+            },
+            {
+              "label": "同一版本：重新載入處理",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/public/js/index.js#L1777-L1780"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/LICENSE"
+            },
+            {
+              "label": "同一版本：標誌不屬於原碼授權",
+              "url": "https://github.com/hedgedoc/hedgedoc/blob/b09975a3ba1191cc354112097236ca57eab763c8/README.md#L84-L88"
+            }
+          ],
+          "asset": {
+            "input": "draft-account-notice/notice-b-incompatible-editor.png",
+            "sha256": "dcd8560a4a24b2172722ba1a1a7cc7d0ec01570fbe488b5bc55de40b782735d6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "實作結構重繪：離線且唯讀的雙欄示例編輯器上覆有介面版本不相容的提示，右上有關閉叉號，另有重新載入。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 63 題 · 帳戶通知與舊介面兩幅自製合成示意",
+      "text": "兩幅為自製合成示意（非官方原圖）。Zulip Server 13.3（Apache-2.0）及 HedgeDoc 1.10.8（AGPL-3.0）是兩個不同專案的獨立參考，不是同一流程的兩步。A 只展示現有帳戶說明的排版，帳戶、說明及未勾選選項均虛構，非條款、實際同意或認證。B 只展示不相容編輯器的技術提示：關閉提示不會恢復編輯，重新載入也不保證恢復。沒有真實帳戶、身分、條款或筆記，沒有登入、允許、同意、提交、連線或重新載入等操作，亦不是育伴港當前頁面。"
+    }
+  ]
+}
