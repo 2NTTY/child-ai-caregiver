@@ -12,6 +12,8 @@ CACHE = "/var/tmp/yuban-knowledge"
 MAX_MEMORY_MIB = 512
 FAMILY_HEADROOM_MIB = 384
 LAUNCHER_HEADROOM_MIB = 64
+# Opt in only with a measured read packet registered by the running worker image.
+STAGED_BOOK_MIB = 384
 HASH = re.compile(r"[a-f0-9]{64}")
 SLOT = "/run/lock/yuyoufang-fhs-publication.lock"
 # The release owner has one original deferred review outside the three assigned lanes.
@@ -71,10 +73,14 @@ def checked_site(host):
     return state
 
 
-def capacity_for_phase(host, state, pdf_bytes):
+def capacity_for_phase(host, state, pdf_bytes, staged_book=False):
     # The native request can hold PDF bytes, base64 and its serialized JSON concurrently.
-    # Keep the existing maximum for exceptionally large originals, before any paid dispatch.
-    minimum = MAX_MEMORY_MIB if pdf_bytes >= 32 * 1048576 else max(256, 224 + (4 * pdf_bytes + 1048575) // 1048576)
+    if staged_book:
+        minimum = STAGED_BOOK_MIB
+    elif pdf_bytes >= 32 * 1048576:
+        minimum = MAX_MEMORY_MIB
+    else:
+        minimum = max(256, 224 + (4 * pdf_bytes + 1048575) // 1048576)
     reserve = FAMILY_HEADROOM_MIB + LAUNCHER_HEADROOM_MIB
     required = reserve + (minimum + 15) // 16 * 16
     waiting_since = None
@@ -93,7 +99,8 @@ def capacity_for_phase(host, state, pdf_bytes):
                 continue  # Read memory again after the health checks.
             if waiting_since is not None:
                 print(f"publication_resumed_after_seconds={time.monotonic() - waiting_since:.1f}", file=sys.stderr, flush=True)
-            return available, min(MAX_MEMORY_MIB, (available - reserve) // 16 * 16)
+            limit = STAGED_BOOK_MIB if staged_book else min(MAX_MEMORY_MIB, (available - reserve) // 16 * 16)
+            return available, limit
         now = time.monotonic()
         if available >= reserve + 256:
             # Other originals fit. Allow a brief fluctuation of one allocation quantum, then give them the slot.
@@ -113,7 +120,12 @@ def capacity_for_phase(host, state, pdf_bytes):
 
 def compose_job(host, args, command, *, original=None, pdf_bytes=0):
     state = checked_site(host)
-    available, memory = capacity_for_phase(host, state, pdf_bytes)
+    staged_book = False
+    if original and args.reads and pdf_bytes >= 32 * 1048576:
+        pins = host.run(["docker", "exec", "yuban-p1-worker-1", "sh", "-c",
+                         "f=/app/knowledge/fhs-staged-book-indexes.json; if test -f \"$f\"; then cat \"$f\"; else echo '{}'; fi"])
+        staged_book = json.loads(pins).get(command[2]) == args.reads_hash
+    available, memory = capacity_for_phase(host, state, pdf_bytes, staged_book)
     volume, = [mount for mount in host.container("worker")["Mounts"] if mount["Destination"] == CACHE and mount["Type"] == "volume"]
     # Compose reuses the current worker configuration, including its file secret, on the same host.
     # Only this transient container receives the limits. The original worker volume stays read-only.
@@ -122,6 +134,8 @@ def compose_job(host, args, command, *, original=None, pdf_bytes=0):
                "volumes": [f"fhs_publication_cache:{CACHE}:ro"]}
     if args.reads:
         service["environment"] = {"FHS_CAMPAIGN_PDF_READS": args.reads, "FHS_CAMPAIGN_PDF_READS_SHA256": args.reads_hash}
+        if staged_book:
+            service["environment"]["FHS_CAMPAIGN_STAGED_WINDOWS"] = "1"
     if original:
         service.setdefault("environment", {}).update(FHS_CAMPAIGN_LANE=args.lane, FHS_CAMPAIGN_ORIGINAL_OPERATION=original)
     if args.action == "accounting":

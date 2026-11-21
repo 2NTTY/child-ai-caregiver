@@ -1,0 +1,97 @@
+{
+  "schema": "fhs-staged-book-capacity/1",
+  "baseline": "077d0572",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux-x64",
+    "cpu": 0.5,
+    "network": "none",
+    "swapBytes": 0,
+    "rootFilesystem": "read-only",
+    "credentials": "none",
+    "productionProviderCalls": 0
+  },
+  "method": "Verified real source bytes through the pinned object stream, registered parser index, content-addressed records, persisted window descriptor, physical page mapping, and both organizer and reviewer requests. Used the production gateway and Google SDK. Consumed each complete Node HTTP Request body locally. Firestore, object storage and model responses were fixtures. Results measure capacity, not model approval, billing, live network usage or publication.",
+  "operatorMiB": 384,
+  "familyReserveMiB": 384,
+  "launcherReserveMiB": 64,
+  "admissionMiB": 832,
+  "sources": [
+    {
+      "sourceId": "pdf-836e9d989e83046a43059df7",
+      "physicalPages": 112,
+      "originalSha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+      "indexSha256": "bec34ea42d8b2d8d227d385a7dff6e798768ca7a4d90a2815f614ade5b57703e",
+      "windows": 10,
+      "sdkRequests": 20,
+      "coreAndSliceSha256": "38da599c6f0b62fcc6c9b1621a89ddbc19b5b2979d47c7fedc20ff13985a9b41",
+      "largestHttpBodyBytes": 15673884,
+      "measurements": [
+        {
+          "limitBytes": 335544320,
+          "cgroupPeakBytes": 335544320,
+          "processMaxRssKiB": 317168,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 315,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          }
+        },
+        {
+          "limitBytes": 402653184,
+          "cgroupPeakBytes": 338030592,
+          "processMaxRssKiB": 384508,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          }
+        }
+      ]
+    },
+    {
+      "sourceId": "pdf-63e7d5463521682636a066e5",
+      "physicalPages": 192,
+      "originalSha256": "48db798a9c469d34bb99cd49f55c112c80d8691c77d41d8ec8b0396933396177",
+      "indexSha256": "aad35df1f310456fa1b6b71edcc596d5f3d73ef24c3d43a83a41d5c41dd1b16a",
+      "windows": 16,
+      "sdkRequests": 32,
+      "coreAndSliceSha256": "1cc4b8833fb799a4a5dc188256d3b4e08894321b92232a67deeff6f58fa5dc41",
+      "largestHttpBodyBytes": 11887819,
+      "measurements": [
+        {
+          "limitBytes": 335544320,
+          "cgroupPeakBytes": 312090624,
+          "processMaxRssKiB": 311892,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          }
+        },
+        {
+          "limitBytes": 402653184,
+          "cgroupPeakBytes": 278036480,
+          "processMaxRssKiB": 325312,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          }
+        }
+      ]
+    }
+  ]
+}

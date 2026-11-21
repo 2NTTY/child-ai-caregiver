@@ -1,6 +1,6 @@
 import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { recordedCommunicationComparison, recordedComparisonRequestHash } from './fhs-script-comparison-stage.ts';
-import { extractKnowledgePdf } from "./knowledge-pdf.ts";
+import { extractKnowledgePdf, type KnowledgePdfOptions, type KnowledgePdfResult } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
 import type { DocumentReference, Transaction } from "@google-cloud/firestore";
 import { z } from "zod";
@@ -71,7 +71,7 @@ export class FirestoreKnowledgeWorkError extends Error {
 }
 function reject(code: string): never { throw new FirestoreKnowledgeWorkError(code); }
 type Options = FirestoreDomainOptions & {
-  pdfReader?: typeof extractKnowledgePdf;
+  pdfReader?: KnowledgeWorkPdfReader;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
 };
 const MAX_PAYLOAD_BYTES = 512 * 1024;
@@ -81,6 +81,10 @@ export const knowledgeOrganizationRepairId = (prior: string) =>
   knowledgeReviewHash(["knowledge-organization-format-repair/1", hash.parse(prior)]);
 export const knowledgeTruncatedOutputRepairId = (prior: string) =>
   knowledgeReviewHash(["knowledge-known-output-truncation/1", hash.parse(prior)]);
+
+export type KnowledgeWorkPdfReader = typeof extractKnowledgePdf & {
+  readVerifiedWindow?: (parentHash: string, options: KnowledgePdfOptions) => Promise<KnowledgePdfResult>;
+};
 
 /** A bounded operator ledger, separate from every family's authority and chat. */
 export function createFirestoreKnowledgeWork(options: Options) {
@@ -205,8 +209,15 @@ export function createFirestoreKnowledgeWork(options: Options) {
       let descriptor;
       if (prior.exists) descriptor = open(reference, prior.data(), schema);
       else {
-        const original = await originals.readPdf(sourceId, parentHash);
-        const result = await (options.pdfReader ?? extractKnowledgePdf)(original, { expectedHash: parentHash, startPage: first, pageLimit: count, includePagePdf: true, signal });
+        const windowOptions = { expectedHash: parentHash, startPage: first, pageLimit: count, includePagePdf: true, signal };
+        const reader: KnowledgeWorkPdfReader = options.pdfReader ?? extractKnowledgePdf;
+        let result: KnowledgePdfResult;
+        if (reader.readVerifiedWindow) {
+          await originals.verifyPdf(sourceId, parentHash);
+          result = await reader.readVerifiedWindow(parentHash, windowOptions);
+        } else {
+          result = await reader(await originals.readPdf(sourceId, parentHash), windowOptions);
+        }
         if (!result.pagePdf || result.pages.length !== count) reject("knowledge_window_range_invalid");
         const contentHash = await originals.save(sourceId, "application/pdf", Buffer.from(result.pagePdf));
         const proposed = schema.parse({ ...identity, total: result.totalPages, contentHash });

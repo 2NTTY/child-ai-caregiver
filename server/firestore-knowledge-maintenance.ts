@@ -28,7 +28,7 @@ import { requireDurableUsage, type PlatformProviderFactory, type FirestoreModelR
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
-import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError, knowledgeTruncatedOutputRepairId } from "./firestore-knowledge-work.ts";
+import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError, knowledgeTruncatedOutputRepairId, type KnowledgeWorkPdfReader } from "./firestore-knowledge-work.ts";
 import { BACKGROUND_KNOWLEDGE_RESERVED_UNITS, createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, KnowledgeModelQuotaPending, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion, type KnowledgePdfAcceptance } from "./background-knowledge-model.ts";
@@ -57,7 +57,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   refresh: ReturnType<typeof createFirestoreKnowledgeRefresh>;
   readControl(tx: Transaction): Promise<{ enabled: boolean; generation: string }>;
   fetch: SourceFetcher;
-  pdfReader?: typeof extractKnowledgePdf;
+  pdfReader?: KnowledgeWorkPdfReader;
   fixtureFetch?: SourceFetcher;
   pdfQuestion?: KnowledgePdfQuestion;
   acceptance?: KnowledgePdfAcceptance;
