@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-145-image-count",
+  "base": {
+    "artifact": "candidate-143/out",
+    "htmlSha256": "5776f44da68aedce6c87e28966ea44c01095ff4deb0c26b5d9f3e04b82ef546e",
+    "rawRecordsSha256": "9f1fb1b9e836e046d41a94e372952f207074877f599d2a65f29cbfa96ea9d071",
+    "rawArtworkSha256": "87ade01ac8662e24bec5d97567e15bde904447598d88bdc8162d51ef3d9e4bde",
+    "topics": 70,
+    "choices": 143,
+    "images": 143
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-multi-model-synthesis/assets.json",
+      "sha256": "f32deda3eeeb1fd83283b2f99d0077e1a442c1eb389b3bae16ddacc493eedaf5"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "9ef386407f73c0d9ba983a48266f2e399bbfe7f7e85dc5f2b12d86b0cc356f18",
+    "PROVENANCE.md": "11624de2a99138a59098dffe98681d57d0b82e0d4917a786fedeaa99ed933094"
+  },
+  "topics": [
+    {
+      "number": 71,
+      "title": "同題讀取 AI 觀點與小結",
+      "choices": [
+        {
+          "name": "並排比較，另看合併回覆",
+          "note": "同一問題的兩份 AI 回覆並排，原回覆依然可讀。下方另有一份已存在的合併回覆，不會取代原文；畫面未執行合併。",
+          "links": [
+            {
+              "label": "Open WebUI v0.6.5：並排模型回覆",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/lib/components/chat/Messages/MultiResponseMessages.svelte#L210-L231"
+            },
+            {
+              "label": "同一版本：完整對話頁",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/routes/%28app%29/c/%5Bid%5D/%2Bpage.svelte#L1-L10"
+            },
+            {
+              "label": "同一版本：個別與多模型訊息",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/lib/components/chat/Messages/Message.svelte#L90-L108"
+            },
+            {
+              "label": "同一版本：另列已存在的合併回覆",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/lib/components/chat/Messages/MultiResponseMessages.svelte#L283-L315"
+            },
+            {
+              "label": "同一版本：手動合併的原始碼",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/lib/components/chat/Messages/MultiResponseMessages.svelte#L318-L333"
+            },
+            {
+              "label": "同一版本：合併回覆另存的資料結構",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/src/lib/components/chat/Chat.svelte#L1823-L1861"
+            },
+            {
+              "label": "Open WebUI v0.6.5 程式授權：BSD-3-Clause（非圖像授權）",
+              "url": "https://github.com/open-webui/open-webui/blob/07d8460126a686de9a99e2662d06106e22c3f6b6/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-multi-model-synthesis/synthesis-a-parallel-cards.png",
+            "sha256": "4f83a43cebe7a217a01a902aa884e6f455be13ba6cdea58deca8136a796f531d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構的展板規劃對話頁，同一問題下的兩份 AI 回覆橫向並排；下方另有一份已呈現的合併回覆，仍可看到原回覆。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "沿順序讀發言，再看綜合答覆",
+          "note": "三個 AI 模型依序發言，下方另列模型綜合答覆。綜合答覆不是人工判定或核證。畫面未啟動模型。",
+          "links": [
+            {
+              "label": "Synode v0.4.4：依序發言及綜合答覆",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/src/components/chat/ChatView.tsx#L364-L386"
+            },
+            {
+              "label": "同一版本：完整工作區",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/src/components/layout/MainLayout.tsx#L11-L23"
+            },
+            {
+              "label": "同一版本：依序和獨立模式說明",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/README.md#L19-L38"
+            },
+            {
+              "label": "同一版本：模型名稱所在區域",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/src/components/chat/ModelResponse.tsx#L37-L59"
+            },
+            {
+              "label": "同一版本：個別模型回覆",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/src/components/chat/ModelResponse.tsx#L83-L105"
+            },
+            {
+              "label": "同一版本：另列的模型綜合區域",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/src/components/chat/MasterVerdict.tsx#L25-L56"
+            },
+            {
+              "label": "同一版本：套件版本",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/package.json#L1-L5"
+            },
+            {
+              "label": "Synode 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/mahatab/synode-council-of-ai-agents/blob/c72070d0e1ef2c412e8795c0a4a03bb94465e769/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-multi-model-synthesis/synthesis-b-threaded-models.png",
+            "sha256": "fa760a08547e0208b47e78faf434d9b61ace151007055b81492c90d4004c2be2",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構的場刊對話頁，原問題下方有三個具名 AI 模型按垂直順序發言，底部另列綜合答覆。綜合答覆並非人工判定。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 71 題 · AI 回覆與小結的兩幅自製合成示意",
+      "input": "draft-multi-model-synthesis/DECLARATION.txt",
+      "sha256": "9ef386407f73c0d9ba983a48266f2e399bbfe7f7e85dc5f2b12d86b0cc356f18"
+    }
+  ]
+}
