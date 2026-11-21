@@ -27,6 +27,7 @@ import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
+import { communicationReplayWork, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
 import { inspectFailedScriptReview, readOriginalScriptEmbedding } from './fhs-script-review-stage.mjs';
 
@@ -187,9 +188,13 @@ try {
       } });
     if (inspecting) {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
-        const failedStage = reviseHeldScript && recordedScriptReviewStage(id);
-        const reviewStage = failedStage && !saved?.receipt ? await inspectFailedScriptReview({script:scriptEdition,
-          request:{...request,operationFingerprint:failedStage.operationFingerprint},job,definition,checkId,refresh,work,knowledge}) : undefined;
+      const failedStage = reviseHeldScript && recordedScriptReviewStage(id);
+      const comparison = failedStage && id === recordedCommunicationComparison.sourceId;
+      const validationWork = comparison ? recordedCommunicationComparison.work : failedStage?.operationFingerprint;
+      const inspection = {script:scriptEdition,request:{...request,operationFingerprint:validationWork},job,definition,checkId,refresh,work,knowledge};
+      const reviewStage = validationWork && !saved?.receipt ? await inspectFailedScriptReview(inspection) : undefined;
+      const comparisonReplay = comparison && reviewStage?.retainedText && reviewStage.validation === 'invalid'
+        ? await inspectFailedScriptReview({...inspection,normalize:true}) : undefined;
       const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
       let recordedWindow;
       if (command === 'inspect' && reads && !active && !reservations.length && saved?.windowed) {
@@ -199,7 +204,7 @@ try {
             reads, indexHash: process.env.FHS_CAMPAIGN_PDF_READS_SHA256 });
         }
       }
-      console.log(JSON.stringify({ id, registered: true, operationFingerprint, reviewStage, embeddingStage, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
+      console.log(JSON.stringify({ id, registered: true, operationFingerprint, reviewStage, comparisonReplay, embeddingStage, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
         leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations, recordedWindow,
@@ -219,7 +224,11 @@ try {
           if (predecessor && !predecessor.result && !predecessor.receipt || predecessor?.lease && predecessor.lease.untilMs > Date.now())
             throw Error('knowledge_campaign_original_work_unresolved');
           assertScriptBaseline(scriptEdition, await knowledge.publishedEdition(id));
-          if (!saved?.prepared && !await database.runTransaction(tx => gate.hasGenerationCapacity(tx, maxOutputTokens), { readOnly: true }))
+          if (!saved?.prepared && operationFingerprint === communicationReplayWork) {
+            const replay = await inspectFailedScriptReview({script:scriptEdition,request:{...request,operationFingerprint:recordedCommunicationComparison.work},
+              job,definition,checkId,refresh,work,knowledge,normalize:true});
+            if (replay?.validation !== 'valid') throw Error('knowledge_script_recorded_comparison_invalid');
+          } else if (!saved?.prepared && !await database.runTransaction(tx => gate.hasGenerationCapacity(tx, maxOutputTokens), { readOnly: true }))
             throw Error('knowledge_campaign_budget_exhausted');
           let snapshot = await refresh.resumeCheck(job.data, checkId);
           if (!snapshot && !saved && !reviseHeldScript) {

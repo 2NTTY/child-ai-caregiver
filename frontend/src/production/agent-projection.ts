@@ -80,7 +80,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
     validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
-    applicabilityLabel: [age.region, ...(age.ageBasis === 'publisher' || age.ageBasis === 'unconfirmed'
+    applicabilityLabel: [age.region, ...(age.ageBasis==='per_instruction' ? ['按操作分齡',...(age.ageExamples??[]).map(e=>e.quote),'只供查閱原文'] : age.ageBasis === 'publisher' || age.ageBasis === 'unconfirmed'
       ? [age.publisherAudiences ? `原文對象：${age.publisherAudiences.join('、')}` : '原文未指明對象',
         age.maxAgeMonths===null?'月齡範圍未確定':`少於 ${age.maxAgeMonths} 個月，下限未指明`,'只供查閱原文']
       : [age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",

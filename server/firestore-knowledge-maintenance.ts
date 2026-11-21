@@ -3,6 +3,7 @@ import { assembleKnowledgePdfWindows, manualPdfWindowBudget, planKnowledgePdfWin
 import { AGE_OUTPUT_VERSION } from './knowledge-age-output.ts';
 import { commissionedWebOriginal, matchesRegisteredRetainedDraft, retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
+import { communicationReplayWork,normalizeRecordedComparison,recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
 import { campaignMaterialWatches } from "./platform-materials.ts";
@@ -294,9 +295,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const configHash = previous?.prepared && previous.publicationConfigHash === publicationConfigHash
         ? previous.configHash : readerConfigHash;
       const today = new Date().toISOString().slice(0, 10);
-      const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) =>
-        (!(firstDispatch || script || web) || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
-        && reader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts);
+      const replaysCommunication = script?.sourceId === recordedCommunicationComparison.sourceId
+        && request.operationFingerprint === communicationReplayWork;
+      const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) => replaysCommunication ||
+        ((!(firstDispatch || script || web) || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
+        && reader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts));
       if (!publication && grant?.day !== today && previous?.configHash === configHash && previous.waitingForQuotaDay === today)
         return { status: "budget_exhausted" as const, code: previous.quotaPhase === "model" ? "knowledge_model_daily_admission" : "knowledge_embedding_daily_admission", published: false, budget: previous.budget };
       let budget: AgentBudget | undefined;
@@ -366,6 +369,12 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) => {
               const stage = { system: input.system, user: input.user, attemptKey: input.attemptKey };
+              if (replaysCommunication) {
+                if (input.role !== 'knowledge_review') reject('knowledge_script_review_stage_binding');
+                const saved = await work.inspectCommunicationComparison({...request,operationFingerprint:recordedCommunicationComparison.work},stage);
+                if (saved.state !== 'ready' || !saved.text) reject('knowledge_script_stage_text_unavailable');
+                return normalizeRecordedComparison(saved.text, input.user);
+              }
               if (transcript) return work.readHeldStage(request, transcript, stage.attemptKey, knowledgeReviewHash(stage));
               if (revisedWindow && (input.role === 'knowledge_organize' || revisedWindow.registration.action === 'retain_window_quotes'))
                 return work.readHeldStage(request,revisedWindow,stage.attemptKey,knowledgeReviewHash(stage));

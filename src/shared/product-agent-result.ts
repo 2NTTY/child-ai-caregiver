@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { knowledgeAgeExample } from './knowledge-age-example.ts';
 import { discussionTranscriptSchema } from './chat-discussion.ts';
 import { mediaClip, scriptPassage } from './platform-media.ts';
 import { sourceReadingSchema } from './source-card-reading.ts';
@@ -26,7 +27,8 @@ export const agentCitationSchema = z.object({
   termsUrl: z.url().optional(), citedExcerpt: z.string().min(1).max(300).optional(), series: sourceSeriesSchema.optional(), treatment: chunkTreatmentSchema.optional(),
   mediaClip: mediaClip.optional(), scriptPassage: scriptPassage.optional(), key: z.string(), section: z.string(), sourceExcerpt: z.string(), text: z.string(), keywords: z.array(z.string()),
   originalText: z.string().optional(), originalKind: z.enum(['page_excerpt','page_transcription','visual_page']).optional(), excerptPage: version.optional(), pageStart: count.optional(), pageEnd: count.optional(),
-  applicability: z.object({ region: z.string(), use:z.literal('original_lookup').optional(), ageBasis: z.enum(['actual', 'corrected', 'any','publisher','unconfirmed']), publisherAudiences:z.array(z.string()).optional(),
+  applicability: z.object({ region: z.string(), use:z.literal('original_lookup').optional(), ageBasis: z.enum(['actual', 'corrected', 'any','publisher','unconfirmed','per_instruction']), publisherAudiences:z.array(z.string()).optional(),
+    ageExamples:z.array(knowledgeAgeExample).max(32).optional(),
     minAgeMonths: z.number().nullable(), maxAgeMonths: z.number().nullable(), maxAgeMonthsExclusive: z.boolean().optional(),
     topics: z.array(z.string()), conditions: z.array(z.string()) }),
   chunkId: uuid, sourceId: identifier, versionId: uuid, versionHash: z.string(), contentHash: z.string(),

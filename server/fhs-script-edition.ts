@@ -7,6 +7,7 @@ import { embeddingForChunk } from './knowledge-inputs.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 import { ageExampleRegistration } from './knowledge-age-examples.ts';
 import { rejectedScriptEmbedding } from './fhs-script-embedding-receipt.ts';
+import { communicationReplayWork,recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
 
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const schema = z.strictObject({sourceId: z.string().regex(/^fhs-\d+$/u), observationHash: digest,
@@ -61,7 +62,7 @@ const exampleEdition = z.strictObject({sourceId:schema.shape.sourceId,observatio
   priorVersionHash:digest,examples:z.array(ageExampleRegistration).min(1)});
 const exampleEditions = z.array(exampleEdition).parse(JSON.parse(readFileSync(
   new URL('../knowledge/fhs-script-age-examples.json',import.meta.url),'utf8')));
-export function currentScriptReadingWork(pin:ScriptEdition) {
+function comparisonScriptWork(pin:ScriptEdition) {
   const previous = lookupScriptWork(pin), edition = exampleEditions.find(row => row.sourceId === pin.sourceId);
   const repair = stageRepairs.find(row => row.sourceId === pin.sourceId);
   if (repair) {
@@ -77,6 +78,20 @@ export function currentScriptReadingWork(pin:ScriptEdition) {
   if (!edition) return previous;
   if (edition.priorWork !== previous || edition.observationHash !== pin.observationHash) throw Error('knowledge_script_age_example_binding');
   return knowledgeReviewHash(['fhs-script-reading-examples/1',edition]);
+}
+const procedureEdition=z.strictObject({sourceId:schema.shape.sourceId,priorWork:digest,heldVersion:digest,
+  procedures:z.record(z.string().min(1),ageExampleRegistration.shape.procedure.unwrap())}).parse(JSON.parse(
+    readFileSync(new URL('../knowledge/fhs-script-procedure-conditions.json',import.meta.url),'utf8')));
+export function currentScriptReadingWork(pin:ScriptEdition) {
+  const prior=comparisonScriptWork(pin);
+  if (pin.sourceId===recordedCommunicationComparison.sourceId) {
+    if (prior!==recordedCommunicationComparison.work || pin.observationHash!==recordedCommunicationComparison.observationHash)
+      throw Error('knowledge_script_review_stage_binding');
+    return communicationReplayWork;
+  }
+  if (pin.sourceId!==procedureEdition.sourceId) return prior;
+  if (prior!==procedureEdition.priorWork) throw Error('knowledge_script_procedure_binding');
+  return knowledgeReviewHash(['fhs-script-instruction-ages/1',procedureEdition]);
 }
 const failedReviewStage = z.strictObject({
   sourceId: schema.shape.sourceId, observationHash: digest, operationFingerprint: digest,
@@ -116,7 +131,7 @@ export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerpri
     || publisher.prepared?.versionHash!==lookup.priorVersionHash || publisher.prepared.review.decision!=='hold_candidate'))
     throw Error('knowledge_script_lookup_predecessor_changed');
   const repaired = workId !== lookupScriptWork(pin);
-  if (repaired && currentScriptReadingWork(pin) !== workId) throw Error('knowledge_script_age_example_binding');
+  if (repaired && currentScriptReadingWork(pin) !== workId && comparisonScriptWork(pin)!==workId) throw Error('knowledge_script_age_example_binding');
   const edition = repaired ? exampleEditions.find(row => row.sourceId === pin.sourceId) : undefined;
   const repair = repaired ? stageRepairs.find(row => row.sourceId === pin.sourceId) : undefined;
   const embedding = repaired && pin.sourceId === rejectedScriptEmbedding.sourceId ? rejectedScriptEmbedding : undefined;
@@ -142,14 +157,28 @@ export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerpri
       || approved.prepared.review.decision !== 'approve_candidate') throw Error('knowledge_script_embedding_receipt_binding');
     notes.push('The previous independent review approved the original publication. Check the new non-film retrieval text, the complete unchanged original and all film passages.');
   }
-  const examples = edition?.examples ?? repair?.examples;
+  let examples = edition?.examples ?? repair?.examples;
+  const procedures = pin.sourceId===procedureEdition.sourceId && workId===currentScriptReadingWork(pin);
+  if (procedures) {
+    const old=await inspect(procedureEdition.priorWork);
+    if (!old || old.lease || old.receipt || old.result?.status!=='candidate_held' || old.result.code!=='review_hold'
+      || old.result.observationHash!==pin.observationHash || old.prepared?.versionHash!==procedureEdition.heldVersion
+      || old.prepared.review.decision!=='hold_candidate' || examples?.length!==Object.keys(procedureEdition.procedures).length)
+      throw Error('knowledge_script_procedure_binding');
+    notes.push(...old.prepared.review.notes);
+    examples=examples.map(e=>{
+      const procedure=procedureEdition.procedures[e.age.wording];
+      if (!procedure) throw Error('knowledge_script_procedure_binding');
+      return {...e,procedure};
+    });
+  }
   return {...original,notes,
     ...(previous?{previousReading:{work:scriptRevisionWorkId(pin),reason:scope.previousCode,version:scope.previousVersionHash}}:{}),
     ...(lookup?{priorPublisherReview:{work:publisherScriptWork(pin),versionHash:lookup.priorVersionHash}}:{}),
     publisherScope:{audiences:scope.audiences.map(label=>lookup?.upperBound?.audience===label.audience?{...label,beforeMonths:lookup.upperBound.beforeMonths}:label),
       amendUnits:[...(scope.amendUnits??[]),...(lookup?.amendUnits??[]),...(repair?.amendUnits??[]),...(embedding?[embedding.chunkKey]:[])],
       ...(lookup||embedding?{exclusiveLookup:true as const}:{}),...(examples?{ageExamples:examples}:{}),
-      ...(repair?{sourceComparison:true as const}:{})}};
+      ...(repair?{sourceComparison:true as const}:{}),...(procedures?{procedureLookup:true as const}:{})}};
 }
 export function verifyHeldScript(pin: ScriptEdition, original: {
   receipt:unknown; lease:unknown; result?:{status:string;code?:string|null;observationHash?:string|null}|null;

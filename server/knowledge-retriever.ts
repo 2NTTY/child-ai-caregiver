@@ -7,6 +7,7 @@ import { parseKnowledgeFilter, parseKnowledgeQuery } from "./knowledge-inputs.ts
 import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { firstHitPerSource, rankKnowledge } from "./knowledge-ranking.ts";
 import { includeLeafletInSearch } from './fhs-leaflet-editions.ts';
+import { procedureReadingPreview } from './knowledge-procedure-reading.ts';
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
 import { isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
@@ -75,7 +76,8 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
         if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
         if (matched.some(chunk => !chunk)) return null;
         return matched.map(chunk => {
-          const { distance: _distance, rankScore: _rankScore, originalText: _originalText, ...reviewed } = chunk!;
+          const { distance: _distance, rankScore: _rankScore, ...candidate } = chunk!;
+          const {originalText:_originalText,...reviewed}=procedureReadingPreview(candidate,applicability);
           return { ...reviewed, readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false } };
         });
       }
@@ -138,7 +140,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             // Keep evidence from each matched material ahead of further passages from the same one.
             ranked = firstHitPerSource(ranked, row => row.sourceId);
           }
-          const chunks = ranked.map(({ originalText: _originalText, ...chunk }) => ({
+          const chunks = ranked.map(chunk=>procedureReadingPreview(chunk,filter)).map(({ originalText: _originalText, ...chunk }) => ({
             ...chunk, ...(videoList ? { text: chunk.sourceExcerpt.slice(0, 48).toWellFormed() } : {}),
             readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false },
           }));

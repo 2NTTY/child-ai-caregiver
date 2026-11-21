@@ -3,6 +3,27 @@ import test from 'node:test';
 import { compactPublisherReview, publisherScriptReading, scriptReadingContract } from '../server/knowledge-script-reading.ts';
 import { approvedScriptEdition, currentScriptReadingWork, heldScriptRevision, publisherScriptWork, scriptEditionWorkId, scriptRevisionWorkId, verifiedScriptReading, verifyHeldScript } from '../server/fhs-script-edition.ts';
 import { ageExampleRegistration, bindPublisherAgeExamples } from '../server/knowledge-age-examples.ts';
+import { procedureReadingPreview } from '../server/knowledge-procedure-reading.ts';
+import type { KnowledgeEvidence, KnowledgeFilter } from '../src/shared/knowledge.ts';
+
+test('instruction previews keep the matched action and show both publisher groups at their shared boundary',()=>{
+  const originalText='先閱讀使用說明。\n一歲以下的孩子看甲組；一歲以上的孩子看乙組。兩組均須留意說明。';
+  const unit={id:'p0-12345678901234567890',originalText,scriptPassage:{title:'分組',firstParagraph:1}};
+  const registrations=[['一歲以下','upper','upper_group'],['一歲以上','lower','lower_group']].map(([wording,form,procedure])=>
+    ageExampleRegistration.parse({scope:{scriptTitle:'分組'},age:{wording,unit:'years',form,values:[1]},procedure}));
+  const [draft]=publisherScriptReading([unit],'分組',[],'',true,registrations);
+  const chunk={...draft,originalText,sourceExcerpt:originalText} as unknown as KnowledgeEvidence;
+  const filter:KnowledgeFilter={purpose:'read_originals',classification:'official_guidance',region:'HK',topics:[],age:null,ageMatch:'contained'};
+  function read(months:number|null) {return procedureReadingPreview(chunk,{...filter,age:months===null?null:{basis:'actual',minMonths:months,maxMonths:months}});}
+  assert.equal(chunk.applicability.ageBasis,'per_instruction');
+  assert.deepEqual(read(3).applicability.ageExamples?.map(e=>e.procedure?.months),[12]);
+  assert.ok(read(3).text.includes('甲組')&&!read(3).text.includes('乙組'));
+  assert.ok(read(17).text.includes('乙組')&&!read(17).text.includes('甲組'));
+  assert.ok(read(17).text.includes('兩組均須留意說明。'));
+  assert.equal(read(12).applicability.ageExamples?.length,2);
+  assert.equal(read(null).applicability.ageExamples?.length,2);
+  assert.equal(chunk.originalText,originalText);
+});
 
 test('scene ages and table rows retain their own quoted passage, numeral and publisher unit', () => {
   const age = ageExampleRegistration.parse({scope:{scriptTitle:'家居安全'},age:{wording:'3歲',unit:'years',form:'age',values:[3]}});

@@ -205,7 +205,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
-    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true} };
+    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true;procedureLookup?:true} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   webOriginal?: ReviewedWebOriginal;
   candidate: BackgroundKnowledgeCandidate;
@@ -484,6 +484,7 @@ export async function prepareKnowledgeMaintenance(input: {
       ordinaryCareSearch:'excluded in storage before ranking', adjacentCareContext:'excluded', personalAdvice:'excluded', proactive:'excluded',
       oneSidedAge:'Only a bound explicitly stated for the whole publication may be recorded. The other endpoint remains unknown. A single bound grants no advice eligibility.',
       ...(publisherScope.ageExamples ? {ageExamples:'Verify every age example against the quoted row or scene, its source units, qualifiers, offset and transcript paragraph when present. A scene age or table row describes only its own example. Assess any missing or mismatched conditions.'} : {}),
+      ...(publisherScope.procedureLookup ? {procedures:'Independently check the normalized month threshold, original qualifier and exact action in each per_instruction passage. A milestone and a deadline describe different events. In original search, an actual age wholly outside one of the printed groups excludes that group from the action preview. Unknown age or a range crossing the shared threshold retains both labelled alternatives. Same-version expansion preserves the full original. Check whether these controls address the prior hold; retain any remaining concerns.'} : {}),
       conditions:'Quoted subgroup examples are not eligibility for the whole unit. A qualitative heading establishes the audience only as written. Check the effect of these enforced access rules on each former hold.'}} : {}),
     ...(input.explicitAgeScope || retained ? { ageScopeCheck: independentAgeCheck } : {}),
     ...(retained?.revision.action === 'review_age_draft' ? { editorialAgeProposal: { change: 'Only the numeric bounds were cleared in the listed units. Check the full original audience, exceptions and conditions. Hold if this broadens the intended audience.', reason: retained.revision.reason, originalScopes: retained.revision.units } } : {}),
