@@ -8147,7 +8147,86 @@
         "secondStatusLaunched": false
       }
     },
-    "nextAction": "36 頁漫畫有可從印本核對的圖像細節。其原單有終態，現行首次派送登記沒有這冊。112 頁合訂本已有原綁定而未有整理工作。原 C 可在工位恢復容量後查回其正式 lane 狀態，依原單及 C1 共用額度決定派送。兩冊均未有自身的 Gemini 閱讀、獨立審核或家長版本。",
+    "formalLaneReadback": {
+      "release": {
+        "run": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44923001551",
+        "release": "r44923001551-1",
+        "source": "3bdad2346a3acce11dec10dab8e817d4c7ab32f4",
+        "worker": {
+          "sha": "3bdad2346a3acce11dec10dab8e817d4c7ab32f4",
+          "digest": "sha256:ee11c3581a250b9550abaae8600afeae02bbd4dee6d27a9b76975999ab70ca45"
+        },
+        "observedAt": "2026-11-22T00:20:34+08:00"
+      },
+      "rows": [
+        {
+          "localCaptureAt": "2026-11-21T16:31:16.891Z",
+          "lane": "C2",
+          "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+          "sha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+          "pages": 36,
+          "state": "held",
+          "code": "unavailable",
+          "observationHash": "b73aecabc4cad735502392694454d35c75b560a2f4818ffeb138ecb14e87f082",
+          "operationFingerprint": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+          "pinned": true,
+          "checkId": "f098b0d8-94e3-5ed7-8020-cba61a32ede5",
+          "revision": "e0869cb1-2c62-4244-95fe-919fc6b098e1",
+          "workerGeneration": "fa8a5944-12cf-4059-a90f-c2281d04562a",
+          "modelCalls": 1,
+          "tickets": []
+        },
+        {
+          "localCaptureAt": "2026-11-21T16:28:25.632Z",
+          "lane": "C2",
+          "sourceId": "pdf-836e9d989e83046a43059df7",
+          "sha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+          "pages": 112,
+          "state": "ready",
+          "started": false,
+          "observationHash": "a6598a8a40ee0d9c0298b73a03a81292e00f2fab389a48306bf86f336b3cb4b8",
+          "quotaDay": null,
+          "operationFingerprint": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+          "pinned": true,
+          "checkId": "610e8c13-7e90-58c6-85d6-a744ec258bd5",
+          "revision": "ecd96ac6-4992-493a-923c-3dc465dc34d9",
+          "workerGeneration": "fa8a5944-12cf-4059-a90f-c2281d04562a",
+          "modelCalls": 0,
+          "tickets": []
+        }
+      ],
+      "scopeAt": "2026-11-21T16:31:57.919358Z",
+      "matchingOriginalRows": 116,
+      "activePdfEditions": 35,
+      "activeLongPdfEditions": 0,
+      "observedGrossMicros": {
+        "held": 3268916,
+        "spent": 12635394,
+        "limit": 30000000,
+        "available": 14095690
+      },
+      "staging": {
+        "cacheObservedAt": "2026-11-21T16:33:55Z",
+        "directoryPattern": "/var/tmp/yuban-knowledge/fhs-*/index.json",
+        "verifiedIndexes": 10,
+        "matchingIndexCount": 0,
+        "conventionalDestinationPresent": false,
+        "archive": ".cache/fhs-preflight/c3-font-map-packets/pdf-836e9d989e83046a43059df7.tar.gz",
+        "fileSha256": "3fd66c73cb7e41591d74d845c1f04c8b19627a177d7fe52ccc738fb89a219887",
+        "indexSha256": "bec34ea42d8b2d8d227d385a7dff6e798768ca7a4d90a2815f614ade5b57703e",
+        "archiveBytes": 65089073,
+        "fileBytesAfterExtraction": 69795952,
+        "verifiedDataFiles": 43,
+        "spaceObservedAt": "2026-11-21T16:40:55Z",
+        "diskAvailableKiB": 4704072,
+        "hostMemoryAvailableKiB": 727348,
+        "statusMinimumAvailableMiB": 704,
+        "dispatchMinimumAvailableMiB": 960
+      },
+      "productionDataWrites": 0,
+      "providerCalls": 0
+    },
+    "nextAction": "112 頁合訂本的正式工位已確認可沿原單開始；原 C 決定派送時可沿部署手冊載入已核實的單冊封裝，C1 核算共用額度。36 頁漫畫的原單仍保留。兩冊均待核對自身的付費閱讀、獨立審核、向量、家長版本及原頁引用。",
     "additionalProviderCalls": 0,
     "productionDataWrites": 0
   }
