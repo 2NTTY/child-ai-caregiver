@@ -1,5 +1,5 @@
 import type { PdfAmendment } from "./knowledge-pdf-amendments.ts";
-import { assembleKnowledgePdfWindows, manualPdfWindowBudget, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, type WindowReading } from "./knowledge-pdf-windows.ts";
+import { assembleKnowledgePdfWindows, manualPdfWindowBudget, planKnowledgePdfWindows, readKnowledgePdfWindow, PDF_WINDOW_METHOD, PDF_WINDOW_RANGE_LIMIT, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { AGE_OUTPUT_VERSION } from './knowledge-age-output.ts';
 import { matchesRegisteredRetainedDraft, retainedDraftWorkId, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
@@ -195,7 +195,12 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       }
       const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
       if (transcript && !windowed) reject('knowledge_retained_transcription_binding');
-      const manualWindows = manual && !manual.resumeOnly && windowed ? manualPdfWindowBudget(manual.pages) : undefined;
+      // A resumed job or retained reading must reconstruct its original page and stage keys.
+      const priorReading = revisedWindow?.operationFingerprint ?? retained?.operationFingerprint ?? recovery?.priorWork ?? reusedOrganizationFrom;
+      const planOwner = previous ?? (windowed && priorReading ? await work.inspect({ ...request, operationFingerprint: priorReading }) : null);
+      const rangeLimit = planOwner ? planOwner.windowRangeLimit ?? 14 : PDF_WINDOW_RANGE_LIMIT;
+      const windowPlan = windowed && rangeLimit === PDF_WINDOW_RANGE_LIMIT ? {windowRangeLimit:rangeLimit} : {};
+      const manualWindows = manual && !manual.resumeOnly && windowed ? manualPdfWindowBudget(manual.pages, rangeLimit) : undefined;
       const modelAllowance = transcript ? 2 : retained ? 1 : windowed ? current.maxModelCalls : 2;
       const limits = { modelCalls: manualWindows?.modelCalls ?? Math.min(modelAllowance, current.maxModelCalls, personal?.runLimits.modelCalls ?? modelAllowance),
         toolCalls: Math.min(8, current.maxToolCalls, personal?.runLimits.toolCalls ?? 8), queryEmbeddings: 1,
@@ -220,7 +225,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         ...(previousVisual ? { previousVisual } : {}) } : undefined;
       if (comparison && (windowed || focus || !definition.leafletPage || comparison.baseline.source.sourceId !== request.watchId
         || comparison.baseline.versionHash !== sourceVersionHash(comparison.baseline.source))) reject("knowledge_destination_baseline_conflict");
-      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...(focus ? { focus } : {}), ...(revision ? {revision} : {}), ...(comparisonBinding ? { comparisonBinding } : {}) });
+      const readerConfigHash = knowledgeReviewHash({ ...configBinding, ...windowPlan, ...(focus ? { focus } : {}), ...(revision ? {revision} : {}), ...(comparisonBinding ? { comparisonBinding } : {}) });
       const publicationConfigHash = knowledgeReviewHash({ config, limits, ...corpusPolicy, ...ageContract, ...(revision ? {revision} : {}), policyVersion:current.version, credentialBinding,
         watchRevision:registration.data.revision, question:options.pdfQuestion ?? null, focus:focus ?? null, ...(comparisonBinding ? { comparisonBinding } : {}) });
       if (focus && (!options.pdfQuestion || !recordedCheckId || !definition.leafletPage
@@ -276,7 +281,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         durable: {
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
-              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
+              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...windowPlan, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
                 maxUnits: manualWindows?.maxUnits ?? 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) }, reusedOrganizationFrom,
               manual || grant?.day === today ? tx => platformDaily.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts) : undefined, retained);
             const authorize = async () => {
@@ -373,7 +378,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                     const baseline = await readBaseline(), extraction = candidate.observed.extraction!;
                     if (baseline && (candidate.previousObservationHash !== baseline.observationHash ||
                       sourceVersionHash(baseline.source) !== baseline.versionHash)) reject("knowledge_maintenance_baseline_mismatch");
-                    const plan = planKnowledgePdfWindows(extraction.totalPages!, limits.modelCalls);
+                    const plan = planKnowledgePdfWindows(extraction.totalPages!, limits.modelCalls, rangeLimit);
                     const readings: WindowReading[] = [];
                     for (const [index, range] of plan.entries()) {
                       let reading = await session.readWindow(index);
@@ -401,7 +406,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                     }
                     const currentObservation = await options.refresh.inspect(candidate.watchId);
                     if (currentObservation.observation?.contentHash !== candidate.observationHash) reject("knowledge_observation_changed");
-                    const prepared = assembleKnowledgePdfWindows({ candidate, baseline, windows: readings,
+                    const prepared = assembleKnowledgePdfWindows({ candidate, baseline, windows: readings, windowRangeLimit:rangeLimit,
                       fetchedAt: currentObservation.observation.fetchedAt, packVersion: prompt.packVersion,
                       growthRules: GROWTH_RULES.filter(r => r.sourceId === candidate.watchId) });
                     const pair = readings[0]?.registeredRequests;
