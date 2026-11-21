@@ -8,6 +8,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createMemoryFixture } from '../src/preview/memory-fixture.ts';
 import * as projections from '../src/memory-reference-view-model.ts';
 import * as memory from '../src/memory-view-model.ts';
+import * as sourceSeries from '../../src/shared/source-series.ts';
+import * as library from '../../src/shared/personal-library.ts';
 
 const require = createRequire(import.meta.url);
 const scopeKey = 'server:user:child:owner';
@@ -50,9 +52,11 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}), useFocusEffect() {} };
     if (name === './SourceDocumentCard') return { SourceDocumentCard: nativeElement('article') };
     if (name === './PlatformCardJoin') return { PlatformCardJoin: () => null };
+    if (name === '../AppRadioItem') return { AppRadioItem: nativeElement('button') };
     if (name === '../AppDialog') return { AppDialog: nativeElement('dialog') };
-    if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package',
-      '../../../../src/shared/source-series', '../../../../src/shared/personal-library'].includes(name)) return {};
+    if (name === '../../../../src/shared/source-series') return sourceSeries;
+    if (name === '../../../../src/shared/personal-library') return library;
+    if (['../../platform/file-export', '../../platform/package-import', '../../production/library-package'].includes(name)) return {};
     if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => ({ navigate: action => action() }) };
     if (name.endsWith('/history-view-model')) return compile('../src/history-view-model.ts', require);
     if (name.endsWith('/PersistentWorkCards')) return { PersistentWorkCards: () => null };
@@ -121,6 +125,17 @@ test('the source deck groups editions by series and keeps version details off it
   assert.equal((html.match(/aria-label="餵食指南，2 份文件，使用中"/g) ?? []).length, 1);
   assert.match(html, /合成機構/);
   assert.doesNotMatch(html, /文件甲|文件乙|private-test-version|匯出版本參照/);
+});
+
+test('the personal deck shows one partially adopted health card across native series and categories', () => {
+  const value = snapshot();
+  const childHealth = { total: 3, adopted: 1, enabled: 0, fixed: 1, categories: ['兒童發展', '視力'] };
+  const items = ['vision', 'feeding'].map(sourceId => ({ sourceId, title: sourceId, publisher: '家庭健康服務', classification: 'official_guidance',
+    series: { id: sourceId, institutionId: 'www.fhs.gov.hk', name: sourceId }, childHealth }));
+  value.model.references = { scopeKey, state: 'ready', data: { audience: 'public', items: [], hasMore: true, catalog: items } };
+  const { html } = renderView(freeze(value), { tab: 'references' });
+  assert.equal((html.match(/aria-label="衛生署 兒童健康，3 份文件，已採用 1／3 份"/gu) ?? []).length, 1);
+  assert.doesNotMatch(html, /aria-label="(?:vision|feeding)，/u);
 });
 
 test('read provider passes the exact owner value and masks all scope, child and access mismatches', () => {

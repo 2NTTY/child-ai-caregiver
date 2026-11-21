@@ -3472,5 +3472,1319 @@
         "reservedTickets": 0
       }
     ]
+  },
+  "ownerReceiptReadback": {
+    "readTime": "2026-11-21T06:09:03.473123Z",
+    "sourceReceiptCommits": {
+      "C1": "db3d759a03f13b49a2d1ee8e1ab7a940396fdbe7",
+      "C2": "3c270db8d056929f3005f6f9ca8f0144fd0f4e22"
+    },
+    "baseReadTime": "2026-11-20T17:08:56.519129Z",
+    "sources": 116,
+    "pages": 1471,
+    "outcomes": {
+      "candidate_held": 65,
+      "family_edition_verified": 32,
+      "work_without_verified_terminal_receipt": 1,
+      "reserved_unknown": 7,
+      "no_original_work_record": 11
+    },
+    "verifiedFamilyEditions": 32,
+    "exportedVectors": 62,
+    "verifiedCitations": 62,
+    "largestVerifiedEditionPages": 8,
+    "verifiedEditionsOver20Pages": 0,
+    "balanceMicros": {
+      "held": 19550208,
+      "spent": 9919202,
+      "limit": 30000000,
+      "available": 530590
+    },
+    "method": "Apply changedEntries by sourceId over initialScopeReadback.entries. Rejoined all 116 original hashes, current source heads and tickets at one timestamp. C1 and C2 owner evidence supplies each later disposition, vector export and page proof. Earlier C and C3 editions retain the same live version and ticket counts.",
+    "longCandidate": {
+      "owner": "C2",
+      "sourceId": "pdf-f3051ac61ad97b50bf629775",
+      "title": "6至24個月嬰幼兒健康飲食(2)進展篇(上)小冊子",
+      "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+      "pages": 24,
+      "observationHash": "b7182b6f185ad4742b7a20b58530682c16f3bb4b8c718e60e26edf4a76e2820a",
+      "originalOperationSha256": "830f8e6c5d64500653c51a20983eaab5917c548e46434a130644384b1c3230f7",
+      "wholePdfBytes": 7210655,
+      "organizerSchemaSha256": "1176c1b89ff8d0f821871fd5f02d9596022bf944f406838f391737c5a610569d",
+      "requiredReadingStages": 2,
+      "physicalRanges": [
+        [
+          1,
+          7
+        ],
+        [
+          8,
+          13
+        ],
+        [
+          14,
+          20
+        ],
+        [
+          21,
+          24
+        ]
+      ],
+      "selection": "Of the 12 in-scope PDFs over 20 pages, this is the unstarted original with the fewest planned reading stages. The other 24-page whole PDF has an unanswered reservation.",
+      "verification": "Rebuilt the normal organizer request locally. Its attached bytes match the complete frozen 24-page PDF, its four physical ranges cover all pages, and its observation hash and original operation match the production owner receipt. The capture stopped before provider dispatch. A provider read, independent approval, vector export, active edition and live citations remain pending."
+    },
+    "changedEntries": [
+      {
+        "sourceId": "resource-af8c3e8cc813be",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-2fcfc6f5232e6a7858a730f2",
+        "owner": "C2",
+        "settledTickets": 1,
+        "reservedTickets": 0,
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "interrupted_original_review"
+      },
+      {
+        "sourceId": "pdf-978f5df8a09640d894087117",
+        "owner": "C2",
+        "settledTickets": 2,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "source_review_held",
+        "ownerDisposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "owner": "C2",
+        "settledTickets": 1,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "independent_review_budget_required",
+        "ownerDisposition": "independent_review_budget_required"
+      },
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "owner": "C2",
+        "settledTickets": 2,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "source_review_held",
+        "ownerDisposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-2f68a230d9e7115440b2b241",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-10198577dd00f5dbce4da010",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-b1e19bee54f42ee9de413a78",
+        "owner": "C2",
+        "settledTickets": 5,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "f98f56ae-0f8b-5f52-b01c-564eae5187fc",
+        "versionHash": "ef1259fbd26163d7c18b8340dec0811435534d506f9fabd45e81a3bdfb0ada18",
+        "exportedVectors": 3,
+        "citedPhysicalPages": [
+          2,
+          3,
+          4
+        ],
+        "citationProof": [
+          "recorded_independent_transcription"
+        ]
+      },
+      {
+        "sourceId": "pdf-5e65881f402bf4ae0ca22646",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-881ea5c99f3479c6d5e67047",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 1,
+        "outcome": "reserved_unknown",
+        "reason": "unknown_provider_result_quarantined"
+      },
+      {
+        "sourceId": "pdf-e4e9735e1a0ba0923750e633",
+        "owner": "C2",
+        "settledTickets": 2,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "source_review_held",
+        "ownerDisposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-ade31647bbc60577ac26ecc9",
+        "owner": "C2",
+        "settledTickets": 9,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "ce395045-308d-5eeb-b775-248438d4a9f9",
+        "versionHash": "468bad54d5136dcc9f3c3a6bc72b073b68975f5075d7489092e1b7439522c73f",
+        "exportedVectors": 7,
+        "citedPhysicalPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "citationProof": [
+          "text_exact",
+          "recorded_independent_transcription"
+        ]
+      },
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-c212ef9814e180c2794a4aa1",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-811789c9be36ae025ee7e2a2",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-1de70dac6945f17a3891a257",
+        "owner": "C2",
+        "settledTickets": 1,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "source_review_held",
+        "ownerDisposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-0964fd47800bc6931d69b130",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-b23cd70ace657d574bfaa15b",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-66d4917b4892792da0ea028d",
+        "owner": "C2",
+        "settledTickets": 9,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "b74dde5e-c4fb-5e62-a1c9-1c985648d341",
+        "versionHash": "1f65c58df56c1c3830aa097abd07340271fc0758e630c4ab53c08f7243017ad6",
+        "exportedVectors": 7,
+        "citedPhysicalPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "citationProof": [
+          "recorded_independent_transcription"
+        ]
+      },
+      {
+        "sourceId": "pdf-e429ac892c396fb798ad7132",
+        "owner": "C2",
+        "settledTickets": 9,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "7837d94a-9620-5405-a956-d9c63af807a3",
+        "versionHash": "966f890b713794d461e6b59a643c2ff3b8984fa2eb92340b375dd546927259f3",
+        "exportedVectors": 7,
+        "citedPhysicalPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "citationProof": [
+          "recorded_independent_transcription"
+        ]
+      },
+      {
+        "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
+        "owner": "C2",
+        "settledTickets": 1,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "source_review_held",
+        "ownerDisposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+        "owner": "C2",
+        "settledTickets": 6,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "2954778f-aad7-5ddd-bfed-2e7e60b081cf",
+        "versionHash": "1489469ed93f78136dde7add4411d9dc715e216652f1f7b88a30a19f54511735",
+        "exportedVectors": 4,
+        "citedPhysicalPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "citationProof": [
+          "recorded_independent_transcription",
+          "text_exact"
+        ]
+      },
+      {
+        "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "owner": "C2",
+        "settledTickets": 5,
+        "reservedTickets": 0,
+        "outcome": "family_edition_verified",
+        "versionId": "17641a63-feab-5c46-9778-8123a26f7979",
+        "versionHash": "60b607282eed6a9b8e41e9123cb2c5d8cb13a4602244a6456be17e605a3a2bfd",
+        "exportedVectors": 3,
+        "citedPhysicalPages": [
+          2,
+          3,
+          4
+        ],
+        "citationProof": [
+          "recorded_independent_transcription",
+          "text_exact"
+        ]
+      },
+      {
+        "sourceId": "pdf-6488540e32c5e926ecee6787",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable",
+        "ownerDisposition": "generation_reservation_unavailable"
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "capacity_before_dispatch",
+        "availableMiB": 844,
+        "requiredMiB": 960
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "no_original_work_record",
+        "reason": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-a195a3e5ac7644036bdaf073",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "owner": "C2",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable",
+        "ownerDisposition": "generation_reservation_unavailable"
+      },
+      {
+        "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-26a1e80e0727a8e30c63f634",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-422bb3fc181398ac29e0f914",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed"
+      },
+      {
+        "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      },
+      {
+        "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
+        "owner": "C1",
+        "settledTickets": 0,
+        "reservedTickets": 0,
+        "outcome": "candidate_held",
+        "reason": "unavailable"
+      }
+    ]
+  },
+  "rejectionSettlementReadback": {
+    "readTime": "2026-11-21T06:26:08.568653Z",
+    "balanceMicros": {
+      "held": 11378688,
+      "spent": 9919202,
+      "limit": 30000000,
+      "available": 8702110
+    },
+    "verifiedFamilyEditions": 32,
+    "exportedVectors": 62,
+    "citations": 62,
+    "editionsOver20Pages": 0,
+    "originalRejections": [
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "owner": "C3",
+        "stageHash": "e6cdd9bf19ab2f46b39d55148f88e9cd9ea76b680b81e16c04416a711bc27b80",
+        "httpStatus": 400,
+        "evidenceSha256": "1fe94a1942d24e9bd0bc8eaf92fa5e82c407e666724f69b09c21c6dcb46a24ba",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "owner": "C3",
+        "stageHash": "8cbddb2c9b7104c14050bfd612a41568bc9bc047318b6b21cebf1b5b431690d6",
+        "httpStatus": 400,
+        "evidenceSha256": "2f8a1c8b50e7b3a4443df18992a1fe0308ebea939dd34d7a0676aa92f22e6d1f",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "owner": "C2",
+        "stageHash": "2c9972d0b748c2429a0844b290076713325a7dcf4409c45c1bafe084bb056aa5",
+        "httpStatus": 400,
+        "evidenceSha256": "cc2dd12a00c2a44997824b55d482a006c52d9d47f72d72e8135e442196658786",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "owner": "C3",
+        "stageHash": "c0232be52a2dc0ef1e2da2fddbf299dee134e850779551457d8c5e39e38cd435",
+        "httpStatus": 400,
+        "evidenceSha256": "4f52e6dfac9044a9763100f622f2fadef8707d052cd9869028b8cf1c19b22224",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "owner": "C3",
+        "stageHash": "d175200bb0402f75013173c69938eb871f20295979cd79a684339abc0ccd5c7e",
+        "httpStatus": 400,
+        "evidenceSha256": "5b6d0fba458651927267c6607db60f18feaaf38be16bbcaab8b945402d4307d8",
+        "releasedGrossMicros": 1634304,
+        "settledCostMicros": 0,
+        "outcome": "original_request_rejected_before_edition"
+      }
+    ],
+    "readyLongSourceId": "pdf-f3051ac61ad97b50bf629775",
+    "outcomes": {
+      "candidate_held": 65,
+      "family_edition_verified": 32,
+      "work_without_verified_terminal_receipt": 1,
+      "original_request_rejected_before_edition": 5,
+      "reserved_unknown": 2,
+      "no_original_work_record": 11
+    },
+    "verifiedAgainst": "All 116 source heads, original work presence and provider tickets were compared to ownerReceiptReadback. Only the five original reservations listed here changed state. All five returned the stored native HTTP 400 evidence and settled at zero charge with no reported token counts.",
+    "c3BalanceMicros": {
+      "settledTickets": 48,
+      "spent": 1530855,
+      "reservedTickets": 1,
+      "held": 1634304
+    }
+  },
+  "heldWindowInspectionInputs": {
+    "sourceReadTime": "2026-11-21T06:09:03.473123Z",
+    "indexSha256": "944affb50ce17f9bf8cb2328248b81ee5a84feaf9732a81c382c2a7983e03561",
+    "archiveSha256": "69441ec8e67370d57fc97a8b1e9e72b8cedb391d42bc0a435f84cbbb8939e73c",
+    "archiveBytes": 7977,
+    "parser": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "blocks": 7,
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "pages": 4,
+        "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "firstWindow": [
+          1,
+          4
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 67625,
+        "blocks": [
+          [
+            1,
+            4
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 1622,
+        "otherSettledOutputTokens": 1957
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "pages": 8,
+        "sha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "firstWindow": [
+          1,
+          8
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 107310,
+        "blocks": [
+          [
+            1,
+            8
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 3562,
+        "otherSettledOutputTokens": 2349
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "pages": 8,
+        "sha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "firstWindow": [
+          1,
+          8
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 119692,
+        "blocks": [
+          [
+            1,
+            8
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 4383,
+        "otherSettledOutputTokens": 3166
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "pages": 7,
+        "sha256": "1b7ff10371bc9e8ccdac687f434aae288294cd59da535db29f5ec370a245d4ac",
+        "firstWindow": [
+          1,
+          7
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 84326,
+        "blocks": [
+          [
+            1,
+            7
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 2209,
+        "otherSettledOutputTokens": 1582
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "pages": 84,
+        "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "firstWindow": [
+          1,
+          12
+        ],
+        "ranges": [
+          [
+            1,
+            3
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            7,
+            9
+          ],
+          [
+            10,
+            12
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 107640,
+        "blocks": [
+          [
+            1,
+            8
+          ],
+          [
+            9,
+            16
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 2865,
+        "otherSettledOutputTokens": 1666
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "pages": 4,
+        "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "firstWindow": [
+          1,
+          4
+        ],
+        "ranges": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ]
+        ],
+        "settledGenerations": 2,
+        "settledGrossMicros": 86573,
+        "blocks": [
+          [
+            1,
+            4
+          ]
+        ],
+        "organizerTicketMatched": true,
+        "organizerOutputTokens": 4452,
+        "otherSettledOutputTokens": 1586
+      }
+    ],
+    "inspectionPatch": "38364da96c3fd6be1be4a8f8143dee3ecbba042f",
+    "method": "Prepared seven original page-text blocks under the registered parser and verified every record after archive readback. Each of the six failed original first windows has two distinct, settled generation tickets with output. The organizer stage hash matches the normally reconstructed PDF request. The paired excerpts and any publication outcome await the released read-only inspector."
+  },
+  "wholePdfReleaseCompatibility": {
+    "revisions": [
+      "c6af936a8ff5509f890b65c29017dd1564b6664d",
+      "cc76610870ac8d21370d0a98b2dec7dbd1c67ce3"
+    ],
+    "sources": [
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "pages": 24,
+        "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+        "observationHash": "b7182b6f185ad4742b7a20b58530682c16f3bb4b8c718e60e26edf4a76e2820a",
+        "bytes": 7210655,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "a7795b96865b688b1325f6fc86f8ace89e00530807c239c9b7c1c3205325bd77",
+            "schemaSha256": "1176c1b89ff8d0f821871fd5f02d9596022bf944f406838f391737c5a610569d",
+            "ranges": [
+              [
+                1,
+                7
+              ],
+              [
+                8,
+                13
+              ],
+              [
+                14,
+                20
+              ],
+              [
+                21,
+                24
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "4cee3d7c99180a26426d2ad8fb1083d082c511fcc9e6c8448e5cb027c5917ff3",
+            "schemaSha256": "d6b038f7882420e8ce9ae77460a282c41d591de6519fa4622e3f088032b19ccf"
+          }
+        ],
+        "originalOperationSha256": "830f8e6c5d64500653c51a20983eaab5917c548e46434a130644384b1c3230f7",
+        "priorStatusReceiptSha256": "3623f8e9db4b93d5293713a4d95ea3bdddf86b85b2e2c5d7781d2d93ee9de98d",
+        "stateAtStatus": "unstarted_zero_tickets"
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "pages": 16,
+        "sha256": "ef440bafe855f988c1403611bb862360c900b44e40b64727362ff52fcb06b641",
+        "observationHash": "c07f82de37f9e29d1afa02908dd303dee01286cee27d47a569f3c4b775f8b18b",
+        "bytes": 20060504,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "938dd5f1ece20197687d995fbaac0c74f6121d2338c2a3479e9c64f254c0115e",
+            "schemaSha256": "988a170892963e69cc29da31a835e822186ff67d998e48344bf7e6aa581d0db6",
+            "ranges": [
+              [
+                1,
+                5
+              ],
+              [
+                6,
+                10
+              ],
+              [
+                11,
+                15
+              ],
+              [
+                16,
+                16
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "1e21c0ce8d8be47a5a759ef86eddad24209f73b490a0b11f78d4b3764870d62b",
+            "schemaSha256": "b3d6bb3655461589f79f5974a838f7014b8cdd383aac06d1013c7348657d80ee"
+          }
+        ],
+        "originalOperationSha256": "1fb88ecaa438d48f5490962ada2585db2650536d95f8c9f5de6a4bcd4e97f242",
+        "priorStatusReceiptSha256": "a8320edf1a0495b3aab5c5433fb055aeecc6e12482a18e2d8abaab8e7208b46d",
+        "stateAtStatus": "unstarted_zero_tickets"
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "pages": 12,
+        "sha256": "b3f5f159c6c195f0f05d41d25974bda4f70ea7b2ac56431db9b8612ec18a8345",
+        "observationHash": "1640c298a2cc6899434ec2e0d9925f7933ee5ba352073d26da56d0d76d2c931a",
+        "bytes": 4014688,
+        "stages": [
+          {
+            "role": "knowledge_organize",
+            "requestHash": "2c0db6199a32724fa519e575b8a165bb02c2dcbe630c765331b0e6f0416b414d",
+            "schemaSha256": "e5545eb13b30beb030dda4da582711ac0e48fc784008592049190338eca573c2",
+            "ranges": [
+              [
+                1,
+                10
+              ],
+              [
+                11,
+                12
+              ]
+            ]
+          },
+          {
+            "role": "knowledge_review",
+            "requestHash": "76c6502f4948615dba2670e52f967d98dc505c8a5a5557d42c2d7f47998c308c",
+            "schemaSha256": "b51442c05092e96fd6cf7bffad4e6990027d31b88cae71f81edb92e416973c06"
+          }
+        ],
+        "originalOperationSha256": "b1232e2cb83b0a87701c4573481bd925d1a14236c4e22bad2a3f74118151be61",
+        "priorStatusReceiptSha256": "c43fff707b7938e56ce2b1f562aed925598cf7432f99d60db6b9d9597b15a7c1",
+        "stateAtStatus": "unstarted_zero_tickets"
+      }
+    ],
+    "reviewInput": "Same synthetic organizer fixture for the independent request comparison only; no provider dispatch or content acceptance.",
+    "checkedAt": "2026-11-21T06:47:18.610Z",
+    "selection": "These three C2 originals were deferred pending a dense-window worker release. Each matching production status receipt at 14:41–14:42 HKT showed an unstarted source. Their registered observations use the whole-PDF route in both revisions.",
+    "method": "Unpacked the two Git revisions separately. Each revision reconstructed both request envelopes with the complete frozen attachment. The normal organizer request and the independent request using the same synthetic organizer output have the same bytes and schemas across revisions. The real provider read, verdict and edition remain unverified until original production dispatch."
+  },
+  "interruptedOrganizerReadback": {
+    "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+    "sourceSha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+    "pages": 24,
+    "originalBytes": 5193998,
+    "observationHash": "54467b86404f518bcbeca66207ce5f84aacd8832e4a694723e58cbde66b1cdfc",
+    "organizerStageHash": "71d9377fb7c9778faea2e73a41455a0bbec17f51560d683806c45a78dfefc5fb",
+    "originalOperationSha256": "136e481f888de3689cbc5e566d23503e44973c55b169f9051b8dae4fdd387562",
+    "originalTicketAt": "2026-11-20T14:10:56.749Z",
+    "originalWorkerRevision": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
+    "readTime": "2026-11-21T06:42:59.797500Z",
+    "stageCreatedAt": "2026-11-20T14:10:55.994361Z",
+    "stageLastWrittenAt": "2026-11-20T14:10:55.994361Z",
+    "preparedCandidate": false,
+    "sourceProof": "The complete 24-page organizer input was reconstructed locally from the frozen bytes and original observation. The historical prompt bytes match the original generation stage hash and ticket. The stage was created pending and never updated. Its last write predates the dispatch reservation, and no prepared candidate exists.",
+    "metricStart": "2026-11-20T14:08:00Z",
+    "metricEnd": "2026-11-20T14:32:00Z",
+    "projectGeminiGenerateContent200": 2,
+    "concurrentReservedSources": [
+      "pdf-3af602cff5d00f305e7cc95e",
+      "pdf-c79a394b580ec9e870d63319"
+    ],
+    "sourceIdentifiableDataAccessEvents": 0,
+    "resolution": "The two successful project-level calls have neither source nor operation keys. Their token counts cannot be assigned to the original source, and neither response body is available here. Retain the reservation and do not redispatch this operation."
+  },
+  "originalSourceFollowthrough": {
+    "readTime": "2026-11-21T06:58:42.257590Z",
+    "baselineReadTime": "2026-11-21T06:26:08.568653Z",
+    "scopeRows": 116,
+    "verifiedEditions": 32,
+    "exportedVectors": 62,
+    "verifiedCitations": 62,
+    "largestPublishedPages": 8,
+    "changedEntries": [
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "pages": 7,
+        "newSettledGenerations": 1,
+        "settledGrossMicrosChange": 41585,
+        "outcome": "existing_held_source_with_new_settled_generation",
+        "newFamilyEdition": false
+      },
+      {
+        "sourceId": "pdf-2f68a230d9e7115440b2b241",
+        "pages": 12,
+        "newSettledGenerations": 1,
+        "settledGrossMicrosChange": 0,
+        "outcome": "candidate_held",
+        "code": "knowledge_review_failed",
+        "originalStatusReceiptSha256": "fc3a18e8bda91ffb83e2748ca353e26a53e3500d2b8cc598de2d12604c7c1762",
+        "observationHash": "fb308f83d85d07f654caebe1084a3529e5a6d25830916e571ccfced98512898c"
+      },
+      {
+        "sourceId": "pdf-5e65881f402bf4ae0ca22646",
+        "pages": 8,
+        "newSettledGenerations": 2,
+        "settledGrossMicrosChange": 101331,
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "originalStatusReceiptSha256": "ede8ed275c2c731a0268c67c8aa6b5bd019903b042410bfd7ee7b80f2ef9d09f",
+        "observationHash": "12d820a2e550aa33f431f69a010d6f6e9ac1dfcf859c09bd05118963037ecb7d"
+      },
+      {
+        "sourceId": "pdf-881ea5c99f3479c6d5e67047",
+        "pages": 8,
+        "newSettledGenerations": 1,
+        "settledGrossMicrosChange": 58164,
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "originalStatusReceiptSha256": "3dad795179f4d7411a564abd022018839a6f50cc620edb15c91c0fb14f2306d8",
+        "observationHash": "8bc512a859152f66d65e488ca003a58819203e31dd0e4ba118e49354446b5567"
+      },
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "pages": 8,
+        "newSettledGenerations": 2,
+        "settledGrossMicrosChange": 116986,
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "originalStatusReceiptSha256": "5cb8defbe32ede1a50b1419c6712e3c6ca56fb6ad7f8d4912421cf0d4c67195b",
+        "observationHash": "2e27314f900ca2ea82e7db4b026848e0675dae0f00bfe0fc3b84374799bf73b5"
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "pages": 8,
+        "newSettledGenerations": 2,
+        "settledGrossMicrosChange": 103381,
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "originalStatusReceiptSha256": "8c8660d41cf081a40cc6695079bdddef8190b59556d63bc4ba56bdc7d950e9bb",
+        "observationHash": "793b2fc91f6e8ec64d2b4b50bde5275425f785a2f8811216f1294b90d930889e"
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "pages": 84,
+        "newSettledGenerations": 1,
+        "settledGrossMicrosChange": 53631,
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "originalStatusReceiptSha256": "96452d55570448a315e457b0b9e44ea3ebc9eb6b9ceff2a7ced799c9617e3250",
+        "observationHash": "8941673947096bb44456bc86b7838653258a6f967aabcb207ce4c2fb220f9273"
+      }
+    ],
+    "unstartedOriginals": [
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "owner": "C2",
+        "pages": 24
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "owner": "C2",
+        "pages": 12
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "owner": "C2",
+        "pages": 16
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "owner": "C1",
+        "pages": 192
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "owner": "C2",
+        "pages": 112
+      }
+    ],
+    "settledGrossMicrosChange": 475078,
+    "balanceMicros": {
+      "held": 11378688,
+      "spent": 10394280,
+      "limit": 30000000,
+      "available": 8227032
+    },
+    "zeroCostOriginalRejection": {
+      "sourceId": "pdf-2f68a230d9e7115440b2b241",
+      "httpStatus": 400,
+      "evidenceSha256": "30cb6caf5fe59d11d514e8bd3ea50ad536e584024c3cb001877f463904afaaa5"
+    },
+    "afterProductionRelease": {
+      "release": {
+        "runId": 44877432001,
+        "observedAt": "2026-11-21T15:00:33+08:00",
+        "workerRevision": "d24a98eae934cf810efb1fb3dd9920debebf35ec",
+        "workerDigest": "sha256:19ea7b8a5f92189af7d15b3dfcbcda9f6cbca773aac70c4de70d52ce6c872747"
+      },
+      "readTime": "2026-11-21T07:08:05.580188Z",
+      "sourceCount": 116,
+      "wholeOriginals": [
+        {
+          "sourceId": "pdf-f3051ac61ad97b50bf629775",
+          "physicalPages": 24,
+          "sourceSha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+          "observationHash": "b7182b6f185ad4742b7a20b58530682c16f3bb4b8c718e60e26edf4a76e2820a",
+          "originalOperationSha256": "830f8e6c5d64500653c51a20983eaab5917c548e46434a130644384b1c3230f7",
+          "organizerStageHash": "e26d141d892c8b84d716f4098d32f274307b94f6a4a0859a01955af5f0efe568",
+          "organizerRequestHash": "0d5f50fc2b6e3f818e0b57ab2ddefe732d3593d11831e2151f75133d9291dfd6",
+          "attemptedAt": "2026-11-21T07:05:55.974Z",
+          "providerTicketState": "reserved",
+          "settledCostMicros": null,
+          "heldCeilingMicros": 1634304,
+          "organizerStageCreatedAt": "2026-11-21T07:05:54.780531Z",
+          "organizerStageLastWrittenAt": "2026-11-21T07:07:24.949977Z",
+          "originalDispatchStdoutSha256": "435062ec7cfaed664e835a294076f29696b41050cac45c2980ddc1837f363bc1",
+          "originalDispatchStderrSha256": "98b03774014d4fd824f598edfb60de07a9a0cd3406d9d694b44f807cbdb5e7fa",
+          "outcome": "candidate_held",
+          "reason": "knowledge_review_failed",
+          "receiptCheckedAt": "2026-11-21T07:07:51.026Z",
+          "originalStatusReceiptSha256": "27265af441971aebcb4aacaa7f97060ed0d5e9db6f11409b047396f4716cca30",
+          "providerHttpStatus": 504,
+          "providerCategory": "timeout",
+          "independentReviewTickets": 0
+        },
+        {
+          "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+          "physicalPages": 12,
+          "sourceSha256": "b3f5f159c6c195f0f05d41d25974bda4f70ea7b2ac56431db9b8612ec18a8345",
+          "observationHash": "1640c298a2cc6899434ec2e0d9925f7933ee5ba352073d26da56d0d76d2c931a",
+          "originalOperationSha256": "b1232e2cb83b0a87701c4573481bd925d1a14236c4e22bad2a3f74118151be61",
+          "organizerStageHash": "52736417bf68eded74cbb8fb6aa8fc871cf0c5e2e5849e92e053b36f77de41db",
+          "organizerRequestHash": "770a0f90e64f6575487ba9ca44cf79799c7d890db15bbfa307dfc4da6e3aa1e9",
+          "attemptedAt": "2026-11-21T07:01:44.936Z",
+          "providerTicketState": "settled",
+          "settledCostMicros": 42812,
+          "heldCeilingMicros": 0,
+          "organizerStageCreatedAt": "2026-11-21T07:01:44.320648Z",
+          "organizerStageLastWrittenAt": "2026-11-21T07:02:08.602631Z",
+          "originalDispatchStdoutSha256": "0cd1c4675063bdb156368c24382fc8a96f1ca8459c8afe7f9ed8e9f59e208a35",
+          "originalDispatchStderrSha256": "aec6669522e3ac7f7d160a48432e11bad053e4b0374c078d57f46d422c7eb632",
+          "organizerOutputTokens": 2806,
+          "outcome": "candidate_held",
+          "reason": "knowledge_age_one_sided",
+          "receiptCheckedAt": "2026-11-21T07:02:34.343Z",
+          "originalStatusReceiptSha256": "33b6de5c7020ba6281158b82970930c96d8dca13cf041b3f8923130a1f3d4ba8"
+        },
+        {
+          "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+          "physicalPages": 16,
+          "sourceSha256": "ef440bafe855f988c1403611bb862360c900b44e40b64727362ff52fcb06b641",
+          "observationHash": "c07f82de37f9e29d1afa02908dd303dee01286cee27d47a569f3c4b775f8b18b",
+          "originalOperationSha256": "1fb88ecaa438d48f5490962ada2585db2650536d95f8c9f5de6a4bcd4e97f242",
+          "organizerStageHash": "7d82308b7f2c06978660e7380dcd69e5c2579091334a24fa99e36c2d3e81f61e",
+          "organizerRequestHash": "f7cbc02f11a18e10742b418256561db050751f2d41b0c252f7d97457cb3b3411",
+          "attemptedAt": "2026-11-21T07:03:22.240Z",
+          "providerTicketState": "settled",
+          "settledCostMicros": 51726,
+          "heldCeilingMicros": 0,
+          "organizerStageCreatedAt": "2026-11-21T07:03:20.620188Z",
+          "organizerStageLastWrittenAt": "2026-11-21T07:03:57.289802Z",
+          "originalDispatchStdoutSha256": "6f917b13dbf3c91d9267ea58ffa2ef605aff45355acf6e38d6b6fd326f1c48a2",
+          "originalDispatchStderrSha256": "5347c81992d20080b0b4bd3b80113a652f0bba2bd696b07e8b07ac947893899a",
+          "organizerOutputTokens": 3267,
+          "outcome": "work_interrupted_after_settled_organizer",
+          "processExit": 137,
+          "jobLimitMiB": 400,
+          "jobPeakBytes": 419430400,
+          "nextStageProviderTickets": 0
+        }
+      ],
+      "sourceEditionsUnchanged": 32,
+      "largestEditionPages": 8,
+      "inScopeLegacyRejections": [
+        {
+          "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+          "httpStatus": 504,
+          "evidenceSha256": "8041cb6f21187afb1dfdba50d1efe27057d52fbbd8c4ebcd49566fed302b6024",
+          "legacyReceiptHash": "3acaf0f76246afbe8294fe13f2c5ef8932df7eda74bc254fe6bd324f03f4d963",
+          "settledCostMicros": 0,
+          "releasedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-6637fb9890bacf75064562bd",
+          "httpStatus": 504,
+          "evidenceSha256": "f252b2041a02451fb221439b8952d5053a3c4286a1b670d5164b5f31b460c42a",
+          "legacyReceiptHash": "f16a7408cb7202d74524b113aba917ccea343b70fcd7a9963eb2a753c5cb60e2",
+          "settledCostMicros": 0,
+          "releasedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+          "httpStatus": 504,
+          "evidenceSha256": "22481293410d61f33522770beadd36e2e8514824c6824294373a627bb23c9bc3",
+          "legacyReceiptHash": "9e1039268b2f5262c4584cef1fa9b4a3f06f87d0e144e97ad9c88770224b9730",
+          "settledCostMicros": 0,
+          "releasedMicros": 1634304
+        }
+      ],
+      "unstartedOriginals": [
+        {
+          "sourceId": "pdf-63e7d5463521682636a066e5",
+          "owner": "C1",
+          "pages": 192
+        },
+        {
+          "sourceId": "pdf-836e9d989e83046a43059df7",
+          "owner": "C2",
+          "pages": 112
+        }
+      ],
+      "balanceMicros": {
+        "held": 4902912,
+        "spent": 10488818,
+        "limit": 30000000,
+        "available": 14608270
+      },
+      "outcomes": {
+        "candidate_held": 68,
+        "family_edition_verified": 32,
+        "known_timeout_with_open_reservation": 1,
+        "no_original_work_record": 2,
+        "original_request_rejected_before_edition": 9,
+        "reserved_unknown": 2,
+        "work_without_verified_terminal_receipt": 2
+      },
+      "method": "Compared original source heads and tickets at both read times. Matched three previously prepared whole-PDF organizer requests to production tickets, stage metadata and original worker outputs. The 24-page source received HTTP 504. A source-level finalized reading, independent review, embeddings and edition are absent. The 16-page original has one settled organizer with output tokens and no independent reviewer provider ticket."
+    },
+    "outcomes": {
+      "candidate_held": 70,
+      "family_edition_verified": 32,
+      "no_original_work_record": 5,
+      "original_request_rejected_before_edition": 6,
+      "reserved_unknown": 2,
+      "work_without_verified_terminal_receipt": 1
+    }
   }
 }
