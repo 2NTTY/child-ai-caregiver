@@ -57,7 +57,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 當前工作
 
 <a id="registered-source-categories"></a>
-**REQ-004／006 已登記網站的文件分類。** 本人來源巡查沿用出版者的文件分類、導覽路徑及分組目錄；欠分類時用文件可核實的詞句歸入日常照護等主題，線索不足則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。已在本機普通家長帳戶驗 NHS 教材及香港生長圖表，兩站各巡查兩次、各保留一份文件和一項索引工作。受控目錄另驗只改分類、正文換版及現行頁的列印副本／獨立附件。待主聊天整合發布，正式批次及金額由 C 統籌。[逐站收據及限制](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json)
+**REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
+
+本機普通家長帳戶已驗 NHS 教材及香港生長圖表，各巡查兩次、各一份原件及一項索引工作。詞表外教材《兩個信封》的離線整理提出「財務管理」，獨立審核接納引文並否決主題。受控審核另驗接納後顯示主題及原句，網站加分類、改名、移除分類均沿用原整理和向量。正式 Gemini 語意效果待驗；主聊天統籌整合發布，正式批次及金額由 C 統籌。[逐站收據及卡內畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json) · [語意分類及重用收據](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/semantic-topic.json)
 
 <a id="assistant-discussion-companion-catalogue"></a>
 ### 三方討論、頁內助手與平台卡庫

@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-11-22 香港，本機家長驗收。** 個人來源卡可依網站原有分類找文件。NHS 嬰兒餵哺教材沿兩個網站分類開啟同一原件；香港生長圖表按 PDF 首頁用詞分類。兩站再次巡查均沿用原版本。正式站待整合發布。[巡查收據及卡內畫面](PLAN.md#registered-source-categories)
+**2026-11-22 香港，本機驗收。** 個人來源卡優先顯示出版者分類。未知網站的教材亦可在原有整理及獨立審核中按原句提出新主題。《兩個信封》的本機模型提出「財務管理」，獨立審核保留引文、否決分類。受控接納個案另驗網站改分類後沿用原件及索引。NHS 及香港生長圖表已在家長畫面核對；正式 Gemini 效果及發布待驗。[逐站及語意分類證據](PLAN.md#registered-source-categories)
 
 **2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
 

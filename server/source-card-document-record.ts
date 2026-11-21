@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { documentCategoriesSchema } from '../src/shared/source-card-reading.ts';
+import { privateTopic } from './private-source-index-record.ts';
 import { KNOWLEDGE_PDF_MAX_BYTES } from './knowledge-pdf.ts';
 import { chatFileMimeSchema } from '../src/shared/chat-files.ts';
 import { registeredSourceUrlSchema, sourceAccessGate, sourceCardAllowsUrl, sourceGapReason, sourceReadingMethod, sourceReadingParser, type RegisteredSourceSettings } from '../src/shared/registered-source-card.ts';
@@ -32,8 +33,10 @@ export function scanItemKey({ sections: _sections, ...location }: SourceScanItem
   return firestoreDomainHash(location);
 }
 export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('head'), ...itemFields,
-    rag: z.strictObject({ accessRevision: z.int().positive().max(2147483647), incarnation: z.uuid(), authorityTag: digest.optional() }).optional() }),
+  z.strictObject({ kind: z.literal('head'), ...itemFields, bodyVersion: digest.optional(),
+    rag: z.strictObject({ accessRevision: z.int().positive().max(2147483647), incarnation: z.uuid(), authorityTag: digest.optional(),
+      topic: privateTopic.extend({ page: z.int().positive().nullable(), offset: z.int().nonnegative(),
+        organizeRunId: z.uuid(), reviewRunId: z.uuid() }).optional() }).optional() }),
   z.strictObject({ kind: z.literal('edition'), ...itemFields }),
   z.strictObject({
     kind: z.literal('staging'), ...item, cleanupAt: z.iso.datetime(), next: z.int().nonnegative(),

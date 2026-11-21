@@ -969,7 +969,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | 操作 | 入口及結果 |
 |---|---|
 | 列出、查看 | `GET /api/account/source-cards?cursor=…` 回傳 `{items,nextCursor}`。用 `GET /api/account/source-cards/:cardId` 讀取一張卡的 `{card}`。 |
-| 本人卡內文件 | `GET /api/account/source-cards/:cardId/documents?cursor=…` 逐頁回傳已保存的現行文件及下一頁游標。每項含 `documentId,version,title,url,mimeType,preview,categories`。分類依據為 `publisher`、`document` 或 `unclassified`，按正文歸類時附原文用詞。瀏覽分類與照護條件分開；歷史引用仍以固定版本讀回。 |
+| 本人卡內文件 | `GET /api/account/source-cards/:cardId/documents?cursor=…` 逐頁回傳現行文件及下一頁游標。每項含 `documentId,version,title,url,mimeType,preview,categories`。優先回 `publisher`；欠出版者分類時，`document` 可帶既有私人整理及獨立審核確認的主題和逐字引文，或按原文用詞所得的分類。欠證據回 `unclassified`。同版及授權有效期間，只改分類可重用已核實主題。瀏覽分類只供尋找文件，歷史引用按固定版本讀回。 |
 | 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
 | 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
 | 提供位置、跳過求助 | `suggest_location` 附家長提供的 `url`，已有缺口時須附目前 `gap.checkId`。`skip_gap` 附同一 `checkId`。兩者沿用本人卡、原操作收據及預期版本。 |
