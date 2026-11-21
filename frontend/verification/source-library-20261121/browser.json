@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-21",
+  "environment": "Production Expo Web and application API on localhost with Firebase emulators, using an isolated parent account",
+  "node": "24.22.3",
+  "browser": "Microsoft Edge",
+  "viewports": [
+    "1280 x 850",
+    "390 x 844"
+  ],
+  "fixture": "12 published material records over two catalogue pages, two enabled personal sources and one disabled personal source",
+  "runs": {
+    "wide": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "singleJoinAndReload": true,
+      "laterPageDocument": "fhs-toddler-development",
+      "partialReadRejected": 1,
+      "writeOperations": [
+        "join"
+      ]
+    },
+    "narrow": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "disabledReturnedToStore": true,
+      "rejoined": true,
+      "personalTogglePersisted": true,
+      "filteredMaterials": 6,
+      "mediaLinks": 4,
+      "writeOperations": [
+        "disable",
+        "enable"
+      ]
+    },
+    "final": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "singleFixedEditionPreserved": true,
+      "failedJoinReadBackBeforeRetry": true,
+      "focusAfterDisableAndJoin": true,
+      "companionMinimizedForScreenshots": true,
+      "writeOperations": [
+        "fixed",
+        "disable",
+        "enable"
+      ]
+    },
+    "pictures": {
+      "browser": "158.0.4370.33",
+      "dataset": 12,
+      "registeredCards": 3,
+      "screenshots": [
+        "current-390.png",
+        "current-1280.png",
+        "store-390.png",
+        "store-1280.png"
+      ],
+      "verifiedImportLocation": true,
+      "writeOperations": [
+        "disable",
+        "enable"
+      ]
+    }
+  }
+}

@@ -5,14 +5,14 @@ import { exportSeriesReferences, libraryPickLimit, readSeriesReferences } from '
 import { EmptyListCard } from "../EmptyListCard";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { SourceDocumentCard } from "./SourceDocumentCard";
+import { SourceLibrary, LibraryAction, LibraryRow, LibrarySheet, type PersonalCardRows } from './SourceLibrary';
 import { PlatformCardJoin } from './PlatformCardJoin';
 import { AppDialog } from "../AppDialog";
 import { AppRadioItem } from "../AppRadioItem";
-import { childHealthSeries, libraryArchiveMaxEditions, sourceSeries, type ManageSeries } from "../../../../src/shared/source-series";
+import { childHealthSeries, libraryArchiveMaxEditions, sourceSeries, type LibrarySelectionCommand, type ManageSeries } from "../../../../src/shared/source-series";
 import { useFocusEffect, useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
-import { childHealthStatus, libraryDocumentChoice, selectedLibraryEditions, type PersonalLibraryItem } from "../../../../src/shared/personal-library";
+import { childHealthStatus, libraryDocumentChoice, platformLibraryJoin, selectedLibraryEditions, type PersonalLibraryItem } from "../../../../src/shared/personal-library";
 import { historyMessageQuestion, personalWorkQuestion } from "../../history-view-model";
 import { PersistentWorkCards } from "../history/PersistentWorkCards";
 import { HistoryMessageDetail } from "../history/HistoryMessageDetail";
@@ -25,7 +25,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton, AppSelect, AppSelectionTrigger, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
+import { AppButton, AppSelectionTrigger, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
@@ -159,12 +159,6 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
   </View>;
 }
 type MaintenanceEntry = (sourceId: string) => ReactNode;
-const topicArt: Record<string, { icon: AppIconName; tint: string }> = {
-  feeding: { icon: 'silverware-fork-knife', tint: colors.paleAmber },
-  development: { icon: 'sprout', tint: colors.sage },
-  vision: { icon: 'eye', tint: colors.paleTeal },
-  checkup: { icon: 'clipboard-check-outline', tint: colors.paleTeal },
-};
 function MaterialLink({ url, label, title, onFailure }: { url: string; label: string; title?: boolean; onFailure(url: string): void }) {
   return <Pressable accessibilityRole="link" accessibilityLabel={label}
     {...(Platform.OS === 'web' ? { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } }
@@ -173,7 +167,7 @@ function MaterialLink({ url, label, title, onFailure }: { url: string; label: st
     <Text style={title ? styles.materialTitle : styles.mediaLabel}>{label}</Text>
   </Pressable>;
 }
-function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry }) {
+function CatalogDocument({ item, maintenanceEntry, pin }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry; pin?: () => void }) {
   const [metadata, setMetadata] = useState(false), [failedUrl, setFailedUrl] = useState('');
   const fetched = item.lastSuccessfulCheckAt ?? item.fetchedAt;
   const choice = libraryDocumentChoice(item);
@@ -187,42 +181,28 @@ function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem
     {item.methods?.length ? <Metadata label="整理方式">{item.methods.join('、')}</Metadata> : null}
   </View> : null;
   const warning = failedUrl ? <Text selectable style={styles.warning}>未能開啟：{failedUrl}</Text> : null;
-  if (item.childHealth) {
-    const status = !choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用'
-      : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新';
-    return <View testID={`memory-catalog-source-${item.sourceId}`} style={styles.materialRow}>
-      <View style={styles.materialHeading}><View style={styles.materialMain}>
-        <MaterialLink url={item.url} label={item.title} title onFailure={setFailedUrl} />
-        <Text style={styles.meta}>{status}{links.length ? ` · ${links.length} 項影音` : ''}</Text>
-      </View><Pressable accessibilityRole="button" accessibilityLabel={item.title + '的教材詳情'}
-        accessibilityState={{ expanded: metadata }} aria-expanded={metadata}
-        onPress={() => { setMetadata(!metadata); setFailedUrl(''); }}
-        style={({ pressed }) => [styles.materialToggle, pressed && styles.sourcePressed]}>
-        <AppIcon name={metadata ? 'chevron-up' : 'chevron-down'} size={20} />
-      </Pressable></View>
-      {metadata ? <View style={styles.materialDetails}>
-        {links.length ? <View style={styles.mediaLinks}>{links.map((url, index) =>
-          <MaterialLink key={url} url={url} label={`影音 ${index + 1}`} onFailure={setFailedUrl} />)}</View> : null}
-        <Text style={styles.meta}>{item.coverage ?? '部分收錄'} · {item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}</Text>
-        {version}
-      </View> : null}
-      {warning}
-    </View>;
-  }
-  return <SourceDocumentCard testID={`memory-catalog-source-${item.sourceId}`} title={item.title}
-    byline={`${item.coverage ?? '部分收錄'} · ${item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}`}>
-    <View style={styles.actions}>
-      <AppButton label="開啟來源網站" variant="secondary" density="compact" onPress={() => {
-        setFailedUrl(''); void Linking.openURL(item.url).catch(() => setFailedUrl(item.url));
-      }} />
-      <AppButton label={metadata ? '收起資料' : '版本資料'} expanded={metadata} variant="quiet" density="compact" onPress={() => setMetadata(value => !value)} />
-    </View>
+  const status = !choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用'
+    : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新';
+  return <View testID={`memory-catalog-source-${item.sourceId}`} style={styles.materialRow}>
+    <View style={styles.materialHeading}><View style={styles.materialMain}>
+      <MaterialLink url={item.url} label={item.title} title onFailure={setFailedUrl} />
+      <Text style={styles.meta}>{status}{links.length ? ` · ${links.length} 項影音` : ''}</Text>
+    </View><Pressable accessibilityRole="button" accessibilityLabel={item.title + '的教材詳情'}
+      accessibilityState={{ expanded: metadata }} aria-expanded={metadata}
+      onPress={() => { setMetadata(!metadata); setFailedUrl(''); }}
+      style={({ pressed }) => [styles.materialToggle, pressed && styles.sourcePressed]}>
+      <AppIcon name={metadata ? 'chevron-up' : 'chevron-down'} size={20} />
+    </Pressable></View>
+    {metadata ? <View style={styles.materialDetails}>
+      {links.length ? <View style={styles.mediaLinks}>{links.map((url, index) =>
+        <MaterialLink key={url} url={url} label={`影音 ${index + 1}`} onFailure={setFailedUrl} />)}</View> : null}
+      <Text style={styles.meta}>{item.coverage ?? '部分收錄'} · {item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}</Text>
+      {version}
+      {!item.childHealth ? maintenanceEntry?.(item.sourceId) : null}
+      {pin ? <LibraryAction label={choice?.enabled && choice.selectedVersionId ? '固定這份教材的目前版本' : '採用這份教材的固定版本'} onPress={pin} /> : null}
+    </View> : null}
     {warning}
-    {item.media?.links.map((url, index) => <AppButton key={url} label={'影音原連結 ' + (index + 1)} accessibilityLabel={'開啟影音 ' + url}
-      variant="quiet" density="compact" onPress={() => { void Linking.openURL(url).catch(() => setFailedUrl(url)); }} />)}
-    {version}
-    {maintenanceEntry?.(item.sourceId)}
-  </SourceDocumentCard>;
+  </View>;
 }
 function CatalogChoice({ label, value, onChange, options, action }: {
   label: string; value: string; onChange(value: string): void; options: { value: string; label: string }[];
@@ -239,25 +219,24 @@ function CatalogChoice({ label, value, onChange, options, action }: {
       }} />)}</View> : null}
   </View>;
 }
-function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenanceEntry, width, requestedDocument }: {
-  items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; details: boolean;
-  onOpen: () => void; onClose: () => void; maintenanceEntry?: MaintenanceEntry; requestedDocument?: string; width: `${number}%`;
+function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, maintenanceEntry, requestedDocument }: {
+  items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; initialSection: 'files' | 'settings';
+  onClose(): void; onJoin?: () => void; maintenanceEntry?: MaintenanceEntry; requestedDocument?: string;
 }) {
-  const [section, setSection] = useState<'files' | 'settings'>('files');
+  const [section, setSection] = useState(initialSection);
   const tabsId = useId();
   const [category, setCategory] = useState('all'), [archivePart, setArchivePart] = useState('0');
-  useEffect(() => { if (!details) { setSection('files'); setCategory('all'); setArchivePart('0'); } }, [details]);
   const [exportNotice, setExportNotice] = useState(''), active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const [exporting, setExporting] = useState(false), [fingerprint, setFingerprint] = useState('');
   const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
   const first = items[0]!, managed = first.childHealth, series = managed ? childHealthSeries : first.series ?? sourceSeries(first), preference = first.preference;
   const categories = managed?.categoryCounts?.map(row => row.name) ?? [...new Set(items.flatMap(item => item.childHealth?.categories ?? []))];
-  const selected = details && section === 'settings' ? selectedLibraryEditions(items) : [];
+  const selected = section === 'settings' ? selectedLibraryEditions(items) : [];
   const parts = Math.ceil(selected.length / libraryArchiveMaxEditions);
   const start = Math.min(Number(archivePart), Math.max(0, parts - 1)) * libraryArchiveMaxEditions;
   const archiveEditions = selected.slice(start, start + libraryArchiveMaxEditions);
-  const busy = workspace.reads?.referencesBusy || !workspace.model.online || workspace.model.references.state !== 'ready';
+  const busy = workspace.reads?.referencesBusy || !workspace.model.online || workspace.model.references.state !== 'ready' || !!workspace.model.references.data?.hasMore;
   const change = (action: SeriesPreferenceAction) => {
     if (managed) {
       const operation: ManageSeries['operation'] = action === 'platform' ? 'remove' : action === 'toggle' ? managed.enabled ? 'disable' : 'enable' : action;
@@ -275,41 +254,33 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
   const firstDocument = requestedDocument && items.find(item => item.sourceId === requestedDocument);
   const documents = (firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items)
     .filter(item => !managed || category === 'all' || item.childHealth?.categories.includes(category));
-  const categoryTotal = managed?.categoryCounts?.find(row => row.name === category)?.count ?? 0;
-  const more = workspace.reads?.loadMoreReferences, hasMore = workspace.model.references.data?.hasMore;
-  useEffect(() => {
-    if (details && section === 'files' && categoryTotal > documents.length && !busy && hasMore) more?.();
-  }, [details, section, categoryTotal, documents.length, items.length, busy, hasMore, more]);
   const requiresSelection = managed ? items.some(item => { const choice = libraryDocumentChoice(item); return choice?.selectedVersionId && !choice.eligible; })
     : preference?.mode !== 'platform' && items.some(item => item.preference?.eligible === false);
   const enabled = managed ? managed.enabled > 0 : preference?.enabled !== false;
   const state = managed ? childHealthStatus(managed) : preference?.mode === 'platform' ? '未下載' : !enabled ? '已停用' : requiresSelection ? '待選版本'
     : preference?.mode === 'fixed' ? '已固定' : preference?.mode === 'follow' ? '已跟隨' : '使用中';
-  const fileCount = managed ? `${managed.total} 份文件` : `${workspace.model.references.data?.hasMore ? '已載入 ' : ''}${items.length} 份文件`;
-  const art = items.flatMap(item => item.topics ?? []).map(topic => topicArt[topic]).find(Boolean);
-  return <View style={{ width }} testID={`memory-catalog-series-${series.id}`}>
-    <Pressable accessibilityRole="button" accessibilityLabel={`${series.name}，${fileCount}，${state}`} accessibilityState={{ expanded: details }}
-      onPress={onOpen}
-      style={({ pressed }) => [styles.cover, pressed && styles.coverPressed]}>
-      <View style={[styles.coverBody, { backgroundColor: art?.tint ?? colors.quietSurface }]}>
-        <View style={styles.coverTop}><AppIcon name={art?.icon ?? 'book-open-variant'} size={30} color={colors.ink} />
-          <View style={styles.coverState}><Text style={styles.stateText}>{state}</Text></View></View>
-        <Text style={styles.coverTitle}>{series.name}</Text>
-      </View>
-      <View style={styles.coverFooter}><Text style={styles.count}>{fileCount}</Text><AppIcon name="arrow-right" size={18} /></View>
-    </Pressable>
-    {details ? <AppDialog visible onDismiss={onClose} accessibilityLabel={series.name} style={managed ? styles.materialDialog : undefined}>
-      <AppDialog.Title>{series.name}</AppDialog.Title>
+  const pin = (item: PersonalLibraryItem) => {
+    if (!managed || !item.versionHash) return;
+    workspace.reads?.setLibraryPreference?.({ seriesId: childHealthSeries.id, expectedRevision: managed.revision,
+      imported: true, enabled: true, mode: 'fixed', editions: [{ sourceId: item.sourceId, versionHash: item.versionHash }] });
+  };
+  return <AppDialog visible onDismiss={onClose} accessibilityLabel={series.name} style={managed ? styles.materialDialog : undefined}>
+      <View style={styles.sheetHeading}><Text accessibilityRole="header" style={styles.sectionTitle}>{series.name}</Text><LibraryAction name="關閉" icon="close" onPress={onClose} /></View>
       <AppDialog.Content style={styles.dialogTabs}><UnderlineTabs id={tabsId} label="來源內容" items={[{key:'files',label:'文件'}, {key:'settings',label:'設定與匯出'}]} value={section} onChange={setSection} /></AppDialog.Content>
       <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
+      {workspace.model.references.state !== 'ready' ? <View style={styles.section}>
+        <Text accessibilityLiveRegion="polite" style={styles.warning}>未能確認最新來源設定。</Text>
+        {workspace.reads?.refreshContext ? <LibraryAction label="重新讀取參考" disabled={!workspace.model.online || workspace.reads.referencesBusy} onPress={workspace.reads.refreshContext} /> : null}
+      </View> : null}
       {requiresSelection && enabled ? <Text style={styles.warning}>收錄範圍已更改。請在「設定與匯出」選用新版本。</Text> : null}
       <AppTabPanel tabsId={tabsId} tabKey="files" active={section === 'files'}><View style={styles.section}>
+        {onJoin ? <LibraryAction label="加入目前的卡" tone="join" disabled={busy} onPress={onJoin} /> : null}
         {managed && categories.length > 0 ? <CatalogChoice label="分類" value={category} onChange={setCategory}
           options={[{ value: 'all', label: '全部' }, ...categories.map(value => ({ value, label: value }))]}
-          action={<PlatformCardJoin seriesId={series.id} compact />} /> : <PlatformCardJoin seriesId={series.id} compact={Boolean(managed)} />}
-        <View style={managed ? styles.materialList : styles.section}>{documents.map(item =>
-          <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}</View>
-        {managed && items.length < managed.total && workspace.model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多教材" variant="quiet" disabled={busy} onPress={workspace.reads.loadMoreReferences} /> : null}
+          action={!onJoin && !busy && managed.adopted < managed.total ? <PlatformCardJoin seriesId={series.id} compact /> : undefined} /> : null}
+        <View style={styles.materialList}>{documents.map(item =>
+          <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry}
+            pin={managed && item.versionHash && !busy && workspace.reads?.setLibraryPreference && !(libraryDocumentChoice(item)?.enabled && libraryDocumentChoice(item)?.mode === 'fixed' && libraryDocumentChoice(item)?.selectedVersionId === item.versionId) ? () => pin(item) : undefined} />)}</View>
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
       {preference ? <Metadata label="我的設定">{managed ? `${state}，${managed.enabled} 份已啟用` : state + ' · ' + (preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版')}</Metadata> : null}
@@ -344,9 +315,7 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
         .then(message => { if (active.current) setExportNotice(message); }, () => { if (active.current) setExportNotice('未能匯出版本參照。'); }); }} /> : null}
     {exportNotice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{exportNotice}</Text> : null}
       </View></AppTabPanel></ScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="關閉" onPress={onClose} variant="secondary" density="compact" /></AppDialog.Actions>
-    </AppDialog> : null}
-  </View>;
+    </AppDialog>;
 }
 function ImportLibrary({ catalog, workspace }: { catalog: readonly PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue }) {
   const [pending, setPending] = useState<Awaited<ReturnType<typeof readSeriesReferences>> | null>(null);
@@ -381,69 +350,137 @@ function ImportLibrary({ catalog, workspace }: { catalog: readonly PersonalLibra
 }
 const referenceFilters: Record<string, string> = { official_guidance: '官方指引', recent_information: '近期資訊',
   feeding: '餵食', development: '兒童發展', play: '遊戲', vision: '視力', checkup: '健康檢查' };
-function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maintenanceEntry?: MaintenanceEntry; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; width: number }) {
-  const sources = visibleKnowledgeReferences(model.references), catalog = model.references.data?.catalog;
-  const { series: originalSeries, sourceDocument, catalog: openCatalog } = useLocalSearchParams<{ series?: string; sourceDocument?: string; catalog?: string }>();
-  const currentDocument = sourceDocument ? catalog?.find(item => item.sourceId === sourceDocument) : undefined;
-  const referenced = currentDocument ?? catalog?.find(item => item.series?.id === originalSeries);
-  const requested = referenced?.childHealth ? childHealthSeries.id : currentDocument ? (currentDocument.series ?? sourceSeries(currentDocument)).id : originalSeries;
-  const [opened, setOpened] = useState<string | undefined>(requested);
-  useEffect(() => { setOpened(requested); }, [requested, sourceDocument]);
-  useFocusEffect(useCallback(() => () => setOpened(undefined), []));
-  const [filter, setFilter] = useState('all');
-  const [showRegistered, setShowRegistered] = useState(false);
-  const [showCatalog, setShowCatalog] = useState(openCatalog === 'platform');
-  useEffect(() => { if (openCatalog === 'platform') setShowCatalog(true); }, [openCatalog]);
-  // Relative widths stay aligned when the Web shell's reading scale changes.
-  const cardWidth = width >= 650 ? '32%' : width >= 340 ? '49%' : '100%';
-  const tags = [...new Set((catalog ?? []).flatMap(item => [item.classification, ...(item.topics ?? [])]))];
-  const registered = model.references.data?.registered ?? [];
-  const institutions = new Map<string, { name: string; series: Map<string, PersonalLibraryItem[]> }>();
+function seriesFor(item: PersonalLibraryItem) {
+  return item.childHealth ? childHealthSeries : item.series ?? sourceSeries(item);
+}
+function seriesEnabled(items: PersonalLibraryItem[]) {
+  const managed = items[0].childHealth;
+  return managed ? managed.enabled > 0 : items.some(item => !item.preference || item.preference.mode !== 'platform' && item.preference.enabled);
+}
+function joinSeries(items: PersonalLibraryItem[]): LibrarySelectionCommand | null {
+  const first = items[0], managed = first.childHealth, seriesId = seriesFor(first).id;
+  if (managed) return { action: 'manage', seriesId: childHealthSeries.id, expectedState: managed.stateHash, operation: managed.adopted ? 'enable' : 'join' };
+  if (!first.preference) return null;
+  const command = first.preference.mode === 'platform' ? platformLibraryJoin(items) : seriesPreferenceChange(seriesId, items, 'toggle');
+  if (!command) return null;
+  return { ...command, wholeSeries: true, editions: [{ sourceId: first.sourceId, versionId: first.versionId }] };
+}
+function ReferenceSection({ model, workspace, maintenanceEntry, personal, active }: {
+  model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; maintenanceEntry?: MaintenanceEntry; personal?: PersonalCardRows; active: boolean;
+}) {
+  const read = model.references, catalog = read.data?.catalog, sources = visibleKnowledgeReferences(read);
+  const { series: original, sourceDocument, catalog: entry } = useLocalSearchParams<{ series?: string; sourceDocument?: string; catalog?: string }>();
+  const groups = new Map<string, PersonalLibraryItem[]>();
   for (const item of catalog ?? []) {
-    const series = item.childHealth ? childHealthSeries : item.series ?? sourceSeries(item);
-    if (!showCatalog && series.id !== requested && (item.childHealth ? !item.childHealth.adopted : item.preference?.mode === 'platform')) continue;
-    const institution = institutions.get(series.institutionId) ?? { name: item.publisher, series: new Map<string, PersonalLibraryItem[]>() };
-    const documents = institution.series.get(series.id) ?? [];
-    documents.push(item); institution.series.set(series.id, documents); institutions.set(series.institutionId, institution);
+    const id = seriesFor(item).id, group = groups.get(id);
+    if (group) group.push(item); else groups.set(id, [item]);
   }
-  const shown = [...institutions].map(([id, institution]) => ({ id, name: institution.name,
-    series: [...institution.series].filter(([, documents]) => filter === 'all' || documents.some(item => item.classification === filter || item.topics?.includes(filter))) }))
-    .filter(institution => institution.series.length);
+  const linked = sourceDocument && catalog?.find(item => item.sourceId === sourceDocument);
+  const oldSeries = original && catalog?.find(item => item.series?.id === original);
+  const requested = linked ? seriesFor(linked).id : oldSeries ? seriesFor(oldSeries).id : original;
+  const [opened, setOpened] = useState<string | undefined>(requested), [section, setSection] = useState<'files' | 'settings'>('files');
+  const [store, setStore] = useState(entry === 'platform'), [filter, setFilter] = useState('all');
+  const [pending, setPending] = useState<{ id: string; before: typeof read.data } | null>(null);
+  const [focusId, setFocusId] = useState(''), [notice, setNotice] = useState(''), [registeredOpen, setRegisteredOpen] = useState(false);
+  const rows = useRef(new Map<string, View>()), shopRef = useRef<View>(null);
+  useEffect(() => { setOpened(requested); setSection('files'); }, [requested, sourceDocument]);
+  useEffect(() => { if (entry === 'platform') setStore(true); }, [entry]);
+  useFocusEffect(useCallback(() => () => { setOpened(undefined); setStore(false); setPending(null); setFocusId(''); }, []));
+  const busy = !!workspace.reads?.referencesBusy, complete = model.online && read.state === 'ready' && !read.data?.hasMore;
+  const loadRemaining = workspace.reads?.loadAllReferences ?? workspace.reads?.loadMoreReferences;
+  useEffect(() => {
+    if (active && model.online && !busy && read.state === 'ready' && read.data?.hasMore) loadRemaining?.();
+  }, [active, model.online, busy, read.state, read.data, loadRemaining]);
+  const joined = !!pending && groups.has(pending.id) && seriesEnabled(groups.get(pending.id)!);
+  useEffect(() => {
+    if (!pending || busy || !complete || read.data === pending.before) return;
+    setPending(null);
+    if (joined) { setOpened(undefined); setStore(false); setFocusId(pending.id); setNotice('已加入目前的卡'); }
+    else setNotice('已重新讀取，這張卡尚未啟用。');
+  }, [pending, busy, complete, read.data, joined]);
+  useEffect(() => {
+    if (!focusId || store || opened) return;
+    const frame = requestAnimationFrame(() => {
+      const control = rows.current.get(focusId) ?? shopRef.current;
+      control?.focus();
+      if (Platform.OS === 'web') (control as unknown as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
+      setFocusId('');
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusId, store, opened]);
+  const open = (id: string, settings = false) => { setOpened(id); setSection(settings ? 'settings' : 'files'); };
+  const openShop = () => { setStore(true); setNotice(''); setFilter('all'); setRegisteredOpen(false); };
+  const closeShop = () => { setStore(false); setFocusId('shop'); };
+  const join = (id: string, command: LibrarySelectionCommand) => {
+    if (!workspace.reads?.setLibraryPreference || !complete || busy || pending) return;
+    setPending({ id, before: read.data }); setNotice(''); workspace.reads.setLibraryPreference(command);
+  };
+  const openItems = opened ? groups.get(opened) : undefined;
+  const enabledOpen = !!openItems && seriesEnabled(openItems);
+  const priorOpen = useRef({ id: opened, enabled: enabledOpen });
+  useEffect(() => {
+    if (priorOpen.current.id !== opened || enabledOpen) {
+      priorOpen.current = { id: opened, enabled: enabledOpen };
+      return;
+    }
+    if (!complete || busy) return;
+    if (opened && priorOpen.current.enabled) {
+      setOpened(undefined); setFocusId('shop'); setNotice('已停用，可在平台卡列表重新加入。');
+    }
+    priorOpen.current = { id: opened, enabled: enabledOpen };
+  }, [opened, enabledOpen, complete, busy]);
+  const currentRows: ReactNode[] = [], storeRows: ReactNode[] = [];
+  const tags = [...new Set((catalog ?? []).flatMap(item => [item.classification, ...(item.topics ?? [])]))];
+  for (const [id, items] of groups) {
+    const first = items[0], managed = first.childHealth, title = seriesFor(first).name, enabled = seriesEnabled(items);
+    const count = managed ? managed.total + ' 份教材' : items.length + ' 份文件';
+    const subtitle = (managed ? '家庭健康服務' : first.publisher) + ' · ' + count;
+    const props = { title, subtitle, art: managed ? 'health' as const : 'platform' as const };
+    if (enabled) currentRows.push(<LibraryRow key={id} {...props} label={title + '，' + count} testID={'memory-catalog-series-' + id}
+      rowRef={node => { if (node) rows.current.set(id, node); else rows.current.delete(id); }} onOpen={() => open(id)}
+      action={<LibraryAction name={title + '的操作'} icon="dots-horizontal" onPress={() => open(id, true)} />} />);
+    if (store && (filter === 'all' || items.some(item => item.classification === filter || item.topics?.includes(filter)))) {
+      const command = !enabled && joinSeries(items);
+      storeRows.push(<LibraryRow key={id} {...props} onOpen={() => open(id)} testID={'platform-store-' + id}
+        action={enabled ? <Text style={styles.meta}>✓ 已加入</Text> : <LibraryAction label="加入" name={'加入' + title} tone="join"
+          disabled={!command || !model.online || !complete || busy || !!pending || !workspace.reads?.setLibraryPreference}
+          onPress={() => { if (command) join(id, command); }} />} />);
+    }
+  }
+  const retry = workspace.reads?.refreshContext;
+  const status = <>
+    {read.state !== 'ready' ? <ReadNotice read={read} unavailable="參考來源暫未提供" /> : null}
+    {pending ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{busy ? '正在加入…' : read.state !== 'ready' ? '未能確認是否已加入，請重新讀取參考。' : ''}</Text> : null}
+    {read.state === 'ready' && read.data?.hasMore ? <Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取其餘平台卡…</Text> : null}
+    {['error', 'unavailable', 'stale'].includes(read.state) && retry ? <LibraryAction label="重新讀取參考" disabled={!model.online || busy} onPress={retry} /> : null}
+    {notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{notice}</Text> : null}
+  </>;
+  const registered = read.data?.registered ?? [];
+  const detailJoin = openItems && !enabledOpen && joinSeries(openItems);
   return <View style={styles.section}>
-    {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{currentDocument.childHealth ? childHealthSeries.name : (currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
-    {catalog ? <AppButton label={showCatalog ? '返回我的參考資料' : '平台卡庫'} density="compact" variant="secondary"
-      onPress={() => { setShowCatalog(!showCatalog); setOpened(undefined); }} /> : null}
-    <View style={styles.tools}>
-      {tags.length > 1 ? <View style={styles.filter}><AppSelect label="篩選來源庫" showLabel={false} value={filter} onChange={setFilter} options={[{ value: 'all', label: '全部來源' },
-        ...tags.map(value => ({ value, label: referenceFilters[value] ?? value }))]} /></View> : null}
-      {catalog && workspace.reads?.setLibraryPreference && model.references.state === 'ready' && !model.references.data?.hasMore
-        ? <ImportLibrary catalog={catalog} workspace={workspace} /> : null}
-    </View>
-    {model.references.state !== 'ready' ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}
-    {catalog ? shown.map(institution => <View key={institution.id} style={styles.section}>
-      <Text accessibilityRole="header" style={styles.sectionTitle}>{institution.name}</Text>
-      <View style={styles.deck}>{institution.series.map(([key, items]) => <CatalogSeries key={key} items={items} width={cardWidth}
-        workspace={workspace} requestedDocument={key === requested ? sourceDocument : undefined} details={key === opened} onOpen={() => setOpened(key)} onClose={() => setOpened(undefined)} maintenanceEntry={maintenanceEntry} />)}</View>
-    </View>) : sources.map(source => <ReferenceCard key={source.chunkId} source={source} />)}
-    {catalog && !shown.length ? <Text style={styles.meta}>{!showCatalog && filter === 'all' ? '尚未下載平台卡。' : '沒有符合篩選的來源庫。'}</Text> : null}
-    {showCatalog && filter === 'all' && registered.length ? <View style={styles.details}>
-      <AppButton label={`未發布來源（${registered.length}）`} expanded={showRegistered} variant="quiet" density="compact" onPress={() => setShowRegistered(value => !value)} />
-      {showRegistered && registered.map(item => <View key={item.sourceId} style={styles.document}>
-        <Text style={styles.cardTitle}>{item.series.name}</Text><Text style={styles.meta}>{item.publisher} · {item.kind === 'pdf' ? 'PDF' : '網頁'}</Text>
-        <Text selectable style={styles.meta}>{item.url}</Text>
-        <Text style={styles.meta}>{({ registered: '已登記來源', pending: '待核對或發布', withdrawn: '已停用或失效' })[item.status]}{item.live ? ' · 可按次即時搜尋' : ''}</Text>
-        {item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}
-      </View>)}</View> : null}
-    {model.online && model.references.state === 'ready' && !sources.length && !catalog?.length && !registered.length
-      ? <EmptyListCard title={model.references.data?.hasMore ? '仍有來源未載入' : '暫無可讀來源'} /> : null}
-    {requested && catalog && ![...institutions.values()].some(item => item.series.has(requested)) && !model.references.data?.hasMore
-      ? <Text style={styles.meta}>原系列已不在目前目錄，舊引用仍可從聊天查看。</Text> : null}
-    {['error', 'unavailable', 'stale'].includes(model.references.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取參考" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.refreshContext} /> : null}
-    {model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.loadMoreReferences} /> : null}
+    <SourceLibrary personal={personal} platformRows={currentRows} ready={complete && !sources.length}
+      shop={(!sources.length || catalog) && <LibraryAction label="平台卡列表" icon="book-open-variant" tone="shop" buttonRef={shopRef} onPress={openShop} />}
+      status={<>{status}{original && requested && original !== requested && linked ? <Text style={styles.meta}>這份文件現歸入「{seriesFor(linked).name}」。聊天引用保留當時的版本。</Text> : null}
+        {requested && complete && !groups.has(requested) ? <Text style={styles.meta}>原系列已不在目前目錄，舊引用仍可從聊天查看。</Text> : null}</>} />
+    {!catalog ? sources.map(source => <ReferenceCard key={source.chunkId} source={source} />) : null}
+    {active && store && !openItems && (catalog || !sources.length) ? <LibrarySheet title="平台卡列表" close={closeShop}
+      action={complete && (registered.length > 0 || workspace.reads?.setLibraryPreference) ? <LibraryAction name="平台卡列表選項" expanded={registeredOpen} icon="dots-horizontal" onPress={() => setRegisteredOpen(!registeredOpen)} /> : null}>
+      {groups.size > 1 && tags.length > 1 ? <CatalogChoice label="分類" value={filter} onChange={setFilter} options={[{value:'all',label:'全部'}, ...tags.map(value => ({value,label:referenceFilters[value] ?? value}))]} /> : null}
+      {storeRows}{complete && !storeRows.length ? <Text style={styles.meta}>暫無符合的已發布平台卡</Text> : null}{status}
+      {registeredOpen && complete ? <View style={styles.details}>
+        {catalog && workspace.reads?.setLibraryPreference ? <ImportLibrary catalog={catalog} workspace={workspace} /> : null}
+        {registered.map(item => <View key={item.sourceId}><Text style={styles.cardTitle}>{item.series.name}</Text>
+          <Text style={styles.meta}>{item.publisher} · {item.kind === 'pdf' ? 'PDF' : '網頁'} · {({registered:'已登記來源',pending:'待核對或發布',withdrawn:'已停用或失效'})[item.status]}{item.live ? ' · 可按次即時搜尋' : ''}</Text>
+          <Text selectable style={styles.meta}>{item.url}</Text>{item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}</View>)}
+      </View> : null}
+    </LibrarySheet> : null}
+    {active && openItems && opened ? <CatalogDetail key={opened} items={openItems} workspace={workspace} initialSection={section} requestedDocument={sourceDocument}
+      onJoin={detailJoin && workspace.reads?.setLibraryPreference ? () => join(opened, detailJoin) : undefined}
+      maintenanceEntry={maintenanceEntry} onClose={() => { setOpened(undefined); if (!store) setFocusId(opened); }} /> : null}
   </View>;
 }
-type MemoryReferenceViewProps = { maintenanceEntry?: MaintenanceEntry; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void; activeTab?: Tab; onTabChange?: (tab: Tab) => void };
-function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
+type MemoryReferenceViewProps = { personal?: PersonalCardRows; maintenanceEntry?: MaintenanceEntry; tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void; activeTab?: Tab; onTabChange?: (tab: Tab) => void };
+function ScopedMemoryReferenceView({ workspace, personal, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
   const { series } = useLocalSearchParams<{ series?: string }>();
@@ -511,33 +548,22 @@ function ScopedMemoryReferenceView({ workspace, maintenanceEntry, confirmerDispl
           {otherOpen ? <View style={styles.notebook}>{other.map(renderFact)}</View> : null}</View> : null}
       </ReadNotice>
     </View></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} width={container.width} maintenanceEntry={maintenanceEntry} workspace={workspace} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} active={tab === "references"} personal={personal} maintenanceEntry={maintenanceEntry} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps) {
+export function MemoryReferenceView({ personal, maintenanceEntry, confirmerDisplay, onPrepareQuestion, tabActions, activeTab, onTabChange }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
   const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} maintenanceEntry={maintenanceEntry} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} activeTab={activeTab} onTabChange={onTabChange} />
+  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} personal={personal} maintenanceEntry={maintenanceEntry} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} activeTab={activeTab} onTabChange={onTabChange} />
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
   root: { width: "100%", minWidth: 0, gap: spacing.lg },
   section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
-  tools: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: spacing.sm },
-  filter: { width: 178, maxWidth: '100%', flexShrink: 1 },
   importControl: { alignItems: 'flex-start', gap: spacing.xs, minWidth: 0, maxWidth: '100%' },
-  deck: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '2%', rowGap: spacing.md },
-  cover: { flexGrow: 1, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, overflow: 'hidden', backgroundColor: colors.paper },
-  coverPressed: { borderColor: colors.ink, opacity: 0.82 },
-  coverBody: { flexGrow: 1, minHeight: 122, padding: spacing.lg, justifyContent: 'space-between', gap: spacing.xl },
-  coverTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs, flexWrap: 'wrap' },
-  coverTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 20, lineHeight: 28, fontWeight: '700' },
-  coverState: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.paper },
-  stateText: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta },
-  coverFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs, minHeight: 44, paddingHorizontal: spacing.lg },
-  count: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, flexShrink: 1 },
   dialogTabs: { paddingBottom: 0 },
+  sheetHeading: { marginTop: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.lg },
   materialDialog: { maxWidth: 720 },
   seriesTools: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   seriesFilter: { maxWidth: '100%', flexShrink: 1 },
@@ -555,7 +581,6 @@ const styles = StyleSheet.create({
   mediaLabel: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool, textDecorationLine: 'underline' },
   scrollArea: { paddingHorizontal: 0, flexShrink: 1 },
   dialogContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
-  document: { gap: spacing.sm, padding: spacing.md, backgroundColor: colors.canvas, borderRadius: radius.small, minWidth: 0 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
   notebook: { borderTopWidth: 2, borderTopColor: colors.ink, minWidth: 0 },
   factRow: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingVertical: spacing.md, gap: spacing.xs, minWidth: 0 },
