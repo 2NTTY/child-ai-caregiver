@@ -5812,9 +5812,12 @@
   },
   "longSourceReceiptInputs": {
     "preparationCommit": "4ba79938549b161bda2f140255c461ba733dd6f0",
-    "workerSource": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
-    "readTime": "2026-11-21T09:22:11.641332Z",
-    "originalReceiptCheckedAt": "2026-11-20T16:57:19.302Z",
+    "preparationBaseline": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
+    "receiptWorkerSource": "1daa69f4d72618b31d6cd91d84e2ee65c626ce55",
+    "receiptReleaseRun": "44891540220",
+    "previousReceiptStopped": "site_release_in_progress",
+    "readTime": "2026-11-21T10:20:38.629561Z",
+    "originalReceiptCheckedAt": "2026-11-21T10:27:27.576Z",
     "parserBinding": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
     "comic": {
       "sourceId": "pdf-48e37ddf27a8864e98362fa9",
@@ -5865,8 +5868,8 @@
       "archiveSha256": "288ab4e7ad4609b028a3a4b5f7b2e5012b293741e0ffd71fa658f91628482796",
       "archiveBytes": 3962306,
       "operatorDirectory": "fhs-c3-ready-pdf-48e37ddf27a8864e98362fa9-4b42b2f92f5f",
-      "mountedIndexFormalReadback": "awaiting_host_capacity",
-      "officialReceiptSha256": "7b2454412257e2e63b4c4c469291f1f61ef53dbbdb242da2521d70877f5e5459",
+      "mountedIndexFormalReadback": "confirmed",
+      "officialReceiptSha256": "42ac7bdadeae3a8f6bb207fe01cb64da7295c047d96ea21f92c14935addcfdde",
       "officialOutcome": "candidate_held",
       "officialCode": "unavailable",
       "providerTicketsAtLatestLedgerRead": 0,
@@ -5914,6 +5917,6 @@
         "indexSha256": "249dc8030ced36ed5a69156116ede3a52d923a80d20696b67b53a220402b9ab1"
       }
     ],
-    "confirmation": "The staged comic index and each of its 14 records were verified in the operator volume. The unchanged original attachments and all 36 parent pages were opened locally through the pinned reader; the held work has no independent review, family version or published citation to verify. The two larger source-specific packs have been reopened locally; their original jobs remain unstarted at the last scoped ledger read."
+    "confirmation": "The released receipt accepted the mounted comic index and read the original terminal result. The unchanged original attachments and all 36 parent pages were opened locally through the pinned reader; the held work has no independent review, family version or published citation to verify. The two larger source-specific packs have been reopened locally; their original jobs remain unstarted at the last scoped ledger read."
   }
 }
