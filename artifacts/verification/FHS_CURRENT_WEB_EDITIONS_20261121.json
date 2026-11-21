@@ -6234,6 +6234,119 @@
       "originalReviewTicketState": "settled",
       "newProviderTickets": 0,
       "newChargesMicros": 0
+    },
+    "bcgFullAssessment": {
+      "sourceId": "fhs-481",
+      "checkedAt": "2026-11-21T23:45:16.892Z",
+      "site": {
+        "at": "2026-11-21T23:41:28+00:00",
+        "sha": "657d5b19f97f3c28c6fd242968859d4f4c848487",
+        "release": "r44962289543-1",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44962289543"
+      },
+      "originalOperation": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+      "sealedReviewOperation": "7acf97ab245e93bb44cc7784b2afb403d312abb4405a6d8072244bb1c669e943",
+      "publicationOperation": "dd0b5aa791cf91415c17fddcaa669abd6f7b606a7cc56ec90fa358ade9365f7c",
+      "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+      "reviewStageHash": "7bffe8bb2503a351f6811b37487da8f6dc5cc61c4a7888eaf52419753f59bed5",
+      "reviewRequestHash": "8ca0ab0f9f1bbae0e00f629b5486e1d286e1f9cc588192744b9fa09d419dd387",
+      "sealedResponse": {
+        "hash": "a99e1f0f4e07f719835f4b1dc6b8577ed2a73da37e145bd936b4f64fe7f42ca3",
+        "characters": 1758,
+        "recordedDecision": "approve"
+      },
+      "fullAssessment": {
+        "hash": "505f8455f7895f7e54527e6dc8f82d613687937cf948237351849f805c6f59d5",
+        "decision": "approve",
+        "formalExplanationLimit": 2000,
+        "assessedExplanations": [
+          {
+            "key": "p0-9864b8298b84d6e110f0",
+            "characters": 168,
+            "hash": "8941a8f2755fb03cd8b4d5fa35bf8ea560703c7af0900184bcfd978fad611f81"
+          }
+        ],
+        "sourceQuotesVerified": true,
+        "recordedDecisionMatched": true,
+        "originalReviewNotesMatched": true,
+        "reviewNotesHash": "b665f3f153eb1301990e8d18fdac3f6c64d7a18094cad69489e79dae6c3b002e",
+        "reviewNoteCount": 1
+      },
+      "publication": {
+        "receipt": "committed",
+        "versionId": "799eb622-d000-5399-9c49-50b0ff511237",
+        "versionHash": "bb7a9dd7695349b5286e3a8ea43a543b8e699e77faa9b8decfc4c9cfad27779d",
+        "publishedAt": "2026-11-21T23:43:32.758Z",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
+        "sections": 1,
+        "originalLength": 709,
+        "originalSha256": "3818cbbfcadbfcc46407bd5829fbef6f90246bd0a59ab99ee6b7bc9eef3f4816",
+        "audiences": [
+          "新生嬰兒",
+          "十五歲以下的居港兒童如從未接種卡介苗"
+        ],
+        "use": "original_lookup",
+        "minAgeMonths": null,
+        "maxAgeMonths": null,
+        "vectors": 1,
+        "vectorDimensions": 1024,
+        "embeddingInputsMatched": true
+      },
+      "familyLookup": {
+        "publicCatalogReadAt": "2026-11-21T23:44:00.146980Z",
+        "liveCatalogPages": 19,
+        "queries": [
+          {
+            "query": "卡介苗",
+            "rank": 1,
+            "chunkId": "7b901650-24c7-51e0-9523-12246e839c59",
+            "sourceId": "fhs-481",
+            "versionId": "799eb622-d000-5399-9c49-50b0ff511237",
+            "versionHash": "bb7a9dd7695349b5286e3a8ea43a543b8e699e77faa9b8decfc4c9cfad27779d",
+            "windows": 1,
+            "quoted": null,
+            "audiences": [
+              "新生嬰兒",
+              "十五歲以下的居港兒童如從未接種卡介苗"
+            ],
+            "use": "original_lookup"
+          },
+          {
+            "query": "卡介苗原文怎樣列明不宜接種的人士？",
+            "rank": 2,
+            "chunkId": "7b901650-24c7-51e0-9523-12246e839c59",
+            "sourceId": "fhs-481",
+            "versionId": "799eb622-d000-5399-9c49-50b0ff511237",
+            "versionHash": "bb7a9dd7695349b5286e3a8ea43a543b8e699e77faa9b8decfc4c9cfad27779d",
+            "windows": 1,
+            "quoted": "先向專科醫生查詢，是否有需要延遲接受疫苗注射",
+            "audiences": [
+              "新生嬰兒",
+              "十五歲以下的居港兒童如從未接種卡介苗"
+            ],
+            "use": "original_lookup"
+          }
+        ]
+      },
+      "billing": {
+        "sourceTicketCountBefore": 2,
+        "sourceTicketCountAfter": 3,
+        "originalReviewTicketState": "settled",
+        "newGenerationCalls": 0,
+        "newEmbeddingCalls": 1,
+        "newChargesMicros": 83
+      },
+      "coverage": {
+        "commissioned": 129,
+        "webEditions": 128,
+        "equivalentPdf": {
+          "id": "fhs-30108",
+          "sourceId": "pdf-28468771ad2490f045bd5d56",
+          "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+          "questions": 24
+        },
+        "citable": 129
+      }
     }
   }
 }
