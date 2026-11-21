@@ -5062,5 +5062,21 @@
       "requiredOrganizeAndReviewStages": 6,
       "result": "All 36 original core pages and their neighboring context are present. The original and current window ranges are identical. The original terminal work remains held with no provider ticket. These checks provide no model reading or authorization to reopen the work."
     }
+  },
+  "registeredRecoveryReadback": {
+    "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+    "physicalPages": 7,
+    "sourceSha256": "acce0101a098b38b14a30886bcdc07ace79589e26aa80d042f8f55c7bb8f50dc",
+    "originalOperationSha256": "984a699fcb478a4f33d90df88b9361ec41d27985ede0bad335d404de2bd9b387",
+    "deliveryOperationSha256": "3349c0f4ce8ae8ac27596dcde24a1b286d4ecfc6c687f7f60942c064e8d78d5f",
+    "observationHash": "0a0c8ce5c9824133180596be7f47b8ff2ecf6c7f68042579f7c88ae864ab0d97",
+    "receiptCheckedAt": "2026-11-21T06:53:05.933Z",
+    "receiptSha256": "84fc29369aa7ad9521e181717f369ae0b424f4e9e287ebf7075d4f2d0f6d698b",
+    "workerOutputSha256": "2d220d8098079fca31e650ebc27b37079d946da0d1bfc3d70ab5927e74ad6c14",
+    "stageHash": "60aee3146cc9f8b077ce19acce958894fcf38930a99f7e0c6259717f21dd338e",
+    "settledGrossMicros": 41585,
+    "outcome": "candidate_held",
+    "code": "knowledge_window_quote_mismatch",
+    "newFamilyEdition": false
   }
 }
