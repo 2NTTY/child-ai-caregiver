@@ -1,5 +1,6 @@
 {
-  "asOf": "2026-11-22T05:32:00+08:00",
+  "asOf": "2026-11-21T21:55:28.940245Z",
+  "preflightAsOf": "2026-11-22T05:32:00+08:00",
   "sourceId": "fhs-14836",
   "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
   "priorHostInspection": {
@@ -97,5 +98,182 @@
       ]
     ]
   },
-  "independentReview": "Awaiting deployed worker and original independent review."
+  "independentReviewAtPreflight": "Awaiting deployed worker and original independent review.",
+  "production": {
+    "worker": {
+      "requiredRevision": "0e46e5e15e97cd1d81df6a90a4eeb51528f8f81f",
+      "releaseId": "r44952877396-1",
+      "worker": "4a17d6206bb0b0518c2c9c7b0ddb886f36bc42a0",
+      "api": "4a17d6206bb0b0518c2c9c7b0ddb886f36bc42a0",
+      "workerDigest": "sha256:1ef6c2166dfc3c4c4b0253fb20a7397840178fa8bb6a00aa4da1c4596dad2874",
+      "at": "2026-11-21T21:53:07+00:00",
+      "run": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44952877396"
+    },
+    "operation": {
+      "sourceId": "fhs-14836",
+      "operationFingerprint": "f3e9a90c7011c45402deb54210a71ac1762192c65fe047eae156d9902baa5161",
+      "receiptState": "committed",
+      "listedCard": {
+        "seriesId": "fhs-child-health",
+        "versionId": "bf21383e-f638-5336-b589-0180259817c3",
+        "chunks": 9,
+        "vectors": 9,
+        "chapter": {
+          "originalLength": 3010,
+          "audiences": [
+            "學前兒童"
+          ],
+          "finalSentence": "最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+          "headings": [
+            "正面親職（二）：學前階段的實踐",
+            "認識你的孩子",
+            "DEAR 共享時光",
+            "DEAR 鼓勵欣賞",
+            "DEAR 恰當引導",
+            "DEAR 尊重接納",
+            "善待自己",
+            "獎勵計劃",
+            "調整目標和獎賞"
+          ]
+        }
+      },
+      "candidateVersionHash": "388a82340ffd6d14b6717eca062af25b12000dcbff5d6e96dddc5a6799b651e7",
+      "activeVersionId": "bf21383e-f638-5336-b589-0180259817c3",
+      "activeVersionHash": "388a82340ffd6d14b6717eca062af25b12000dcbff5d6e96dddc5a6799b651e7",
+      "observationHash": "36b3cbdf13243b681a57d54d0eb73a924d6f461398a1b3f56e191b06e2b15bb0",
+      "reviewDecision": "approve_candidate",
+      "reviewNotes": [
+        "所有段落均為首次完整收錄之官方參考指引（original_lookup），文字與原文完全一致，受眾忠實維持官方字眼「學前兒童」且無不當推斷數值年齡上下限；3歲的實例亦嚴格限定於舉例層次，禁止事項及附帶條件均精確保留，符合文庫收錄標準。"
+      ],
+      "publisherOriginals": "publisher-originals:e7c1270ca365ce30aaf6b424a44adc97d49bf67d7a1f8bf81b2d5eb612110f09",
+      "independentReview": "knowledge-review:e2064633bc8775cd60490270a4c36b9fbb915e1f8d562babb3ac09cf04fdad12",
+      "priorOperationFingerprint": "2357ad13a1fa2afafd8cb9f5a63b6be14ffd102d7b281ad37f36c3e27b54dd17",
+      "payer": "system:knowledge-publication",
+      "ageOutput": "source-unit-age/1",
+      "maxOutputTokens": 4096,
+      "status": "already_recorded",
+      "code": "published",
+      "published": true
+    },
+    "publicFamilyReadback": {
+      "at": "2026-11-21T21:55:28.940245Z",
+      "release": "r44952877396-1",
+      "worker": "4a17d6206bb0b0518c2c9c7b0ddb886f36bc42a0",
+      "version": "bf21383e-f638-5336-b589-0180259817c3",
+      "versionHash": "388a82340ffd6d14b6717eca062af25b12000dcbff5d6e96dddc5a6799b651e7",
+      "publishedAt": "2026-11-21T21:55:11.773Z",
+      "review": "approve",
+      "wholeOriginalCharacters": 3010,
+      "wholeOriginalSha256": "87a69dceb01e69cd8208329a10f9fca855c0c777bf9b095b63e5ed54f54d4ca2",
+      "chapterSections": 9,
+      "chapterVectors": 9,
+      "linkedFilmSource": "fhs-14842",
+      "linkedFilmVersion": "800d6021-ce74-5e81-9f3e-d7074c274ff7",
+      "method": "Released product tools on the active public catalogue in an isolated adopted parent library. Immutable lexical indexes verified against published hashes. Keyword lookup, zero query embeddings, zero production family writes.",
+      "entries": [
+        {
+          "kind": "title",
+          "query": "正面親職（二）：學前階段的實踐",
+          "rank": 1,
+          "sourceId": "fhs-14836",
+          "versionId": "bf21383e-f638-5336-b589-0180259817c3",
+          "anchorChunkId": "efb5362f-4126-504e-812a-ed9895db9e79",
+          "anchorSection": "正面親職（二）：學前階段的實踐",
+          "expansions": 1,
+          "chunkId": "efb5362f-4126-504e-812a-ed9895db9e79",
+          "section": "正面親職（二）：學前階段的實踐",
+          "originalOffset": 0,
+          "originalCharacters": 344,
+          "expandedCharacters": 344,
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+          "publisherAudiences": [
+            "學前兒童"
+          ]
+        },
+        {
+          "kind": "ending",
+          "query": "幾時可以轉為不定時獎賞？",
+          "rank": 1,
+          "sourceId": "fhs-14836",
+          "versionId": "bf21383e-f638-5336-b589-0180259817c3",
+          "anchorChunkId": "97e341ac-9c1c-5d33-8c2d-2561f90da677",
+          "anchorSection": "調整目標和獎賞",
+          "expansions": 1,
+          "chunkId": "97e341ac-9c1c-5d33-8c2d-2561f90da677",
+          "section": "調整目標和獎賞",
+          "originalOffset": 0,
+          "originalCharacters": 133,
+          "expandedCharacters": 133,
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+          "verifiedEnding": "最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+          "publisherAudiences": [
+            "學前兒童"
+          ]
+        },
+        {
+          "kind": "section",
+          "query": "調整目標和獎賞",
+          "rank": 1,
+          "sourceId": "fhs-14836",
+          "versionId": "bf21383e-f638-5336-b589-0180259817c3",
+          "anchorChunkId": "97e341ac-9c1c-5d33-8c2d-2561f90da677",
+          "anchorSection": "調整目標和獎賞",
+          "expansions": 1,
+          "chunkId": "97e341ac-9c1c-5d33-8c2d-2561f90da677",
+          "section": "調整目標和獎賞",
+          "originalOffset": 0,
+          "originalCharacters": 133,
+          "expandedCharacters": 133,
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+          "verifiedEnding": "最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+          "publisherAudiences": [
+            "學前兒童"
+          ]
+        },
+        {
+          "kind": "plan",
+          "query": "想查正面親職獎勵計劃嘅原文，幾時可以轉為不定時獎賞？",
+          "rank": 1,
+          "sourceId": "fhs-14836",
+          "versionId": "bf21383e-f638-5336-b589-0180259817c3",
+          "anchorChunkId": "c09fc55e-8c7d-5536-9d08-adc81eded8a4",
+          "anchorSection": "獎勵計劃",
+          "expansions": 1,
+          "chunkId": "97e341ac-9c1c-5d33-8c2d-2561f90da677",
+          "section": "調整目標和獎賞",
+          "originalOffset": 0,
+          "originalCharacters": 133,
+          "expandedCharacters": 133,
+          "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+          "verifiedEnding": "最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+          "publisherAudiences": [
+            "學前兒童"
+          ]
+        },
+        {
+          "kind": "film",
+          "query": "「情緒導航」五部曲（學前兒童篇）",
+          "rank": 1,
+          "sourceId": "fhs-14842",
+          "versionId": "800d6021-ce74-5e81-9f3e-d7074c274ff7",
+          "anchorChunkId": "571c84f9-44ce-5c85-ab4a-3c29c00c30f1",
+          "anchorSection": "影片《「情緒導航」五部曲（學前兒童篇）》劇本第 1–42 段",
+          "expansions": 1,
+          "chunkId": "571c84f9-44ce-5c85-ab4a-3c29c00c30f1",
+          "section": "影片《「情緒導航」五部曲（學前兒童篇）》劇本第 1–42 段",
+          "originalOffset": 0,
+          "originalCharacters": 1186,
+          "expandedCharacters": 1186,
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+          "publisherAudiences": [
+            "學前兒童"
+          ],
+          "paragraphRange": [
+            1,
+            42
+          ]
+        }
+      ]
+    }
+  }
 }
