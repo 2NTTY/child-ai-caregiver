@@ -154,6 +154,7 @@ function writeBudget(values: unknown[]): void {
 }
 function applies(a: KnowledgeChunkInput["applicability"], filter: KnowledgeFilter): boolean {
   if (a.region !== filter.region || filter.topics.length && !filter.topics.some(topic => a.topics.includes(topic))) return false;
+  if (a.use === 'original_lookup' && (a.ageBasis === 'publisher' || a.ageBasis === 'unconfirmed')) return true;
   if (a.ageBasis === "any" || filter.ageMatch === "unknown") return true;
   if (!filter.age || a.ageBasis !== filter.age.basis) return false;
   const overlap = filter.ageMatch === "overlap", lower = overlap ? filter.age.maxMonths : filter.age.minMonths;

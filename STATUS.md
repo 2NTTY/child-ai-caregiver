@@ -2,7 +2,7 @@
 
 **2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
 
-**2026-11-21 香港 21:20 查庫**　22 份教材的 61 套官方劇本已全數保存，共 1,695 段。10 份教材的新版已上架，家長搜尋可定位 30 套的 852 段原文；另有 31 套、843 段尚未納入劇本索引。12 份新版因年齡資料、整理輸出上限或獨立審核結果而保留。本批已結算 US$1.330376，因餘額擱置 0 份。[61 套逐項覆蓋及費用](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json) · [正式驗收](PLAN.md#fhs-official-source-forms)
+**2026-11-21 香港 23:43 查庫**　61 套官方劇本共 1,695 段已全部保存。今輪兩份教材新增 8 套，家長已可在整卡按片名定位 38 套並展開同版原段。餘下 23 套集中在六份教材，出版者受眾及分齡原句修訂待核。[劇本驗收](PLAN.md#fhs-official-source-forms) · [上一輪逐套收據](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json)
 
 **2026-11-21 香港 16:54**　回答後討論已在本機 Edge 以同一合成家庭、普通政策及真 Vertex 驗通。家長從已保存的原答開討論，四次模型呼叫取得三席、主答及獨立核對。收合重開後本人及平台用量同為 4 → 4；下一條廣東話普通問題正常回覆，兩邊用量均為 5。正式舊截圖仍未能配對原單，發布由主對話處理。[分項收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [家長畫面](artifacts/verification/REQ009_PARENT_BUDGET_THREE_20261121.png)
 

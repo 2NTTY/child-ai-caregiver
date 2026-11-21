@@ -25,7 +25,7 @@ import { AGE_OUTPUT_VERSION } from '../server/knowledge-age-output.ts';
 import { retainedDraftRevisionSchema, retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
-import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, scriptRevisionWorkId } from '../server/fhs-script-edition.ts';
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork } from '../server/fhs-script-edition.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
 
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
@@ -147,7 +147,7 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
     const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior) : undefined;
-    const operationFingerprint = scriptEdition ? (reviseHeldScript ? scriptRevisionWorkId(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
+    const operationFingerprint = scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
@@ -256,6 +256,8 @@ try {
           candidateVersionHash: recorded?.prepared?.versionHash ?? null, activeVersionId: active?.versionId ?? null,
           activeVersionHash: active?.versionHash ?? null, observationHash: recorded?.result?.observationHash ?? recorded?.prepared?.review.observationHash ?? null,
           reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering || scriptEdition ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}),
+          ...(recorded?.prepared?.provenance.organizeAttemptKey.startsWith('publisher-originals:') ? {
+            publisherOriginals:recorded.prepared.provenance.organizeAttemptKey, independentReview:recorded.prepared.provenance.reviewAttemptKey } : {}),
           ...(reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
