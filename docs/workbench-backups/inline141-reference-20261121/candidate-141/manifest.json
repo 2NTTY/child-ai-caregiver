@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-141-image-count",
+  "base": {
+    "artifact": "candidate-139/out",
+    "htmlSha256": "a92b02b76302b5c5924f92f29b861488317150a5f164bf1cbcf5ef7e720c8bdc",
+    "rawRecordsSha256": "d38b54a374fc565594b58936c73e60d1d316b179d13b12f6bec4d1eea189c8b1",
+    "rawArtworkSha256": "249eecedd3e853692162cdf1b41c565c56b89a9fe5466014d34c0339932a5399",
+    "topics": 68,
+    "choices": 139,
+    "images": 139
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-shared-module-denied/assets.json",
+      "sha256": "c6fa0aa2781b26869caa11b93df080cfdcc7b165d6a6613b3e584752d73d0e3c"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b0c9415e59ccefe8fccdd3f83f8b74f4e58a7bfdf20e67e445a8816b9bf78b1f",
+    "PROVENANCE.md": "c67e4ccd40f2b2b4c658266bdeeaf43555e67a291bc020c1e938e6f9a8e8b7ad"
+  },
+  "topics": [
+    {
+      "number": 69,
+      "title": "已登入，這一頁未共享：回到可用範圍",
+      "choices": [
+        {
+          "name": "此頻道無法開啟",
+          "note": "即使已登入，這個頻道也可能不公開或不存在。頁面不顯示該頻道的名稱、成員或訊息，只提供回到已可使用的預設頻道。",
+          "links": [
+            {
+              "label": "Mattermost v10.8.0：完整頻道提示頁",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/error_page/error_page.tsx#L137-L156"
+            },
+            {
+              "label": "同一版本：頻道入口的錯誤處理",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/channel_identifier_router/actions.ts#L208-L215"
+            },
+            {
+              "label": "同一版本：通往整頁提示",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/channel_identifier_router/actions.ts#L373-L375"
+            },
+            {
+              "label": "同一版本：錯誤頁入口",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/root/root.tsx#L403-L411"
+            },
+            {
+              "label": "同一版本：不公開或不存在的共用提示",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/error_page/error_message.tsx#L80-L96"
+            },
+            {
+              "label": "同一版本：返回預設頻道",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/components/error_page/error_page.tsx#L99-L109"
+            },
+            {
+              "label": "同一版本：預設頻道的適用條件",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/webapp/channels/src/packages/mattermost-redux/src/selectors/entities/channels.ts#L1243-L1258"
+            },
+            {
+              "label": "Mattermost 網頁程式授權：Apache-2.0（非圖像授權）",
+              "url": "https://github.com/mattermost/mattermost/blob/bb105f3a2785636ad53b2d0bf4027900d41f6a67/LICENSE.txt#L14-L15"
+            }
+          ],
+          "asset": {
+            "input": "draft-shared-module-denied/denied-a-unknown-channel.png",
+            "sha256": "44a142d659d29e71c2d00bcdd4a6e5199fa6bcff6646ee88f062772a8c30541b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：已登入情境的整頁錯誤提示只說此頻道可能不公開或不存在。不顯示頻道名稱、成員或訊息，只有返回已加入的預設頻道的提示。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "只顯示已公開的課程簡介",
+          "note": "只保留本來已公開的成人工作坊課名和簡介。不能自行報讀，也未顯示教材或成員；這個例子可返回網站首頁。",
+          "links": [
+            {
+              "label": "Moodle v5.0.0：不能自行報讀的完整入口",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/enrol/index.php#L97-L107"
+            },
+            {
+              "label": "同一版本：程式授權聲明",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/enrol/index.php#L1-L22"
+            },
+            {
+              "label": "同一版本：課程報讀入口及登入條件",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/enrol/index.php#L43-L60"
+            },
+            {
+              "label": "同一版本：由課程頁回到報讀入口",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/course/view.php#L81-L87"
+            },
+            {
+              "label": "同一版本：課程存取檢查",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/lib/moodlelib.php#L2569-L2609"
+            },
+            {
+              "label": "同一版本：課程入口可顯示的資料",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/course/renderer.php#L97-L124"
+            },
+            {
+              "label": "同一版本：沒有報讀選項時的返回區塊",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/enrol/templates/enrolment_options.mustache#L37-L45"
+            },
+            {
+              "label": "同一版本：報讀畫面的資料測試",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/course/tests/course_renderer_test.php#L36-L55"
+            },
+            {
+              "label": "同一版本：內容頁框架頂部",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/theme/boost/templates/drawers.mustache#L58-L61"
+            },
+            {
+              "label": "同一版本：內容頁框架底部",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/theme/boost/templates/drawers.mustache#L161-L170"
+            },
+            {
+              "label": "Moodle 程式授權：GPL-3.0-or-later（非圖像授權）",
+              "url": "https://github.com/moodle/moodle/blob/78e860178314c45441a21e0b99455400b8283d48/COPYING.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-shared-module-denied/denied-b-public-entry.png",
+            "sha256": "28fd524683f63901b66c4aa4b1e09a54003c97aea8670613c5cd2bacbc2619ce",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構成人工作坊的完整課程報讀入口，只展示本來已公開的課名與簡介。頁面說明不能自行報讀並提供返回網站首頁；沒有教材、成員或報讀表單。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 69 題 · 不可用頁面的返回路徑：兩幅自製合成示意",
+      "input": "draft-shared-module-denied/DECLARATION.txt",
+      "sha256": "b0c9415e59ccefe8fccdd3f83f8b74f4e58a7bfdf20e67e445a8816b9bf78b1f"
+    }
+  ]
+}
