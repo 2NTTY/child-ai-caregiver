@@ -201,7 +201,7 @@ sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAM
 
 `prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留。已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，結果未明的票據逐張足額預留。自動維護的每日次數適用於排程及自動查新。
 
-第二冊《常見嬰兒皮膚問題》及第五冊《三至四歲大兒童的發展》使用同一主機工位。從[網頁原單](../knowledge/fhs-initial-recovery.json)取該章的 `sourceId` 及 `operationFingerprint`，以 `sudo python3 -I "$tool" web-original inspect SOURCE_ID ORIGINAL_OPERATION` 查原單。正式工位獲分配後，以同一組參數把 `inspect` 改為 `run`。伺服器核實原 HTTP 504 已零費用結算及觀測仍相符，直接把全章及出版者所列對象交獨立審核。通過後查回生效版、家長卡、全文及其索引。若保留或派送結果未明，以 `inspect` 查回同一工作。
+網頁沿[首批原單](../knowledge/fhs-initial-recovery.json)的 `sourceId` 及 `operationFingerprint`，以 `sudo python3 -I "$tool" web-original inspect SOURCE_ID ORIGINAL_OPERATION` 查單。獲分配後，以同一組參數把 `inspect` 改為 `run`。第二及第五冊的舊 504 原單須核實原票已零費用結算。登記了 `chapterReading` 的網頁則核對原保留原因、觀測及先前修訂，逐字拼回各節，連同出版者對象和原審核意見送審。通過後查回生效版、家長卡、全文及索引。保留或派送結果未明時，用 `inspect` 查回同一工作。
 
 三組共用一個主機檔案鎖。鎖涵蓋同一份原件的準備、送審及終態核對，各階段的 Node 程序會先後退出。工具逐次驗證 Compose 版本和家長 API 健康，從可用記憶體預留 384 MiB 給家長服務、64 MiB 給主機啟動工具，餘下按 16 MiB 向下取整。製卡容器以 0.5 CPU、256 至 512 MiB 硬上限、零額外 swap 運行。送審另按原檔大小檢查可用空間，32 MiB 或以上原件一般需 512 MiB 工位。112 頁第四冊及 192 頁第三冊如使用[已實測的單冊索引](../knowledge/fhs-staged-book-indexes.json)，工位會串流核實原件，逐段讀取已綁定的原頁附件。兩冊的容器上限為 384 MiB，連同家長及啟動工具預留，主機須有 832 MiB 可用。索引缺少分段或校驗失敗時，該段會在送審前停止。可用記憶體短暫跌穿共同門檻 704 MiB 時，主機程序持有原工位及原操作，每五秒重讀記憶體。回升後再驗正式版本、家長 API 及當下餘量，才啟動該階段一次。等候期間不建立新容器或預留模型費用。若其他原件仍能運行，大原件只差一級容量時最多再等 30 秒，之後列出 `capacity_wait` 給同組其他教材繼續。容器沿用已發布的 worker 映像及唯讀 PDF 卷。每次結束會輸出核心記錄的記憶體峰值。SSH 中斷後先查原單。
 

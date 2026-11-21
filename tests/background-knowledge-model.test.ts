@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { assembleAgentPrompt } from "../server/agent-prompt.ts";
 import { commissionedWebOriginal, retainedDraftRevisionSchema, retainedDraftWorkId } from "../server/knowledge-retained-draft.ts";
+import { commissionedWebChapter } from "../server/fhs-web-reading.ts";
+import { checkChapterReading } from "../server/knowledge-web-chapter.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { canResumeRetainedPromptFailure, createFirestoreKnowledgeWork } from "../server/firestore-knowledge-work.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
@@ -147,6 +149,33 @@ test('a commissioned web chapter retains its whole original and literal audience
   assert.equal(await run('approve'), 'approve_candidate');
   await assert.rejects(prepareKnowledgeMaintenance({candidate:current, webOriginal:{...webOriginal, observationHash:'0'.repeat(64)},
     baseline:null, fetchedAt, growthRules:[], completeText:async () => assert.fail('Unexpected model call')}), /knowledge_web_original_changed/u);
+});
+
+test('a held web edition sends its intact sections, literal audiences and previous independent objection to review', async () => {
+  const registered = commissionedWebChapter('fhs-30006')!;
+  const c = candidate(), headings = ['培育子女','學前兒童的評估'];
+  const text = headings[0] + ' 家長可以閱讀嬰幼兒的原文。 ' + headings[1] + ' 保留個別條件。';
+  const observed = {...c.observed, title:headings[0]!, text};
+  const current = {...c, observed, observationHash:observationHash(observed)};
+  const chapter = {textSha256:createHash('sha256').update(text).digest('hex'), headings, finalSentence:'保留個別條件。'};
+  const webOriginal = {...registered,sourceId:c.watchId,url:observed.url,observationHash:current.observationHash,
+    chapterReading:{...registered.chapterReading,chapter}};
+  const notes = ['The earlier reading omitted the stated preschool audience.'];
+  const prepared = await prepareKnowledgeMaintenance({candidate:current, webOriginal, webReviewNotes:notes,
+    baseline:null, fetchedAt, growthRules:[], async completeText(input) {
+      assert.equal(input.role, 'knowledge_review');
+      const p = JSON.parse(input.user);
+      assert.deepEqual(p.priorOutcome.reviewNotes, notes);
+      const keys = Object.keys(p.sourceComparison.facts);
+      assert.equal(keys.length, 2);
+      return JSON.stringify({changes:Object.fromEntries(keys.map(k=>[k,{explanation:'Complete source section.'}])),
+        questions:[{query:'Which audience is stated?',expectedKeys:keys,reason:'Original wording.'}],
+        checks:{age:'Literal audience.',numbersAndUnits:'Exact.',timing:'Exact.',conditions:'Exact.',
+          exceptions:'Exact.',prohibitions:'Exact.',withdrawal:'First edition.'},
+        decision:'hold',decisionReason:'Independent hold.'});
+    }});
+  checkChapterReading(text,chapter,prepared.source.chunks,registered.chapterReading.audiences);
+  assert.equal(prepared.review.decision,'hold_candidate');
 });
 
 test("the initial corpus age grammar couples bounds and holds one-sided evidence before independent review", async () => {

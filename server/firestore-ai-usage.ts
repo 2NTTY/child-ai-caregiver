@@ -12,6 +12,7 @@ import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-cam
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
 import { approvedScriptEdition, type ScriptEdition } from './fhs-script-edition.ts';
 import { commissionedWebOriginal, type ReviewedWebOriginal } from './knowledge-retained-draft.ts';
+import { commissionedWebChapter, type CommissionedWebChapter } from './fhs-web-reading.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
@@ -58,7 +59,7 @@ function comparable<T extends { kind?: 'model' | 'embedding' }>(value: T) {
   return { ...value, kind: value.kind ?? 'model' };
 }
 
-export type CommissionedKnowledgePublication = ManualPublicationPin | ScriptEdition | ReviewedWebOriginal;
+export type CommissionedKnowledgePublication = ManualPublicationPin | ScriptEdition | ReviewedWebOriginal | CommissionedWebChapter;
 export interface FirestoreAiUsageOptions {
   /** Already configured client; this adapter never reads credentials or owns its lifecycle. */
   database: Firestore;
@@ -97,7 +98,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
     this.#publication = manualPublication !== undefined;
     if (manualPublication && (billingSource !== 'platform' || campaignAdmission
       || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication
-        && commissionedWebOriginal(manualPublication.sourceId) !== manualPublication))
+        && commissionedWebOriginal(manualPublication.sourceId) !== manualPublication && commissionedWebChapter(manualPublication.sourceId) !== manualPublication))
       reject('invalid_configuration');
     if (campaignAdmission) {
       if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');

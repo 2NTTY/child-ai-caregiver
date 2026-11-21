@@ -393,6 +393,24 @@
     },
     {
       "sourceId": "fhs-20033",
+      "chapterReading": {
+        "audiences": [
+          "幼兒和學前階段"
+        ],
+        "priorReview": null,
+        "chapter": {
+          "textSha256": "af389c72154ccfed29cc6ca46f201b73dd7f08ed258ff0f347d3f2b24dbad0bd",
+          "headings": [
+            "孩子「偏食」怎麼辦?",
+            "為何孩子經常拒絕吃或只願吃某些食物？",
+            "要改善偏食的行為，須從多方面入手",
+            "進餐時:",
+            "孩子會缺乏營養嗎？",
+            "把孩子抗拒的菜蔬，混入他的飯裏，讓他不知不覺吃，有幫助嗎？"
+          ],
+          "finalSentence": "所以，還是簡單地將飯和抗拒吃的菜蔬分開放在他的面前，讓孩子逐漸熟悉和接受。"
+        }
+      },
       "title": "孩子「偏食」怎麼辦?",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
       "textHash": "ed298866ac0bde9a0a7d1318392450a650a9c2db7151998a4793e0c330067334",
@@ -427,6 +445,20 @@
     },
     {
       "sourceId": "fhs-30012",
+      "chapterReading": {
+        "audiences": [
+          "寶寶"
+        ],
+        "priorReview": null,
+        "chapter": {
+          "textSha256": "32f50b4c27e9135a079baad6208c6932dc57cf1821bb321dc64771e18b4d722e",
+          "headings": [
+            "可以讓寶寶用吸管杯子喝飲料嗎？",
+            "寶寶使用吸管杯子的提示："
+          ],
+          "finalSentence": "家長可增加寶寶喝水的次數，但不要勉強他多喝一點； 杯子可盛奶、水、清湯或其他飲料，讓寶寶早些適應用新的方法喝各種流質； 除喝奶或茶點時間之外，家長須避免給寶寶用吸管杯吸吮含糖飲料，如奶、果汁等，以減低糖分攝取量和蛀牙的機會； 家長須注意用吸管杯/杯子盛的飲料不應帶有渣滓或粒狀物。"
+        }
+      },
       "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
       "textHash": "78d31e91d881f3a2c264a047caa89e20244802bd4c09637cd544affbbd7abf86",
@@ -576,6 +608,24 @@
     },
     {
       "sourceId": "fhs-30006",
+      "chapterReading": {
+        "audiences": [
+          "嬰幼兒",
+          "學前兒童"
+        ],
+        "priorReview": "3bafef7cdfc3738c6d73a361c96fa8d76ca6d5fcc6ec95cc3bec0e2ca23d72a1",
+        "chapter": {
+          "textSha256": "3e047b72bf3cf32fc2d0431607b6376166e7d1b5f255e702b17ff577ca2d5c27",
+          "headings": [
+            "培育還是催谷子女",
+            "兒童腦部發展知多點",
+            "要全面地提升子女的才能水平，應送他到不同的才藝班或訓練班嗎？",
+            "培育子女就要先知道他們的IQ嗎？",
+            "你是最適合啟發子女的人！"
+          ],
+          "finalSentence": "Center on the Developing Child, Harvard University http://developingchild.harvard.edu/index.php/activities/council/"
+        }
+      },
       "title": "培育還是催谷子女",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
       "textHash": "7886ae5e3922145f7ba2d21a3377ba257dbf988e885cbc2a1bc6a4c1e1f77304",
@@ -610,6 +660,26 @@
     },
     {
       "sourceId": "fhs-30143",
+      "chapterReading": {
+        "audiences": [
+          "幼兒和學前孩子"
+        ],
+        "priorReview": null,
+        "chapter": {
+          "textSha256": "9478a93ebff00899925595f18e303b688bbb2a59948933a4c3aa92c2980d8917",
+          "headings": [
+            "足不出戶的「親子遊樂團」",
+            "整天足不出戶，孩子沒有「郁動吓」的機會？",
+            "很多幼兒也喜愛「模仿」和聽音樂",
+            "「放電」完畢，不妨來些較靜態的活動吧！",
+            "留在家中也提供了更多親子共讀的時間",
+            "家長也可按孩子的能力讓他分擔合適的家務",
+            "在花心思為孩子安排精彩活動之餘",
+            "其實孩子難以時刻都配合家長安排的活動和流程"
+          ],
+          "finalSentence": "即使想不到什麼特別的活動給孩子，家長也不用擔心，只要是安全的，放手容許孩子自由活動，他或會創作出意想不到的玩意！同時，家長也要接納自己在身心及時間的限制，讓自己有喘息的空間，需要時讓孩子在安全的情況下自個兒玩片刻，或請其他家人幫忙看顧一下孩子，都可以讓家長在「親子遊樂團」的行程中更投入和有創意。"
+        }
+      },
       "title": "足不出戶的「親子遊樂團」",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
       "textHash": "40ab3c2281e62c7ad66a61f55263b4220050832a2c5da3ad9f148a31c42f20a6",
@@ -664,6 +734,26 @@
     },
     {
       "sourceId": "fhs-14838",
+      "chapterReading": {
+        "audiences": [
+          "學前兒童"
+        ],
+        "priorReview": null,
+        "chapter": {
+          "textSha256": "06012235992942eac5f86b2a06ab9e93e2c4f6fd8cad548f28bc0d184e7cd360",
+          "headings": [
+            "親職系列 19 —— 品德培育之一",
+            "R1 以身作則（Role modeling）",
+            "R2 作出實際又可達到的期望(Realistic expectation)",
+            "R3 給孩子關注與讚賞(Recognition)",
+            "R4 運用行為獎勵表（Reward）*",
+            "R5 貫徹執行規限和後果（Rules with consequences）",
+            "R6 用理由去誘導孩子（Reasoning）",
+            "O1 開放式討論（Open discussion）"
+          ],
+          "finalSentence": "只要你有耐性堅持下去，孩子漸漸就會有所表現的了。"
+        }
+      },
       "title": "品德培育之一",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
       "textHash": "a6f1917dab57c1ca3c4fc1309d291c4225dff4fa50d3327a9fae01da7a473238",
@@ -772,6 +862,20 @@
     },
     {
       "sourceId": "fhs-481",
+      "chapterReading": {
+        "audiences": [
+          "新生嬰兒",
+          "十五歲以下的居港兒童如從未接種卡介苗"
+        ],
+        "priorReview": null,
+        "chapter": {
+          "textSha256": "3818cbbfcadbfcc46407bd5829fbef6f90246bd0a59ab99ee6b7bc9eef3f4816",
+          "headings": [
+            "卡介苗"
+          ],
+          "finalSentence": " 如有任何疑問，請向衞生署轄下各母嬰健康院查詢。"
+        }
+      },
       "title": "卡介苗（預防結核病）",
       "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
       "textHash": "04f62daa55a37a5f92e95824ceba8066edd2e1faf2f9d0a57dcefa3eb97ca006",

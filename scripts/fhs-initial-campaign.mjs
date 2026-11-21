@@ -27,12 +27,16 @@ import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage, registeredChapterReading } from '../server/fhs-script-edition.ts';
 import { checkChapterReading } from '../server/knowledge-web-chapter.ts';
+import { commissionedWebChapter, webChapterWorkId } from '../server/fhs-web-reading.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { communicationReplayWork, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
 import { inspectFailedScriptReview, readOriginalScriptEmbedding } from './fhs-script-review-stage.mjs';
 
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
+const chapterCommand = invocation === 'publish-web-chapter' || invocation === 'inspect-web-chapter';
+const chapter = chapterCommand ? commissionedWebChapter(id) : undefined;
+if (chapterCommand && (!chapter || expected !== chapter.operationFingerprint)) throw Error('knowledge_web_chapter_scope');
 const reviseHeldScript = invocation === 'revise-script-edition' || invocation === 'inspect-script-revision';
 const scriptCommand = reviseHeldScript || invocation === 'publish-script-edition' || invocation === 'inspect-script-edition';
 const scriptEdition = scriptCommand ? approvedScriptEdition(id) : undefined;
@@ -42,7 +46,8 @@ const commissioned = invocation === 'publish-approved' || invocation === 'resume
 const manual = commissioned ? manualPublicationPin(id) : undefined;
 if (commissioned && (!manual || manual.resumeOnly && invocation !== 'resume-approved'))
   throw Error('knowledge_manual_publication_scope');
-const command = invocation === 'publish-script-edition' || invocation === 'revise-script-edition' ? 'process-sized'
+const command = invocation === 'inspect-web-chapter' ? 'inspect' : invocation === 'publish-web-chapter' ? 'process-sized'
+  : invocation === 'publish-script-edition' || invocation === 'revise-script-edition' ? 'process-sized'
   : invocation === 'inspect-script-edition' || invocation === 'inspect-script-revision' ? 'inspect'
   : invocation === 'publish-approved' ? 'process-age-checked' : invocation === 'resume-approved' ? 'resume-age-checked' : invocation;
 const recovering = command === 'recover';
@@ -64,7 +69,7 @@ const laneSource = assigned?.[1].find(row => row.sourceId === id);
 if (assigned && (!lane || lane !== assigned[0]) || lane && (!assigned || !commissioned || manual?.lane !== lane
   || !/^[a-f0-9]{64}$/u.test(originalPin ?? '')) || originalPin && !lane) throw Error('fhs_lane_source_owned');
 if ((!handlesSource && !['status', 'initialize', 'retain-inspected'].includes(command)) || extra.length
-  || (scriptCommand || resuming || repairing || recoveryCommand ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
+  || (chapterCommand || scriptCommand || resuming || repairing || recoveryCommand ? !/^[a-f0-9]{64}$/u.test(expected ?? '') : expected !== undefined)
   || (handlesSource ? !id : id !== undefined))
   throw Error('Use status, initialize, retain-inspected, inspect|process|process-sized|process-age-checked|publish-approved SOURCE_ID, or resume|resume-age-checked|resume-approved|repair-truncated|recover|inspect-recovery SOURCE_ID ORIGINAL_FINGERPRINT');
 const persistence = await openFirebasePersistence(process.env);
@@ -72,7 +77,7 @@ try {
   const { database, cipher, config, authority } = persistence;
   if (config.projectId !== 'ai-caregivers-for-children' || process.env.FIRESTORE_EMULATOR_HOST
     || process.env.AI_KNOWLEDGE_MAINTENANCE_PAYER !== 'platform') throw Error('knowledge_campaign_environment_mismatch');
-  const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS || (recoveryCommand || scriptEdition
+  const retainedFile = process.env.FHS_CAMPAIGN_RETAINED_RECEIPTS || (chapter || recoveryCommand || scriptEdition
     ? new URL('../artifacts/verification/FHS_INITIAL_RETAINED_UNKNOWN_20261120.json', import.meta.url) : undefined);
   const retained = retainedFile ? retainedCampaignReceipts.parse(JSON.parse(readFileSync(retainedFile, 'utf8'))).retained : [];
   const webOriginal = draftRevision?.action === 'review_web_original' ? commissionedWebOriginal(id) : undefined;
@@ -127,7 +132,7 @@ try {
     const pdfReader = await openFhsCampaignPdfReads(command, definition.kind, process.env);
     const fetchSource = pdfReader ? createKnowledgeSourceFetcher({ pdfReader }) : fetchKnowledgeSource;
     const credentials = campaignCredentials;
-    if (firstPass && !lane && !scriptEdition) await refresh.register(id, 'fhs-initial-20261120', true);
+    if (firstPass && !lane && !scriptEdition && !chapter) await refresh.register(id, 'fhs-initial-20261120', true);
     const [job] = await refresh.jobs(id);
     if (!job && inspecting && !draftRevision) {
       console.log(JSON.stringify({ id, registered: false, started: false, operationFingerprint: null,
@@ -153,7 +158,7 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
     const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior) : undefined;
-    const operationFingerprint = scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
+    const operationFingerprint = chapter ? webChapterWorkId(chapter) : scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
@@ -180,7 +185,7 @@ try {
     const configForBatch = { ...base, maxOutputTokens, localModelOverride: campaignModel, agentThinkingLevel: 'low' };
     const runAdmission = !manual && !scriptEdition && !webOriginal && (explicitAgeScope || draftRevision) ? admission : undefined;
     const runner = createFirestoreKnowledgeMaintenance({ ...domain, readControl, config: configForBatch, credentialBinding: credentials,
-      explicitAgeScope, retainedDraft: draftRevision, reviewedWindow, firstDispatch, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual, scriptEdition, reviseHeldScript,
+      explicitAgeScope, retainedDraft: draftRevision, webChapter: chapter, reviewedWindow, firstDispatch, campaignAdmission: runAdmission, campaignBudget: gate, manualPublication: manual, scriptEdition, reviseHeldScript,
       ...(repairing ? { truncatedOutput: { priorWork: original, observationHash: prior.result.observationHash } } : {}),
       fetch: fetchSource, pdfReader, refresh, knowledge, providers(cfg) {
         if (cfg.project !== config.projectId || cfg.model !== campaignModel || cfg.location !== 'global') throw Error('knowledge_campaign_route_changed');
@@ -209,7 +214,8 @@ try {
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
         receipt: saved?.receipt?.state, active: active?.versionId ?? null, started: Boolean(saved),
         leaseUntilMs: saved?.lease?.untilMs ?? null, quotaDay: saved?.waitingForQuotaDay ?? null, reservations, recordedWindow,
-        ...(scriptEdition ? { reviewNotes:saved?.prepared?.review.notes ?? [], observationHash:saved?.result?.observationHash ?? null } : {}),
+        ...(scriptEdition || chapter ? { reviewNotes:saved?.prepared?.review.notes ?? [], observationHash:saved?.result?.observationHash ?? null } : {}),
+        ...(chapter ? {priorOperationFingerprint:chapter.operationFingerprint, priorReview:chapter.chapterReading.priorReview} : {}),
         ...(draftRevision ? { priorOperationFingerprint: draftRevision.operationFingerprint, observationHash: draftRevision.observationHash,
           activeVersionHash: active?.versionHash ?? null,
           retainedPromptFailure: saved?.retainedPromptFailure?.code ?? null, reviewNotes: saved?.prepared?.review.notes ?? [] } : {}) }));
@@ -240,9 +246,11 @@ try {
             snapshot = await refresh.resumeCheck(job.data, checkId);
           }
           assertScriptObservation(scriptEdition, definition, snapshot);
-        } else if (resuming || repairing || recovering || lane) {
+        } else if (resuming || repairing || recovering || lane || chapter) {
           const snapshot = laneObservation ? laneObservation.snapshot : await refresh.resumeCheck(job.data, checkId);
           if (snapshot?.status !== 'ok') throw Error('knowledge_campaign_original_observation_changed');
+          if (chapter && (snapshot.items.length !== 1 || snapshot.items[0].url !== chapter.url
+            || observationHash(snapshot.items[0]) !== chapter.observationHash)) throw Error('knowledge_web_chapter_observation_changed');
           if (laneSource && !matchesFhsPdfObservation(laneSource, snapshot)) throw Error('fhs_lane_original_check_changed');
           if (recovering && (snapshot.items.length !== 1 || snapshot.items[0].url !== recovery.url
             || observationHash(snapshot.items[0]) !== draftRevision.observationHash))
@@ -263,7 +271,7 @@ try {
         } while (true);
       }
       let readback;
-      if (recovering || manual || scriptEdition) {
+      if (recovering || manual || scriptEdition || chapter) {
         const sourceUrl = recovering ? recovery.url : definition.url;
         const recorded = await work.inspect(request), active = await knowledge.publishedEdition(id);
         if (result.published && (recorded?.receipt?.state !== 'committed' || recorded.prepared?.review.decision !== 'approve_candidate'
@@ -278,7 +286,14 @@ try {
           const edition = await knowledge.exportPublishedEdition(id, active.versionHash, card.seriesId);
           if (edition.versionHash !== active.versionHash || edition.source.url !== sourceUrl) throw Error('knowledge_campaign_recovery_card_mismatch');
           listedCard = { seriesId: card.seriesId, versionId: card.versionId, chunks: edition.source.chunks.length, vectors: edition.embeddings.length };
-          if (webOriginal) {
+          if (chapter) {
+            const snapshot = await refresh.resumeCheck(job.data, checkId);
+            if (snapshot?.status !== 'ok' || snapshot.items.length !== 1 || observationHash(snapshot.items[0]) !== chapter.observationHash
+              || edition.embeddings.length !== edition.source.chunks.length) throw Error('knowledge_web_chapter_readback_mismatch');
+            const {chapter:structure, audiences} = chapter.chapterReading;
+            checkChapterReading(snapshot.items[0].text, structure, edition.source.chunks, audiences);
+            listedCard.chapter = {originalLength:snapshot.items[0].text.length, audiences, headings:structure.headings};
+          } else if (webOriginal) {
             const snapshot = await refresh.resumeCheck(job.data, checkId);
             const item = snapshot?.status === 'ok' && snapshot.items.length === 1 ? snapshot.items[0] : null;
             const [chunk] = edition.source.chunks;
@@ -306,13 +321,13 @@ try {
           receiptState: recorded?.receipt?.state ?? null, listedCard,
           candidateVersionHash: recorded?.prepared?.versionHash ?? null, activeVersionId: active?.versionId ?? null,
           activeVersionHash: active?.versionHash ?? null, observationHash: recorded?.result?.observationHash ?? recorded?.prepared?.review.observationHash ?? null,
-          reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering || scriptEdition ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}),
+          reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering || scriptEdition || chapter ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}),
           ...(recorded?.prepared?.provenance.organizeAttemptKey.startsWith('publisher-originals:') ? {
             publisherOriginals:recorded.prepared.provenance.organizeAttemptKey, independentReview:recorded.prepared.provenance.reviewAttemptKey } : {}),
-          ...(reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
+          ...(chapter ? {priorOperationFingerprint:chapter.operationFingerprint} : reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
-        ...(manual || scriptEdition || webOriginal ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),
+        ...(manual || scriptEdition || webOriginal || chapter ? { payer: KNOWLEDGE_PUBLICATION_PAYER } : {}),
         ...(explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {}), ...(runAdmission ? { campaignDayAdmission: runAdmission } : {}), maxOutputTokens,
         status: result.status, code: result.code, published: result.published }));
       if (!result.published && result.status !== 'unchanged') {

@@ -5710,5 +5710,217 @@
         }
       ]
     }
+  },
+  "remainingWebEditions": {
+    "catalogueReadAt": "2026-11-21T22:06:57.485Z",
+    "scope": "Production family catalogue. All 129 commissioned web sources compared with the C catalogue at 626c810c. Offline approval fixtures exercise only local review, archive, indexing and replay.",
+    "cataloguePages": 18,
+    "reviewedWebEditions": 122,
+    "publisherOriginals": 7,
+    "rows": [
+      {
+        "sourceId": "fhs-30006",
+        "title": "培育還是催谷子女",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.html",
+        "familyCataloguePage": 7,
+        "observationHash": "47f20a8bd4f77524ffa51479368987cf2c5d77d993c160c90f6be4b990751a7a",
+        "originalLength": 2290,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "原文 0 至 3 歲用來解釋發展速度。學前評估也有特定情境，兩者均不能推出整段 0–72 個月。",
+        "publisherAudiences": [
+          "嬰幼兒",
+          "學前兒童"
+        ],
+        "isolatedReadback": {
+          "sections": 5,
+          "fullTextLength": 2290,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        }
+      },
+      {
+        "sourceId": "fhs-14838",
+        "title": "親職系列 19 —— 品德培育之一",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14838.html",
+        "familyCataloguePage": 4,
+        "observationHash": "a8a25e3561d649fb83594da284213f8b9ee21a434a9224486649e066351aa911",
+        "originalLength": 2176,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "七歲、十歲和三歲分別出現在故事或示例中。十歲不是整段親職指引的上限。 原整理條件另列學齡兒童；先釐清學前管教方法的對象。",
+        "publisherAudiences": [
+          "學前兒童"
+        ],
+        "isolatedReadback": {
+          "sections": 8,
+          "fullTextLength": 2176,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        }
+      },
+      {
+        "sourceId": "fhs-20033",
+        "title": "孩子「偏食」怎麼辦?",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20033.html",
+        "familyCataloguePage": 7,
+        "observationHash": "0fb44821ec9490fcb9d57d6a25940b82a2ee0eebcf24f9b157842c4893b72524",
+        "originalLength": 1757,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "原文指定幼兒和學前階段，沒有把這兩個詞定義成 12–72 個月。整段受眾若無法忠實表達，須保留待審。",
+        "publisherAudiences": [
+          "幼兒和學前階段"
+        ],
+        "isolatedReadback": {
+          "sections": 6,
+          "fullTextLength": 1757,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        }
+      },
+      {
+        "sourceId": "fhs-30012",
+        "title": "可以讓寶寶用吸管杯子喝飲料嗎？",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30012.html",
+        "familyCataloguePage": 8,
+        "observationHash": "beaef690e042a8c29a3a428a5713cee7ee86327cc5d905f80038ff622a18f744",
+        "originalLength": 373,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "7 至 9 個月指開始學用有杯嘴的訓練杯。吸管在習慣後才引入，其他杯子注意事項亦沒有給整段統一的上下限。原輸出只填 7，沒有理由補上限。",
+        "publisherAudiences": [
+          "寶寶"
+        ],
+        "isolatedReadback": {
+          "sections": 2,
+          "fullTextLength": 373,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        }
+      },
+      {
+        "sourceId": "fhs-30108",
+        "title": "你的初生寶寶安全嗎？",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30108.html",
+        "familyCataloguePage": 10,
+        "observationHash": "da587782b7ea5cd855161931ac8f9d440e88861e580d4bc20f3e8065136653ed",
+        "originalLength": 943,
+        "disposition": "covered_by_reviewed_edition",
+        "familyReadback": {
+          "id": "fhs-30108",
+          "sourceId": "pdf-28468771ad2490f045bd5d56",
+          "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+          "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+          "questions": 24,
+          "answers": 24,
+          "skipToQuestion": 6,
+          "inapplicableChoiceCount": 24,
+          "pages": [
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "sourceId": "fhs-30143",
+        "title": "足不出戶的「親子遊樂團」",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30143.html",
+        "familyCataloguePage": 11,
+        "observationHash": "1ef2f1fc0a61992ce98bd07fbecad529716ffefff4e5567d9cd5aa995bad82bd",
+        "originalLength": 1536,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "原文以幼兒和學前孩子為對象，較難的活動另指三歲以上。沒有為整段訂明至 72 個月，亦不能把局部下限套在其他活動。 原整理的文字條件也寫入 0 至 6 歲，單改數字欄不足。",
+        "publisherAudiences": [
+          "幼兒和學前孩子"
+        ],
+        "isolatedReadback": {
+          "sections": 8,
+          "fullTextLength": 1536,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        },
+        "posterComparison": {
+          "id": "fhs-30143",
+          "sourceId": "pdf-17a3f9316300dcf81b376854",
+          "versionId": "3dbd3757-0da1-5e1f-8590-8e2e8d5ad602",
+          "posterExplicitlyRefersToFullArticle": true,
+          "additionalPublisherCondition": "三歲以上的孩子可以嘗試一些更高難度的動作或更複雜的活動"
+        }
+      },
+      {
+        "sourceId": "fhs-481",
+        "title": "卡介苗",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/481.html",
+        "familyCataloguePage": 13,
+        "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+        "originalLength": 709,
+        "disposition": "ready_for_independent_review",
+        "originalReason": "原整理只回報單邊月齡，沒有準備好可用的適用條件。乙段分列出生後的新生嬰兒及十五歲以下、居港且從未接種的兒童。丙段另列近期活疫苗、免疫抑制治療、免疫缺乏、癌病、嚴重皮膚病及母親孕期生物製劑治療，包括專科評估是否延遲。須分別保留兩組及其例外，再交獨立審核。",
+        "publisherAudiences": [
+          "新生嬰兒",
+          "十五歲以下的居港兒童如從未接種卡介苗"
+        ],
+        "isolatedReadback": {
+          "sections": 1,
+          "fullTextLength": 709,
+          "reviewCallsIncludingReopen": 1,
+          "organizerCalls": 0
+        }
+      }
+    ],
+    "publisherDirectoryLinks": [
+      {
+        "volume": 1,
+        "title": "家庭健康服務 公眾健康講座",
+        "url": "https://www.fhs.gov.hk/tc_chi/main_ser/healthtalk_timetable.html"
+      },
+      {
+        "volume": 1,
+        "title": "母嬰健康院服務時間、地址及電話",
+        "url": "https://www.fhs.gov.hk/tc_chi/centre_det/maternal/maternal.html"
+      },
+      {
+        "volume": 2,
+        "title": "家庭健康服務 公眾健康講座",
+        "url": "https://www.fhs.gov.hk/tc_chi/main_ser/healthtalk_timetable.html"
+      },
+      {
+        "volume": 3,
+        "title": "預防兒童服用撲熱息痛的意外中毒",
+        "url": "http://www.hkpcn.org.hk/chi/ER.html"
+      },
+      {
+        "volume": 3,
+        "title": "家庭健康服務 公眾健康講座",
+        "url": "https://www.fhs.gov.hk/tc_chi/main_ser/healthtalk_timetable.html"
+      }
+    ],
+    "outsideCampaignLinkDecisions": {
+      "pdf": 27,
+      "translation_link": 7,
+      "external_post": 1,
+      "html": 20,
+      "unavailable": 3,
+      "directory_link": 13
+    },
+    "existingPlatformEditions": [
+      {
+        "sourceId": "fhs-solid-food",
+        "versionId": "5ae32610-68bb-527f-bec2-ec4597bdc13a"
+      },
+      {
+        "sourceId": "fhs-toddler-development",
+        "versionId": "46c4d086-3f2d-5320-837f-548e7c271765"
+      },
+      {
+        "sourceId": "fhs-preschool-development",
+        "versionId": "a0bd6f17-20b9-50de-add0-6d4e0fa67f7d"
+      },
+      {
+        "sourceId": "fhs-child-vision",
+        "versionId": "16e41ea5-7480-53ea-8de0-1bd234cdb070"
+      },
+      {
+        "sourceId": "fhs-feeding-booklet-en",
+        "versionId": "c57ddf18-aec6-5e21-a4af-0fdd95a860b8"
+      }
+    ]
   }
 }

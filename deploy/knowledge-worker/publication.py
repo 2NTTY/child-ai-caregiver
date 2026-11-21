@@ -30,10 +30,14 @@ def commands(args, manifest):
         return
     if args.action == "web-original":
         match = next((row for row in manifest["entries"] if row["sourceId"] == args.source
-                      and row["action"] == "review_web_original" and row["operationFingerprint"] == args.original), None)
+                      and (row["action"] == "review_web_original" or row.get("chapterReading"))
+                      and row["operationFingerprint"] == args.original), None)
         if args.reads or not match:
             raise ValueError("Unassigned web original")
-        verb = "inspect-recovery" if args.mode == "inspect" else "recover"
+        if match.get("chapterReading"):
+            verb = "inspect-web-chapter" if args.mode == "inspect" else "publish-web-chapter"
+        else:
+            verb = "inspect-recovery" if args.mode == "inspect" else "recover"
         yield ["scripts/fhs-initial-campaign.mjs", verb, args.source, args.original]
         return
     if args.action == "script":

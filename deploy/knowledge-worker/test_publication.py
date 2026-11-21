@@ -11,9 +11,11 @@ class PublicationTests(unittest.TestCase):
     def test_web_chapters_require_their_own_registered_operation(self):
         path = Path(__file__).resolve().parents[2] / "knowledge/fhs-initial-recovery.json"
         manifest = json.loads(path.read_text(encoding="utf8"))
-        for row in (item for item in manifest["entries"] if item["action"] == "review_web_original"):
+        for row in (item for item in manifest["entries"] if item["action"] == "review_web_original" or item.get("chapterReading")):
             args = SimpleNamespace(action="web-original", source=row["sourceId"], original=row["operationFingerprint"], reads=None)
-            for mode, verb in (("inspect", "inspect-recovery"), ("run", "recover")):
+            modes = (("inspect", "inspect-web-chapter"), ("run", "publish-web-chapter")) if row.get("chapterReading") else (
+                ("inspect", "inspect-recovery"), ("run", "recover"))
+            for mode, verb in modes:
                 args.mode = mode
                 self.assertEqual(list(publication.commands(args, manifest)), [
                     ["scripts/fhs-initial-campaign.mjs", verb, args.source, args.original]])
