@@ -6,6 +6,10 @@ import { ageExampleRegistration, bindPublisherAgeExamples } from '../server/know
 import { procedureReadingPreview } from '../server/knowledge-procedure-reading.ts';
 import type { KnowledgeEvidence, KnowledgeFilter } from '../src/shared/knowledge.ts';
 
+test('the commissioned procedure labels resolve to the paid production operation in every locale', () => {
+  assert.equal(currentScriptReadingWork(approvedScriptEdition('fhs-30092')!),'8ed6a70e97a40c02b2ba951822f03bfb5b470bcd97c5b1f1240e570fe4791509');
+});
+
 test('instruction previews keep the matched action and show both publisher groups at their shared boundary',()=>{
   const originalText='先閱讀使用說明。\n一歲以下的孩子看甲組；一歲以上的孩子看乙組。兩組均須留意說明。';
   const unit={id:'p0-12345678901234567890',originalText,scriptPassage:{title:'分組',firstParagraph:1}};

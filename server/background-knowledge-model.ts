@@ -19,6 +19,7 @@ import { backgroundKnowledgePdfCoverageIssue } from "./background-knowledge-main
 import { loadAgentPrompt, loadRecordedKnowledgePrompt } from "./agent-prompt.ts";
 import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { observationHash } from "./knowledge-observation.ts";
+import { recordedCommunicationComparison, recordedExplanationKey, referenceRecordedExplanation } from './fhs-script-comparison-stage.ts';
 import {
   knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment,
   type KnowledgeReviewAssessment,
@@ -204,6 +205,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
  */
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
+  replayCommunication?: boolean;
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
     publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[];sourceComparison?:true;procedureLookup?:true} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
@@ -512,7 +514,14 @@ export async function prepareKnowledgeMaintenance(input: {
     && ("growthRuleImpact" in reviewed.value || "growthRuleReason" in reviewed.value))
     reject("knowledge_growth_rule_authority_invalid");
   const nativeReview = pdfReviewSchema?.parse(reviewed.value);
-  const comparisonReview=sourceComparisonSchema?.parse(reviewed.value);
+  let retainedNote: ReturnType<typeof referenceRecordedExplanation> = null;
+  if (input.replayCommunication) {
+    if (!sourceComparisonSchema || candidate.watchId !== recordedCommunicationComparison.sourceId
+      || candidate.observationHash !== recordedCommunicationComparison.observationHash)
+      reject('knowledge_script_review_stage_binding');
+    retainedNote = referenceRecordedExplanation(reviewed.value);
+  }
+  const comparisonReview=sourceComparisonSchema?.parse(retainedNote?.value ?? reviewed.value);
   const publisherReview=publisherReviewSchema?.parse(comparisonReview ? {...comparisonReview,
     changes:Object.fromEntries(Object.entries(comparisonReview.changes).map(([key,change]) => [key,
       {...change,meaning:comparisonFacts.get(key) ?? ('meaning' in change ? change.meaning : undefined)}]))} : reviewed.value);
@@ -563,6 +572,10 @@ export async function prepareKnowledgeMaintenance(input: {
     changes: modelAssessment.changes.map(change => {
       const original = comparisonUnits.find(unit => unit.key === change.key);
       if (!original) reject("knowledge_maintenance_review_unit_mismatch");
+      if (retainedNote && change.key === recordedExplanationKey) {
+        if (change.explanation !== retainedNote.reference) reject('knowledge_script_review_stage_binding');
+        return {...change,oldQuote:original.oldQuote,newQuote:original.newQuote,explanation:retainedNote.explanation};
+      }
       return { ...change, oldQuote: original.oldQuote, newQuote: original.newQuote };
     }),
   }, source, baseline?.source ?? null);
@@ -594,6 +607,7 @@ export async function prepareKnowledgeMaintenance(input: {
 /** No memory fallback: the durable caller must store evidence before returning approval. */
 export function createModelKnowledgeReviewPort(options: {
   explicitAgeScope?: boolean;
+  replayCommunication?: boolean;
   scriptRevision?: Parameters<typeof prepareKnowledgeMaintenance>[0]['scriptRevision'];
   retainedDraft?: Parameters<typeof prepareKnowledgeMaintenance>[0]['retainedDraft'];
   webOriginal?: ReviewedWebOriginal;
@@ -617,7 +631,9 @@ export function createModelKnowledgeReviewPort(options: {
         reject("knowledge_destination_baseline_conflict");
       const comparedCandidate = comparison ? { ...candidate, previousObservationHash: comparison.baseline.observationHash } : candidate;
       const prepared = await prepareKnowledgeMaintenance({ candidate: comparedCandidate, baseline: comparison?.baseline ?? local,
-        explicitAgeScope: options.explicitAgeScope, scriptRevision:options.scriptRevision, retainedDraft: options.retainedDraft, webOriginal:options.webOriginal, previousVisual: await options.previousVisual?.(candidate),
+        explicitAgeScope: options.explicitAgeScope, replayCommunication: options.replayCommunication,
+        scriptRevision: options.scriptRevision, retainedDraft: options.retainedDraft, webOriginal: options.webOriginal,
+        previousVisual: await options.previousVisual?.(candidate),
         heldDraft: await options.heldDraft?.(),
         fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, readPdf: options.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, growthRules: options.growthRules, signal });
       if (comparison) {

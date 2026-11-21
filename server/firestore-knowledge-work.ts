@@ -1,5 +1,5 @@
 import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
-import { recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
+import { recordedCommunicationComparison, recordedComparisonRequestHash } from './fhs-script-comparison-stage.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
 import type { DocumentReference, Transaction } from "@google-cloud/firestore";
@@ -128,7 +128,8 @@ export function createFirestoreKnowledgeWork(options: Options) {
     async inspectCommunicationComparison(raw:BackgroundKnowledgeRunRequest,input:{system:string;user:string;attemptKey:string}) {
       const pin=recordedCommunicationComparison;
       if ('knowledge-review:'+knowledgeReviewHash({system:input.system,user:input.user}) !== input.attemptKey
-        || knowledgeReviewHash(input.attemptKey) !== pin.stageHash) reject('knowledge_script_review_stage_binding');
+        || knowledgeReviewHash(input.attemptKey) !== pin.stageHash || knowledgeReviewHash(input) !== recordedComparisonRequestHash)
+        reject('knowledge_script_review_stage_binding');
       return readFailedScriptStage(raw,{sourceId:pin.sourceId,observationHash:pin.observationHash,operationFingerprint:pin.work,
         code:'knowledge_review_failed',attemptKey:input.attemptKey,requestHash:knowledgeReviewHash(input)});
     },
