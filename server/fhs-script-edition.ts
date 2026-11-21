@@ -55,6 +55,21 @@ export function currentScriptReadingWork(pin:ScriptEdition) {
   const publisher=publisherScriptWork(pin), lookup=lookupReviews.get(pin.sourceId);
   return lookup?knowledgeReviewHash(['fhs-script-reading-access/1',publisher,lookup]):publisher;
 }
+const failedReviewStage = z.strictObject({
+  sourceId: schema.shape.sourceId, observationHash: digest, operationFingerprint: digest,
+  attemptKey: z.string().regex(/^knowledge-review:[0-9a-f]{64}$/u), requestHash: digest, stageHash: digest,
+  code: z.enum(['invalid_response', 'knowledge_review_failed']),
+});
+const stageReceipts = z.array(failedReviewStage).parse(JSON.parse(readFileSync(
+  new URL('../knowledge/fhs-script-review-stages.json', import.meta.url), 'utf8')));
+export function recordedScriptReviewStage(sourceId: string) {
+  const row = stageReceipts.find(entry => entry.sourceId === sourceId);
+  if (!row) return null;
+  const pin = approvedScriptEdition(sourceId);
+  if (!pin || pin.observationHash !== row.observationHash || currentScriptReadingWork(pin) !== row.operationFingerprint
+    || knowledgeReviewHash(row.attemptKey) !== row.stageHash) throw Error('knowledge_script_review_stage_binding');
+  return row;
+}
 type RecordedHold = Parameters<typeof verifyHeldScript>[1];
 export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerprint:string)=>Promise<RecordedHold>) {
   const original=verifyHeldScript(pin,await inspect(scriptEditionWorkId(pin))),scope=publisherScopes.get(pin.sourceId);
