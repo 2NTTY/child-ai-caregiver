@@ -63,6 +63,7 @@
     "mammoth": "1.13.0",
     "mediabunny": "1.61.5",
     "patch-package": "8.0.1",
+    "pdf-lib": "1.17.1",
     "pdfjs-dist": "6.4.299",
     "react": "19.2.3",
     "react-dom": "19.2.3",

@@ -6,6 +6,7 @@ import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type CampaignDayAdmission, type createKnowledgeCampaignBudget } from "./knowledge-campaign-budget.ts";
 import { campaignMaterialWatches } from "./platform-materials.ts";
+import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, type ScriptEdition } from './fhs-script-edition.ts';
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import type { Transaction } from "@google-cloud/firestore";
@@ -27,7 +28,7 @@ import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
 import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
 import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError, knowledgeTruncatedOutputRepairId } from "./firestore-knowledge-work.ts";
-import { createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, KnowledgeModelQuotaPending, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
+import { BACKGROUND_KNOWLEDGE_RESERVED_UNITS, createBackgroundKnowledgeMaintenanceRunner, KnowledgeWindowPending, KnowledgeModelQuotaPending, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import { assertPreparedKnowledgePdfLayout, createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline, type KnowledgePdfQuestion, type KnowledgePdfAcceptance } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
@@ -66,6 +67,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   campaignAdmission?: CampaignDayAdmission;
   campaignBudget?: ReturnType<typeof createKnowledgeCampaignBudget>;
   manualPublication?: ManualPublicationPin;
+  scriptEdition?: ScriptEdition;
   firstDispatch?: FirstDispatch;
   truncatedOutput?: { priorWork: string; observationHash: string };
   reviseHeldPdf?: { priorWork: string; priorVersionHash: string; feedback: string; amendments?: PdfAmendment[] };
@@ -78,6 +80,13 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   if (options.useIsolatedPlatformDailyLimit && options.sponsor) reject("knowledge_fixture_publication_scope");
   if ((options.campaignAdmission || options.campaignBudget) && options.sponsor) reject("knowledge_campaign_payer_mismatch");
   const manual = options.manualPublication;
+  const script = options.scriptEdition;
+  const publication = manual ?? script;
+  if (script && (approvedScriptEdition(script.sourceId) !== script || !options.campaignBudget || !options.providers || !options.explicitAgeScope
+    || options.credentialBinding !== campaignCredentials || options.sponsor || options.campaignAdmission || manual || options.firstDispatch
+    || options.truncatedOutput || options.retainedDraft || options.reviewedWindow || options.focusedPage || options.reviseHeldPdf
+    || options.acceptance || options.isolatedComparison || options.pdfQuestion || options.isolatedFixturePublish || options.fixtureFetch))
+    reject('knowledge_script_edition_scope');
   const revisedWindow = options.reviewedWindow;
   const firstDispatch = options.firstDispatch;
   if (firstDispatch && (!manual || manual.resumeOnly || revisedWindow || options.retainedDraft || options.truncatedOutput
@@ -101,7 +110,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       if (grant && (grant.policyVersion !== current.version || current.dailyUserAttempts !== 200 || current.dailyGlobalAttempts !== 400))
         reject("knowledge_campaign_policy_changed");
       const platformDaily = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: "platform",
-        campaignAdmission: grant });
+        campaignAdmission: grant, manualPublication: publication });
       const definition = publicMaintenanceWatch(request.watchId);
       const registration = (await options.refresh.jobs(request.watchId)).find(job => job.definition.id === request.watchId);
       if (!definition || !registration || registration.data.workerGeneration !== request.workerGeneration
@@ -113,7 +122,10 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const transcript = retained?.action === 'retain_pdf_transcription' ? retained : undefined;
       if (options.campaignBudget) {
         const original = knowledgeReviewHash([campaignCredentials, request.watchId, registration.data.revision, request.workerGeneration]);
-        const bound = firstDispatch ? firstDispatch.original === original && request.operationFingerprint === firstDispatchWorkId(original)
+        const bound = script ? script.sourceId === request.watchId && definition.kind === 'page' && !reusedOrganizationFrom
+          && request.operationFingerprint === scriptEditionWorkId(script)
+          && recordedCheckId === knowledgeOperationId('knowledge-observation/1', request.operationFingerprint)
+          : firstDispatch ? firstDispatch.original === original && request.operationFingerprint === firstDispatchWorkId(original)
           && !reusedOrganizationFrom && bindFirstDispatch(manual,original,await work.inspect({...request,operationFingerprint:original}))?.observation === firstDispatch.observation
           : revisedWindow ? revisedWindow.operationFingerprint === original && request.operationFingerprint === retainedDraftWorkId(original)
           && revisedWindow.registration === registeredReviewedWindow(manual,original,revisedWindow.observationHash) && !reusedOrganizationFrom
@@ -140,7 +152,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const personal = sponsor && await sponsor.routing.resolve(sponsor.userId, 'knowledge-maintenance');
       if (sponsor && (!personal || personal.billingSource !== 'personal' || !personal.maintenanceEmbedding || !await personal.authorize()))
         reject('knowledge_sponsor_not_authorized');
-      const daily = personal?.dailyUsage ?? platformDaily, payerId = sponsor?.userId ?? (manual ? KNOWLEDGE_PUBLICATION_PAYER : OPERATOR);
+      const daily = personal?.dailyUsage ?? platformDaily, payerId = sponsor?.userId ?? (publication ? KNOWLEDGE_PUBLICATION_PAYER : OPERATOR);
       const credentialBinding = sponsor && personal
         ? knowledgeReviewHash(['maintenance-sponsor/1', sponsor.userId, personal.settingsVersion]) : options.credentialBinding;
       const previous = await work.inspect(request);
@@ -174,8 +186,19 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           recordedCheckId = checkId;
         }
       }
-      const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
+      const pinned = recordedCheckId && (definition.leafletPage || script) ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
       let verifyCommission: ((tx: Transaction) => Promise<void>) | undefined;
+      if (script) {
+        assertScriptObservation(script, definition, pinned);
+        verifyCommission = async tx => {
+          const state = await options.refresh.gate.read(tx, script.sourceId);
+          if (!state?.watch.enabled || !state.watch.manualOnly || !state.catalogMatches || state.watch.revision !== expectedRevision
+            || state.observation?.contentHash !== script.observationHash || state.observation.unavailable)
+            reject('knowledge_script_edition_observation_changed');
+          assertScriptBaseline(script, await options.knowledge.publishedEdition(script.sourceId, tx));
+        };
+        if (!previous?.receipt && !previous?.result) await options.database.runTransaction(verifyCommission, { readOnly: true });
+      }
       if (manual) {
         const commissionOperation = commissionedParent ?? request.operationFingerprint;
         const check = knowledgeOperationId('knowledge-observation/1', commissionOperation);
@@ -221,6 +244,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const corpusPolicy = options.useIsolatedPlatformDailyLimit ? { isolatedMaintenanceProject: options.projectId } : {};
       const ageContract = revisedWindow ? {reviewedWindow:knowledgeReviewHash(revisedWindow)}
         : retained ? { retainedDraftRevision: knowledgeReviewHash(retained) }
+        : script ? { ageOutput: AGE_OUTPUT_VERSION, scriptEdition: knowledgeReviewHash(script) }
         : options.explicitAgeScope ? { ageOutput: AGE_OUTPUT_VERSION } : {};
       const configBinding = { config, limits, ...corpusPolicy, ...ageContract, ...(recovery ? { truncatedOutput: recovery } : {}), ...(definition.leafletPage ? { reader: windowed ? PDF_WINDOW_METHOD : NATIVE_PDF_READER_VERSION } : {}), policyVersion: current.version,
         credentialBinding, ...(options.pdfQuestion ? { pdfQuestion: options.pdfQuestion } : {}), promptPack: prompt.packVersion, watchRevision: registration.data.revision };
@@ -245,9 +269,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         ? previous.configHash : readerConfigHash;
       const today = new Date().toISOString().slice(0, 10);
       const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) =>
-        (!firstDispatch || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
+        (!(firstDispatch || script) || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
         && reader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts);
-      if (!manual && grant?.day !== today && previous?.configHash === configHash && previous.waitingForQuotaDay === today)
+      if (!publication && grant?.day !== today && previous?.configHash === configHash && previous.waitingForQuotaDay === today)
         return { status: "budget_exhausted" as const, code: previous.quotaPhase === "model" ? "knowledge_model_daily_admission" : "knowledge_embedding_daily_admission", published: false, budget: previous.budget };
       let budget: AgentBudget | undefined;
       let baseline: KnowledgeMaintenanceBaseline | null | undefined;
@@ -295,9 +319,10 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
         durable: {
           async bind(boundRequest, leaseToken) {
             const session = await work.bind(boundRequest, leaseToken, configHash,
-              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...windowPlan, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
+              { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...windowPlan, ...(windowed ? { windowed:true as const } : {}),
+                ...(script ? {maxUnits: BACKGROUND_KNOWLEDGE_RESERVED_UNITS + script.chunkCount} : {}), ...(definition.leafletPage ? {
                 maxUnits: manualWindows?.maxUnits ?? 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) }, reusedOrganizationFrom,
-              manual || grant?.day === today ? tx => generationCapacity(tx,platformDaily) : undefined, retained,
+              publication || grant?.day === today ? tx => generationCapacity(tx,platformDaily) : undefined, retained,
               firstDispatch && verifyCommission ? {...firstDispatch,verify:verifyCommission} : undefined);
             const authorize = async () => {
               if (signal.aborted || !await session.authorize()) return false;
@@ -460,6 +485,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 const prepared = await session.readPrepared(candidate);
                 if (!prepared || !await authorize()) reject("knowledge_work_publication_mismatch");
                 assertPreparedKnowledgePdfLayout(prepared, options.pdfQuestion, options.acceptance);
+                if (script) {
+                  if (prepared.source.chunks.length !== script.chunkCount || prepared.assessment.comparedVersionId !== script.baselineId || prepared.assessment.comparedHash !== script.baselineHash
+                    || candidate.observationHash !== script.observationHash) reject('knowledge_script_edition_baseline_changed');
+                  scriptEditionCoverage(candidate.observed, prepared.source);
+                }
                 const imported = await options.knowledge.importSource(prepared.source);
                 const reviewed = await options.knowledge.review(imported.versionId, imported.hash, "agent-knowledge-maintenance",
                   prepared.assessment, { sourceId: candidate.watchId, contentHash: candidate.observationHash,
@@ -484,7 +514,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                   const embedding = createEmbeddingGateway({ config, ...corpusPolicy, provider: meter?.embedding(provider,document.hash) ?? provider,
                     billingSource: daily.billingSource, usage: createFirestoreOperatorEmbeddingUsage(options, session.deadlineAtMs,
                       sponsor ? { userId: payerId, dailyLimit: config.dailyUserAttempts, binding: credentialBinding } : undefined,
-                      grant, manual) });
+                      grant, publication) });
                   await options.knowledge.embedDocument(document, () => embedding.embed({
                     text: document.text, title: document.title, task: "RETRIEVAL_DOCUMENT",
                   }, { kind: "corpus_maintenance", actorId: "operator:knowledge-maintenance",

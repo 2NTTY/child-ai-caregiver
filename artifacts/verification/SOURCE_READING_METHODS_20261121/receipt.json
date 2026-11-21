@@ -1,5 +1,6 @@
 {
   "baseline": "6bd0095f",
+  "integration": "與 fd755190 合併後，重跑 11 項 Server／助手檢查及 Server TypeScript 通過。",
   "verificationDate": "2026-11-21",
   "environment": "Windows, Node 24.22.3. 本人來源排程、加密卡片、文件索引、助手引用及固定版讀回使用正式程式。網站 HTTP 回應和 Firestore 交易以隔離測例提供。另以本機 Firebase Auth、Firestore 模擬器和 390 × 844 Edge 核對求助入口。",
   "parentMessagesForInitialAndScheduledChecks": 0,

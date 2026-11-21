@@ -100,6 +100,22 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
+    /** A terminal independent print reading remains inspectable after its lease expires. */
+    async inspectPrintedStage(raw: BackgroundKnowledgeRunRequest, input: {system:string; user:string; attemptKey:string}) {
+      const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      if (!/^knowledge-print-review:[0-9a-f]{64}$/u.test(input.attemptKey)) reject("knowledge_work_binding_changed");
+      const root = ref("work", request.operationFingerprint), stage = ref("model", request.operationFingerprint, input.attemptKey);
+      return database.runTransaction(async tx => {
+        const [record, saved] = await tx.getAll(root, stage);
+        if (!record.exists && !saved.exists) return null;
+        if (!record.exists || knowledgeReviewHash(open(root, record.data(), workSchema).request) !== knowledgeReviewHash(request))
+          reject("knowledge_work_binding_changed");
+        if (!saved.exists) return null;
+        const reading = open(stage, saved.data(), stageSchema);
+        if (reading.requestHash !== knowledgeReviewHash(input)) reject("knowledge_work_binding_changed");
+        return {state:reading.state, text:reading.text};
+      }, {readOnly:true});
+    },
     async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision | BoundReviewedWindow, attemptKey: string, requestHash: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);

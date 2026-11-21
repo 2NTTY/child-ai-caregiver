@@ -113,6 +113,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 ### FHS 首批同一帳日續作
 
+11 月 21 日獲委託的[22 份官方劇本教材](../knowledge/fhs-script-editions.json)按網頁觀測版本接續。在[分組製卡工具](#fhs-publication-lanes)用 `script inspect SOURCE_ID OBSERVATION_SHA256` 查原單，再用 `script run SOURCE_ID OBSERVATION_SHA256` 整理、獨立審核及補缺少的向量。重開用同一命令。入口沿用同一主機工位、記憶體限制及帳本，核對前一生效版本、完整文字指紋及已登記的片段數。舊單未明、版本變更或預留不足時保留原紀錄。發布後的 `listedCard.scripts` 按劇本列出完整段數、各段範圍、短引長度及原文向量查回結果。
+
 **人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
 
 **舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。
