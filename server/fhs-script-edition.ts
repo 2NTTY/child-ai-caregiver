@@ -91,7 +91,8 @@ export function currentScriptReadingWork(pin:ScriptEdition) {
   }
   if (pin.sourceId!==procedureEdition.sourceId) return prior;
   if (prior!==procedureEdition.priorWork) throw Error('knowledge_script_procedure_binding');
-  return knowledgeReviewHash(['fhs-script-instruction-ages/1',procedureEdition]);
+  // These Chinese keys first went to production under en-US collation. Always resolve that same paid work.
+  return knowledgeReviewHash(['fhs-script-instruction-ages/1',procedureEdition], 'en-US');
 }
 const failedReviewStage = z.strictObject({
   sourceId: schema.shape.sourceId, observationHash: digest, operationFingerprint: digest,

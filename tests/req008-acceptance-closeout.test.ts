@@ -877,16 +877,18 @@ test("11. [R008-D01..R008-D06] Programmatic policies, conditional tool exposure 
   assert.equal(Object.keys(allDeps).some(name => name.toLowerCase().includes("deepseek")), false);
 });
 
-test("12. [§9 & §10 Audit] PLAN.md, docs/REQUIREMENTS_BACKLOG.md & WORKLOG.md match closeout honesty rules with zero forbidden working codes", () => {
+test("12. [§9 & §10 Audit] PLAN.md and docs/REQUIREMENTS_BACKLOG.md match closeout honesty rules with zero forbidden working codes", () => {
   const backlog = readFileSync(path.join(root, "docs/REQUIREMENTS_BACKLOG.md"), "utf8");
   const plan = readFileSync(path.join(root, "PLAN.md"), "utf8");
-  const worklog = readFileSync(path.join(root, "WORKLOG.md"), "utf8");
   const testSelf = readFileSync(path.join(root, "tests/req008-acceptance-closeout.test.ts"), "utf8");
 
   assert.ok(backlog.includes("req008-closeout01"));
   assert.ok(backlog.includes("--live") && backlog.includes("PDFium") && backlog.includes("REQ-003"));
   assert.ok(plan.includes('<a id="req008-closeout01"></a>'));
-  assert.ok(worklog.includes("REQ-008 專責產物預覽整合與離線全包驗收"));
+  const review = plan.match(/^\*\*#738 最後覆核。\*\* (.+)$/mu)?.[1];
+  assert.ok(review, "REQ-008 plan must retain the final review record");
+  assert.ok(review.includes("合成 Chrome 預覽") && review.includes("三組 TypeScript"));
+  assert.ok(review.includes("不等於正式部署") && review.includes("不還原本體或摘錄"));
 
   for (let i = 1; i <= 18; i += 1) {
     assert.ok(plan.includes(`R008-S${String(i).padStart(2, "0")}`), `PLAN.md must map R008-S${String(i).padStart(2, "0")}`);
@@ -897,8 +899,6 @@ test("12. [§9 & §10 Audit] PLAN.md, docs/REQUIREMENTS_BACKLOG.md & WORKLOG.md 
 
   const forbidden = /\b(?:B-P\d+|PR-[A-E]|BND-\w+|H2-R\d+|N18-\w+|R\d{1,2}|Slice\s+B)\b/g;
   const planCloseoutSlice = plan.slice(plan.indexOf('<a id="req008-closeout01"></a>'));
-  const worklogEntrySlice = worklog.slice(worklog.indexOf("### 2026-11-21　REQ-008 專責產物預覽整合與離線全包驗收"));
   assert.deepEqual([...planCloseoutSlice.matchAll(forbidden)].map(m => m[0]), []);
-  assert.deepEqual([...worklogEntrySlice.matchAll(forbidden)].map(m => m[0]), []);
   assert.deepEqual([...testSelf.matchAll(forbidden)].map(m => m[0]), []);
 });

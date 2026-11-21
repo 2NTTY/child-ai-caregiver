@@ -145,7 +145,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 首批未索引的 31 套沿原單處理。正式版 `7e41cf5c` 讓家長按題名或內容找教材，純原文片段保留原對象、條件及未知月齡。一般照護、建議及主動提醒排除這類片段。香港 11 月 22 日 01:05 查回 41 套、1,238 段，較首批增加 11 套、386 段。以整張卡的正式快照逐名測試，41 套均可展開同版原段；6 條內容查找有 4 條命中所問劇本。6 條一般照護查詢傳回純原文片段 0 個。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44926747284) · [逐套收據](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
 
-香港 03:09，隔離家長逐套查回 52／61 套、1,312／1,695 段，內容查找 5／6。《建立睡前常規》首位命中並展開 48 段。10 套母乳劇本已獲獨立批准，原向量票已按 HTTP 400 結算 US$0。餘下九套、383 段中，嬰兒用品八套的原回應無法查回，其後獨立審核要求檢索時區分原文的分齡操作。親子溝通一套的單張已補上出版者明示的年齡上限，第二次比較回應仍未通過結構校驗。下一步沿原票查其錯誤，並驗嬰兒用品按分齡查找、重新獨立審核及《替寶寶換尿片》的內容問題。[原單入口](docs/DEPLOYMENT.md#fhs-ingestion) · [母乳結算及逐套結果](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json) · [首輪原單診斷](artifacts/verification/FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json)
+香港 03:52，隔離家長按片名查回 60／61 套、1,362／1,695 段。六個內容問題全部命中，《替寶寶換尿片》及《建立睡前常規》均首位命中並可展開全篇。嬰兒用品八套獲獨立批准，3 個月、17 個月及未知年齡的隔離查找按原句顯示相應操作。餘下一套親子溝通完整版共 333 段。零模型讀回確認第二張已付審核只有單張變更說明超出簡短欄位的 160 字上限。下一步在原票校驗時逐字保留完整說明，再按已保存的獨立決定結案及核對家長查回。[最新正式收據](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json) · [母乳原單結算](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json) · [睡眠及原票診斷](artifacts/verification/FHS_SCRIPT_STAGE_DIAGNOSIS_20261122.json)
 
 普通文字問題使用發行者明示的現行網頁。《飲奶知多少？》的印刷本和網頁已按原件核對。34 組範本中，31 組是單張正文，3 組是分章目錄。查問印本、圖表或獨立附件時保留所問版本。兩個同範圍的合成矛盾段落已在一次實際工具回應中各自帶回原文。正式環境於香港 18:31 有上述兩個網頁生效版，共 4 個段落及 4 個向量。[出版者版本證據](knowledge/fhs-leaflet-editions.json)
 
@@ -2028,6 +2028,8 @@ The integrated short-path offline gate retains all 244 cases in master 39f2f322 
 
 <a id="req008-closeout01"></a>
 ### REQ-008 全包專責產物預覽整合與離線驗收收束
+
+**#738 最後覆核。** 由本人原執行紀錄在網頁預覽獲授權的 PDF／HTML 草稿；切換孩子後不顯示遲到結果。原生 App 引導到網頁，不代為讀取或分享。上限 128 KiB，超限不寫草稿。刪除孩子或帳戶會移除對應草稿，不影響其他孩子或帳戶。邏輯還原驗證並移除草稿，不還原本體或摘錄；原生加密快照仍沿原保留規則。合成 Chrome 預覽、獨立覆核、守衛離線回歸及三組 TypeScript 均已核對；不等於正式部署、真家庭資料或真機驗收。原 PR 的逐步紀錄留在該 PR 歷史，不改寫主分支工作日誌。
 
 以現行主線契約（主聊天工具循環、`assembleTurnBackground`、`discoverDailyNeeds`、`evaluateHighRiskPolicyMatrix`、`createAgentRuntime`、加密 Firestore domain 儲存、`pdfjs-dist` 隔離 worker）為基礎，補齊繁體中文字型子集內嵌（`server/assets/fonts/LXGWWenKaiTC-Regular.ttf` via `fontkit` ＋ `zlib.deflateSync`）、離線 `createSharpVisualArtifactVerifier()` 光柵像素與邊界檢查、`document_compose`／`prepare_family_artifact` 條件式能力暴露、受保護的 `agent_specialist_drafts` 加密草稿暫存、`GET /api/children/:childId/agent/runs/:runId/artifacts/:artifactId` CSP `sandbox` 即時重核預覽端點（版本或權限變動回 `409 document_changed`，`formalSave: false`／`published: false`），以及前端 `AgentRunView` 草稿預覽卡，並完成 REQ-008 §9（`R008-S01`..`R008-S18`）與 §10（`R008-D01`..`R008-D06`）之全包離線合成閉環驗收。
 

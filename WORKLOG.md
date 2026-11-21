@@ -7366,15 +7366,12 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
 - 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
 
-### 2026-11-21　REQ-008 專責產物預覽整合與離線全包驗收
+### 2026-11-22｜角色切頁修正交付
 
-以 `6e91757e` 為基線，完成 REQ-008 專責 PDF／HTML 草稿交付閉環與全包 §9（`R008-S01`..`R008-S18`）、§10（`R008-D01`..`R008-D06`）離線合成驗收：
-- 渲染與視覺驗證：`server/specialist-artifact-renderer.ts` 改用 `fontkit` ＋ `zlib.deflateSync` 內嵌子集化 `LXGWWenKaiTC-Regular.ttf`（`/FontFile2` ＋ `/CIDToGIDMap /Identity`、二進位 `Buffer.concat` 組裝）並匯出 `createSharpVisualArtifactVerifier()` 執行 1x A4 RGBA 光柵檢查；`server/specialist-artifact-pdf-worker.ts` 補上 `/CIDFontType2` 缺少 `/FontFile2` 之缺字防線。
-- 加密草稿暫存、預覽端點與前端 UI：`src/shared/specialist-artifact.ts`、`src/shared/product-agent.ts`、`src/shared/product-agent-result.ts`、`server/firestore-agent-documents.ts`、`server/firestore-product-agent-store.ts`、`server/product-agent-store.ts`、`server/specialist-artifact-agent.ts`、`server/product-agent-capabilities.ts`、`server/product-agent-tools.ts`、`server/product-agent.ts`、`server/product-agent-api.ts`、`src/client/product-agent-api.ts`、`frontend/src/agent-view-model.ts`、`frontend/src/production/agent-projection.ts`、`frontend/src/components/agent/AgentRunView.tsx`；支援條件式 `prepare_family_artifact` 暴露、`formalSave: false` 限制、`GET /api/children/:childId/agent/runs/:runId/artifacts/:artifactId`（CSP `sandbox`＋版本變動回 `409 document_changed`）及草稿預覽卡片。
-- 測試、CI 與文件：擴充 `tests/req008-specialist-artifact-renderer.test.ts`（11 cases）、新增 `tests/req008-acceptance-closeout.test.ts`（12 cases）及離線 workflow `.github/workflows/req008-acceptance-closeout-offline.yml`（`scripts/ci/verify-req008-acceptance-closeout-offline.sh`，15 檔 161 cases），並更新 `docs/REQUIREMENTS_BACKLOG.md` 與 `PLAN.md#req008-closeout01`。
-- 未執行閘門：真實 Gemini `--live` 基準、實體 Chromium／PDFium 截圖目視檢查、REQ-003 模式分支持續合併、雲端背景排程部署及流動裝置真機測試。
+原站發布 `r44934163597-1` 已交付 #784。版本 8 的 Android preview 公開更新清單於香港 02:50 回傳 HTTP 200，更新 ID 和 runtime 與本次 EAS 發布吻合。切頁畫格來自 Edge；手機實際套用和觸控效果待驗。[版本及查回收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
 
-### 2026-11-22｜REQ-008 #738 私密預覽修復及覆核
+### 2026-11-22 · C2 嬰兒用品正式查回及親子溝通原票定位
 
-Web 可由原執行紀錄檢視獲授權的 PDF／HTML 草稿；切換孩子後不顯示遲到的舊結果。原生 App 提示使用網頁，不代為讀取或分享。新增預覽以 128 KiB 為上限，超限不寫草稿。
-刪除孩子或帳戶會移除相應的草稿本體，保留其他孩子及帳戶的內容；輯錄保留必要的操作識別碼，但正式運行紀錄及邏輯還原不帶草稿摘錄。原生加密快照仍依原有保留規則，不變更雲端設定。已用合成資料驗 Chrome 預覽及離線刪除／還原回歸；未部署、未驗真家庭資料或原生 App 裝置。
+香港 03:52，正式版 `736d5a1b` 已提交嬰兒用品審核，八套共 50 段首次上架。隔離家長逐套查回 60 套、1,362 段。換尿片首位查到全文 17 段，睡前常規首位查到全文 48 段。六個內容問題全數命中，66 個命中對回 46 個正式索引位置。耳溫計逐段查找在 3 個月、17 個月及年齡未確認三種情況下，依次顯示「一歲以下」、「一歲以上」及兩組；同版原文均保留兩組。正式共用帳本結算 US$13.165279、預留 US$3.268608。[正式收據](artifacts/verification/FHS_SCRIPT_PROCEDURE_RESULTS_20261122.json)
+
+首次本機比對在已提交收據的工作指紋不符時停止。證實中文字鍵在本機和工位的預設排序不同，沿工位既有排序已重建同一付費工作。親子溝通第二次已付回應的結構校驗只報單張說明超出 160 字。合成長說明已在原物料上驗證可按內容雜湊保留完整文字及獨立保留決定。正式原回應的決定仍待驗，這次診斷沒有模型費用。
