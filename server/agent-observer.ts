@@ -1,8 +1,10 @@
 import { BasePlugin } from "@google/adk";
+import { discussionToolNames, isDiscussionDraftRejection } from './chat-discussion.ts';
 import { taskParameterDiagnosticHints, type TaskParameterDiagnosticHint } from "./task-parameter-hints.ts";
 
 type ToolRejectionStage = "schema" | "authorization" | "execution";
 type ToolRejectionCode = "invalid_parameters" | "not_authorized" | "unknown"
+  | "discussion_turn_order" | "discussion_main_too_long"
   | "invalid_input" | "invalid_assignee" | "agent_run_expired" | "confirmation_requires_interactive_scope"
   | "invalid_citation" | "original_quote_mismatch" | "citation_required" | "citation_limit" | "use_citation_ids" | "attached_claim_needs_evidence" | "not_found"
   | "version_conflict" | "operation_conflict" | "agent_proposal_limit" | "agent_scope_changed" | "agent_source_mismatch"
@@ -50,7 +52,7 @@ function rejectionCode(tool: string, stage: ToolRejectionStage, code: unknown): 
       "version_conflict", "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch"] as const;
     return allowed.find(value => value === code) ?? "unknown";
   }
-  if (tool === "present_answer") return ["invalid_input", "invalid_citation", "original_quote_mismatch", "citation_required", "citation_limit", "use_citation_ids", "attached_claim_needs_evidence"].find(value => value === code) as ToolRejectionCode ?? "unknown";
+  if (isDiscussionDraftRejection(tool, code)) return code;
   if (tool === "read_family_documents") return ["invalid_input", "not_found", "version_conflict"].find(value => value === code) as ToolRejectionCode ?? "unknown";
   if (tool === "request_confirmation" || tool === "propose_family_document_change") return ["invalid_input", "not_found", "version_conflict",
     "agent_scope_changed", "confirmation_expired", "confirmation_scope_changed", "work_cancelled", "source_changed", "document_changed"].find(value => value === code) as ToolRejectionCode ?? "unknown";
@@ -109,7 +111,8 @@ class MetadataAgentObserver extends BasePlugin {
       if (!outcome || outcome === "succeeded") return;
       // The sink boundary rebuilds every field from its fixed allowlists.
       this.emit("tool_rejection", toolName, outcome, { stage,
-        code: stage === "execution" && ["propose_task", "present_answer", "read_family_documents", "request_confirmation", "propose_family_document_change"].includes(toolName) ? result.data?.code : undefined,
+        code: stage === "execution" && ["propose_task", "present_answer", "read_family_documents", "request_confirmation",
+          "propose_family_document_change", ...discussionToolNames].includes(toolName) ? result.data?.code : undefined,
         hints: stage === "schema" && toolName === "propose_task" ? result.data?.hints : undefined });
     } catch {
       // Malformed diagnostic metadata must not affect a tool's business result.
