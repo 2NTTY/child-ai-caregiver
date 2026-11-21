@@ -1,15 +1,19 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { usePathname } from 'expo-router';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
+import { Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from 'react-native-paper';
 import { useChatExposure, useChatForeground } from '../../production/useChatExposure';
 import { assistantPages, type ChatPageContext } from '../../../../src/shared/chat-page-context';
 import { useProduction } from '../../production/ProductionProvider';
-import { colors } from '../../theme';
-import { AppDialog } from '../AppDialog';
+import { colors, mobileLayout } from '../../theme';
+import { CompanionPopover } from './CompanionPopover';
+import { AgentComposer } from '../agent/AgentComposer';
+import { AssistantByline } from '../chat/AssistantByline';
+import { ChatAction } from '../chat/ChatAction';
+import { failedChatReply } from '../chat/failed-reply';
 import { CharacterDock } from './CharacterDock';
 import { AppButton } from '../ui';
-import { VoiceCapture } from '../agent/VoiceCapture';
+import { AppIcon } from '../AppIcon';
 import { useCompanionSelection } from './CompanionSelection';
 function characterSource(apiBaseUrl: string) {
   return Platform.OS === 'web' ? '/companion/zundamon.html' : new URL('/companion/zundamon.html', apiBaseUrl).href;
@@ -18,7 +22,7 @@ function characterSource(apiBaseUrl: string) {
 export function ChatToolbarCompanion({ compact }: { compact: boolean }) {
   const { identityKey, apiBaseUrl } = useProduction();
   const foreground = useChatForeground(), pathname = usePathname();
-  const height = compact ? 50 : 62;
+  const height = compact ? 78 : 214;
   if (!identityKey || pathname !== '/chat') return null;
   return <View style={{ width: Math.ceil(height * .71), height, flexShrink: 0 }}>
     <CharacterDock key={identityKey} src={characterSource(apiBaseUrl)} page="/chat" foreground={foreground} inToolbar />
@@ -30,10 +34,10 @@ export function SiteCompanion() {
   return identityKey ? <Companion key={identityKey} /> : null;
 }
 
-type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean; reminderId?: string };
+type Panel = { page: string; scope: string | null; chosenChild?: string; includeItem: boolean; reminderId?: string; focusRequest?: number };
 
 function Companion() {
-  const pathname = usePathname(), { height } = useWindowDimensions(), foreground = useChatForeground();
+  const pathname = usePathname(), foreground = useChatForeground();
   const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState, online } = useProduction();
   const childId = !sharedChild.target && scopeKey && selectedChildId === chatState.selectedChildId ? selectedChildId : null;
   const scope = scopeKey ?? (sharedChild.target ? JSON.stringify(sharedChild.target) : null);
@@ -53,10 +57,11 @@ function Companion() {
   }, [pathname, scope, selectedChildId, sharedChild.target]);
   return <>
     <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground} panelOpen={open}
-      onChat={() => setPanel({ page: pathname, scope, includeItem: !!childId, reminderId: unread || undefined })} />
-    {open && (childId
-      ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} reminderId={panel.reminderId} height={height} close={() => setPanel(null)} />
-      : <ConversationChoices close={() => setPanel(null)} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} />)}
+      onChat={() => setPanel(current => open && current ? { ...current, focusRequest: (current.focusRequest ?? 1) + 1 }
+        : { page: pathname, scope, includeItem: !!childId, reminderId: unread || undefined })} />
+    {open && <CompanionPopover>{childId
+      ? <QuickConversation key={scope} page={pathname} childId={childId} includeItem={panel.includeItem} reminderId={panel.reminderId} focusRequest={panel.focusRequest ?? 1} close={() => setPanel(null)} />
+      : <ConversationChoices close={() => setPanel(null)} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} />}</CompanionPopover>}
   </>;
 }
 
@@ -71,7 +76,7 @@ function ConversationChoices({ close, onChoose }: { close(): void; onChoose(id: 
     if (!sharedChild.target && id === recordsState.selectedChildId) actions.refresh();
     else actions.selectChild(id);
   }
-  return <AppDialog visible onDismiss={close} accessibilityLabel="選擇私人對話" style={styles.dialog}>
+  return <View accessibilityLabel="選擇私人對話" style={styles.chooser}>
     <Text variant="titleMedium">選擇私人對話</Text>
     {verified && children.length > 0 ? <>
       <Text>{sharedChild.target ? '選擇後，本頁會切換到該孩子的私人空間。共享項目會留在原空間。' : '選擇孩子後，可在本頁繼續對話。'}</Text>
@@ -87,60 +92,78 @@ function ConversationChoices({ close, onChoose }: { close(): void; onChoose(id: 
       <AppButton variant="secondary" label="重新讀取孩子名單" disabled={!online || childrenLoading} onPress={() => void controller.reloadChildren()} />
     </>}
     <AppButton variant="quiet" label="收起" onPress={close} />
-  </AppDialog>;
+  </View>;
 }
 
-function QuickConversation({ page, childId, includeItem, reminderId, height, close }: { page: string; childId: string; includeItem: boolean; reminderId?: string; height: number; close(): void }) {
+function QuickConversation({ page, childId, includeItem, reminderId, focusRequest, close }: {
+  page: string; childId: string; includeItem: boolean; reminderId?: string; focusRequest: number; close(): void;
+}) {
   const { chatState: chat, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, sendChat,
-    chatController, chatWritesAllowed, voiceUpload, fileUpload, photoUpload, openAgentDraft, checkVoiceUpload } = useProduction();
-  const selected = useCompanionSelection();
+    chatController, chatWritesAllowed, voiceUpload, fileUpload, photoUpload, openAgentDraft, agentRuns, recordsState } = useProduction();
+  const selected = useCompanionSelection(), compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const item = includeItem && selected?.page === page && selected.childId === childId ? selected.item : undefined;
-  const [voiceOpen, setVoiceOpen] = useState(false);
-  const draft = chat.drafts[childId];
+  const draft = chat.drafts[childId], phase = draft?.phase ?? 'draft';
+  const [previousIds] = useState(() => new Set(chat.messages.map(m => m.id)));
   const activeReply = chat.replyingMessageId ?? (chat.remoteReply?.status === 'running'
     && !chat.messages.some(m => m.role === 'model' && m.inReplyTo === chat.remoteReply?.messageId) ? chat.remoteReply.messageId : null);
-  const canStartNext = draft?.phase === 'reply_failed' && !!draft.savedUserMessageId && !chat.busy && !activeReply;
+  const question = [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'user' && !m.discussionOf
+    && (!previousIds.has(m.id) || m.id === activeReply || m.id === draft?.savedUserMessageId));
+  const reply = question && [...chat.messages].reverse().find(m => m.inReplyTo === question.id);
+  const reason = reply && failedChatReply(reply.text, reply.agentRunId ? agentRuns[reply.agentRunId]?.stopReasonLabel : undefined);
+  const submitted = !!draft?.savedUserMessageId && (phase === 'replying' || phase === 'reply_failed');
+  const upload = [voiceUpload, fileUpload, photoUpload].find(u => u.busy || u.unknown || u.notice);
   const editable = chatWritesAllowed && chat.online && !chat.busy && !activeReply && !!chat.loadedAt && !chat.loading
-    && (!draft || draft.phase === 'draft') && ![voiceUpload,fileUpload,photoUpload].some(u => u.busy || u.unknown);
+    && phase === 'draft' && ![voiceUpload, fileUpload, photoUpload].some(u => u.busy || u.unknown);
   const reminder = reminderId ? chat.messages.find(m => m.id === reminderId && m.childId === childId && m.proactive) : undefined;
   const [exposed, setExposed] = useState(false);
   const foreground = useChatForeground();
   const exposedIds = useMemo(() => exposed && reminder ? [reminder.id] : [], [exposed, reminder?.id]);
   useChatExposure(foreground && exposed, exposedIds);
-  const recent = chat.messages.filter(m => m.childId === childId && m.id !== reminder?.id && !m.proactiveUnread).slice(-4);
   const validPage = assistantPages.find(p => p === page);
   const send = () => {
     if (!editable || !validPage) return;
-    const context: ChatPageContext = { page: validPage, ...(item ? {item} : {}) };
-    void sendChat({ pageContext: context });
+    const context: ChatPageContext = { page: validPage, ...(item ? { item } : {}) };
+    return sendChat({ pageContext: context });
   };
-  return <AppDialog visible onDismiss={close} accessibilityLabel="小助手對話" style={styles.dialog}>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.heading}><Text variant="titleMedium">小助手</Text><AppButton variant="quiet" label="開啟助手頁" onPress={() => { close(); openAgentDraft(); }} /></View>
-      <ScrollView style={{maxHeight:Math.max(100,Math.min(height * .48, 350))}} keyboardShouldPersistTaps="handled">
-        {reminder && <View testID="companion-reminder" onLayout={() => setExposed(true)} style={styles.line}>
-          <Text variant="labelSmall">助手提醒</Text><Text selectable>{reminder.text}</Text></View>}
-        {recent.map(m => <View key={m.id} style={[styles.line,m.role === 'user' && styles.userLine]}><Text variant="labelSmall">{m.role === 'user' ? '你' : '助手'}</Text>
-          <Text selectable>{m.text || (m.voice ? '語音訊息' : '附件訊息')}</Text></View>)}
-        {voiceOpen && <VoiceCapture visible onDismiss={() => setVoiceOpen(false)} onPick={a => { if (addAgentAttachment(a)) setVoiceOpen(false); }} />}
-      </ScrollView>
-      {item && <Text variant="labelMedium">連同目前{({task:'待辦',record:'記錄',document:'文件'})[item.kind]}發問</Text>}
-      {agentAttachments.map(a => <AppButton key={a.id} variant="quiet" disabled={!editable} label={'移除' + (a.kind === 'voice' ? '錄音' : '附件')} onPress={() => removeAgentAttachment(a.id)} />)}
-      <TextInput mode="outlined" dense multiline accessibilityLabel="小助手問題" placeholder="想問甚麼？" maxLength={10000} disabled={!editable}
-        value={draft?.savedUserMessageId ? '' : chatDraft} onChangeText={setChatDraft} style={styles.input} />
-      {(chat.error || chat.replyError || draft?.notice || voiceUpload.notice) && <Text accessibilityLiveRegion="polite">{chat.error || chat.replyError || voiceUpload.notice || draft?.notice}</Text>}
-      {canStartNext && <AppButton variant="quiet" label="開始下一條問題" onPress={() => chatController.startNewMessage()} />}
-      {voiceUpload.unknown && <AppButton label="查核原錄音上傳" onPress={checkVoiceUpload} />}
-      <View style={styles.actions}><AppButton variant="quiet" label="收起" onPress={close} />
-        <AppButton variant="quiet" label="錄音" disabled={!editable || !!agentAttachments.length} onPress={() => setVoiceOpen(true)} />
-        {activeReply ? <AppButton label="停止回覆" disabled={chat.cancelling || chat.cancelAcceptedFor === activeReply || !chat.online} onPress={() => void chatController.cancelReply()} />
-          : <AppButton label="送出" disabled={!editable || !validPage || voiceOpen || (!chatDraft.trim() && !agentAttachments.length)} onPress={send} />}</View>
-    </KeyboardAvoidingView>
-  </AppDialog>;
+  const notice = upload?.notice || chat.error || (!reason && (chat.replyError || (phase !== 'draft' || !!chatDraft.trim()) && draft?.notice));
+  const openFull = () => { close(); openAgentDraft(); };
+  return <>
+    <View style={styles.heading}>
+      <View style={styles.identity}><AppIcon name="message-text-outline" size={18} /><Text style={styles.headingText}>小助手</Text></View>
+      <View style={styles.identity}><ChatAction label="完整對話" accessibilityLabel="開啟助手頁" onPress={openFull} icon="arrow-right" />
+        <ChatAction label="收起小助手對話" onPress={close} icon="close" iconOnly /></View>
+    </View>
+    {(reminder || question || activeReply || notice) && <ScrollView testID="companion-turn" style={styles.preview} keyboardShouldPersistTaps="handled">
+      {reminder && <View testID="companion-reminder" onLayout={() => setExposed(true)} style={styles.reply}>
+        <Text style={styles.byline}>助手提醒</Text><Text selectable style={styles.body}>{reminder.text}</Text></View>}
+      {question && <View style={styles.question}><Text selectable style={styles.body}>{question.text || '附件訊息'}</Text></View>}
+      {reply && <View style={styles.reply}><AssistantByline />
+        {reason && <Text accessibilityRole="alert" style={styles.warning}>{reason.reason}</Text>}
+        {!!(reason ? reason.body : reply.text) && <Text selectable style={styles.body}>{reason ? reason.body : reply.text}</Text>}</View>}
+      {activeReply && !reply && <Text accessibilityLiveRegion="polite" style={styles.byline}>正在回覆…</Text>}
+      {!!notice && <Text accessibilityLiveRegion="polite" style={styles.warning}>{notice}</Text>}
+    </ScrollView>}
+    {(phase === 'save_unknown' || phase === 'checked' || upload?.unknown || phase === 'reply_failed') &&
+      <ChatAction label="在完整對話查核原訊息" icon="arrow-right" onPress={openFull} />}
+    {!question && !reminder && !activeReply && <Text style={styles.prompt}>想問甚麼？</Text>}
+    <Text style={styles.context}>{item ? ({ task: '待辦', record: '記錄', document: '文件' })[item.kind] + ' · ' + (selected?.label || '目前選取的項目')
+      : (recordsState.children.find(c => c.id === childId)?.displayName ?? '孩子') + '的私人對話'}</Text>
+    <AgentComposer embedded compact={compact} enabled={editable} allowTyping={submitted && chatWritesAllowed && !chat.busy && !activeReply}
+      focusRequest={focusRequest} draft={submitted ? draft.nextText ?? '' : chatDraft} attachments={submitted ? [] : agentAttachments}
+      onChangeDraft={setChatDraft} onPreview={send} submitLabel="送出" suggestionsAvailable={false}
+      onStop={activeReply ? () => void chatController.cancelReply() : undefined} stopTarget={activeReply ?? undefined}
+      stopDisabled={chat.cancelling || chat.cancelAcceptedFor === activeReply || !chat.online}
+      submitEnabled={editable && !!validPage && (!!chatDraft.trim() || !!agentAttachments.length) && chatDraft.length <= 10000}
+      onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} />
+  </>;
 }
 const styles = StyleSheet.create({
-  dialog:{width:'91%',maxWidth:420,alignSelf:'center',paddingHorizontal:14,paddingBottom:10},
-  heading:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, actions:{flexDirection:'row',flexWrap:'wrap',alignItems:'center',justifyContent:'flex-end',gap:4},
-  input:{maxHeight:90,backgroundColor:colors.white}, line:{marginBottom:8,alignSelf:'flex-start',maxWidth:'94%',padding:8,borderRadius:10,backgroundColor:colors.white},
-  userLine:{alignSelf:'flex-end',backgroundColor:colors.paleTeal},
+  chooser: { gap: 8 }, heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.paleTeal, borderBottomWidth: 1, borderColor: colors.sage,
+    marginTop: -12, marginHorizontal: -12, paddingHorizontal: 12, borderTopLeftRadius: 19, borderTopRightRadius: 19 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 6 }, headingText: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  preview: { maxHeight: 170, flexShrink: 1 }, byline: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  reply: { paddingVertical: 6, gap: 3 }, question: { alignSelf: 'flex-end', maxWidth: '90%', borderRadius: 12, padding: 8, backgroundColor: colors.sage },
+  body: { color: colors.ink, fontSize: 15, lineHeight: 22 }, warning: { color: colors.warningInk, fontSize: 13, lineHeight: 19 },
+  prompt: { fontSize: 19, lineHeight: 26, fontWeight: '600', color: colors.ink, marginTop: 10 },
+  context: { color: colors.muted, fontSize: 12, marginTop: 2 },
 });

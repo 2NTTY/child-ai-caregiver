@@ -12,7 +12,7 @@ import {
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { failedChatReply } from '../components/chat/failed-reply';
 import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Platform, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -30,6 +30,8 @@ import { useProduction } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
 import { ChatPhotoMessage } from "../production/ChatPhotoMessage";
 import { NotificationChatTarget } from "../production/NotificationChatTarget";
+import { AssistantByline } from '../components/chat/AssistantByline';
+import { conversationTurns } from '../components/chat/conversation-turns';
 import { QuestionDiscussion } from '../components/chat/QuestionDiscussion';
 import { useChatExposure, useChatForeground } from "../production/useChatExposure";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
@@ -46,16 +48,13 @@ export default function ChatPage() {
   const viewportWidth = useWindowDimensions().width;
   const [paneWidth, setPaneWidth] = useState(0);
   return <View style={[styles.root, customBackground && styles.customRoot]} role="region" accessibilityLabel="助手" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <View testID="chat-page-layout" style={styles.pageLayout}>
-      <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
-        onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
+    <View testID="chat-page-layout" style={styles.pageLayout} onLayout={event => setPaneWidth(event.nativeEvent.layout.width)}>
+      <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint} />
     </View>
     <NotificationChatTarget key={`${scopeKey}:${messageId}`} />
   </View>;
 }
-function ChatContents({ compact, onPaneLayout }: {
-  compact: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
-}) {
+function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
   const { model, actions, owner, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
@@ -71,15 +70,22 @@ function ChatContents({ compact, onPaneLayout }: {
   const [activityEntry, setActivityEntry] = useState<"list" | "detail">("list");
   const [paneHeight, setPaneHeight] = useState(0);
   const [discussNext, setDiscussNext] = useState(false);
+  const [openedDiscussion, setOpenedDiscussion] = useState<string>();
+  useEffect(() => { if (pathname !== '/chat') setDiscussNext(false); }, [pathname]);
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const handlePaneLayout = (event: LayoutChangeEvent) => {
     setPaneHeight(event.nativeEvent.layout.height);
-    onPaneLayout?.(event);
   };
   const foreground = useChatForeground(), [visibleIds, setVisibleIds] = useState<string[]>([]);
   useChatExposure(foreground && pathname === "/chat" && !notificationMessageId && !detailsOpen && !privacyOpen, visibleIds);
   const displayedMessages = visibleIds.length ? chat.messages.filter(message => visibleIds.includes(message.id)) : chat.messages.slice(-6);
-  const displayedRuns = displayedMessages.flatMap(message => message.role === 'model' && message.agentRunId ? [message.agentRunId] : []).join(',');
+  const turns = useMemo(() => conversationTurns(chat.messages), [chat.messages]);
+  const displayedRuns = displayedMessages.flatMap(message => {
+    const discussion = turns.discussions.get(message.id);
+    const discussionRunId = discussion?.reply?.agentRunId ?? discussion?.question.agentRunId;
+    const ids = message.role === 'model' && message.agentRunId ? [message.agentRunId] : [];
+    return discussionRunId ? [...ids, discussionRunId] : ids;
+  }).join(',');
   useEffect(() => {
     if (pathname !== '/chat' || !scopeKey || !chat.online || !displayedRuns || chat.selectedChildId !== child?.id) return;
     const read = new AbortController();
@@ -187,6 +193,17 @@ function ChatContents({ compact, onPaneLayout }: {
       </BackgroundSurface>
     </ScrollView>
   </View> : null;
+  const savedFailure = currentReply && unfinishedReply && failedChatReply(currentReply.text,
+    currentReply.agentRunId ? agentRuns[currentReply.agentRunId]?.stopReasonLabel : undefined);
+  const savedDraftReply = !!draft?.savedUserMessageId && scopedMessages.some(m => m.inReplyTo === draft.savedUserMessageId);
+  const recoveryRowId = phase === 'reply_failed' && savedFailure && currentReply?.inReplyTo === draft?.savedUserMessageId
+    && turns.rows.slice(-6).some(row => row.id === currentReply.id) ? currentReply.id : undefined;
+  const showDraftNotice = phase === 'save_unknown' || phase === 'checked' || phase === 'draft' && !!chatDraft.trim()
+    || phase === 'reply_failed' && !(savedFailure && currentReply?.inReplyTo === draft?.savedUserMessageId);
+  const sameFailureNotice = savedFailure && (!remote || remote.messageId === currentReply?.inReplyTo)
+    && (chat.replyError?.startsWith('這次回覆未完成，') || chat.replyError === savedFailure.reason);
+  const replyNotice = sameFailureNotice ? null : chat.replyError;
+  const notice = (showDraftNotice && draft?.notice) || replyNotice;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
     {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
@@ -206,18 +223,17 @@ function ChatContents({ compact, onPaneLayout }: {
       ? <ProgressSourceCards sources={turnFeedback.sources} reviewing={replying && turnFeedback.phase === "reviewing"} retainedAfterFailure={!replying} />
       : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
-    {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
-    {chat.replyError && (!(draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim())) || chat.replyError !== draft?.notice) ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
+    {notice && notice !== chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{notice}</Text> : null}
     {chat.error || phase === "save_unknown" || phase === "checked" ? <AppButton label={phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重試讀取聊天"}
       variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /> : null}
     {chat.cancelNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{chat.cancelNotice}</Text> : null}
     {phase === "checked" ? <View style={styles.statusRow}>
       {draft?.candidateMessageId ? <AppButton label="已核對，確認這則聊天已保存" variant="quiet" disabled={busy} onPress={() => chatController.confirmFoundMessage()} /> : null}
       <AppButton label="已核對，解鎖原文重試" variant="quiet" disabled={busy || !chat.online} onPress={() => chatController.unlockCheckedSave()} /></View> : null}
-    {phase === "reply_failed" && draft?.savedUserMessageId ? <View style={styles.statusRow}>
-      <AppButton label="重試原訊息回覆" variant="quiet" disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
+    {phase === "reply_failed" && draft?.savedUserMessageId && !recoveryRowId ? <View style={styles.statusRow}>
+      <ChatAction label={savedDraftReply ? '查核原回覆' : '重試原訊息回覆'} disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
         onPress={() => { void requestChatReply(draft.savedUserMessageId!); }} />
-      <AppButton label="開始新訊息" variant="quiet" disabled={busy} onPress={() => chatController.startNewMessage()} /></View> : null}
+      <ChatAction label="開始新訊息" disabled={busy} onPress={() => chatController.startNewMessage()} /></View> : null}
     {!busy && turnFeedback && (turnFeedback.cards?.length || turnFeedback.sources?.length)
       && !(remote?.messageId === turnFeedback.messageId && remote.status === "running") && turnFeedback.messageId !== draft?.savedUserMessageId
       ? <AppButton label="收起這次查核提示" variant="quiet" density="compact"
@@ -229,23 +245,26 @@ function ChatContents({ compact, onPaneLayout }: {
   const timelineFooter = feedback ? <View style={styles.feedback}>{feedback}</View> : null;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
+  const welcome = confirmedEmptyChat && !busy && !agentAttachments.length && phase === 'draft';
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
-    : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
-      : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
-        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊什麼？</Text></BackgroundSurface> : null;
+    : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
-      <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
-      <ChatToolbarCompanion compact={compact} />
+      <View style={styles.headerIdentity}>
+        {compact && <ChatToolbarCompanion compact />}
+        <View><Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.headingTitle}>育有方助手</Text>
+          {child && <Text style={styles.meta}>{child.displayName}的私人對話</Text>}</View>
+      </View>
       <View style={styles.toolbarActions}>
         <ChatAction icon="clock-outline" label={agentModel.pendingDecision ? "對話活動 · 待查核" : needsDecision ? "對話活動 · 待確認" : "對話活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"}
           onPress={target => { detailsTrigger.current = target; setActivityEntry("list"); setDetailsOpen(true); }} compact={compact} disabled={!child} />
       </View>
     </BackgroundSurface>
-    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={handlePaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
-    <ChatTimeline items={scopedMessages} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
+    <View style={styles.conversationLayout}>
+    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={handlePaneLayout} style={[styles.readingPanel, welcome && styles.welcomePanel]} activeStyle={styles.boundedReadingPanel}>
+    {welcome ? <View testID="chat-empty-prompt" style={styles.welcome}><Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊甚麼？</Text></View> : <ChatTimeline items={childScopedChat ? turns.rows : []} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
       onVisibleItems={ids => setVisibleIds(previous => previous.join(",") === ids.join(",") ? previous : ids)}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
         enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
@@ -266,9 +285,10 @@ function ChatContents({ compact, onPaneLayout }: {
         const failure = message.role === "model" && (effectiveRunStatus === "stopped" || effectiveRunStatus === "unknown" || !effectiveRunStatus)
           ? failedChatReply(message.text, run?.stopReasonLabel) : null;
         const original = message.inReplyTo ? scopedMessages.find(row => row.id === message.inReplyTo && row.role === "user") : undefined;
-        const followup = message.role === 'model' ? scopedMessages.find(row => row.discussionOf === message.id) : undefined;
-        const discussionReply = followup && scopedMessages.find(row => row.role === 'model' && row.inReplyTo === followup.id);
-        const discussionRun = discussionReply?.agentRunId ? agentRuns[discussionReply.agentRunId] : original?.discussion ? run : undefined;
+        const linked = turns.discussions.get(message.id);
+        const followup = linked?.question, discussionReply = linked?.reply;
+        const linkedRunId = discussionReply?.agentRunId ?? followup?.agentRunId;
+        const discussionRun = linkedRunId ? agentRuns[linkedRunId] : original?.discussion ? run : undefined;
         const discussionQuestion = followup ?? (original?.discussion ? original : message.discussion && !hasModelReply ? message : undefined);
         const discussionActive = !!discussionQuestion && activeReplyId === discussionQuestion.id && replyRunning;
         const discussionState = discussionActive ? (scopedFeedback?.messageId === discussionQuestion?.id
@@ -284,6 +304,21 @@ function ChatContents({ compact, onPaneLayout }: {
         const inlineSteps = failure && run?.readOnlyStop ? run.tools.map(tool => ({
           id: tool.id, label: tool.nameLabel, state: tool.status === "succeeded" ? "succeeded" as const : "failed" as const,
         })) : undefined;
+        const followupRemote = remote?.messageId === followup?.id ? remote : null;
+        const canCheckFollowup = followup && !discussionReply && !discussionActive && followup.authorUserId === chat.userId
+          && chat.messages.slice(-chat.limit).some(item => item.id === followup.id)
+          && !(discussionRun?.status === 'stopped' && discussionRun.stopReasonLabel === agentStopMessage('busy'))
+          && !(followupRemote?.status === 'stopped' && followupRemote.stopReason === 'busy');
+        const discussionPanel = discussionQuestion && <QuestionDiscussion key={discussionQuestion.id}
+          initiallyExpanded={openedDiscussion === message.id || !!message.discussionOf} summary={discussionReply?.text}
+          runId={linkedRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
+          status={discussionRun?.status} state={discussionState} online={chat.online}
+          checkOriginal={canCheckFollowup ? () => { void requestChatReply(followup.id); } : undefined}
+          checkDisabled={busy || chat.loading || !chat.online || !chatWritesAllowed}
+          onToggle={() => timelineRef.current?.holdReadingPosition()}
+          read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
+          onOpenSource={openAgentSource} onLocateSource={locateSource} />;
+        if (message.discussionOf) return discussionPanel;
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: childProfiles && model.children.length
           ? model.children.map(item => item.displayName).join("、") : mismatchedDirectory ? "這則舊回覆未能回答你的問題。" : failure?.body ?? message.text,
           phase: effectiveRunStatus ? runPhases[effectiveRunStatus] : failure ? "stopped" : undefined, activities: inlineSteps,
@@ -291,6 +326,7 @@ function ChatContents({ compact, onPaneLayout }: {
           phaseLabel={failure?.reason ?? (effectiveRunStatus === "running" ? "運行仍在處理" : undefined)} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
+            {message.role === 'model' && !failure && <AssistantByline />}
             {message.role === 'user' && message.pageContext?.item && (message.pageContext.item.kind === 'document'
               ? <Text style={styles.meta}>提問時所選的文件 · 版本 {message.pageContext.item.version}</Text>
               : <ChatAction compact={compact} label={message.pageContext.item.kind === 'task' ? '查看提問時所選的待辦' : '查看提問時所選的記錄'}
@@ -304,15 +340,11 @@ function ChatContents({ compact, onPaneLayout }: {
             {message.voice?<VoiceMessage messageId={message.id} voice={message.voice}/>:null}
             {message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : null}
           </>}
-          degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
-            {discussionQuestion ? <QuestionDiscussion key={discussionQuestion.id} runId={discussionReply?.agentRunId ?? discussionRun?.id ?? (original?.discussion ? message.agentRunId : undefined)}
-              status={discussionRun?.status} state={discussionState} online={chat.online}
-              onToggle={() => timelineRef.current?.holdReadingPosition()}
-              read={async (id, signal) => scopeKey ? owner.agentOwner.readChatEvidence(scopeKey, [id], signal, true) : undefined}
-              onOpenSource={openAgentSource} />
+          degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply || message.id === recoveryRowId ? <>
+            {discussionQuestion ? discussionPanel
               : message.role === 'model' && !failure && run?.status === 'completed' && original?.authorUserId === chat.userId
                 ? <ChatAction label="討論這個回答" icon="account-group-outline" disabled={busy || chat.loading || !chat.online || !chatWritesAllowed}
-                  onPress={() => { setFollowRequest(`discuss-${Date.now()}`); void chatController.discussAnswer(message.id); }} /> : null}
+                  onPress={() => { setOpenedDiscussion(message.id); timelineRef.current?.holdReadingPosition(); void chatController.discussAnswer(message.id); }} /> : null}
             {childProfiles ? <ChatAction label="查看子女檔案" compact={compact} onPress={() => actions.open("profile")} /> : null}
             {message.role === 'model' && sourcesMatch && run?.sourceCardReadings?.map(target =>
               <RegisteredReadingCard key={JSON.stringify(target)} target={target} active={displayedMessages.some(item => item.id === message.id)} />)}
@@ -325,16 +357,18 @@ function ChatContents({ compact, onPaneLayout }: {
             {message.role === 'model' && sourcesMatch && run?.platformSeriesIds?.map(series =>
               <ChatAction key={series} label="查看已加入的平台卡" compact={compact}
                 onPress={() => navigate(() => router.push({ pathname: '/memory', params: { series } }), 'workspace')} />)}
-            {message.agentRunId && !inlineSteps && !detailsOnReply ? <ChatAction label="回覆詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
+            {message.id === recoveryRowId && <ChatAction label="開始新訊息" icon="plus" disabled={busy} onPress={() => chatController.startNewMessage()} />}
+            {message.agentRunId && (!inlineSteps || message.id === recoveryRowId) && !detailsOnReply ? <ChatAction label="回覆詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
               onPress={target => { detailsTrigger.current = target; setActivityEntry("detail"); selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
-            {pendingReply && !(replyRunning && activeReplyId === message.id) ? <ChatAction label={message.agentRunId ? "查核原回覆" : "取得回覆"}
+            {pendingReply && !(phase === 'reply_failed' && draft?.savedUserMessageId === message.id) && !(replyRunning && activeReplyId === message.id) ? <ChatAction label={message.agentRunId ? "查核原回覆" : "取得回覆"}
               accessibilityLabel="要求這則已保存訊息的回覆" compact={compact} disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
               onPress={() => { void requestChatReply(message.id); }} /> : null}
           </> : undefined} />;
-      }} />
+      }} />}
+    {welcome && timelineFooter}
     {officialHelpPanel}
-    <AgentComposer discussionControl={childScopedChat && !replyRunning && phase === 'draft' && <ChatAction label={discussNext ? '已選討論' : '討論'}
+    <AgentComposer centered={welcome} discussionControl={childScopedChat && !replyRunning && phase === 'draft' && <ChatAction label={discussNext ? '只討論本題 ×' : '三方討論'}
       accessibilityLabel={discussNext ? '取消這一題的討論' : '為這一題開啟三個 AI 觀點討論'}
       icon={discussNext ? 'check' : 'account-group-outline'} compact disabled={busy || !chat.online || !chatWritesAllowed}
       onPress={() => setDiscussNext(value => !value)} />}
@@ -352,6 +386,10 @@ function ChatContents({ compact, onPaneLayout }: {
       {child ? <ChatAction label="平台卡庫" accessibilityLabel="查看可下載的平台卡"
         onPress={() => navigate(() => router.push({ pathname: '/memory', params: { section: 'references', catalog: 'platform' } }), 'workspace')} subtle /> : null}</BackgroundSurface>
     </BackgroundSurface>
+    {!compact && <View style={styles.companionAside}><View style={styles.companionStage}>
+      <View pointerEvents="none" style={styles.companionBackdrop} /><ChatToolbarCompanion compact={false} />
+    </View></View>}
+    </View>
     <AgentConversation visible={detailsOpen} entry={activityEntry} onOpenResource={path => navigate(() => { setDetailsOpen(false); router.push(path as Parameters<typeof router.push>[0]); }, "workspace")} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
     <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
@@ -366,10 +404,17 @@ const styles = StyleSheet.create({
   readingPanel: { flex: 1, minHeight: 0, minWidth: 0, width: "100%" },
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
-  toolbar: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexShrink: 0,
+  toolbar: { width: "100%", maxWidth: 1060, borderBottomWidth: 1, borderBottomColor: colors.softLine, alignSelf: "center", flexShrink: 0,
     paddingHorizontal: chatLayout.wideInset, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
-  screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
+  headerIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
+  headingTitle: { color: colors.ink, fontSize: 21, lineHeight: 29, fontWeight: '700' },
+  welcomePanel: { justifyContent: 'center' },
+  welcome: { width: '100%', maxWidth: chatLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 22, paddingBottom: 4 },
+  conversationLayout: { justifyContent: 'center', flex: 1, flexDirection: 'row', minHeight: 0, width: '100%', maxWidth: 1060, alignSelf: 'center' },
+  companionAside: { width: '20%', maxWidth: 190, alignItems: 'center', justifyContent: 'center', paddingBottom: 32 },
+  companionStage: { width: '100%', alignItems: 'center', justifyContent: 'flex-end' },
+  companionBackdrop: { position: 'absolute', height: 163, width: '85%', bottom: 0, borderRadius: 82, backgroundColor: colors.sage },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
@@ -381,8 +426,8 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
   progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
   progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
-  earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
-  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
+  emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
+  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "600" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
   privacyFooter: { flexDirection: 'row', flexWrap: 'wrap', flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },
 });
