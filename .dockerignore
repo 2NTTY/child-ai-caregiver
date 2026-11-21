@@ -53,6 +53,8 @@ scripts/**
 !scripts/knowledge.mjs
 !scripts/knowledge-refresh.mjs
 !scripts/fhs-publication-receipt.mjs
+!scripts/fhs-review-printed-pages.mjs
+!scripts/fhs-printed-correction.mjs
 !scripts/fhs-held-window-evidence.mjs
 !scripts/fhs-initial-campaign.mjs
 !scripts/fhs-catalog-batch.mjs
