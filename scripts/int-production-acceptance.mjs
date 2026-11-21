@@ -270,7 +270,7 @@ async function main() {
     await expect(page.getByText(actualText, { exact: true }).first()).toBeVisible(); returnedCareConfirmed = true; boundary();
 
     phase = "reload_history";
-    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).first().click();
+    await page.getByRole("link", { name: "助手", exact: true }).first().click();
     await expect(page).toHaveURL(origin + "/chat");
     const historyRead = responseAt("/children/" + child.id + "/messages");
     await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });

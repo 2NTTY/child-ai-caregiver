@@ -8,6 +8,7 @@ export type ChatComposerInputHandle = { focus(options?: { preventScroll?: boolea
 export type ChatComposerInputProps = {
   onAttachment?(attachment: import("../../assistant-draft").AssistantAttachment): void;
   onAttachmentError?(message: string): void;
+  autoFocus?: boolean;
   onStop?(): void; stopTarget?: string;
   value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
   onFocus(): void; onBlur(): void;
@@ -19,7 +20,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
   const [height, setHeight] = useState<number>(chatLayout.inputMinHeight);
   useEffect(() => { if (!props.value) setHeight(chatLayout.inputMinHeight); }, [props.value]);
   useImperativeHandle(ref, () => ({ focus: () => input.current?.focus(), blur: () => input.current?.blur() }), []);
-  return <AppTextField ref={input} mode="flat" dense multiline disabled={props.disabled}
+  return <AppTextField autoFocus={props.autoFocus} ref={input} mode="flat" dense multiline disabled={props.disabled}
     accessibilityLabel="撰寫對話問題" placeholder="補充情況，或加入附件…" placeholderTextColor={chatColors.secondary}
     value={props.value} onChangeText={props.onChangeText} onFocus={props.onFocus} onBlur={props.onBlur}
     underlineColor="transparent" activeUnderlineColor="transparent" underlineStyle={styles.underline}
