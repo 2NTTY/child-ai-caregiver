@@ -26,6 +26,12 @@ def commands(args, manifest):
     if args.action == "accounting":
         yield ["scripts/fhs-initial-campaign.mjs", "status"]
         return
+    if args.action == "script":
+        if args.reads or not any(row["sourceId"] == args.source and row["observationHash"] == args.observation for row in manifest):
+            raise ValueError("Unassigned script edition")
+        verb = "publish-script-edition" if args.mode == "run" else "inspect-script-edition"
+        yield ["scripts/fhs-initial-campaign.mjs", verb, args.source, args.observation]
+        return
     groups = {group["id"]: group["sources"] for group in manifest["lanes"]}
     if args.action == "lane":
         sources = sorted(groups[args.lane], key=lambda source: source["pages"])
@@ -190,6 +196,10 @@ def main():
     lane.add_argument("mode", choices=["status", "prepare", "run"])
     lane.add_argument("source", nargs="?")
     sub.add_parser("accounting")
+    script = sub.add_parser("script")
+    script.add_argument("mode", choices=["inspect", "run"])
+    script.add_argument("source")
+    script.add_argument("observation")
     sub.add_parser("inspect").add_argument("source")
     receipt = sub.add_parser("receipt")
     receipt.add_argument("source")
@@ -206,7 +216,11 @@ def main():
     import host
     manifest = None
     byte_sizes = {}
-    if args.action != "accounting":
+    if args.action == "script":
+        if not HASH.fullmatch(args.observation) or not re.fullmatch(r"fhs-[0-9]{5}", args.source):
+            parser.error("Invalid script source or observation")
+        manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-script-editions.json"]))
+    elif args.action != "accounting":
         manifest = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-initial-publication-lanes.json"]))
     if args.action == "lane" and args.mode == "run":
         inventory = json.loads(host.run(["docker", "exec", "yuban-p1-worker-1", "cat", "/app/knowledge/fhs-child-inventory.json"]))

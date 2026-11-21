@@ -71,7 +71,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   saveLibraryPreference(tx: Transaction, owner: string, change: LibrarySelectionCommand): Promise<{ revision: number }>;
   platformCards(tx: Transaction, owner: string, after?: string, url?: string): Promise<{ cards: ListedPlatformCard[]; next: string | null }>;
   joinListedPlatformCard(tx: Transaction, owner: string, card: ListedPlatformCard): Promise<{ revision: number }>;
-  publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
+  publishedEdition(sourceId: string, transaction?: Transaction): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
     chunkIdentities: { key: string; chunkId: string; contentHash: string }[];
     source: KnowledgeSourceInput; enabled: boolean; current: boolean } | null>;
   treatmentEditions(sourceId: string, candidateId?: string, transaction?: Transaction): Promise<{ base: TreatmentEdition; selected: TreatmentEdition }>;
@@ -743,9 +743,9 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
       }
       return true;
     },
-    async publishedEdition(id) {
+    async publishedEdition(id, transaction) {
       if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
-      return database.runTransaction(async tx => {
+      const read = async (tx: Transaction) => {
         const source = await readSource(tx, id);
         if (!source?.activeVersionId) return null;
         const edition = await load(tx, source.activeVersionId, source);
@@ -753,7 +753,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           observationHash: edition.version.review?.assessment.observationHash ?? null,
           chunkIdentities: edition.chunks.map(({ document, chunkId, contentHash }) => ({ key: document.key, chunkId, contentHash })),
           source: edition.document, enabled: source.enabled, current: publication(edition) };
-      }, { readOnly: true });
+      };
+      return transaction ? read(transaction) : database.runTransaction(read, { readOnly: true });
     },
     prepareSearch,
     async rebuildSearchPageIn(tx, versionId, expectedHash, start) {

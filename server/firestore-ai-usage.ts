@@ -10,6 +10,7 @@ import type { ModelBillingSource, ModelSettingsUsage } from '../src/shared/model
 import { canonical, isRecord } from './firestore-session-codec.ts';
 import { campaignDayAdmission, type CampaignDayAdmission } from './knowledge-campaign-budget.ts';
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
+import { approvedScriptEdition, type ScriptEdition } from './fhs-script-edition.ts';
 import { DurableAiUsageError, type DurableAiUsage, type DurableAiUsageAdmission, type DurableAiUsageReceipt,
   type DurableAiUsageRecord, type DurableAiUsageRequest } from './durable-ai-usage.ts';
 
@@ -66,7 +67,7 @@ export interface FirestoreAiUsageOptions {
   billingSource: ModelBillingSource;
   serverClock?: () => number;
   campaignAdmission?: CampaignDayAdmission;
-  manualPublication?: ManualPublicationPin;
+  manualPublication?: ManualPublicationPin | ScriptEdition;
 }
 
 /**
@@ -92,7 +93,8 @@ export class FirestoreAiUsage implements DurableAiUsage {
     this.#database = database; this.#cipher = cipher; this.#projectId = projectId; this.#namespace = namespace;
     this.#source = parse(sourceSchema, billingSource, 'invalid_configuration'); this.#clock = serverClock;
     this.#publication = manualPublication !== undefined;
-    if (manualPublication && (billingSource !== 'platform' || campaignAdmission || manualPublicationPin(manualPublication.sourceId) !== manualPublication))
+    if (manualPublication && (billingSource !== 'platform' || campaignAdmission
+      || manualPublicationPin(manualPublication.sourceId) !== manualPublication && approvedScriptEdition(manualPublication.sourceId) !== manualPublication))
       reject('invalid_configuration');
     if (campaignAdmission) {
       if (billingSource !== 'platform' || campaignAdmission !== campaignDayAdmission) reject('invalid_configuration');
