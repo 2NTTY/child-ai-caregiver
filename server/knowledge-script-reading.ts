@@ -49,7 +49,7 @@ export function publisherScriptReading(units:readonly Unit[],materialTitle:strin
       /(?:[\d零〇一二兩三四五六七八九十百半]+\s*(?:個?月|歲|星期大|週大|日大)|學前|初生|新生)/u.test(s)))].slice(0,8);
     const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:['official-transcript'],conditions,
       ...(bound.has(unit.id) ? {ageExamples:bound.get(unit.id)!} : {}),
-      use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:before??null,
+      use:'original_lookup',ageBasis:bound.get(unit.id)?.some(e=>e.procedure)?'per_instruction':audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:before??null,
       ...(before!==undefined?{maxAgeMonthsExclusive:true}:{}),
       ...(audiences.length?{publisherAudiences:audiences}:{})};
     const searchText=exclusiveLookup && !unit.scriptPassage?[...unit.originalText.trim()].slice(0,150).join(''):unit.originalText;

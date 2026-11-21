@@ -1,4 +1,5 @@
 import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
+import { recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
 import type { DocumentReference, Transaction } from "@google-cloud/firestore";
@@ -100,12 +101,11 @@ export function createFirestoreKnowledgeWork(options: Options) {
       return schema.parse(JSON.parse(plaintext));
     } catch { reject("knowledge_work_storage_invalid"); }
   }
-  return {
-    /** Read the exact model stage of a commissioned public script with a settled, unsuccessful review. */
-    async inspectScriptReview(raw: BackgroundKnowledgeRunRequest) {
+  async function readFailedScriptStage(raw: BackgroundKnowledgeRunRequest, pin: {
+    sourceId:string;operationFingerprint:string;observationHash:string;code:string;attemptKey:string;requestHash:string;
+  }) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
-      const pin = recordedScriptReviewStage(request.watchId);
-      if (!pin || request.operationFingerprint !== pin.operationFingerprint || request.publishMode !== 'live')
+      if (request.watchId !== pin.sourceId || request.operationFingerprint !== pin.operationFingerprint || request.publishMode !== 'live')
         reject('knowledge_script_review_stage_binding');
       const root = ref('work', pin.operationFingerprint), stage = ref('model', pin.operationFingerprint, pin.attemptKey);
       return database.runTransaction(async tx => {
@@ -117,6 +117,20 @@ export function createFirestoreKnowledgeWork(options: Options) {
           || old.budget.modelCalls !== 1 || saved.requestHash !== pin.requestHash) reject('knowledge_script_review_stage_binding');
         return { state: saved.state, text: saved.text };
       }, { readOnly: true });
+  }
+  return {
+    /** Read the exact model stage of a commissioned public script with a settled, unsuccessful review. */
+    async inspectScriptReview(raw: BackgroundKnowledgeRunRequest) {
+      const pin = recordedScriptReviewStage(raw.watchId);
+      if (!pin) reject('knowledge_script_review_stage_binding');
+      return readFailedScriptStage(raw,pin);
+    },
+    async inspectCommunicationComparison(raw:BackgroundKnowledgeRunRequest,input:{system:string;user:string;attemptKey:string}) {
+      const pin=recordedCommunicationComparison;
+      if ('knowledge-review:'+knowledgeReviewHash({system:input.system,user:input.user}) !== input.attemptKey
+        || knowledgeReviewHash(input.attemptKey) !== pin.stageHash) reject('knowledge_script_review_stage_binding');
+      return readFailedScriptStage(raw,{sourceId:pin.sourceId,observationHash:pin.observationHash,operationFingerprint:pin.work,
+        code:'knowledge_review_failed',attemptKey:input.attemptKey,requestHash:knowledgeReviewHash(input)});
     },
     /** A terminal independent print reading remains inspectable after its lease expires. */
     async inspectPrintedStage(raw: BackgroundKnowledgeRunRequest, input: {system:string; user:string; attemptKey:string}) {

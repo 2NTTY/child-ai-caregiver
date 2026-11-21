@@ -6,22 +6,26 @@ import { knowledgeOperationId, knowledgeReviewHash } from '../server/knowledge-r
 import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
+import { normalizeRecordedComparison, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
-export async function inspectFailedScriptReview({ script, request, job, definition, checkId, refresh, work, knowledge }) {
+export async function inspectFailedScriptReview({ script, request, job, definition, checkId, refresh, work, knowledge, normalize = false }) {
   const pin = recordedScriptReviewStage(script.sourceId);
-  if (!pin || request.operationFingerprint !== pin.operationFingerprint) return undefined;
-  const saved = await work.inspectScriptReview(request);
-  const receipt = { stageHash: pin.stageHash, requestHash: pin.requestHash, state: saved.state, modelCalls: 0 };
-  if (saved.state !== 'ready') return { ...receipt, retainedText: false };
+  const comparison = request.operationFingerprint === recordedCommunicationComparison.work && script.sourceId === recordedCommunicationComparison.sourceId;
+  if (!pin || !comparison && request.operationFingerprint !== pin.operationFingerprint) return undefined;
+  let saved = comparison ? undefined : await work.inspectScriptReview(request);
+  const receipt = { stageHash: comparison?recordedCommunicationComparison.stageHash:pin.stageHash,
+    requestHash: comparison?null:pin.requestHash, state:saved?.state, modelCalls:0 };
+  if (saved && saved.state !== 'ready') return { ...receipt, retainedText: false };
   const verified = await refresh.resumeCheck(job.data, checkId);
   assertScriptObservation(script, definition, verified);
   const baseline = await knowledge.publishedEdition(script.sourceId);
   assertScriptBaseline(script, baseline);
   const { observation } = await refresh.inspect(script.sourceId);
   if (observation?.contentHash !== pin.observationHash) throw Error('knowledge_script_review_stage_binding');
-  const scriptRevision = await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),pin.operationFingerprint);
-  let matched = false;
+  const scriptRevision = await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),
+    request.operationFingerprint,operationFingerprint=>work.inspectScriptReview({...request,operationFingerprint}));
+  let matched = false, reviewedText, facts;
   try {
     const result = await prepareKnowledgeMaintenance({
       candidate: { watchId: script.sourceId, observed: verified.items[0], definition, observationHash: pin.observationHash,
@@ -32,21 +36,42 @@ export async function inspectFailedScriptReview({ script, request, job, definiti
           throw Error('knowledge_script_review_stage_binding');
         // The deployed prompt modules used LF. A Windows checkout may contain CRLF.
         const recordedSystem = system.replace(/\r\n/gu, '\n');
-        if ('knowledge-review:' + knowledgeReviewHash({system:recordedSystem,user}) !== pin.attemptKey
-          || knowledgeReviewHash({system:recordedSystem,user,attemptKey:pin.attemptKey}) !== pin.requestHash)
+        const recordedKey='knowledge-review:'+knowledgeReviewHash({system:recordedSystem,user});
+        const bound={system:recordedSystem,user,attemptKey:recordedKey};
+        if (knowledgeReviewHash(recordedKey) !== receipt.stageHash || !comparison && knowledgeReviewHash(bound) !== pin.requestHash)
           throw Error('knowledge_script_review_stage_binding');
+        if (comparison) {
+          saved=await work.inspectCommunicationComparison(request,bound);
+          receipt.requestHash=knowledgeReviewHash(bound);receipt.state=saved.state;
+        }
         matched = true;
-        return saved.text;
+        if (saved.state !== 'ready') throw Error('knowledge_script_stage_text_unavailable');
+        facts = JSON.parse(user).sourceComparison?.facts;
+        reviewedText = comparison && normalize ? normalizeRecordedComparison(saved.text,user) : saved.text;
+        return reviewedText;
       },
     });
     if (!matched) throw Error('knowledge_script_review_stage_binding');
     return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash };
   } catch (error) {
     if (!matched) throw error;
-    if (error instanceof ZodError) return { ...receipt, retainedText: true, validation: 'invalid', issues: error.issues.map(issue => ({
-      path: issue.path.join('.'), code: issue.code, ...(typeof issue.maximum === 'number' ? { maximum: issue.maximum } : {}),
-      ...(typeof issue.minimum === 'number' ? { minimum: issue.minimum } : {}),
-    })) };
+    if (saved?.state !== 'ready') return {...receipt,retainedText:false};
+    if (error instanceof ZodError) {
+      const parsed=JSON.parse(reviewedText.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/u,'$1'));
+      const labels=['new','removed','changed','unchanged','approve','hold'];
+      const issues=error.issues.map(issue=>{
+        const value=issue.path.reduce((row,k)=>row?.[k],parsed);
+        const fact=issue.path[0]==='changes' ? facts?.[issue.path[1]] : undefined;
+        const classification=typeof value==='object' && value ? value.meaning : value;
+        return {path:issue.path.join('.'),code:issue.code,
+          ...(Array.isArray(issue.keys)?{extraFields:issue.keys.filter(k=>/^[a-zA-Z][a-zA-Z0-9_-]{0,79}$/u.test(k))}:{}),
+          ...(labels.includes(classification)?{received:classification}:{}),
+          ...(Array.isArray(issue.values)?{expected:issue.values.filter(v=>labels.includes(v))}:{}),
+          ...(fact===null || labels.includes(fact)?{structuralFact:fact}:{}),
+          ...(typeof issue.maximum==='number'?{maximum:issue.maximum}:{}),...(typeof issue.minimum==='number'?{minimum:issue.minimum}:{})};
+      });
+      return {...receipt,retainedText:true,validation:'invalid',issues};
+    }
     if (/^knowledge_[a-z_]{1,100}$/u.test(error?.message))
       return { ...receipt, retainedText: true, validation: 'invalid', reason: error.message };
     throw error;
