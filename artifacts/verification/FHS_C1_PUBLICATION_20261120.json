@@ -38,8 +38,21 @@
       "checkId": "6209ad5d-c344-53f7-825b-45bc1f391197",
       "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "capacity_wait",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "originalLaneReadback": "capacity_wait",
+        "modelCalls": 0,
+        "workStarted": false,
+        "observationHash": "9382f598343a2dd006a28afb07dd04aaff07995804072450801abe60866fdfb5",
+        "capacityMiB": {
+          "available": 844,
+          "job": 512,
+          "family": 384,
+          "launcher": 64,
+          "required": 960
+        }
       },
       "physicalPageMapSha256": "346da2f57bd6a7c5b2202c9e33b4ec736e55a5b659dc87a773e68503fd8d36f8",
       "title": "共享育兒樂 (三) 嬰幼兒篇",
@@ -53,8 +66,14 @@
       "checkId": "c0d2d86d-681b-559f-8fa7-75ef9af1cb0e",
       "observationHash": "d4a5d326d80c188a7eb7369dcd5535fa2c895031996e223d1545dab4ed0d7b1d",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "d4a5d326d80c188a7eb7369dcd5535fa2c895031996e223d1545dab4ed0d7b1d",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "61badaaa7ab1bca27a02ea0604449d5d61afb955ede4d0ad0a4c4637ecafbdd1",
       "title": "6至24個月嬰幼兒7日飲食全攻略小冊子",
@@ -68,8 +87,14 @@
       "checkId": "cc7bd2ff-85c3-5a60-81a1-d8d70eab870c",
       "observationHash": "82d782d2fb532cd856e40a7552589f8b56a1d144a970e0c4dc18daf31f81c1ce",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "82d782d2fb532cd856e40a7552589f8b56a1d144a970e0c4dc18daf31f81c1ce",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "4b762d13272972e746fb11787996e41612d4815166f9443bb5ee322c1e8a0283",
       "title": "懷孕及哺乳期的健康飲食",
@@ -83,8 +108,14 @@
       "checkId": "86cabefc-adb1-50da-8b61-8059f607517f",
       "observationHash": "f5a7fc000559f140470985e70312dc66619b686f8aec277a432c64783b204bf5",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "f5a7fc000559f140470985e70312dc66619b686f8aec277a432c64783b204bf5",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "83e1b9e873d63a32d90e5291429e4abd82d0a90b42fc518d6a4d385c0f9f6103",
       "title": "6至24個月嬰幼兒健康飲食 (1) 起步篇小冊子",
@@ -98,8 +129,14 @@
       "checkId": "82630547-3532-59da-82d9-879e476c2dac",
       "observationHash": "7fbad46ab556d5661e3168414a178f0efb14233099ba74c0a8f198558c394de7",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "7fbad46ab556d5661e3168414a178f0efb14233099ba74c0a8f198558c394de7",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "c1a13dcc3553acc5f8b9f0c15fa081c0feef8e9d87e025a84824e3a8c2b0dc5e",
       "title": "幼兒口腔護理全接觸小冊子",
@@ -113,8 +150,14 @@
       "checkId": "9585dcfe-9d63-5bfa-82b4-c32455bddc76",
       "observationHash": "c15324cb97b41c382f42b79e14ff1f7bf704e1fe9d8934f31dd6d95b6fcd42c3",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "knowledge_review_failed",
+        "modelCalls": 0,
+        "observationHash": "c15324cb97b41c382f42b79e14ff1f7bf704e1fe9d8934f31dd6d95b6fcd42c3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "b421dca14a728b1810e0b39e614c168bc9cf49bdd5b3d38256a84cc998a09cfb",
       "title": "培育高「EQ」孩子從零歲開始：為嬰幼兒「情緒導航」的小錦囊",
@@ -128,8 +171,14 @@
       "checkId": "49a5b6f3-54c5-54f4-8582-267287db45ea",
       "observationHash": "c430c7a3ee1e1e828bfe8be586caba01425ac121385fd485a888b34a2bf67511",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "c430c7a3ee1e1e828bfe8be586caba01425ac121385fd485a888b34a2bf67511",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "cdde38b2bae0c734d9b2ccd252cd3ad6af37b390d6d193aadbe214550ff5a59e",
       "title": "培育高「EQ」孩子：三至五歲延續篇 為學前兒童「情緒導航」的小錦囊",
@@ -143,8 +192,14 @@
       "checkId": "57993517-1329-5028-8fd4-c3969ad524a2",
       "observationHash": "d68e6a57580b0619fc9d668ece53d11b4094adefd419785999900c19ab62b39c",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "d68e6a57580b0619fc9d668ece53d11b4094adefd419785999900c19ab62b39c",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
       "title": "品德培育之一",
@@ -158,8 +213,14 @@
       "checkId": "23f922c3-73d9-54ec-80fb-69f6d7edd1d6",
       "observationHash": "92dbfbd34e4a05a6d266982d9603ccc9ca7342ce0d04684766ab4283ad947035",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "92dbfbd34e4a05a6d266982d9603ccc9ca7342ce0d04684766ab4283ad947035",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "d8ce1baaa111efeac792d15e0b6aa8857f2c32a640216b664d126cd7d041dd5b",
       "title": "嬰兒揹帶、手推車、餐椅及汽車用兒童束縛設備安全使用小貼士",
@@ -173,8 +234,14 @@
       "checkId": "7621260e-f1f3-51ce-8677-2757f92cee06",
       "observationHash": "eaf1161f837a2ddc6a47aea39a74977fb39bb34f51d9a767ec55be59601ad001",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "eaf1161f837a2ddc6a47aea39a74977fb39bb34f51d9a767ec55be59601ad001",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
       "title": "連繫．情感 兒童社交情緒發展 (一歲至兩歲)",
@@ -188,8 +255,14 @@
       "checkId": "64de9107-c4d1-59ae-8909-6c4bc22a240d",
       "observationHash": "bea590f15181b7b310dc28c055a3b3f5e7127a13dd7166a640c6ad05907df88c",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "bea590f15181b7b310dc28c055a3b3f5e7127a13dd7166a640c6ad05907df88c",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "c62e82e3aff2afc80286a5288f38c03d4be669efc7c054d9949466758f13565a",
       "title": "你攝取足夠碘嗎？",
@@ -203,8 +276,14 @@
       "checkId": "3e795afb-f5d8-5c1d-8c2c-3451554d4f5c",
       "observationHash": "52e668ad0b62454e4ccc09f87775ecd384ba7382bfcc3e5a7425bcd7ca73e3b3",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "52e668ad0b62454e4ccc09f87775ecd384ba7382bfcc3e5a7425bcd7ca73e3b3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "057b29da1db00e7f3ec0bcfdb7cad5bf7a80dece62b1abdc13c090d689a7da1d",
       "title": "八至十二個月大嬰兒的發展",
@@ -218,8 +297,14 @@
       "checkId": "e86b1fec-63b1-5df1-8090-e6006da346c6",
       "observationHash": "436d40eeb50aa694f0dddea8122687b154ad98ec51928d318f357d655c6cef25",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "436d40eeb50aa694f0dddea8122687b154ad98ec51928d318f357d655c6cef25",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "f61800f197aa1dfaffbb47b2e069bfdb720c2056d2f12cbe395d57e15e2dce35",
       "title": "嬰兒的啼哭",
@@ -233,8 +318,15 @@
       "checkId": "8630e1ff-cc77-53c3-8b02-aa69bb5403b6",
       "observationHash": "8a442357648d890a34c198488c06943b1bbf8e19c716ac3e6f128434214906f3",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "8a442357648d890a34c198488c06943b1bbf8e19c716ac3e6f128434214906f3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "receiptProvenance": "Official lane C1 status reread of the original operation after the second run."
       },
       "physicalPageMapSha256": "02ce36344d75697d00feb7dc85c3868ba8ceb69549a6aac26aabe2009fc118c7",
       "title": "發燒的護理",
@@ -248,8 +340,15 @@
       "checkId": "194656b3-5886-5be4-88a6-e6f0c11473a2",
       "observationHash": "2683bea63d6a62409e2bcad45c42a3419e1a001cc1687137643fa0775ea4a5e2",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "2683bea63d6a62409e2bcad45c42a3419e1a001cc1687137643fa0775ea4a5e2",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition",
+        "receiptProvenance": "Official lane C1 status reread of the original operation after the second run."
       },
       "physicalPageMapSha256": "764e5c47062d9c0c7d22202d891d2f9f9311e63abc299599125570a8a5e1b578",
       "title": "寶寶有便秘嗎？",
@@ -263,8 +362,14 @@
       "checkId": "b8c7312f-bde8-5bce-84e5-01d965ead194",
       "observationHash": "fa1322c7775878a560ed3dca993b0877080819d4d893e8bc088015259b939f00",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "fa1322c7775878a560ed3dca993b0877080819d4d893e8bc088015259b939f00",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "c60a4a67afbd756a4ce2c536ed86ee3dcaf292d21ef2024ec3a7a29474459ea7",
       "title": "你的寶寶安全嗎？",
@@ -278,8 +383,14 @@
       "checkId": "f656d8b9-190d-5dbd-8393-71b41f2b9432",
       "observationHash": "14017f2dbde204930256ff3ce6733d4dca91968d8e9acfb8d58a89876469eb62",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "14017f2dbde204930256ff3ce6733d4dca91968d8e9acfb8d58a89876469eb62",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
       "title": "品德培育之二 （兩至四歲）",
@@ -293,8 +404,14 @@
       "checkId": "c507c8bd-eb46-5979-8a84-ecd5fa594dba",
       "observationHash": "2f2bd0ca60a9adcf82ceb401dc1be6d7cb746f24fb9bde0c8bd8c386fa82f469",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "2f2bd0ca60a9adcf82ceb401dc1be6d7cb746f24fb9bde0c8bd8c386fa82f469",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "8086e92a1059a6a9a15b2b687e58e9609f549b79a76b5029df6f2f983d4c1a40",
       "title": "四至七個月大嬰兒的發展",
@@ -308,8 +425,14 @@
       "checkId": "b8f47f86-e451-54dd-8617-cc4c0601de64",
       "observationHash": "53ece6de285ec40a1a38be84a4db87dfa9d5f1d5cef79615d25d5c1a87c2d311",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "53ece6de285ec40a1a38be84a4db87dfa9d5f1d5cef79615d25d5c1a87c2d311",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "c691963eb0a2aededff77f5a2d28726806361d27d69bc33590e8b244ef1357ac",
       "title": "連繫．情感 兒童社交情緒發展(初生至6個月)",
@@ -323,8 +446,14 @@
       "checkId": "e50c9ac4-7fde-50af-873b-9c140f6802e7",
       "observationHash": "0d3bf14bd340f6d235c3c3f349fb50e0535caffb9b07499e564befb0ccbbc492",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "0d3bf14bd340f6d235c3c3f349fb50e0535caffb9b07499e564befb0ccbbc492",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "880d742381433aabb690d550b5962492f455599d3ba3fe23a34544b1a67c7aca",
       "title": "跟尿片說再見",
@@ -351,7 +480,9 @@
             "state": "settled",
             "settledMicros": 40979
           }
-        ]
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "2c92dbcd3f62a2dafefd7cf57da45da852b6182a67250a87365e9c4fff7204c1",
       "title": "學前兒童視力普查",
@@ -365,8 +496,14 @@
       "checkId": "879e7925-2f01-5c25-8109-3db9c0e647dc",
       "observationHash": "3f1ccbf3c7cacce9c6953feb213d85c5bb35346c59d79d804b42ece9c04de51f",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "3f1ccbf3c7cacce9c6953feb213d85c5bb35346c59d79d804b42ece9c04de51f",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "ead5bba2a8901f6f3112cbdbff32630a94dd7ca511ebda56067b99bf1782ca45",
       "title": "常見嬰兒皮膚問題",
@@ -380,8 +517,14 @@
       "checkId": "cebd745b-94ef-504d-8535-86c2608c03c1",
       "observationHash": "88e5a8eee36051db8866381149f6961def5e35badeea76d9f55e13787160c7c3",
       "production": {
-        "outcome": "not_started",
-        "tickets": []
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "modelCalls": 1,
+        "observationHash": "88e5a8eee36051db8866381149f6961def5e35badeea76d9f55e13787160c7c3",
+        "originalLaneReadback": "held",
+        "tickets": [],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "fa756735ba118438ba847790ead0d595bb341d50f73bf602c82b76490c9a3a73",
       "title": "你的 0 – 5 歲孩子需要電子屏幕產品嗎？",
@@ -426,7 +569,9 @@
             "state": "settled",
             "settledMicros": 28830
           }
-        ]
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "3415e7f2ae9154d63a2c3fbf5cce890db0320e88ff1d86179ea696ded141a4af",
       "title": "你的寶寶聽到你嗎?",
@@ -471,7 +616,9 @@
             "state": "settled",
             "settledMicros": 32193
           }
-        ]
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "2ad86183b6f33fdbd7e9d4bf161711cf4743a19589795c8f96d4798566cb89b4",
       "title": "新生至一個月大嬰兒的發展",
@@ -505,7 +652,9 @@
             "state": "settled",
             "settledMicros": 30986
           }
-        ]
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "9a32be8139b1b140439b7a0eb8d44e756af56f489d03543d62d0d471e0c5eee9",
       "title": "愛護兒童慎防意外 (一歲至三歲)",
@@ -532,7 +681,9 @@
             "state": "settled",
             "settledMicros": 34086
           }
-        ]
+        ],
+        "listedVersionId": null,
+        "vectorExport": "no_visible_edition"
       },
       "physicalPageMapSha256": "6937242f0c3208e3dddf521c1f62ac1e141b16b913094f2f8c4716a639edc05b",
       "title": "疫苗資料二維條碼索引",
@@ -553,7 +704,7 @@
         "observationHash": "b8b81653e8976872be7a8ce0ffef16d6c812e2b732f6a2aac2552cd2db130126",
         "originalLaneReadback": "published",
         "familyReadback": {
-          "checkedAt": "2026-11-20T16:41:42.500Z",
+          "checkedAt": "2026-11-21T05:56:27.748Z",
           "card": {
             "sourceId": "pdf-f43b59147093cacef5308dcd",
             "versionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
@@ -610,7 +761,9 @@
             "state": "settled",
             "settledMicros": 78
           }
-        ]
+        ],
+        "listedVersionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
+        "vectorExport": "verified"
       },
       "physicalPageMapSha256": "961660cce1ae5b16a1a8101cf2af05f77aa3577afc3e6e94a6f9c9559a367b38",
       "title": "新生嬰兒聽力普查測驗:耳聲發射測試",
@@ -619,14 +772,14 @@
     }
   ],
   "productionReadback": {
-    "asOf": "2026-11-20T16:43:38.027130Z",
+    "asOf": "2026-11-21T05:56:40.095961Z",
     "workflowRun": 44746426203,
     "releaseAttempt": 2,
     "releaseSha": "54a2a602339a8cab5ec894418497d8b4bbff2d59",
     "readIndexSha256": "e25b694bff2032050f9bdd4c85f33691c11b8542df0d8781a273bb640eefe87c",
     "counts": {
-      "candidate_held": 5,
-      "not_started": 22,
+      "candidate_held": 26,
+      "capacity_wait": 1,
       "published": 1
     },
     "laneTickets": 11,
@@ -634,11 +787,11 @@
     "laneReservedMicros": 0,
     "sharedCampaign": {
       "limitMicros": 30000000,
-      "settledMicros": 9810566,
-      "reservedMicros": 14647296,
-      "availableMicros": 5542138,
-      "attempts": 585,
-      "settledAttempts": 576,
+      "settledMicros": 9918357,
+      "reservedMicros": 19550208,
+      "availableMicros": 531435,
+      "attempts": 594,
+      "settledAttempts": 582,
       "originalFiveReserved": [
         {
           "ticketId": "530e4681-5892-478b-ad8c-2035c74b5ba7",
@@ -667,7 +820,7 @@
         }
       ]
     },
-    "originalLaneEvidence": "The original capacity-limited command read each saved terminal operation after dispatch. Its first invocation stopped at the site release guard after six sources. Firestore ticket IDs and card heads were reconciled independently.",
+    "originalLaneEvidence": "Both coordinator runs used the capacity-limited production lane. Each terminal operation was matched to its source, observation, physical PDF and tickets. Two truncated output lines were reread with the official read-only lane status command.",
     "firstRunStop": {
       "afterTerminalSources": 6,
       "exitCode": 1,
@@ -675,6 +828,40 @@
       "nextReleaseReceipt": "r44773701383-1",
       "nextReleaseSha": "883426b658c032e496228b877b0c0b5cee8b24ab",
       "nextReleaseObservedAt": "2026-11-20T16:40:12+00:00"
+    },
+    "heldByCode": {
+      "knowledge_age_one_sided": 2,
+      "knowledge_review_failed": 1,
+      "knowledge_window_quote_mismatch": 3,
+      "unavailable": 20
+    },
+    "secondRun": {
+      "completedAt": "2026-11-20T17:18:36.183Z",
+      "existingTerminal": 6,
+      "additionalHeld": 21,
+      "runBalances": {
+        "settledMicros": 9918206,
+        "reservedMicros": 19550208,
+        "availableMicros": 531586
+      },
+      "perGenerationReservationMicros": 1634304,
+      "maxOutputTokens": 8192,
+      "capacityWaitSourceId": "pdf-63e7d5463521682636a066e5",
+      "supplementalStatusSourceIds": [
+        "pdf-811789c9be36ae025ee7e2a2",
+        "pdf-88bcbb29830a2b0bf2bda335"
+      ],
+      "unavailableEvidence": "Twenty original operations report candidate_held / unavailable. Each has one locally counted model step, no supplier ticket, no candidate ready for publication and no visible edition. The shared balance could not reserve the next generation. The recorded code gives no finer cause for an individual operation."
+    },
+    "currentFamilyCatalogue": {
+      "checkedAt": "2026-11-21T05:56:27.734Z",
+      "releaseSha": "6e91757e5f66fded6dc3f8bfe58602f2d26daf7a",
+      "releaseId": "r44782348928-1",
+      "method": "Queried all 28 original URLs through the family catalogue in one read-only Firestore transaction under the deployed public source configuration. Matched the one visible edition to its original operation, exported all required vectors and resolved its citation against the frozen physical PDF.",
+      "urls": 28,
+      "listedEditions": 1,
+      "withoutVisibleEdition": 27,
+      "verifiedDocumentVectors": 1
     }
   },
   "physicalPageReadback": {
