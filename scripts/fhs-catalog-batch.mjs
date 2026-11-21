@@ -18,6 +18,8 @@ async function runOriginalBatch(args) {
     .split(' ').map(id => 'fhs-' + id);
   const items = new Map(inventory.items.map(item => [item.id, item]));
   const pdfs = new Map(inventory.pdfOriginals.map(item => [item.url, item]));
+  // A publisher can replace the watch URL while the original batch keeps its order and deduplication key.
+  const originalPdf = source => pdfs.get(items.get(source.id)?.url ?? source.url);
   const seen = new Set();
   const assigned = new Set([...publicationAssignments().values()].flat().map(row => row.sourceId));
   const waitForDaily = args[0] === '--wait-for-daily';
@@ -56,12 +58,12 @@ async function runOriginalBatch(args) {
       || (pdfs.get(a.url)?.pages ?? 0) - (pdfs.get(b.url)?.pages ?? 0);
   });
   // Keep the original FHS order stable when resuming an earlier run by its terminal receipt.
-  const external = [...externalMaterialWatches].sort((a, b) => pdfs.get(a.url).pages - pdfs.get(b.url).pages);
+  const external = [...externalMaterialWatches].sort((a, b) => originalPdf(a).pages - originalPdf(b).pages);
   const sources = onlyExternal ? external : [...external, ...familyHealth];
   for (const source of sources) {
     if (recoverHeld && !recoveries.has(source.id)) continue;
     if (repairOnly && !repairs.has(source.id)) continue;
-    const hash = items.get(source.id)?.textHash ?? pdfs.get(source.url)?.sha256 ?? source.url;
+    const hash = items.get(source.id)?.textHash ?? originalPdf(source)?.sha256 ?? source.url;
     if (seen.has(hash)) continue;
     seen.add(hash);
     if (!resumed) {

@@ -6,6 +6,10 @@ import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage }
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
 import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
+import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
+import { hasSettledGenerationOutput } from './fhs-held-window-evidence.mjs';
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { damagedPdfText } from '../server/knowledge-pdf-quotes.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
@@ -102,6 +106,48 @@ function recordedWholePdfReadings(pdf, provenance) {
   return readings;
 }
 
+async function recordedWindowReadings(pdf, work, sourceId, originalOperation, confirmGenerations) {
+  const provenance = work.prepared.provenance;
+  const windows = provenance.windows;
+  if (pdf.totalPages <= 20 || !work.windowed || !windows?.length || typeof confirmGenerations !== 'function'
+    || provenance.retainedDraft || provenance.nativePdf || work.reusedOrganizationFrom)
+    return undefined;
+  const plan = planKnowledgePdfWindows(pdf.totalPages, AGENT_RUN_LIMITS.modelCalls.max, work.windowRangeLimit ?? 14);
+  if (windows.length !== plan.length
+    || provenance.organizeAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.organizeKey))
+    || provenance.reviewAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.reviewKey)))
+    return undefined;
+  const readings = [];
+  for (const [index, window] of windows.entries()) {
+    const { first, last, firstRead, lastRead } = plan[index];
+    if (window.method !== PDF_WINDOW_METHOD || window.parentHash !== pdf.sha256 || !digest.test(window.sliceHash)
+      || window.registeredRequests || window.first !== first || window.last !== last || window.firstRead !== firstRead || window.lastRead !== lastRead
+      || window.pages?.length !== last - first + 1 || window.organizePages?.length !== window.pages.length)
+      return undefined;
+    if (!window.pages.every((p, i) => p.page === first + i && p.status !== 'unreadable' && p.reason?.trim()
+      && window.organizePages[i].page === p.page && window.organizePages[i].status === p.status && window.organizePages[i].reason?.trim()))
+      return undefined;
+    const reading = { first, last, firstRead, lastRead, sliceHash: window.sliceHash, physicalPages: window.pages.map(p => p.page) };
+    for (const [role, findings] of [['organize', window.organizePages], ['review', window.pages]]) {
+      const key = window[role + 'Key'], prefix = 'knowledge-window-' + role + ':';
+      if (typeof key !== 'string' || !key.startsWith(prefix) || !digest.test(key.slice(prefix.length))) return undefined;
+      reading[role] = { stageHash: knowledgeReviewHash(key), pageFindingsSha256: knowledgeReviewHash(findings) };
+    }
+    readings.push(reading);
+  }
+  const stages = readings.flatMap(reading => [reading.organize.stageHash, reading.review.stageHash]);
+  if (new Set(stages).size !== stages.length || !await confirmGenerations(sourceId, originalOperation, stages)) return undefined;
+  return readings;
+}
+
+export async function confirmOriginalGenerations(attempts, sourceId, operation, stages) {
+  const refs = stages.map(stage => attempts.doc(campaignTicketId('generation', sourceId, operation, stage)));
+  const fieldMask = ['sourceId', 'operationFingerprint', 'stageHash', 'kind', 'state', 'rejection', 'outputTokens'];
+  const docs = await attempts.firestore.getAll(...refs, { fieldMask });
+  return docs.length === refs.length && docs.every((doc, i) =>
+    doc.id === refs[i].id && hasSettledGenerationOutput(doc.data(), sourceId, operation, stages[i]));
+}
+
 export async function readFhsDelivery({ sourceId, originalOperation, deliveryOperation = originalOperation }, ports) {
   if (!digest.test(originalOperation) || !digest.test(deliveryOperation) || originalOperation !== ports.originalOperation)
     throw Error('fhs_receipt_operation_binding');
@@ -143,6 +189,12 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
   if (originalOperation === deliveryOperation) {
     const readings = recordedWholePdfReadings(pdf, prepared.provenance);
     if (readings) pdf.recordedReadings = readings;
+  }
+  // A registered first dispatch bills every window to the original commission.
+  if (originalOperation === deliveryOperation
+    || (work.firstDispatchFrom === originalOperation && deliveryOperation === firstDispatchWorkId(originalOperation))) {
+    const windowReadings = await recordedWindowReadings(pdf, work, sourceId, originalOperation, ports.confirmOriginalGenerations);
+    if (windowReadings) pdf.recordedWindowReadings = windowReadings;
   }
   return { ...row, readback: pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
     card: { ...metadata, seriesId: card.seriesId }, vectors: { required: expected.length, exported: actual.length, chunkKeys: actual }, pdf };
@@ -210,6 +262,8 @@ async function main() {
     }
     const ports = { originalOperation: knowledgeReviewHash([campaignCredentials, sourceId, job.data.revision, job.data.workerGeneration]),
       pin, inspect, verifyRepair, active: () => store.publishedEdition(sourceId),
+      confirmOriginalGenerations: (id, operation, stages) => confirmOriginalGenerations(
+        database.collection(config.namespace + '_knowledge_campaigns').doc(campaign).collection('attempts'), id, operation, stages),
       familyCard: (url, id, version) => database.runTransaction(async tx => {
         const result = await store.platformCards(tx, randomUUID(), undefined, url);
         return result.cards.find(card => card.sourceId === id && card.versionId === version);

@@ -7,6 +7,25 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createKnowledgeCampaignBudget, campaignLimitMicros, campaignRecoverySchemas } from '../server/knowledge-campaign-budget.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+import { bindFirstDispatch, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
+import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+
+test('the first-dispatch registration binds the comic to its held observation and original commission', () => {
+  const sourceId = 'pdf-48e37ddf27a8864e98362fa9';
+  const original = '914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb';
+  const observation = 'b73aecabc4cad735502392694454d35c75b560a2f4818ffeb138ecb14e87f082';
+  const pin = manualPublicationPin(sourceId);
+  assert.equal(pin?.lane, 'C2');
+  assert.equal(pin.pages, 36);
+  const request = { watchId:sourceId, operationFingerprint:original, workerGeneration:randomUUID(), publishMode:'live' as const };
+  const result = { status:'candidate_held' as const, code:'unavailable' as const, watchId:sourceId, observationHash:observation, published:false as const };
+  const parent = { request, result, budget:{modelCalls:1}, preparedHash:null, lease:null, receipt:null };
+  assert.deepEqual(bindFirstDispatch(pin, original, parent), {original, observation});
+  assert.equal(bindFirstDispatch(pin, original, {...parent, result:{...result, observationHash:knowledgeReviewHash('other observation')}}), undefined);
+  assert.equal(bindFirstDispatch(pin, original, {...parent, receipt:{state:'committed'}}), undefined);
+  assert.equal(bindFirstDispatch(pin, knowledgeReviewHash('other commission'), parent), undefined);
+  assert.equal(hasUndispatchedOriginal('pdf-836e9d989e83046a43059df7'), false);
+});
 
 test('an audited first dispatch keeps its original ticket and admits one worker across restarts and late callbacks', async () => {
   const {database} = firestoreDomainFixture(), namespace = 'first_dispatch', generation = randomUUID();
