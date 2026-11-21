@@ -1238,6 +1238,29 @@ test('external material admission binds each reviewed PDF to its exact publisher
   assert.deepEqual(await fetch(selected, new AbortController().signal), { status: 'failed', reason: 'response' });
 });
 
+test('the March 2026 SWD leaflet uses the existing card and binds each edition to its own bytes', async () => {
+  const { campaignMaterialWatches, platformMaterials, reviewedExternalOriginal, externalMaterialAllowed } = await import('../server/platform-materials.ts');
+  const { sourceFetchUrl } = await import('../server/knowledge-source-fetch.ts');
+  const id = 'resource-6c18c8d7a17495';
+  const current = 'https://www.swd.gov.hk/storage/asset/section/652/tc/Bilingual%20Leaflet_We%20All%20Have%20a%20Duty%20(March%202026).pdf';
+  const historical = 'https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf';
+  const currentHash = '0bf08a72f09cbda1ad5a848d7d2ce49adb6c1b7de58409b710f45cda7a9a3dc0';
+  const historicalHash = 'afa57bcfc265dcec5c49d89958bc7ae4e0d3dd3dea251d1e33563cb2e6cea63c';
+  const watches = campaignMaterialWatches.filter(watch => watch.id === id);
+  assert.deepEqual(watches.map(watch => watch.url), [current]);
+  assert.deepEqual([...platformMaterials.values()].filter(item => [historical,current].includes(item.url)).map(item => item.id), [id]);
+  assert.equal(platformMaterials.get(id)?.url, current);
+  assert.equal(reviewedExternalOriginal(current), currentHash);
+  assert.equal(reviewedExternalOriginal(historical), historicalHash);
+  assert.equal(sourceFetchUrl(current, watches[0]!).href, current);
+  assert.throws(() => sourceFetchUrl(historical, watches[0]!), /source_url_rejected/);
+  const allowed = (url:string, contentHash:string) => externalMaterialAllowed({sourceId:id, url,
+    publisher:watches[0]!.publisher, termsUrl:watches[0]!.termsUrl, classification:'official_guidance',
+    extraction:{format:'text_pdf', contentHash, totalPages:2, pageStart:1, pageEnd:2, complete:true}});
+  assert.ok(allowed(current,currentHash) && allowed(historical,historicalHash));
+  assert.ok(!allowed(current,historicalHash) && !allowed(historical,currentHash));
+});
+
 test('published campaign cards get observation-only weekly checks and retain a changed original for review', async t => {
   const { campaignMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { createFirestoreBackgroundMaintenance } = await import('../server/firestore-background-maintenance.ts');
