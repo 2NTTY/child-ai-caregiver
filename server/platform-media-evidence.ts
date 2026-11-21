@@ -27,7 +27,8 @@ export async function loadMediaOriginals(link: string, signal: AbortSignal, fetc
   const canonical = platformMediaLink(link);
   if (!canonical) throw Error('knowledge_media_url_invalid');
   const id = youtubeVideoId(new URL(canonical)), page = id ? officialVideoPages.get(id) : canonical;
-  let transcript = '', captions: MediaCue[] = [], streams = [canonical];
+  let transcript = '', streams = [canonical];
+  const captionsByStream = new Map<string, MediaCue[]>();
   async function exact(url: string, accept: string) {
     const result = await fetcher(url, value => {
       if (value !== url || new URL(value).origin !== 'https://www.fhs.gov.hk') throw Error('knowledge_media_url_invalid');
@@ -38,22 +39,34 @@ export async function loadMediaOriginals(link: string, signal: AbortSignal, fetc
   }
   if (page && page.endsWith('.html')) {
     const html = load(await exact(page, 'text/html'));
-    transcript = html('#transcript').text().replace(/\s+/gu, ' ').trim();
-    if (transcript.length > 64000) throw Error('knowledge_media_transcript_too_large');
     streams = [...new Set(html('iframe[src],video[src],audio[src],source[src]').toArray()
       .map(el => platformMediaLink(html(el).attr('src') ?? '', page)).filter((s): s is string => !!s && !s.endsWith('.html')))];
+    // A direct link selects one stream, but cannot disambiguate a page-wide script.
+    const singleStream = streams.length === 1;
+    if (singleStream) {
+      transcript = html('#transcript').text().replace(/\s+/gu, ' ').trim();
+      if (transcript.length > 64000) throw Error('knowledge_media_transcript_too_large');
+    }
     if (id) streams = streams.filter(url => youtubeVideoId(new URL(url)) === id);
     if (!streams.length) throw Error('knowledge_media_source_unavailable');
-    if (streams.length === 1) {
-      const tracks = html('track[src]').toArray().filter(el => ['captions','subtitles'].includes(html(el).attr('kind') ?? 'subtitles'));
+    const availableTracks = html('track[src]').toArray().filter(el => ['captions','subtitles'].includes(html(el).attr('kind') ?? 'subtitles'));
+    for (const stream of streams) {
+      const tracks = availableTracks.filter(el => {
+        const player = html(el).closest('video,audio');
+        if (!player.length) return singleStream;
+        return player.add(player.children('source[src]')).toArray().some(source =>
+          platformMediaLink(html(source).attr('src') ?? '', page) === stream);
+      });
       const track = tracks.find(el => /^zh/iu.test(html(el).attr('srclang') ?? '')) ?? tracks[0];
       if (track) {
         const url = new URL(html(track).attr('src')!, page);
-        if (url.origin === 'https://www.fhs.gov.hk' && url.pathname.endsWith('.vtt')) captions = readWebVtt(await exact(url.href, 'text/vtt'));
+        if (url.origin === 'https://www.fhs.gov.hk' && url.pathname.endsWith('.vtt'))
+          captionsByStream.set(stream, readWebVtt(await exact(url.href, 'text/vtt')));
       }
-    } else transcript = '';
+    }
   }
   return streams.map(url => {
+    const captions = captionsByStream.get(url) ?? [];
     const video = youtubeVideoId(new URL(url)), duration = video ? knownVideoDurations[video] : undefined;
     return { url, hash: knowledgeHash(['public-media/1', url, captions, transcript]), captions, transcript, ...(duration ? { duration } : {}) };
   });
