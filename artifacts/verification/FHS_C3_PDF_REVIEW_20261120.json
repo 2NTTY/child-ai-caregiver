@@ -1298,5 +1298,2179 @@
       "interruptedWorkLastUpdated":"2026-11-20T14:10:55.994361Z",
       "method":"At one Firestore read time, matched all 28 assigned operation fingerprints against their original work and candidate records, source heads and campaign attempts. The single generation reservation belongs to the 24-page guide. The disconnected command returned no provider result."
     }
+  },
+  "c3CommissionedResults": {
+    "lane": "C3",
+    "assigned": 28,
+    "assignedPages": 468,
+    "latestFamilyOrHoldReceipt": "2026-11-20T16:52:01.162848Z",
+    "verifiedFamilyEditions": 5,
+    "confirmedHolds": 18,
+    "reservedUnknown": 5,
+    "outstandingReadbacks": 0,
+    "method": "The bounded production entry used each assigned original operation. Published rows match the active family card, every required document vector and the physical opening page in the frozen PDF. A held row pairs the production decision with a separate receipt. Rows marked production_decision_and_firestore_readback match that decision to the original work, candidate, card head and tickets at one Firestore read time. Unsettled provider reservations remain attached to their originals.",
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "title": "一至三個月大嬰兒的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15650.pdf",
+        "sha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:49:33.727Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 33131
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34494
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "title": "接種疫苗預防傳染病",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14828.pdf",
+        "sha256": "e8813172e165c25a1d0112334aaaad3e59b40b7873de592c6a8a4fe5fa0afc5b",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:44:09.618Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34151
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "title": "兒童語音發展 知多一點點",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30121.pdf",
+        "sha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:46:16.731Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 54345
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32228
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-e7427b7b969a37e3d8e889a1",
+        "title": "新生嬰兒健康須知 (出生至三個月)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15667.pdf",
+        "sha256": "fcfb2a9505cc87c653cf5577c22681d5d7d45df78c069da92d8b830f60752801",
+        "pages": 4,
+        "checkedAt": "2026-11-20T14:51:39.503Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 31877
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 175
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 26912
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "2e9e06cc-24d6-5ab5-8cc9-d506767a9cab",
+          "versionHash": "f3f3bf7750a77fd2cf74c82d86116190720210de5b04eb913861368a5e5fb81b",
+          "seriesId": "pdf-e7427b7b969a37e3d8e889a1"
+        },
+        "vectors": {
+          "required": 1,
+          "exported": 1,
+          "chunkKeys": [
+            "p1-d1690d91bd5ba21f8f54"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-d1690d91bd5ba21f8f54",
+            "page": 1,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "resource-1ba127a119f802",
+        "title": "兒童健康服務-首次登記表格",
+        "url": "https://www.fhs.gov.hk/tc_chi/doc_br/files/fhs_11b.pdf",
+        "sha256": "175e81f6a4ca2147864df8fc49b26d9d19ef710b5a7267a9c4031e131abd9c9e",
+        "pages": 4,
+        "checkedAt": "2026-11-20T15:45:26.525Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 85
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 26988
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 85
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 30896
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "6c933b79-2ae9-5e2b-8986-8e90af34c79f",
+          "versionHash": "b978fdb50fc1dfee78ca0bae3cd9622d4a1c509fabe103c7ca5b00e31db2db80",
+          "seriesId": "resource-1ba127a119f802"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-3efdfde7c8459df19c34",
+            "p3-7fc5a860c931840d46af"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-3efdfde7c8459df19c34",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p3-7fc5a860c931840d46af",
+            "page": 3,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-7d1aab663a0d1e17c4e6b5d1",
+        "title": "新生嬰兒護理預備篇",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13050.pdf",
+        "sha256": "82fc5465ca77726dcb6efd652d8920679811c0ff5e2d52161a616be899880346",
+        "pages": 6,
+        "checkedAt": "2026-11-20T14:52:51.909Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 30947
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-a5681663d0428e3b6cd5f674",
+        "title": "預防嬰幼兒及孕婦缺乏維他命D的聯合建議",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30190.pdf",
+        "sha256": "24fd7e9f243ae7539f981cda397c08352c97f6be42c357ddc7e9683d0788520a",
+        "pages": 6,
+        "checkedAt": "2026-11-20T14:54:26.612Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32150
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 36923
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 58
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 59
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 68
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "9179e8d9-b8ce-5aca-b4c5-bd71bffce938",
+          "versionHash": "245744e1d7a41e767c2719463b5857cb0a855df3aabd8237e93df901e640372c",
+          "seriesId": "pdf-a5681663d0428e3b6cd5f674"
+        },
+        "vectors": {
+          "required": 3,
+          "exported": 3,
+          "chunkKeys": [
+            "p1-0a95d7c5059757f0fe1c",
+            "p3-60db550f72708f4c5933",
+            "p5-b51818ff75a03b2f27a2"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-0a95d7c5059757f0fe1c",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p3-60db550f72708f4c5933",
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p5-b51818ff75a03b2f27a2",
+            "page": 5,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "title": "培育還是催谷子女",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30006.pdf",
+        "sha256": "1b7ff10371bc9e8ccdac687f434aae288294cd59da535db29f5ec370a245d4ac",
+        "pages": 7,
+        "checkedAt": "2026-11-20T14:56:31.996Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 37775
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 46551
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-72a78af063b2df4ff8d129a3",
+        "title": "一起乘風破浪-協助孩子克服逆境（學前兒童）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14842.pdf",
+        "sha256": "e9f1a02b50e3fed0af1c8eefb1725f22d4945ca25f17d72e4e5fa0880b8668ac",
+        "pages": 7,
+        "checkedAt": "2026-11-20T14:59:09.433Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 47492
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-110b0452a51c2bc488fbe7f5",
+        "title": "正面親職（三）：應對學前兒童的不當行為",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14837.pdf",
+        "sha256": "80d0ae8ad0b446d46281bde34e93a82e41e6d49824cb05e220e8d8dc2119e9e2",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:02:50.633Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 53832
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "title": "三至四歲大兒童發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15672.pdf",
+        "sha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:05:44.505Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 65858
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 53834
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null
+      },
+      {
+        "sourceId": "pdf-40e5eb1a042e9dee765714ef",
+        "title": "嬰幼兒與維他命D",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30078.pdf",
+        "sha256": "3e81eb4bb1efe1bf0bf1ad0694dbc2eace48145279b9341f70afbcf168de3681",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:08:21.334Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 36678
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 34581
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 36
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 90
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "3f868796-d569-51bd-979d-f839c13f10c8",
+          "versionHash": "62f33fbc8e53cb839e944d4c6961ffa7cf3dc4826609e74f774777e7c27ee3bc",
+          "seriesId": "pdf-40e5eb1a042e9dee765714ef"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-ea15052ca12619ad2faf",
+            "p7-c89dc73ea44cbc078c47"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-ea15052ca12619ad2faf",
+            "page": 1,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p7-c89dc73ea44cbc078c47",
+            "page": 7,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "title": "兩至三歲大兒童的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15670.pdf",
+        "sha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:16:47.021885Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 47595
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 59715
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-75f4948b23d797f1e6883149",
+        "title": "兒童的發展知多少-給學前兒童的家長",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.pdf",
+        "sha256": "c62c723285ba62ed7b692edf67b4e1f97ffda6de6885bb9d199436790614b98d",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:27:21.544765Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 65772
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-83ee5bc5318ca28cbbf5598a",
+        "title": "親子溝通: 給一歲前嬰兒的父母",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13046.pdf",
+        "sha256": "28c72ca8a6fe4a840325e274b2b918504035e2b6960997f9f807b889482d13d7",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:28:51.334467Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 59498
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-942362fc743b07c81abe9109",
+        "title": "一起乘風破浪-培育孩子的抗逆力（學前兒童）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14841.pdf",
+        "sha256": "0539ef75708cae9ee99ce7ea196e2eeea0e8a219b0a5f7fd57f14b8d7bc15e58",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:31:21.349263Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 52433
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_uncertain",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
+        "title": "交朋友",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13036.pdf",
+        "sha256": "482c1bb1065637e55e68495ad24cee8c6146b01683d5e15983f2905363c07a5d",
+        "pages": 8,
+        "checkedAt": "2026-11-20T16:42:40.719068Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 66315
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_work_model_outcome_unknown",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-b2dd7935c763e5df68d2420e",
+        "title": "一至兩歲大兒童的發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.pdf",
+        "sha256": "2089764b2b7d88ceb368aef5a5c562d52d857179863eddacd3fec57edfddbcd3",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:50:05.076469Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 63704
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 46787
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_review_held",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-c2c12e4018ee7099064622d4",
+        "title": "連繫．情感 兒童社交情緒發展 (三歲至五歲)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30158.pdf",
+        "sha256": "ea7a08b27cd12241a9d8cb67f11fe8c729dea137ca0ee60738e216e78cb26b12",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:57:05.443Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 129
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32741
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 32486
+          },
+          {
+            "kind": "embedding",
+            "state": "settled",
+            "costMicros": 26
+          }
+        ],
+        "outcome": "family_edition_verified",
+        "card": {
+          "versionId": "7e205598-5d7e-5a8e-8ed5-e4d95dd51e68",
+          "versionHash": "9c7d3dbc7e2ef419565a9985191bad07b8a8d09229fb1c5b003c14542796260e",
+          "seriesId": "pdf-c2c12e4018ee7099064622d4"
+        },
+        "vectors": {
+          "required": 2,
+          "exported": 2,
+          "chunkKeys": [
+            "p1-3a65c4626ab895406760",
+            "p8-69b3acd8b85f7de2b7c0"
+          ]
+        },
+        "citations": [
+          {
+            "key": "p1-3a65c4626ab895406760",
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "key": "p8-69b3acd8b85f7de2b7c0",
+            "page": 8,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-db6902edaf415c9e24a2438a",
+        "title": "正面親職（一）：從小開始",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13048.pdf",
+        "sha256": "5ec13c649aed1b6f0eb73a84c16389c18392db69aae2949a1cd695abbdbd0b8c",
+        "pages": 8,
+        "checkedAt": "2026-11-20T15:46:49.922485Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 60411
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "title": "聽聽講講 教孩子學說話之二（兩至四歲）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13038.pdf",
+        "sha256": "aef04aa1361faef4823e817bc30b34f860bc3f284ce1a4eef945898db3e5d725",
+        "pages": 10,
+        "checkedAt": "2026-11-20T16:43:41.239053Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "title": "僱主指引 - 實施「母乳餵哺友善工作間」",
+        "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/30031.pdf",
+        "sha256": "add30a8bef1277b7ec81d5366b3356041098295d8aff370fa36492515bfd2f44",
+        "pages": 12,
+        "checkedAt": "2026-11-20T15:40:35.100779Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "title": "連繫．情感 兒童社交情緒發展(7至12個月)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30156.pdf",
+        "sha256": "03b9bf5fa6e8d861a3080695d2658f41a64729d3297f3361b191fcf800e4b10d",
+        "pages": 12,
+        "checkedAt": "2026-11-20T16:45:35.235963Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "title": "全方位認識「泵奶器」",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.pdf",
+        "sha256": "b819bad662f6a5cf30944178eb62c15a1efd0503c38110ea476bed6e1b03410a",
+        "pages": 16,
+        "checkedAt": "2026-11-20T16:44:36.591525Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "costMicros": null
+          }
+        ],
+        "outcome": "reserved_unknown",
+        "code": "knowledge_review_failed",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback",
+        "providerFailure": [
+          {
+            "httpStatus": 400,
+            "category": "invalid_request"
+          }
+        ],
+        "reservedMicros": 1634304
+      },
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.pdf",
+        "sha256": "defd883db6b8af91f03a547f30b57e372d814258360fab5ce990137d0511b7cf",
+        "pages": 24,
+        "outcome": "reserved_unknown",
+        "code": "fhs_lane_dispatch_reserved",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "reserved",
+            "ceilingMicros": 1634304,
+            "costMicros": null,
+            "at": "2026-11-20T14:10:56.749Z"
+          }
+        ],
+        "checkedAt": "2026-11-20T14:34:34.598319Z"
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "title": "共享育兒樂 (五) 學前兒童篇 [三歲至六歲]",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.pdf",
+        "sha256": "cd515efcaa8b308c7cf02b1c5186ada45768c3deb7850128c66bf3d03e0ed608",
+        "pages": 80,
+        "checkedAt": "2026-11-20T16:52:01.162848Z",
+        "modelCalls": 1,
+        "attempts": [],
+        "outcome": "candidate_held",
+        "code": "unavailable",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "title": "共享育兒樂 (二) 新生嬰兒篇[一星期至一個月]",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30033.pdf",
+        "sha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "pages": 84,
+        "checkedAt": "2026-11-20T16:49:40.086943Z",
+        "modelCalls": 2,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 49089
+          },
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 58551
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_window_quote_mismatch",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      },
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "title": "愛·從母乳開始……",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.pdf",
+        "sha256": "8971dc31be66bdacc393f1ecdce46114bdb86bf0393d2e1abcd07db8d508b308",
+        "pages": 96,
+        "checkedAt": "2026-11-20T16:17:10.822353Z",
+        "modelCalls": 1,
+        "attempts": [
+          {
+            "kind": "generation",
+            "state": "settled",
+            "costMicros": 53304
+          }
+        ],
+        "outcome": "candidate_held",
+        "code": "knowledge_age_one_sided",
+        "independentReviewDecision": null,
+        "holdVerification": "production_decision_and_firestore_readback"
+      }
+    ],
+    "originalReadback": {
+      "readTime": "2026-11-20T16:53:23.019539Z",
+      "sourceCount": 28,
+      "totalPages": 468,
+      "campaignGrossLimitMicros": 30000000,
+      "campaignSettledMicros": 9918206,
+      "campaignReservedMicros": 19550208,
+      "laneSettledMicros": 1530855,
+      "laneReservedMicros": 8171520,
+      "unsettledOriginals": [
+        {
+          "sourceId": "pdf-7265fd820fae618428179c2f",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-142c907be41886853278155e",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-512682e6652f267b32fb90ce",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-25f6d14e786c74f161e631d1",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        },
+        {
+          "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+          "work": true,
+          "prepared": false,
+          "activeVersionId": null,
+          "reservedMicros": 1634304
+        }
+      ],
+      "openItems": []
+    },
+    "firstWindowOrganizerSchemas": {
+      "workerRevision": "883426b658c032e496228b877b0c0b5cee8b24ab",
+      "release": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44773701383",
+      "method": "Captured the native organizer response schema offline before the provider call, using the registered source, original first PDF attachment, production range plan and explicit age setting. The 80-, 84- and 96-page editions have the same four-range first-window schema. HTTP 400 receipts do not specify which input field was rejected.",
+      "rows": [
+        {
+          "sourceId": "pdf-7265fd820fae618428179c2f",
+          "physicalPages": 10,
+          "firstAttachmentBytes": 5320430,
+          "corePages": 10,
+          "ranges": 10,
+          "schemaBytes": 3309,
+          "schemaSha256": "22d241f29d9f0b99723da4773661221b91b8f33dae09891c5cbbdb017877c5ba"
+        },
+        {
+          "sourceId": "pdf-25f6d14e786c74f161e631d1",
+          "physicalPages": 16,
+          "firstAttachmentBytes": 4926570,
+          "corePages": 14,
+          "ranges": 14,
+          "schemaBytes": 3725,
+          "schemaSha256": "d89b7162dad4c58461f05bf1ab4ec5ecfcd62d731b609b2e7bfc6f0d12f2ebc9"
+        },
+        {
+          "sourceId": "pdf-142c907be41886853278155e",
+          "physicalPages": 12,
+          "firstAttachmentBytes": 882159,
+          "corePages": 12,
+          "ranges": 12,
+          "schemaBytes": 3517,
+          "schemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b"
+        },
+        {
+          "sourceId": "pdf-512682e6652f267b32fb90ce",
+          "physicalPages": 12,
+          "firstAttachmentBytes": 7837614,
+          "corePages": 12,
+          "ranges": 12,
+          "schemaBytes": 3517,
+          "schemaSha256": "7bdd48cf49539414f2a083eb0b07149e80c9e15734464b5395884a3818adcc6b"
+        },
+        {
+          "sourceId": "pdf-82798af3747e7b5fb61b4127",
+          "physicalPages": 96,
+          "firstAttachmentBytes": 3245020,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
+        },
+        {
+          "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+          "physicalPages": 80,
+          "firstAttachmentBytes": 6535561,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
+        },
+        {
+          "sourceId": "pdf-b061777e96a27e5124285ba5",
+          "physicalPages": 84,
+          "firstAttachmentBytes": 4370774,
+          "corePages": 12,
+          "ranges": 4,
+          "schemaBytes": 3085,
+          "schemaSha256": "b2dcfc034e108e4503af7d6e1f816ccfd450a9d1dd594977d505a0aa7a8807f2"
+        }
+      ]
+    },
+    "lastSourceAdmission": {
+      "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+      "workCreatedAt": "2026-11-20T16:51:41.553273Z",
+      "workRecordedAt": "2026-11-20T16:51:48.094909Z",
+      "accountUnchangedDuringWork": true,
+      "before": {
+        "held": 19550208,
+        "spent": 9918206,
+        "limit": 30000000
+      },
+      "after": {
+        "held": 19550208,
+        "spent": 9918206,
+        "limit": 30000000
+      },
+      "availableAtOpenMicros": 531586,
+      "availableAtHoldMicros": 531586,
+      "requiredGenerationReservationMicros": 1634304,
+      "sourceProviderTickets": 0
+    }
+  },
+  "initialScopeReadback": {
+    "scopeReceipt": "FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json",
+    "scopeFilter": {
+      "kind": "pdf",
+      "outcome": "no_terminal_receipt"
+    },
+    "readTime": "2026-11-20T17:08:56.519129Z",
+    "sources": 116,
+    "physicalPages": 1471,
+    "outcomes": {
+      "no_original_work_record": 18,
+      "family_edition_verified": 26,
+      "work_without_verified_terminal_receipt": 15,
+      "reserved_unknown": 6,
+      "candidate_held": 51
+    },
+    "verifiedFamilyEditions": 26,
+    "exportedVectors": 31,
+    "largestVerifiedEditionPages": 8,
+    "sourcesOver20Pages": 12,
+    "verifiedEditionsOver20Pages": 0,
+    "method": "Joined the 09:00 source list and original lane bindings to source heads, work markers and provider tickets at one Firestore read time. For every active edition the earlier family readback matches the exact live version, exported vector count and physical citation proof. An original work marker alone supplies no terminal disposition. Ticket counts under the earlier C group describe the source history; the 84 lane sources are bound to their original operation.",
+    "fourProviderResponses": {
+      "model": "gemini-3.8-flash",
+      "location": "global",
+      "httpStatus": 400,
+      "category": "invalid_request",
+      "sdk": "@google/genai 2.24.0",
+      "sdkAttempts": 1,
+      "maxOutputTokens": 8192,
+      "pricing": "https://cloud.google.com/model-garden/pricing",
+      "pricingCheckedOn": "2026-11-21 Asia/Hong_Kong",
+      "rule": "A returned HTTP 400 carries no input or output token charge under the published Google Cloud rule. The November 13 timeout provision concerns Gemini 4 completions above 32K tokens. Each of these four original requests had one authenticated SDK error and one matching original generation reservation.",
+      "accounting": "The original C production coordinator now owns reconciliation of the four identified reservations against the original source, operation, stage and ticket. Token usage was not returned. No zero-token measurement or ledger settlement is asserted. The 24-page bottle-feeding request had no matched provider response and is excluded.",
+      "observedLedgerMicros": {
+        "limit": 30000000,
+        "settled": 9918206,
+        "reserved": 19550208,
+        "available": 531586
+      },
+      "fourReservationsMicros": 6537216,
+      "conditionalAvailableMicrosIfOnlyTheseSettleAtZeroGross": 7068802,
+      "entries": [
+        {
+          "sourceId": "pdf-142c907be41886853278155e",
+          "reservedAt": "2026-11-20T15:39:07.156Z",
+          "reservedMicros": 1634304,
+          "ticketIdSha256": "0d4c9bf2446d9e9e13dc0bb66374532ca765c62342c3f74c22a2c60489fc5cd6",
+          "stageHash": "e6cdd9bf19ab2f46b39d55148f88e9cd9ea76b680b81e16c04416a711bc27b80",
+          "runStdoutSha256": "a8e33b34a50a861e40bcd73ca10e7253bc56c02f048200209dcc3ef1d0499533",
+          "runStderrSha256": "a1aa52748e708a8601337e02ef11b009d7e1c227b7b5c35530c1741071301450",
+          "terminalStdoutSha256": "cd6a2d591347361c18a300caf91382065a3f579de1ed2a0080152da2a53fd1fe"
+        },
+        {
+          "sourceId": "pdf-7265fd820fae618428179c2f",
+          "reservedAt": "2026-11-20T16:43:19.364Z",
+          "reservedMicros": 1634304,
+          "ticketIdSha256": "9ffafad9ca564ae9ac4293de4f1ea28279fe1f53f39914de00199ad8a8035991",
+          "stageHash": "8cbddb2c9b7104c14050bfd612a41568bc9bc047318b6b21cebf1b5b431690d6",
+          "runStdoutSha256": "7bf5ba2fc4e23caf98a178d95caa0a8ff6a29782fcb640a2e2e4d47da0f958c1",
+          "runStderrSha256": "c983a844ff3fd22ed545026b3b52a9d30a2393c7e5e34cc2c97245cbe3963edf",
+          "terminalStdoutSha256": "7bf5ba2fc4e23caf98a178d95caa0a8ff6a29782fcb640a2e2e4d47da0f958c1"
+        },
+        {
+          "sourceId": "pdf-25f6d14e786c74f161e631d1",
+          "reservedAt": "2026-11-20T16:44:14.277Z",
+          "reservedMicros": 1634304,
+          "ticketIdSha256": "0f7a3dc3d813a2851bfff8a90fcbf7088c1e7aa90269012d5ee47968b505e4bc",
+          "stageHash": "c0232be52a2dc0ef1e2da2fddbf299dee134e850779551457d8c5e39e38cd435",
+          "runStdoutSha256": "77ae44b79d54af0d0793432ea0bf792ba9d30cc3fa817ba04e44eda1514d88ce",
+          "runStderrSha256": "626375a086f739f064c02c096e2f5f532ae5956fef4781498db4e8187851fe08",
+          "terminalStdoutSha256": "77ae44b79d54af0d0793432ea0bf792ba9d30cc3fa817ba04e44eda1514d88ce"
+        },
+        {
+          "sourceId": "pdf-512682e6652f267b32fb90ce",
+          "reservedAt": "2026-11-20T16:45:13.306Z",
+          "reservedMicros": 1634304,
+          "ticketIdSha256": "1602372808ec4b114285fda5144af7193303c500a7e41c9a1baf7330e9b92ca2",
+          "stageHash": "d175200bb0402f75013173c69938eb871f20295979cd79a684339abc0ccd5c7e",
+          "runStdoutSha256": "cc72d5e1502f197103233674007b47ee679002196e90c33c55b87f807f0e5a56",
+          "runStderrSha256": "9a3e9d47a6ef7e88437b3461db044b20dd234c2a30982a45eecc13ff3d8c262b",
+          "terminalStdoutSha256": "cc72d5e1502f197103233674007b47ee679002196e90c33c55b87f807f0e5a56"
+        }
+      ]
+    },
+    "entries": [
+      {
+        "sourceId": "resource-af8c3e8cc813be",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "resource-1ba127a119f802",
+        "owner": "C3",
+        "outcome": "family_edition_verified",
+        "versionId": "6c933b79-2ae9-5e2b-8986-8e90af34c79f",
+        "versionHash": "b978fdb50fc1dfee78ca0bae3cd9622d4a1c509fabe103c7ca5b00e31db2db80",
+        "exportedVectors": 2,
+        "citedPhysicalPages": [
+          1,
+          3
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 4,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-2fcfc6f5232e6a7858a730f2",
+        "owner": "C2",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "process_interrupted_after_one_settled_generation",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "owner": "C3",
+        "outcome": "reserved_unknown",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-978f5df8a09640d894087117",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_review_held",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "owner": "C3",
+        "outcome": "reserved_unknown",
+        "reason": "fhs_lane_dispatch_reserved",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_coverage_disputed",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-2f68a230d9e7115440b2b241",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "review_hold",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-10198577dd00f5dbce4da010",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b1e19bee54f42ee9de413a78",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "04654663-9af2-58d2-b97f-3af935eccf14",
+        "versionHash": "3a00851be007a0f1598e81ed457b34db918a68cba4603115872e8b877ff3b175",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-5e65881f402bf4ae0ca22646",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_work_model_outcome_unknown",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-881ea5c99f3479c6d5e67047",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "owner": "C3",
+        "outcome": "reserved_unknown",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c79a394b580ec9e870d63319",
+        "owner": "C",
+        "outcome": "reserved_unknown",
+        "reason": "original_reviewer_reservation_unsettled",
+        "settledTickets": 1,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-e4e9735e1a0ba0923750e633",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_review_held",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-83ee5bc5318ca28cbbf5598a",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-db6902edaf415c9e24a2438a",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-ade31647bbc60577ac26ecc9",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-7d1aab663a0d1e17c4e6b5d1",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c212ef9814e180c2794a4aa1",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-811789c9be36ae025ee7e2a2",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3428e3d13ed575680a0fa8a5",
+        "owner": "C1",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a8b1017b75ded7e02814cdb2",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "d3a5b281-d111-512b-996e-129239404ad2",
+        "versionHash": "970249df638beda4bae24a8032e799055e6bc6756e59e2136e67e866cab557a7",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-75f4948b23d797f1e6883149",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-1de70dac6945f17a3891a257",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-110b0452a51c2bc488fbe7f5",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-0964fd47800bc6931d69b130",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b23cd70ace657d574bfaa15b",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-66d4917b4892792da0ea028d",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-942362fc743b07c81abe9109",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-72a78af063b2df4ff8d129a3",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-e429ac892c396fb798ad7132",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
+        "owner": "C1",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b2dd7935c763e5df68d2420e",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_review_held",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-f43b59147093cacef5308dcd",
+        "owner": "C1",
+        "outcome": "family_edition_verified",
+        "versionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
+        "versionHash": "18e99a3a2e06e94ede97cf29693b6ab162afc5f03f858c75bd21ea988405b30c",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          4
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-01991cbeb3f85382c992d63a",
+        "owner": "C1",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
+        "owner": "C1",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-bd15166fe03791ef9ff7c062",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "6a81ecbb-2091-5bbe-b492-fc155dffe453",
+        "versionHash": "6b6d72ff65aca931af35ed1f6fe0c6b66352166e44d73d33575fc826bb9a19af",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-e7427b7b969a37e3d8e889a1",
+        "owner": "C3",
+        "outcome": "family_edition_verified",
+        "versionId": "2e9e06cc-24d6-5ab5-8cc9-d506767a9cab",
+        "versionHash": "f3f3bf7750a77fd2cf74c82d86116190720210de5b04eb913861368a5e5fb81b",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 1,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-6488540e32c5e926ecee6787",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-96b158a588a4b294cbbd010b",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_uncertain",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-15f80bcfe4c3560a68c19a89",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4ace9fb38791edb68e91ac3b",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-231c869513252fae5e5ce54e",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "02bb8559-7f1f-5a29-8a4d-f19f5dfb2721",
+        "versionHash": "dca3c4a737b9ba18a1ff884bc8f3a9889b4b3ae6c843060d6460878c8973d3d8",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "dd8983bc-ca0b-5163-8560-97f3c6aa6cd6",
+        "versionHash": "ff78685c97ee67e555ff5c0ad033adc6fb94cfaefeed25e817e558499feca81a",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-6637fb9890bacf75064562bd",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "unavailable",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "owner": "C2",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "unavailable",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a195a3e5ac7644036bdaf073",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-f4804bcf1d97c9f5c624043a",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "5708cc78-1a33-5db5-a8bd-6075dee4de4d",
+        "versionHash": "39b537dcd355104592498ed7d97ece9e83bb9142316900d7448f537c11c830cb",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "owner": "C3",
+        "outcome": "reserved_unknown",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-9aef95ce230e1ad16ec567f0",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-40e5eb1a042e9dee765714ef",
+        "owner": "C3",
+        "outcome": "family_edition_verified",
+        "versionId": "3f868796-d569-51bd-979d-f839c13f10c8",
+        "versionHash": "62f33fbc8e53cb839e944d4c6961ffa7cf3dc4826609e74f774777e7c27ee3bc",
+        "exportedVectors": 2,
+        "citedPhysicalPages": [
+          1,
+          7
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 4,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-51a3b0aebacc5c2f6a002561",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "59953c98-8f50-5298-a579-861533b4f5cc",
+        "versionHash": "b5cc832551dd3088f94eaa74f9b412b4e2804a6fef32e559fc63bcdd600ec203",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-28468771ad2490f045bd5d56",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+        "versionHash": "e3119738201a1c62ed877112dc5373c1ff3002d9bd91b3abe7846bfe85e59757",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-902a9652db3c94e03ea54d75",
+        "owner": "C2",
+        "outcome": "family_edition_verified",
+        "versionId": "815fe89c-e7c3-58d2-81c0-c9fdfa0a9e6a",
+        "versionHash": "99acdfe4ebc75380146b6cbd074cc5f59a98de4af0581931637b00693ed4c2ac",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-780e4c1676a794ee6e89c6db",
+        "owner": "C2",
+        "outcome": "family_edition_verified",
+        "versionId": "e83b43ba-9c61-59dd-bbef-b26c14d11940",
+        "versionHash": "08f561df56ad4b57417cae90095f9973856bcb7b6b92856ab36baf7488fb988b",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "owner": "C3",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3fca76df105dc64c4e94f76c",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "fef2b2bc-0322-52a5-9d3f-90caace8683c",
+        "versionHash": "7bb45ab04c494df84e3cabb128f028f9381660b34584ec748d1322fcfafafe31",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c35022f4755f452c3ab6ca7c",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "b2abf3ee-8f95-553f-9b9a-be87fe67c5c8",
+        "versionHash": "adcd441410b261f9dbdcb5d59c5a17cae314b7ebcbc618afc4deebb4a77d875d",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "owner": "C2",
+        "outcome": "candidate_held",
+        "reason": "unavailable",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-b50a158f021811e4c7daafba",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "39b303d4-e61c-5e6d-bc34-d715cf61dfdc",
+        "versionHash": "e33fb389fd9abf50c6355c9856089fc9f064b09305a3c98f9ba32e8b8455ba7f",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4bdbc1ab6341b2e2f08bf986",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "owner": "C3",
+        "outcome": "reserved_unknown",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-26a1e80e0727a8e30c63f634",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c2c12e4018ee7099064622d4",
+        "owner": "C3",
+        "outcome": "family_edition_verified",
+        "versionId": "7e205598-5d7e-5a8e-8ed5-e4d95dd51e68",
+        "versionHash": "9c7d3dbc7e2ef419565a9985191bad07b8a8d09229fb1c5b003c14542796260e",
+        "exportedVectors": 2,
+        "citedPhysicalPages": [
+          3,
+          8
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 4,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-422bb3fc181398ac29e0f914",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "62398efd-1815-5746-95c7-9393bd247305",
+        "versionHash": "0d5cd9820151aecef8a49ce8ed00e80fcf4adfb239f797ae2b0610f81079ee55",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4fd38b86578fa01ebbd32579",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-a5681663d0428e3b6cd5f674",
+        "owner": "C3",
+        "outcome": "family_edition_verified",
+        "versionId": "9179e8d9-b8ce-5aca-b4c5-bd71bffce938",
+        "versionHash": "245744e1d7a41e767c2719463b5857cb0a855df3aabd8237e93df901e640372c",
+        "exportedVectors": 3,
+        "citedPhysicalPages": [
+          1,
+          3,
+          5
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 5,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_review_failed",
+        "settledTickets": 0,
+        "reservedTickets": 1
+      },
+      {
+        "sourceId": "pdf-0036bc862846cdd19984930b",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-16ecfbe91853bb20831c4b97",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "ed702acb-0f4e-5765-9ae4-15ffafa3a05a",
+        "versionHash": "e91a69e31887a61047650b4858551233489ec74160b7d41f2fc23f2ccef0e214",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "dd70e395-9086-5f4e-bed6-dfff16512317",
+        "versionHash": "a60a1237991d54d26daaf5d56315f4e3b053fb905cf273676b8157ebee179ba9",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-258dbc8a8c69d4f66dd0ab05",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "c8984965-13ee-5add-aa24-ee8e5c0eb70e",
+        "versionHash": "ebeb05bc1555afcf0c3a314cd44ec3f736171bc8ac8a1e3cbfe648b171a80ee7",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-8d229a086ffa572923ed027f",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "c78e7b03-66fc-52d9-8aca-6a634557bbba",
+        "versionHash": "d5529b4029e1bb3a9823418740acb8569ba09535be452c40fcdb170127072b1c",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-5acb6474a38d19249e4933d6",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "74d94903-fab3-5f2c-91df-5e1a4f980a8b",
+        "versionHash": "182376502e898b3c2fb0416e2d1ac84e9b01917e53652fca3f8025bde2f3b29b",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "text_exact"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "owner": "C",
+        "outcome": "family_edition_verified",
+        "versionId": "c1f8b503-4a75-53f8-89cb-593c49f25778",
+        "versionHash": "1277fdea0291c7aaac95acc6eac111ceed55f2585e1be3d47b6ccf824382446c",
+        "exportedVectors": 1,
+        "citedPhysicalPages": [
+          1
+        ],
+        "citationProof": [
+          "independent_page_transcriptions"
+        ],
+        "settledTickets": 3,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "owner": "C",
+        "outcome": "candidate_held",
+        "reason": "knowledge_window_quote_mismatch",
+        "settledTickets": 2,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-d6050975ffe38c8275c7c121",
+        "owner": "C1",
+        "outcome": "candidate_held",
+        "reason": "knowledge_age_one_sided",
+        "settledTickets": 1,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "owner": "C1",
+        "outcome": "no_original_work_record",
+        "reason": "no_work_or_provider_ticket_at_read_time",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      },
+      {
+        "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
+        "owner": "C1",
+        "outcome": "work_without_verified_terminal_receipt",
+        "reason": "work_record_exists_without_provider_ticket",
+        "settledTickets": 0,
+        "reservedTickets": 0
+      }
+    ]
   }
 }

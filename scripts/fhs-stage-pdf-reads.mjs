@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {copyFile, mkdir, mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {serialize} from 'node:v8';
 import {observeKnowledgeLeaflet} from '../server/knowledge-source-fetch.ts';
 import {manualPdfWindowBudget, planKnowledgePdfWindows} from '../server/knowledge-pdf-windows.ts';
 import {campaignMaterialWatches} from '../server/platform-materials.ts';
@@ -9,7 +10,7 @@ import {fhsPdfReadKey, openFhsPdfReads} from './fhs-pdf-reads.ts';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
-/** Copy only reads the normal fetcher and admitted windows actually use. Publish the index last. */
+/** Keep original resumable windows and stage new layouts with the same pinned parser. */
 export async function stageFhsPdfReads({sources, originals, prepared, indexSha256, outputParent, textOnly = false}) {
   const full = await readFile(join(prepared, 'index.json'));
   if (sha(full) !== indexSha256) throw Error('fhs_pdf_index_integrity');
@@ -18,12 +19,24 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
   const records = {}, sourceReads = [];
   const identities = new Set(sources.map(row => row.sourceId));
   if (!sources.length || identities.size !== sources.length) throw Error('fhs_pdf_input_scope');
+  await mkdir(outputParent, {recursive:true});
+  const directory = await mkdtemp(join(outputParent, 'fhs-pdf-reads-'));
+  const generated = new Set();
   const signal = new AbortController().signal;
-  const capture = async (bytes, options = {}) => {
+  const capture = async (bytes, options = {}, newWindow = false) => {
     const key = fhsPdfReadKey(options.expectedHash ?? sha(bytes), options);
-    if (!Object.hasOwn(index.records, key)) throw Error('fhs_pdf_prepared_read_missing');
+    const existing = Object.hasOwn(index.records, key);
+    if (!existing && !newWindow) throw Error('fhs_pdf_prepared_read_missing');
     const result = await read(bytes, options);
-    if (!textOnly || !options.includePagePdf) records[key] = index.records[key];
+    if (!textOnly || !options.includePagePdf) {
+      if (existing) records[key] = index.records[key];
+      else {
+        const packed = serialize(result), digest = sha(packed);
+        await writeFile(join(directory, digest), packed);
+        generated.add(digest);
+        records[key] = digest;
+      }
+    }
     return result;
   };
   for (const {sourceId, sha256, pages} of sources) {
@@ -40,25 +53,26 @@ export async function stageFhsPdfReads({sources, originals, prepared, indexSha25
     const modelCalls = Math.max(1, windows.length) * 2;
     const summary = {sourceId, sha256, pages, route: windows.length ? 'windows' : 'whole', minimumModelCalls:modelCalls};
     const windowInputs = [];
-    for (const range of windows) {
+    const legacy = budget ? planKnowledgePdfWindows(pages, budget.modelCalls, 14) : [];
+    const sameSlice = (a, b) => a.firstRead === b.firstRead && a.lastRead === b.lastRead;
+    for (const range of [...windows, ...legacy.filter(old => !windows.some(w => sameSlice(w, old)))]) {
+      const newWindow = !legacy.some(old => sameSlice(range, old));
       const count = range.lastRead - range.firstRead + 1;
-      const slice = await capture(original, {expectedHash:sha256, startPage:range.firstRead, pageLimit:count, includePagePdf:true});
+      const slice = await capture(original, {expectedHash:sha256, startPage:range.firstRead, pageLimit:count, includePagePdf:true}, newWindow);
       if (!slice.pagePdf || slice.totalPages !== pages || slice.pages.length !== count) throw Error('fhs_pdf_window_source_mismatch');
       const sliceHash = sha(slice.pagePdf);
       for (let startPage = 1; startPage <= count; startPage += 8) {
-        const inner = await capture(slice.pagePdf, {expectedHash:sliceHash, startPage, pageLimit:8});
+        const inner = await capture(slice.pagePdf, {expectedHash:sliceHash, startPage, pageLimit:8}, newWindow);
         if (inner.totalPages !== count || inner.pages.length !== Math.min(8, count - startPage + 1)) throw Error('fhs_pdf_window_source_mismatch');
       }
-      windowInputs.push({first:range.first, last:range.last, firstRead:range.firstRead, lastRead:range.lastRead, sha256:sliceHash});
+      if (windows.includes(range)) windowInputs.push({first:range.first, last:range.last, firstRead:range.firstRead, lastRead:range.lastRead, sha256:sliceHash});
     }
     sourceReads.push({...summary, ...(windows.length ? {windows:windowInputs} : {})});
   }
-  await mkdir(outputParent, {recursive:true});
-  const directory = await mkdtemp(join(outputParent, 'fhs-pdf-reads-'));
   const digests = [...new Set(Object.values(records))].sort();
   for (const digest of digests) {
     const destination = join(directory, digest);
-    await copyFile(join(prepared, digest), destination);
+    if (!generated.has(digest)) await copyFile(join(prepared, digest), destination);
     if (sha(await readFile(destination)) !== digest) throw Error('fhs_pdf_read_integrity');
   }
   const sorted = Object.fromEntries(Object.entries(records).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));

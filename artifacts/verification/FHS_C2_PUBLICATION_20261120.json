@@ -72,23 +72,69 @@
     ]
   },
   "delivery": {
-    "terminalReceipts": 10,
+    "terminalReceipts": 17,
     "totalSources": 28,
     "outcomes": {
       "candidate_held": 9,
-      "published": 1
+      "published": 8
     },
     "settledAndReservedGrossMicros": {
-      "readAt": "2026-11-20T15:40:49.934863Z",
-      "laneSettledRequests": 19,
-      "laneSettled": 733131,
-      "lanePendingRequests": 0,
-      "laneReserved": 0,
+      "readAt": "2026-11-21T06:04:41.947361Z",
+      "laneSettledRequests": 59,
+      "laneSettled": 1112857,
+      "lanePendingRequests": 1,
+      "laneReserved": 1634304,
       "sharedCap": 30000000,
-      "sharedSettled": 8830053,
-      "sharedReserved": 13012992
+      "sharedSettled": 9919202,
+      "sharedReserved": 19550208,
+      "availableToReserve": 530590,
+      "oneGenerationReservation": 1634304,
+      "oneEmbeddingReservation": 308,
+      "sharedPendingRequests": 12
     },
     "sources": [
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "title": "「媽記奶品工場」漫畫",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30018.pdf",
+        "sha256": "6123b4763072b5b8eff1b4aff2d72b480f5404746ba81d42fdca3f6bf09ee9f3",
+        "pages": 36,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T16:57:19.302Z",
+        "modelCalls": 1,
+        "code": "unavailable",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "title": "餵哺孩子 由你作主 (組合套裝)",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30136.pdf",
+        "sha256": "013fb4c49babc6dffcc92ce5b11c959078241dd0ac3e9134e66a31295ba11b71",
+        "pages": 28,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T17:01:55.309Z",
+        "modelCalls": 1,
+        "code": "unavailable",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "title": "搖籃曲之一:建立睡眠常規",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13043.pdf",
+        "sha256": "c6c88ad013ab9107597c0eb9ef90227b6023d7f48ccfec9845b72060872c8672",
+        "pages": 10,
+        "outcome": "candidate_held",
+        "checkedAt": "2026-11-20T16:52:21.837Z",
+        "modelCalls": 1,
+        "code": "knowledge_review_failed",
+        "published": false,
+        "prepared": false,
+        "review": null
+      },
       {
         "sourceId": "pdf-1de70dac6945f17a3891a257",
         "title": "正面親職（二）：學前階段的實踐",
@@ -104,6 +150,70 @@
         "review": null
       },
       {
+        "sourceId": "pdf-66d4917b4892792da0ea028d",
+        "title": "品德培育之三 （四至六歲）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14840.pdf",
+        "sha256": "0d270b0d4e0333b78cc18ea5a2b999093f606d5bb9b962c7105e6c591eac591a",
+        "pages": 8,
+        "outcome": "published",
+        "checkedAt": "2026-11-21T05:58:19.297Z",
+        "modelCalls": 0,
+        "versionId": "b74dde5e-c4fb-5e62-a1c9-1c985648d341",
+        "versionHash": "1f65c58df56c1c3830aa097abd07340271fc0758e630c4ab53c08f7243017ad6",
+        "requiredVectors": 7,
+        "exportedVectors": 7,
+        "citations": [
+          {
+            "page": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 4,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 5,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 6,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 7,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 8,
+            "proof": "recorded_independent_transcription"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-780e4c1676a794ee6e89c6db",
+        "title": "寶寶有話說 － 了解寶寶的信號",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30119.pdf",
+        "sha256": "3dcdb3b34a2dd2ec27649bb0e9818fa1b00dad2262ca2ca34f92101e1585cfee",
+        "pages": 8,
+        "outcome": "published",
+        "checkedAt": "2026-11-20T16:03:39.839Z",
+        "modelCalls": 2,
+        "versionId": "e83b43ba-9c61-59dd-bbef-b26c14d11940",
+        "versionHash": "08f561df56ad4b57417cae90095f9973856bcb7b6b92856ab36baf7488fb988b",
+        "requiredVectors": 1,
+        "exportedVectors": 1,
+        "citations": [
+          {
+            "page": 1,
+            "proof": "text_exact"
+          }
+        ]
+      },
+      {
         "sourceId": "pdf-978f5df8a09640d894087117",
         "title": "實施「母乳餵哺友善場所」指引",
         "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/30037.pdf",
@@ -116,6 +226,94 @@
         "published": false,
         "prepared": false,
         "review": null
+      },
+      {
+        "sourceId": "pdf-ade31647bbc60577ac26ecc9",
+        "title": "幼兒學說話之一 （一至兩歲）",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13049.pdf",
+        "sha256": "5554652445da243586616aece9df9338c73c8be3fd5b855918c2b12d07a3585c",
+        "pages": 8,
+        "outcome": "published",
+        "checkedAt": "2026-11-21T05:59:28.760Z",
+        "modelCalls": 0,
+        "versionId": "ce395045-308d-5eeb-b775-248438d4a9f9",
+        "versionHash": "468bad54d5136dcc9f3c3a6bc72b073b68975f5075d7489092e1b7439522c73f",
+        "requiredVectors": 7,
+        "exportedVectors": 7,
+        "citations": [
+          {
+            "page": 2,
+            "proof": "text_exact"
+          },
+          {
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "page": 4,
+            "proof": "text_exact"
+          },
+          {
+            "page": 5,
+            "proof": "text_exact"
+          },
+          {
+            "page": 6,
+            "proof": "text_exact"
+          },
+          {
+            "page": 7,
+            "proof": "text_exact"
+          },
+          {
+            "page": 8,
+            "proof": "recorded_independent_transcription"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-e429ac892c396fb798ad7132",
+        "title": "樂於學習之一",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14843.pdf",
+        "sha256": "78b5bbbd4869bc764df8752c9f1b5402dbcae3afe8b6acb44ef51eab893709e5",
+        "pages": 8,
+        "outcome": "published",
+        "checkedAt": "2026-11-21T06:01:37.952Z",
+        "modelCalls": 0,
+        "versionId": "7837d94a-9620-5405-a956-d9c63af807a3",
+        "versionHash": "966f890b713794d461e6b59a643c2ff3b8984fa2eb92340b375dd546927259f3",
+        "requiredVectors": 7,
+        "exportedVectors": 7,
+        "citations": [
+          {
+            "page": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 4,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 5,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 6,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 7,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 8,
+            "proof": "recorded_independent_transcription"
+          }
+        ]
       },
       {
         "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
@@ -185,13 +383,31 @@
         "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15664.pdf",
         "sha256": "c16d35c3521dcf957f8cf78ecb7018d16214f12e42cbc885204267854f95e28f",
         "pages": 4,
-        "outcome": "candidate_held",
-        "checkedAt": "2026-11-20T14:41:27.441Z",
-        "modelCalls": 2,
-        "code": "knowledge_window_quote_mismatch",
-        "published": false,
-        "prepared": false,
-        "review": null
+        "outcome": "published",
+        "checkedAt": "2026-11-21T05:57:09.192Z",
+        "modelCalls": 0,
+        "versionId": "2954778f-aad7-5ddd-bfed-2e7e60b081cf",
+        "versionHash": "1489469ed93f78136dde7add4411d9dc715e216652f1f7b88a30a19f54511735",
+        "requiredVectors": 4,
+        "exportedVectors": 4,
+        "citations": [
+          {
+            "page": 1,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 4,
+            "proof": "text_exact"
+          }
+        ]
       },
       {
         "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
@@ -213,13 +429,27 @@
         "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13032.pdf",
         "sha256": "431fbf81d87aa6c834eafa7dc5e45db23044c71772df144d04a7341ad3c7ad7c",
         "pages": 4,
-        "outcome": "candidate_held",
-        "checkedAt": "2026-11-20T15:01:49.526Z",
-        "modelCalls": 2,
-        "code": "knowledge_window_quote_mismatch",
-        "published": false,
-        "prepared": false,
-        "review": null
+        "outcome": "published",
+        "checkedAt": "2026-11-21T06:00:31.068Z",
+        "modelCalls": 0,
+        "versionId": "f98f56ae-0f8b-5f52-b01c-564eae5187fc",
+        "versionHash": "ef1259fbd26163d7c18b8340dec0811435534d506f9fabd45e81a3bdfb0ada18",
+        "requiredVectors": 3,
+        "exportedVectors": 3,
+        "citations": [
+          {
+            "page": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 4,
+            "proof": "recorded_independent_transcription"
+          }
+        ]
       },
       {
         "sourceId": "pdf-f2ed89529922c1ab403f28d2",
@@ -227,15 +457,475 @@
         "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15694.pdf",
         "sha256": "6d8d05a4e554f8ea04f8bc664ddb13f62147a6cb04eeacf8df236543271f6925",
         "pages": 4,
-        "outcome": "candidate_held",
-        "checkedAt": "2026-11-20T15:03:01.812Z",
-        "modelCalls": 2,
-        "code": "knowledge_window_quote_mismatch",
-        "published": false,
-        "prepared": false,
-        "review": null
+        "outcome": "published",
+        "checkedAt": "2026-11-21T06:02:38.502Z",
+        "modelCalls": 0,
+        "versionId": "17641a63-feab-5c46-9778-8123a26f7979",
+        "versionHash": "60b607282eed6a9b8e41e9123cb2c5d8cb13a4602244a6456be17e605a3a2bfd",
+        "requiredVectors": 3,
+        "exportedVectors": 3,
+        "citations": [
+          {
+            "page": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "page": 3,
+            "proof": "text_exact"
+          },
+          {
+            "page": 4,
+            "proof": "text_exact"
+          }
+        ]
       }
-    ]
+    ],
+    "currentDispositions": [
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "共享育兒樂 (四) 幼童篇 [兩歲至三歲]",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30035.pdf",
+        "sha256": "be3c9e500c38b42efc26b2c31ed342f80abd3dbe873b646872cf455f19c1bc34",
+        "pages": 112,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "共享育兒樂 (一) 新生嬰兒篇",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30032.pdf",
+        "sha256": "c41887b435f78c5c56284c71e16697d459bc0552c062a7f7413e5cdb90432eed",
+        "pages": 84,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "sourceWorkPresent": true,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "protectedReadback": {
+          "state": "held",
+          "modelCalls": 1,
+          "code": "unavailable"
+        },
+        "evidence": "The original work recorded unavailable and created no provider ticket. The shared gross balance was unchanged at 590 attempts before and after the two affected operations, with less than one generation ceiling available.",
+        "disposition": "generation_reservation_unavailable"
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "sourceWorkPresent": true,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "protectedReadback": {
+          "state": "held",
+          "modelCalls": 1,
+          "code": "unavailable"
+        },
+        "evidence": "The original work recorded unavailable and created no provider ticket. The shared gross balance was unchanged at 590 attempts before and after the two affected operations, with less than one generation ceiling available.",
+        "disposition": "generation_reservation_unavailable"
+      },
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "6至24個月嬰幼兒健康飲食(2)進展篇(上)小冊子",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14722.pdf",
+        "sha256": "ee95d71394b4054a441cc4d14d356006e992c7b21cbe8ba85e4e751824a37516",
+        "pages": 24,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "6至24個月嬰幼兒 健康飲食(3) 進展篇(下)小冊子",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/16301.pdf",
+        "sha256": "ef440bafe855f988c1403611bb862360c900b44e40b64727362ff52fcb06b641",
+        "pages": 16,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-2f68a230d9e7115440b2b241",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "BB話你知-親子溝通小錦囊",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12196.pdf",
+        "sha256": "11694a988fa569420b60d07d10dc3b723225208b40f3bf785584a2ad0bf93bbe",
+        "pages": 12,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "睡得安全 親子無憂",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14799.pdf",
+        "sha256": "b3f5f159c6c195f0f05d41d25974bda4f70ea7b2ac56431db9b8612ec18a8345",
+        "pages": 12,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "sourceWorkPresent": true,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 1,
+        "reservedGrossMicros": 1634304,
+        "evidence": "Original work held. An unsettled generation still reserves its full ceiling. No resubmission.",
+        "disposition": "unknown_provider_result_quarantined"
+      },
+      {
+        "sourceId": "pdf-1de70dac6945f17a3891a257",
+        "sourceWorkPresent": true,
+        "settledRequests": 1,
+        "settledGrossMicros": 55308,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidenceCode": "knowledge_age_uncertain",
+        "disposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-2fcfc6f5232e6a7858a730f2",
+        "sourceWorkPresent": true,
+        "settledRequests": 1,
+        "settledGrossMicros": 50993,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "僱員指引 - 母乳餵哺與工作相容",
+        "url": "https://www.fhs.gov.hk/tc_chi/breastfeeding/20038.pdf",
+        "sha256": "9213e7f1de8ff15c84cb01b4e09e030153d0b5a0b12f5563b799d4596fe887ff",
+        "pages": 8,
+        "protectedReadback": {
+          "state": "ready",
+          "started": true,
+          "modelCalls": 2
+        },
+        "evidence": "The original 256 MiB process stopped after two work units. Its expired lease, one settled generation and absence of a second provider ticket or publication were verified. Any fresh review dispatch requires a full generation reservation. Reconcile the saved second stage before any such dispatch.",
+        "disposition": "interrupted_original_review"
+      },
+      {
+        "sourceId": "pdf-5e65881f402bf4ae0ca22646",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "育兒預備篇",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13034.pdf",
+        "sha256": "422c834ec554531e7a8b5c8107eec4ee634b6707b5c0ae6f17654726f2e8186b",
+        "pages": 8,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-66d4917b4892792da0ea028d",
+        "sourceWorkPresent": true,
+        "settledRequests": 9,
+        "settledGrossMicros": 111099,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-780e4c1676a794ee6e89c6db",
+        "sourceWorkPresent": true,
+        "settledRequests": 3,
+        "settledGrossMicros": 63757,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-881ea5c99f3479c6d5e67047",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "預備上學去",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13037.pdf",
+        "sha256": "39f4306808864641abcb18bf95957a6ccbe78b92f4c6a3cecd05709394f3143a",
+        "pages": 8,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-978f5df8a09640d894087117",
+        "sourceWorkPresent": true,
+        "settledRequests": 2,
+        "settledGrossMicros": 121371,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidenceCode": "knowledge_window_review_held",
+        "disposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-ade31647bbc60577ac26ecc9",
+        "sourceWorkPresent": true,
+        "settledRequests": 9,
+        "settledGrossMicros": 102553,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "玩出創意來",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13039.pdf",
+        "sha256": "a591f31032a0dbc081ee5ce636b82fffa95551ea9d9daf89c95fd9baf9c196ef",
+        "pages": 8,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "sourceWorkPresent": false,
+        "settledRequests": 0,
+        "settledGrossMicros": 0,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "title": "四至六歲大兒童發展",
+        "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15699.pdf",
+        "sha256": "d28c4fe29c3084e8cc18a24bb214077dbdc8edf8e6c45f13a36db9adfbb7f59d",
+        "pages": 8,
+        "protectedReadback": {
+          "state": "ready",
+          "started": false,
+          "modelCalls": 0
+        },
+        "evidence": "Frozen original prepared. No original work record or provider ticket. Available shared gross is below one generation reservation.",
+        "disposition": "not_dispatched_generation_budget"
+      },
+      {
+        "sourceId": "pdf-e429ac892c396fb798ad7132",
+        "sourceWorkPresent": true,
+        "settledRequests": 9,
+        "settledGrossMicros": 101978,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
+        "sourceWorkPresent": true,
+        "settledRequests": 1,
+        "settledGrossMicros": 52830,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidenceCode": "knowledge_age_one_sided",
+        "disposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "sourceWorkPresent": true,
+        "settledRequests": 1,
+        "settledGrossMicros": 49233,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidence": "Only the original organizer was recorded. Six region values were validated as the same Hong Kong code. A new independent review requires a full generation reservation.",
+        "disposition": "independent_review_budget_required"
+      },
+      {
+        "sourceId": "pdf-902a9652db3c94e03ea54d75",
+        "sourceWorkPresent": true,
+        "settledRequests": 3,
+        "settledGrossMicros": 58154,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-e4e9735e1a0ba0923750e633",
+        "sourceWorkPresent": true,
+        "settledRequests": 2,
+        "settledGrossMicros": 81412,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidenceCode": "knowledge_window_review_held",
+        "disposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+        "sourceWorkPresent": true,
+        "settledRequests": 6,
+        "settledGrossMicros": 72062,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "sourceWorkPresent": true,
+        "settledRequests": 2,
+        "settledGrossMicros": 66185,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "evidenceCode": "knowledge_window_coverage_disputed",
+        "disposition": "source_review_held"
+      },
+      {
+        "sourceId": "pdf-b1e19bee54f42ee9de413a78",
+        "sourceWorkPresent": true,
+        "settledRequests": 5,
+        "settledGrossMicros": 63201,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "sourceWorkPresent": true,
+        "settledRequests": 5,
+        "settledGrossMicros": 62721,
+        "pendingRequests": 0,
+        "reservedGrossMicros": 0,
+        "originalHoldCode": "knowledge_window_quote_mismatch",
+        "originalModelUnits": 2,
+        "deliveryModelUnits": 0,
+        "revision": "retain_window_quotes",
+        "disposition": "published_verified"
+      }
+    ],
+    "sourceBindingsReadAt": "2026-11-21T06:04:45.295503Z",
+    "accountedSources": 28,
+    "accountedPages": 464,
+    "dispositionCounts": {
+      "generation_reservation_unavailable": 2,
+      "independent_review_budget_required": 1,
+      "interrupted_original_review": 1,
+      "not_dispatched_generation_budget": 10,
+      "published_verified": 8,
+      "source_review_held": 5,
+      "unknown_provider_result_quarantined": 1
+    },
+    "quoteRepair": {
+      "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/735",
+      "originalQuotePairsChecked": 31,
+      "originalEditions": 6,
+      "regionOnlyEditionsRequiringIndependentReview": 1,
+      "productionRelease": {
+        "commit": "6e91757e5f66fded6dc3f8bfe58602f2d26daf7a",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44782348928",
+        "releasedAt": "2026-11-20T17:29:39Z",
+        "workerFilesVerified": 10,
+        "pdfReadIndexesVerified": 3
+      },
+      "verifiedPublishedEditions": 6,
+      "newGenerationCalls": 0,
+      "exportedVectors": 31,
+      "verifiedCitations": 31,
+      "settledEmbeddingGrossMicros": 996
+    },
+    "preExistingQuarantine": {
+      "checkedAt": "2026-11-21T06:04:47.901603Z",
+      "originalReservations": 5,
+      "boundOriginalOperations": 5,
+      "reservedGrossMicros": 8110080,
+      "sharedPendingAtRead": 12
+    },
+    "verifiedPublishedVectors": 33,
+    "verifiedPublishedCitations": 33
   },
   "protectedInputReads": {
     "nativeSourcePackets": 23,
@@ -273,6 +963,7 @@
     "knowledge_window_review_held": "The independent window approval or range-support requirement failed. Publication requires a supported review for the affected content.",
     "knowledge_age_one_sided": "The source was classified as having only one endpoint for the proposed age scope. Preserve the qualification and obtain a representable, reviewed scope.",
     "knowledge_age_uncertain": "The proposed age scope was uncertain. Recheck the scope against the source before publication.",
-    "knowledge_review_failed": "The candidate failed validation. The recorded stage must be inspected before deciding whether a format-only repair is possible."
+    "knowledge_review_failed": "The candidate failed validation. The recorded stage must be inspected before deciding whether a format-only repair is possible.",
+    "unavailable": "The original processing result records unavailable. The shared gross ledger had insufficient room for one generation reservation, and no provider ticket was created for either affected source."
   }
 }
