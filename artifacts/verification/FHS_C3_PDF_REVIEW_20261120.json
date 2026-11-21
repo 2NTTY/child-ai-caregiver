@@ -5154,5 +5154,126 @@
     ],
     "productionModelCalls": 0,
     "limits": "Synthetic draft size, local I/O, no actual model, durable daily usage, accepted reviewer verdict, embedding, publication or family-traffic load. These measurements do not establish a smaller safe production limit. The current launcher requires 512 MiB for the job and 448 MiB of headroom."
+  },
+  "seriesReleaseReadback": {
+    "readTime": "2026-11-21T08:10:24.874480Z",
+    "workerSource": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
+    "releaseRun": "44882194026",
+    "baselineReadTime": "2026-11-21T07:39:14.905431Z",
+    "scopeSources": 116,
+    "scopePages": 1471,
+    "other114RowsUnchanged": true,
+    "verifiedFamilyEditions": 34,
+    "exportedVectors": 76,
+    "verifiedCitations": 76,
+    "largestVerifiedEditionPages": 8,
+    "originalsOver20Pages": 12,
+    "verifiedEditionsOver20Pages": 0,
+    "outcomes": {
+      "candidate_held": 66,
+      "family_edition_verified": 34,
+      "no_original_work_record": 2,
+      "original_request_rejected_before_edition": 10,
+      "reserved_unknown": 2,
+      "work_without_verified_terminal_receipt": 2
+    },
+    "balanceMicros": {
+      "held": 3268608,
+      "spent": 10489270,
+      "limit": 30000000,
+      "available": 16242122
+    },
+    "changedEntries": [
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "sourceSha256": "a591f31032a0dbc081ee5ce636b82fffa95551ea9d9daf89c95fd9baf9c196ef",
+        "originalOperation": "ddbb0136e4f31e0da603604c317b822eb90000ff24713b35f2d7fb6f05183f1a",
+        "deliveryOperation": "270849b8775aeefef4ae41e74271ac758ddd8ee2e8ae3f2543260dfcd62ea28b",
+        "familyVersionId": "c48c00e2-876d-544a-bda9-32bc89d2bf84",
+        "versionHash": "10e3e85adb8e376a78e36470abbb97507f21c47412a5322f947f7aeabf5a58a5",
+        "seriesId": "fhs-child-health",
+        "receiptSha256": "4fd586ea0fbf955016fa6a64c41950ed5cf1509698cfdb7ff17643f17255c6c3",
+        "checkedAt": "2026-11-21T08:03:36.014Z",
+        "exportedVectors": 7,
+        "citations": [
+          {
+            "physicalPage": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 4,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 5,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 6,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 7,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 8,
+            "proof": "recorded_independent_transcription"
+          }
+        ],
+        "newGenerationTickets": 0,
+        "newEmbeddingTickets": 7,
+        "newEmbeddingMicros": 249
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "sourceSha256": "d28c4fe29c3084e8cc18a24bb214077dbdc8edf8e6c45f13a36db9adfbb7f59d",
+        "originalOperation": "81ad23a00cb8b20a820bd82f6fdd02b54680e92628d0fee8f075a35c43f47314",
+        "deliveryOperation": "c5bf382ac35a0521cb33d48b1bdb0f37217458e7ab5dd256685aceb420059bdf",
+        "familyVersionId": "d6451592-d4b2-5964-bdb7-02544319b936",
+        "versionHash": "6421cfefcd62be7cdda4074919ad62e05554a45aebf9eb2e5ac53193472333c6",
+        "seriesId": "fhs-child-health",
+        "receiptSha256": "8b86124eec162827e56ece4cf12fee49a37d3c5226fa7091b74eb7c544f793b7",
+        "checkedAt": "2026-11-21T08:05:46.908Z",
+        "exportedVectors": 7,
+        "citations": [
+          {
+            "physicalPage": 2,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 3,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 4,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 5,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 6,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 7,
+            "proof": "recorded_independent_transcription"
+          },
+          {
+            "physicalPage": 8,
+            "proof": "text_exact"
+          }
+        ],
+        "newGenerationTickets": 0,
+        "newEmbeddingTickets": 7,
+        "newEmbeddingMicros": 203
+      }
+    ]
   }
 }
