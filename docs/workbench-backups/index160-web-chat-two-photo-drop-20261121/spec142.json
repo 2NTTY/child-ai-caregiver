@@ -1,0 +1,81 @@
+{
+  "group": {
+    "id": "web-chat-two-photo-drop-no-auto-selection",
+    "title": "一次把兩張手作照片拖進聊天，哪張已加入草稿？",
+    "index": "external-comparison",
+    "readerNote": "合成示例，限附件入口已開的 Web 聊天輸入框一次拖放。現版會整批拒絕：兩張都沒有加入，不會讀取檔案、上傳或送出，不自動取第一張；同一對話的原草稿文字及附件保持不變。A 留在對話，讓家長重選一張；B 是提案，先在本機從兩張裏選一張，取消不改原稿，不自動上傳或送出。每則最多一份附件，加入草稿不等於送出。不是測試連續拖放、原生 App 或換孩子。此工作台不用真照片，也沒有實際讀取、上傳或送出任何檔案。",
+    "choices": [
+      {
+        "name": "A｜留在對話，說清兩張都沒有加入",
+        "note": "一次拖兩張後留在原對話，輸入框附近提示「兩張都沒有加入，每則訊息可加一份附件；請重選一張」。保持原有草稿文字及附件，並保留選檔入口。Nextcloud 原圖只參考保留對話脈絡；圖中是拖放上傳提示，Nextcloud 支援多檔，不是育伴港拒收畫面，也不沿用它的上傳或分享方式。",
+        "source": "https://raw.githubusercontent.com/nextcloud/documentation/4ebe12f9a3e328158bdbd3d7b4d135069567dc95/user_manual/talk/images/drag-and-drop.png",
+        "sourceNotes": [
+          {
+            "label": "Nextcloud 官方原圖的固定文件提交",
+            "url": "https://github.com/nextcloud/documentation/blob/4ebe12f9a3e328158bdbd3d7b4d135069567dc95/user_manual/talk/images/drag-and-drop.png"
+          },
+          {
+            "label": "Nextcloud 官方手冊：在聊天中拖放檔案",
+            "url": "https://docs.nextcloud.com/server/stable/user_manual/en/talk/attachments.html#sharing-files-in-a-chat"
+          },
+          {
+            "label": "育伴港：整批不合規先返回，不讀取或加入其中一張",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/ChatComposerInput.web.tsx#L25-L35"
+          },
+          {
+            "label": "育伴港：網頁輸入框把一次拖放的完整檔案清單送入檢查",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/ChatComposerInput.web.tsx#L59-L67"
+          },
+          {
+            "label": "育伴港：同一草稿的文字、附件預覽與提示共存",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/AgentComposer.tsx#L152-L156"
+          },
+          {
+            "label": "育伴港：真正送出前仍限制最多一份附件",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/chatScreen.tsx#L108-L116"
+          }
+        ],
+        "linkLabel": "查看 Nextcloud Talk 聊天整頁原圖（需連網）",
+        "version": "Nextcloud 官方文件提交 4ebe12f9a3e328158bdbd3d7b4d135069567dc95 的 drag-and-drop.png（1062×852），檔案歷史標示更新 Talk 基本截圖供 v30；不以現行手冊的 35 版當作截圖版號。拍攝日期未公布，2026-11-21 核對。",
+        "rights": "Nextcloud 官方文件原圖，這裏僅外連，不內嵌、不轉載其中照片。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜先在裝置上選一張，再加入草稿",
+        "note": "這是未實作提案：在原有純文字草稿上，另開完整選圖畫面，顯示這次的兩張本機候選，不預選、不自動取第一張。取消則原稿不變；家長選定一張並按「加入草稿」才顯示未送出的預覽。後續還要明確按送出，不自動上傳或送出；如已有附件，不默默取代。WordPress 媒體庫原圖供縮圖、單選及確認的版面參考，它不是本機草稿或現有功能。",
+        "source": "https://wordpress.org/documentation/files/2022/10/Screen-Shot-2022-10-27-at-10.36.03-AM-1024x575.png",
+        "sourceNotes": [
+          {
+            "label": "WordPress 官方：Featured image，選定後有獨立確認入口",
+            "url": "https://wordpress.org/documentation/article/page-post-settings-sidebar/#featured-image"
+          },
+          {
+            "label": "育伴港：整批不合規先返回，不讀取或加入其中一張",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/ChatComposerInput.web.tsx#L25-L35"
+          },
+          {
+            "label": "育伴港：網頁輸入框把一次拖放的完整檔案清單送入檢查",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/ChatComposerInput.web.tsx#L59-L67"
+          },
+          {
+            "label": "育伴港：同一草稿的文字、附件預覽與提示共存",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/agent/AgentComposer.tsx#L152-L156"
+          },
+          {
+            "label": "育伴港：真正送出前仍限制最多一份附件",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/chatScreen.tsx#L108-L116"
+          }
+        ],
+        "linkLabel": "查看 WordPress 完整選圖畫面（需連網）",
+        "version": "WordPress 官方 Page/Post Settings sidebar「Featured image」發布的 1024×575 圖，檔名帶 2022-10-27，沒有截圖對應軟件版號；是完整選圖視窗，不是整個編輯器。2026-11-21 核對。",
+        "rights": "WordPress 官方文件原圖，這裏僅外連，不內嵌、不轉載其中照片。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "b22b968309bf75da02eec72918b9f74156f1b0f058534352a605a3123506beb9"
+}
