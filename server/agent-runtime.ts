@@ -218,7 +218,7 @@ export interface AgentRunInput {
   /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
   presentationRepair?: "present_answer";
   /** Server-authored current speaker, only for an explicitly requested question discussion. */
-  discussion?: { dailyAttemptsAtStart?: number; beginTurn: () => void; instruction: (finishing: boolean) => string; remainingSpeakers: () => number; readyToClose: () => boolean;
+  discussion?: { dailyAttemptsAtStart?: number; groundedFollowup?: boolean; beginTurn: (stage?: import('./chat-discussion.ts').DiscussionPresentationStage) => void; endedEarly: () => boolean; instruction: (finishing: boolean) => string; remainingSpeakers: () => number; readyToClose: () => boolean;
     hasContributions: () => boolean; toolAvailable: (name: string) => boolean; isDraftRejection: (tool: string, code: unknown) => boolean };
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
@@ -533,7 +533,12 @@ export function createAgentRuntime(options: {
           const dailySlots = (plan: ReturnType<AgentBudget['planningSnapshot']>) => (input.discussion?.dailyAttemptsAtStart ?? Infinity)
             - plan.usedBeforeThisCall.modelCalls - plan.usedBeforeThisCall.queryEmbeddings;
           const shouldPresent = (plan: ReturnType<AgentBudget['planningSnapshot']>) => terminalToolNames.size > 0
-            && (plan.phase === 'finish' || dailySlots(plan) <= 2 || input.discussion?.readyToClose() === true);
+            && (plan.phase === 'finish' || dailySlots(plan) <= 2 || input.discussion?.readyToClose() === true || input.discussion?.endedEarly() === true);
+          const discussionStage = (finishing: boolean) => input.discussion?.groundedFollowup && !input.discussion.endedEarly() && input.discussion.remainingSpeakers() > 0
+            ? finishing ? 'closing' as const : 'speaker' as const : undefined;
+          const requireClosingView = (declarations: NonNullable<import('@google/genai').Tool['functionDeclarations']>) =>
+            declarations.map(d => d.name === 'present_answer' && d.parameters?.properties?.closingView
+              ? { ...d, parameters: { ...d.parameters, required: [...new Set([...(d.parameters.required ?? []), 'closingView'])] } } : d);
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
           const prompt = await getPrompt();
@@ -822,10 +827,14 @@ export function createAgentRuntime(options: {
                   role: runRole,
                   ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
                 }));
-                if (finishingNow && !request.config.toolConfig?.functionCallingConfig?.allowedFunctionNames?.length) {
-                  const declarations = request.config.tools.flatMap(tool =>
+                const allowed = request.config.toolConfig?.functionCallingConfig?.allowedFunctionNames;
+                if (finishingNow && (!allowed?.length || allowed.some(name => !terminalToolNames.has(name)))) {
+                  const terminal = request.config.tools.flatMap(tool =>
                     "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
                     .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
+                  const stage = discussionStage(true);
+                  input.discussion?.beginTurn(stage);
+                  const declarations = stage === 'closing' ? requireClosingView(terminal) : terminal;
                   const names = declarations.map(declaration => declaration.name!);
                   if (names.length && names.every(name => Object.hasOwn(request.toolsDict, name))) {
                     config = {
@@ -938,7 +947,6 @@ export function createAgentRuntime(options: {
             tools: runtimeTools,
             ...(effectiveCompactors.length ? { contextCompactors: effectiveCompactors } : {}),
             beforeModelCallback: ({ context, request }) => {
-              input.discussion?.beginTurn();
               if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
               // ADK adds this exact label after this callback. Measure it before
               // preserving the unmodified native work/finish configuration below.
@@ -947,10 +955,15 @@ export function createAgentRuntime(options: {
                 request.config.labels.adk_agent_name ||= 'yuban_agent';
               }
               const originalNativeConfig = { ...request.config };
+              const finishing = !!shouldPresent(budget.planningSnapshot(true, { reserveDeliveryReview, role: runRole,
+                ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}) }));
+              const stage = discussionStage(finishing);
+              input.discussion?.beginTurn(stage);
               const finishConfig = (config: NonNullable<LlmRequest['config']>) => {
-                const declarations = (config.tools ?? []).flatMap(tool =>
+                const terminal = (config.tools ?? []).flatMap(tool =>
                   "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
                   .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
+                const declarations = stage === 'closing' ? requireClosingView(terminal) : terminal;
                 const names = declarations.map(declaration => declaration.name!);
                 if (!names.length || names.some(name => !Object.hasOwn(request.toolsDict, name))) throw new AgentStopped("invalid_tool");
                 return { ...config, tools: [{ functionDeclarations: declarations }],
@@ -958,15 +971,17 @@ export function createAgentRuntime(options: {
               };
               // Per-attempt admission remains in the gateway. Keep the native pre-lock
               // configuration so a future work request is never inferred from a smaller finish request.
-              if (shouldPresent(budget.planningSnapshot(true, {
-      reserveDeliveryReview,
-      role: runRole,
-      ...(activeRoleProfiles ? { profileOverrides: activeRoleProfiles } : {}),
-    }))) {
+              if (finishing) {
                 request.config = finishConfig(originalNativeConfig);
                 const names = request.config.toolConfig!.functionCallingConfig!.allowedFunctionNames!;
                 request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
                 request.allowedTools = names;
+              } else if (stage === 'speaker') {
+                // A grounded follow-up has a real speaker turn before ordinary synthesis.
+                // Evidence and the official urgent-help tool remain available.
+                const names = Object.keys(request.toolsDict).filter(name => !terminalToolNames.has(name));
+                request.config = { ...originalNativeConfig,
+                  toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: names } } };
               }
               if (input.fitInitialInput) {
                 try {

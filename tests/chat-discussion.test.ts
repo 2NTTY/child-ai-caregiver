@@ -67,10 +67,19 @@ test('a question binds three successive native turns, the main reply and one ind
         const view = { text:turns[i], citationIds:[chunkId] };
         const finish = i === Math.min(2, (dailySlots ?? modelLimit) - 2);
         const name = finish ? 'present_answer' : discussionToolNames[i];
-        if (finish) assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
+        const allowed = request.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames ?? [];
+        if (finish) {
+          assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
+          const declaration = request.config?.tools?.flatMap(t => 'functionDeclarations' in t ? t.functionDeclarations ?? [] : []).find(d=>d.name==='present_answer');
+          assert.ok(declaration?.parameters?.required?.includes('closingView'));
+        } else {
+          assert.ok(allowed.includes(name));
+          assert.ok(allowed.includes('show_official_help'));
+          assert.ok(!allowed.includes('present_answer'));
+        }
         if (finish && truncateClosing) return { content: { role: 'model', parts: [{text:'truncated output'}] }, finishReason: FinishReason.MAX_TOKENS };
         if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
-        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0],citationIds:[chunkId]}],
+        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]}],
           closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
         return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP};
       }
@@ -195,6 +204,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const capped = await reply();
   assert.equal(capped?.status, 'completed', JSON.stringify({stop:capped?.stopReason, tools:capped?.tools}));
   assert.deepEqual(capped.discussion?.map(t => t.text), turns.map(text => text+' [1]'));
+  assert.equal(capped.text, main[0] + ' [1]');
   assert.equal(capped.counts.modelCalls, 4);
   assert.deepEqual(await reply(), capped);
   assert.equal(calls, 4);
@@ -251,6 +261,24 @@ test('a parallel or out-of-order viewpoint cannot observe a fabricated predecess
   assert.throws(() => discussion.closingParagraph(view as never), /discussion_turn_order/);
   discussion.beginNativeTurn();
   assert.equal((await discussion.tools[1].execute(view, {} as never)).status,'succeeded');
+});
+
+test('grounded discussions require speaker turns and may explicitly finish a single-option question', async () => {
+  const discussion = createQuestionDiscussion(async () => true, () => {});
+  discussion.beginNativeTurn('speaker');
+  assert.throws(() => discussion.checkPresentation(false), /discussion_turn_order/);
+  const contribution = await discussion.tools[0].execute({
+    text: '這個問題只問家長想選哪一天。', kind: 'clarification', citationIds: [], endDiscussion: 'no_tradeoff',
+  }, {} as never);
+  assert.equal(contribution.status, 'succeeded');
+  assert.equal(contribution.data?.next, 'present_answer');
+  assert.equal(discussion.noTradeoff(), true);
+  discussion.beginNativeTurn();
+  assert.doesNotThrow(() => discussion.checkPresentation(false));
+  const comparison = createQuestionDiscussion(async () => true, () => {});
+  comparison.beginNativeTurn('closing');
+  assert.throws(() => comparison.checkPresentation(false), /discussion_turn_order/);
+  assert.doesNotThrow(() => comparison.checkPresentation(true));
 });
 
 test('replays the reviewed Web discussion and rejects unsupported app changes in either a role or the main reply', async () => {

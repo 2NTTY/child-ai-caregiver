@@ -1010,6 +1010,7 @@ export function createProductAgentTools(options: {
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
           const wire = discussion ? discussionPresentationInput.parse(args) : { ...chatPresentationInput.parse(args), closingView: undefined };
+          discussion?.checkPresentation(!!wire.closingView);
           if (wire.closingView) closing = discussion!.closingParagraph(wire.closingView);
           for (const quote of wire.originalQuotes ?? []) {
             const source = evidence.get(quote.chunkId)?.chunk;
@@ -1350,8 +1351,11 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    discussionInstruction: discussion?.instruction,
+    discussionInstruction: discussion && ((finishing: boolean) => selectedOfficialHelp.size
+      ? '已選取正式求助入口，現在用 present_answer 直接提交所需的求助回覆。'
+      : discussion.instruction(finishing)),
     beginDiscussionTurn: discussion?.beginNativeTurn,
+    discussionEndedEarly: () => !!discussion?.noTradeoff() || selectedOfficialHelp.size > 0,
     nextDiscussionTool: discussion?.nextTool,
     remainingDiscussionSpeakers: discussion?.remainingSpeakers,
     async preparePartialDiscussion() {
@@ -1457,8 +1461,18 @@ export function createProductAgentTools(options: {
         // Only labels appended from reviewed IDs should become interactive care links.
         const text=paragraph.text.replace(/\[(照護記錄|孩子資料) (\d+)\]/gu,(mark,kind,ordinal)=>
           (kind==='照護記錄' ? careReferences : materialReferences).length ? `［${kind} ${ordinal}］` : mark);
-        const labels = paragraph.citationIds.map(citationLabel).join('');
-        return labels ? text + ' ' + labels : text;
+        let body = text;
+        const labels: string[] = [];
+        for (const id of paragraph.citationIds) {
+          const label = citationLabel(id);
+          if (discussion && evidence.has(id) && body.includes('[' + id + ']')) {
+            body = body.replaceAll('[' + id + ']', label);
+          } else {
+            labels.push(label);
+          }
+        }
+        const suffix = labels.join('');
+        return suffix ? body + ' ' + suffix : body;
       });
       // Some private readers (chat history, selected records) expose a citation only
       // during presentation. Count revalidated selected originals, never inventory labels.

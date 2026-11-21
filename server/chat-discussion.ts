@@ -10,6 +10,10 @@ export const viewpointParameters = z.strictObject({
   citationIds: z.array(z.string().min(1).max(80)).max(6),
 });
 export const discussionToolNames = ['share_knowledge_view', 'ask_parent_view', 'compare_methods_view'] as const;
+export type DiscussionPresentationStage = 'speaker' | 'closing';
+const speakerParameters = viewpointParameters.extend({
+  endDiscussion: z.literal('no_tradeoff').optional().describe('Only when there is genuinely no choice to compare. Explain why in your contribution. Omit for ordinary trade-offs.'),
+});
 const draftRejectionCodes = ['invalid_parameters', 'invalid_input', 'discussion_turn_order', 'discussion_main_too_long',
   'citation_required', 'invalid_citation', 'citation_limit', 'original_quote_mismatch', 'attached_claim_needs_evidence', 'use_citation_ids'] as const;
 export function isDiscussionDraftRejection(tool: string, code: unknown): code is typeof draftRejectionCodes[number] {
@@ -35,30 +39,40 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
   const paragraphs: AgentAnswer['paragraphs'] = [];
   const maxMainParagraphs = () => MAX_ANSWER_PARAGRAPHS - paragraphs.length;
   let speakerAtRequestStart = -1;
+  let presentationStage: DiscussionPresentationStage | undefined;
+  let noTradeoff = false;
   function readView(view: z.infer<typeof viewpointParameters>) {
     return { ...view, kind: view.kind ?? (paragraphs.length === 1 ? 'clarification' : 'caregiving') };
   }
   const tools: AgentTool[] = discussionRoles.map((role, index) => ({
     name: discussionToolNames[index], description: discussionLabels[role] + '。' + viewpoints[index],
-    parameters: viewpointParameters, authorize,
+    parameters: speakerParameters, authorize,
     parameterErrorHints: () => [{ path: 'viewpoint', reason: 'invalid_parameters', expected: 'Use text and citationIds (an array). Omit kind for the ordinary role. Write one short paragraph.' }],
     async execute(args) {
       if (index !== paragraphs.length || index !== speakerAtRequestStart)
         return { status: 'rejected', data: { code: 'discussion_turn_order', next: discussionToolNames[paragraphs.length] ?? 'present_answer' } };
-      const paragraph = readView(viewpointParameters.parse(args));
+      const { endDiscussion, ...view } = speakerParameters.parse(args);
+      const paragraph = readView(view);
       try { validate({ kind: paragraph.kind, paragraphs: [paragraph] }); }
       catch (e) { if (e instanceof FamilyError) return { status: 'rejected', data: { code: e.code } }; throw e; }
       paragraphs.push(paragraph);
+      noTradeoff ||= endDiscussion === 'no_tradeoff';
       return { status: 'succeeded', data: { speaker: discussionLabels[role], contribution: paragraph,
-        next: paragraphs.length < 2 ? discussionToolNames[paragraphs.length] : 'present_answer',
+        next: !noTradeoff && paragraphs.length < 2 ? discussionToolNames[paragraphs.length] : 'present_answer',
         maxMainParagraphs: maxMainParagraphs() - (paragraphs.length === 2 ? 1 : 0),
-        instruction: paragraphs.length === 2 ? viewpoints[2] + ' 用 closingView 發言，paragraphs 另寫主回答。'
+        instruction: noTradeoff ? '已說明這題只有單一做法。用 paragraphs 提交主回答。'
+          : paragraphs.length === 2 ? viewpoints[2] + ' 用 closingView 發言，paragraphs 另寫主回答。'
           : viewpoints[paragraphs.length] ?? '主助手直接回答家長，引用已讀證據，可保留條件和分歧。' } };
     },
   }));
   return {
     tools,
-    beginNativeTurn() { speakerAtRequestStart = paragraphs.length; },
+    beginNativeTurn(stage?: DiscussionPresentationStage) { speakerAtRequestStart = paragraphs.length; presentationStage = stage; },
+    noTradeoff: () => noTradeoff,
+    checkPresentation(hasClosing: boolean) {
+      if (presentationStage === 'speaker' || presentationStage === 'closing' && !hasClosing)
+        throw new FamilyError(400, 'discussion_turn_order');
+    },
     nextTool: () => discussionToolNames[paragraphs.length],
     remainingSpeakers: () => discussionRoles.length - paragraphs.length,
     // The opening contribution can stand on its own if the final presentation is rejected.
@@ -68,7 +82,7 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
       return opening?.kind && { kind: opening.kind, paragraphs: [opening] };
     },
     roles: () => discussionRoles.slice(0, paragraphs.length),
-    instruction: (finishing: boolean) => discussionInstruction + ' 每位只講一兩句，直接回應上一位。用香港繁體中文，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
+    instruction: (finishing: boolean) => noTradeoff ? '已交付的觀點指出這一題沒有可比較的選擇。現在用 present_answer 的 paragraphs 直接回答，不再加角色。' : discussionInstruction + ' 每位只講一兩句，直接回應上一位。用香港繁體中文，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
       ? ' 現在輪到「' + discussionLabels[discussionRoles[paragraphs.length]] + '」。' + viewpoints[paragraphs.length]
         + (finishing || paragraphs.length === 2
           ? ' 現在單獨使用 present_answer。closingView 填 text 和 citationIds。paragraphs 另寫一段主回答，交代家長可以怎樣揀。'

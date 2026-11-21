@@ -637,7 +637,9 @@ export function createProductAgent(options: {
             authorize: () => options.photos!.authorizeImage(userId, childId, reference) };
         } } : {}),
         ...(discussion ? { discussion: {
-          beginTurn: () => tools?.beginDiscussionTurn?.(),
+          groundedFollowup: !!priorAnswer && seededOfficialEvidence.length > 0,
+          beginTurn: stage => tools?.beginDiscussionTurn?.(stage),
+          endedEarly: () => tools?.discussionEndedEarly() ?? false,
           instruction: (finishing: boolean) => tools?.discussionInstruction?.(finishing) ?? discussionInstruction,
           remainingSpeakers: () => tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length,
           readyToClose: () => seededOfficialEvidence.length > 0 && (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) <= 1,
@@ -673,7 +675,7 @@ export function createProductAgent(options: {
           ...(reusedEvidenceInvalidated ? { reusedEvidenceInvalidated: true } : {}),
           instructionPolicy: "直接回應目前這句。第一人稱指發話的使用者，與目前選取的孩子分開。問身份時根據已知身份回答，稱呼或意思不明可直接問。舊回答中的頁面入口只屬當時的問題。交辦若缺對象、欄位或內容，先用 present_answer 的 clarification 和一個不帶斷言的問題問齊缺項，citationIds 可留空，等家長補充再寫入。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若目前對話已有答案，直接回答；引用短原句可用 messageTopology 的 quoteHistory。問某件事最後定下甚麼安排，即使同時要求引用舊話，先核對目前孩子的有效事實。未知記憶鍵名時用 read_memory_facts({})；若工具未載入，先載入 memory_facts。按意思選相關項，需要原句時按 factId 讀回。已有主題詞也可用 search_history(kind=memory_fact)。若目標是找某次對話，或事實未有答案，才查對話原文。search_history 的 followingMessages 是當時緊接的原話，currentFactTopics 是可按 factId 續讀的主題。引用原句用 present_answer，kind=private_reference，paragraphs=[{quoteHistory: 所選原句的識別}]。另寫回答時，每段引用支持該段的原話。需要按訊息 ID 續讀才載入 history，再用 read_history。"
             + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : ""),
-          outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions",
+          outputPolicy: "用 present_answer 直接回應本句。若只問可用的聊天語言或怎樣向助手提問，以 operation 回答操作問題，citationIds 留空。家長可用廣東話提問。實際照護建議逐段引用適用官方來源。回答文字不能執行操作。",
           conversationMode,
           turnBackground: formatTurnBackgroundForPrompt(turnBackground),
           ...(dailyNeeds.suppressedForUrgency || dailyNeeds.signals.length > 0 || dailyNeeds.suggestOptionalDiscussion ? { dailyNeedsDiscovery: dailyNeeds } : {}),
