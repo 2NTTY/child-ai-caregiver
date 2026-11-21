@@ -7,8 +7,9 @@ import { factContentDate, summarySourcePeriod, summarySourcePeriodSchema, memory
 import { randomUUID } from 'node:crypto';
 import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { resolveChatMode, type ChatMode } from '../src/shared/chat.ts';
 import type { MemoryStore } from './memory.ts';
-import type { MemoryFact, MemoryTopic, ConversationSummary, SummaryInput, FactSource } from '../src/shared/memory.ts';
+import type { MemoryFact, MemoryTopic, ConversationSummary, SummaryInput, FactSource, SummarySourceMessageMeta } from '../src/shared/memory.ts';
 import { factCreateSchema, factConfirmSchema, factReviseSchema, factDeactivateSchema, memoryDeleteSchema,
   topicCreateSchema, topicChangeSchema, topicReopenSchema, summarySaveSchema, factValuesSchema, sharedFactCreateSchema } from './memory-validation.ts';
 import { factIsApplicable, normalizedFactKey, profileIsApplicable, requireTopicTransition, topicMayAsk } from './memory-policy.ts';
@@ -16,7 +17,7 @@ import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { readContextBasis, prepareContextChange } from './firestore-context-basis.ts';
 import type { FirestoreChatStore } from './firestore-chat.ts';
-import { firestoreChatMessageStorageSchema } from './chat-message-schema.ts';
+import { chatModeSchema, firestoreChatMessageStorageSchema } from './chat-message-schema.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { readImportMapping, type HandoverImportResolution } from './handover-import-records.ts';
@@ -64,10 +65,15 @@ export function validMemoryFactAttribution(value: z.infer<typeof firestoreFactSt
 }
 const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.string().min(1).max(6000), createdAt: time,
   previousId: uuid.nullable(), coveredMessageIds: z.array(uuid).min(1).max(50), lastCoveredMessageId: uuid,
+  sourceMessages: z.array(z.object({ messageId: uuid, version: z.number().int().min(1), chatMode: chatModeSchema }).strict()).max(50).optional(),
   coverageScope: z.literal('imported_source').optional(), importedFrom: importProvenanceSchema.optional(), sourcePeriod: summarySourcePeriodSchema.optional(),
 }).strict().refine(value => value.coverageScope === 'imported_source' ? value.importedFrom?.current.source.section === 'summary_history'
   : value.importedFrom === undefined);
 export { summarySchema as firestoreSummarySchema };
+function buildSummarySourceMessages(items: readonly { id: string; chatMode?: ChatMode }[]): SummarySourceMessageMeta[] | undefined {
+  if (!items.some(item => item.chatMode !== undefined)) return undefined;
+  return items.map(item => ({ messageId: item.id, version: 1, chatMode: resolveChatMode(item.chatMode) }));
+}
 const savedSummarySchema = z.object({ summary: summarySchema, basis: z.string().regex(/^[a-f0-9]{64}$/u),
   checkedChatBasis: z.string().regex(/^[a-f0-9]{64}$/u).optional(),
   validUntil: time.nullable(), lastSortKey: z.string().regex(/^[0-9]{19}$/u), batch: summaryBatchSchema.optional() }).strict();
@@ -914,11 +920,13 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     const value: ConversationSummary = { id: randomUUID(), childId: binding.scope.childId, version: (head?.summary.version ?? 0) + 1,
       text, createdAt: new Date().toISOString(), previousId: null, coveredMessageIds: manifest.coveredMessageIds,
       lastCoveredMessageId: manifest.coveredMessageIds.at(-1)! };
-    const messages = source.resolvedSources.flatMap(unit => unit.source.kind === 'chat_text'
-      ? [domainParse(z.object({ createdAt: time }), unit.modelMetadata, 'private_summary_source_binding')] : []);
+    const chatSources = source.resolvedSources.flatMap(unit => unit.source.kind === 'chat_text'
+      ? [{ id: unit.source.messageId, ...domainParse(z.object({ createdAt: time, chatMode: chatModeSchema.optional() }), unit.modelMetadata, 'private_summary_source_binding') }] : []);
+    const sourceMessages = buildSummarySourceMessages(chatSources);
+    if (sourceMessages) value.sourceMessages = sourceMessages;
     const corrections = source.resolvedSources.flatMap(unit => unit.source.kind === 'correction_json'
       ? [{ kind: unit.source.dependency.kind, current: JSON.parse(unit.sourceText) }] : []);
-    const period = summarySourcePeriod(messages, corrections);
+    const period = summarySourcePeriod(chatSources, corrections);
     if (period) value.sourcePeriod = period;
     const dependencies = manifest.dependencies;
     const expiry = summaryExpiry(dependencies.map(item => item.validUntil));
@@ -955,11 +963,14 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     if (input.previousVersion !== expected.input.previousVersion || input.basis !== expected.input.basis ||
       JSON.stringify(input.coveredMessageIds) !== JSON.stringify(expected.input.messages.slice(0, input.coveredMessageIds.length).map(value => value.id)))
       domainReject('summary_coverage_changed');
+    const covered = expected.input.messages.slice(0, input.coveredMessageIds.length);
+    const sourceMessages = buildSummarySourceMessages(covered);
     const value: ConversationSummary = { id: randomUUID(), childId: binding.scope.childId, version: expected.input.previousVersion + 1,
       text: input.text, createdAt: new Date().toISOString(), previousId: null,
-      coveredMessageIds: input.coveredMessageIds, lastCoveredMessageId: input.coveredMessageIds.at(-1)! };
+      coveredMessageIds: input.coveredMessageIds, lastCoveredMessageId: input.coveredMessageIds.at(-1)!,
+      ...(sourceMessages ? { sourceMessages } : {}) };
     if (repair && input.coveredMessageIds.length !== repair.input.messages.length) domainReject('summary_coverage_changed');
-    const period = summarySourcePeriod(expected.input.messages.slice(0, input.coveredMessageIds.length), expected.input.currentSources);
+    const period = summarySourcePeriod(covered, expected.input.currentSources);
     if (period) value.sourcePeriod = period;
     const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.sortKeys[input.coveredMessageIds.length - 1];
     const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
@@ -1329,7 +1340,11 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       // Older history remains available through authorized search, not a growing prompt.
       for (const item of [...valid].reverse()) {
         const candidate = [item.saved, ...selected];
-        const candidateLength = JSON.stringify(candidate.map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length;
+        const candidateLength = JSON.stringify(candidate.map(value => ({
+          id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds,
+          ...(value.summary.sourceMessages?.length ? { sourceMessages: value.summary.sourceMessages } : {}),
+          text: value.summary.text,
+        }))).length;
         if (candidateLength > maxSummaryProjectionCharacters) {
           // Contiguous window reached; cannot include this or older batches without creating a gap.
           break;
@@ -1341,7 +1356,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
       const batchProjection = { batches: selected.map(value => {
         // Recompute from dependencies too: old stored heads may have a lexically sorted expiry.
         const expiry = summaryExpiry([value.validUntil, ...value.batch!.dependencies.map(item => item.validUntil)]);
-        return { id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text,
+        return { id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds,
+          ...(value.summary.sourceMessages?.length ? { sourceMessages: value.summary.sourceMessages } : {}),
+          text: value.summary.text,
           validUntil: expiry === Infinity ? null : new Date(expiry).toISOString() };
       }), omittedOrInvalidatedBatches: recent.batches.length - selected.length };
       const expiry = summaryExpiry(batchProjection.batches.map(batch => batch.validUntil));

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
-import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
+import type { ChatMessage, ChatMode, ChatPage } from "../src/shared/chat.ts";
 import type { ImportedChatMessage, ImportedChatPage } from "../src/shared/chat-imports.ts";
 import { READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
@@ -15,8 +15,14 @@ export interface ChatStore {
   listForUser(userId: string, childId: string, before?: string | null, purpose?: 'agent' | 'display'): Promise<(ChatPage & {
     dataVersion?: string; sourceDeadlines?: Record<string, string>;
   }) | null>;
-  createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;
+  createUserMessageForUser(userId: string, childId: string, text: string, chatMode?: ChatMode): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
+}
+export class LegacyChatModeUnsupportedError extends Error {
+  constructor() {
+    super("The retired PostgreSQL adapter cannot persist chat-only mode");
+    this.name = "LegacyChatModeUnsupportedError";
+  }
 }
 interface MessageRow {
   id: string; child_id: string; author_user_id: string | null;
@@ -65,7 +71,9 @@ export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges 
         nextCursor: result.rows.length > 100 ? rows.at(-1)!.id : null };
       });
     },
-    async createUserMessageForUser(userId, childId, text) {
+    async createUserMessageForUser(userId, childId, text, chatMode) {
+      // Never persist a chat-only turn without its mode, which defaults to assistant.
+      if (chatMode === "chat_only") throw new LegacyChatModeUnsupportedError();
       return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
       const messageId = randomUUID();
       const result = await client.query<MessageRow>(
