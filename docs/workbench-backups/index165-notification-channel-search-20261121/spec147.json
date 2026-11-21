@@ -1,0 +1,85 @@
+{
+  "group": {
+    "id": "notification-history-matched-channel-preview",
+    "title": "搜尋「實際事項」找到一則提醒，為甚麼卡片沒有這幾個字？",
+    "index": "external-comparison",
+    "readerNote": "合成例：同一則已載入消息有兩個渠道，第一個剛好是瀏覽器通知，Telegram 的提示寫了「請開啟育有方查看實際事項」。搜尋會比對所有渠道，但卡片只預覽第一個渠道。實際記錄不一定有兩個渠道，順序亦不固定。畫面只展示已保存的通知內容，不是送達證明。",
+    "choices": [
+      {
+        "name": "A｜打開消息，逐個渠道看",
+        "note": "現況：卡片仍顯示瀏覽器通知；打開「消息內容」後找到 Telegram 的原句。Qt Linguist 原圖選中 Color，同一工作區分列德語和法語，僅參考分區，不採用翻譯或編輯功能。",
+        "source": "https://doc.qt.io/qt-6.11/images/linguist-linguist_2.webp",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://doc.qt.io/qt-6.11/linguist-translating-multiple-languages.html"
+          },
+          {
+            "label": "已載入消息會搜尋所有渠道",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/history-view-model.ts#L8-L15"
+          },
+          {
+            "label": "列表以第一個渠道作預覽",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/history/PersonalHistoryViews.tsx#L137-L157"
+          },
+          {
+            "label": "同一則消息按渠道分開展示",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/history/PersonalHistoryViews.tsx#L169-L178"
+          },
+          {
+            "label": "瀏覽器一般提示文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/web-push.ts#L37-L41"
+          },
+          {
+            "label": "Telegram 一般提示文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/telegram-gateway.ts#L11-L13"
+          }
+        ],
+        "linkLabel": "查看 Qt Linguist 完整視窗",
+        "version": "Qt Linguist 官方 6.11 手冊；2026-11-21 核對 1271×808 原圖。",
+        "rights": "Qt 官方文件採 GFDL 1.3；原圖僅外連，不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜卡片直接標出命中的渠道",
+        "note": "未實作提案：卡片標示「命中 Telegram」，顯示含「實際事項」的原句；打開後定位到這一欄，仍可看其他渠道。參考 DocFetcher Pro 原圖的結果列表及命中標亮，不引入檔案索引，也不發送通知。",
+        "source": "https://docfetcherpro.com/images/screenshot_033_main_window_numbered.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://docfetcherpro.com/features/"
+          },
+          {
+            "label": "已載入消息會搜尋所有渠道",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/history-view-model.ts#L8-L15"
+          },
+          {
+            "label": "列表以第一個渠道作預覽",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/history/PersonalHistoryViews.tsx#L137-L157"
+          },
+          {
+            "label": "同一則消息按渠道分開展示",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/history/PersonalHistoryViews.tsx#L169-L178"
+          },
+          {
+            "label": "瀏覽器一般提示文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/src/shared/web-push.ts#L37-L41"
+          },
+          {
+            "label": "Telegram 一般提示文字",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/server/telegram-gateway.ts#L11-L13"
+          }
+        ],
+        "linkLabel": "查看 DocFetcher Pro 完整搜尋視窗",
+        "version": "官網 Features 的官方編號原圖 033，圖內沒有可核實的應用版號；2026-11-21 核對 1010×761 原圖。",
+        "rights": "DocFetcher Pro 官網原圖；未依賴轉載許可，僅外連。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "28aded1aeb85933d6b14e83101ac0d2d188f2070235c78cffe17c08b1fd802d6"
+}
