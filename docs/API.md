@@ -971,6 +971,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | 列出、查看 | `GET /api/account/source-cards?cursor=…` 回傳 `{items,nextCursor}`。用 `GET /api/account/source-cards/:cardId` 讀取一張卡的 `{card}`。 |
 | 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
 | 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
+| 提供位置、跳過求助 | `suggest_location` 附家長提供的 `url`，已有缺口時須附目前 `gap.checkId`。`skip_gap` 附同一 `checkId`。兩者沿用本人卡、原操作收據及預期版本。 |
 | 本人授權 | 助手用 `sourceCardAuthorizationPath(cardId)` 打開指定卡。本人表單單獨提交至 `POST /api/account/source-cards/:cardId/credential`。`replace` 包含網站帳戶、密碼、選填同源登入頁；`clear` 撤銷授權。兩者都帶原操作 ID 及預期版本。卡片讀取只回傳 `credentialRef`。 |
 | 聊天引用 | `GET /api/account/source-cards/:cardId/reading` 以文件 ID、版本、頁及位置讀回當時引用的片段。圖像描述與逐字原文分開標示，已審核片段另核對摘錄雜湊及該次索引身份。打開時再次核對本人權限。 |
 
@@ -979,6 +980,10 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 worker 以 `due → claim → finish` 接續每張卡的排程。下載前可用 `credentialFor` 核對當前租約及取出該站表單憑證，憑證只供登入適配器使用。長操作用 `renew` 延長租約，私人資料寫入用 `withCurrentCheck` 在同一交易核對卡版本、擁有人及執行者。逾時接手沿用原 `checkId`，停用、修改及刪除會截停舊執行者回寫。卡片記錄上次檢查、結果及下次時間；重新登入、付款、多重驗證或 CAPTCHA 會暫停巡查，待本人處理後再試。帳戶刪除涵蓋卡片、操作收據及加密憑證。災難還原後卡片保持停用，本人重新提供登入授權。[交易與 worker 契約](../server/firestore-registered-source-cards.ts)
 
 巡查完成時可隨 `lastResult` 填寫本次確實保存到本人資料庫的 `savedDocumentCount`、已可供檢索的 `indexedDocumentCount`。未取得相應收據便省略該數；零表示已核實為零。來源按內容自動保存及整理。
+
+目錄及公告可在 `methods` 讀回已驗入口、讀法版本、已觀察項數、核實時間，以及實際可查的樣本文件和固定版本。網站公布的 RSS／Atom 入口、HTML 正文連結、表格或結構化項目可自動辨認。巡查可沿原有受限瀏覽器讀取動態目錄。變更讀法必須有本次保存及索引的樣本；目錄縮短而未能交代覆蓋時保留上版。卡內資料只在原授權範圍流通。
+
+已嘗試的私人來源如仍有缺口，`gap` 指出網址、原因、原巡查及是否已跳過。從原助手交回位置後，worker 用原巡查 ID、新卡版本及獨立進度核實指定入口。只有站內原頁指向該位置，或目錄能對上已驗樣本，且實際讀回可查原件，才保存新讀法。`hint.status` 會由 `pending` 轉為 `verified` 或 `rejected`。線索及方法留在加密卡片和巡查收據；引文只取固定版本的站內原文。每卡同時可核實一個位置，最多保留八個已驗入口。
 
 <a id="private-source-rag"></a>
 #### 本人來源的視覺檢索

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { KNOWLEDGE_PDF_MAX_BYTES } from './knowledge-pdf.ts';
 import { chatFileMimeSchema } from '../src/shared/chat-files.ts';
-import { registeredSourceUrlSchema, sourceCardAllowsUrl, type RegisteredSourceSettings } from '../src/shared/registered-source-card.ts';
+import { registeredSourceUrlSchema, sourceAccessGate, sourceCardAllowsUrl, sourceGapReason, sourceReadingMethod, sourceReadingParser, type RegisteredSourceSettings } from '../src/shared/registered-source-card.ts';
 import { domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
@@ -9,7 +9,10 @@ export const SOURCE_CARD_PART_BYTES = 96 * 1024;
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const base = { cardId: z.uuid(), grant: digest };
 const item = { ...base, documentId: digest, version: digest };
-export const scanItemIssue = z.enum(['file_too_large', 'listing_changed']);
+export const scanItemIssue = z.enum([...sourceGapReason.options, 'unverified_hint']);
+const prospect = z.strictObject({ url: registeredSourceUrlSchema, parser: sourceReadingParser, samples: z.array(registeredSourceUrlSchema).max(16),
+  covers: registeredSourceUrlSchema.optional(), feedUrl: registeredSourceUrlSchema.optional(), listed: z.int().positive().optional(),
+  reduced: z.boolean().optional(), storedOnly: z.boolean().optional(), verified: sourceReadingMethod.optional() });
 const scan = { ...base, checkId: z.uuid(), revision: z.int().positive() };
 export const sourceIndexCoverage = z.enum(['full_text', 'text_excerpt', 'page_one_excerpt', 'original_only']);
 const itemFields = {
@@ -38,7 +41,9 @@ export const sourceCardDocumentRecord = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('scan-document'), ...scan, documentId: digest, indexed: z.boolean() }),
   z.strictObject({ kind: z.literal('scan-cleanup'), ...scan, cleanupAt: z.iso.datetime() }),
   z.strictObject({
-    kind: z.literal('receipt'), ...scan, status: z.enum(['changed', 'unchanged', 'failed']), sequence: z.int().positive(),
+    kind: z.literal('receipt'), ...scan, status: z.enum(['changed', 'unchanged', 'failed']), sequence: z.int().nonnegative(),
+    prospects: z.array(prospect).max(8).optional(), contentChanged: z.boolean().optional(),
+    accessGate: z.strictObject({ url: registeredSourceUrlSchema, reason: sourceAccessGate }).optional(),
     transientFailures: z.int().min(1).max(2).optional(), pending: z.int().nonnegative(), discovered: z.int().positive(),
     issueCount: z.int().nonnegative(), issueExamples: z.array(z.strictObject({ url: z.url().max(4096), reason: scanItemIssue })).max(8),
     savedDocumentCount: z.int().nonnegative(), oversizedCount: z.int().nonnegative(), indexedDocumentCount: z.int().nonnegative()
