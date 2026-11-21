@@ -8,10 +8,11 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SourceDocumentCard } from "./SourceDocumentCard";
 import { PlatformCardJoin } from './PlatformCardJoin';
 import { AppDialog } from "../AppDialog";
-import { sourceSeries } from "../../../../src/shared/source-series";
+import { AppRadioItem } from "../AppRadioItem";
+import { childHealthSeries, libraryArchiveMaxEditions, sourceSeries, type ManageSeries } from "../../../../src/shared/source-series";
 import { useFocusEffect, useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
-import { selectedLibraryEditions, type PersonalLibraryItem } from "../../../../src/shared/personal-library";
+import { childHealthStatus, libraryDocumentChoice, selectedLibraryEditions, type PersonalLibraryItem } from "../../../../src/shared/personal-library";
 import { historyMessageQuestion, personalWorkQuestion } from "../../history-view-model";
 import { PersistentWorkCards } from "../history/PersistentWorkCards";
 import { HistoryMessageDetail } from "../history/HistoryMessageDetail";
@@ -24,7 +25,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton, AppSelect, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
+import { AppButton, AppSelect, AppSelectionTrigger, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
@@ -167,6 +168,7 @@ const topicArt: Record<string, { icon: AppIconName; tint: string }> = {
 function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry }) {
   const [metadata, setMetadata] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const fetched = item.lastSuccessfulCheckAt ?? item.fetchedAt;
+  const choice = libraryDocumentChoice(item);
   return <SourceDocumentCard testID={`memory-catalog-source-${item.sourceId}`} title={item.title}
     byline={`${item.coverage ?? '部分收錄'} · ${item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}`}>
     <View style={styles.actions}>
@@ -180,7 +182,7 @@ function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem
       variant="quiet" density="compact" onPress={() => { void Linking.openURL(url).catch(() => setLinkFailed(true)); }} />)}
     {metadata ? <View style={styles.historyEntry}>
       <Metadata label="發布版本">{item.versionId}</Metadata>
-      {item.preference?.mode === 'fixed' && item.preference.selectedVersionId ? <Metadata label="已選快照">{item.preference.selectedVersionId}</Metadata> : null}
+      {choice?.mode === 'fixed' && choice.selectedVersionId ? <Metadata label="已選快照">{choice.selectedVersionId}</Metadata> : null}
       {item.publishedAt ? <Metadata label="發布">{memoryDateLabel(item.publishedAt)}</Metadata> : null}
       {fetched ? <Metadata label="最近取得">{memoryDateLabel(fetched)}</Metadata> : null}
       {item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}
@@ -189,20 +191,41 @@ function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem
     {maintenanceEntry?.(item.sourceId)}
   </SourceDocumentCard>;
 }
+function CatalogChoice({ label, value, onChange, options }: {
+  label: string; value: string; onChange(value: string): void; options: { value: string; label: string }[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return <View><AppSelectionTrigger label={label + '：' + (options.find(row => row.value === value)?.label ?? value)}
+    expanded={expanded} onPress={() => setExpanded(!expanded)} />
+    {expanded ? <View accessibilityRole="radiogroup" accessibilityLabel={label}>{options.map(row =>
+      <AppRadioItem key={row.value} {...row} checked={row.value === value} onPress={() => { onChange(row.value); setExpanded(false); }} />)}</View> : null}
+  </View>;
+}
 function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenanceEntry, width, requestedDocument }: {
   items: PersonalLibraryItem[]; workspace: MemoryReferenceWorkspaceValue; details: boolean;
   onOpen: () => void; onClose: () => void; maintenanceEntry?: MaintenanceEntry; requestedDocument?: string; width: `${number}%`;
 }) {
   const [section, setSection] = useState<'files' | 'settings'>('files');
   const tabsId = useId();
-  useEffect(() => { if (!details) setSection('files'); }, [details]);
+  const [category, setCategory] = useState('all'), [archivePart, setArchivePart] = useState('0');
+  useEffect(() => { if (!details) { setSection('files'); setCategory('all'); setArchivePart('0'); } }, [details]);
   const [exportNotice, setExportNotice] = useState(''), active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const [exporting, setExporting] = useState(false), [fingerprint, setFingerprint] = useState('');
   const exportLock = useRef(false), [shareFile, setShareFile] = useState<(() => Promise<void>) | null>(null);
-  const first = items[0]!, series = first.series ?? sourceSeries(first), preference = first.preference;
+  const first = items[0]!, managed = first.childHealth, series = managed ? childHealthSeries : first.series ?? sourceSeries(first), preference = first.preference;
+  const categories = managed?.categoryCounts?.map(row => row.name) ?? [...new Set(items.flatMap(item => item.childHealth?.categories ?? []))];
+  const selected = details && section === 'settings' ? selectedLibraryEditions(items) : [];
+  const parts = Math.ceil(selected.length / libraryArchiveMaxEditions);
+  const start = Math.min(Number(archivePart), Math.max(0, parts - 1)) * libraryArchiveMaxEditions;
+  const archiveEditions = selected.slice(start, start + libraryArchiveMaxEditions);
   const busy = workspace.reads?.referencesBusy || !workspace.model.online || workspace.model.references.state !== 'ready';
   const change = (action: SeriesPreferenceAction) => {
+    if (managed) {
+      const operation: ManageSeries['operation'] = action === 'platform' ? 'remove' : action === 'toggle' ? managed.enabled ? 'disable' : 'enable' : action;
+      workspace.reads?.setLibraryPreference?.({ action: 'manage', seriesId: childHealthSeries.id, operation, expectedState: managed.stateHash });
+      return;
+    }
     const update = seriesPreferenceChange(series.id, items, action);
     if (update) workspace.reads?.setLibraryPreference?.(workspace.model.references.data?.hasMore && !update.adopt
       ? { ...update, wholeSeries: true } : update);
@@ -212,12 +235,19 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
     }
   };
   const firstDocument = requestedDocument && items.find(item => item.sourceId === requestedDocument);
-  const documents = firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items;
-  const requiresSelection = preference?.mode !== 'platform' && items.some(item => item.preference?.eligible === false);
-  const enabled = preference?.enabled !== false;
-  const state = preference?.mode === 'platform' ? '未下載' : !enabled ? '已停用' : requiresSelection ? '待選版本'
-    : preference?.mode === 'fixed' ? '已固定' : '已跟隨';
-  const fileCount = `${workspace.model.references.data?.hasMore ? '已載入 ' : ''}${items.length} 份文件`;
+  const documents = (firstDocument ? [firstDocument, ...items.filter(item => item !== firstDocument)] : items)
+    .filter(item => !managed || category === 'all' || item.childHealth?.categories.includes(category));
+  const categoryTotal = managed?.categoryCounts?.find(row => row.name === category)?.count ?? 0;
+  const more = workspace.reads?.loadMoreReferences, hasMore = workspace.model.references.data?.hasMore;
+  useEffect(() => {
+    if (details && section === 'files' && categoryTotal > documents.length && !busy && hasMore) more?.();
+  }, [details, section, categoryTotal, documents.length, items.length, busy, hasMore, more]);
+  const requiresSelection = managed ? items.some(item => { const choice = libraryDocumentChoice(item); return choice?.selectedVersionId && !choice.eligible; })
+    : preference?.mode !== 'platform' && items.some(item => item.preference?.eligible === false);
+  const enabled = managed ? managed.enabled > 0 : preference?.enabled !== false;
+  const state = managed ? childHealthStatus(managed) : preference?.mode === 'platform' ? '未下載' : !enabled ? '已停用' : requiresSelection ? '待選版本'
+    : preference?.mode === 'fixed' ? '已固定' : preference?.mode === 'follow' ? '已跟隨' : '使用中';
+  const fileCount = managed ? `${managed.total} 份文件` : `${workspace.model.references.data?.hasMore ? '已載入 ' : ''}${items.length} 份文件`;
   const art = items.flatMap(item => item.topics ?? []).map(topic => topicArt[topic]).find(Boolean);
   return <View style={{ width }} testID={`memory-catalog-series-${series.id}`}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${series.name}，${fileCount}，${state}`} accessibilityState={{ expanded: details }}
@@ -237,25 +267,34 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       {requiresSelection && enabled ? <Text style={styles.warning}>收錄範圍已更改。請在「設定與匯出」選用新版本。</Text> : null}
       <AppTabPanel tabsId={tabsId} tabKey="files" active={section === 'files'}><View style={styles.section}>
         <PlatformCardJoin seriesId={series.id} />
-        {documents.map(item => <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}
+        {managed && categories.length > 0 ? <CatalogChoice label="教材分類" value={category} onChange={setCategory}
+          options={[{ value: 'all', label: '全部分類' }, ...categories.map(value => ({ value, label: value }))]} /> : null}
+        {documents.map(item => {
+          const choice = libraryDocumentChoice(item);
+          return <View key={item.sourceId}><CatalogDocument item={item} maintenanceEntry={maintenanceEntry} />
+            {managed ? <Text style={styles.meta}>{!choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用' : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新'}</Text> : null}</View>;
+        })}
+        {managed && items.length < managed.total && workspace.model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多教材" variant="quiet" disabled={busy} onPress={workspace.reads.loadMoreReferences} /> : null}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
-      {preference ? <Metadata label="我的設定">{state} · {preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版'}</Metadata> : null}
-      {preference && preference.mode !== 'platform' && workspace.reads?.setLibraryPreference ? <View style={styles.actions}>
+      {preference ? <Metadata label="我的設定">{managed ? `${state}，${managed.enabled} 份已啟用` : state + ' · ' + (preference.mode === 'fixed' ? '固定快照' : preference.mode === 'follow' ? '跟隨同範圍更新' : '平台發布版')}</Metadata> : null}
+      {(managed ? managed.adopted > 0 : preference && preference.mode !== 'platform') && workspace.reads?.setLibraryPreference ? <View style={styles.actions}>
         <AppButton label={enabled ? '停用來源' : '啟用來源'} variant="secondary" disabled={busy} onPress={() => change('toggle')} />
-        <AppButton label="固定目前版本" variant="quiet" disabled={busy || workspace.model.references.data?.hasMore || preference.revision > 0 && preference.mode === 'fixed' && !requiresSelection && items.every(item => item.preference?.selectedVersionId === item.versionId)} onPress={() => change('fixed')} />
-        <AppButton label="跟隨同範圍更新" variant="quiet" disabled={busy || preference.mode === 'follow'} onPress={() => change('follow')} />
+        <AppButton label="固定目前版本" variant="quiet" disabled={busy || !managed && (workspace.model.references.data?.hasMore || preference?.mode === 'fixed' && !requiresSelection && items.every(item => item.preference?.selectedVersionId === item.versionId))} onPress={() => change('fixed')} />
+        <AppButton label="跟隨同範圍更新" variant="quiet" disabled={busy || (managed ? managed.fixed === 0 : preference?.mode === 'follow')} onPress={() => change('follow')} />
         <AppButton label="從我的參考資料刪除" variant="quiet" disabled={busy} onPress={() => change('platform')} />
       </View> : null}
-      {workspace.model.references.data?.hasMore ? <Text style={styles.meta}>載入所有來源後可固定目前版本及匯出。</Text> : null}
+      {workspace.model.references.data?.hasMore ? <Text style={styles.meta}>{managed ? '載入所有教材後可匯出。' : '載入所有來源後可固定目前版本及匯出。'}</Text> : null}
+      {managed && parts > 1 && !workspace.model.references.data?.hasMore ? <CatalogChoice label="匯出教材範圍" value={String(start / libraryArchiveMaxEditions)} onChange={setArchivePart}
+        options={Array.from({ length: parts }, (_, index) => ({ value: String(index), label: `第 ${index * libraryArchiveMaxEditions + 1} 至 ${Math.min(selected.length, (index + 1) * libraryArchiveMaxEditions)} 份` }))} /> : null}
     {workspace.reads?.exportLibraryArchive && !workspace.model.references.data?.hasMore ? <View style={styles.actions}>
       <Text style={styles.meta}>分享原文請註明出處，僅限非商業用途。</Text>
       <AppButton label={exporting ? '正在匯出…' : '匯出來源庫 ZIP'} variant="secondary"
-        disabled={busy || exporting || !selectedLibraryEditions(items).length} onPress={async () => {
+        disabled={busy || exporting || !archiveEditions.length} onPress={async () => {
           if (exportLock.current || !workspace.reads?.exportLibraryArchive) return;
           exportLock.current = true; setExporting(true); setExportNotice(''); setFingerprint(''); setShareFile(null);
           try {
-            const result = await workspace.reads.exportLibraryArchive({ seriesId: series.id, editions: selectedLibraryEditions(items) });
+            const result = await workspace.reads.exportLibraryArchive({ seriesId: series.id, editions: archiveEditions });
             if (active.current && result) { setExportNotice(result.message); setFingerprint(result.sha256); setShareFile(() => result.share ?? null); }
           } catch (error) { if (active.current) setExportNotice(error instanceof Error ? error.message : '暫未能匯出知識包。'); }
           finally { exportLock.current = false; if (active.current) setExporting(false); }
@@ -265,8 +304,8 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       }} /> : null}
       {fingerprint ? <Metadata label="ZIP SHA-256">{fingerprint}</Metadata> : null}
     </View> : null}
-    {items.every(item => item.versionHash) && !workspace.model.references.data?.hasMore ? <AppButton label="匯出版本參照 ZIP" variant="quiet" disabled={busy}
-      onPress={() => { void exportSeriesReferences(items).then(bytes => exportAttachment(new Uint8Array(bytes), 'application/zip', series.id + '.zip', () => active.current))
+    {items.every(item => item.versionHash) && !workspace.model.references.data?.hasMore ? <AppButton label="匯出版本參照 ZIP" variant="quiet" disabled={busy || !archiveEditions.length}
+      onPress={() => { void exportSeriesReferences(items.filter(item => archiveEditions.some(ref => ref.sourceId === item.sourceId))).then(bytes => exportAttachment(new Uint8Array(bytes), 'application/zip', series.id + '.zip', () => active.current))
         .then(message => { if (active.current) setExportNotice(message); }, () => { if (active.current) setExportNotice('未能匯出版本參照。'); }); }} /> : null}
     {exportNotice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{exportNotice}</Text> : null}
       </View></AppTabPanel></ScrollView></AppDialog.ScrollArea>
@@ -310,8 +349,9 @@ const referenceFilters: Record<string, string> = { official_guidance: '官方指
 function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maintenanceEntry?: MaintenanceEntry; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; width: number }) {
   const sources = visibleKnowledgeReferences(model.references), catalog = model.references.data?.catalog;
   const { series: originalSeries, sourceDocument, catalog: openCatalog } = useLocalSearchParams<{ series?: string; sourceDocument?: string; catalog?: string }>();
-  const currentDocument = sourceDocument && catalog?.find(item => item.sourceId === sourceDocument);
-  const requested = currentDocument ? (currentDocument.series ?? sourceSeries(currentDocument)).id : originalSeries;
+  const currentDocument = sourceDocument ? catalog?.find(item => item.sourceId === sourceDocument) : undefined;
+  const referenced = currentDocument ?? catalog?.find(item => item.series?.id === originalSeries);
+  const requested = referenced?.childHealth ? childHealthSeries.id : currentDocument ? (currentDocument.series ?? sourceSeries(currentDocument)).id : originalSeries;
   const [opened, setOpened] = useState<string | undefined>(requested);
   useEffect(() => { setOpened(requested); }, [requested, sourceDocument]);
   useFocusEffect(useCallback(() => () => setOpened(undefined), []));
@@ -325,8 +365,8 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
   const registered = model.references.data?.registered ?? [];
   const institutions = new Map<string, { name: string; series: Map<string, PersonalLibraryItem[]> }>();
   for (const item of catalog ?? []) {
-    const series = item.series ?? sourceSeries(item);
-    if (!showCatalog && series.id !== requested && item.preference?.mode === 'platform') continue;
+    const series = item.childHealth ? childHealthSeries : item.series ?? sourceSeries(item);
+    if (!showCatalog && series.id !== requested && (item.childHealth ? !item.childHealth.adopted : item.preference?.mode === 'platform')) continue;
     const institution = institutions.get(series.institutionId) ?? { name: item.publisher, series: new Map<string, PersonalLibraryItem[]>() };
     const documents = institution.series.get(series.id) ?? [];
     documents.push(item); institution.series.set(series.id, documents); institutions.set(series.institutionId, institution);
@@ -335,7 +375,7 @@ function ReferenceSection({ model, workspace, maintenanceEntry, width }: { maint
     series: [...institution.series].filter(([, documents]) => filter === 'all' || documents.some(item => item.classification === filter || item.topics?.includes(filter))) }))
     .filter(institution => institution.series.length);
   return <View style={styles.section}>
-    {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{(currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
+    {originalSeries && requested !== originalSeries && currentDocument ? <Text style={styles.meta}>這份文件現歸入「{currentDocument.childHealth ? childHealthSeries.name : (currentDocument.series ?? sourceSeries(currentDocument)).name}」。聊天引用保留當時的系列及版本。</Text> : null}
     {catalog ? <AppButton label={showCatalog ? '返回我的參考資料' : '平台卡庫'} density="compact" variant="secondary"
       onPress={() => { setShowCatalog(!showCatalog); setOpened(undefined); }} /> : null}
     <View style={styles.tools}>

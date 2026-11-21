@@ -12,7 +12,7 @@ import { canonical } from './firestore-session-codec.ts';
 import { FamilyError } from './family-access.ts';
 import type { ListedPlatformCard } from './knowledge-library-selection.ts';
 
-import type { LibraryArchiveSelection, LibrarySelectionCommand } from '../src/shared/source-series.ts';
+import { childHealthSeries, type LibraryArchiveSelection, type LibrarySelectionCommand } from '../src/shared/source-series.ts';
 
 const cursorSchema = z.object({ version: z.literal(1), scope: workRecoveryScopeSchema,
   authorizationVersion: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u),
@@ -46,12 +46,12 @@ export function createFirestorePersonalLibrary(options: {
         do {
           signal.throwIfAborted();
           const page = await catalogForUser(userId, cursor);
-          items.push(...page.items.filter(item => item.series?.id === selection.seriesId));
+          items.push(...page.items.filter(item => selection.seriesId === childHealthSeries.id ? !!item.childHealth : item.series?.id === selection.seriesId));
           cursor = page.nextSourceId;
         } while (cursor);
         const expected = selectedLibraryEditions(items);
-        if (!expected.length || expected.length !== selection.editions.length
-          || expected.some(row => !selection.editions.some(item => item.sourceId === row.sourceId && item.versionHash === row.versionHash)))
+        if (!expected.length || (selection.seriesId !== childHealthSeries.id && expected.length !== selection.editions.length)
+          || selection.editions.some(row => !expected.some(item => item.sourceId === row.sourceId && item.versionHash === row.versionHash)))
           throw new FamilyError(409, 'library_selection_changed');
         if (canonical(await options.authority.readScope(userId, childId)) !== canonical(scope)) changed();
       };

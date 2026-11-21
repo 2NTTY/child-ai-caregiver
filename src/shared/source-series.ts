@@ -5,6 +5,15 @@ export const sourceSeriesSchema = z.strictObject({
   id, institutionId: z.string().min(1).max(255), name: z.string().min(1).max(300),
 });
 export type SourceSeries = z.infer<typeof sourceSeriesSchema>;
+export const childHealthSeries = { id: 'fhs-child-health', institutionId: 'www.fhs.gov.hk', name: '衛生署 兒童健康' } as const;
+export const managedSeriesViewSchema = z.strictObject({
+  stateHash: z.string().regex(/^[a-f0-9]{64}$/u), revision: z.int().nonnegative(), total: z.int().positive(), adopted: z.int().nonnegative(),
+  enabled: z.int().nonnegative(), fixed: z.int().nonnegative(),
+});
+export type ManagedSeriesView = z.infer<typeof managedSeriesViewSchema>;
+const manageSeries = z.strictObject({ action: z.literal('manage'), seriesId: z.literal(childHealthSeries.id),
+  expectedState: managedSeriesViewSchema.shape.stateHash, operation: z.enum(['join', 'follow', 'fixed', 'enable', 'disable', 'remove']) });
+export type ManageSeries = z.infer<typeof manageSeries>;
 
 // Membership belongs to the registered document identity. Titles and topic filters may change.
 const fhsSeries: Record<string, readonly [string, string]> = {
@@ -21,8 +30,9 @@ export function sourceSeries(source: { sourceId: string; title: string; url: str
   return { institutionId, id: entry?.[0] ?? source.sourceId, name: entry?.[1] ?? source.title };
 }
 
+export const libraryArchiveMaxEditions = 100;
 export const libraryArchiveSelectionSchema = z.strictObject({ seriesId: id,
-  editions: z.array(z.strictObject({ sourceId: id, versionHash: z.string().regex(/^[a-f0-9]{64}$/u) })).min(1).max(100),
+  editions: z.array(z.strictObject({ sourceId: id, versionHash: z.string().regex(/^[a-f0-9]{64}$/u) })).min(1).max(libraryArchiveMaxEditions),
 }).refine(value => new Set(value.editions.map(row => row.sourceId)).size === value.editions.length);
 export type LibraryArchiveSelection = z.infer<typeof libraryArchiveSelectionSchema>;
 
@@ -38,7 +48,7 @@ const libraryJoinSchema = z.strictObject({
   editions: z.array(z.strictObject({ sourceId: id, versionId: z.uuid() })).min(1).max(100),
 }).refine(value => new Set(value.editions.map(item => item.sourceId)).size === value.editions.length);
 export type LibraryJoin = z.infer<typeof libraryJoinSchema>;
-export const librarySelectionCommandSchema = z.union([libraryJoinSchema, libraryPreferenceChangeSchema]);
+export const librarySelectionCommandSchema = z.union([libraryJoinSchema, libraryPreferenceChangeSchema, manageSeries]);
 export type LibrarySelectionCommand = z.infer<typeof librarySelectionCommandSchema>;
 export const libraryPreferenceViewSchema = z.strictObject({
   revision: z.int().nonnegative(), enabled: z.boolean(), mode: librarySelectionMode,

@@ -4,10 +4,10 @@ import type { KnowledgeSourceInput } from '../src/shared/knowledge.ts';
 import type { SourceWatchDefinition } from './knowledge-refresh-types.ts';
 
 interface Material {
-  id: string; title: string; url: string; status: string; pdfs?: string[]; reuseSourceId?: string; mediaLinks?: string[];
+  id: string; title: string; url: string; status: string; pdfs?: string[]; reuseSourceId?: string; mediaLinks?: string[]; categories: string[];
 }
 interface Original { sha256: string; url: string; pages: number }
-const inventory: { items: Material[]; pdfOriginals: Original[]; media: { url: string; videoIds?: string[] }[];
+const inventory: { items: Material[]; sections: Record<string, string>; pdfOriginals: Original[]; media: { url: string; videoIds?: string[] }[];
   videoDurationSeconds: Record<string, number> } = JSON.parse(
   readFileSync(new URL('../knowledge/fhs-child-inventory.json', import.meta.url), 'utf8'));
 export const platformMaterials = new Map<string, { id: string; title: string; url: string; mediaLinks: string[] }>();
@@ -58,6 +58,40 @@ for (const original of inventory.pdfOriginals) {
   const label = landing?.title ?? new URL(original.url).pathname.split('/').at(-1)!;
   add('pdf-' + createHash('sha256').update(original.url).digest('hex').slice(0, 24), label, original.url, landing?.mediaLinks ?? []);
 }
+
+// The catalogue also links other publishers. Only exact registered FHS documents belong to this family series.
+const childHealthMembers = new Map<string, { url: string; categories: string[] }>();
+const catalogueByUrl = new Map(inventory.items.map(item => [item.url, item]));
+function categoryLabels(item: Material) {
+  const pending = [...item.categories], seen = new Set<string>(), labels = new Set<string>();
+  while (pending.length) {
+    const url = pending.pop()!.replace('/sc_chi/', '/tc_chi/');
+    if (seen.has(url)) continue;
+    seen.add(url);
+    const label = inventory.sections[url];
+    if (label) {
+      labels.add(label);
+      const ageSection = url.replace(/(\/class_life\/child\/child_(?:bfm|otm|oty|tsy))_[^/]+\.html$/u, '$1.html');
+      if (ageSection !== url && inventory.sections[ageSection]) labels.add(inventory.sections[ageSection]!);
+    }
+    else pending.push(...catalogueByUrl.get(url)?.categories ?? []);
+  }
+  return [...labels];
+}
+for (const item of platformMaterials.values()) {
+  if (new URL(item.url).hostname !== 'www.fhs.gov.hk') continue;
+  const pdf = inventory.pdfOriginals.find(row => row.url === item.url);
+  const labels = inventory.items.filter(row => row.url === item.url || pdf && row.pdfs?.includes(pdf.sha256))
+    .flatMap(categoryLabels);
+  childHealthMembers.set(item.id, { url: item.url, categories: [...new Set(labels)] });
+}
+childHealthMembers.set('fhs-feeding-booklet-en', { url: 'https://www.fhs.gov.hk/english/health_info/child/14727.pdf',
+  categories: ['營養及健康生活習慣'] });
+export function childHealthCategories(source: { sourceId: string; url: string }) {
+  const member = childHealthMembers.get(source.sourceId);
+  return member?.url === source.url ? member.categories : undefined;
+}
+export function isChildHealthSourceId(id: string) { return childHealthMembers.has(id); }
 
 // Only FHS material uses this reviewed publisher scope. External sources retain their own terms at review.
 export const fhsMaterialWatches: SourceWatchDefinition[] = [...platformMaterials.values()].filter(item =>
