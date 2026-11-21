@@ -23,7 +23,7 @@ export function AgentVoiceControl({ disabled, compact, onPress, unavailableReaso
   return <InputControl label="語音輸入" icon="microphone-outline" compact={compact}
     disabled={disabled || !!unavailableReason} hint={unavailableReason} onPress={onPress} />;
 }
-function InputControl({ label, icon, onPress, compact, disabled, busy = false, hint }: {
+export function InputControl({ label, icon, onPress, compact, disabled, busy = false, hint }: {
   label: string; icon: AppIconName; onPress(): void; compact: boolean; disabled: boolean; busy?: boolean; hint?: string;
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
