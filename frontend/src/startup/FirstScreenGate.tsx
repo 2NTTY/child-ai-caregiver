@@ -12,21 +12,21 @@ type FirstScreenContextValue = {
 };
 const FirstScreenContext = createContext<FirstScreenContextValue>({ ready: true, outcomes: {}, settle: () => {} });
 
-export function FirstScreenGate({ pathname, width, launch, children, dataState = "ready", startupKey = "initial" }: { pathname: string; width: number; launch: ReactNode; children: ReactNode; dataState?: StartupReadiness; startupKey?: string }) {
+export function FirstScreenGate({ pathname, width, launch, children, dataState = "ready", startupKey = "initial", waitForArtwork = true }: { pathname: string; width: number; launch: ReactNode; children: ReactNode; dataState?: StartupReadiness; startupKey?: string; waitForArtwork?: boolean }) {
   const [hydrated, setHydrated] = useState(false);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const revealed = revealedKey === startupKey;
   const [outcomes, setOutcomes] = useState<ImageOutcomes>({});
   const required = useMemo(() => requiredFirstScreenImages(pathname, width), [pathname, width]);
   const requiredKey = required.join(":");
-  const ready = hydrated && (revealed || dataState !== "loading" && (dataState === "error" || firstScreenImagesSettled(required, outcomes)));
-  const gate = useRef({ revealed, required });
-  gate.current = { revealed, required };
+  const ready = hydrated && (revealed || dataState !== "loading" && (dataState === "error" || !waitForArtwork || firstScreenImagesSettled(required, outcomes)));
+  const gate = useRef(required);
+  gate.current = required;
 
   useEffect(() => { setHydrated(true); }, []);
   useLayoutEffect(() => { if (ready) setRevealedKey(startupKey); }, [ready, startupKey]);
   const settle = useCallback((image: FirstScreenImage, outcome: ImageOutcome) => {
-    if (gate.current.revealed || !gate.current.required.includes(image)) return;
+    if (!gate.current.includes(image)) return;
     setOutcomes(current => settleFirstScreenImage(current, image, outcome));
   }, []);
 

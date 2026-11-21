@@ -97,23 +97,31 @@ function harness() {
 const records = (patch = {}) => ({ auth: 'signedIn', online: true, children: [{ id: 'A' }], childrenLoading: false, childrenError: null,
   childrenLoadedAt: '2026-10-07', selectedChildId: 'A', ...patch });
 
-function startup(h, { image = true, report = 'ready', includeReport = true, identity = 'parent:1', state = records(), path: route = '/', search = {} } = {}) {
-  const { ProductionFirstScreenGate, useProductionStartupReadiness } = h.load('src/production/ProductionFirstScreenGate.tsx');
+function startup(h, { image = true, report = 'ready', includeReport = true, identity = 'parent:1', state = records(), path: route = '/', search = {}, gate = 'ready' } = {}) {
+  const { ProductionFirstScreenGate, useProductionStartupReadiness, useProductionVisibleSettingsSection } = h.load('src/production/ProductionFirstScreenGate.tsx');
   const { useFirstScreenImage } = h.load('src/startup/FirstScreenGate.tsx');
-  const Probe = startup.Probe ??= (props) => { props.reportHook(props.report); const hero = props.imageHook('home-hero');
+  const Probe = startup.Probe ??= (props) => { props.sectionHook(props.section); props.reportHook(props.report); const hero = props.imageHook('home-hero');
     props.hookReact.useLayoutEffect(() => { if (props.image) hero.onLoad(); }, [props.image]); return h.jsx('ReadyContent', {}); };
-  h.production({ identityKey: identity, scopeKey: state.selectedChildId ? `${identity}:${state.selectedChildId}` : null, recordsState: state }); h.route(route, search);
+  h.production({ identityKey: identity, scopeKey: state.selectedChildId ? `${identity}:${state.selectedChildId}` : null, recordsState: state, account: { gate }, sharedChild: { target: null } }); h.route(route, search);
   return h.jsx(ProductionFirstScreenGate, { width: 1000, launch: h.jsx('Launch', {}), children: includeReport ? h.jsx(Probe, {
-    image, report, reportHook: useProductionStartupReadiness, imageHook: useFirstScreenImage, hookReact: h.react,
+    image, report, section: search.section, sectionHook: useProductionVisibleSettingsSection, reportHook: useProductionStartupReadiness, imageHook: useFirstScreenImage, hookReact: h.react,
   }) : null });
 }
 
-test('loaded artwork cannot reveal a slow child list or a slow required route read', () => {
+test('the home shell waits for child admission and opens while its panels and artwork load', () => {
   const h = harness(); h.render(startup(h, { state: records({ children: [], selectedChildId: null, childrenLoading: true, childrenLoadedAt: null }) }));
   assert.ok(h.node('frontend-startup-loading'));
   h.tick(); assert.ok(h.node('frontend-startup-loading'), 'the image fallback timer is not a data timeout');
-  h.render(startup(h, { report: 'loading' })); assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { image: false, report: 'loading' })); assert.ok(h.node('frontend-preview-ready'));
   h.render(startup(h)); assert.ok(h.node('frontend-preview-ready')); assert.equal(h.node('frontend-startup-loading'), undefined);
+});
+
+test('an account verification screen can appear before domain reporters are mounted', () => {
+  const h = harness();
+  h.render(startup(h, { gate: 'verification', image: false, includeReport: false, state: records({ childrenLoadedAt: null }) }));
+  assert.ok(h.node('frontend-preview-ready'));
+  h.render(startup(h, { gate: 'ready', state: records({ childrenLoadedAt: null }) }));
+  assert.ok(h.node('frontend-startup-loading'), 'account admission must not open the next child scope early');
 });
 
 test('errors reveal recovery without waiting for artwork and retries do not rehide it', () => {
@@ -131,20 +139,20 @@ test('zero children and anonymous login settle; initialization never invents a s
 test('same-identity refresh stays open but a new identity or session epoch waits again', () => {
   const h = harness(); h.render(startup(h)); assert.ok(h.node('frontend-preview-ready'));
   h.render(startup(h, { report: 'loading' })); assert.ok(h.node('frontend-preview-ready'));
-  h.render(startup(h, { identity: 'parent:2', report: 'loading' })); assert.ok(h.node('frontend-startup-loading'));
-  h.render(startup(h, { identity: 'other-parent:1', report: 'loading' })); assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { identity: 'parent:2', state: records({ childrenLoadedAt: null }) })); assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { identity: 'other-parent:1', state: records({ childrenLoadedAt: null }) })); assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { identity: 'other-parent:1' })); assert.ok(h.node('frontend-preview-ready'));
 });
 
 test('a report for a previous route/scope cannot release a new startup', () => {
-  const h = harness(); h.render(startup(h, { image: false })); assert.ok(h.node('frontend-startup-loading'));
+  const h = harness(); h.render(startup(h, { path: '/growth', report: 'loading' })); assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { path: '/tasks', includeReport: false })); assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { path: '/tasks' })); assert.ok(h.node('frontend-preview-ready'));
 });
 
 test('children-list failure exposes the actual refresh control', () => {
   const h = harness(), { ProductionGate } = h.load('src/production/ProductionGate.tsx'); let calls = 0;
-  h.production({ identityKey: 'parent:1', online: true, account: { gate: 'ready', deletion: { phase: 'idle' } }, recordsState: records({ childrenLoadedAt: null, childrenError: 'Synthetic list failure' }), refresh() { calls++; } });
+  h.production({ identityKey: 'parent:1', online: true, account: { gate: 'ready', deletion: { phase: 'idle' } }, sharedChild: { target: null }, recordsState: records({ childrenLoadedAt: null, childrenError: 'Synthetic list failure' }), refresh() { calls++; } });
   h.render(h.jsx(ProductionGate, { children: 'private' })); assert.ok(h.node('production-children-error'));
   h.hosts().find(x => x.type === 'Button').props.onPress(); assert.equal(calls, 1);
 });
@@ -230,9 +238,9 @@ test('notification deep links wait for preferences and channels, while appearanc
   assert.equal(routeStartupReadiness('/settings', params, { preferences: 'loading' }), 'loading');
   assert.equal(routeStartupReadiness('/settings', params, { preferences: 'ready', push: 'ready', telegram: 'ready' }), 'ready');
   assert.equal(routeStartupReadiness('/settings', params, { preferences: 'error' }), 'error');
-  h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'loading' }));
+  h.render(startup(h, { path: '/settings', search: params, state: records({ children: [], selectedChildId: null }), report: 'loading' }));
   assert.ok(h.node('frontend-startup-loading'));
-  h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'error' }));
+  h.render(startup(h, { path: '/settings', search: params, state: records({ children: [], selectedChildId: null }), report: 'error' }));
   assert.ok(h.node('frontend-preview-ready'));
 });
 
