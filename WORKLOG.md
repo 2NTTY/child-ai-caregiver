@@ -7366,6 +7366,10 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
 - 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
 
+### 2026-11-22｜角色切頁修正交付
+
+原站發布 `r44934163597-1` 已交付 #784。版本 8 的 Android preview 公開更新清單於香港 02:50 回傳 HTTP 200，更新 ID 和 runtime 與本次 EAS 發布吻合。切頁畫格來自 Edge；手機實際套用和觸控效果待驗。[版本及查回收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
+
 ### 2026-11-22｜A 家長連續使用助手
 
 由 `1bef029b` 實測，交付前快進至 `710321e7`。同一普通合成家長在 Edge 問子女名單、轉問助手身份、要求先補問再更正私人記憶。拒絕名冊讀取後曾誤供登入者身份；同一問句修後只問所欠語言，零寫入。家長確認前只有私人候選，確認後原版卻因模型重述欠引用而報錯。修後以原事實第 1 版預備待確認修訂，在同一 Web 輸入「確認」，第 2 版收據用了零次模型。重開長期記憶只見一項，共享檔案仍是第 0 版。
