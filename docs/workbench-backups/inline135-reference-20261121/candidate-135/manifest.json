@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-135-image-count",
+  "base": {
+    "artifact": "candidate-133/out",
+    "htmlSha256": "0e8cad0f7ef22fba35fba331e8e0a775f6d62ba44609daa80314b9b1f9bbfb27",
+    "rawRecordsSha256": "e7b8def952b9c36fe7b09bc0b382560226381b77d4ba93a5c11a6e2c25bd7e07",
+    "rawArtworkSha256": "6382f1b70369f9425e2749f852a8951ae98f0ab816f0f8c25bcedf5dc0ff9b4a",
+    "topics": 65,
+    "choices": 133,
+    "images": 133
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-search-coverage/assets.json",
+      "sha256": "d914fa7236d6d1bdc28b5c40539a31ba6971b5d938590e65174ba25164ed183a"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "0911050b7a8412944d3c0161d7b00d2b0a6ddd8e1e6a3842ccb5a26d474210fe",
+    "PROVENANCE.md": "5112d1ce59592d733062c25bcca124260c9cde4c5f3103b62070c3ff08e01422"
+  },
+  "topics": [
+    {
+      "number": 66,
+      "title": "搜尋範圍：改上限或改時段",
+      "choices": [
+        {
+          "name": "看到結果上限，再重新搜尋",
+          "note": "這次搜尋達到結果上限，有部分結果未列出。勾選較高的上限後要另跑一次，不是接續本次結果，也不代表已搜完。",
+          "links": [
+            {
+              "label": "Sourcegraph 完整搜尋頁（final public Apache snapshot）",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/search/results/StreamingSearchResults.tsx#L426-L452"
+            },
+            {
+              "label": "同一版本：搜尋路徑",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/routes.constants.ts#L1-L4"
+            },
+            {
+              "label": "同一版本：搜尋頁入口",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/routes.tsx#L52-L60"
+            },
+            {
+              "label": "同一版本：有查詢時顯示結果",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/search/SearchPageWrapper.tsx#L12-L29"
+            },
+            {
+              "label": "同一版本：搜尋結果列表",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/search/results/StreamingSearchResults.tsx#L513-L529"
+            },
+            {
+              "label": "同一版本：完成後顯示結果數",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/branded/src/search-ui/results/progress/StreamingProgress.tsx#L21-L33"
+            },
+            {
+              "label": "同一版本：達到上限時顯示加號",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/branded/src/search-ui/results/progress/StreamingProgressCount.tsx#L29-L36"
+            },
+            {
+              "label": "同一版本：由結果數展開略過原因",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/branded/src/search-ui/results/progress/StreamingProgressSkippedButton.tsx#L31-L59"
+            },
+            {
+              "label": "同一版本：勾選建議並重新搜尋",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/branded/src/search-ui/results/progress/StreamingProgressSkippedPopover.tsx#L138-L184"
+            },
+            {
+              "label": "同一版本：結果上限與 count:1000 建議",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/doc/api/stream_api/index.md#L89-L97"
+            },
+            {
+              "label": "同一版本：套用建議條件並重新搜尋",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/search/results/StreamingSearchResults.tsx#L318-L331"
+            },
+            {
+              "label": "同一版本：重跑入口",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/client/web/src/search/results/StreamingSearchResults.tsx#L542-L549"
+            },
+            {
+              "label": "同一版本：公開與企業程式授權區分",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/LICENSE#L1-L3"
+            },
+            {
+              "label": "Sourcegraph 程式授權：Apache-2.0（非圖像授權）",
+              "url": "https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b/LICENSE.apache"
+            }
+          ],
+          "asset": {
+            "input": "draft-search-coverage/coverage-a-count-rerun.png",
+            "sha256": "228a92838f5c66c4c43f54d4d767525651bcf0c96c8fe137e635aa8515d918d6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構工作筆記的完整文字搜尋頁。30+ 結果下展開上限提示，勾選尚未套用的 count:1000，另有重新搜尋，不會接續本次結果。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "按時間窗查看更早日誌",
+          "note": "右側時段只表示實際回傳日誌的範圍。查看更早日誌時，保留查詢式、改到較早的時間窗，不是在同一時間窗增加筆數。",
+          "links": [
+            {
+              "label": "Grafana OSS v12.0.0：完整 Explore 日誌頁",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Explore.tsx#L429-L465"
+            },
+            {
+              "label": "同一版本：Explore 入口",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/routes/routes.tsx#L155-L165"
+            },
+            {
+              "label": "同一版本：舊式日誌結果",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Logs/Logs.tsx#L1073-L1085"
+            },
+            {
+              "label": "同一版本：日誌列表旁的導航",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Logs/Logs.tsx#L1130-L1141"
+            },
+            {
+              "label": "同一版本：較早或較後的時段按鈕",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Logs/LogsNavigation.tsx#L191-L205"
+            },
+            {
+              "label": "同一版本：右側日誌導航說明",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/docs/sources/explore/logs-integration.md#L28-L46"
+            },
+            {
+              "label": "同一版本：以已回傳日誌時間標示各頁",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Logs/LogsNavigationPages.tsx#L19-L48"
+            },
+            {
+              "label": "同一版本：請求較早的查詢時間窗",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/features/explore/Logs/LogsNavigation.tsx#L90-L134"
+            },
+            {
+              "label": "同一版本：Loki 筆數上限是另一項設定",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/public/app/plugins/datasource/loki/querybuilder/components/LokiQueryBuilderOptions.tsx#L162-L181"
+            },
+            {
+              "label": "同一版本：開源範圍與授權聲明",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/LICENSING.md#L1-L5"
+            },
+            {
+              "label": "Grafana 程式授權：AGPL-3.0-only（非圖像授權）",
+              "url": "https://github.com/grafana/grafana/blob/4c0e7045f97f356716755b47183b22e7f12bb4bf/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-search-coverage/coverage-b-older-window.png",
+            "sha256": "595f8c1f442f782746f38e75d7b88d3e9e93369eb4f6c96afcfa262df2e2a939",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構展板的完整日誌探索頁。查詢式及時段在上方，右側列出每頁實際回傳範圍，正在看較早的一頁；下方可讀更早的查詢時段。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 66 題 · 搜尋上限與時段的兩幅自製合成示意",
+      "input": "draft-search-coverage/DECLARATION.txt",
+      "sha256": "0911050b7a8412944d3c0161d7b00d2b0a6ddd8e1e6a3842ccb5a26d474210fe"
+    }
+  ]
+}
