@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-177-image-count",
+  "base": {
+    "artifact": "candidate-175/out",
+    "htmlSha256": "9399efb18637dde5c79489d7727a5f452be6f1e2104c7a99ecbb2f7b91025e76",
+    "rawRecordsSha256": "b2b955b9775ebaa3ca0d0f803afb3bfa677f4b6a535e168e5b6c268273fb6b37",
+    "rawArtworkSha256": "4bc60523d445c26aea2bd38c7caf38892d65bf638c889d20a6a68e02e9d45bb9",
+    "topics": 86,
+    "choices": 175,
+    "images": 175
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-mobile-nav/assets.json",
+      "sha256": "8a44f8f9389f95927ec1f9cc48ed220ed993d1525e530e1056b78b03330ef2fc"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "32689c536bfa0a6c3074179a6212c0aa30a96cc65852d6e3ce9a540ab42a7854",
+    "PROVENANCE.md": "ccf58252f931a3c90ce3cfe9bbbfb2d5c745010807ffe9c8bca38dfef5fb281a"
+  },
+  "topics": [
+    {
+      "number": 87,
+      "title": "手機底欄：點「核對」，上拉開「全部功能」",
+      "choices": [
+        {
+          "name": "上滑開清單，點按開個別程式",
+          "note": "Launcher3 從桌面上滑可開啟圖中的應用程式清單，點按桌面捷徑則開啟個別程式。育伴港用的是同一個右下角「核對」入口：點按開核對，上拉開「全部功能」，並非系統啟動器。",
+          "links": [
+            {
+              "label": "Launcher3 Android 16.0.0 r1：桌面、收藏區及應用程式清單",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/res/layout/launcher.xml#L31-L80"
+            },
+            {
+              "label": "同版：桌面往上滑可進入應用程式清單",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/src/com/android/launcher3/touch/AllAppsSwipeController.java#L139-L169"
+            },
+            {
+              "label": "同版：點按桌面捷徑開啟個別程式",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/src/com/android/launcher3/touch/ItemClickHandler.java#L86-L107"
+            },
+            {
+              "label": "同版：應用程式清單的搜尋欄",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/res/layout/search_container_all_apps.xml#L16-L37"
+            },
+            {
+              "label": "同版：應用程式清單另有無障礙操作",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/src/com/android/launcher3/views/AccessibilityActionsView.java#L63-L81"
+            },
+            {
+              "label": "Launcher3 程式碼授權：Apache-2.0",
+              "url": "https://github.com/Goooler/Launcher3/blob/2f5b9b869d86620fdb899bc2df53d523dc9dc6ea/src/com/android/launcher3/touch/AllAppsSwipeController.java#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-mobile-nav/mobile-nav-a.png",
+            "sha256": "7d887a2aba998177003850f0c76d7e7ada760ef447b0224033076b49b8aa3157",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Android 16 Launcher3 的非官方直向手機重繪。搜尋應用程式欄下是五欄原創虛構應用程式圖示；這是開啟後的清單，沒有桌面捷徑、收藏列或拖曳中的畫面。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "上滑開分頁，輕點仍是原入口",
+          "note": "Firefox Android 啟用相關手勢後，由底部工具列向上滑可打開全頁分頁總覽；輕點網址列仍會進入搜尋或網址輸入。育伴港只參考將輕點與上滑分開，並保留「全部功能」入口。",
+          "links": [
+            {
+              "label": "Firefox Android 154.0（FIREFOX_154_0_RELEASE）：瀏覽器手勢容器和內容",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/res/layout/fragment_browser.xml#L5-L38"
+            },
+            {
+              "label": "依工具列設定啟用手勢",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/browser/BrowserFragment.kt#L239-L249"
+            },
+            {
+              "label": "合資格上滑導向分頁總覽",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/components/toolbar/gestures/ToolbarVerticalGesturesHandler.kt#L77-L105"
+            },
+            {
+              "label": "滑動方向及系統手勢保留區",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/components/toolbar/gestures/ToolbarVerticalGesturesHandler.kt#L125-L158"
+            },
+            {
+              "label": "輕點網址列的獨立處理",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/components/toolbar/BrowserToolbarMiddleware.kt#L383-L398"
+            },
+            {
+              "label": "分頁總覽畫面的實作",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/tabstray/ui/TabManagementFragment.kt#L319-L351"
+            },
+            {
+              "label": "全頁分頁、頂部列與下方控制",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/tabstray/ui/tabstray/TabsTray.kt#L181-L235"
+            },
+            {
+              "label": "手勢原始碼 MPL 2.0 聲明",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/components/toolbar/gestures/ToolbarVerticalGesturesHandler.kt#L1-L3"
+            },
+            {
+              "label": "Mozilla Public License 2.0（MPL-2.0 程式）",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/content/license.html#L202-L648"
+            }
+          ],
+          "asset": {
+            "input": "draft-mobile-nav/mobile-nav-b.png",
+            "sha256": "4231c46fe052f22b483f0e4a793eb7805068a111922c3fbf8442d817aa8cfcda",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "單一 Android 手機畫面：Firefox 的全頁分頁總覽顯示四張虛構紙藝展分頁，排成兩欄，目前分頁有紫框。下方左側是搜尋和選單，右側是新增分頁；原網頁與網址列沒有露出。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 87 題 · 手機替代入口的兩幅自製示意",
+      "input": "draft-mobile-nav/DECLARATION.txt",
+      "sha256": "32689c536bfa0a6c3074179a6212c0aa30a96cc65852d6e3ce9a540ab42a7854"
+    }
+  ]
+}
