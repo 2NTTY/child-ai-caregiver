@@ -9,6 +9,7 @@ export interface KnowledgeApplicability {
   region: string;
   ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed";
   publisherAudiences?: string[];
+  ageExamples?: import('./knowledge-age-example.ts').KnowledgeAgeExample[];
   minAgeMonths: number | null;
   maxAgeMonths: number | null;
   maxAgeMonthsExclusive?: boolean;

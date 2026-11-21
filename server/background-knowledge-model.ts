@@ -3,6 +3,7 @@ import { layoutFactContract, type KnowledgePdfQuestion, type LayoutFacts } from 
 import { z } from "zod";
 import { ageScopeInstruction, independentAgeCheck, modelAgeApplicability } from './knowledge-age-output.ts';
 import { scriptReadingContract, scriptScopeInstruction, scriptReviewInstruction, publisherScriptReading, compactPublisherReview, publisherReviewInstruction, type PublisherAudience } from './knowledge-script-reading.ts';
+import type { AgeExampleRegistration } from './knowledge-age-examples.ts';
 import { reviseRetainedDraft, type RetainedOrganizerRevision, type retainedDraftProvenanceSchema } from './knowledge-retained-draft.ts';
 import { nativeCoverageSchema, nativeResponseSchema, pdfOrganizationContract } from "./knowledge-pdf-output.ts";
 import { damagedPdfText, pdfQuantityLocators } from "./knowledge-pdf-quotes.ts";
@@ -204,7 +205,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
 export async function prepareKnowledgeMaintenance(input: {
   explicitAgeScope?: boolean;
   scriptRevision?: { priorWork: string; reason: string; notes: readonly string[];
-    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true} };
+    publisherScope?:{audiences:PublisherAudience[];amendUnits:string[];exclusiveLookup?:true;ageExamples?:readonly AgeExampleRegistration[]} };
   retainedDraft?: { revision: RetainedOrganizerRevision; readOrganizer(attemptKey: string): Promise<string> };
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -347,7 +348,8 @@ export async function prepareKnowledgeMaintenance(input: {
     reusable.delete(key);
   }
   const pending = units.filter(unit => !reusable.has(unit.id));
-  const publisherDraft=publisherScope?publisherScriptReading(pending,candidate.observed.title,publisherScope.audiences,candidate.observed.text,publisherScope.exclusiveLookup):null;
+  const publisherDraft=publisherScope?publisherScriptReading(pending,candidate.observed.title,publisherScope.audiences,candidate.observed.text,
+    publisherScope.exclusiveLookup,publisherScope.ageExamples):null;
   const scriptReading = input.scriptRevision && !publisherDraft && pending.length ? scriptReadingContract(pending, candidate.observed.title) : null;
   const organized = publisherDraft ? null : scriptReading ? await complete('organize', organize.text, {
     role:'background-knowledge-maintenance', task:scriptScopeInstruction, materialTitle:candidate.observed.title,
@@ -465,6 +467,7 @@ export async function prepareKnowledgeMaintenance(input: {
       publishedSourceTool:'find_official_material (parent requests a publication, original passage or citation check)',
       ordinaryCareSearch:'excluded in storage before ranking', adjacentCareContext:'excluded', personalAdvice:'excluded', proactive:'excluded',
       oneSidedAge:'Only a bound explicitly stated for the whole publication may be recorded. The other endpoint remains unknown. A single bound grants no advice eligibility.',
+      ...(publisherScope.ageExamples ? {ageExamples:'Verify every age example against the quoted row or scene, its source units, qualifiers, offset and transcript paragraph when present. A scene age or table row describes only its own example. Assess any missing or mismatched conditions.'} : {}),
       conditions:'Quoted subgroup examples are not eligibility for the whole unit. A qualitative heading establishes the audience only as written. Check the effect of these enforced access rules on each former hold.'}} : {}),
     ...(input.explicitAgeScope || retained ? { ageScopeCheck: independentAgeCheck } : {}),
     ...(retained?.revision.action === 'review_age_draft' ? { editorialAgeProposal: { change: 'Only the numeric bounds were cleared in the listed units. Check the full original audience, exceptions and conditions. Hold if this broadens the intended audience.', reason: retained.revision.reason, originalScopes: retained.revision.units } } : {}),

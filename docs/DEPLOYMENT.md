@@ -123,6 +123,8 @@ gcloud secrets versions add site-timer-github-app --project=ai-caregivers-for-ch
 
 親子溝通及新生嬰兒用品的審核未有有效決定時，用同一 `script inspect-revision` 查 `reviewStage`。兩份[已結算的原審核請求](../knowledge/fhs-script-review-stages.json)已按原工作、原觀測及完整請求指紋登記。若有保存回應，worker 用原候選重驗，只輸出欄位、驗證結果及指紋。沒有已保存回應時，收據會列明原階段狀態。查回過程不會派送模型、改寫工作或發布教材。
 
+睡眠教材的[分齡原句](../knowledge/fhs-script-age-examples.json)沿原修訂入口處理。worker 先核對前次保留決定及候選版本，按原表格行或劇本段落綁定年齡、單位及引句，再連同原意見交獨立審核。任何登記字眼找不到對應原文時即停。
+
 **人工製卡。** 操作員明確委託 Codex 處理的教材按指定清單接續，維護程序的每日次數只計排程與自動巡查。先查原操作和付費收據，再處理仍未完成的教材。這批沿用 US$30 抵免前毛額，供應商的真實限額及未知投遞預留仍然適用。各組分工見[首批清單](../knowledge/fhs-initial-publication-lanes.json)。
 
 **舊版操作紀錄。** 下文的日期參數及日額是舊入口在 11 月 20 日接回指定工作的做法。

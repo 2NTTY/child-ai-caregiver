@@ -2,6 +2,27 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compactPublisherReview, publisherScriptReading, scriptReadingContract } from '../server/knowledge-script-reading.ts';
 import { approvedScriptEdition, currentScriptReadingWork, heldScriptRevision, publisherScriptWork, scriptEditionWorkId, scriptRevisionWorkId, verifiedScriptReading, verifyHeldScript } from '../server/fhs-script-edition.ts';
+import { ageExampleRegistration, bindPublisherAgeExamples } from '../server/knowledge-age-examples.ts';
+
+test('scene ages and table rows retain their own quoted passage, numeral and publisher unit', () => {
+  const age = ageExampleRegistration.parse({scope:{scriptTitle:'家居安全'},age:{wording:'3歲',unit:'years',form:'age',values:[3]}});
+  const unit = {id:'scene',originalText:'前段。\n相片：兒子(5歲)和女兒(3歲)跟爸爸說再見。',scriptPassage:{title:'家居安全',firstParagraph:10}};
+  const [scene] = publisherScriptReading([unit],'安全',[],'',true,[age]);
+  assert.equal(scene!.applicability.use,'original_lookup');
+  assert.equal(scene!.applicability.minAgeMonths,null);
+  assert.equal(scene!.applicability.maxAgeMonths,null);
+  const [example] = scene!.applicability.ageExamples!;
+  assert.equal(example!.paragraph,11);
+  assert.equal(unit.originalText.slice(example!.start,example!.start+example!.quote.length),example!.quote);
+  assert.ok(example!.quote.includes('女兒(3歲)'));
+  const table = ageExampleRegistration.parse({scope:{unitKey:'table'},age:{wording:'3-4歲',unit:'years',form:'range',values:[3,4]},
+    quote:'3-4歲 約 10-13 小時'});
+  const bound = bindPublisherAgeExamples([{id:'table',originalText:'1-2歲 約11-14小時 3-4歲 約 10-13 小時'}],[table]);
+  assert.equal(bound.get('table')![0]!.quote,'3-4歲 約 10-13 小時');
+  assert.throws(()=>bindPublisherAgeExamples([unit],[table]),/example_missing/u);
+  assert.throws(()=>bindPublisherAgeExamples([{...unit,originalText:'女兒(13歲)。'}],[age]),/example_missing/u);
+  assert.throws(()=>ageExampleRegistration.parse({...age,age:{...age.age,values:[36]}}));
+});
 
 test('a publisher audience remains visible without creating age endpoints or advice eligibility', () => {
   const unit = {id:'p0-12345678901234567890',originalText:'家長可參考原文。',scriptPassage:{title:'情緒導航（學前兒童篇）'}};

@@ -1,0 +1,191 @@
+[
+  {
+    "sourceId": "fhs-13043",
+    "observationHash": "72db528549e6b9f2befab1cbc934b7ec7500ee5441ef637920d22b2fe3296fc6",
+    "priorWork": "11c4c44ac784410e197a992c24c3e0304afc4d36d896ad607980569f744f8850",
+    "priorVersionHash": "fc2c660828f0f52cf47a41fc176cf3dfb5ba1c795a0443faa1b47ac42ebddc6b",
+    "examples": [
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "約三至六歲時",
+          "unit": "years",
+          "form": "range",
+          "values": [
+            3,
+            6
+          ]
+        }
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "約三至六個月大時",
+          "unit": "months",
+          "form": "range",
+          "values": [
+            3,
+            6
+          ]
+        }
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "八個月大時",
+          "unit": "months",
+          "form": "age",
+          "values": [
+            8
+          ]
+        }
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "兩個月大前",
+          "unit": "months",
+          "form": "before",
+          "values": [
+            2
+          ]
+        }
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "0-3 個月大",
+          "unit": "months",
+          "form": "range",
+          "values": [
+            0,
+            3
+          ]
+        },
+        "quote": "0-3 個月大 約 14-17 小時"
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "4-11個月大",
+          "unit": "months",
+          "form": "range",
+          "values": [
+            4,
+            11
+          ]
+        },
+        "quote": "4-11個月大 約 12-16 小時"
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "1-2 歲",
+          "unit": "years",
+          "form": "range",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "quote": "1-2 歲 約 11-14 小時"
+      },
+      {
+        "scope": {
+          "unitKey": "p0-0397be2575110d272930"
+        },
+        "age": {
+          "wording": "3-4歲",
+          "unit": "years",
+          "form": "range",
+          "values": [
+            3,
+            4
+          ]
+        },
+        "quote": "3-4歲 約 10-13 小時"
+      },
+      {
+        "scope": {
+          "scriptTitle": "家居安全"
+        },
+        "age": {
+          "wording": "12-18個月",
+          "unit": "months",
+          "form": "range",
+          "values": [
+            12,
+            18
+          ]
+        }
+      },
+      {
+        "scope": {
+          "scriptTitle": "家居安全"
+        },
+        "age": {
+          "wording": "18-24個月",
+          "unit": "months",
+          "form": "range",
+          "values": [
+            18,
+            24
+          ]
+        }
+      },
+      {
+        "scope": {
+          "scriptTitle": "家居安全"
+        },
+        "age": {
+          "wording": "5歲",
+          "unit": "years",
+          "form": "age",
+          "values": [
+            5
+          ]
+        }
+      },
+      {
+        "scope": {
+          "scriptTitle": "家居安全"
+        },
+        "age": {
+          "wording": "3歲",
+          "unit": "years",
+          "form": "age",
+          "values": [
+            3
+          ]
+        }
+      },
+      {
+        "scope": {
+          "scriptTitle": "家居安全"
+        },
+        "age": {
+          "wording": "兩歲",
+          "unit": "years",
+          "form": "age",
+          "values": [
+            2
+          ]
+        }
+      }
+    ]
+  }
+]
