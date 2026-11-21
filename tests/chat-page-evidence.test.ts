@@ -3,6 +3,7 @@ import test from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { AgentBudget } from '../server/agent-budget.ts';
 import { createProductAgentTools } from '../server/product-agent-tools.ts';
+import { chatDeliveryPassNeedsSources } from '../server/chat-delivery-review.ts';
 
 test('a companion restatement preserves the original while an unsupported sibling can be corrected in the same run', async () => {
   const budget = new AgentBudget();
@@ -31,5 +32,37 @@ test('a companion restatement preserves the original while an unsupported siblin
     const implicit = await present.execute({kind:'private_reference', paragraphs:[item]}, call);
     assert.equal(implicit.status, 'succeeded');
     assert.deepEqual(surface.deliveryDraft()?.paragraphs[0]?.citationIds, ['page-item']);
+  } finally { budget.close(); }
+});
+
+test('a history quote may supply a fact but repeating the current page question cannot answer it', async () => {
+  const budget = new AgentBudget(), runId = randomUUID();
+  const scope = { userId: 'actor', workspaceId: randomUUID(), childId: randomUUID(), authorizationVersion: '1', dataVersion: '1' };
+  const question = '我已準備借書證，呢個仲要帶啲咩？';
+  const oldQuestion = { id:randomUUID(), childId:scope.childId, role:'user' as const, authorUserId:scope.userId, inReplyTo:null,
+    createdAt:new Date().toISOString(), text:question };
+  const page = { citationId:'page-item', classification:'private' as const, version:'task/1', contentHash:'a'.repeat(64),
+    excerptComplete:true, excerpt:JSON.stringify({title:'手作班',details:'要帶借書證和藍色圍裙。'}) };
+  function setup(request: string) {
+    const tools = createProductAgentTools({run:{runId, scope, budget}, authorize:async () => true,
+      currentMessageId:randomUUID(), trustedUserMessage:request, recentQuoteSources:[oldQuestion],
+      pageEvidence:{source:page, isCurrent:async () => true}, memory:{}, tasks:{}, store:{}, knowledge:{createRun:() => ({})},
+    } as unknown as Parameters<typeof createProductAgentTools>[0]);
+    return {tools, present:tools.tools.find(t=>t.name==='present_answer')!};
+  }
+  const call = {scope, runId, callId:randomUUID(), signal:budget.signal};
+  const quote = {quoteHistory:'R1'};
+  try {
+    const history = setup('我上次點問手作班要帶咩？請引返我句原話。');
+    assert.equal((await history.present.execute({kind:'private_reference', paragraphs:[quote]},call)).status,'succeeded');
+    const historical = history.tools.deliveryDraft()!;
+    assert.equal(chatDeliveryPassNeedsSources(historical),false);
+    assert.equal(chatDeliveryPassNeedsSources({...historical,userRequest:question}),true);
+    const current = setup(question);
+    assert.partialDeepStrictEqual(await current.present.execute({kind:'private_reference',paragraphs:[quote]},call),
+      {status:'rejected',data:{code:'attached_claim_needs_evidence'}});
+    const answer = {text:'仲要帶藍色圍裙。',citationIds:['page-item']};
+    assert.equal((await current.present.execute({kind:'private_reference',paragraphs:[quote,answer]},call)).status,'succeeded');
+    assert.deepEqual(current.tools.deliveryDraft()?.paragraphs.map(p=>p.text),['你當時說：「'+question+'」',answer.text]);
   } finally { budget.close(); }
 });

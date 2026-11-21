@@ -26,7 +26,7 @@ export function directoryPageReference(page: number, data: DirectoryPage): strin
   return page + ':' + digest;
 }
 
-/** Only an attempt to widen a private chat to other children spends this same-run check. */
+/** Resolve the current message's scope on the first account lookup in this run. */
 export async function requestedAccountContext(run: AgentRunContext, messageId: string, current: string): Promise<'children' | 'speaker' | null> {
   if (!run.completeText || !current.trim()) return null;
   const decision = await run.completeText({

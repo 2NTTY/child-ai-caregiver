@@ -32,13 +32,20 @@ test('personal assistant reads workspace data on demand, paginates and composes 
     const speaker = make({trustedUserMessage:'我是誰',run:{runId,scope,budget,completeText:async ()=>'READ_SPEAKER'}});
     const identity = await speaker.tools.find(t=>t.name==='read_account_context')!.execute({subject:'children'},toolCall);
     assert.equal(identity.reference,'speaker');
-    const unrelated = make({trustedUserMessage:'你係咩助手？我想填屋企語言，你先問我，唔好儲住。',run:{runId,scope,budget,completeText:async ()=>'KEEP_PRIVATE'}});
-    const refused = await unrelated.tools.find(t=>t.name==='read_account_context')!.execute({subject:'children'},toolCall);
-    assert.equal(refused.status,'rejected');
-    assert.equal(refused.reference,undefined);
-    assert.ok(!JSON.stringify(refused.data).includes('workspace:speaker'));
+    let scopeChecks = 0;
+    const unrelated = make({trustedUserMessage:'你係咩助手？我想填屋企語言，你先問我，唔好儲住。',run:{runId,scope,budget,
+      completeText:async () => { scopeChecks++; return 'KEEP_PRIVATE'; }}});
+    const unrelatedReader = unrelated.tools.find(t=>t.name==='read_account_context')!;
+    assert.equal(scopeChecks, 0);
+    for (const subject of ['speaker', 'children']) {
+      const refused = await unrelatedReader.execute({subject},toolCall);
+      assert.equal(refused.status,'rejected');
+      assert.equal(refused.reference,undefined);
+      assert.ok(!JSON.stringify(refused.data).includes('workspace:speaker'));
+    }
+    assert.equal(scopeChecks, 1);
     assert.deepEqual(calls,[]);
-    const first = await read({});
+    const first = await read({subject:'speaker'});
     assert.equal(first.children.length,1); assert.ok(first.nextPage);
     assert.deepEqual(first.children,[{displayName:'第一位',selected:true}]);
     assert.equal(JSON.stringify(first).includes(scope.childId),false);

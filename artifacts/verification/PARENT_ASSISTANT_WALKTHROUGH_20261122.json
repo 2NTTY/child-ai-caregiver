@@ -7,7 +7,7 @@
     "browser": "Isolated headless Edge 158.0.4370.33, 1120 x 850, zh-HK",
     "runtime": "Node 24.22.1, production Web, Server and ADK entry points with local Firebase emulators and real Vertex gemini-3.1-flash-lite",
     "account": "One synthetic non-administrator parent, one child and one saved task. The bootstrap operator issued the fixture invitation. Session admission, role and all parent actions were checked separately.",
-    "policy": "Platform mode, policy v0, 8 model calls per run, ordinary daily limits 20 per user and 100 globally. One separately approved isolated dialogue had up to 5 additional daily attempts for this parent only."
+    "policy": "Platform mode, policy v0, 8 model calls per run, ordinary daily limits 20 per user and 100 globally. Temporary single-dialogue allowances were confined to this parent in the isolated fixture. The initial limited retry and later full-round tests are recorded separately."
   },
   "directory": {
     "message": "5d8e5b08-2303-4fb7-b388-8d980fcd3820",
@@ -51,6 +51,35 @@
     "passed": 33,
     "serverTypecheck": "tsc --project tsconfig.server.json",
     "budget": {"localReservationUSD": 0.30, "shared12hLimitUSD": 5, "sharedMeterReadAtUtc": "2026-11-21T19:28:08.385Z", "parentDayAttempts": 25, "parentDayInputTokens": 257766, "parentDayOutputTokens": 1921, "parentAttemptsWithIncompleteUsage": 25, "billing": "Platform. Counters include background work. The measured token totals are not a settled charge."},
-    "remaining": "A newly delivered live answer naming both materials in this exact household is unverified. Deployment, a real parent account and physical-device interaction were outside the simulation."
+    "remainingAtFirstHead": "The initial limited retry did not deliver an answer. The subsequent live test below closes the exact-household acceptance case."
+  },
+  "followUp": {
+    "initialHead": "f4157efc5d2220f4b4c66b1e36b82034d1993708",
+    "accountScope": "Before the follow-up, a direct speaker tool request succeeded on an assistant-identity clarification. Both model-selected subjects now consult the same lazy per-turn scope decision. The regression covers both wrong selections, the valid identity, pagination and zero checks before a lookup.",
+    "earlierCitationFailures": {
+      "run": "105b43a8-3e76-4b58-8d2c-fc09fabde60c",
+      "known": "The first two submissions were rejected with invalid_citation. The third was accepted, then daily quota stopped final review.",
+      "unknown": "The rejected arguments were unavailable. The original native session had already been cleaned up, the retained run diagnostics contained only the rejection code, and both remaining emulator snapshots postdated completion. The later observed history echo is a separate result."
+    },
+    "liveEcho": {
+      "message": "175c9efa-8910-4a39-95af-16c0b62f5bdb", "answer": "7325a928-5b16-4f98-8499-de60c343fb2d", "run": "a4e504cd-fdd1-43e2-9d64-5877d7a94453",
+      "observed": "The generator submitted only quoteHistory R2, which resolved to the parent's previous identical question. The independent reviewer returned pass. Main chat displayed only the attributed question. The browser assertion for the two materials failed.",
+      "modelCalls": 2, "dailyAttemptsBefore": 25, "dailyAttemptsAfter": 27,
+      "reviewDraftHash": "11692c965124be895e673ca85ad2014f3caaf494166a242c54c04a7816bfc3f8"
+    },
+    "liveAfterRepair": {
+      "question": "呢個要準備啲咩？", "message": "63425d02-bd96-4b37-bc8b-0c5aae3f9436",
+      "answer": "fd629501-3190-4a22-9f3c-f949bdc596aa", "run": "3c6f9c3f-2982-479e-a882-595f75275824",
+      "sameSelectedTaskVersion": 1, "modelCalls": 2, "toolCalls": 1, "queryEmbeddings": 0,
+      "firstSubmission": {"kind": "private_reference", "citationIds": ["page-item"]},
+      "review": {"decision": "pass", "issues": [], "draftHash": "b6d5b7a43060c5c43b8c1eed3b8e20206511cb1577732aead3508e72d5fc0574"},
+      "reopenedAfterRestore": {"sameAnswerAndRun": true, "parentDailyCap": 20, "attemptsRetained": 29, "newReplyRequests": 0},
+      "parentVisibleText": "關於「週末圖書館手作班」，活動通知寫明你需要帶備借書證和藍色圍裙，並前往兒童館報到。",
+      "observed": "In the same ordinary parent's Edge session the question was sent from the selected task. Main chat displayed the material list from the actual reviewed answer. The single private fact remained at version 2 and the empty profile at version 0."
+    },
+    "controlled": "The tool and delivery gate reject an answer consisting only of the attached question echoed back. The same question can still be quoted when history is explicitly requested; its factual part can also accompany an answer based on the page. The earlier offline comparison remains recorded separately.",
+    "verification": {"passed": 58, "files": ["chat-page-evidence", "chat-workspace-view", "agent-context-topology", "chat-delivery-review", "chat-discussion"], "serverTypecheck": "passed"},
+    "funding": {"ordinaryModelCallsPerRun": 8, "ordinaryQueryEmbeddingsPerRun": 4, "ordinaryUserDailyCap": 20, "dailyAttemptsRetained": 29, "inputTokens": 304300, "outputTokens": 2182, "estimatedGenerationUSDAtUncachedGlobalRates": 0.079348, "reservedUSD": 0.30, "rateSource": "https://cloud.google.com/model-garden/pricing", "billing": "Usage-based estimate, not an invoice. The earlier 25-attempt aggregate matched Cloud Monitoring for Flash-Lite over the fixture window. Both new runs returned individual input and total counts."},
+    "remaining": "Production deployment, a real parent on the deployed site and physical-phone interaction were outside this walkthrough."
   }
 }

@@ -769,12 +769,13 @@ export function createProductAgentTools(options: {
       parameters: z.strictObject({subject:z.enum(['speaker','children']), page:z.number().int().min(1).optional()}), authorize: permitted,
       async execute(args) {
         if (!await permitted()) throw new AgentStopped('unauthorized');
-        const speaker = () => ({status:'succeeded' as const,reference:'speaker',data:{result:registerWorkspaceEvidence('workspace:speaker',
-          {subject:'speaker',role:'signed_in_account_holder',personalNameProvided:false})}});
-        if (args.subject === 'speaker') return speaker();
         requestedContext ??= requestedAccountContext(run, options.currentMessageId!, options.trustedUserMessage ?? '');
         const subject = await requestedContext;
-        if (subject === 'speaker') return speaker();
+        if (subject === 'speaker') {
+          if (!await permitted()) throw new AgentStopped('unauthorized');
+          return {status:'succeeded',reference:'speaker',data:{result:registerWorkspaceEvidence('workspace:speaker',
+            {subject:'speaker',role:'signed_in_account_holder',personalNameProvided:false})}};
+        }
         if (subject === null) return { status:'rejected', data:{ code:'account_context_not_requested',
           nextAction:'本輪沒有要求查帳戶資料。回到家長當前的問題，沿對話已確定的對象，只補問仍欠的資料。' } };
         let reference: string | undefined;
