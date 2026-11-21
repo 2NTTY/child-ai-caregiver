@@ -609,9 +609,12 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
             if (!(error instanceof FirestoreDomainError && error.code === 'summary_coverage_changed')) throw error;
           }
         }
+        // Specialist previews are a live projection from their independently authorised draft cache.
+        const durableResult: ProductAgentResult = { ...result, proposals: [] };
+        delete durableResult.specialistArtifacts;
         const saved: FirestoreAgentRun = { ...run, state: result.status, stopReason: result.stopReason,
           dataVersion: b.scope.storageEpoch + ':' + (prepared?.changeSeq ?? b.changeSeq),
-          result: { ...result, proposals: [] } };
+          result: durableResult };
         prepared?.commit(); write(b, saved); return true;
       });
     },

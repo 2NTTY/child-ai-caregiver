@@ -1,4 +1,4 @@
-import { SiteCompanion } from './companion/SiteCompanion';
+import { CompanionSlot } from './companion/CompanionViewport';
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProductionHome as useProduction } from "../production/useProductionHome";
 import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
+import { PendingReviewShortcut } from "./PendingReviewShortcut";
+import { TemporaryChatEntry } from "./TemporaryChatEntry";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { RightRail } from "./AppShell";
 
@@ -32,16 +34,16 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailOpen(false); }, [pathname, motionScope]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
-      <View style={styles.header}><CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+      <View style={styles.header}><TemporaryChatEntry compact /><CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
         brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"), "workspace")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
-        <View testID="header-actions" style={styles.actions}><NotificationBell />
+        <View testID="header-actions" style={styles.actions}><PendingReviewShortcut /><NotificationBell />
           <ToolbarIconButton quiet icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />
         </View>
       </View>
 
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
-    <View style={styles.content}>{children}<SiteCompanion /></View>
+    <View style={styles.content}>{children}<CompanionSlot /></View>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧資訊側欄" onRequestClose={() => setRailOpen(false)}>
       <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>

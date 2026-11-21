@@ -309,7 +309,7 @@ async function startupRecoveryHarness(route) {
   }
   function render(nextChild = child) {
     child = nextChild; const snapshot = owner.owner.getSnapshot();
-    ui.production({ identityKey: context().identityKey, scopeKey: currentScope(), selectedChildId: child, sharedChild: { target: null },
+    ui.production({ identityKey: context().identityKey, scopeKey: currentScope(), selectedChildId: child, sharedChild: { target: null }, account: { gate: 'ready' },
       recordsState: { auth: 'signedIn', online: true, children: [{ id: childA }, { id: childB }], childrenLoading: false,
         childrenError: null, childrenLoadedAt: '2026-10-22', selectedChildId: child }, controller: { reloadChildren: noop },
       chatState: { loading: false, loadedAt: '2026-10-22' }, chatController: { reloadMessages: noop },

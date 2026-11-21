@@ -198,6 +198,13 @@
       "sourceId": "resource-6c18c8d7a17495",
       "title": "保護兒童 你我有責",
       "url": "https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf",
+      "currentEdition": {
+        "publisherIndex": "https://www.swd.gov.hk/tc/pubsvc/family/fcw_info/fcwprocedure/fcwp_mdco/index.html",
+        "url": "https://www.swd.gov.hk/storage/asset/section/652/tc/Bilingual%20Leaflet_We%20All%20Have%20a%20Duty%20(March%202026).pdf",
+        "sha256": "0bf08a72f09cbda1ad5a848d7d2ce49adb6c1b7de58409b710f45cda7a9a3dc0",
+        "dateText": "March 2026",
+        "sourceAgeDefinition": "People under 18"
+      },
       "inventoryStatus": "pdf",
       "sha256": "afa57bcfc265dcec5c49d89958bc7ae4e0d3dd3dea251d1e33563cb2e6cea63c",
       "pages": 2,

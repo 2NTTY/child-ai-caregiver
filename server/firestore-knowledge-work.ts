@@ -1,4 +1,5 @@
 import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
+import { recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
 import { extractKnowledgePdf } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
 import type { DocumentReference, Transaction } from "@google-cloud/firestore";
@@ -17,6 +18,9 @@ import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.t
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
+import { firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
+import { campaign } from './knowledge-campaign-budget.ts';
+import { recordedScriptReviewStage } from './fhs-script-edition.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -25,6 +29,8 @@ const receiptSchema = z.strictObject({ observationHash: hash, state: z.literal("
 const workSchema = z.strictObject({
   request: backgroundKnowledgeRunRequestSchema, configHash: hash, publicationConfigHash:hash.optional(), reusedOrganizationFrom: hash.optional(), deadlineAtMs: time,
   windowed: z.literal(true).optional(),
+  firstDispatchFrom: hash.optional(),
+  windowRangeLimit: z.literal(8).optional(),
   quotaPhase:z.literal('model').optional(), waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
   lease: z.strictObject({ token: z.uuid(), untilMs: time }).nullable(),
   budget: backgroundKnowledgeWorkBudgetSchema, result: backgroundKnowledgeRunResultSchema.nullable(),
@@ -95,7 +101,53 @@ export function createFirestoreKnowledgeWork(options: Options) {
       return schema.parse(JSON.parse(plaintext));
     } catch { reject("knowledge_work_storage_invalid"); }
   }
+  async function readFailedScriptStage(raw: BackgroundKnowledgeRunRequest, pin: {
+    sourceId:string;operationFingerprint:string;observationHash:string;code:string;attemptKey:string;requestHash:string;
+  }) {
+      const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      if (request.watchId !== pin.sourceId || request.operationFingerprint !== pin.operationFingerprint || request.publishMode !== 'live')
+        reject('knowledge_script_review_stage_binding');
+      const root = ref('work', pin.operationFingerprint), stage = ref('model', pin.operationFingerprint, pin.attemptKey);
+      return database.runTransaction(async tx => {
+        const [work, model] = await tx.getAll(root, stage);
+        if (!work.exists || !model.exists) reject('knowledge_script_review_stage_missing');
+        const old = open(root, work.data(), workSchema), saved = open(stage, model.data(), stageSchema);
+        if (knowledgeReviewHash(old.request) !== knowledgeReviewHash(request) || old.lease || old.receipt || old.preparedHash
+          || old.result?.status !== 'candidate_held' || old.result.code !== pin.code || old.result.observationHash !== pin.observationHash
+          || old.budget.modelCalls !== 1 || saved.requestHash !== pin.requestHash) reject('knowledge_script_review_stage_binding');
+        return { state: saved.state, text: saved.text };
+      }, { readOnly: true });
+  }
   return {
+    /** Read the exact model stage of a commissioned public script with a settled, unsuccessful review. */
+    async inspectScriptReview(raw: BackgroundKnowledgeRunRequest) {
+      const pin = recordedScriptReviewStage(raw.watchId);
+      if (!pin) reject('knowledge_script_review_stage_binding');
+      return readFailedScriptStage(raw,pin);
+    },
+    async inspectCommunicationComparison(raw:BackgroundKnowledgeRunRequest,input:{system:string;user:string;attemptKey:string}) {
+      const pin=recordedCommunicationComparison;
+      if ('knowledge-review:'+knowledgeReviewHash({system:input.system,user:input.user}) !== input.attemptKey
+        || knowledgeReviewHash(input.attemptKey) !== pin.stageHash) reject('knowledge_script_review_stage_binding');
+      return readFailedScriptStage(raw,{sourceId:pin.sourceId,observationHash:pin.observationHash,operationFingerprint:pin.work,
+        code:'knowledge_review_failed',attemptKey:input.attemptKey,requestHash:knowledgeReviewHash(input)});
+    },
+    /** A terminal independent print reading remains inspectable after its lease expires. */
+    async inspectPrintedStage(raw: BackgroundKnowledgeRunRequest, input: {system:string; user:string; attemptKey:string}) {
+      const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      if (!/^knowledge-print-review:[0-9a-f]{64}$/u.test(input.attemptKey)) reject("knowledge_work_binding_changed");
+      const root = ref("work", request.operationFingerprint), stage = ref("model", request.operationFingerprint, input.attemptKey);
+      return database.runTransaction(async tx => {
+        const [record, saved] = await tx.getAll(root, stage);
+        if (!record.exists && !saved.exists) return null;
+        if (!record.exists || knowledgeReviewHash(open(root, record.data(), workSchema).request) !== knowledgeReviewHash(request))
+          reject("knowledge_work_binding_changed");
+        if (!saved.exists) return null;
+        const reading = open(stage, saved.data(), stageSchema);
+        if (reading.requestHash !== knowledgeReviewHash(input)) reject("knowledge_work_binding_changed");
+        return {state:reading.state, text:reading.text};
+      }, {readOnly:true});
+    },
     async readHeldStage(request: BackgroundKnowledgeRunRequest, revision: RetainedDraftRevision | BoundReviewedWindow, attemptKey: string, requestHash: string) {
       const priorRequest = { ...request, operationFingerprint: revision.operationFingerprint };
       const root = ref('work', revision.operationFingerprint), stageRef = ref('model', revision.operationFingerprint, attemptKey);
@@ -189,17 +241,22 @@ export function createFirestoreKnowledgeWork(options: Options) {
       }, { readOnly: true });
     },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
-      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
-      sameDayCapacity?: (tx: Transaction) => Promise<boolean>, retained?: RetainedDraftRevision) {
+      limits: { modelCalls: number; deadlineMs: number; maxUnits?: number; windowed?: true; windowRangeLimit?: 8; publicationConfigHash?:string }, reusedOrganizationFrom?: string,
+      sameDayCapacity?: (tx: Transaction) => Promise<boolean>, retained?: RetainedDraftRevision,
+      firstDispatch?: FirstDispatch & {verify:(tx:Transaction)=>Promise<void>}) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      if (firstDispatch && (reusedOrganizationFrom || retained || firstDispatchWorkId(firstDispatch.original)!==request.operationFingerprint))
+        reject('knowledge_first_dispatch_binding');
       if (reusedOrganizationFrom && knowledgeOrganizationRepairId(reusedOrganizationFrom) !== request.operationFingerprint)
         reject("knowledge_work_repair_binding");
       z.uuid().parse(leaseToken); hash.parse(configHash);
-      z.object({ modelCalls: z.number().int().min(1).max(limits.windowed ? 64 : 2), windowed: z.literal(true).optional(), publicationConfigHash:hash.optional(), deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
+      z.object({ modelCalls: z.number().int().min(1).max(limits.windowed ? 64 : 2), windowed: z.literal(true).optional(),
+        windowRangeLimit: limits.windowed ? workSchema.shape.windowRangeLimit : z.never().optional(), publicationConfigHash:hash.optional(),
+        deadlineMs: z.number().int().min(1000).max(300_000), maxUnits: z.number().int().min(2).max(258).optional() }).strict().parse(limits);
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
       function verify(row: Work) {
-        if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom || row.windowed !== limits.windowed
-          || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
+        if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom || row.firstDispatchFrom !== firstDispatch?.original || row.windowed !== limits.windowed
+          || row.windowRangeLimit !== limits.windowRangeLimit || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
           reject("knowledge_work_binding_changed");
         return row;
       }
@@ -247,6 +304,16 @@ export function createFirestoreKnowledgeWork(options: Options) {
           return row;
         }
         let priorBudget: BackgroundKnowledgeWorkBudget | undefined;
+        if (firstDispatch) {
+          const parentRef=ref('work',firstDispatch.original), prepared=ref('prepared',firstDispatch.original);
+          const charges=database.collection(namespace+'_knowledge_campaigns').doc(campaign).collection('attempts');
+          const [parent,candidate,head,tickets]=await Promise.all([tx.get(parentRef),tx.get(prepared),
+            tx.get(database.collection(namespace+'_knowledge_sources').doc(request.watchId)),tx.get(charges.where('sourceId','==',request.watchId).limit(1))]);
+          if (!parent.exists || candidate.exists || head.get('activeVersionId') || !tickets.empty
+            || !isUndispatchedParent(open(parentRef,parent.data(),workSchema),{...request,operationFingerprint:firstDispatch.original},firstDispatch.observation))
+            reject('knowledge_first_dispatch_binding');
+          await firstDispatch.verify(tx);
+        }
         if (reusedOrganizationFrom) {
           const oldRef = ref("work", reusedOrganizationFrom);
           const old = open(oldRef, (await tx.get(oldRef)).data(), workSchema);
@@ -258,7 +325,10 @@ export function createFirestoreKnowledgeWork(options: Options) {
             reject("knowledge_work_repair_binding");
           priorBudget = old.budget;
         }
-        const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}), ...(limits.windowed ? { windowed:true as const } : {}), ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
+        const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}),
+          ...(firstDispatch ? {firstDispatchFrom:firstDispatch.original} : {}),
+          ...(limits.windowed ? {windowed:true as const} : {}), ...(limits.windowRangeLimit ? {windowRangeLimit:limits.windowRangeLimit} : {}),
+          ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
           budget: priorBudget ?? { usedUnits: 0, maxUnits: limits.maxUnits ?? 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
         tx.create(workRef, seal(workRef, row)); return row;
       });

@@ -1,14 +1,30 @@
 # STATUS
 
-**2026-11-20 香港 23:40**　C2 本批 28 份原件已核實 1 張家長卡、9 份保留。《寶寶愛活動》的文件向量可匯出，引用逐字對上第 1 頁。C2 帳本 19 次請求已結算 US$0.733131；《僱員指引－母乳餵哺與工作相容》的程序觸及記憶體上限，正查原工作。其餘教材按原操作繼續。[分組進度](PLAN.md#fhs-c2-publication-lane) · [正式收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json)
+**2026-11-22 香港，本機驗收。** 個人來源卡優先顯示出版者分類。未知網站的教材亦可在原有整理及獨立審核中按原句提出新主題。《兩個信封》的本機模型提出「財務管理」，獨立審核保留引文、否決分類。受控接納個案另驗網站改分類後沿用原件及索引。NHS 及香港生長圖表已在家長畫面核對；正式 Gemini 效果及發布待驗。[逐站及語意分類證據](PLAN.md#registered-source-categories)
 
-**2026-11-20 香港 22:34**　正式機已恢復。C3 已核對 28 份教材、468 頁，只有 24 頁《奶瓶餵哺指引》有一次生成預留，尚待結算。28 份均未見生效卡，餘下 27 份等候正式機的製卡資源限制就緒。[C3 分組進度](PLAN.md#active) · [重啟後核對](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
+**2026-11-21 香港 22:14，本機家長驗收。** 《嬰兒的啼哭》登記及觀測後自動成為第十份原文，隔離發布後移入同一分類的正式列表。卡內入口待部署。21:23 的正式快照共有 156 個生效來源；本線九份原文均已點讀，七份仍待審適用條件或問卷結構，另兩份 504 原票已結算。[逐教材對照及家長查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
+
+**2026-11-21 香港，本機驗收。** 本人網站在 HTML 目錄改表格、Atom 改由首頁公布入口後，均能自行更新至助手可查的引文。私人卡持續讀不到原文時，家長可從卡內開啟原助手草稿或跳過同一缺口。正式發布待主聊天整合。[兩站實際引文及限制](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [卡內畫面](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
+
+**2026-11-22 香港 03:09 查庫**　61 套官方劇本共 1,695 段已保存。隔離家長按片名查回 52 套、1,312 段，包括新上架的 10 套母乳劇本。原向量票以 HTTP 400 結算 US$0，已解除 US$0.000308 預留。六個內容問題命中五個，《建立睡前常規》首位命中全部 48 段。《替寶寶換尿片》仍未命中。嬰兒用品八套待審逐項分齡操作，親子溝通一套待核已付費的比較回應。[逐套結果、正式票據及家長查找](artifacts/verification/FHS_SCRIPT_MOTHER_SETTLEMENT_20261122.json)
+
+**2026-11-22 香港，回答後討論。** 01:00 正式發布收據確認 Web、API 及 worker 已包含 #749。隔離家庭從原答開討論，四次真模型呼叫完成三席及主答，收合重開用量維持不變。正式站獨立瀏覽器停在登入頁，指定測試帳號按當時預算發起及收合仍待點按。舊截圖可辨認單次模型呼叫上限，未能配對原單。[正式站及舊單查核](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json) · [家長操作收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json)
+
+**2026-11-21 香港**　家長平台卡庫及本人參考資料以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。系列已發布，手機實際點按待驗。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026)
+
+**2026-11-22 香港 01:53**　首批 116 份 PDF 有 35 份家長可用，共 80 個已核實的向量及原頁引用。餘下 81 份已逐份對回原單及保留原因，12 份超過 20 頁。原 C 選定先驗 36 頁漫畫實頁 16。漫畫及 112 頁第四冊仍為零張供應商票據，漫畫原單的首次派送登記已通過本機驗證，正式閱讀和家長版本待交付。[全批逐份結果及原單](PLAN.md#active)
+
+**2026-11-21 香港 14:04**　C2 本批 28 份官方 PDF、464 頁已逐份對帳。8 張家長卡已生效，33 個所需向量全部可匯出，33 處引文均已核回原頁。當中 6 張沿用已有整理稿及獨立審核，新增生成 0 次。其餘 20 份中，13 份因共用餘額低於一次生成預留而暫停，5 份保留年齡、審核或頁面覆蓋問題，1 份等候原票據結算，1 份原工作中斷。共用帳本可預留 US$0.530590。[分組結果](PLAN.md#fhs-c2-publication-lane) · [28 份逐項收據](artifacts/verification/FHS_C2_PUBLICATION_20261120.json)
+
+**2026-11-21 香港 13:56**　C1 已核對 28 份教材、468 頁。家長卡庫可見 1 張聽力普查卡，已查回文件向量及第 4 頁引用。26 份候選保留，另有 1 份 192 頁原件因主機記憶體不足待辦。C1 的 11 筆請求全部已結算，合共 US$0.315907。[逐份結果及原頁證據](artifacts/verification/FHS_C1_PUBLICATION_20261120.json)
+
+**2026-11-21 香港 00:53**　C3 的 28 份教材、468 頁已逐份對帳。5 張正式家長卡已核實 10 個向量及引用實頁。16 份因內容核對保留，另 2 份因審核結果未明或可用預留不足而保留。5 份原生成預留仍待結算。全活動可用 US$0.531586。[C3 分組結果](PLAN.md#active) · [逐份收據及費用](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json)
 
 **2026-11-20 香港 13:49**　早上 09:00 快照內的 24 份待審教材已有十份上架、十二份保留、兩份 504 隔離。十份已從正式卡庫核對生效及匯出版本。13:44 的正式發布收據為 `r44682020469-1`，API 及 worker 均為 `fa1bdecb`。另計的待向量 PDF 已於 12:32 發布。[24 份逐項結果與限制](artifacts/verification/FHS_HELD_PUBLICATION_20261120.json) · [首批原快照](artifacts/verification/FHS_INITIAL_CAMPAIGN_QUOTA_20261120.json) · [正式版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44682020469)
 
 **2026-11-20 香港 14:15**　09:00 清單的 116 份 PDF 已核實 18 份正式家長卡及 18 個文件向量。17 份完整摘錄逐字命中原頁，另 1 份海報引文在兩份獨立轉錄均命中。13 份保留，1 份已有整理稿、等候獨立審核。其餘 84 份逐份查無模型用量或生效版，當中 4 份已恢復來源觀察。今日維護 300／300 次；原 C 已安排香港 11 月 21 日 08:00:03 沿原操作接續。另已核回同批 C2 二十頁圖表的兩次閱讀、兩個向量及原頁。[逐份狀態及版本](artifacts/verification/FHS_C3_PDF_REVIEW_20261120.json) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44684090457)
 
-**2026-11-20 香港**　Web、API、worker 已發布至 `07d6d5c2`，Android 版本 8 的 preview 通道回傳同版 OTA。Edge 已驗從待辦頁向角色提問、在主聊天展開三方討論，並從討論點讀同版教材。C 首批收據為 55 份已發布、31 份保留、1 份等候每日額度、164 份待處理。手機實際操作待驗。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44620294763) · [跨功能收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json) · [首次入庫收據](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)
+**2026-11-21 香港**　全身 Live2D 互動已隨 `883426b6` 上線，Android 版本 8 的 preview 通道已回傳同版更新。桌面及窄屏已驗角色避開待辦狀態及聊天首行。從待辦向角色提問、回主聊天展開三方討論及點讀同版教材的流程已在 Edge 驗通。實機手勢及鍵盤待驗。[畫面與量度](artifacts/verification/ZUNDAMON_INTERACTION_20261120/layout-20261121/receipt.json) · [跨功能及發布收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
 
 **2026-11-19 15:12 香港，正式交付。** 來源庫及聊天均可免費加入已發布平台卡。平台管理五個家庭健康服務來源，私人來源的整理與新查詢向量沿本人密鑰。原站 Web、API、worker 同版，站外健康核對通過。Android preview 已向版本 8 提供同一套產品畫面。付費網站的真實帳戶和本次手機點按留待體驗驗收。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44475842261) · [Android 更新](https://expo.dev/accounts/2ntty/projects/yuyoufang/updates/bc937464-28b8-40ea-ade7-a83d1c763966) · [平台卡驗收](artifacts/verification/REQ006_FREE_PLATFORM_FOLLOW_20261119.json)
 

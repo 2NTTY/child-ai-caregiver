@@ -519,6 +519,10 @@ test("7. [R008-S13, R008-S14 & R008-S15] E2E Firestore ProductAgent + prepare_fa
   assert.equal(summary.requiresFormalConfirmation, true);
   assert.equal(summary.verification.passed, true);
   assert.deepEqual(summary.verification.unverifiedChecks, []);
+  const durableRun = await authority.runTransaction("parent", child.id, b => agents.runs.read(b, result.runId));
+  assert.equal(durableRun.result?.specialistArtifacts, undefined, "Run storage must not duplicate private preview metadata");
+  assert.equal(durableRun.result?.text, result.text);
+  assert.deepEqual((await agents.store.get("parent", child.id, result.runId))?.specialistArtifacts, [summary]);
 
   // Family document version must remain untouched (v1, no auto formal save).
   assert.equal((await documents.get("parent", child.id, createdDoc.id))?.version, createdDoc.version);
@@ -592,7 +596,7 @@ test("8. [R008-S14, R008-S15 & R008-S17] Document version change yields 409 docu
   const built = buildFamilyArtifactHtml(projectDocumentExport(doc.current, { snapshotId: doc.current.id, snapshotVersion: doc.current.version, authorityVersion: described.authorityVersion, purpose: "school", includeSources: true, includeRevision: false }));
   const report = await createSharpVisualArtifactVerifier().verifyRenderedVisuals({ format: "html", artifactVersion: 1, artifactHash: built.hash, bytes: built.bytes });
   const artifactId = randomUUID();
-  await agents.store.stageSpecialistDraft!(claim.scope, claim.runId, {
+  const stagedInput: Parameters<NonNullable<typeof agents.store.stageSpecialistDraft>>[2] = {
     artifactId,
     sourceQuote: "請產生準備單預覽",
     bytes: built.bytes,
@@ -618,7 +622,24 @@ test("8. [R008-S14, R008-S15 & R008-S17] Document version change yields 409 docu
       published: false,
       requiresFormalConfirmation: true,
     },
-  });
+  };
+  const withSize = (size: number) => {
+    const bytes = Buffer.alloc(size, 1), id = randomUUID();
+    const artifactHash = createHash("sha256").update(bytes).digest("hex");
+    return { ...stagedInput, artifactId: id, bytes, summary: {
+      ...stagedInput.summary, artifactId: id, byteLength: bytes.byteLength, artifactHash,
+      verification: { ...stagedInput.summary.verification, artifactHash },
+    } };
+  };
+  const nearLimit = withSize(128 * 1024);
+  await agents.store.stageSpecialistDraft!(claim.scope, claim.runId, nearLimit);
+  const readNearLimit = await agents.store.readSpecialistDraft!("parent", child.id, claim.runId, nearLimit.artifactId);
+  assert.deepEqual(readNearLimit?.bytes, nearLimit.bytes);
+  const oversize = withSize(128 * 1024 + 1);
+  await assert.rejects(() => agents.store.stageSpecialistDraft!(claim.scope, claim.runId, oversize),
+    (error: any) => error.status === 413 && error.code === "specialist_draft_too_large");
+  assert.equal(await agents.store.readSpecialistDraft!("parent", child.id, claim.runId, oversize.artifactId), null);
+  await agents.store.stageSpecialistDraft!(claim.scope, claim.runId, stagedInput);
   const initialResult: ProductAgentResult = {
     runId: claim.runId, provenance: null, status: "completed", stopReason: null, text: "已產生 HTML 草稿預覽。",
     citations: [], retrievalMode: "not_used", tools: [{ name: SPECIALIST_ARTIFACT_TOOL_NAME, status: "succeeded", reference: artifactId }],
@@ -645,7 +666,7 @@ test("8. [R008-S14, R008-S15 & R008-S17] Document version change yields 409 docu
   assert.equal(methodRes.status, 405);
 
   const projectedResult = await agents.store.get("parent", child.id, claim.runId);
-  assert.equal(projectedResult?.specialistArtifacts?.[0]?.contentState, "invalidated");
+  assert.equal(projectedResult?.specialistArtifacts?.find(item => item.artifactId === artifactId)?.contentState, "invalidated");
 
   // UI transpilation check: preserves {tool.nameLabel} and renders invalidated vs ready draft button state.
   const runViewSrc = readFileSync(path.join(root, "frontend/src/components/agent/AgentRunView.tsx"), "utf8");
@@ -701,18 +722,26 @@ test("8. [R008-S14, R008-S15 & R008-S17] Document version change yields 409 docu
     "../../motion": { MotionDisclosure: "MotionDisclosure", MotionFeedback: "MotionFeedback", MotionReveal: "MotionReveal" },
     "./proposal-presentation": { proposalContextLabel: () => "", proposalDetailGroups: () => ({ visible: [], supporting: [] }), proposalDetailIcon: () => null, proposalDetailIsChange: () => false },
   });
-  let openedId = "";
-  const viewModel = projectAgentRun(projectedResult!, child.id, "2026-11-21T00:00:00Z");
-  const tree = AgentRunView({
-    model: { online: true, readState: "ready", busy: null, run: viewModel, loadedAt: null, sharedConfirmed: {}, pendingDecision: null, notice: null },
-    actions: { refresh() {}, setSharedConfirmation() {}, decide() {}, retryOriginal() {}, openSource() {}, openSpecialistArtifact: (id: string) => { openedId = id; } },
+  const opened: Array<[string, string]> = [];
+  const viewModel = projectAgentRun({ ...projectedResult!,
+    specialistArtifacts: projectedResult?.specialistArtifacts?.filter(item => item.artifactId === artifactId) }, child.id, "2026-11-21T00:00:00Z");
+  const render = (run: typeof viewModel) => AgentRunView({
+    model: { online: true, readState: "ready", busy: null, run, loadedAt: null, sharedConfirmed: {}, pendingDecision: null, notice: null },
+    actions: { refresh() {}, setSharedConfirmation() {}, decide() {}, retryOriginal() {}, openSource() {},
+      openSpecialistArtifact: (id: string, runId: string) => { opened.push([id, runId]); } },
   });
+  const tree = render(viewModel);
   collectButtons(tree);
   assert.ok(collectText(tree).includes("草稿預覽 · 尚未正式保存或發布"));
+  assert.equal(buttons.find(b => b.label === "開啟預覽")?.disabled, true, "invalidated draft button must be disabled");
+  buttons.length = 0;
+  const ready = render({ ...viewModel,
+    specialistArtifacts: viewModel.specialistArtifacts?.map(item => ({ ...item, contentState: "ready" })) });
+  collectButtons(ready);
   const previewBtn = buttons.find(b => b.label === "開啟預覽");
-  assert.ok(previewBtn && previewBtn.disabled === true, "invalidated draft button must be disabled");
-  previewBtn.onPress?.();
-  assert.equal(openedId, artifactId);
+  assert.ok(previewBtn && previewBtn.disabled === false, "ready draft button must be enabled");
+  previewBtn.onPress();
+  assert.deepEqual(opened, [[artifactId, claim.runId]]);
 });
 
 test("9. [R008-S16 & R008-S17] Bounded repair cap, shared root budget accounting, and single-flight lock prevent runaway sub-delegation", async t => {

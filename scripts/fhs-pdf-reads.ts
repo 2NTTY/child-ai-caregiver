@@ -38,9 +38,10 @@ export async function resolveFhsPdfObservation(refresh: Observations, job: Refre
 
 export async function fhsPdfParserBinding() {
   const pkg = JSON.parse(await readFile(new URL(import.meta.resolve('pdfjs-dist/package.json')), 'utf8'));
-  const sources = await Promise.all(['knowledge-pdf', 'knowledge-pdf-worker', 'knowledge-pdf-glyphs', 'knowledge-pdf-quotes'].map(
+  const fontParser = JSON.parse(await readFile(new URL(import.meta.resolve('pdf-lib/package.json')), 'utf8'));
+  const sources = await Promise.all(['knowledge-pdf', 'knowledge-pdf-worker', 'knowledge-pdf-font-maps', 'knowledge-pdf-glyphs', 'knowledge-pdf-quotes'].map(
     name => readFile(new URL('../server/' + name + '.ts', import.meta.url), 'utf8')));
-  return sha256(Buffer.from(JSON.stringify([pkg.version, ...sources.map(code => code.replaceAll('\r\n', '\n'))])));
+  return sha256(Buffer.from(JSON.stringify([pkg.version, fontParser.version, ...sources.map(code => code.replaceAll('\r\n', '\n'))])));
 }
 
 export function fhsPdfReadKey(hash: string, { startPage = 1, pageLimit = 8, includePagePdf = false }: KnowledgePdfOptions) {

@@ -30,6 +30,7 @@ GUARD=frontend/scripts/family-cleanup-network-guard.mjs
 CONTRACT=scripts/ci/summary-progress-contract.mjs
 TEST_FILES=(
   tests/req008-acceptance-closeout.test.ts
+  tests/specialist-preview-wiring.test.mjs
   tests/req008-specialist-artifact-renderer.test.ts
   tests/req008-context-and-blindspot-discovery.test.ts
   tests/req008-highrisk-policy-and-cleanup.test.ts
@@ -44,8 +45,12 @@ TEST_FILES=(
   tests/agent-review-obligation.test.ts
   tests/product-agent-execution-contract.test.ts
   tests/agent-budget.test.ts
+  tests/firestore-erasure-export.test.ts
+  tests/firestore-restore.test.ts
+  tests/firebase-recovery-operator.test.ts
+  tests/firestore-summary-erasure-cleanup.test.ts
 )
-TEST_CASES=(12 11 9 9 6 14 18 1 1 1 1 44 17 8 9)
+TEST_CASES=(12 5 11 9 9 6 14 18 1 1 1 1 44 17 8 9 1 7 7 3)
 
 for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   tsconfig.json tsconfig.server.json frontend/tsconfig.json \
@@ -66,6 +71,10 @@ for source in "${TEST_FILES[@]}" "$GUARD" "$CONTRACT" \
   frontend/src/agent-view-model.ts \
   frontend/src/production/agent-projection.ts \
   frontend/src/components/agent/AgentRunView.tsx \
+  frontend/src/production/ProductionProvider.tsx \
+  frontend/src/platform/specialist-artifact-preview.ts \
+  frontend/src/platform/specialist-artifact-preview.native.ts \
+  frontend/src/platform/specialist-artifact-preview-contract.ts \
   PLAN.md docs/REQUIREMENTS_BACKLOG.md WORKLOG.md; do
   test -f "$source" && test ! -L "$source"
   git ls-files --error-unmatch -- "$source" >/dev/null

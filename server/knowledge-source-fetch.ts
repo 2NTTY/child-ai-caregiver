@@ -1,7 +1,9 @@
 import { load } from "cheerio";
 import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
-import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalOriginal } from './platform-materials.ts';
+import { readLinkedOfficialPages } from './fhs-source-forms.ts';
+import { oralPrint,verifiedOralExcerpts } from './fhs-verified-oral-excerpts.ts';
+import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalEdition, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
@@ -45,6 +47,11 @@ export async function observeKnowledgeLeaflet(definition: SourceWatchDefinition,
     const sha256 = createHash('sha256').update(original).digest('hex');
     if (large.bytes !== original.length || large.sha256 !== sha256)
       return { status: 'failed', reason: 'response', pdfEditionReview: { reason: 'new_fingerprint', sha256, bytes: original.length } };
+  }
+  if (definition.id === oralPrint.sourceId) {
+    const printed = verifiedOralExcerpts(definition,createHash('sha256').update(original).digest('hex'),oralPrint.totalPages,title,revision);
+    if (printed) return {status:'ok',readMethod:'fhs-independent-printed-excerpts/1',
+      original:{mimeType:'application/pdf',bytes:original},items:[printed]};
   }
   let batch = await reader(original, { startPage: 1, pageLimit: 8, ...(large ? { expectedHash: large.sha256 } : {}), signal });
   const { fileHash, totalPages } = batch;
@@ -140,6 +147,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {
+          if (approvedHash) revision = reviewedExternalEdition(definition.url, approvedHash)?.dateText ?? revision;
           const original = await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
           const landing = definition.leafletPage === definition.url && fhsPdfMediaPages.get(definition.url);
           if (original.status === 'ok' && landing) {
@@ -154,7 +162,14 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
               }
             } catch { signal.throwIfAborted(); }
           }
-          return original.status === 'ok' && mediaLinks ? { ...original, mediaLinks } : original;
+          if (original.status !== 'ok' || !mediaLinks) return original;
+          try {
+            const { links, pages } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+            return { ...original, mediaLinks: links, mediaPages: pages };
+          } catch {
+            signal.throwIfAborted();
+            return { ...original, mediaLinks };
+          }
         }
         const parsed = await (adapters.pdfReader ?? extractKnowledgePdf)(result.body, { startPage: window!.startPage,
           pageLimit: window!.endPage - window!.startPage + 1, signal });
@@ -168,6 +183,11 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (definition.kind === 'page' && definition.selector && new URL(definition.url).hostname === 'www.fhs.gov.hk'
         && (result.url ?? definition.url) === definition.url) {
         mediaLinks = mediaLinksFromPage(load(html), definition.selector, definition.url);
+        if (mediaLinks?.length) {
+          const { links, pages, scripts } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+          if (scripts.length) items[0]!.scripts = scripts;
+          return { status: 'ok', mediaLinks: links, mediaPages: pages, items };
+        }
       }
       return { status: "ok", ...(mediaLinks ? { mediaLinks } : {}), ...(definition.id === "chp-recent"
         ? { original: { mimeType: "application/rss+xml" as const, bytes: result.body } } : {}), items };

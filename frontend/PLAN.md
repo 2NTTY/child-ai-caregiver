@@ -4,9 +4,21 @@
 
 <a id="active"></a>
 
+**角色切頁閃爍（2026-11-22，本機正式模式 Web）。** 窄屏從待辦進入助手頁，原版將舊工作區高度套到新工具列，角色先放大至 690 px。第 10 個合成畫格只餘腳下陰影，連續 8 格看不到角色，iframe 仍在。統一由頁面提供尺寸後比例恢復，但 WebGL 畫布改尺寸時仍有 6 格空白。現由同一組版面尺寸控制位置及命中區，Web 只縮放固定畫布。相同五次切頁在窄屏 212 格及桌面 131 格都保留可見角色和原 WebGL 實例。另實際保存兩則本機測試訊息，待辦帶原項目，關注頁沿用同一孩子並清除舊項目。正式站及 Android 發布交主聊天。[首個空白畫格](verification/companion-route-2026-11-22/first-missing.jpg) · [修正前慢放](verification/companion-route-2026-11-22/touch-before.webp) · [修正後慢放](verification/companion-route-2026-11-22/touch-after.webp) · [桌面慢放](verification/companion-route-2026-11-22/desktop-after.webp) · [逐格量度](verification/companion-route-2026-11-22/receipt.json)
+
+**Zundamon 對話表情及臉旁氣泡（2026-11-22）。** 送出時點頭，等候小點在臉頰旁原位換成短答或長答開首。空白輸入列和有字時的送出共用同一按鈕位置。桌面 1280 × 800 及觸控 390 × 844 各以連續 20 幀驗收，窄屏把可視區收至 510 px。兩端從等候到長答，輸入列及角色位置均無位移；角色靠左右兩邊、實際錄音時的聆聽、保留下一句及返回安靜助手頁均已核對。角色說話中途切換系統「減少動畫」時，實際嘴形參數回到零並停止更新。每端兩則文字及一段直接送出的語音保存到原孩子和原待辦，試聽後捨棄為零上傳。回覆來自本機合成資料，咪高峰及鍵盤可視區以 Edge 模擬，真機待驗。發布交主聊天。[桌面連續畫面](verification/zundamon-dialogue-2026-11-22/desktop.webp) · [窄屏連續畫面](verification/zundamon-dialogue-2026-11-22/touch.webp) · [桌面量度](verification/zundamon-dialogue-2026-11-22/desktop.json) · [窄屏量度](verification/zundamon-dialogue-2026-11-22/touch.json)
+
+**角色旁輸入及語音（2026-11-21）。** 工作頁點角色展開單一輸入框；本輪回答留在身旁，開啟助手頁可讀回同一則全文。咪高峰一次點按即開始，錄製中可直接送出，亦可按耳機先試聽或捨棄。桌面和窄屏觸控均以本地登入測試孩子及已保存待辦驗收；每端各保存一則文字和一段語音。兩端實測暫緩原保存期間即時回顯、清空輸入並保留下一題草稿；回答出現後移除問題副本。取消及試聽期間零上傳，錄製中直接送出只上傳一次。長文來自本地測試資料，錄音經 Edge 模擬咪高峰、正式上傳及保存流程。原生裝置待驗，正式發布由主聊天整合。[桌面氣泡](verification/companion-speech-2026-11-21/desktop-reply.png) · [觸控試聽](verification/companion-speech-2026-11-21/touch-preview.png) · [桌面紀錄](verification/companion-speech-2026-11-21/desktop.json) · [窄屏紀錄](verification/companion-speech-2026-11-21/touch.json)
+
+**小助手及完整對話的回覆狀態（2026-11-21）。** 兩個入口共用一行狀態。普通提問顯示「正在回覆…」，收到同一題的具體進度才換字，已保存的失敗原因留在該則回答。單一孩子省去副題，多孩或從共享空間選定私人對話時顯示孩子稱呼。本機 Edge 從待辦小窗送出「你是誰」，桌面和窄屏查看同一原題，重開後查回失敗結果。正式發布交主聊天。[桌面小窗](verification/chat-turn-status-2026-11-21/desktop-companion.png) · [窄屏小窗](verification/chat-turn-status-2026-11-21/compact-companion.png) · [驗收紀錄](verification/chat-turn-status-2026-11-21/receipt.json)
+
+**桌面助手入口（2026-11-21）。** 已復原齒輪設定正上方的黃色「與 Agent 對話」。本機 Edge 在 1280 × 600 捲動側欄後，兩個入口的位置保持固定。390 × 844 由底部「助手」返回同一段對話，桌面及窄屏均保留未送出的草稿。正式發布交主聊天。[短視窗畫面](verification/desktop-agent-entry-2026-11-21/desktop-1280x600.png) · [座標及驗收](verification/desktop-agent-entry-2026-11-21/receipt.json)
+
 **記憶頁與聊天引用（2026-11-19）。** 短期脈絡以待續事項呈現，長期記憶按事實逐條核對。回答下每項引用各有一張小卡，顯示文件、已知頁碼及能與已讀原文對上的摘錄。點卡開啟當時版本，可再開同版 PDF。
 
-**參考資料來源卡（2026-11-19）。** 系列封面顯示名稱、文件數與使用狀態。開卡後先看文件，設定及匯出放在另一頁籤。本機瀏覽器以已發布文件核對版本展開及聊天連結，再以四系列樣本核對 1440／390／320 px 的三／二／一欄排列。
+**家長參考資料頁（2026-11-21，PR #752 已合併）。** 「目前的卡」合併已啟用的平台及本人來源，下方保留「未啟用的個人卡」。平台卡可在右上角列表加入；寫入並讀回後關窗，把焦點移到該卡。平台與個人來源各自讀完所有分頁。已用本機正式 Web／API、跨兩頁的十二份教材及三張個人卡核對加入、重開、停用、再加入、單份固定版本，以及第二頁讀取失敗後重試。[驗收紀錄](verification/source-library-20261121/browser.json) · [390 px 混合清單](verification/source-library-20261121/current-390.png) · [1280 px 平台卡列表](verification/source-library-20261121/store-1280.png)
+
+**衛生署兒童健康教材閱讀（2026-11-21）。** 標題開原文，展開後按官方題名列出影音及已核實的文字稿連結。有來源日期才顯示；個別教材的固定版本在「設定與匯出」處理。本機 Edge 以 C2 候選 v5 目錄核對《奶瓶餵哺指引》的四個官方題名和四個劇本入口，1280 及 390 px 均由清單成功開啟文字稿。相同卡以 v4 讀取時保留四個原連結。新版家長頁與 C2 目錄待整合發布。[桌面](verification/parent-material-reading-20261121/reading-1280.png) · [窄屏](verification/parent-material-reading-20261121/reading-390.png) · [版本及瀏覽器結果](verification/parent-material-reading-20261121/browser.json) · [早前分類及採用驗收](verification/fhs-compact-material-list-20261121/browser.json)
 
 **管理後台與 REQ-005。** 維護者在正式站見到「目前沒有用量告警」。首宗真人收件仍待實際事件。管理首頁改為先讀告警與分項用量，AI 設定、帳戶邀請、知識管理和通知示範各有分頁。以本機合成管理員核對桌面和窄屏、切頁保留設定草稿及重新驗證入口。正式用量政策和收據沿[根驗收表](../PLAN.md#req005-closeout01)追蹤。
 

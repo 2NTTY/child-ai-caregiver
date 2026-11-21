@@ -11,7 +11,7 @@ import {
   type OfficialHelpId,
 } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
-import type { ChatReplyState, ChatMessage, ChatSendOptions } from "../shared/chat.ts";
+import { isChatMode, resolveChatMode, type ChatMode, type ChatReplyState, type ChatMessage, type ChatSendOptions } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
 
 type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" | "reply_failed";
@@ -22,6 +22,8 @@ export interface ChatDraft {
   nextText?: string;
   pageContext?: ChatPageContext;
   retryOriginalSelection?: boolean;
+  /** Mode sent with the original write. Keep it when reconciling or retrying that write. */
+  sentChatMode?: ChatMode;
   file?: Pick<ChatFileMessageReference,"id"|"version">;
   voice?: Pick<VoiceMessageReference,"id"|"version">;
   photo?: Pick<PhotoMessageReference,"id"|"version">;
@@ -35,6 +37,8 @@ export interface ChatDraft {
 }
 
 export interface ChatState {
+  /** Local presentation until the original write has a verified receipt. */
+  outgoing?: { childId: string; text: string; attachmentLabel?: string };
   userId: string | null;
   online: boolean;
   selectedChildId: string | null;
@@ -45,18 +49,32 @@ export interface ChatState {
   loadingOlder: boolean;
   cancelling: boolean;
   cancelAcceptedFor?: string;
-  queuedTextAfter?: string;
+  queuedText?: { afterMessageId: string; pageContext?: ChatPageContext; chatMode: ChatMode };
   cancelNotice: string | null;
   loadedAt: string | null;
   error: string | null;
   available: boolean | null;
   usage: ChatUsage | null;
   drafts: Record<string, ChatDraft>;
+  chatModes?: Record<string, ChatMode>;
+  modeSwitchedDuringReply?: { messageId: string; from: ChatMode; to: ChatMode } | null;
   busy: "save" | "reply" | null;
   remoteReply?: ChatReplyState | null;
   replyingMessageId: string | null;
   replyError: string | null;
   feedback?: (AgentProgress & { cards: OfficialHelpId[]; sources: AgentProgressSource[] }) | null;
+}
+
+type AttachmentKind = "voice" | "file" | "photo";
+export interface ChatAttachmentUpload {
+  kind: AttachmentKind;
+  label: string;
+  prepare(): Promise<{ id: string; version: number } | null>;
+}
+
+export function chatDraftIsSubmitted(chat: ChatState, draft?: ChatDraft): boolean {
+  return !!chat.outgoing && chat.outgoing.childId === chat.selectedChildId
+    || !!draft?.savedUserMessageId && (draft.phase === "replying" || draft.phase === "reply_failed");
 }
 
 interface RequestScope {
@@ -93,15 +111,15 @@ const SESSION_CHANGED = CHAT_CLIENT_COPY.sessionChanged;
 const UNKNOWN_SAVE = CHAT_CLIENT_COPY.unknownSave;
 
 function emptyDraft(): ChatDraft {
-  return { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null, notice: null, knownIds: [] };
+  return { text: "", sentChatMode: undefined, voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null, notice: null, knownIds: [] };
 }
 
 function initialState(online: boolean): ChatState {
   return {
     userId: null, online, selectedChildId: null, messages: [], limit: 100, loading: false,
     nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null,
-    loadedAt: null, error: null, available: null, usage: null, drafts: {},
-    busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null,
+    loadedAt: null, error: null, available: null, usage: null, drafts: {}, chatModes: {}, modeSwitchedDuringReply: null,
+    busy: null, outgoing: undefined, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null,
   };
 }
 
@@ -120,6 +138,7 @@ function childAccessDenied(error: unknown): boolean {
 }
 
 function saveErrorMessage(error: unknown): string {
+  if (error instanceof ChatApiError && error.onlineCode === 'chat_mode_unavailable') return '目前不支援「只是聊天」模式，訊息未有傳送。';
   if (error instanceof ChatApiError && error.onlineCode === 'selected_item_changed') return '所選項目已更新或無法讀取。請重開詳情再送出。';
   if (error instanceof ChatApiError && error.code === "invalid_input") return CHAT_CLIENT_COPY.saveInvalidInput;
   if (error instanceof ChatApiError && error.code === "not_found") return CHAT_CLIENT_COPY.saveNotFound;
@@ -191,7 +210,8 @@ export class ChatController {
   }
 
   private abortRequests(): void {
-    if (this.state.queuedTextAfter || this.state.cancelAcceptedFor) this.update({ queuedTextAfter: undefined, cancelAcceptedFor: undefined });
+    if (this.state.queuedText || this.state.cancelAcceptedFor || this.state.outgoing)
+      this.update({ queuedText: undefined, cancelAcceptedFor: undefined, outgoing: undefined });
     this.view += 1;
     for (const controller of this.requests) controller.abort();
     this.requests.clear();
@@ -212,7 +232,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null, error: null,
-        replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
+        replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
     }
     return true;
   }
@@ -227,11 +247,13 @@ export class ChatController {
     this.forgottenChildIds.add(childId);
     const drafts = { ...this.state.drafts };
     delete drafts[childId];
+    const chatModes = { ...(this.state.chatModes ?? {}) };
+    delete chatModes[childId];
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
-      this.update({ drafts, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
-    } else this.update({ drafts });
+      this.update({ drafts, chatModes, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
+    } else this.update({ drafts, chatModes });
   }
 
   reconcileChildren(childIds: string[], pendingDeletionId: string | null): void {
@@ -241,7 +263,7 @@ export class ChatController {
     for (const childId of present) {
       if (childId !== pendingDeletionId) this.forgottenChildIds.delete(childId);
     }
-    const known = new Set([...Object.keys(this.state.drafts),
+    const known = new Set([...Object.keys(this.state.drafts), ...Object.keys(this.state.chatModes ?? {}),
       ...(this.state.selectedChildId ? [this.state.selectedChildId] : []), ...this.blockedChildIds]);
     for (const childId of known) {
       if (!present.has(childId)) this.forgetChild(childId);
@@ -308,7 +330,7 @@ export class ChatController {
       }
       this.abortRequests();
       this.update({ selectedChildId: childId, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null, modeSwitchedDuringReply: null });
       if (childId && online) {
         void this.reloadMessages();
         void this.refreshMetadata();
@@ -319,11 +341,41 @@ export class ChatController {
     }
   }
 
+  getChatMode(childId: string | null = this.state.selectedChildId): ChatMode {
+    return resolveChatMode(childId ? this.state.chatModes?.[childId] : undefined);
+  }
+
+  setChatMode(mode: ChatMode): void {
+    const childId = this.state.selectedChildId;
+    if (!this.state.userId || !childId || !isChatMode(mode)) return;
+    const previous = this.getChatMode(childId);
+    if (previous === mode) return;
+    const activeReplyMessageId = this.state.busy === "reply"
+      ? this.state.replyingMessageId
+      : this.state.remoteReply?.status === "running"
+        ? this.state.remoteReply.messageId
+        : null;
+    const activeMessage = this.state.messages.find(message => message.id === activeReplyMessageId && message.role === "user");
+    const priorNotice = this.state.modeSwitchedDuringReply;
+    const originMode = activeMessage ? resolveChatMode(activeMessage.chatMode)
+      : priorNotice?.messageId === activeReplyMessageId ? priorNotice.from : previous;
+    this.update({
+      chatModes: { ...(this.state.chatModes ?? {}), [childId]: mode },
+      modeSwitchedDuringReply: activeReplyMessageId && originMode !== mode
+        ? { messageId: activeReplyMessageId, from: originMode, to: mode }
+        : null,
+    });
+  }
+
   setText(text: string): void {
     const childId = this.state.selectedChildId;
-    if (!this.state.userId || !childId || this.state.busy === "save") return;
+    if (!this.state.userId || !childId) return;
+    if (this.state.busy === "save") {
+      if (this.state.outgoing?.childId === childId) this.updateDraft(childId, { nextText: text });
+      return;
+    }
     const draft = this.state.drafts[childId] ?? emptyDraft();
-    if (this.state.queuedTextAfter) this.update({ queuedTextAfter: undefined });
+    if (this.state.queuedText) this.unqueueNextText();
     if (draft.phase === "reply_failed" && this.state.busy === null && this.state.remoteReply?.status !== "running") {
       this.startNewMessage();
       this.updateDraft(childId, { text, notice: null });
@@ -375,6 +427,7 @@ export class ChatController {
     this.update({ loading: true, error: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
+      let modeMismatchedReceipt = false;
       if (this.api.reconcilePending && this.api.hasPendingOnline?.()) {
         const receipt = await this.api.reconcilePending(scope.controller.signal, scope.userId);
         if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
@@ -383,7 +436,13 @@ export class ChatController {
           if (target) {
             const value = receipt.result as { message?: ChatMessage } | null;
             const message = value?.message;
-            if (message?.childId === target && message.authorUserId === scope.userId && message.role === "user") {
+            const originalMode = this.state.drafts[target]?.sentChatMode;
+            if (message?.childId === target && message.authorUserId === scope.userId && message.role === "user"
+              && originalMode !== undefined && resolveChatMode(message.chatMode) !== originalMode) {
+              this.updateDraft(target, { phase: "checked", savedUserMessageId: null, candidateMessageId: null, knownIds: [],
+                notice: "原操作回報的模式不一致，沒有要求 AI 回覆。請核對聊天記錄。" });
+              modeMismatchedReceipt = target === childId;
+            } else if (message?.childId === target && message.authorUserId === scope.userId && message.role === "user") {
               this.updateDraft(target, { phase: "reply_failed", savedUserMessageId: message.id, candidateMessageId: null,
                 notice: "Server 已確認原訊息保存；尚未要求 AI 回覆，可按需要繼續。", knownIds: [] });
             } else this.updateDraft(target, { text: "", voice: undefined, file: undefined, photo: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null,
@@ -427,6 +486,7 @@ export class ChatController {
                 loadedAt: new Date().toISOString(),
                 remoteReply: null,
                 replyError: null,
+                modeSwitchedDuringReply: null,
               });
             }
           }
@@ -440,7 +500,7 @@ export class ChatController {
         if (!this.current(scope)) return;
       } else if (!this.state.remoteReply || !page.messages.some(row => row.role === "model"
         && row.inReplyTo === this.state.remoteReply!.messageId && row.agentRunId === this.state.remoteReply!.runId)) {
-        this.update({ remoteReply: null, replyError: null });
+        this.update({ remoteReply: null, replyError: null, modeSwitchedDuringReply: null });
       }
       const draft = this.state.drafts[childId];
       const latestTurn = [...authoritativePage.messages].reverse().find(item => item.role === "user");
@@ -475,12 +535,13 @@ export class ChatController {
           this.update({ remoteReply: outcome.remoteReply });
         }
       }
-      if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
+      if (!modeMismatchedReceipt && (draft?.phase === "save_unknown" || draft?.phase === "checked")) {
         if (this.api.reconcilePending) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: null,
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
         const matches = authoritativePage.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
+          && resolveChatMode(item.chatMode) === resolveChatMode(draft.sentChatMode)
           && item.discussion === draft.discussion && sameChatPageContext(item.pageContext, draft.pageContext) && item.text === draft.text && item.voice?.id === draft.voice?.id && item.file?.id === draft.file?.id && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
@@ -523,6 +584,7 @@ export class ChatController {
       this.update({
         remoteReply: null,
         replyError: null,
+        ...(this.state.modeSwitchedDuringReply?.messageId === messageId ? { modeSwitchedDuringReply: null } : {}),
         messages: result ? this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) : this.state.messages,
       });
       return result;
@@ -577,26 +639,27 @@ export class ChatController {
     } finally { if (this.current(scope)) this.update({ loadingOlder: false }); this.release(scope); }
   }
 
-  queueNextText(): void {
+  queueNextText(pageContext?: ChatPageContext): void {
     const { selectedChildId, replyingMessageId, busy, online } = this.state;
     const draft = selectedChildId ? this.state.drafts[selectedChildId] : null;
-    if (!online || busy !== "reply" || !replyingMessageId || draft?.phase !== "replying"
+    if (!online || busy !== "reply" || this.state.queuedText || !replyingMessageId || draft?.phase !== "replying"
         || draft.savedUserMessageId !== replyingMessageId || !draft.nextText?.trim() || draft.nextText.length > 10_000) return;
-    this.update({ queuedTextAfter: replyingMessageId });
+    this.update({ queuedText: { afterMessageId: replyingMessageId, pageContext, chatMode: this.getChatMode(selectedChildId) } });
   }
 
   unqueueNextText(): void {
-    this.update({ queuedTextAfter: undefined });
+    this.update({ queuedText: undefined });
   }
 
   private finishTextQueue(scope: RequestScope, messageId: string | null): void {
-    if (!messageId || !this.current(scope) || this.state.queuedTextAfter !== messageId) return;
+    const queued = this.state.queuedText;
+    if (!messageId || !this.current(scope) || queued?.afterMessageId !== messageId) return;
     this.unqueueNextText();
     const draft = scope.childId ? this.state.drafts[scope.childId] : null;
     if (this.state.online && !this.state.busy && draft?.phase === "draft" && draft.text.trim()
         && !this.state.replyError && !this.state.remoteReply && this.state.cancelAcceptedFor !== messageId
         && this.state.messages.some(row => row.role === "model" && row.inReplyTo === messageId && !isIncompleteModelReplyText(row.text))) {
-      void this.send();
+      void this.send(undefined, undefined, undefined, { pageContext: queued.pageContext, chatMode: queued.chatMode });
     }
   }
 
@@ -605,7 +668,7 @@ export class ChatController {
     const replyingMessageId = this.state.replyingMessageId ?? (this.state.remoteReply?.status === "running" ? this.state.remoteReply.messageId : null);
     if (!childId || !replyingMessageId || this.state.busy !== "reply" && this.state.remoteReply?.status !== "running" || this.state.cancelling || this.state.cancelAcceptedFor === replyingMessageId || !this.state.online || !this.api.cancelReply) return;
     const scope = this.scope();
-    this.update({ cancelling: true, cancelNotice: null, queuedTextAfter: undefined });
+    this.update({ cancelling: true, cancelNotice: null, queuedText: undefined });
     try {
       if (!await this.verifyIdentity(scope)) return;
       const accepted = await this.api.cancelReply(childId, replyingMessageId, scope.controller.signal, scope.userId);
@@ -703,7 +766,7 @@ export class ChatController {
     let replyCompleted = false;
     let activeRunId: string | null = null;
     try {
-      if (!await this.verifyIdentity(scope)) return;
+      if (!this.current(scope)) return;
       const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
         if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
         if (activeRunId !== null && activeRunId !== event.runId) return;
@@ -804,7 +867,11 @@ export class ChatController {
           && (this.state.feedback.cards.length > 0 || this.state.feedback.sources.length > 0)
           ? this.state.feedback
           : null;
-        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply });
+        const keepModeNotice = settledRemoteReply?.status === "running"
+          && this.state.modeSwitchedDuringReply?.messageId === messageId
+          ? this.state.modeSwitchedDuringReply
+          : null;
+        this.update({ busy: null, replyingMessageId: null, feedback: retainFeedback, remoteReply: settledRemoteReply, modeSwitchedDuringReply: keepModeNotice });
         void this.refreshMetadata();
       }
     }
@@ -828,7 +895,7 @@ export class ChatController {
     this.updateDraft(childId,{photo:undefined});return true;
   }
 
-  async send(voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">, options: ChatSendOptions = {}): Promise<void> {
+  async send(voice?: ChatDraft["voice"], file?: ChatDraft["file"], photo?: ChatDraft["photo"], options: ChatSendOptions = {}, upload?: ChatAttachmentUpload): Promise<void> {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt || this.state.remoteReply?.status === "running" && !this.state.messages.some(item => item.role === "model" && item.inReplyTo === this.state.remoteReply?.messageId)) return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
@@ -840,27 +907,44 @@ export class ChatController {
     const text = normalizeChatInput(draft.text);
     const discussion = draft.retryOriginalSelection ? draft.discussion : options.discussion;
     const pageContext = draft.retryOriginalSelection ? draft.pageContext : options.pageContext;
-    const attachments = [draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo].filter(Boolean);
-    if (attachments.length > 1 || !text.trim() && attachments.length === 0 || draft.text.length > 10_000) {
+    const refs = { voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo };
+    const attachmentKinds = (["voice", "file", "photo"] as const).filter(kind => refs[kind] || upload?.kind === kind);
+    if (attachmentKinds.length > 1 || !text.trim() && attachmentKinds.length === 0 || draft.text.length > 10_000) {
       this.updateDraft(childId, { notice: "請輸入 1 至 10,000 個字元的訊息。" });
       return;
     }
     const scope = this.scope();
     let savedId: string | null = null;
-    this.update({ busy: "save", replyError: null });
+    const currentMode = draft.retryOriginalSelection
+      ? resolveChatMode(draft.sentChatMode)
+      : options.chatMode ?? this.getChatMode(childId);
+    let writeStarted = false;
+    const labels = { voice: "語音訊息", file: "檔案", photo: "照片" };
+    this.update({ busy: "save", replyError: null, outgoing: { childId, text,
+      attachmentLabel: upload?.label || (attachmentKinds[0] && labels[attachmentKinds[0]]) } });
     try {
+      if (upload) {
+        const prepared = await upload.prepare();
+        if (!prepared || !this.current(scope)) return;
+        refs[upload.kind] = { id: prepared.id, version: prepared.version };
+      }
       if (!await this.verifyIdentity(scope)) return;
-      this.updateDraft(childId, { text, discussion, pageContext, retryOriginalSelection: false, voice: draft.voice ?? voice, file: draft.file ?? file, photo: draft.photo ?? photo, phase: "saving", notice: null, candidateMessageId: null,
+      this.updateDraft(childId, { text, discussion, pageContext, sentChatMode: currentMode, retryOriginalSelection: false, ...refs, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice, draft.file ?? file, draft.photo ?? photo, { discussion, pageContext });
+      writeStarted = true;
+      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, refs.voice, refs.file, refs.photo, {
+        discussion, pageContext, ...(currentMode === "chat_only" ? { chatMode: currentMode } : {}),
+      });
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
       if (!await this.verifyIdentity(scope)) return;
-      this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
-        feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelAcceptedFor: undefined, cancelNotice: null });
+      const selectedMode = this.getChatMode(childId);
+      this.update({ outgoing: undefined, messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
+        feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelAcceptedFor: undefined, cancelNotice: null,
+        modeSwitchedDuringReply: selectedMode !== currentMode ? { messageId: saved.id, from: currentMode, to: selectedMode } : null });
       savedId = saved.id;
-      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: "聊天已保存，正在等候 AI 回覆。" });
+      this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, dismissedHelpMessageId: undefined, notice: null });
       await this.performReply(scope, saved.id);
     } catch (error) {
       if (!this.current(scope)) return;
@@ -869,7 +953,7 @@ export class ChatController {
         return;
       }
       if (childAccessDenied(error)) { this.forgetChild(childId); return; }
-      const uncertain = unknownSave(error);
+      const uncertain = writeStarted && unknownSave(error);
       this.updateDraft(childId, { phase: uncertain ? "save_unknown" : "draft",
         notice: uncertain ? UNKNOWN_SAVE : saveErrorMessage(error) });
     } finally {
@@ -877,7 +961,7 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "saving") {
           this.updateDraft(childId, { phase: "save_unknown", notice: UNKNOWN_SAVE });
         }
-        this.update({ busy: null });
+        this.update({ busy: null, outgoing: undefined });
       }
       this.finishTextQueue(scope, savedId);
       this.release(scope);
@@ -942,9 +1026,10 @@ export class ChatController {
         this.update({ busy: null, replyingMessageId: null });
         await this.reloadMessages(); return;
       }
+      if (!await this.verifyIdentity(scope)) return;
       this.update({ remoteReply: null });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { phase: "replying", notice: "聊天已保存，正在等候 AI 回覆。" });
+        this.updateDraft(childId, { phase: "replying", notice: null });
       }
       await this.performReply(scope, messageId);
     } catch (error) {
@@ -975,6 +1060,7 @@ export class ChatController {
     if (draft?.phase !== "checked" || !messageId) return;
     const candidate = this.state.messages.find(item => item.id === messageId && item.role === "user"
       && item.authorUserId === this.state.userId && item.text === draft.text
+      && resolveChatMode(item.chatMode) === resolveChatMode(draft.sentChatMode)
       && item.discussion === draft.discussion && sameChatPageContext(item.pageContext, draft.pageContext)
       && item.photo?.id === draft.photo?.id && item.photo?.version === draft.photo?.version);
     if (!candidate) return;

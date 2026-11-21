@@ -1,0 +1,19 @@
+[
+  {
+    "sourceId": "fhs-12196",
+    "priorWork": "af7660c9d5649042657d1fa07c6668e34d84d6d037ee1531add55903e101d057",
+    "stage": "ready",
+    "amendUnits": ["p0-fb6716d05520055ed5ba"]
+  },
+  {
+    "sourceId": "fhs-30092",
+    "priorWork": "922adefcd2b9116e5184415a3caf7f80c8ff05bf05720bb4e3c760e9ac8878a1",
+    "stage": "unknown",
+    "examples": [
+      {"scope":{"scriptTitle":"替寶寶清潔口腔"},"age":{"wording":"十四個月大前","unit":"months","form":"before","values":[14]}},
+      {"scope":{"scriptTitle":"替寶寶清潔口腔"},"age":{"wording":"九個月大","unit":"months","form":"age","values":[9]}},
+      {"scope":{"scriptTitle":"紅外線耳温計的使用步驟"},"age":{"wording":"一歲以下","unit":"years","form":"upper","values":[1]}},
+      {"scope":{"scriptTitle":"紅外線耳温計的使用步驟"},"age":{"wording":"一歲以上","unit":"years","form":"lower","values":[1]}}
+    ]
+  }
+]

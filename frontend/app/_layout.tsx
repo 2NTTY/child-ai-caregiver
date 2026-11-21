@@ -1,4 +1,6 @@
 export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from "../src/components/RouteFeedback";
+import { CompanionViewport } from '../src/components/companion/CompanionViewport';
+import { CompanionSelectionProvider } from '../src/components/companion/CompanionSelection';
 import { Stack, usePathname } from "expo-router";
 import Head from "expo-router/head";
 import { brand } from "../src/branding";
@@ -29,7 +31,9 @@ export default function RootLayout() {
           <BrandLogo style={styles.logo} decorative />
           <StartupLoadingLabel label={`正在開啟${brand.name}`} />
         </View>}>
-        <Stack screenOptions={{ headerShown: false, animation: "none" }} />
+        <CompanionSelectionProvider><CompanionViewport>
+          <Stack screenOptions={{ headerShown: false, animation: "none" }} />
+        </CompanionViewport></CompanionSelectionProvider>
       </ProductionFirstScreenGate></ProductionProvider></PreviewNavigationGuard>
     </MotionPaperProvider></MotionProvider></SafeAreaProvider>
   );

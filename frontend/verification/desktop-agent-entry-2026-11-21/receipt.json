@@ -1,0 +1,83 @@
+{
+  "browser": "158.0.4370.33",
+  "baseline": "1daa69f4",
+  "modelMode": "--no-model",
+  "desktop": {
+    "viewport": [
+      1280,
+      600
+    ],
+    "order": [
+      "/chat",
+      "/settings"
+    ],
+    "before": {
+      "entry": {
+        "x": 16.8,
+        "y": 397.23,
+        "width": 267.8,
+        "height": 104.8
+      },
+      "settings": {
+        "x": 16.8,
+        "y": 518.81,
+        "width": 267.8,
+        "height": 64.39
+      }
+    },
+    "after": {
+      "entry": {
+        "x": 16.8,
+        "y": 397.23,
+        "width": 267.8,
+        "height": 104.8
+      },
+      "settings": {
+        "x": 16.8,
+        "y": 518.81,
+        "width": 267.8,
+        "height": 64.39
+      }
+    },
+    "scrollTop": [
+      0,
+      407.1428527832031
+    ],
+    "chatLinks": 1,
+    "chatLinksInScrollArea": 0,
+    "guardStayedWithTaskDraft": true,
+    "guardConfirmedLeave": true,
+    "keyboardReturn": true,
+    "savedConversationAndChatDraftRetained": true
+  },
+  "compact": {
+    "viewport": [
+      390,
+      844
+    ],
+    "route": "/chat",
+    "desktopEntries": 0,
+    "bottomChatTabs": 1,
+    "box": {
+      "x": 78,
+      "y": 767.2,
+      "width": 78,
+      "height": 76.8
+    },
+    "savedConversationAndChatDraftRetained": true
+  },
+  "persistedRowsCompared": 6,
+  "messageOrReplyWrites": 0,
+  "entryComponentGitBlob": "5acab78aa10c82e99dbfd1549bfa9333a3c16b81",
+  "positionUnit": "CSS px from viewport top left, bounding box including borders",
+  "screenshot": "desktop-1280x600.png",
+  "environment": "Windows Edge, local Firebase emulator account, emulated Auth footer hidden for desktop screenshot.",
+  "guardFlow": "Unsaved task form: Close, Continue editing retained text; Close, Discard closed it; then clicked the fixed sidebar link from Tasks.",
+  "historyVerification": "Checked rendered message IDs against the local account API, then checked the same ordered IDs on both returns.",
+  "native": "Existing NativeDashboardTabs chat screen and shared chat destination inspected. No device run.",
+  "verificationNotes": [
+    "First browser attempt correctly encountered the task modal blocking the background sidebar. Retested through the visible Close action.",
+    "The second attempt used a saved sentence from a different fixture child. Final run compared actual persisted message IDs of the signed-in selected child.",
+    "The local emulator returned HTTP 500 during shutdown export and retained its previous snapshot."
+  ]
+}

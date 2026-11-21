@@ -2,7 +2,7 @@ import { sourceCardDocumentRecord, sourceDocumentRecordId, sourceDocumentMetadat
 import { PRIVATE_INDEX_COLLECTION, privateIndexId, privateIndexRecord, privateIndexMetadata } from './private-source-index-record.ts';
 import { PRIVATE_QUERY_COLLECTION, privateQueryId, privateQueryRecord } from './private-source-search.ts';
 import { knowledgeOriginalManifest } from './firestore-knowledge-originals.ts';
-import { campaign, campaignCredentials, campaignRecoverySchemas, campaignTicketId, matchesCampaignPublicationBinding } from './knowledge-campaign-budget.ts';
+import { campaign, campaignCredentials, campaignRecoverySchemas, matchesCampaignAttempt, matchesCampaignPublicationBinding } from './knowledge-campaign-budget.ts';
 import { manualPublicationPin } from './fhs-manual-publication.ts';
 import { platformCardMedia } from '../src/shared/platform-media.ts';
 import { mediaEditionRecord } from './platform-media-processing.ts';
@@ -378,8 +378,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
   function knowledgeBinding(kind: FirestoreRestoreKnowledgeKind, id: string, raw: FirestoreRestoreValue): void {
     if (kind === 'campaign-attempt') {
       const entry = parse(campaignRecoverySchemas.attempt, raw);
-      requireBinding(z.uuid().safeParse(id).success && (!entry.stageHash || !!entry.operationFingerprint
-        && id === campaignTicketId(entry.kind, entry.sourceId, entry.operationFingerprint, entry.stageHash)));
+      requireBinding(matchesCampaignAttempt(id, entry));
     }
     else if (kind === 'campaign-publication') {
       const entry = parse(campaignRecoverySchemas.publicationBinding, raw), pin = manualPublicationPin(id);

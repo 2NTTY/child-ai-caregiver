@@ -4,6 +4,7 @@ import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
 import { citedOriginalSpans, type KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
 import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
+import { buildProposalDiff, extractProposalEditableDraft } from "./proposal-draft-edit.ts";
 
 const toolNames: Record<string, string> = {
   share_knowledge_view: '育兒知識觀點發言', ask_parent_view: '新手家長觀點回應', compare_methods_view: '比較育兒方法',
@@ -15,7 +16,7 @@ const toolNames: Record<string, string> = {
   propose_fact_revision: "提出事實更正", propose_fact_deactivation: "提出事實停用", request_confirmation: "準備具體確認", confirmed_proposal: "已按本人確認保存",
   read_concerns:"讀取持續關注",propose_concern:"保存持續關注候選",propose_concern_change:"保存關注變更候選",
   list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
-  stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
+  stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源", find_official_material: "查閱官方教材",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
   read_family_document_content: "續讀文件固定版本", list_family_document_versions: "讀取文件版本目錄", propose_family_document_change: "保存文件修改候選",
   read_family_documents: "讀取家庭文件", generate_family_document: "整理及保存家庭文件", change_family_document: "更新家庭文件",
@@ -81,9 +82,12 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
     sourceDate: [source.sourceDateText, source.sourcePublishedAt ? `發布：${source.sourcePublishedAt}` : null,
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
     validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
-    applicabilityLabel: [age.region, age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
+    applicabilityLabel: [age.region, ...(age.ageBasis==='per_instruction' ? ['按操作分齡',...(age.ageExamples??[]).map(e=>e.quote),'只供查閱原文'] : age.ageBasis === 'publisher' || age.ageBasis === 'unconfirmed'
+      ? [age.publisherAudiences ? `原文對象：${age.publisherAudiences.join('、')}` : '原文未指明對象',
+        age.maxAgeMonths===null?'月齡範圍未確定':`少於 ${age.maxAgeMonths} 個月，下限未指明`,'只供查閱原文']
+      : [age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
       age.minAgeMonths === null ? "沒有最低月齡" : `最低 ${age.minAgeMonths} 個月`,
-      age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`,
+      age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`]),
       ...age.topics, ...age.conditions].join(" · "),
   };
 }
@@ -108,8 +112,44 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
   const value = proposal.value;
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt, contentState: proposal.contentState,
+    editableDraft: proposal.contentState === "invalidated" ? undefined : extractProposalEditableDraft(value),
+    diff: buildProposalDiff(proposal),
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
-      label: `${proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+      label: `${proposal.result.kind === "care_record" ? "照護記錄" : proposal.result.kind === "private_note" ? "私人備註" : proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if (value.kind === "care_record_create" || value.kind === "care_record_revise") {
+    const kindNames = { note: "日常備註", feeding: "餵食", sleep: "睡眠", diaper: "換片" } as const;
+    return {
+      ...common, scope: "family",
+      title: `${kindNames[value.details.kind]} · ${value.kind === "care_record_create" ? "新增照護記錄" : "更正原照護記錄"}`,
+      content: value.text,
+      details: [
+        { label: "種類", value: kindNames[value.details.kind] },
+        ...(value.kind === "care_record_revise" ? [
+          { label: "原記錄與版本", value: `${value.recordId} · ${value.expectedVersion}` },
+          ...(value.previousText ? [{ label: "修改前內容", value: value.previousText }] : []),
+          { label: "建議內容", value: value.text },
+          { label: "原因", value: value.reason },
+        ] : [{ label: "建議內容", value: value.text }]),
+        ...(value.details.quantity ? [{ label: "數量", value: `${value.details.quantity.rawValue}${value.details.quantity.unit}` }] : []),
+      ],
+    };
+  }
+  if (value.kind === "private_note_create" || value.kind === "private_note_revise") {
+    return {
+      ...common, scope: "private",
+      title: value.title,
+      content: value.text,
+      details: [
+        ...(value.kind === "private_note_revise" ? [
+          { label: "原備註與版本", value: `${value.noteId} · ${value.expectedVersion}` },
+          ...(value.previousTitle ? [{ label: "修改前標題", value: value.previousTitle }] : []),
+          ...(value.previousText ? [{ label: "修改前內容", value: value.previousText }] : []),
+        ] : []),
+        { label: "建議內容", value: value.text },
+        { label: "接受後可見範圍", value: "只限你本人" },
+      ],
+    };
+  }
   if (value.kind === "family_document_change") {
     if (proposal.contentState === "invalidated") return { ...common, scope: "family", title: "原家庭文件修改",
       content: "原文件或來源已改變，候選正文已遮蔽；請重新核對", details: [{ label: "原文件及版本", value: `${value.documentId} · ${value.change.expectedVersion}` }] };
@@ -178,7 +218,7 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
 }
 // Only these steps can be shown inline without the decision/receipt dialog.
 const chatReadSteps = new Set(['load_capabilities', 'read_context', 'read_memory_facts', 'search_history', 'read_history',
-  'search_knowledge', 'read_knowledge_context', 'present_answer']);
+  'search_knowledge', 'find_official_material', 'read_knowledge_context', 'present_answer']);
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
   const cardLinks = new Map<string, boolean>();
   const platformSeries = new Set<string>();

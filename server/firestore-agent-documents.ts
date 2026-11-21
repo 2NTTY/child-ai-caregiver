@@ -5,13 +5,13 @@ import type { ProductAgentStore, StagedSpecialistDraftInput } from './product-ag
 import type { AgentOriginalDocumentReceipts } from './agent-original-receipts.ts';
 import type { FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { domainParse, domainReject } from './firestore-domain-data.ts';
+import { domainParse, domainReject, FirestoreDomainError } from './firestore-domain-data.ts';
 import type { FirestoreChatStore } from './firestore-chat.ts';
 import type { createFirestoreAgentRuns } from './firestore-agent-runs.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { documentPatchIsStructural } from './family-document-edits.ts';
 import type { FirestoreAgentProposalExtension } from './firestore-agent-proposals.ts';
-import { specialistArtifactSummarySchema, type SpecialistArtifactSummary } from '../src/shared/specialist-artifact.ts';
+import { SPECIALIST_DRAFT_MAX_BYTES, specialistArtifactSummarySchema, type SpecialistArtifactSummary } from '../src/shared/specialist-artifact.ts';
 
 export const firestoreAgentDocumentLinkSchema = z.object({ runId: z.uuid(), operationId: z.uuid(), documentId: z.uuid(),
   savedVersion: z.number().int().positive(), toolName: z.enum(['generate_family_document', 'change_family_document']) }).strict();
@@ -125,9 +125,8 @@ export function createFirestoreAgentDocuments(options: FirestoreDomainOptions & 
       published: false,
       requiresFormalConfirmation: true,
     });
-    if (input.bytes.byteLength === 0 || input.bytes.byteLength > 700_000 || input.bytes.byteLength !== summary.byteLength) {
-      domainReject('invalid_input', 400);
-    }
+    if (input.bytes.byteLength === 0 || input.bytes.byteLength !== summary.byteLength) domainReject('invalid_input', 400);
+    if (input.bytes.byteLength > SPECIALIST_DRAFT_MAX_BYTES) domainReject('specialist_draft_too_large', 413);
     const computedHash = createHash('sha256').update(input.bytes).digest('hex');
     if (computedHash !== summary.artifactHash) domainReject('specialist_draft_integrity', 400);
 
@@ -159,12 +158,15 @@ export function createFirestoreAgentDocuments(options: FirestoreDomainOptions & 
       }
 
       const bytesBase64 = Buffer.from(input.bytes).toString('base64');
-      b.transaction.create(ref, {
-        ...data.tags(b.scope),
-        runId,
-        artifactId,
-        ...data.seal('agent-specialist-draft', id, b.scope, firestoreSpecialistDraftSchema, { summary: storedSummary, bytesBase64 }),
-      });
+      const envelope = (() => {
+        try {
+          return data.seal('agent-specialist-draft', id, b.scope, firestoreSpecialistDraftSchema, { summary: storedSummary, bytesBase64 });
+        } catch (error) {
+          if (error instanceof FirestoreDomainError && error.code === 'document_too_large') domainReject('specialist_draft_too_large', 413);
+          throw error;
+        }
+      })();
+      b.transaction.create(ref, { ...data.tags(b.scope), runId, artifactId, ...envelope });
       return storedSummary;
     });
   };

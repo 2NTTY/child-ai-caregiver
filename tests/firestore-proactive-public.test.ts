@@ -176,6 +176,7 @@ test('global discovery uses actual published chunk keys and profile resolution n
         chunkIdentities: [{ key: current.key, chunkId: current.chunkId, contentHash: current.contentHash }],
         source: { sourceId: current.sourceId, url: current.url, title: current.title, publisher: current.publisher, classification: current.classification,
           sourcePublishedAt: current.sourcePublishedAt, validUntil: current.validUntil, sourceUpdatedAt: null, fetchedAt: at, termsUrl: definition.termsUrl,
+          timelyEvent: current.timelyEvent,
           chunks: [{ key: current.key, section: current.section, sourceExcerpt: current.sourceExcerpt, text: current.text,
             applicability: current.applicability, keywords: current.keywords }] } };
     }, async ruleCandidates(_tx, rules) { assert.equal(rules[0]!.key, 'synthetic-section'); return [current]; } },
@@ -220,7 +221,7 @@ test('global discovery uses actual published chunk keys and profile resolution n
   f.records.delete(data.ref('memory_topics', 'memory-topic', '88888888-8888-4888-8888-888888888888').path);
   addTopic('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '幼兒餵食', 'private');
   assert.equal((await read()).candidates.length, 0, 'Unrelated family topics and matching private topics do not establish shared topical relevance');
-  current = { ...current, classification: 'recent_information', sourcePublishedAt: at,
+  current = { ...current, classification: 'recent_information', sourcePublishedAt: at, timelyEvent: { kind: 'announcement', status: 'active' },
     validUntil: new Date(Date.parse(at) + 86400_000).toISOString() };
   addTopic('88888888-8888-4888-8888-888888888888', '幼兒餵食');
   await sources.prepareGlobal({ force: true });

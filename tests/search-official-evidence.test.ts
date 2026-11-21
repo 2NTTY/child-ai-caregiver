@@ -691,6 +691,47 @@ test('overview evidence supports a public introduction but cannot be the sole so
   assert.equal((await answer('public_information', '機構提供計劃概覽。')).status, 'succeeded');
 });
 
+test('a transcript restricted to original lookup can quote a number without endorsing a recommendation', async t => {
+  const quote='原文列出 3 種遊戲。';
+  const item=mockChunk(chunkSolidId,{title:'玩具教材',sourceExcerpt:quote,text:quote,keywords:['玩具'],distance:0.1,
+    treatment:{kind:'overview',policyVersion:1}});
+  item.applicability={...item.applicability,use:'original_lookup'};
+  const budget=new AgentBudget();t.after(()=>budget.close());
+  const options = {authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
+    memory:{context:async()=>emptyMemoryContext()} as any,tasks:{} as any,store:{} as any,
+    knowledge:createKnowledgeRetriever({candidates:async()=>[item]},fakeEmbeddingGateway())};
+  const tools=createProductAgentTools(options);
+  const background=createProductAgentTools({...options,background:true});
+  assert.ok(!background.tools.some(tool=>tool.name==='find_official_material'));
+  const find=tools.tools.find(tool=>tool.name==='search_knowledge')!;
+  const ordinary=await find.execute({query:'玩具',classification:'official_guidance'},{callId:'find'} as any);
+  assert.equal(ordinary.status,'succeeded');
+  assert.deepEqual((ordinary.data?.result as any).chunks,[]);
+  const original=tools.tools.find(tool=>tool.name==='find_official_material')!;
+  const found=await original.execute({query:'玩具'},{callId:'original'} as any);
+  assert.equal(found.status,'succeeded');assert.equal((found.data?.result as any).chunks[0].chunkId,item.chunkId);
+  const present=tools.tools.find(tool=>tool.name==='present_answer')!;
+  const answer=(kind:string,text:string)=>present.execute({kind,paragraphs:[{text,citationIds:[item.chunkId]}],
+    originalQuotes:[{chunkId:item.chunkId,text:quote}]},{callId:'show'+text.length} as any);
+  assert.equal((await answer('caregiving','所有孩子應玩 3 種遊戲。')).status,'rejected');
+  assert.equal((await answer('public_information','所有孩子應玩 3 種遊戲。')).status,'rejected');
+  assert.equal((await answer('public_information',`《玩具教材》原文：「${quote}」`)).status,'succeeded');
+});
+
+test('an exact film title remains in the returned results when related materials rank ahead of its script', async t => {
+  const title='家居安全',budget=new AgentBudget();t.after(()=>budget.close());
+  const hits=Array.from({length:4},(_,index)=>mockChunk(`77777777-8888-4999-8aaa-11111111111${index}`,{
+    section:'家居安全',text:'家居安全教材',rankScore:4-index,distance:null,
+    ...(index===3?{scriptPassage:{title,url:'https://www.fhs.gov.hk/tc_chi/mulit_med/000020.html#transcript',
+      firstParagraph:1,lastParagraph:3}}:{})}));
+  const tools=createProductAgentTools({authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
+    memory:{context:async()=>emptyMemoryContext()} as any,tasks:{} as any,store:{} as any,
+    knowledge:createKnowledgeRetriever({candidates:async()=>hits},fakeEmbeddingGateway())});
+  const tool=tools.tools.find(tool=>tool.name==='search_knowledge')!;
+  const answer=await tool.execute({query:'《家居安全》',classification:'official_guidance'},{callId:'by-title'} as any);
+  assert.equal((answer.data as any).result.chunks[0].scriptPassage.title,title);
+});
+
 test("long documents, tables and exception conditions maintain end-to-end traceability across chunks (REQ-001 §7 Line 5)", async (t) => {
   const gateway = fakeEmbeddingGateway();
   const anchorChunkId = "77777777-8888-4999-8aaa-111111111111";

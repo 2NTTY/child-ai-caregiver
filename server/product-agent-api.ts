@@ -9,14 +9,14 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { ChatStore } from "./chat.ts";
 import type { ChatMessage } from "../src/shared/chat.ts";
 import { readAgentWorkSchema, historySearchSchema, historyReadSchema } from "../src/shared/agent-work.ts";
-import { agentDecisionSchema } from "../src/shared/product-agent.ts";
+import { agentDecisionSchema, agentProposalEditSchema } from "../src/shared/product-agent.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const artifactRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")/artifacts/(" + uuid + ")$", "i");
-const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/decide)?$", "i");
+const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/(decide|edit))?$", "i");
 const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
 const pendingRoute = new RegExp("^/api/children/(" + uuid + ")/agent/pending$", "i");
 const workRoute = new RegExp("^/api/children/(" + uuid + ")/agent/work(?:/(" + uuid + "))?$", "i");
@@ -141,6 +141,15 @@ export async function handleProductAgentRequest(request: Request, userId: string
     }
     if (run![3]) {
       if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
+      const proposalAction = run![4]!.toLowerCase();
+      if (proposalAction === "edit") {
+        if (!options.store.editProposal) return apiError("ai_unavailable", "草稿編輯尚未接通。", 503);
+        const editInput = agentProposalEditSchema.safeParse(body);
+        if (!editInput.success) return apiError("invalid_input", "請核對編輯內容與版本。", 400);
+        const proposal = await options.store.editProposal(userId, childId, run![2].toLowerCase(), run![3].toLowerCase(), editInput.data);
+        if (!proposal || !await options.isCurrentUser(userId)) return apiError("not_found", "找不到可修改的事項。", 404);
+        return jsonResponse({ proposal });
+      }
       const input = agentDecisionSchema.safeParse(body);
       if (!input.success) return apiError("invalid_input", "請核對確認事項。", 400);
       const proposal = await options.store.decide(userId, childId, run![2].toLowerCase(), run![3].toLowerCase(), input.data);

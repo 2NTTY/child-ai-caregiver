@@ -5,9 +5,23 @@ import { sharedInputCreateSchema, sourceManagementSchema, sourceManagementChange
 import { concernValuesSchema, concernChangeSchema } from "./concerns.ts";
 import { documentPatchSchema } from "./family-documents.ts";
 import type { ChatDeliveryReviewBinding } from "./chat-delivery-review.ts";
+import { ordinaryRecordDetailsSchema } from "./agent-actions.ts";
 
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
+const version = z.number().int().min(1).max(2147483646);
 export const agentProposalSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("care_record_create"), text: text(2000), details: ordinaryRecordDetailsSchema,
+    sourceQuote: text(2000), sourceBasis: z.literal("voice_interpretation").optional(),
+    quantityEvidence: text(200).nullable().optional() }).strict(),
+  z.object({ kind: z.literal("care_record_revise"), recordId: z.uuid(), expectedVersion: version, text: text(2000),
+    details: ordinaryRecordDetailsSchema, reason: text(1000), sourceQuote: text(2000),
+    sourceBasis: z.literal("voice_interpretation").optional(), quantityEvidence: text(200).nullable().optional(),
+    previousText: text(2000).optional() }).strict(),
+  z.object({ kind: z.literal("private_note_create"), title: text(100), text: text(2000),
+    memoryKey: text(100).optional(), sourceQuote: text(2000) }).strict(),
+  z.object({ kind: z.literal("private_note_revise"), noteId: z.uuid(), expectedVersion: version, title: text(100),
+    text: text(2000), memoryKey: text(100).optional(), sourceQuote: text(2000),
+    previousTitle: text(100).optional(), previousText: text(2000).optional() }).strict(),
   z.object({ kind: z.literal("family_document_change"), documentId: z.uuid(), change: documentPatchSchema }).strict()
     .refine(value => JSON.stringify(value).length <= 6000, "Document candidate exceeds the complete confirmation limit"),
   z.object({ kind: z.literal("concern_create"), values: concernValuesSchema }).strict(),
@@ -23,6 +37,29 @@ export const agentProposalSchema = z.discriminatedUnion("kind", [
     intendedVisibility: z.enum(["private", "family"]), validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid().optional() }).strict(),
 ]);
 export type AgentProposalValue = z.infer<typeof agentProposalSchema>;
+export const agentProposalEditSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+  value: agentProposalSchema,
+}).strict();
+export type AgentProposalEdit = z.infer<typeof agentProposalEditSchema>;
+export function proposalTargetKey(value: AgentProposalValue): string {
+  switch (value.kind) {
+    case "care_record_create": return "care_record:create";
+    case "care_record_revise": return `care_record:revise:${value.recordId}`;
+    case "private_note_create": return "private_note:create";
+    case "private_note_revise": return `private_note:revise:${value.noteId}`;
+    case "family_document_change": return `family_document:change:${value.documentId}`;
+    case "concern_create": return "concern:create";
+    case "concern_change": return `concern:change:${value.concernId}`;
+    case "private_source_create": return "private_source:create";
+    case "private_source_change": return `private_source:change:${value.inputId}`;
+    case "task_create": return "task:create";
+    case "task_change": return `task:change:${value.taskId}`;
+    case "memory_fact": return "memory_fact:create";
+    case "memory_fact_revise": return `memory_fact:revise:${value.factId}`;
+    case "memory_fact_deactivate": return `memory_fact:deactivate:${value.factId}`;
+  }
+}
 export const agentDecisionSchema = z.object({
   expectedVersion: z.number().int().positive(), decision: z.enum(["accept", "dismiss"]),
   confirmShared: z.boolean(),
@@ -32,7 +69,7 @@ export interface AgentProposal {
   id: string; runId: string; childId: string; version: number;
   status: "pending" | "accepted" | "dismissed" | "expired";
   createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null; targetVisibility?: "private" | "family"; contentState?: "ready" | "invalidated";
-  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document"; id: string; version: number } | null;
+  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document" | "care_record" | "private_note"; id: string; version: number } | null;
 }
 export interface AgentPendingPage {
   proposals: AgentProposal[];

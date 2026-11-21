@@ -28,7 +28,7 @@ import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts'
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
 import { originalRestoreScopeKinds, discardedRestoreKinds } from './firestore-restore-operation-records.ts';
-import { isRestoreProtocolOrUsage, restoreFirestoreUsage, assertPrivateSummaryProtocolEvidence } from './firestore-restore-usage.ts';
+import { isRestoreProtocolOrUsage, isRestoreSpecialistDraft, restoreFirestoreUsage, assertPrivateSummaryProtocolEvidence } from './firestore-restore-usage.ts';
 import { firestoreScopeErasureSchema } from './firestore-erasure.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -142,9 +142,9 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     && input.targetDatabaseId!==options.database.databaseId,'restore_target');
   requireValue(input.documents.length<=2000&&input.liveDocuments.length<=2000,'restore_limit');
   const codec=createFirestoreRestoreCodec(options), data=new FirestoreDomainData(options);
-  const isSession=(row:FirebaseBackupDocument)=>isRestoreProtocolOrUsage(options.namespace,row.path);
-  const decoded=input.documents.filter(row=>!isSession(row)).map(row=>codec.decode(row));
-  const live=input.liveDocuments.filter(row=>!isSession(row)).map(row=>codec.decode(row));
+  const isExcluded=(row:FirebaseBackupDocument)=>isRestoreProtocolOrUsage(options.namespace,row.path) || isRestoreSpecialistDraft(options,row);
+  const decoded=input.documents.filter(row=>!isExcluded(row)).map(row=>codec.decode(row));
+  const live=input.liveDocuments.filter(row=>!isExcluded(row)).map(row=>codec.decode(row));
   unique(decoded,row=>row.path); unique(live,row=>row.path);
   assertFirebaseRestoreAuthority(decoded); assertFirebaseRestoreAuthority(live);
   reconcilePrivateSummaryRestore(decoded, live);
@@ -405,7 +405,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   // The operator persists a bounded encrypted plan, applies pages, then validates the complete paused result.
   const encodedBytes=records.reduce((sum,row)=>sum+firebaseBackupDocumentDigest(row).bytes,0);
   requireValue(records.length<=4000&&encodedBytes<=32*1024*1024,'restore_limit');
-  const restored=records.filter(row=>!isSession(row)).map(row=>codec.decode(row));
+  const restored=records.filter(row=>!isExcluded(row)).map(row=>codec.decode(row));
   assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);assertRestoredChatFileRelations(restored);assertRestoredAvatarRelations(restored,true);
   return {records,removePaths,generation,newEpochByWorkspace,journalHash:digest(journal.map(firebaseErasureIntentHash).sort()),
     authHash:digest([...authUsers.values()].sort((a,b)=>a.userId.localeCompare(b.userId))),

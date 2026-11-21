@@ -1,0 +1,115 @@
+{
+  "observedDateHongKong": "2026-11-22",
+  "scope": "Synthetic registered HTML originals. Local model observations and controlled worker decisions are separate runs.",
+  "version": {
+    "featureBase": "321e7dfa30fe8a64e6590927c2e24b151de60fc6",
+    "promptPack": "0.1.69",
+    "module": "module.private-source-reading@1.1.0",
+    "systemSha256": "8f1d2b09ca38229598ab4ba2f53e0ed64bc9bbc2033a50cf9ffaac619084f487"
+  },
+  "liveLocal": {
+    "model": "Qwen/Qwen2.5-1.5B-Instruct-GGUF, Q4_K_M",
+    "runtime": "llama.cpp b12608, Windows Vulkan",
+    "modelSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    "temperature": 0,
+    "seed": 42,
+    "input": "The product's privateReadingInput supplied the system instruction, structured output schema, source title, heading and body. The review started a separate request with the source and organizer's candidates.",
+    "runs": [
+      {
+        "source": "<article><h1>兩個信封</h1><h2>先留下車費</h2><p>把零用錢分入兩個信封。第一個信封留作每天乘車，第二個信封用來儲起買東西的錢。每次拿錢前，先比較餘額和價錢。</p></article>",
+        "title": "兩個信封",
+        "keywordResult": "unclassified",
+        "organizer": {
+          "proposed": {
+            "label": "財務管理",
+            "evidence": "兩個信封\n\n先留下車費\n\n把零用錢分入兩個信封。第一個信封留作每天乘車，第二個信封用來儲起買東西的錢。每次拿錢前，先比較餘額和價錢。"
+          },
+          "quotationCount": 1,
+          "distinctQuotationCount": 1,
+          "schemaSha256": "d4bf4b6404ee8d6c4f34d84e30aae2d6e6da9ce87fdd7f922804b23e836928bb"
+        },
+        "independentReview": {
+          "supported": [
+            true
+          ],
+          "topicSupported": false,
+          "schemaSha256": "9b648155855ddd1d705b741b8f883c0e3231284a29d64c14491733e1d739cf37"
+        },
+        "result": "unclassified"
+      },
+      {
+        "source": "<article><h1>走到對面</h1><h2>在斑馬線前</h2><p>等到綠色行人燈亮起，先看看兩邊有沒有車，再沿斑馬線走到對面。</p></article>",
+        "title": "走到對面",
+        "keywordResult": "unclassified",
+        "organizer": {
+          "proposed": {
+            "label": "生長與發展",
+            "evidence": "走到對面\n\n在斑馬線前\n\n等到綠色行人燈亮起，先看看兩邊有沒有車，再沿斑馬線走到對面。"
+          },
+          "quotationCount": 8,
+          "distinctQuotationCount": 1,
+          "schemaSha256": "d4bf4b6404ee8d6c4f34d84e30aae2d6e6da9ce87fdd7f922804b23e836928bb"
+        },
+        "independentReview": {
+          "supported": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "topicSupported": false,
+          "schemaSha256": "7f9a6551bfdf4ba599fdc4413eaf3fd462109b6ff66060a9f3ab4e2cd76ce777"
+        },
+        "result": "unclassified"
+      }
+    ],
+    "intermediateObservations": [
+      "The first text draft used visual_description and was held. The text-only schema now permits quotations only.",
+      "The initial reviewer returned zero decisions for one submitted quotation. The final schema requests exactly one decision per quotation. The retained organizer response was reused."
+    ]
+  },
+  "controlledWorker": {
+    "test": "tests/private-source-index-worker.test.ts",
+    "backend": "In-memory Firestore with the product's owner authorization, durable queue, worker, model-routing and directory services. Synthetic generation and embedding providers.",
+    "source": "兩個信封",
+    "independentCases": [
+      {
+        "topicSupported": false,
+        "afterReview": "unclassified",
+        "readyUnits": 1
+      },
+      {
+        "topicSupported": true,
+        "afterReview": "財務管理",
+        "readyUnits": 1
+      }
+    ],
+    "eachCase": {
+      "initialIndex": {
+        "organize": 1,
+        "review": 1,
+        "embedding": 1
+      },
+      "rechecks": [
+        "identical original",
+        "add publisher section 家長教材",
+        "rename to 本月選讀",
+        "remove publisher section; recover prior review decision"
+      ],
+      "additionalProviderCalls": 0,
+      "documentVersions": 1,
+      "indexJobs": 1,
+      "originalReviewProofUnchanged": true
+    }
+  },
+  "limits": {
+    "paidProviderCalls": 0,
+    "productionGeminiTested": false,
+    "productionWrites": 0,
+    "localTopicsAccepted": 0
+  }
+}

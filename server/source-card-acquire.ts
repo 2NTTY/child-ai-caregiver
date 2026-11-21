@@ -3,7 +3,8 @@ import { fetchPublicSourceResponse } from './public-source-transport.ts';
 import { parsePersonalPage } from './personal-source-fetch.ts';
 import { KNOWLEDGE_PDF_MAX_BYTES } from './knowledge-pdf.ts';
 import { sourceFileOriginal, type SourceCardOriginal } from './source-card-original.ts';
-import { inspectSourcePage, sourceCardScope, type SourceCardInput, type UserAction } from './source-card-page.ts';
+import { inspectSourcePage, sourceCardScope, sourceFeedLinks, type SourceCardInput, type UserAction } from './source-card-page.ts';
+import type { SourceReadingMethod } from '../src/shared/registered-source-card.ts';
 import { renderSourceCard, type RenderResource } from './source-card-render-client.ts';
 import { loginSourceCard, siteCookieJar, type SourceCardCredential } from './source-card-login.ts';
 
@@ -14,14 +15,15 @@ export interface SourceCardAccess {
   readSession?(cardId: string, origin: string): Promise<BoundSiteSession | null>;
   credentialFor?(cardId: string): Promise<SourceCardCredential | null>;
 }
-type Failure = 'scope' | 'authorization' | 'limit' | 'file_too_large' | 'listing_changed' | 'unavailable' | 'unreadable';
+type Failure = 'scope' | 'authorization' | 'limit' | 'file_too_large' | 'listing_changed' | 'unavailable' | 'unreadable' | 'unverified_hint';
 export type SourceCardResult = { status: 'ok'; originals: SourceCardOriginal[] }
   | { status: 'needs_user'; reason: UserAction } | { status: 'failed'; reason: Failure };
 type Reply = { url: string; mime: string; body: Buffer };
-export interface SourceCardWorkItem { url: string; offset?: number; listingHash?: string }
+export interface SourceCardWorkItem { url: string; offset?: number; listingHash?: string; sections?: string[] }
 export interface SourceCardBatchWork { revision: number; checkId: string; items: SourceCardWorkItem[] }
+export interface SourceMethodCandidate { url: string; parser: SourceReadingMethod['parser']; samples: string[]; covers?: string; feedUrl?: string; listed?: number; reduced?: boolean }
 export type SourceCardBatchResult = Exclude<SourceCardResult, { status: 'ok' }> |
-  { status: 'ok'; originals: SourceCardOriginal[]; consumed: number; next: SourceCardWorkItem[] };
+  { status: 'ok'; originals: SourceCardOriginal[]; consumed: number; next: SourceCardWorkItem[]; candidate?: SourceMethodCandidate; redirects?: { from: string; to: string }[] };
 const listingWindow = 16;
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const mimeType = (header: string) => header.split(';')[0]!.trim().toLowerCase();
@@ -160,8 +162,11 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
       return value;
     }
     const next: SourceCardWorkItem[] = [];
+    let candidate: SourceMethodCandidate | undefined;
+    const redirects: { from: string; to: string }[] = [];
     let consumed = 0;
-    const accepted = () => ({ status: 'ok' as const, originals: [...originals.values()], next, consumed });
+    const accepted = () => ({ status: 'ok' as const, originals: [...originals.values()], next, consumed,
+      ...(candidate ? { candidate } : {}), ...(redirects.length ? { redirects } : {}) });
     const file = async (reply: Reply) => {
       try { return await sourceFileOriginal(reply.url, reply.mime, reply.body, signal); }
       catch (error) { return fail(error instanceof Error && error.message === 'source_file_too_large' ? 'file_too_large' : 'unreadable'); }
@@ -171,34 +176,91 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
       if (url && [...secrets].some(secret => decodeURIComponent(url).includes(secret))) fail('authorization');
       return url;
     };
-    async function scan(item: SourceCardWorkItem): Promise<{ found: SourceCardOriginal[]; children: SourceCardWorkItem[] }> {
+    async function scan(item: SourceCardWorkItem) {
       const reply = await read(item.url);
       const offset = item.offset ?? 0;
       const found: SourceCardOriginal[] = [], children: SourceCardWorkItem[] = [];
-      const leaf = { found, children };
+      const leaf = { found, children, canonical: reply.url };
       if (!work && item.url !== reply.url && visited.has(reply.url)) return leaf;
       visited.add(reply.url);
-      if (reply.mime !== 'text/html') {
+      const saved = input.methods?.find(method => method.url === item.url);
+      const hint = input.hint?.status === 'pending' && input.hint.url === item.url ? input.hint : undefined;
+      const catalogue = input.kind !== 'document' && (item.url === entry.href || !!saved || !!hint);
+      async function corroborate(links: string[]) {
+        if (!hint || offset) return;
+        if (input.methods?.some(method => links.includes(method.sample.url) || method.sample.url === item.url)) return;
+        const parent = await read(hint.covers ?? entry.href);
+        if (parent.mime !== 'text/html' || parent.body.length > 1024 * 1024 ||
+            !inspectSourcePage(parent.body.toString('utf8'), parent.url).references.includes(item.url)) fail('unverified_hint');
+      }
+      let advertisedFeed: string | undefined;
+      const remember = (mode: SourceReadingMethod['parser'], urls: string[], listed?: number) => {
+        if (work && catalogue && urls.length) candidate = { url: item.url, parser: mode,
+          samples: urls.slice(0, listingWindow), ...(listed ? { listed } : {}), ...(advertisedFeed ? { feedUrl: advertisedFeed } : {}),
+          ...(listed && saved?.listed && listed < saved.listed ? { reduced: true } : {}),
+          ...(hint?.covers || saved?.covers ? { covers: hint?.covers ?? saved?.covers } : {}) };
+      };
+      const feedMime = /^(?:application\/(?:atom\+xml|rss\+xml|xml)|text\/xml)$/u.test(reply.mime);
+      if (reply.mime !== 'text/html' && !feedMime) {
         if (offset) fail('listing_changed');
+        await corroborate([]);
         const original = await file(reply);
         if (!original) fail('unreadable');
+        remember('document', [reply.url]);
         found.push(original); return leaf;
       }
+      if (input.kind === 'document' && feedMime) fail('unreadable');
       if (reply.body.length > 1024 * 1024) fail('file_too_large');
       if (++pages > 8) fail('limit');
       let html: string;
       try { html = new TextDecoder('utf-8', { fatal: true }).decode(reply.body); } catch { return fail('unreadable'); }
-      const page = inspectSourcePage(html, reply.url);
+      const page = inspectSourcePage(feedMime ? '' : html, reply.url);
       if (page.gate) needsUser(page.gate);
-      const listing = input.kind === 'document' ? [] : [...new Set(page.links.map(safeLink).filter((url): url is string => !!url && url !== reply.url))];
-      const dynamic = input.kind !== 'document' && page.dynamic;
+      const scoped = (links: string[]) => [...new Set(links.map(safeLink).filter((url): url is string => !!url && url !== reply.url))];
+      let parser: SourceReadingMethod['parser'] = 'links';
+      let listing = input.kind === 'document' ? [] : scoped(page.links);
+      const records = input.kind === 'document' ? [] : scoped(page.records);
+      if (records.length && (!listing.length || saved?.parser === 'records')) {
+        parser = 'records';
+        listing = [...new Set([...records, ...listing])];
+      } else if (records.length) listing = [...new Set([...listing, ...records])];
+      if (feedMime) { parser = 'feed'; listing = scoped(sourceFeedLinks(html, reply.url)); }
+      else if (catalogue && (!saved || !listing.length || saved.parser === 'feed' || saved.listed && listing.length < saved.listed)) {
+        const feeds = scoped(page.feeds);
+        if (saved?.feedUrl && feeds.includes(saved.feedUrl)) feeds.unshift(feeds.splice(feeds.indexOf(saved.feedUrl), 1)[0]!);
+        for (const feedUrl of feeds.slice(0, 2)) {
+          let feed: Reply;
+          try { feed = await read(feedUrl); } catch (error) {
+            if (gate || signal.aborted || failure !== 'unavailable') throw error;
+            continue;
+          }
+          if (feed.body.length > 1024 * 1024) continue;
+          const links = scoped(sourceFeedLinks(feed.body.toString('utf8'), feed.url));
+          if (links.length) { parser = 'feed'; advertisedFeed = feedUrl; listing = [...new Set([...links, ...listing])]; break; }
+        }
+      }
+      await corroborate(listing);
+      function savePage() {
+        let content;
+        try { content = parsePersonalPage(html, reply.url); } catch { return fail('unreadable'); }
+        found.push({ url: reply.url, mimeType: 'text/html', bytes: reply.body,
+          sha256: createHash('sha256').update(reply.body).digest('hex'), preview: content.text.slice(0,12000),
+          ...(page.sections.length ? { sections: page.sections } : {}) });
+      }
+      if ((page.currentBody || !catalogue && page.article) && listing.length && !offset) savePage();
+      const dynamic = input.kind !== 'document' && !feedMime && page.dynamic;
+      const listedGroups = listing.flatMap(url => page.groups.has(url) ? [[url, page.groups.get(url)]] : []);
       const listingHash = work ? digest([input.cardId, work.revision, work.checkId, input.kind, entry.href, input.allowedPath ?? null,
-        reply.url, listing, dynamic]) : '';
+        reply.url, listing, dynamic, ...(listedGroups.length ? [listedGroups] : [])]) : '';
       if (work && offset <= listing.length && offset > 0 && item.listingHash !== listingHash) fail('listing_changed');
       if (work && offset > listing.length && !dynamic) fail('listing_changed');
       if (listing.length && (!work || offset < listing.length)) {
         const end = work ? Math.min(offset + listingWindow, listing.length) : listing.length;
-        children.push(...listing.slice(offset, end).map(url => ({ url })));
+        remember(parser, listing.slice(offset, end), listing.length);
+        children.push(...listing.slice(offset, end).map(url => {
+          const sections = page.groups.get(url);
+          return sections ? { url, sections } : { url };
+        }));
         if (work) {
           if (end < listing.length || dynamic) children.push({ url: item.url, offset: end, listingHash });
           return leaf;
@@ -249,12 +311,13 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
           break;
         }
         children.push(...[...discovered].map(url => ({ url })));
+        if (!listing.length) remember('rendered', [...discovered]);
         if (!children.length && !found.length && !listing.length && !offset) fail('unreadable');
       } else if (!listing.length) {
-        let content;
-        try { content = parsePersonalPage(html, reply.url); } catch { return fail('unreadable'); }
-        found.push({ url: reply.url, mimeType: 'text/html', bytes: reply.body,
-          sha256: createHash('sha256').update(reply.body).digest('hex'), preview: content.text.slice(0,12000) });
+        if (feedMime || catalogue && !page.currentBody && (!page.hasText || !hint && saved?.parser !== 'document' && (input.kind === 'directory' || !!saved)))
+          fail('unreadable');
+        savePage();
+        remember('document', [reply.url]);
       }
       return leaf;
     }
@@ -267,10 +330,12 @@ async function runAcquisition(input: SourceCardInput, access: SourceCardAccess, 
       let result;
       try { result = await scan(item); }
       catch (e) {
-        if (work && consumed && ['file_too_large','limit','listing_changed'].includes(failure)) break;
+        if (work && consumed && !signal.aborted && !['authorization','scope'].includes(failure)) break;
         throw e;
       }
       consumed++;
+      if (item.url !== result.canonical && result.found.some(original => original.url === result.canonical))
+        redirects.push({ from: item.url, to: result.canonical });
       for (const original of result.found) originals.set(original.url, original);
       if (work) next.push(...result.children);
       else for (const child of result.children) {

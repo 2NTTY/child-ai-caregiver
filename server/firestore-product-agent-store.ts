@@ -18,6 +18,7 @@ import { agentActionToolNames } from '../src/shared/agent-actions.ts';
 import { createFirestoreAgentDocuments } from './firestore-agent-documents.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { createFirestoreAgentSources } from './firestore-agent-sources.ts';
+import { createFirestoreOrdinaryProposalsExtension } from './firestore-ordinary-proposals.ts';
 import type { FirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 
 import type { FirestoreConcernStore } from "./firestore-concerns.ts";
@@ -43,8 +44,9 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
 }) {
   const runs = createFirestoreAgentRuns(options), { data, authority } = runs;
   const documents = createFirestoreAgentDocuments({ ...options, runs });
+  const ordinary = createFirestoreOrdinaryProposalsExtension({ ...options, runs });
   const proposals = createFirestoreAgentProposals({ ...options, runs,
-    extensions: [documents.extension, ...(options.concerns ? [options.concerns.extension] : []), ...(options.sources ? [createFirestoreAgentSources(options.sources)] : [])] });
+    extensions: [documents.extension, ordinary, ...(options.concerns ? [options.concerns.extension] : []), ...(options.sources ? [createFirestoreAgentSources(options.sources)] : [])] });
   const actions = createFirestoreAgentActions({ ...options, runs, proposals });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat: options.chat,
     policyVersion: async b => (await actions.readPolicy(b)).version });
@@ -98,6 +100,13 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     const value: ProductAgentResult = { ...original, proposals: candidates, tools: original.tools.filter(tool =>
       tool.name !== 'confirmed_proposal' && !Object.values(agentActionToolNames).includes(tool.name)) };
     for (const { receipt } of receipts) value.tools.push({ name: agentActionToolNames[receipt.kind], status: 'succeeded', reference: receipt.id });
+    for (const candidate of candidates) {
+      const draftTool = candidate.value.kind === 'care_record_create' ? 'save_ordinary_record'
+        : candidate.value.kind === 'care_record_revise' ? 'revise_ordinary_record'
+          : candidate.value.kind === 'private_note_create' ? 'save_private_instruction'
+            : candidate.value.kind === 'private_note_revise' ? 'revise_private_instruction' : null;
+      if (draftTool) value.tools.push({ name: draftTool, status: 'succeeded', reference: candidate.id });
+    }
     if (confirmation) value.tools.push({ name: 'confirmed_proposal', status: 'succeeded', reference: confirmation.id });
     const documentReceipts = await documents.read(b, run.id);
     value.tools = value.tools.filter(tool => !['generate_family_document', 'change_family_document'].includes(tool.name));
@@ -117,7 +126,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     bindConfirmationQuestion: confirmations.bindConfirmationQuestion, consumeConfirmation: confirmations.consumeConfirmation,
     recordedConfirmation: confirmations.recordedConfirmation,
     replyState: runs.replyState, claim: runs.claim, authorize: runs.authorize, cancelReply: runs.cancelReply, finish: runs.finish,
-    propose: proposals.propose, decide: proposals.decide, pendingProposals: proposals.pendingProposals, backgroundRuns: runs.backgroundRuns,
+    propose: proposals.propose, editProposal: proposals.editProposal, decide: proposals.decide, pendingProposals: proposals.pendingProposals, backgroundRuns: runs.backgroundRuns,
     get: (userId, childId, runId) => runs.result(userId, childId, runId, { read: project }),
     readCancelled: (scope, runId) => runs.result(scope.userId, scope.childId, runId, { read: async (b, run, result) => {
       if (!runs.matches(b, scope, run, false)) domainReject('agent_scope_changed');

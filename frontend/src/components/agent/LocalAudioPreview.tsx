@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { AppState, View } from "react-native";
+import { AppState, Pressable, View } from "react-native";
+import Play from "lucide-react-native/icons/play";
+import Pause from "lucide-react-native/icons/pause";
+import { colors } from "../../theme";
 import { Text } from "react-native-paper";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { AppButton } from "../ui";
 
-export function LocalAudioPreview({ uri, saved=false, seek }: { uri: string; saved?:boolean; seek?:{seconds:number;request:number} }) {
+export function LocalAudioPreview({ uri, saved=false, seek, compact=false }: { uri: string; saved?:boolean; compact?:boolean; seek?:{seconds:number;request:number} }) {
   const player = useAudioPlayer({ uri }), status = useAudioPlayerStatus(player);
   const mounted = useRef(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +34,11 @@ export function LocalAudioPreview({ uri, saved=false, seek }: { uri: string; sav
       else { if (!await preparePlayback()) return; if (status.didJustFinish || status.currentTime >= status.duration) await player.seekTo(0); if (mounted.current && AppState.currentState === "active") player.play(); }
     } catch { setError("暫時未能播放這段音訊，原檔保留。"); }
   }
+  if (compact) return <View><Pressable accessibilityRole="button" accessibilityLabel={status.playing ? "暫停播放" : "播放試聽"}
+    disabled={!status.isLoaded} onPress={() => void toggle()} style={{ minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 }}>
+    {status.playing ? <Pause size={17} color={colors.ink} /> : <Play size={17} color={colors.ink} />}
+    <Text>{Math.floor(status.currentTime)} / {Math.ceil(status.duration)} 秒</Text></Pressable>
+    {error && <Text accessibilityRole="alert">{error}</Text>}</View>;
   return <View><AppButton label={status.playing ? "暫停播放" : saved ? "播放原錄音" : "播放試聽"} disabled={!status.isLoaded} onPress={() => { void toggle(); }} />
     <Text>{Math.floor(status.currentTime)} / {Math.ceil(status.duration)} 秒</Text>
     {error ? <Text accessibilityRole="alert">{error}</Text> : null}</View>;

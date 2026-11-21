@@ -35,7 +35,7 @@ import { FIREBASE_BACKUP_COLLECTION_SUFFIXES, inspectFirebaseBackupSnapshot, ass
 import { createFirestoreRestoreCodec } from './firestore-restore-codec.ts';
 import { prepareFirebaseRestore, assertFirebaseRestoreAuthority, firebaseRestoreEpoch, type FirebaseRestoreAuthUser } from './firestore-restore.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
-import { isRestoreProtocolOrUsage } from './firestore-restore-usage.ts';
+import { isRestoreProtocolOrUsage, isRestoreSpecialistDraft } from './firestore-restore-usage.ts';
 import { createFirebaseRestoreApply } from './firebase-restore-apply.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { firestorePhotoSchemas as photoSchemas, photoObjectScope } from './firestore-photos.ts';
@@ -87,7 +87,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
     abortCopy: options.avatars.abortCopy }) : null;
   const sessionPath=namespace+'_sessions/';
   const prefix=(backupId:string)=>{uuid.parse(backupId);return 'gs://'+options.backupBucketName+'/firebase-backups/v1/'+backupId+'/firestore';};
-  const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)).map(row=>codec.decode(row));
+  const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)
+    && !isRestoreSpecialistDraft(options,row)).map(row=>codec.decode(row));
   async function readAll(database:Firestore,allowCheckpoint=false,unchangedSince?:string):Promise<FirebaseBackupDocument[]>{
     const allowed=new Set(FIREBASE_BACKUP_COLLECTION_SUFFIXES.map(suffix=>namespace+suffix));
     const collections=await database.listCollections();

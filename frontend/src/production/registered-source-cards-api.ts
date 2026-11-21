@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sourceReadingViewSchema, type SourceReading } from '../../../src/shared/source-card-reading.ts';
+import { sourceDirectoryPageSchema, sourceReadingViewSchema, type SourceReading } from '../../../src/shared/source-card-reading.ts';
 import { registeredSourceCardSchema, registeredSourceSettingsSchema, type RegisteredSourceCommand, type RegisteredSourceSettings } from '../../../src/shared/registered-source-card.ts';
 
 export const sourceCardSettingsSchema = registeredSourceSettingsSchema;
@@ -35,6 +35,8 @@ export function createRegisteredSourceCardsApi(baseUrl: string, fetcher: typeof 
   }
   const one = z.object({ card: registeredSourceCardSchema }), mutation = z.object({ card: registeredSourceCardSchema.nullable() });
   return {
+    documents: (userId: string, signal: AbortSignal, cardId: string, cursor?: string) => request(userId, signal,
+      '/' + encodeURIComponent(cardId) + '/documents' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''), sourceDirectoryPageSchema),
     reading(userId: string, signal: AbortSignal, target: SourceReading) {
       const params = new URLSearchParams({ documentId: target.documentId, version: target.version, offset: String(target.offset) });
       if (target.page !== undefined) params.set('page', String(target.page));

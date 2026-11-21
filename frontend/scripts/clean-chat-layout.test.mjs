@@ -140,7 +140,7 @@ test('clean empty chat has one prompt, separate toolbar, stable composer, and co
   assert.equal(node(view.tree, 'AgentComposer').props.inputHint, undefined);
   assert.equal(node(view.tree, 'AgentConversation').props.visible, false);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.ok(label(view.tree, 'AI 處理 · 僅使用獲授權資料'));
+  assert.ok(label(view.tree, '更多助手選項'));
   assert.doesNotMatch(content(timeline.props.footer), /已讀取|最後讀取|尚未有已保存聊天/);
   const readingPanel = nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel');
   const oldComposer = [readingPanel.props.children].flat().findIndex(item => item?.type === 'AgentComposer');

@@ -1,16 +1,28 @@
 import { Text } from 'react-native-paper';
 import { platformLibraryJoin } from '../../../../src/shared/personal-library';
+import { childHealthSeries } from '../../../../src/shared/source-series';
 import { useMemoryReferenceWorkspace } from '../../workspaces/MemoryReferenceWorkspace';
 import { AppButton } from '../ui';
 
-export function PlatformCardJoin({ seriesId, citation }: {
-  seriesId: string; citation?: { sourceId: string; versionId: string };
+export function PlatformCardJoin({ seriesId, citation, compact = false }: {
+  seriesId: string; citation?: { sourceId: string; versionId: string }; compact?: boolean;
 }) {
   const workspace = useMemoryReferenceWorkspace();
   const references = workspace?.model.references;
   const save = workspace?.reads?.setLibraryPreference;
   if (!workspace || !save || references?.state !== 'ready') return null;
-  const items = references.data.catalog?.filter(item => item.series?.id === seriesId) ?? [];
+  const catalogue = references.data.catalog ?? [];
+  const target = citation && catalogue.find(item => item.sourceId === citation.sourceId && item.versionId === citation.versionId);
+  const group = seriesId === childHealthSeries.id ? catalogue.find(item => item.childHealth)?.childHealth : target?.childHealth;
+  if (group && (!citation || target?.childHealth)) {
+    if (group.adopted === group.total) return <Text accessibilityLiveRegion="polite">已採用整個系列</Text>;
+    const label = compact ? (group.adopted ? '採用其餘教材' : '採用整個系列') : (group.adopted ? '採用其餘教材並跟隨更新' : '下載到我的參考資料');
+    return <AppButton label={label}
+      accessibilityLabel={compact ? label + '並跟隨更新' : `下載平台卡「${childHealthSeries.name}」`} density="compact" variant="secondary"
+      disabled={!workspace.model.online || workspace.reads?.referencesBusy}
+      onPress={() => save({ action: 'manage', seriesId: childHealthSeries.id, operation: 'join', expectedState: group.stateHash })} />;
+  }
+  const items = catalogue.filter(item => item.series?.id === seriesId);
   if (citation && !items.some(item => item.sourceId === citation.sourceId && item.versionId === citation.versionId)) return null;
   const { series, preference } = items[0] ?? {};
   const join = platformLibraryJoin(items);

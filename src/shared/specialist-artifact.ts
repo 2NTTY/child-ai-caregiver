@@ -9,6 +9,9 @@ export const SPECIALIST_ARTIFACT_POLICY_VERSION = "req008-specialist-artifact/1"
 /** Server-enforced ceiling for automated rebuild-and-reverify repair loops. */
 export const SPECIALIST_ARTIFACT_MAX_REPAIR_ITERATIONS = 2;
 
+/** Base64 plus encrypted draft metadata must fit the Firestore domain envelope's 192 KiB plaintext limit. */
+export const SPECIALIST_DRAFT_MAX_BYTES = 128 * 1024;
+
 /** Reported whenever no isolated pixel/screenshot renderer ran on the artifact. */
 export const PIXEL_SCREENSHOT_UNVERIFIED_CHECK = "pixel_screenshot_render";
 

@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { FieldPath } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { createFirestoreAuthority } from './firestore-authority.ts';
-import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from './firestore-backup.ts';
+import { FIREBASE_BACKUP_COLLECTION_SUFFIXES, FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX } from './firestore-backup.ts';
 import { domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
 import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
@@ -52,6 +52,8 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
       family, version: raw.version, ciphertext: raw.ciphertext, ...(family === 'domain' ? { recordVersion: raw.recordVersion } : {}) } });
     const { context } = opened;
     const suffix = path.split('/')[0].slice(options.namespace.length);
+    if ((suffix === FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX) !== (context.kind === 'agent-specialist-draft'))
+      domainReject('erasure_document_binding', 503);
     const storageKind = context.kind === 'care-tombstone' && suffix === '_care_records' ? 'care-record'
       : context.kind === 'shared-input-tombstone' && suffix === '_shared_inputs' ? 'shared-input'
       : context.kind === 'memory-tombstone' && suffix === '_memory_facts' ? 'memory-fact'
@@ -64,6 +66,12 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
   }
   function matches(job: FirestoreScopeErasure, row: OpenedRecoveryEnvelope) {
     const scope = job.intent.scope, candidate = row.context.scope;
+    if (row.context.kind === 'agent-specialist-draft') {
+      if (scope.ownerUserId !== candidate.ownerUserId) return false;
+      // Preview bytes are derived private content, including stale storage epochs of the same child.
+      return job.intent.type === 'account-delete' || job.intent.type === 'child-delete'
+        && scope.workspaceId === candidate.workspaceId && scope.childId === candidate.childId;
+    }
     if (mixedChatErasedBy(row.context.kind, row.value, candidate.ownerUserId, scope,
       job.intent.type === 'account-delete' || job.intent.type === 'class-delete')) return true;
     if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete',job.intent.type==='class-delete')) return true;

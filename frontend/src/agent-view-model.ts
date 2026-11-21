@@ -5,12 +5,39 @@ export type AgentRunStatus = "running" | "completed" | "stopped" | "unknown";
 export type AgentProposalStatus = "pending" | "accepted" | "dismissed" | "expired";
 export type AgentDecisionKind = "accept" | "dismiss";
 export interface AgentDetailRow { label: string; value: string }
+export interface AgentProposalEditableDraft {
+  title?: string;
+  content: string;
+  reason?: string;
+  allowEmptyContent?: boolean;
+  titleLabel?: string;
+  contentLabel: string;
+  reasonLabel?: string;
+  maxTitleLength?: number;
+  maxContentLength: number;
+  maxReasonLength?: number;
+}
+export interface AgentProposalDraftEditInput {
+  title?: string;
+  content: string;
+  reason?: string;
+}
+export interface AgentProposalDiffView {
+  beforeLabel: string;
+  beforeText: string;
+  afterLabel: string;
+  afterText: string;
+  beforeTitle?: string;
+  afterTitle?: string;
+}
 export interface AgentProposalView {
   id: string; version: number; status: AgentProposalStatus;
-  kind: "family_document_change" | "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
+  kind: "care_record_create" | "care_record_revise" | "private_note_create" | "private_note_revise" | "family_document_change" | "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
   contentState?: "ready" | "invalidated"; title: string; content: string; scope: "family" | "private";
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
-  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
+  editableDraft?: AgentProposalEditableDraft;
+  diff?: AgentProposalDiffView | null;
+  result: { kind: "care_record" | "private_note" | "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentSpecialistArtifactView {
@@ -60,8 +87,9 @@ export interface AgentRunModel {
 export interface AgentRunActions {
   refresh(): void; setSharedConfirmation(id: string, checked: boolean): void;
   decide(id: string, decision: AgentDecisionKind): void; retryOriginal(): void;
+  editProposal?(id: string, input: AgentProposalDraftEditInput): Promise<boolean> | void;
   openSource(id: string): void;
-  openSpecialistArtifact?(id: string): void;
+  openSpecialistArtifact?(id: string, runId: string): void;
 }
 export interface AgentInboxModel {
   online: boolean; locked: boolean; state: AgentReadState; loadedAt: string | null;
@@ -94,6 +122,10 @@ export function mayDecide(model: AgentRunModel, proposal: AgentProposalView, dec
   return model.readState === "ready" && model.online && !model.busy && !model.pendingDecision
     && !model.writesBlocked && (decision === "dismiss" ? proposal.status === "pending" || proposal.status === "expired" : proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal))
     && (decision !== "accept" || proposal.scope === "private" || !!model.sharedConfirmed[proposal.id]);
+}
+export function mayEditProposal(model: AgentRunModel, proposal: AgentProposalView): boolean {
+  return model.readState === "ready" && model.online && !model.busy && !model.pendingDecision
+    && !model.writesBlocked && proposalNeedsConfirmation(proposal) && !!proposal.editableDraft;
 }
 export function mayCheckShared(model: AgentRunModel, proposal: AgentProposalView): boolean {
   const pending = model.pendingDecision;

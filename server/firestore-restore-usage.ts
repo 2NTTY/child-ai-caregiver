@@ -8,14 +8,42 @@ import { z } from 'zod';
 import { canonical } from './firestore-session-codec.ts';
 import { firestoreUsageRecoverySchemas as usage } from './firestore-ai-usage.ts';
 import { decodeRootBudgetState, encodeRootBudgetState } from './firestore-root-budget.ts';
-import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
-import type { FirebaseBackupDocument } from './firestore-backup.ts';
+import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { firestoreSpecialistDraftSchema } from './firestore-agent-documents.ts';
+import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
+import { FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX, type FirebaseBackupDocument } from './firestore-backup.ts';
 
 const envelopeSchema = z.object({ format: z.string(), version: z.literal(1), ciphertext: z.string().min(1) }).strict();
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore usage binding rejected'), { code: 'restore_usage_binding', status: 409 }); }
 export function isRestoreProtocolOrUsage(namespace: string, path: string) {
   return ['_sessions/', '_adk/', '_root_budget/', '_ai_usage/', '_ai_usage_detail/', '_knowledge_work/', '_knowledge_budget/'].some(suffix => path.startsWith(namespace + suffix));
+}
+/** Discard only a verified native-snapshot preview cache; never copy or rebind the encrypted draft. */
+export function isRestoreSpecialistDraft(options: FirestoreDomainOptions, row: FirebaseBackupDocument): boolean {
+  const prefix = options.namespace + FIREBASE_SPECIALIST_DRAFT_COLLECTION_SUFFIX + '/';
+  if (!row.path.startsWith(prefix)) return false;
+  const fail = (): never => { throw Object.assign(new Error('Restore specialist draft binding rejected'), {
+    code: 'restore_specialist_draft_binding', status: 409,
+  }); };
+  const raw = row.data;
+  if (!/^[a-f0-9]{64}$/u.test(row.path.slice(prefix.length)) || raw.format !== 'yuban-firestore-domain'
+    || raw.version !== 1 || raw.recordVersion !== 1 || typeof raw.ciphertext !== 'string') fail();
+  const { context, value } = openRecoveryEnvelope({ ...options, locator: raw.recovery,
+    envelope: { family: 'domain', version: 1, recordVersion: 1, ciphertext: raw.ciphertext } });
+  const parsed = firestoreSpecialistDraftSchema.safeParse(value);
+  if (!parsed.success) return fail();
+  const { summary, bytesBase64 } = parsed.data, kind = 'agent-specialist-draft';
+  const expectedId = JSON.stringify([context.scope.ownerUserId, summary.runId, summary.artifactId]);
+  const store = new FirestoreDomainData(options);
+  const bytes = Buffer.from(bytesBase64, 'base64');
+  if (context.kind !== kind || context.id !== expectedId
+    || store.ref('agent_specialist_drafts', kind, expectedId).path !== row.path
+    || raw.runId !== summary.runId || raw.artifactId !== summary.artifactId
+    || Object.entries(store.tags(context.scope)).some(([key, value]) => raw[key] !== value)
+    || bytes.toString('base64') !== bytesBase64 || bytes.length !== summary.byteLength
+    || createHash('sha256').update(bytes).digest('hex') !== summary.artifactHash) fail();
+  return true;
 }
 /** Keep spent quota, including operations after the snapshot. Protocol sessions are deliberately not resumed. */
 export function restoreFirestoreUsage(options: FirestoreDomainOptions, snapshots: readonly FirebaseBackupDocument[],

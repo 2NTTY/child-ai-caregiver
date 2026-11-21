@@ -65,7 +65,7 @@
   },
   {
     "path": "tests/firestore-restore.test.ts",
-    "cases": 6
+    "cases": 7
   },
   {
     "path": "tests/firestore-restore-voice-relations.test.ts",

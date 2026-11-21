@@ -2,8 +2,15 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
-import { bindReviewedWindow, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
+import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
+import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
+import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
+import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
+import { hasSettledGenerationOutput } from './fhs-held-window-evidence.mjs';
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
+import { damagedPdfText } from '../server/knowledge-pdf-quotes.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -12,6 +19,7 @@ const confirmedPages = new Set(['text_exact', 'text_layout_whitespace', 'text_ac
 
 function pageEvidence(chunk, physical, windows, pin) {
   const excerpt = chunk.sourceExcerpt;
+  if (excerpt && damagedPdfText.test(excerpt)) return 'unreadable_excerpt';
   if (chunk.originalKind === 'page_transcription' || chunk.originalKind === 'visual_page') {
     const window = windows.find(reading => reading.parentHash === pin.sha256
       && reading.first <= physical.page && reading.last >= physical.page
@@ -80,6 +88,66 @@ export async function verifyFhsPdfPages(metadata, source, identities, windows, p
   return { sha256: pin.sha256, bytes: pin.bytes, totalPages: pin.pages, pages };
 }
 
+function recordedWholePdfReadings(pdf, provenance) {
+  const native = provenance.nativePdf;
+  if (pdf.totalPages <= 20 || native?.contentHash !== pdf.sha256 || native.revision || provenance.retainedDraft || provenance.windows?.length)
+    return undefined;
+  const readings = {};
+  for (const role of ['organize', 'review']) {
+    const key = provenance[role + 'AttemptKey'], prefix = 'knowledge-' + role + ':';
+    const coverage = native[role];
+    if (typeof key !== 'string' || !key.startsWith(prefix) || !digest.test(key.slice(prefix.length))
+      || coverage?.unreadablePages?.length !== 0 || coverage.pages?.length !== pdf.totalPages
+      || !coverage.pages.every((entry, index) => entry?.page === index + 1 && typeof entry.finding === 'string' && entry.finding.trim()))
+      return undefined;
+    readings[role] = { stageHash: knowledgeReviewHash(key), physicalPages: coverage.pages.map(entry => entry.page),
+      pageFindingsSha256: knowledgeReviewHash(coverage.pages) };
+  }
+  return readings;
+}
+
+async function recordedWindowReadings(pdf, work, sourceId, originalOperation, confirmGenerations) {
+  const provenance = work.prepared.provenance;
+  const windows = provenance.windows;
+  if (pdf.totalPages <= 20 || !work.windowed || !windows?.length || typeof confirmGenerations !== 'function'
+    || provenance.retainedDraft || provenance.nativePdf || work.reusedOrganizationFrom)
+    return undefined;
+  const plan = planKnowledgePdfWindows(pdf.totalPages, AGENT_RUN_LIMITS.modelCalls.max, work.windowRangeLimit ?? 14);
+  if (windows.length !== plan.length
+    || provenance.organizeAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.organizeKey))
+    || provenance.reviewAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.reviewKey)))
+    return undefined;
+  const readings = [];
+  for (const [index, window] of windows.entries()) {
+    const { first, last, firstRead, lastRead } = plan[index];
+    if (window.method !== PDF_WINDOW_METHOD || window.parentHash !== pdf.sha256 || !digest.test(window.sliceHash)
+      || window.registeredRequests || window.first !== first || window.last !== last || window.firstRead !== firstRead || window.lastRead !== lastRead
+      || window.pages?.length !== last - first + 1 || window.organizePages?.length !== window.pages.length)
+      return undefined;
+    if (!window.pages.every((p, i) => p.page === first + i && p.status !== 'unreadable' && p.reason?.trim()
+      && window.organizePages[i].page === p.page && window.organizePages[i].status === p.status && window.organizePages[i].reason?.trim()))
+      return undefined;
+    const reading = { first, last, firstRead, lastRead, sliceHash: window.sliceHash, physicalPages: window.pages.map(p => p.page) };
+    for (const [role, findings] of [['organize', window.organizePages], ['review', window.pages]]) {
+      const key = window[role + 'Key'], prefix = 'knowledge-window-' + role + ':';
+      if (typeof key !== 'string' || !key.startsWith(prefix) || !digest.test(key.slice(prefix.length))) return undefined;
+      reading[role] = { stageHash: knowledgeReviewHash(key), pageFindingsSha256: knowledgeReviewHash(findings) };
+    }
+    readings.push(reading);
+  }
+  const stages = readings.flatMap(reading => [reading.organize.stageHash, reading.review.stageHash]);
+  if (new Set(stages).size !== stages.length || !await confirmGenerations(sourceId, originalOperation, stages)) return undefined;
+  return readings;
+}
+
+export async function confirmOriginalGenerations(attempts, sourceId, operation, stages) {
+  const refs = stages.map(stage => attempts.doc(campaignTicketId('generation', sourceId, operation, stage)));
+  const fieldMask = ['sourceId', 'operationFingerprint', 'stageHash', 'kind', 'state', 'rejection', 'outputTokens'];
+  const docs = await attempts.firestore.getAll(...refs, { fieldMask });
+  return docs.length === refs.length && docs.every((doc, i) =>
+    doc.id === refs[i].id && hasSettledGenerationOutput(doc.data(), sourceId, operation, stages[i]));
+}
+
 export async function readFhsDelivery({ sourceId, originalOperation, deliveryOperation = originalOperation }, ports) {
   if (!digest.test(originalOperation) || !digest.test(deliveryOperation) || originalOperation !== ports.originalOperation)
     throw Error('fhs_receipt_operation_binding');
@@ -118,6 +186,16 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
   const currentCard = await ports.familyCard(metadata.url, sourceId, metadata.versionId);
   if (!currentCard?.enabled || currentCard.seriesId !== card.seriesId || currentCard.versionId !== metadata.versionId)
     return { ...row, readback: 'edition_not_current', versionHash: active.versionHash };
+  if (originalOperation === deliveryOperation) {
+    const readings = recordedWholePdfReadings(pdf, prepared.provenance);
+    if (readings) pdf.recordedReadings = readings;
+  }
+  // A registered first dispatch bills every window to the original commission.
+  if (originalOperation === deliveryOperation
+    || (work.firstDispatchFrom === originalOperation && deliveryOperation === firstDispatchWorkId(originalOperation))) {
+    const windowReadings = await recordedWindowReadings(pdf, work, sourceId, originalOperation, ports.confirmOriginalGenerations);
+    if (windowReadings) pdf.recordedWindowReadings = windowReadings;
+  }
   return { ...row, readback: pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
     card: { ...metadata, seriesId: card.seriesId }, vectors: { required: expected.length, exported: actual.length, chunkKeys: actual }, pdf };
 }
@@ -134,7 +212,6 @@ async function main() {
   const { campaignMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { platformSourceWatches } = await import('../server/knowledge-source-catalog.ts');
   const { campaignCredentials } = await import('../server/knowledge-campaign-budget.ts');
-  const { knowledgeReviewHash } = await import('../server/knowledge-review-assessment.ts');
   const { retainedDraftWorkId } = await import('../server/knowledge-retained-draft.ts');
   const { extractKnowledgePdf } = await import('../server/knowledge-pdf.ts');
   const { openFhsPdfReads } = await import('./fhs-pdf-reads.ts');
@@ -158,6 +235,11 @@ async function main() {
     const work = createFirestoreKnowledgeWork(domain);
     const inspect = operationFingerprint => work.inspect({ watchId: sourceId, workerGeneration: job.data.workerGeneration, publishMode: 'live', operationFingerprint });
     async function verifyRepair(original, delivery) {
+      if (delivery===firstDispatchWorkId(original)) {
+        const [prior,child]=await Promise.all([inspect(original),inspect(delivery)]);
+        const grant=bindFirstDispatch(manualPublicationPin(sourceId),original,prior);
+        return Boolean(grant && child?.firstDispatchFrom===original && (!child.result || child.result.observationHash===grant.observation));
+      }
       const truncated = knowledgeTruncatedOutputRepairId(original);
       let parent = original;
       if (delivery === retainedDraftWorkId(truncated)) parent = truncated;
@@ -180,13 +262,19 @@ async function main() {
     }
     const ports = { originalOperation: knowledgeReviewHash([campaignCredentials, sourceId, job.data.revision, job.data.workerGeneration]),
       pin, inspect, verifyRepair, active: () => store.publishedEdition(sourceId),
+      confirmOriginalGenerations: (id, operation, stages) => confirmOriginalGenerations(
+        database.collection(config.namespace + '_knowledge_campaigns').doc(campaign).collection('attempts'), id, operation, stages),
       familyCard: (url, id, version) => database.runTransaction(async tx => {
         const result = await store.platformCards(tx, randomUUID(), undefined, url);
         return result.cards.find(card => card.sourceId === id && card.versionId === version);
       }, { readOnly: true }), exportEdition: (...args) => store.exportPublishedEdition(...args),
       resolve: citation => store.citedPdf(citation), readOriginal: (id, hash) => refresh.originals.readPdf(id, hash), extract };
     let deliveryOperation = requestedDelivery ?? originalOperation;
-    if (!requestedDelivery && ports.originalOperation === originalOperation && manualPublicationPin(sourceId)?.lane === 'C2'
+    if (!requestedDelivery && ports.originalOperation===originalOperation && hasUndispatchedOriginal(sourceId)) {
+      const child=firstDispatchWorkId(originalOperation);
+      if (await inspect(child)) deliveryOperation=child;
+    }
+    if (!requestedDelivery && ports.originalOperation === originalOperation && hasReviewedWindowSource(sourceId)
       && bindReviewedWindow(manualPublicationPin(sourceId),originalOperation,await inspect(originalOperation))) {
       const child = retainedDraftWorkId(originalOperation);
       if (await inspect(child)) deliveryOperation = child;

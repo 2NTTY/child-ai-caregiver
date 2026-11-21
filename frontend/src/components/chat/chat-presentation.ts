@@ -8,7 +8,7 @@ export const chatFont = Platform.select({
 });
 export const chatColors = {
   canvas: colors.canvas, surface: colors.controlSurface, ink: colors.ink, secondary: colors.muted,
-  userBubble: colors.quietSurface, line: colors.softLine, outline: colors.controlOutline, hover: colors.quietSurface,
+  userBubble: colors.sage, line: colors.softLine, outline: colors.controlOutline, hover: colors.quietSurface,
   send: colors.accent, onSend: colors.onAccent, focus: colors.ink,
 } as const;
 export const chatType = {
@@ -19,7 +19,7 @@ export const chatType = {
   input: { fontSize: 16, lineHeight: 24 },
 } as const;
 export const chatLayout = {
-  maxWidth: 760, wideInset: 24, compactInset: 16, turnGap: 32, compactTurnGap: 28,
-  paragraphGap: 12, composerRadius: 24, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
+  maxWidth: 680, wideInset: 20, compactInset: 14, turnGap: 24, compactTurnGap: 20,
+  paragraphGap: 12, composerRadius: 16, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
   inputMinHeight: 48, inputMaxHeight: 168,
 } as const;

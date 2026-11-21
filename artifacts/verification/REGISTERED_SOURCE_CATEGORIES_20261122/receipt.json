@@ -1,0 +1,96 @@
+{
+  "baseline": "2e8225c0",
+  "dateHongKong": "2026-11-22",
+  "environment": "Windows、Node 24.22.3、本機 Firebase Auth／Firestore 模擬器、正式下載器／排程／API、普通合成家長及 Microsoft Edge。",
+  "paidModelCalls": 0,
+  "productionWrites": 0,
+  "realSources": [
+    {
+      "publisher": "NHS",
+      "title": "Your baby's first solid foods - NHS",
+      "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+      "downloadBytes": 52916,
+      "downloadSha256": "e3a8b16cb506b75bcde2172a590e4d7b6d76089be604afed9fb2cbfb66f6ee9a",
+      "version": "017f13399cb5c70804ad79a83481cd6d0ad537029fa75aad0a36ddcc108147eb",
+      "categories": {
+        "basis": "publisher",
+        "labels": [
+          "Baby",
+          "Weaning and feeding"
+        ]
+      },
+      "checks": [
+        {
+          "utc": "2026-11-21T16:35:08.315Z",
+          "status": "changed"
+        },
+        {
+          "utc": "2026-11-21T16:36:08.274Z",
+          "status": "unchanged"
+        }
+      ],
+      "checksInQueue": 2,
+      "indexJobsAcrossBothChecks": 1,
+      "savedDocuments": 1,
+      "sameDocumentAndVersion": true,
+      "editionReadBack": "extracted_text",
+      "anonymousDirectoryStatus": 401,
+      "viewport": "390 × 844",
+      "screenshot": "nhs.png"
+    },
+    {
+      "publisher": "香港特別行政區政府衞生署",
+      "title": "growth_charts.pdf",
+      "url": "https://www.dh.gov.hk/english/useful/useful_PP_Growth_Chart/files/growth_charts.pdf",
+      "downloadBytes": 8499482,
+      "downloadSha256": "73a8961326934dfaa598052b00a5cfccbe101459e1c51ea4fcf4e8ab27cf7eb1",
+      "version": "73a8961326934dfaa598052b00a5cfccbe101459e1c51ea4fcf4e8ab27cf7eb1",
+      "categories": {
+        "basis": "document",
+        "labels": [
+          "生長與發展"
+        ],
+        "evidence": "生長圖表"
+      },
+      "checks": [
+        {
+          "utc": "2026-11-21T16:35:12.093Z",
+          "status": "changed"
+        },
+        {
+          "utc": "2026-11-21T16:36:10.577Z",
+          "status": "unchanged"
+        }
+      ],
+      "checksInQueue": 2,
+      "indexJobsAcrossBothChecks": 1,
+      "savedDocuments": 1,
+      "sameDocumentAndVersion": true,
+      "editionReadBack": "extracted_text",
+      "anonymousDirectoryStatus": 401,
+      "viewport": "1100 × 844",
+      "screenshot": "growth.png"
+    }
+  ],
+  "controlledChecks": [
+    "圖書館目錄在兩個標題及較遲才巡查的另一頁列出同一公告。一次下載保存三個分類；獨立預約表另讀 PDF。",
+    "只改目錄標題後，即時目錄反映新分類。文件 ID、固定版本及索引工作數均維持原值。公告正文改動才產生新版本。",
+    "博物館公告欠出版者分類，系統按原文「展覽」歸入「學習與活動」。來源改版及個別項目失敗時仍可讀回已保存版本。",
+    "核對正文聲明與明確的「本頁列印版」連結後，略過該 PDF。只有目錄、獨立附件、欠現行聲明或同一 PDF 亦被指作獨立文件，均保留原件入口。"
+  ],
+  "limitations": [
+    "兩個真站在兩次巡查之間均沒有改版。目錄改版、只改分類及正文更新使用可控制的網站回應驗證。",
+    "生長圖表全份 PDF 已核對儲存雜湊並讀回首頁，沒有進行 20 頁的付費語義審核。兩項需 Unix socket 的受控瀏覽器測例未於這部 Windows 主機執行。",
+    "此包接本人登記來源卡。兩個已知來源的實測沒有擴大正式來源名單、執行正式批次或動用正式額度。"
+  ],
+  "checks": {
+    "passed": 35,
+    "skipped": 2,
+    "failed": 0,
+    "types": [
+      "Server",
+      "frontend"
+    ],
+    "firstFailure": "在原單一連結測例加入第二個目錄後，改版測例仍只列一個入口，既有完整性檢查保留舊讀法。補回仍應存在的第二個目錄項目，原有改版及固定版斷言通過。"
+  }
+}

@@ -1,0 +1,4000 @@
+{
+  "asOf": "2026-11-21T13:20:00.009208Z",
+  "workerAtBaseline": {
+    "revision": "6bd0095f085ad01bf2889948b9fc2b637c9e06e2",
+    "release": "r44901210516-1"
+  },
+  "publicationWorker": {
+    "worker": "b253fcae5587bb9da38dc2245156dc102154d91a",
+    "digest": "sha256:a4c913add56fb00afe5feb0d2317d335c7cc90a5cb05a60a1620be6d8df10527",
+    "release": "r44904989713-2",
+    "at": "2026-11-21T20:56:17+08:00",
+    "receipt": "deployed"
+  },
+  "hostToolSha256": "7b2acbfa3b5c19417fda38f49002a741e0acfb94a595a809ff159b626e9a8314",
+  "sourceArchiveSha256": "4e20faf6547070d4f30c17ff40b822c7603c398499f625e3bb5b7418eb399807",
+  "scope": "Official HTML transcripts only. Deduplicated paragraph counts refer to official transcript URLs; shared materials remain separately reviewed.",
+  "index": "The retrieval vector uses the entire located passage. Lexical postings use the reviewed search fields. A short citation can be expanded in the same edition. Unpublished transcripts are preserved in the source archive.",
+  "totals": {
+    "materials": 22,
+    "publishedMaterials": 10,
+    "heldMaterials": 12,
+    "budgetBlockedMaterials": 0,
+    "scripts": 61,
+    "archivedParagraphs": 1695,
+    "archiveOnlyScripts": 31,
+    "archiveOnlyParagraphs": 843,
+    "publishedOriginalParagraphs": 852,
+    "fullTextVectorParagraphs": 852,
+    "materialScriptRanges": 43,
+    "materialFullTextVectorRanges": 43,
+    "uniqueFullTextVectorRanges": 43,
+    "scriptsWithLocatedParagraphs": 30,
+    "scriptsWithAllParagraphsVectorized": 30,
+    "rangesWithShortenedCitation": 42,
+    "rangesWithSummaryAndMetadataLexicalIndex": 43
+  },
+  "ledger": {
+    "currency": "USD",
+    "unit": "microdollars before credits",
+    "limit": 30000000,
+    "settled": 12010120,
+    "held": 3268608,
+    "available": 14721272,
+    "generationReservation": 1603584,
+    "embeddingReservation": 308,
+    "scriptAttempts": 78,
+    "scriptGenerations": 34,
+    "scriptEmbeddings": 44,
+    "scriptSettled": 1330376,
+    "scriptHeld": 0
+  },
+  "materials": [
+    {
+      "sourceId": "fhs-20000",
+      "title": "愛·從母乳開始……",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/20000.html",
+      "operationFingerprint": "f52049d43dd8cc6ba956e24331be3767a1c2e9060d05922dd417805b46bd24c9",
+      "observationHash": "ab69a37fa24bafe82561ee25a4ac5d6a21d9ef11020452366a97819e5b52aa89",
+      "baselineId": null,
+      "activeVersionId": null,
+      "activeVersionHash": null,
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "model_output_limit",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 73700,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:19:11.260Z",
+          "kind": "generation",
+          "stageHash": "e676540237b35bbd0deb2f3b73235ca87ec6f08e12c8867fa1dd185583df4e34",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 73700
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-30119",
+      "title": "寶寶有話說 － 了解寶寶的信號",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30119.html",
+      "operationFingerprint": "993ca5bebb05cd56512bd8a37b690ba96cf85cebc6fe11ba603a108178ff32dc",
+      "observationHash": "31e53f0fd423f6e4638969ba208b5ba618831fa7c5c5b2fe7cfd07ac8f88089e",
+      "baselineId": "8184b7de-4f2e-5f64-8be8-721c7dec7162",
+      "activeVersionId": "b7147072-c7a4-5f16-b39c-2abf5c0dc954",
+      "activeVersionHash": "1c3a1f16bf757bb97621ec256bbada4419a25fd20f8224e0c49df31889424606",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "1c3a1f16bf757bb97621ec256bbada4419a25fd20f8224e0c49df31889424606",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 3,
+      "generationAttempts": 2,
+      "embeddingAttempts": 1,
+      "settledMicros": 46348,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T12:58:06.290Z",
+          "kind": "generation",
+          "stageHash": "b6552dbe31ad9a201af555c42d70988050a00f69964ab6ff2ce22ead9ccb4b08",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 15393
+        },
+        {
+          "at": "2026-11-21T12:58:14.387Z",
+          "kind": "generation",
+          "stageHash": "5619c79b9e15c56e3919d60d8201d3c79ac334395073ee84bd3f50d6b56ccaa4",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 30899
+        },
+        {
+          "at": "2026-11-21T12:58:28.804Z",
+          "kind": "embedding",
+          "stageHash": "bed9c8f9ecbcaca1dd244495c3496a174913d3b89353a110efda97aec4f24c13",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 56
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000024.html#transcript",
+          "paragraphs": 22,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 22,
+              "originalHash": "45510a56867805decec596d13c1c24422540633f54b541449eaf898768ecd78b",
+              "chunkKey": "p0-75c0d731b2604eefc944",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "c8ba8e52-bce0-5e95-a7dd-f901cddc3e9b",
+              "contentHash": "35ea462de44221d35c602d5e74b709940466b55fdeb993d4788adbe121aca3f2",
+              "treatment": "detailed",
+              "originalCharacters": 463,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30073",
+      "title": "全方位認識「泵奶器」",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30073.html",
+      "operationFingerprint": "c283980ef9d8a45fc629b744c11c20a00f05103529713dcbb06695667f4ade2f",
+      "observationHash": "04bcb77ea85868ac48f7861096db2b34365b0240031344dd6bb2bcbc2db2180b",
+      "baselineId": "43fa7f6b-d0b6-50a9-97d1-2e3bed119208",
+      "activeVersionId": "cc0f5448-7d1e-5b5d-82e2-3efb82255ea0",
+      "activeVersionHash": "d889978b7d16238d5146c78437c9d5a7c6a4e21d3a191295e3a3ce64d1dc7fdc",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "d889978b7d16238d5146c78437c9d5a7c6a4e21d3a191295e3a3ce64d1dc7fdc",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 3,
+      "generationAttempts": 2,
+      "embeddingAttempts": 1,
+      "settledMicros": 48047,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T12:59:44.365Z",
+          "kind": "generation",
+          "stageHash": "62237a6f5408a565d706b0f3dd94030bc23fa756b087f70c8e34b92b1086e1be",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 13710
+        },
+        {
+          "at": "2026-11-21T12:59:49.259Z",
+          "kind": "generation",
+          "stageHash": "4a3fb8272ed2f219d842e9a377a0ac6437029e67bfee19099d5617454cb8693b",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 34314
+        },
+        {
+          "at": "2026-11-21T13:00:01.389Z",
+          "kind": "embedding",
+          "stageHash": "559972c895a54b12a9d759ead5e58f8af94ed56aba6134a17ef40089fe5802a7",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 23
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_4.html#transcript",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "9ccbfc26d889b8a6e682f5c990eba9dff8b5053e18060bbd21ffad1ec18f2017",
+              "chunkKey": "p0-ff0c40a8a5ff8099260b",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "801a0759-a340-52e2-a13a-78890ce87474",
+              "contentHash": "bd9dc2ea914297b800804e251db0d6bba99a35a41949a096fad9480582799cd3",
+              "treatment": "detailed",
+              "originalCharacters": 174,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-12146",
+      "title": "奶瓶餵哺指引 - 如何正確沖調配方奶粉及安全餵哺嬰兒",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12146.html",
+      "operationFingerprint": "ec4260933277368c86955fbc0a0f448afa870b7e2e985e79d7e66e7eda40f53a",
+      "observationHash": "0d6bab8185e798a8c9acba56bbaec81c72e12605efab6ba6173c2edf9d9c2fec",
+      "baselineId": "77384ed2-1cce-5133-af13-924b2174c251",
+      "activeVersionId": "77384ed2-1cce-5133-af13-924b2174c251",
+      "activeVersionHash": "8446830eba0bac6e62d0bcf8a3160fc236aeaddf45ab2494539048ab134a3c9c",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_one_sided",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 33306,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:13:51.138Z",
+          "kind": "generation",
+          "stageHash": "2abd265934dea2eec9216df95ab54e6c20118dda05e56a793bfcec2d5cb23105",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 33306
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-30078",
+      "title": "嬰幼兒與維他命D",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30078.html",
+      "operationFingerprint": "e03b0bf805171a3476c5a4b7c4f020a6fd97b8421030c84d2dd5f0c663c6868d",
+      "observationHash": "1fbf194e2044e919efce9773b26ace7d3475c70df905fb3fc973261bc70e1ea2",
+      "baselineId": "7f2837c1-4612-543a-b0b1-243eebf45e46",
+      "activeVersionId": "7f2837c1-4612-543a-b0b1-243eebf45e46",
+      "activeVersionHash": "877eebe7375efba6536f766f44510e890178a02349dd366859308e08aae3478e",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 18498,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:01:09.455Z",
+          "kind": "generation",
+          "stageHash": "c8d46ad62eb3e3a356eac2261d8f3eb267a1372fcecdd6a607b95f0c05a3fa61",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 18498
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14727",
+      "title": "6至24個月嬰幼兒健康飲食 (1) 起步篇小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14727.html",
+      "operationFingerprint": "642e2826cb40a596f3742da0884d6990649f46d37968a9ffc2fdc96e221e3dcf",
+      "observationHash": "5c5ab84f61edf1559281684f1b7073800a1304a458d3a9c2c21c28dad29b9ef8",
+      "baselineId": "6d122965-e73c-5e4a-bc8d-678338f8f3f2",
+      "activeVersionId": "6d122965-e73c-5e4a-bc8d-678338f8f3f2",
+      "activeVersionHash": "3d8aad16ddbfcdfa5401cc40d3d63caa515566abe60ad90e45b2c699fa7e01bb",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_one_sided",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 27957,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:13:21.517Z",
+          "kind": "generation",
+          "stageHash": "5f74a09ebecc89d0aecf42395062a1d777d0c00eeb87466470d14c42e68f38ba",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 27957
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14722",
+      "title": "6至24個月嬰幼兒健康飲食(2)進展篇(上)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14722.html",
+      "operationFingerprint": "925556348c4b69991a1e0c69faa4d0e91c579b1745ac848e8cd300cbd0b08a74",
+      "observationHash": "f1c2d0e8f73b67a4f658cf249e060cb19cd7237f826da9b4887c8ef362ec1f77",
+      "baselineId": "ee24cbd4-1877-50ac-8b6e-947c210e8acd",
+      "activeVersionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+      "activeVersionHash": "fee9c864a11912221662025a8e8f4d2ead734be49645b4771940385bd72b02b7",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "fee9c864a11912221662025a8e8f4d2ead734be49645b4771940385bd72b02b7",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 9,
+      "generationAttempts": 2,
+      "embeddingAttempts": 7,
+      "settledMicros": 123450,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:14:34.445Z",
+          "kind": "generation",
+          "stageHash": "e33619d535ba5d26dd21e9e240f5b8f7f7749a37725b52a0cee8fc90eb88e84a",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 44432
+        },
+        {
+          "at": "2026-11-21T13:14:58.746Z",
+          "kind": "generation",
+          "stageHash": "1ddbca75c05519c9a0c0610b8780db2ff49ebe674d438c742ff60953b86c32c3",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 78285
+        },
+        {
+          "at": "2026-11-21T13:15:27.875Z",
+          "kind": "embedding",
+          "stageHash": "c3692763912fbf40ce01645a55705c0ce431f819311880b4d851be3a69be98bb",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 135
+        },
+        {
+          "at": "2026-11-21T13:15:30.164Z",
+          "kind": "embedding",
+          "stageHash": "2ed7fc36bd92fad3e6ed1b4d48b0ced1028c602d15578e829e7943d348675e81",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 83
+        },
+        {
+          "at": "2026-11-21T13:15:31.935Z",
+          "kind": "embedding",
+          "stageHash": "1c81a8d6e60f3ee8742a393610c01754da782ea3155abc3af8af88c259250e8a",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 95
+        },
+        {
+          "at": "2026-11-21T13:15:33.621Z",
+          "kind": "embedding",
+          "stageHash": "23f8f55812464cc46d37e6403e621b8b9c7dd9061f1c2626445eeb1ceb152343",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 138
+        },
+        {
+          "at": "2026-11-21T13:15:34.926Z",
+          "kind": "embedding",
+          "stageHash": "2c9269939c79cef4f9beadbaf102c3519b6769ceb6618edec6abaa28e30b9f2c",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 96
+        },
+        {
+          "at": "2026-11-21T13:15:36.738Z",
+          "kind": "embedding",
+          "stageHash": "d3bb1606e721633d08ee82fa4979e1d5dc45c33c5a726f091a19c780febf0f9b",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 136
+        },
+        {
+          "at": "2026-11-21T13:15:37.604Z",
+          "kind": "embedding",
+          "stageHash": "577b7f28bac53fc85e989e2ce1283f07263194bc6f610582ca2143703a54e5eb",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 50
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042.html#transcript",
+          "paragraphs": 27,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 16,
+              "originalHash": "5877eecbbf7daa1ea9309b09f85622f390cad2d3a0ea90dd5dff19428ba97130",
+              "chunkKey": "p0-5222b0a9d5827aceb363",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "74c6f773-af55-5fd7-9f2f-e62d699ebf82",
+              "contentHash": "bda9f7549fdf7241de356a018bea1302ae18ef2817b2544fb11a87f08e34a491",
+              "treatment": "detailed",
+              "originalCharacters": 1156,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 17,
+              "last": 25,
+              "originalHash": "0bda297c4a6c4bf2e659af64f28f7fa02b833c06f7372964a83336611319b26b",
+              "chunkKey": "p0-3f62d4a21249789c44e8",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "df88fa62-ce2c-596a-8383-2a314d88affe",
+              "contentHash": "53cb71e736533cc4429006700acaff3d313ac161647446b31e6b89a0c7a78992",
+              "treatment": "detailed",
+              "originalCharacters": 676,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 26,
+              "last": 27,
+              "originalHash": "5a8f101ab7a4916fe01f9e5ed9684db3212a124376d4b5fa5eed2a67db12354b",
+              "chunkKey": "p0-7a17435efa4d29038cd1",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "893985b6-e3d1-5350-83e7-bd80270ad6b7",
+              "contentHash": "32c983ccde1bcd0e2071a5788a15e9c3beb3941b0161749380e94a0e45d10069",
+              "treatment": "detailed",
+              "originalCharacters": 788,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042_p2.html#transcript",
+          "paragraphs": 36,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 23,
+              "originalHash": "6cb3bcb201e824a8e03de6d92c2b51b2970e9a7cd3062f77774ad2c2d6f79fb3",
+              "chunkKey": "p0-dd4913485a0c88388b75",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "534dfc83-0616-57fe-af52-cce76df68a2c",
+              "contentHash": "ecea46f76d1c941b1e70acb97789bb3d3797ee795a659c3f3fbe28da9b792989",
+              "treatment": "detailed",
+              "originalCharacters": 1190,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 24,
+              "last": 36,
+              "originalHash": "da071891a81b87c90db47d6ac36b5589840d1ea0b0d36b432ca87b8da064f7e6",
+              "chunkKey": "p0-7f43bca1e822e04f8b76",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "f3ef495f-b20e-5a76-ac81-851052bbeaeb",
+              "contentHash": "6c52d14ab64d78828327a2e163695b0a9d6669ce3628d71e57cfbc1a3642f1dd",
+              "treatment": "detailed",
+              "originalCharacters": 851,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042_p3.html#transcript",
+          "paragraphs": 22,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 22,
+              "originalHash": "866932f17f3c8d6b001b030d3d5c9f572a6229da0587f97887b6853aa0e2d406",
+              "chunkKey": "p0-67f40345b5bf97ead853",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "703b6bcd-9e1d-5901-b2d3-1d7dceae712e",
+              "contentHash": "867712d979002c6614313cb550ba8ad78e4b8d4dc1685d26b4509cb8877bab98",
+              "treatment": "detailed",
+              "originalCharacters": 1050,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000060.html#transcript",
+          "paragraphs": 6,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 6,
+              "originalHash": "0e15a607f4b0f85b94d51945fe2b99340c7c867a76771911c659c4988b65ca0d",
+              "chunkKey": "p0-5ca3a29611fdef45caf7",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "8979aa09-5c47-5c91-8cd6-6aef59296c59",
+              "contentHash": "a63fff84b57e0603e4c7641153bdae7be96afe9c037cd69b643d98cdf7b6d1e1",
+              "treatment": "detailed",
+              "originalCharacters": 392,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-16301",
+      "title": "6至24個月嬰幼兒 健康飲食(3) 進展篇(下)小冊子",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/16301.html",
+      "operationFingerprint": "5848a3afead2034cbfa9da7370b3f270d186df3a4131a63416acf4a303436ca7",
+      "observationHash": "d9673b562f37fbd2c7112f28f86b90f1b718fe328ee36a3b9bc8379f2b0b9506",
+      "baselineId": "8ca9e689-4947-59cd-a880-db7661c34a01",
+      "activeVersionId": "d27e5088-2c98-5430-bea2-2ef047af3f69",
+      "activeVersionHash": "0c6b312581c371bfdfe5d05d0872093df2377e44e2bdf2f07fd3d31d11c1c42c",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "0c6b312581c371bfdfe5d05d0872093df2377e44e2bdf2f07fd3d31d11c1c42c",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 7,
+      "generationAttempts": 2,
+      "embeddingAttempts": 5,
+      "settledMicros": 105031,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:08:32.820Z",
+          "kind": "generation",
+          "stageHash": "7491c9fd6995cf9836f30fd45f2882187d643f469e390c05b5424c181eda539e",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 33890
+        },
+        {
+          "at": "2026-11-21T13:08:51.966Z",
+          "kind": "generation",
+          "stageHash": "3ba9d1227cafe19579fb16769947f8d53395229410958819e3d4c33351d4b5bc",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 70646
+        },
+        {
+          "at": "2026-11-21T13:09:16.352Z",
+          "kind": "embedding",
+          "stageHash": "adaf45e0582ad499aee0a0df3354a4b859a027162a04153f75ce7f7f5865c565",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 131
+        },
+        {
+          "at": "2026-11-21T13:09:18.637Z",
+          "kind": "embedding",
+          "stageHash": "dae1172dca57f2ba8fecc48db229d91835e8650ab8a5833abe93efb1762bd78e",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 110
+        },
+        {
+          "at": "2026-11-21T13:09:20.329Z",
+          "kind": "embedding",
+          "stageHash": "894eaaa1c74cc49748afcafda2e4b01e1b6256dc537b4d9d64f4deaf2dec5833",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 138
+        },
+        {
+          "at": "2026-11-21T13:09:22.038Z",
+          "kind": "embedding",
+          "stageHash": "9e67b352ac1139146d10141e321c1e246fd69c80d8ae6e598700776e47cac12b",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 31
+        },
+        {
+          "at": "2026-11-21T13:09:23.328Z",
+          "kind": "embedding",
+          "stageHash": "604cace53ce0b8655f0ade99bc6c25d326ec3d5dd936631cdf3df7c7932724a4",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 85
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043.html#transcript",
+          "paragraphs": 34,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "83f8f327b1d59512a4a5c4860c883fb22441164d6503945242be15a6af098fde",
+              "chunkKey": "p0-09a32abcd01f1193f103",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "862f0032-bba4-50aa-a1bd-ca3e634c90be",
+              "contentHash": "0971bf1a0324b73e5bd9f2dea11ca477d278d1848b20dee7e27b5c7deadda127",
+              "treatment": "detailed",
+              "originalCharacters": 1119,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 19,
+              "last": 34,
+              "originalHash": "586fcf24f83e22bb9d3550876d9ce30c1aa88dc7327b9a45d0d23a5d651e5b80",
+              "chunkKey": "p0-7d4392eae154981e5834",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "f21bc916-f3dd-54df-82a8-ae54cbd1923d",
+              "contentHash": "beb65fd8a046c102eb53150f0098861518c21ab2c7f198be8ca3ba4234c8ab5b",
+              "treatment": "detailed",
+              "originalCharacters": 959,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043_p2.html#transcript",
+          "paragraphs": 19,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "d7b8a0b4c9a6bbbbca1ab3759c3f7fb040cdc0f1b28f0a18a34b8c4060c0082d",
+              "chunkKey": "p0-9db510c5d91dfb70e678",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "0629751c-bc03-58a6-beba-20adad1bd9f7",
+              "contentHash": "c14fb415be691e0d40a1e4e822db70f89808f9c5a485d9233358711a02921e0c",
+              "treatment": "detailed",
+              "originalCharacters": 1171,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 19,
+              "last": 19,
+              "originalHash": "074bfc807641b5cfcc3ff1cfba904c2e18e9767d0a10218e2660801d5e588056",
+              "chunkKey": "p0-f2d2a754985f1fb26374",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "cd4f1957-3648-50f4-889e-c76ec58b826f",
+              "contentHash": "618075c4be0622d3fad21c62e87692f558c94455a5565339d3b040afd0e31271",
+              "treatment": "detailed",
+              "originalCharacters": 253,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043_p3.html#transcript",
+          "paragraphs": 14,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "b530faca4f3b1c7042f0684c825379bf9d7b9f5fa653cf435806888060801cef",
+              "chunkKey": "p0-2373a68098b22a73aa84",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "8fd4381f-a24e-5886-9859-cda3232d4793",
+              "contentHash": "0eee9c7e2b7664a2889138f5448ecca22bd3c8603b892abe0f980579ebf4d844",
+              "treatment": "detailed",
+              "originalCharacters": 761,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30169",
+      "title": "幼兒成長健康生活好習慣",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30169.html",
+      "operationFingerprint": "9ea08b66219c151e557fdad9934cace54d0abe7e5358b719c27404ebbf7f3783",
+      "observationHash": "0eeba4bc919e7ffd3ece929735cd38712948261f0cdfa350cd57b085dbbbb25f",
+      "baselineId": "08d7a933-9dfb-57ab-a19a-aa3a756848df",
+      "activeVersionId": "08d7a933-9dfb-57ab-a19a-aa3a756848df",
+      "activeVersionHash": "045c81fd219faa3abf60a8730376baa77ea089c0be8bb5d3d20f4b57b8355c0b",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 19902,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:01:57.656Z",
+          "kind": "generation",
+          "stageHash": "0e931869234a0487aea14d60f53aa1b687c1b3f02b15fdd032c7472c7fd4c6b0",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 19902
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-13034",
+      "title": "育兒預備篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13034.html",
+      "operationFingerprint": "06f0c724fc1444248b48d6f79b1c561dba638ee1904b0da43706451f33fd366b",
+      "observationHash": "fcc33ea69d234b21625c1f4215b04fd2955fc39ba94d39cbb91acd25264bba9c",
+      "baselineId": "94c9e508-6170-5c93-9cd8-cc5e4f672a6f",
+      "activeVersionId": "da3fb137-c82f-5218-a136-b047d12e82fe",
+      "activeVersionHash": "4e073772d3975820fae820f8d9234fa2c6d45d8fb3e2f4bd88dd835c7c1d758a",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "4e073772d3975820fae820f8d9234fa2c6d45d8fb3e2f4bd88dd835c7c1d758a",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 3,
+      "generationAttempts": 2,
+      "embeddingAttempts": 1,
+      "settledMicros": 45822,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:00:24.617Z",
+          "kind": "generation",
+          "stageHash": "012a485b24ee41043164dcd146f6343a0faecf23634d432850e00e360db68bb5",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 15846
+        },
+        {
+          "at": "2026-11-21T13:00:32.572Z",
+          "kind": "generation",
+          "stageHash": "3bd69888eca00d2a3e8cd960e5cb8b60c3f4fd14afd2e702e2dc46e65a1c2891",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 29886
+        },
+        {
+          "at": "2026-11-21T13:00:45.799Z",
+          "kind": "embedding",
+          "stageHash": "6e843799d1325ff726beee60d1f5f4b31c2b43d1657f43df744a7e4049c46b9e",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 90
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000016.html#transcript",
+          "paragraphs": 23,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 23,
+              "originalHash": "ce61395402eb856db69a43cecf0d74f76bd2d778b85de8d3360728fdab430d81",
+              "chunkKey": "p0-41524b216d06df05880a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a1528e2d-c93e-526c-8e48-7329f6ad378d",
+              "contentHash": "884c2ac7affcaded4872c4047e5aa3065ec79b8c60e1dddfbf6cc8a49f023ca9",
+              "treatment": "detailed",
+              "originalCharacters": 782,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-12196",
+      "title": "BB話你知-親子溝通小錦囊",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/12196.html",
+      "operationFingerprint": "ae8e22d7c427ca84a400d5594984f7daad7d7c6d4900213379300014ead5de58",
+      "observationHash": "90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772",
+      "baselineId": "61c90b6a-8634-5390-a8d3-b8d6e17763dc",
+      "activeVersionId": "61c90b6a-8634-5390-a8d3-b8d6e17763dc",
+      "activeVersionHash": "36ec766463d1fb33a50f97df553ec89b5f4e396c18be0a07abc8fc2f773f97f4",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "review_hold",
+      "candidateVersionHash": "115f3ebfb3bfd24a23c232d4f5c651a27541052b9c5dcf5e71717012f579f47a",
+      "reviewDecision": "hold_candidate",
+      "publishReceiptState": null,
+      "attempts": 2,
+      "generationAttempts": 2,
+      "embeddingAttempts": 0,
+      "settledMicros": 126803,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:17:51.924Z",
+          "kind": "generation",
+          "stageHash": "f4da665dc2c54a89d3c2e4c793f19cc8fde5f2403f90be640fb23cf9b3615d59",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 58205
+        },
+        {
+          "at": "2026-11-21T13:18:35.638Z",
+          "kind": "generation",
+          "stageHash": "a513125cc1b352a556cb59fb918b09582e9624bc4a2cdfe1f5a23984682a13a5",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 68598
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-30130",
+      "title": "陪我玩、同我講",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30130.html",
+      "operationFingerprint": "9081b51e7283144c6a3acccda8aef52fa96d9bf82900fcadf4f7198ee5321827",
+      "observationHash": "68e7e8b9bb28095869f8d35cc5d1d6c2f264cb50f27e6c5c75bf84a67e5c8eb6",
+      "baselineId": "22009185-605f-5e07-8a2c-6ed577f938ac",
+      "activeVersionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+      "activeVersionHash": "135c8f4d509b77d7576573a398c1477b06049426e220f1dbb57dba758efd8fc7",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "135c8f4d509b77d7576573a398c1477b06049426e220f1dbb57dba758efd8fc7",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 9,
+      "generationAttempts": 2,
+      "embeddingAttempts": 7,
+      "settledMicros": 70016,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:16:00.978Z",
+          "kind": "generation",
+          "stageHash": "ca17ce890950f3cb1ac967cf456d778c5aa2af83edcc232704516fe24c3ca4b3",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 28793
+        },
+        {
+          "at": "2026-11-21T13:16:16.403Z",
+          "kind": "generation",
+          "stageHash": "55992a3db11edea606021bfd1a97403a8f0ae1ee38310389dcd0b60f59ec770a",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 40734
+        },
+        {
+          "at": "2026-11-21T13:16:36.869Z",
+          "kind": "embedding",
+          "stageHash": "56157410397bf162e54133297700c68c810f7cec6bd04e60cb46eda9b68dd74c",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 64
+        },
+        {
+          "at": "2026-11-21T13:16:39.171Z",
+          "kind": "embedding",
+          "stageHash": "38448ddfd732ea7ec8bc3716c973695f34a69c52d436c901feaaa7c7cd7f7177",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 57
+        },
+        {
+          "at": "2026-11-21T13:16:40.894Z",
+          "kind": "embedding",
+          "stageHash": "234acc0191eba19cd994a6fcc40cd892b9ae69a21ccd117e5baacb600417970a",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 80
+        },
+        {
+          "at": "2026-11-21T13:16:42.624Z",
+          "kind": "embedding",
+          "stageHash": "2a9580411873c6485e09feb4d29bf9dec70a22d08b627696b4e375d11ccf56dd",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 54
+        },
+        {
+          "at": "2026-11-21T13:16:43.519Z",
+          "kind": "embedding",
+          "stageHash": "046f7a078b87461db51c96805d9ce3eee501176d69be4d5496b1ec35e1917ebd",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 27
+        },
+        {
+          "at": "2026-11-21T13:16:45.455Z",
+          "kind": "embedding",
+          "stageHash": "138424017049c4a68a5eaa799e939aa0e0bb77e482515323dc773776aaa96015",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 136
+        },
+        {
+          "at": "2026-11-21T13:16:47.118Z",
+          "kind": "embedding",
+          "stageHash": "faffe2bb40fc69d6fbcf51970a050fef38c9ab990e1df428a28ef3c67e755fe9",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 71
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p1.html#transcript",
+          "paragraphs": 20,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 20,
+              "originalHash": "8b04e6b442af02a8fbf0b4ed55fd459fd6087a1c11a08e37d59bd477a5bd1775",
+              "chunkKey": "p0-330289eb3f85f33a8178",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "55da74de-992a-5f85-a60b-ef20464996a7",
+              "contentHash": "3e29c972008dc03433ac59373d86a34c383cf7a64891e75280f728c566f2c3d6",
+              "treatment": "detailed",
+              "originalCharacters": 546,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p2.html#transcript",
+          "paragraphs": 16,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 16,
+              "originalHash": "606f8a89c55a53739f5d69cc4af7f397b739d99ce8eb5d73766320e28456b1f8",
+              "chunkKey": "p0-5af4b268a810c48298a4",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a853a8f9-5551-5376-af7c-c242b11e5544",
+              "contentHash": "204275cb0129f89001fe7a8eb66da3a1d194beff503d266661446e3919490b66",
+              "treatment": "detailed",
+              "originalCharacters": 463,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p3.html#transcript",
+          "paragraphs": 18,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "734101eea6b2419b7120a72422bad641e32dacf68e7ab7a3b863cacfe783a880",
+              "chunkKey": "p0-b87b67083b546ffcc40a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "1f000975-eeee-53ef-a65f-ff049e5cee26",
+              "contentHash": "0525baf5ff76728c9bae1ec0f855591d3ff4229bf63c89e209ed3645135ce230",
+              "treatment": "detailed",
+              "originalCharacters": 652,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p4.html#transcript",
+          "paragraphs": 14,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "44567a603298afe846401291b61546193a0573452f283cadee4af2b6b022c9b7",
+              "chunkKey": "p0-81bfd5fb28d68128ae97",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "5eff7484-8bca-544c-813f-ffee1889228e",
+              "contentHash": "2eefb3ef4ff9ca006c2adcec8a7dedce88138afdc9ce4c837574df0a1d3a4b75",
+              "treatment": "detailed",
+              "originalCharacters": 451,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p5.html#transcript",
+          "paragraphs": 7,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 7,
+              "originalHash": "150a7d66982b82a04e750abce53969486825627cf901295b1e17996c85e2b716",
+              "chunkKey": "p0-3f59e3f0c101e8af473f",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "59ca2144-dc0f-5996-b59f-9c014d0c0b50",
+              "contentHash": "650ed718bb5e51e0b5e4b1942791e42d63b2870cbd679eced20f1d59b106c18e",
+              "treatment": "detailed",
+              "originalCharacters": 227,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p6.html#transcript",
+          "paragraphs": 64,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 45,
+              "originalHash": "9f2cafe7a9a1a436a4e96a55366fb83baa393bd1b57b07c75c7551b52b0b3848",
+              "chunkKey": "p0-098b3cf1b0f580283da7",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "e693df9c-3599-5eb7-874d-761f50eb112e",
+              "contentHash": "cc98df208667b23a1794ab6f49fb5f549ea456caad6936b139e7fe44d889245c",
+              "treatment": "detailed",
+              "originalCharacters": 1137,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 46,
+              "last": 64,
+              "originalHash": "80c204b461ae7c82948f57a13c9db8922022c13ff31808551ea58f71049f7476",
+              "chunkKey": "p0-d05b629eb639415dc9be",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "40d86f4f-fe3b-5321-b5fa-915e710d69d1",
+              "contentHash": "d7d6f9c5eb23881c986d46efb52f3dca2346bc5635e5f05b64223fcd06f179ff",
+              "treatment": "detailed",
+              "originalCharacters": 638,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-13043",
+      "title": "搖籃曲之一:建立睡眠常規",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13043.html",
+      "operationFingerprint": "6a888b80da30cdcee7504c268e3e16d3be414f8b3f79897edc92be77cc502441",
+      "observationHash": "72db528549e6b9f2befab1cbc934b7ec7500ee5441ef637920d22b2fe3296fc6",
+      "baselineId": "4b0d5348-ceef-537e-bbb2-a9b1e80cad26",
+      "activeVersionId": "4b0d5348-ceef-537e-bbb2-a9b1e80cad26",
+      "activeVersionHash": "89395dab571ef6891e5f2f541edaf4b78e4ff3e392cf078ad132d06f359815c2",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "review_hold",
+      "candidateVersionHash": "2869e074e30285d46247b2fc1c80ae305696c5ce105b2aea0bf5c3fe776107aa",
+      "reviewDecision": "hold_candidate",
+      "publishReceiptState": null,
+      "attempts": 2,
+      "generationAttempts": 2,
+      "embeddingAttempts": 0,
+      "settledMicros": 76924,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:09:45.700Z",
+          "kind": "generation",
+          "stageHash": "83b4eff5021f50c0d40071a66f0f885e4cca67bcc54352730002541c66231743",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 31511
+        },
+        {
+          "at": "2026-11-21T13:10:00.402Z",
+          "kind": "generation",
+          "stageHash": "2df44be4861f835488a0752699e1ec73f89f0365795425352a7cd1e7c343c41d",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 45413
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14841",
+      "title": "一起乘風破浪-培育孩子的抗逆力（學前兒童）",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14841.html",
+      "operationFingerprint": "83ab022c5b39d5eca7e160ae08301a52e64396358aa6ad5e71f43fa2bb53e667",
+      "observationHash": "d1f3d1948aee4f635f6698a41bcbca6435662361f7979763fad24a245d9e6a2f",
+      "baselineId": "5cd7e04e-b3d2-596e-b02c-5b0a5d70bb1a",
+      "activeVersionId": "5cd7e04e-b3d2-596e-b02c-5b0a5d70bb1a",
+      "activeVersionHash": "b39846845d98d0ea71049249064bbb2cd0e1e6393df6abef6ee85bbcc9a6142c",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 30774,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:04:27.254Z",
+          "kind": "generation",
+          "stageHash": "1335f0357657d6042a9703522489ac891d7e78c6b3be56eda743e4267521b5a9",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 30774
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14842",
+      "title": "一起乘風破浪-協助孩子克服逆境（學前兒童）",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14842.html",
+      "operationFingerprint": "c8303cb0087d0a09b58f832de8893c0588b073208113905e7627e8fa8611be4d",
+      "observationHash": "8c6b7dc5dfd2e71265f27fb27caef3ffce5553ea1ab32bd13f1e615a60c82861",
+      "baselineId": "2b0237da-167c-5275-8317-39d95c815cf5",
+      "activeVersionId": "2b0237da-167c-5275-8317-39d95c815cf5",
+      "activeVersionHash": "cef6ed47ad572ff79c0f6a7ec064e2d94b5937a35d83e156af76fea51f926dd9",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 18827,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:03:02.077Z",
+          "kind": "generation",
+          "stageHash": "dad75f9bb7ca8efca2096d6c4d1deeec73591026f0f31e0a8763dd4202d13d80",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 18827
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-13048",
+      "title": "正面親職（一）：從小開始",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13048.html",
+      "operationFingerprint": "b769d0292b5e636e6cc4ad3545d560b5454d0e66e0156cc7c8b68ded7744266d",
+      "observationHash": "986746661265eec835f23c9ebd5fb204bac016dce89f1d1559985c46ba70eb56",
+      "baselineId": "c06cbd86-2f9f-5025-bec5-8aa2238ca488",
+      "activeVersionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+      "activeVersionHash": "1faa033c16d368b3a593d8b9325c54af59e73cc8ce54eb1e965f7ae811abca3d",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "1faa033c16d368b3a593d8b9325c54af59e73cc8ce54eb1e965f7ae811abca3d",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 11,
+      "generationAttempts": 2,
+      "embeddingAttempts": 9,
+      "settledMicros": 106436,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:05:42.259Z",
+          "kind": "generation",
+          "stageHash": "b079147666cc6d62c327ee78a091b503a5cc45971011c096d429fc045ede77a7",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 47631
+        },
+        {
+          "at": "2026-11-21T13:06:07.318Z",
+          "kind": "generation",
+          "stageHash": "f1100fc22e39c097003f8092f9839d415e9598a7bcca8db080ec0378da7832c7",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 57945
+        },
+        {
+          "at": "2026-11-21T13:06:29.830Z",
+          "kind": "embedding",
+          "stageHash": "bb7b05ec07188172c2d18d46e4cb0c7dd9cfa0ea4a4946c878e33937127cf3de",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 139
+        },
+        {
+          "at": "2026-11-21T13:06:32.190Z",
+          "kind": "embedding",
+          "stageHash": "88a68b5ee2d2fafe0f2c0ce9a036694c07fba9a0ae500ffbd3c7e5700084dd05",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 27
+        },
+        {
+          "at": "2026-11-21T13:06:33.927Z",
+          "kind": "embedding",
+          "stageHash": "3052597598c4fa2b03a1a1b43a6d7fd12a0a99edd0b28bdcc59acfe8064a245d",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 105
+        },
+        {
+          "at": "2026-11-21T13:06:35.702Z",
+          "kind": "embedding",
+          "stageHash": "1347635f914f1065f7d37d40a4a96d7c0e9d6b38e3aa83646a9803911c57354f",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 111
+        },
+        {
+          "at": "2026-11-21T13:06:37.726Z",
+          "kind": "embedding",
+          "stageHash": "f4759036292bb7798cedf3c1fbd44317fe55cadcc3574fddaabf75bd1c619a01",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 113
+        },
+        {
+          "at": "2026-11-21T13:06:38.850Z",
+          "kind": "embedding",
+          "stageHash": "b8c38a34e3bb0980f314b030aa43c9bdff33631f1d8716c1a1c0df799a3bd761",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 119
+        },
+        {
+          "at": "2026-11-21T13:06:40.541Z",
+          "kind": "embedding",
+          "stageHash": "e574ff2c605f8534ae608e9c2bdcc7f458a79df3bd969cfb61c20fd8100a52a0",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 16
+        },
+        {
+          "at": "2026-11-21T13:06:42.301Z",
+          "kind": "embedding",
+          "stageHash": "cc0b8967acc65c7d4d10b8ac7e70945f90bade0d13e063f1de6e622599b3de68",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 125
+        },
+        {
+          "at": "2026-11-21T13:06:44.594Z",
+          "kind": "embedding",
+          "stageHash": "7c503db01b634fc92cc25f6089c520e0915c394f598a0f426c5a510862cb7772",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 105
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000114.html#transcript",
+          "paragraphs": 49,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 44,
+              "originalHash": "caba26331acfe96ed7cdacbdedcae44e91b077a3d02aca5f865b3d7dfbd4db81",
+              "chunkKey": "p0-fe2f441d11725d66352e",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "cb4781e4-7a93-5a86-a2cf-4c10b2fc3cd6",
+              "contentHash": "688aa93640e5872cf90e708fd357f4f29cf8983c2697288d9d953b8b27fd19a4",
+              "treatment": "detailed",
+              "originalCharacters": 1183,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 45,
+              "last": 49,
+              "originalHash": "6881fd4f1fb8c6f0a4a816d7df6324827d6fffb9258b181de87bc43ba4d993ce",
+              "chunkKey": "p0-51007cf2dd0386db81e9",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "aba3edc8-bd1d-590f-9eb1-c4dd0a4917f4",
+              "contentHash": "9ca37a63949a74d50778834d548b8964010d724c079641b01297e72c23c9e3b6",
+              "treatment": "detailed",
+              "originalCharacters": 218,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000123.html#transcript",
+          "paragraphs": 21,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 21,
+              "originalHash": "4994b07d742d47c0e07e8315c0128216f6626b1cf895fda5ac6c8b9e10b6c8fc",
+              "chunkKey": "p0-504dffd2c3030f6853c4",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a2591537-be5e-54be-9ae3-8b276f5376c1",
+              "contentHash": "d87deed468ed5b904bf9f220fef58740df9e899d52a3ce55d6bd9f007ae6804b",
+              "treatment": "detailed",
+              "originalCharacters": 1151,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000124.html#transcript",
+          "paragraphs": 18,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "75fe73172f92ff829522c4f43462f192c56777e2ab82634f81cb4bf18674a863",
+              "chunkKey": "p0-34db62144771bdeb0f93",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "e8ce82ae-5147-58c3-9365-d03a46b152a4",
+              "contentHash": "e39b1fcb95a1d10770dcb25e82177ef2ccb0eadc662c28fc8e63e090c96026a0",
+              "treatment": "detailed",
+              "originalCharacters": 1134,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000125.html#transcript",
+          "paragraphs": 15,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 15,
+              "originalHash": "8aee5ee04fc054762ac6bbcd6047cc718c2946ba3d4302726d299abf7be39d67",
+              "chunkKey": "p0-f73ee1c3a5c2af4fbf0a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "de9c3604-c656-5ebd-8075-ddb4673036b9",
+              "contentHash": "c417003625951db8a9174ff5bf4ca68461369a2d9f60563876f286f2e0df67cf",
+              "treatment": "detailed",
+              "originalCharacters": 1047,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000126.html#transcript",
+          "paragraphs": 16,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 13,
+              "originalHash": "717893c7c0688e6bf44b9fc8f44e567efa40e2977c049fb55501ff22a3854c30",
+              "chunkKey": "p0-96a49682d0c58832ffb9",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "1529d09f-3e7d-589b-b092-d01af5dbfffd",
+              "contentHash": "6d28a2f6ba02126fdc4522ac6312ac400f75883e786f39373feb85013e381c50",
+              "treatment": "detailed",
+              "originalCharacters": 1190,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 14,
+              "last": 16,
+              "originalHash": "468d53a1222f32759a06f1b47c8f673c35698b4531fce7ffbc4793344a5d8db6",
+              "chunkKey": "p0-24f325861e19b7d47ae1",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "0ef77983-0cd2-5a1d-b769-0261ad284033",
+              "contentHash": "fd9b92fc7ed12c0faa9d7a0dd05bde3315a3fb02fe6bb216d165fa91ccc6ab9e",
+              "treatment": "detailed",
+              "originalCharacters": 151,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000127.html#transcript",
+          "paragraphs": 14,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "3150f4f6764b1af8c86f022abd88dc625cb27b42442cf6e45ff881e1909b1449",
+              "chunkKey": "p0-035d602b975ba57a078a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "697ac984-4695-5fa2-8851-6f831dc04500",
+              "contentHash": "363e5efd00f5a49285c2a8f6e9b7a0b2280a58e7a2c19e98af1a62c494949711",
+              "treatment": "detailed",
+              "originalCharacters": 1185,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000128.html#transcript",
+          "paragraphs": 13,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 13,
+              "originalHash": "2ca86bedb7a3de88a8e0677311b921418d7cc6a01bc506f5932b43c6d8fbb8f0",
+              "chunkKey": "p0-616511dd562128ec146b",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "4502357a-32f0-54ce-af5f-f7f8b801eb17",
+              "contentHash": "2ad2e66b22143e20984ed99a93e1c2cf5228d8821d73991639e161d74eaa37e5",
+              "treatment": "detailed",
+              "originalCharacters": 1016,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-14836",
+      "title": "正面親職（二）：學前階段的實踐",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+      "operationFingerprint": "2357ad13a1fa2afafd8cb9f5a63b6be14ffd102d7b281ad37f36c3e27b54dd17",
+      "observationHash": "36b3cbdf13243b681a57d54d0eb73a924d6f461398a1b3f56e191b06e2b15bb0",
+      "baselineId": null,
+      "activeVersionId": null,
+      "activeVersionHash": null,
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "model_output_limit",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 55460,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:07:06.189Z",
+          "kind": "generation",
+          "stageHash": "6ec2ddcdc2df973b29f15e9869ad9a19a69e4aa233c42a1612005d40019deb55",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 55460
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14837",
+      "title": "正面親職（三）：應對學前兒童的不當行為",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14837.html",
+      "operationFingerprint": "7db1c0afdedd41433dae68678271029558b3291c3015b619f31b429b4e0dee2a",
+      "observationHash": "1c4cb9b27661ccd8de6221c8cfd6e391110f3db9512fa85b245b64a27b3bb7a0",
+      "baselineId": "d20d10b8-284a-570a-9dbe-a8d0a0420fb0",
+      "activeVersionId": "d20d10b8-284a-570a-9dbe-a8d0a0420fb0",
+      "activeVersionHash": "637507d7e3a78c63732d63fd13e3b72217e8f58304fe4b2c82a116efc5a0ca24",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 43899,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:05:01.803Z",
+          "kind": "generation",
+          "stageHash": "cf6d8f808e213eb7177a48b1b2bbea433838ddcd62665dd16daf75217adceb85",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 43899
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-30142",
+      "title": "預防肺炎及呼吸道傳染病-心理防疫篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/poster/30142.html",
+      "operationFingerprint": "449ec5a1cb1fbfb8a7f7e8f31e366168787018e933b8dca422aa36ea32f81713",
+      "observationHash": "5b910fbab3ebfb8c7dddbf84adb5aa53d419c8acf66f718abe3db1b56ea10b21",
+      "baselineId": "733e053d-4bd8-555f-a3b2-8d2995da3906",
+      "activeVersionId": "72e210a0-fc48-5962-a43b-6100bd0bb3f2",
+      "activeVersionHash": "0221cbc9c9c6fb17e27595286e28ac824beb515e7f578a52e892a288d205029a",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "0221cbc9c9c6fb17e27595286e28ac824beb515e7f578a52e892a288d205029a",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 7,
+      "generationAttempts": 2,
+      "embeddingAttempts": 5,
+      "settledMicros": 66648,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:12:28.870Z",
+          "kind": "generation",
+          "stageHash": "51a651e7e4eeb8cb1fc2d1e37edfdb3fcd6ca0021cc8d7ae77e7ccaa68b948c2",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 27374
+        },
+        {
+          "at": "2026-11-21T13:12:40.138Z",
+          "kind": "generation",
+          "stageHash": "c1f631bbca6153120d9232b1ada2f175398ed36c2c0910f017ee2b8315a05725",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 38832
+        },
+        {
+          "at": "2026-11-21T13:12:51.599Z",
+          "kind": "embedding",
+          "stageHash": "56591f7c548af1ac12bb18a6e74c89e899530420a05d2255b0370d2ce8316c48",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 73
+        },
+        {
+          "at": "2026-11-21T13:12:53.899Z",
+          "kind": "embedding",
+          "stageHash": "b5a2f69ea9c6c3d1dde4086a2b793edab85da8c65f59f945c074e99babf61597",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 136
+        },
+        {
+          "at": "2026-11-21T13:12:54.752Z",
+          "kind": "embedding",
+          "stageHash": "09bd2c03d96a9353ebf7d82423b2d3a8eee9f0ed7d91ea47d611a291ac3702a2",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 89
+        },
+        {
+          "at": "2026-11-21T13:12:56.409Z",
+          "kind": "embedding",
+          "stageHash": "4ab17ecea0d52a2d920c089bfbfbe4a1146bf228f24cadf29c5622ed0f5ca52c",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 124
+        },
+        {
+          "at": "2026-11-21T13:12:58.524Z",
+          "kind": "embedding",
+          "stageHash": "609c7d73c5c7ccc7ca3bdd280d3549e817c7a8ba43e56fbbb782c64e4f85fd94",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 20
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000103.html#transcript",
+          "paragraphs": 9,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 9,
+              "originalHash": "df1bae670ea14833ccb5a2ead9b6feb9b825fa1267bff065962f8639d37a93f7",
+              "chunkKey": "p0-63507a220fa5084ad608",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "5f7d5c5e-89b0-5ed4-b4b4-1e3af0364fb7",
+              "contentHash": "b7ee2681d3fa165bf042d4c8682dc824445e8da9b176aa99be0dc3b6fdadc3b4",
+              "treatment": "detailed",
+              "originalCharacters": 609,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000104.html#transcript",
+          "paragraphs": 43,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 28,
+              "originalHash": "59158b4b8d9316759671bfa0f52fa3ca88598dada3c6819399ee82c212943e88",
+              "chunkKey": "p0-71dc84c319fab65e13c0",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "74f111c5-5639-524b-8b06-417eb55aaaf9",
+              "contentHash": "313c5bed2fabad58757e770a93bc2d6465e0569b48909e02a62cdba3eee1ad97",
+              "treatment": "detailed",
+              "originalCharacters": 1191,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 29,
+              "last": 43,
+              "originalHash": "0caacec1c0f7882296a9496c287c6cf5d79bab411bbbcc42bbf326e2658153f1",
+              "chunkKey": "p0-9db1db802a8138a6a1c6",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "2e63c869-ca51-5df7-b4b9-6f0fd636d234",
+              "contentHash": "07de7e19505a9bb000c3131f05ddb55ff9c437ca722241ed9b7fe4aad79f2999",
+              "treatment": "detailed",
+              "originalCharacters": 748,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000105.html#transcript",
+          "paragraphs": 11,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 10,
+              "originalHash": "eae682b79cab8fa9133680926c7193bd8a4d577fbe9bcfd9ea4e4cdcc60ba81a",
+              "chunkKey": "p0-8b052056572fc9d3aee3",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a2bd993a-9e86-5c75-8a2f-aadf92effefe",
+              "contentHash": "6a2fae9292e34596f8e3141a8eb039f70491377addc05b3f638064ca84045523",
+              "treatment": "detailed",
+              "originalCharacters": 1142,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 11,
+              "last": 11,
+              "originalHash": "3a24656083c0505cd33cb3c14cfb664f13fd9f264b268c192be689d1210d9d7b",
+              "chunkKey": "p0-00c18eba0aaae25b865a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "6eea58e6-6562-54d0-966a-bbfc267ff5c8",
+              "contentHash": "08fc35adfeea1f550c23cdd8ed991621b54611268981df511eaeec9038bc4fad",
+              "treatment": "detailed",
+              "originalCharacters": 157,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-13050",
+      "title": "新生嬰兒護理預備篇",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/13050.html",
+      "operationFingerprint": "e32ea5accb1fd2856ef170b3d08d8e4a01cb76f92aed0504a2d93249b2815b21",
+      "observationHash": "659f00ec742eee3438f3779168e96305af25e2df38340f64c4019ae0bef1ae3e",
+      "baselineId": null,
+      "activeVersionId": "1ff99337-0323-58b6-9429-8b4162108731",
+      "activeVersionHash": "d366c31f372b336a4e88fba3ec5aa3edda450b43f17c5729bb7584a2cb241220",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "d366c31f372b336a4e88fba3ec5aa3edda450b43f17c5729bb7584a2cb241220",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 5,
+      "generationAttempts": 2,
+      "embeddingAttempts": 3,
+      "settledMicros": 66936,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:03:24.140Z",
+          "kind": "generation",
+          "stageHash": "a14c4fb7c5abfea00126b288bd010f08916ec1362bb10a297282bf8dd38eb20a",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 34598
+        },
+        {
+          "at": "2026-11-21T13:03:43.219Z",
+          "kind": "generation",
+          "stageHash": "d4f08f0c15f4752f75a45e2e62e58aaee9dc349e58fa27d52a935ab560597e1a",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 32042
+        },
+        {
+          "at": "2026-11-21T13:03:59.286Z",
+          "kind": "embedding",
+          "stageHash": "91437e53d186b26fdee5c4e85215553827fffb44e31abbe9dceeb290c4907c16",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 163
+        },
+        {
+          "at": "2026-11-21T13:04:01.571Z",
+          "kind": "embedding",
+          "stageHash": "fdd2c3d3916ea88ae233803f6e1ba8a77f4e5a3ebb4cce9755884cce952473c1",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 15
+        },
+        {
+          "at": "2026-11-21T13:04:03.205Z",
+          "kind": "embedding",
+          "stageHash": "782deef6b7d4aa9eb2489252ef7350d6041601a8fe1027906d503c84daee065c",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 118
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html#transcript",
+          "paragraphs": 2,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "0766fdf7205225837c9bf9562549f7c2363c018177932acf6de99f7e3f0723f2",
+              "chunkKey": "p0-afac98632bb7a59b020f",
+              "vectorizedFullText": true,
+              "excerptCharacters": 107,
+              "chunkId": "075735d0-3eba-58e7-8636-d9612ff6873e",
+              "contentHash": "52463d02a7a54c0af049eb514847cfa8b73aed6baf0046cb9ad740a23f0ce948",
+              "treatment": "detailed",
+              "originalCharacters": 107,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000006.html#transcript",
+          "paragraphs": 29,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 29,
+              "originalHash": "5a288203edfe293294d198f782232f051f4a76796d5a095814d44a0e6febddd2",
+              "chunkKey": "p0-e1f63e35cf3abd1a5474",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "2d8a7530-c1a9-52f5-a3d0-520cb7430712",
+              "contentHash": "bf348414ae05cef69b46ddedfd1f9f6ab1f19fb40d19f896dd6a9fb749ea5587",
+              "treatment": "detailed",
+              "originalCharacters": 985,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceId": "fhs-30092",
+      "title": "新生嬰兒用品清單",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30092.html",
+      "operationFingerprint": "3836ac9e0f6759b39e449b2dcf7258ce0da3848da564b399643495b4c34f4577",
+      "observationHash": "bfd658600b4bbae14dc4863de513eb99ddadddda7b4e77cef4287d5844a7f289",
+      "baselineId": "c6a93e37-0d22-56f5-af6b-87143fd75068",
+      "activeVersionId": "c6a93e37-0d22-56f5-af6b-87143fd75068",
+      "activeVersionHash": "be0ba5d15bff5315be29c88691b2b69bfcf9300b2d473ec0f6d36fd1016f5eb9",
+      "observationCaptured": true,
+      "disposition": "candidate_held",
+      "reason": "knowledge_age_uncertain",
+      "candidateVersionHash": null,
+      "reviewDecision": null,
+      "publishReceiptState": null,
+      "attempts": 1,
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "settledMicros": 43167,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:17:09.705Z",
+          "kind": "generation",
+          "stageHash": "97529e5d8c59ad18a7762f9f23457b186304c229c61eb0faf5d4c25a907c9bee",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 43167
+        }
+      ],
+      "scripts": []
+    },
+    {
+      "sourceId": "fhs-14799",
+      "title": "睡得安全 親子無憂",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14799.html",
+      "operationFingerprint": "df2e5b01584b40754692e23e9fda8c70acc1dc8810a833cdaa1a991353988cb3",
+      "observationHash": "1f476bfcc865aa5cea0053ddcc33ed78465a6ba6bb5f8f3434808c9d3362fa7d",
+      "baselineId": "3e236f9b-94cf-505d-99c9-187a720c1ad6",
+      "activeVersionId": "dc98ae25-36bf-59da-851a-faec6ee2f9c5",
+      "activeVersionHash": "5c71b8b4544cf410499442f7067340994aa86e16de178df53c2d9034835b936b",
+      "observationCaptured": true,
+      "disposition": "published",
+      "reason": "published",
+      "candidateVersionHash": "5c71b8b4544cf410499442f7067340994aa86e16de178df53c2d9034835b936b",
+      "reviewDecision": "approve_candidate",
+      "publishReceiptState": "committed",
+      "attempts": 7,
+      "generationAttempts": 2,
+      "embeddingAttempts": 5,
+      "settledMicros": 82425,
+      "heldMicros": 0,
+      "charges": [
+        {
+          "at": "2026-11-21T13:11:18.066Z",
+          "kind": "generation",
+          "stageHash": "6314f3f4df5a4381a3e8f49bf077296f91e72dfe27857e79eb0b79e40f79ed74",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 34779
+        },
+        {
+          "at": "2026-11-21T13:11:39.954Z",
+          "kind": "generation",
+          "stageHash": "7a1d3178783ea75bb7a233e52eb2184e297d1687e67a9ddd956ca97343ff4973",
+          "state": "settled",
+          "reservedMicros": 1603584,
+          "settledMicros": 47067
+        },
+        {
+          "at": "2026-11-21T13:11:57.630Z",
+          "kind": "embedding",
+          "stageHash": "4b8ffac0f099ff5d010e003bfe022f3d63d7eb8801bf4429a3f2155554c4489d",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 149
+        },
+        {
+          "at": "2026-11-21T13:11:59.970Z",
+          "kind": "embedding",
+          "stageHash": "84d8ec1106ff7c5245e5c937484efa4ff96dc226c014307a6b08eb308a37ee29",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 149
+        },
+        {
+          "at": "2026-11-21T13:12:01.755Z",
+          "kind": "embedding",
+          "stageHash": "3adf2d2118aa105867eb12be80127b0e7e7fa1fe97f0b0e26a989b48eb0e61d5",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 142
+        },
+        {
+          "at": "2026-11-21T13:12:03.508Z",
+          "kind": "embedding",
+          "stageHash": "8b70e4a13691d294903fc48898c0acc688ee12124323ea634f9afa8894108bbe",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 102
+        },
+        {
+          "at": "2026-11-21T13:12:05.297Z",
+          "kind": "embedding",
+          "stageHash": "90a8c6082703bd4d74987c149c514fc435e5f92cb2877aeeeae272c807538c59",
+          "state": "settled",
+          "reservedMicros": 308,
+          "settledMicros": 37
+        }
+      ],
+      "scripts": [
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000020.html#transcript",
+          "paragraphs": 248,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 74,
+              "originalHash": "61039b3a86615154481fcaba45d56d54b012734906de7c01a0fc800cb4b7d3c6",
+              "chunkKey": "p0-33df2d5a1c84d9e52344",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "b6bf7670-44ed-581d-8bdb-1e0aae28e178",
+              "contentHash": "c42a20ddd2a8216fee6b2b37b4ec74520c93f686be55f54bb76de59d58dc4947",
+              "treatment": "detailed",
+              "originalCharacters": 1199,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 75,
+              "last": 143,
+              "originalHash": "afeb52daa54a24ad72e532bc806b63db3b75777b694b35483dd459040567411c",
+              "chunkKey": "p0-11e1beb6a51c1639b8ed",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a018661d-a7f6-5d4b-9228-9df6d60fc47f",
+              "contentHash": "159322f4eb3afa98eb859e52b7c128349a436cf23b7837be47b52a74e3bcfc33",
+              "treatment": "detailed",
+              "originalCharacters": 1188,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 144,
+              "last": 211,
+              "originalHash": "12d85bba3ecd19344dfa17ef112f552a09ad78e0aaaa6c05dde37aa682780282",
+              "chunkKey": "p0-67f67cc9178703981683",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "681eda88-4c49-5a07-8b12-a2b575085be5",
+              "contentHash": "08bd483572f63367a3283424a6ab145ccd63d1ab2c43773ded61f11c7adbe9f1",
+              "treatment": "detailed",
+              "originalCharacters": 1182,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 212,
+              "last": 248,
+              "originalHash": "01d0715190abd12434d85ec1c5519411480b460c6ac0f7a42b9b46b9cabcf4ea",
+              "chunkKey": "p0-e0931a04344e1c7ec41a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "c7155a5a-c7d7-5633-8b77-db6eea2190b9",
+              "contentHash": "6b49d8513792f16775e9569d148ce82f07cd3a4729ab6faa71afed1d3bc34d97",
+              "treatment": "detailed",
+              "originalCharacters": 841,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        },
+        {
+          "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000081.html#transcript",
+          "paragraphs": 20,
+          "ranges": [
+            {
+              "first": 1,
+              "last": 20,
+              "originalHash": "0f58df6b08b711cba6e9045b145f3344bd7a26c2e4fbcfd0703931900289c9fa",
+              "chunkKey": "p0-cf5feb95aa6533d0c354",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "7ad64a86-ea17-5628-b51d-62cd7f7f12ef",
+              "contentHash": "d1afe3b57e2d3bb92a86239a72a2cf8379f306ef956eb4392e69c8244343a38f",
+              "treatment": "detailed",
+              "originalCharacters": 279,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "title": "如何清潔眼睛",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html#transcript",
+      "materialIds": [
+        "fhs-13050",
+        "fhs-30092"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "797c560142513ac1ff813af55333dab65c6ac28c37ca0e73937757551ca969ba",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 2,
+      "fullTextVectorParagraphs": 2,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13050",
+          "versionId": "1ff99337-0323-58b6-9429-8b4162108731",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "0766fdf7205225837c9bf9562549f7c2363c018177932acf6de99f7e3f0723f2",
+              "chunkKey": "p0-afac98632bb7a59b020f",
+              "vectorizedFullText": true,
+              "excerptCharacters": 107,
+              "chunkId": "075735d0-3eba-58e7-8636-d9612ff6873e",
+              "contentHash": "52463d02a7a54c0af049eb514847cfa8b73aed6baf0046cb9ad740a23f0ce948",
+              "treatment": "detailed",
+              "originalCharacters": 107,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "替初生寶寶清潔臍帶",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000003.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 11,
+      "originalsSha256": "c4ad7cd5070ea9c6119e9b47ab5120b66cc877905bb2e625288631739faaccfa",
+      "archivedParagraphs": 11,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "替寶寶換尿片",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000004.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 17,
+      "originalsSha256": "afff485e6a413d6fdd939b7a28f2d8614ca8eed0394e692ab943f4b89ab85796",
+      "archivedParagraphs": 17,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "怎樣替嬰兒掃風",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html#transcript",
+      "materialIds": [
+        "fhs-12146"
+      ],
+      "paragraphs": 21,
+      "originalsSha256": "4923471a85554007489f79fef6e7452f91713df076a6f03b068bfe56688b4747",
+      "archivedParagraphs": 21,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12146",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "洗白白",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000006.html#transcript",
+      "materialIds": [
+        "fhs-13050",
+        "fhs-30092"
+      ],
+      "paragraphs": 29,
+      "originalsSha256": "007c0ea9de9a1a27b39214960e6fb471a54de5418b90f0bf53029900e64da23e",
+      "archivedParagraphs": 29,
+      "publishedOriginalParagraphs": 29,
+      "fullTextVectorParagraphs": 29,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13050",
+          "versionId": "1ff99337-0323-58b6-9429-8b4162108731",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 29,
+              "originalHash": "5a288203edfe293294d198f782232f051f4a76796d5a095814d44a0e6febddd2",
+              "chunkKey": "p0-e1f63e35cf3abd1a5474",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "2d8a7530-c1a9-52f5-a3d0-520cb7430712",
+              "contentHash": "bf348414ae05cef69b46ddedfd1f9f6ab1f19fb40d19f896dd6a9fb749ea5587",
+              "treatment": "detailed",
+              "originalCharacters": 985,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "剪指甲",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000007.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "7d365dd20cc658d2657f7abf33a67eb2de62c8aeaec8720fed457283cc8b21cc",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "替寶寶清潔口腔",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000009.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 6,
+      "originalsSha256": "0bf02885305b3a40f5b5681d296d055e0e355dc03004dd72feb7d4cf406b8dfb",
+      "archivedParagraphs": 6,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "穿衣技巧",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000010.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 3,
+      "originalsSha256": "0676dd29dbcdee455282862ceba18a6ed438e6ea5fe275de59831e3c4d709d68",
+      "archivedParagraphs": 3,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "挑選衣服",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000011.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 3,
+      "originalsSha256": "42add69625504d1f87a1e45a9a746ff24ed70790768515ce036191755a0187ee",
+      "archivedParagraphs": 3,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "電子探熱針的使用步驟",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000012.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 6,
+      "originalsSha256": "25950aefc866879e9e3fca0e056fed48ceb1dc37c903b638d5810df93647e7f5",
+      "archivedParagraphs": 6,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "紅外線耳温計的使用步驟",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000013.html#transcript",
+      "materialIds": [
+        "fhs-30092"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "e9a610379e43186fd1fe6deb9d07e9235c36c566b87285c1aa2a233bc8511451",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30092",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "建立睡前常規",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000015.html#transcript",
+      "materialIds": [
+        "fhs-13043"
+      ],
+      "paragraphs": 48,
+      "originalsSha256": "fcf513484e26a94ee758581924178f4875644f8b6c9f78d4b5e97b1488ac3cdf",
+      "archivedParagraphs": 48,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-13043",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "錫錫自己",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000016.html#transcript",
+      "materialIds": [
+        "fhs-13034"
+      ],
+      "paragraphs": 23,
+      "originalsSha256": "2030a8860c4695d830a2c0ea415c5a082583329ca77918d2850eafdfb79a0e22",
+      "archivedParagraphs": 23,
+      "publishedOriginalParagraphs": 23,
+      "fullTextVectorParagraphs": 23,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-13034",
+          "versionId": "da3fb137-c82f-5218-a136-b047d12e82fe",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 23,
+              "originalHash": "ce61395402eb856db69a43cecf0d74f76bd2d778b85de8d3360728fdab430d81",
+              "chunkKey": "p0-41524b216d06df05880a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a1528e2d-c93e-526c-8e48-7329f6ad378d",
+              "contentHash": "884c2ac7affcaded4872c4047e5aa3065ec79b8c60e1dddfbf6cc8a49f023ca9",
+              "treatment": "detailed",
+              "originalCharacters": 782,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "家居安全",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000020.html#transcript",
+      "materialIds": [
+        "fhs-13043",
+        "fhs-14799"
+      ],
+      "paragraphs": 248,
+      "originalsSha256": "8a27ffd7c479173c0c637c8053b6492dbebf8c059441db1d1c0af11d416b0fbc",
+      "archivedParagraphs": 248,
+      "publishedOriginalParagraphs": 248,
+      "fullTextVectorParagraphs": 248,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-13043",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-14799",
+          "versionId": "dc98ae25-36bf-59da-851a-faec6ee2f9c5",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 74,
+              "originalHash": "61039b3a86615154481fcaba45d56d54b012734906de7c01a0fc800cb4b7d3c6",
+              "chunkKey": "p0-33df2d5a1c84d9e52344",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "b6bf7670-44ed-581d-8bdb-1e0aae28e178",
+              "contentHash": "c42a20ddd2a8216fee6b2b37b4ec74520c93f686be55f54bb76de59d58dc4947",
+              "treatment": "detailed",
+              "originalCharacters": 1199,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 75,
+              "last": 143,
+              "originalHash": "afeb52daa54a24ad72e532bc806b63db3b75777b694b35483dd459040567411c",
+              "chunkKey": "p0-11e1beb6a51c1639b8ed",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a018661d-a7f6-5d4b-9228-9df6d60fc47f",
+              "contentHash": "159322f4eb3afa98eb859e52b7c128349a436cf23b7837be47b52a74e3bcfc33",
+              "treatment": "detailed",
+              "originalCharacters": 1188,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 144,
+              "last": 211,
+              "originalHash": "12d85bba3ecd19344dfa17ef112f552a09ad78e0aaaa6c05dde37aa682780282",
+              "chunkKey": "p0-67f67cc9178703981683",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "681eda88-4c49-5a07-8b12-a2b575085be5",
+              "contentHash": "08bd483572f63367a3283424a6ab145ccd63d1ab2c43773ded61f11c7adbe9f1",
+              "treatment": "detailed",
+              "originalCharacters": 1182,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 212,
+              "last": 248,
+              "originalHash": "01d0715190abd12434d85ec1c5519411480b460c6ac0f7a42b9b46b9cabcf4ea",
+              "chunkKey": "p0-e0931a04344e1c7ec41a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "c7155a5a-c7d7-5633-8b77-db6eea2190b9",
+              "contentHash": "6b49d8513792f16775e9569d148ce82f07cd3a4729ab6faa71afed1d3bc34d97",
+              "treatment": "detailed",
+              "originalCharacters": 841,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "親子溝通 ( 1 至 4 個月 )",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000024.html#transcript",
+      "materialIds": [
+        "fhs-30119"
+      ],
+      "paragraphs": 22,
+      "originalsSha256": "2718e40e04d5588e4a701e81f183675557c26b1df5bf8e4fff905c6463797041",
+      "archivedParagraphs": 22,
+      "publishedOriginalParagraphs": 22,
+      "fullTextVectorParagraphs": 22,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-30119",
+          "versionId": "b7147072-c7a4-5f16-b39c-2abf5c0dc954",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 22,
+              "originalHash": "45510a56867805decec596d13c1c24422540633f54b541449eaf898768ecd78b",
+              "chunkKey": "p0-75c0d731b2604eefc944",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "c8ba8e52-bce0-5e95-a7dd-f901cddc3e9b",
+              "contentHash": "35ea462de44221d35c602d5e74b709940466b55fdeb993d4788adbe121aca3f2",
+              "treatment": "detailed",
+              "originalCharacters": 463,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "BB話你知 - 親子溝通小錦囊(完整版)",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029.html#transcript",
+      "materialIds": [
+        "fhs-12196"
+      ],
+      "paragraphs": 333,
+      "originalsSha256": "3d4363247e9348a2b40553b2afa32b1d1525f3a4790c3195db519acada546a45",
+      "archivedParagraphs": 333,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "面對面",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p1.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 20,
+      "originalsSha256": "ae3abe5657a8d8a1e207137d3a5e9873632e999471aec64dcd7fb699cfb6543e",
+      "archivedParagraphs": 20,
+      "publishedOriginalParagraphs": 20,
+      "fullTextVectorParagraphs": 20,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 20,
+              "originalHash": "8b04e6b442af02a8fbf0b4ed55fd459fd6087a1c11a08e37d59bd477a5bd1775",
+              "chunkKey": "p0-330289eb3f85f33a8178",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "55da74de-992a-5f85-a60b-ef20464996a7",
+              "contentHash": "3e29c972008dc03433ac59373d86a34c383cf7a64891e75280f728c566f2c3d6",
+              "treatment": "detailed",
+              "originalCharacters": 546,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "讓孩子主導",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p2.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 16,
+      "originalsSha256": "4e91c15ed0af7668fe38274a89a796f67a65db31a44603bd8d46ca4fa836509a",
+      "archivedParagraphs": 16,
+      "publishedOriginalParagraphs": 16,
+      "fullTextVectorParagraphs": 16,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 16,
+              "originalHash": "606f8a89c55a53739f5d69cc4af7f397b739d99ce8eb5d73766320e28456b1f8",
+              "chunkKey": "p0-5af4b268a810c48298a4",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a853a8f9-5551-5376-af7c-c242b11e5544",
+              "contentHash": "204275cb0129f89001fe7a8eb66da3a1d194beff503d266661446e3919490b66",
+              "treatment": "detailed",
+              "originalCharacters": 463,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "多談及眼前的事物",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p3.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 18,
+      "originalsSha256": "dbd065a95ccd85144682f50654980114de63e93283a9176681e753fdd9433dde",
+      "archivedParagraphs": 18,
+      "publishedOriginalParagraphs": 18,
+      "fullTextVectorParagraphs": 18,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "734101eea6b2419b7120a72422bad641e32dacf68e7ab7a3b863cacfe783a880",
+              "chunkKey": "p0-b87b67083b546ffcc40a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "1f000975-eeee-53ef-a65f-ff049e5cee26",
+              "contentHash": "0525baf5ff76728c9bae1ec0f855591d3ff4229bf63c89e209ed3645135ce230",
+              "treatment": "detailed",
+              "originalCharacters": 652,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "多回應多讚賞",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p4.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 14,
+      "originalsSha256": "2300b2f944e7cd1ed34a8b601c46b6f05d1cbfb64f41b94248c7fd133a5ddf64",
+      "archivedParagraphs": 14,
+      "publishedOriginalParagraphs": 14,
+      "fullTextVectorParagraphs": 14,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "44567a603298afe846401291b61546193a0573452f283cadee4af2b6b022c9b7",
+              "chunkKey": "p0-81bfd5fb28d68128ae97",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "5eff7484-8bca-544c-813f-ffee1889228e",
+              "contentHash": "2eefb3ef4ff9ca006c2adcec8a7dedce88138afdc9ce4c837574df0a1d3a4b75",
+              "treatment": "detailed",
+              "originalCharacters": 451,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "加入新玩法",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p5.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 7,
+      "originalsSha256": "1fd9fc1b4a5f3013705596d4c80fbe72d130c6e61a8c44b4bc57d80bc18cb2b6",
+      "archivedParagraphs": 7,
+      "publishedOriginalParagraphs": 7,
+      "fullTextVectorParagraphs": 7,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 7,
+              "originalHash": "150a7d66982b82a04e750abce53969486825627cf901295b1e17996c85e2b716",
+              "chunkKey": "p0-3f59e3f0c101e8af473f",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "59ca2144-dc0f-5996-b59f-9c014d0c0b50",
+              "contentHash": "650ed718bb5e51e0b5e4b1942791e42d63b2870cbd679eced20f1d59b106c18e",
+              "treatment": "detailed",
+              "originalCharacters": 227,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "溝通技巧綜合示範",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p6.html#transcript",
+      "materialIds": [
+        "fhs-12196",
+        "fhs-30130"
+      ],
+      "paragraphs": 64,
+      "originalsSha256": "9aa7ee855c014be0bab8019b100a9c68b6bde4d9d03ce1fb079a8e68aac54abf",
+      "archivedParagraphs": 64,
+      "publishedOriginalParagraphs": 64,
+      "fullTextVectorParagraphs": 64,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12196",
+          "reason": "review_hold"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 45,
+              "originalHash": "9f2cafe7a9a1a436a4e96a55366fb83baa393bd1b57b07c75c7551b52b0b3848",
+              "chunkKey": "p0-098b3cf1b0f580283da7",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "e693df9c-3599-5eb7-874d-761f50eb112e",
+              "contentHash": "cc98df208667b23a1794ab6f49fb5f549ea456caad6936b139e7fe44d889245c",
+              "treatment": "detailed",
+              "originalCharacters": 1137,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 46,
+              "last": 64,
+              "originalHash": "80c204b461ae7c82948f57a13c9db8922022c13ff31808551ea58f71049f7476",
+              "chunkKey": "p0-d05b629eb639415dc9be",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "40d86f4f-fe3b-5321-b5fa-915e710d69d1",
+              "contentHash": "d7d6f9c5eb23881c986d46efb52f3dca2346bc5635e5f05b64223fcd06f179ff",
+              "treatment": "detailed",
+              "originalCharacters": 638,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "起步篇 - 什麼是引進固體食物過渡期",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000041.html#transcript",
+      "materialIds": [
+        "fhs-14727"
+      ],
+      "paragraphs": 7,
+      "originalsSha256": "08c5c724a89aee373f668d8c4e324235f12fb1fb5c4595f9b3a492f1aa2909b7",
+      "archivedParagraphs": 7,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14727",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "起步篇 - 實戰篇：如何為寶寶準備固體食物？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000041_p3.html#transcript",
+      "materialIds": [
+        "fhs-14727"
+      ],
+      "paragraphs": 24,
+      "originalsSha256": "fa785a5385f815cea7ef174de7f5ff90d7dbe9f86c67cdafb65e44a05c58649f",
+      "archivedParagraphs": 24,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14727",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "進展篇(上) - 6至12個月寶寶食物的轉變",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042.html#transcript",
+      "materialIds": [
+        "fhs-14722"
+      ],
+      "paragraphs": 27,
+      "originalsSha256": "f3ea9726a6541274782c2c7864bd56933ccf8648633181c37705af7d01d6ebe6",
+      "archivedParagraphs": 27,
+      "publishedOriginalParagraphs": 27,
+      "fullTextVectorParagraphs": 27,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-14722",
+          "versionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 16,
+              "originalHash": "5877eecbbf7daa1ea9309b09f85622f390cad2d3a0ea90dd5dff19428ba97130",
+              "chunkKey": "p0-5222b0a9d5827aceb363",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "74c6f773-af55-5fd7-9f2f-e62d699ebf82",
+              "contentHash": "bda9f7549fdf7241de356a018bea1302ae18ef2817b2544fb11a87f08e34a491",
+              "treatment": "detailed",
+              "originalCharacters": 1156,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 17,
+              "last": 25,
+              "originalHash": "0bda297c4a6c4bf2e659af64f28f7fa02b833c06f7372964a83336611319b26b",
+              "chunkKey": "p0-3f62d4a21249789c44e8",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "df88fa62-ce2c-596a-8383-2a314d88affe",
+              "contentHash": "53cb71e736533cc4429006700acaff3d313ac161647446b31e6b89a0c7a78992",
+              "treatment": "detailed",
+              "originalCharacters": 676,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 26,
+              "last": 27,
+              "originalHash": "5a8f101ab7a4916fe01f9e5ed9684db3212a124376d4b5fa5eed2a67db12354b",
+              "chunkKey": "p0-7a17435efa4d29038cd1",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "893985b6-e3d1-5350-83e7-bd80270ad6b7",
+              "contentHash": "32c983ccde1bcd0e2071a5788a15e9c3beb3941b0161749380e94a0e45d10069",
+              "treatment": "detailed",
+              "originalCharacters": 788,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "進展篇(上) - 寶寶快樂地進餐",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042_p2.html#transcript",
+      "materialIds": [
+        "fhs-14722"
+      ],
+      "paragraphs": 36,
+      "originalsSha256": "b75e3311101c892bb8a3095a09f5e047b25ab0ef8af33939df269658549a0a77",
+      "archivedParagraphs": 36,
+      "publishedOriginalParagraphs": 36,
+      "fullTextVectorParagraphs": 36,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-14722",
+          "versionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 23,
+              "originalHash": "6cb3bcb201e824a8e03de6d92c2b51b2970e9a7cd3062f77774ad2c2d6f79fb3",
+              "chunkKey": "p0-dd4913485a0c88388b75",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "534dfc83-0616-57fe-af52-cce76df68a2c",
+              "contentHash": "ecea46f76d1c941b1e70acb97789bb3d3797ee795a659c3f3fbe28da9b792989",
+              "treatment": "detailed",
+              "originalCharacters": 1190,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 24,
+              "last": 36,
+              "originalHash": "da071891a81b87c90db47d6ac36b5589840d1ea0b0d36b432ca87b8da064f7e6",
+              "chunkKey": "p0-7f43bca1e822e04f8b76",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "f3ef495f-b20e-5a76-ac81-851052bbeaeb",
+              "contentHash": "6c52d14ab64d78828327a2e163695b0a9d6669ce3628d71e57cfbc1a3642f1dd",
+              "treatment": "detailed",
+              "originalCharacters": 851,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "進展篇(上) - 知多一點點",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000042_p3.html#transcript",
+      "materialIds": [
+        "fhs-14722"
+      ],
+      "paragraphs": 22,
+      "originalsSha256": "f6074dcbc3f75e6498b18648c4404e6e7b2f3a44df51ffa1c76f9f091ccb8121",
+      "archivedParagraphs": 22,
+      "publishedOriginalParagraphs": 22,
+      "fullTextVectorParagraphs": 22,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-14722",
+          "versionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 22,
+              "originalHash": "866932f17f3c8d6b001b030d3d5c9f572a6229da0587f97887b6853aa0e2d406",
+              "chunkKey": "p0-67f40345b5bf97ead853",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "703b6bcd-9e1d-5901-b2d3-1d7dceae712e",
+              "contentHash": "867712d979002c6614313cb550ba8ad78e4b8d4dc1685d26b4509cb8877bab98",
+              "treatment": "detailed",
+              "originalCharacters": 1050,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "進展篇(下) - 一至兩歲的均衡飲食",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043.html#transcript",
+      "materialIds": [
+        "fhs-16301"
+      ],
+      "paragraphs": 34,
+      "originalsSha256": "dd7cb7932b90384cded12fe1882d68896fb2ef4815007108f505522bac55424d",
+      "archivedParagraphs": 34,
+      "publishedOriginalParagraphs": 34,
+      "fullTextVectorParagraphs": 34,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-16301",
+          "versionId": "d27e5088-2c98-5430-bea2-2ef047af3f69",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "83f8f327b1d59512a4a5c4860c883fb22441164d6503945242be15a6af098fde",
+              "chunkKey": "p0-09a32abcd01f1193f103",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "862f0032-bba4-50aa-a1bd-ca3e634c90be",
+              "contentHash": "0971bf1a0324b73e5bd9f2dea11ca477d278d1848b20dee7e27b5c7deadda127",
+              "treatment": "detailed",
+              "originalCharacters": 1119,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 19,
+              "last": 34,
+              "originalHash": "586fcf24f83e22bb9d3550876d9ce30c1aa88dc7327b9a45d0d23a5d651e5b80",
+              "chunkKey": "p0-7d4392eae154981e5834",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "f21bc916-f3dd-54df-82a8-ae54cbd1923d",
+              "contentHash": "beb65fd8a046c102eb53150f0098861518c21ab2c7f198be8ca3ba4234c8ab5b",
+              "treatment": "detailed",
+              "originalCharacters": 959,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "進展篇(下) - 引導孩子好好吃飯",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043_p2.html#transcript",
+      "materialIds": [
+        "fhs-16301"
+      ],
+      "paragraphs": 19,
+      "originalsSha256": "8979d5f451fe2cb551b55a9073778f591b88c49ae3669979b36a06dfa3a33dca",
+      "archivedParagraphs": 19,
+      "publishedOriginalParagraphs": 19,
+      "fullTextVectorParagraphs": 19,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-16301",
+          "versionId": "d27e5088-2c98-5430-bea2-2ef047af3f69",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "d7b8a0b4c9a6bbbbca1ab3759c3f7fb040cdc0f1b28f0a18a34b8c4060c0082d",
+              "chunkKey": "p0-9db510c5d91dfb70e678",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "0629751c-bc03-58a6-beba-20adad1bd9f7",
+              "contentHash": "c14fb415be691e0d40a1e4e822db70f89808f9c5a485d9233358711a02921e0c",
+              "treatment": "detailed",
+              "originalCharacters": 1171,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 19,
+              "last": 19,
+              "originalHash": "074bfc807641b5cfcc3ff1cfba904c2e18e9767d0a10218e2660801d5e588056",
+              "chunkKey": "p0-f2d2a754985f1fb26374",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "cd4f1957-3648-50f4-889e-c76ec58b826f",
+              "contentHash": "618075c4be0622d3fad21c62e87692f558c94455a5565339d3b040afd0e31271",
+              "treatment": "detailed",
+              "originalCharacters": 253,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "進展篇(下) - 建立健康生活模式",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000043_p3.html#transcript",
+      "materialIds": [
+        "fhs-16301"
+      ],
+      "paragraphs": 14,
+      "originalsSha256": "be3587eecc6287318298cd756cc8400e2f999732d56d0cbe675f2b608ad84224",
+      "archivedParagraphs": 14,
+      "publishedOriginalParagraphs": 14,
+      "fullTextVectorParagraphs": 14,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-16301",
+          "versionId": "d27e5088-2c98-5430-bea2-2ef047af3f69",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "b530faca4f3b1c7042f0684c825379bf9d7b9f5fa653cf435806888060801cef",
+              "chunkKey": "p0-2373a68098b22a73aa84",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "8fd4381f-a24e-5886-9859-cda3232d4793",
+              "contentHash": "0eee9c7e2b7664a2889138f5448ecca22bd3c8603b892abe0f980579ebf4d844",
+              "treatment": "detailed",
+              "originalCharacters": 761,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "6至24 個月嬰兒健康飲食話你知BB幾時開始食固體食物? 我點知佢識唔識食？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000059.html#transcript",
+      "materialIds": [
+        "fhs-14727"
+      ],
+      "paragraphs": 3,
+      "originalsSha256": "a2249b717ff970b73e289ffe09510013e42ca9875acca09b7d647cbd7cd4aaaf",
+      "archivedParagraphs": 3,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14727",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "6至24 個月嬰兒健康飲食話你知我已經食飽啦！唔好再餵我！",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000060.html#transcript",
+      "materialIds": [
+        "fhs-14722"
+      ],
+      "paragraphs": 6,
+      "originalsSha256": "d46653a7297115095e52b650b47dcebe1c18edba26051cf699f2c6354a924831",
+      "archivedParagraphs": 6,
+      "publishedOriginalParagraphs": 6,
+      "fullTextVectorParagraphs": 6,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-14722",
+          "versionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 6,
+              "originalHash": "0e15a607f4b0f85b94d51945fe2b99340c7c867a76771911c659c4988b65ca0d",
+              "chunkKey": "p0-5ca3a29611fdef45caf7",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "8979aa09-5c47-5c91-8cd6-6aef59296c59",
+              "contentHash": "a63fff84b57e0603e4c7641153bdae7be96afe9c037cd69b643d98cdf7b6d1e1",
+              "treatment": "detailed",
+              "originalCharacters": 392,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "6至24 個月嬰兒健康飲食話你知BB開始食固體食物，要食啲乜?",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000061.html#transcript",
+      "materialIds": [
+        "fhs-14727"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "f180249fc61663ffb4a29229f38ba382543f7b5ae90cf1c0ac32a1ece0a8fdd2",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14727",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "BB教餵奶 － 回應式餵哺",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html#transcript",
+      "materialIds": [
+        "fhs-12146"
+      ],
+      "paragraphs": 134,
+      "originalsSha256": "e65a9d9e7aafd96ae6d76c7008ad2bd8800fc0bb78f6f4fcb6f12450e3c82f26",
+      "archivedParagraphs": 134,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12146",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "嬰兒安全睡姿與環境 時刻緊記全靠你",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000081.html#transcript",
+      "materialIds": [
+        "fhs-14799"
+      ],
+      "paragraphs": 20,
+      "originalsSha256": "908dbdd2acbd8071ce4d9483a4756d12b0067054eaceddc096abdc1c1bb1b407",
+      "archivedParagraphs": 20,
+      "publishedOriginalParagraphs": 20,
+      "fullTextVectorParagraphs": 20,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-14799",
+          "versionId": "dc98ae25-36bf-59da-851a-faec6ee2f9c5",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 20,
+              "originalHash": "0f58df6b08b711cba6e9045b145f3344bd7a26c2e4fbcfd0703931900289c9fa",
+              "chunkKey": "p0-cf5feb95aa6533d0c354",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "7ad64a86-ea17-5628-b51d-62cd7f7f12ef",
+              "contentHash": "d1afe3b57e2d3bb92a86239a72a2cf8379f306ef956eb4392e69c8244343a38f",
+              "treatment": "detailed",
+              "originalCharacters": 279,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "身心鬆弛好EASY - 腹式呼吸練習",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000103.html#transcript",
+      "materialIds": [
+        "fhs-30142"
+      ],
+      "paragraphs": 9,
+      "originalsSha256": "2aa79af918528ccc70b28c4ddeb2ab6dc914fd4c41a886094e333db924945efc",
+      "archivedParagraphs": 9,
+      "publishedOriginalParagraphs": 9,
+      "fullTextVectorParagraphs": 9,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-30142",
+          "versionId": "72e210a0-fc48-5962-a43b-6100bd0bb3f2",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 9,
+              "originalHash": "df1bae670ea14833ccb5a2ead9b6feb9b825fa1267bff065962f8639d37a93f7",
+              "chunkKey": "p0-63507a220fa5084ad608",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "5f7d5c5e-89b0-5ed4-b4b4-1e3af0364fb7",
+              "contentHash": "b7ee2681d3fa165bf042d4c8682dc824445e8da9b176aa99be0dc3b6fdadc3b4",
+              "treatment": "detailed",
+              "originalCharacters": 609,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "身心鬆弛好EASY - 肌肉鬆弛練習",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000104.html#transcript",
+      "materialIds": [
+        "fhs-30142"
+      ],
+      "paragraphs": 43,
+      "originalsSha256": "4a0fab4161320b489dc9c456e980b154cb4fbe788c546d1b49a208f79b96a69f",
+      "archivedParagraphs": 43,
+      "publishedOriginalParagraphs": 43,
+      "fullTextVectorParagraphs": 43,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-30142",
+          "versionId": "72e210a0-fc48-5962-a43b-6100bd0bb3f2",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 28,
+              "originalHash": "59158b4b8d9316759671bfa0f52fa3ca88598dada3c6819399ee82c212943e88",
+              "chunkKey": "p0-71dc84c319fab65e13c0",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "74f111c5-5639-524b-8b06-417eb55aaaf9",
+              "contentHash": "313c5bed2fabad58757e770a93bc2d6465e0569b48909e02a62cdba3eee1ad97",
+              "treatment": "detailed",
+              "originalCharacters": 1191,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 29,
+              "last": 43,
+              "originalHash": "0caacec1c0f7882296a9496c287c6cf5d79bab411bbbcc42bbf326e2658153f1",
+              "chunkKey": "p0-9db1db802a8138a6a1c6",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "2e63c869-ca51-5df7-b4b9-6f0fd636d234",
+              "contentHash": "07de7e19505a9bb000c3131f05ddb55ff9c437ca722241ed9b7fe4aad79f2999",
+              "treatment": "detailed",
+              "originalCharacters": 748,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "身心鬆弛好EASY - 意像鬆弛練習",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000105.html#transcript",
+      "materialIds": [
+        "fhs-30142"
+      ],
+      "paragraphs": 11,
+      "originalsSha256": "151e08783c1a96ad2d4fe55843d2aa6175f40a90598e093e21bf41f5f282cc9d",
+      "archivedParagraphs": 11,
+      "publishedOriginalParagraphs": 11,
+      "fullTextVectorParagraphs": 11,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-30142",
+          "versionId": "72e210a0-fc48-5962-a43b-6100bd0bb3f2",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 10,
+              "originalHash": "eae682b79cab8fa9133680926c7193bd8a4d577fbe9bcfd9ea4e4cdcc60ba81a",
+              "chunkKey": "p0-8b052056572fc9d3aee3",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a2bd993a-9e86-5c75-8a2f-aadf92effefe",
+              "contentHash": "6a2fae9292e34596f8e3141a8eb039f70491377addc05b3f638064ca84045523",
+              "treatment": "detailed",
+              "originalCharacters": 1142,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 11,
+              "last": 11,
+              "originalHash": "3a24656083c0505cd33cb3c14cfb664f13fd9f264b268c192be689d1210d9d7b",
+              "chunkKey": "p0-00c18eba0aaae25b865a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "6eea58e6-6562-54d0-966a-bbfc267ff5c8",
+              "contentHash": "08fc35adfeea1f550c23cdd8ed991621b54611268981df511eaeec9038bc4fad",
+              "treatment": "detailed",
+              "originalCharacters": 157,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「情緒導航」小秘訣（嬰幼兒篇）",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000114.html#transcript",
+      "materialIds": [
+        "fhs-13048"
+      ],
+      "paragraphs": 49,
+      "originalsSha256": "ded7c48ed6bef1902cba45f19c203eb20327785eaebf201e3aea4d88d3c2964e",
+      "archivedParagraphs": 49,
+      "publishedOriginalParagraphs": 49,
+      "fullTextVectorParagraphs": 49,
+      "pendingMaterials": [],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 44,
+              "originalHash": "caba26331acfe96ed7cdacbdedcae44e91b077a3d02aca5f865b3d7dfbd4db81",
+              "chunkKey": "p0-fe2f441d11725d66352e",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "cb4781e4-7a93-5a86-a2cf-4c10b2fc3cd6",
+              "contentHash": "688aa93640e5872cf90e708fd357f4f29cf8983c2697288d9d953b8b27fd19a4",
+              "treatment": "detailed",
+              "originalCharacters": 1183,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 45,
+              "last": 49,
+              "originalHash": "6881fd4f1fb8c6f0a4a816d7df6324827d6fffb9258b181de87bc43ba4d993ce",
+              "chunkKey": "p0-51007cf2dd0386db81e9",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "aba3edc8-bd1d-590f-9eb1-c4dd0a4917f4",
+              "contentHash": "9ca37a63949a74d50778834d548b8964010d724c079641b01297e72c23c9e3b6",
+              "treatment": "detailed",
+              "originalCharacters": 218,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「情緒導航」五部曲（學前兒童篇）",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+      "materialIds": [
+        "fhs-30169",
+        "fhs-14841",
+        "fhs-14842",
+        "fhs-14836",
+        "fhs-14837"
+      ],
+      "paragraphs": 52,
+      "originalsSha256": "fc9403e256ec4843c2818dba2b53c613e809e6ac0f7821f027c7d60f78a3b674",
+      "archivedParagraphs": 52,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30169",
+          "reason": "knowledge_age_uncertain"
+        },
+        {
+          "sourceId": "fhs-14841",
+          "reason": "knowledge_age_uncertain"
+        },
+        {
+          "sourceId": "fhs-14842",
+          "reason": "knowledge_age_uncertain"
+        },
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        },
+        {
+          "sourceId": "fhs-14837",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "「愛」得其所 – 正面親職為基礎",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000123.html#transcript",
+      "materialIds": [
+        "fhs-13048",
+        "fhs-14836"
+      ],
+      "paragraphs": 21,
+      "originalsSha256": "e519805e24d17489cce0b31218abf3a1374a207fd6f7064182606d466fab0f92",
+      "archivedParagraphs": 21,
+      "publishedOriginalParagraphs": 21,
+      "fullTextVectorParagraphs": 21,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 21,
+              "originalHash": "4994b07d742d47c0e07e8315c0128216f6626b1cf895fda5ac6c8b9e10b6c8fc",
+              "chunkKey": "p0-504dffd2c3030f6853c4",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "a2591537-be5e-54be-9ae3-8b276f5376c1",
+              "contentHash": "d87deed468ed5b904bf9f220fef58740df9e899d52a3ce55d6bd9f007ae6804b",
+              "treatment": "detailed",
+              "originalCharacters": 1151,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「伴」得其所 – 共享時光",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000124.html#transcript",
+      "materialIds": [
+        "fhs-13048",
+        "fhs-14836",
+        "fhs-14837"
+      ],
+      "paragraphs": 18,
+      "originalsSha256": "d5759f14fc0b0e4e38ff50cb5f430eff6e8f7a2658f2324c8edd0cca743233fc",
+      "archivedParagraphs": 18,
+      "publishedOriginalParagraphs": 18,
+      "fullTextVectorParagraphs": 18,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        },
+        {
+          "sourceId": "fhs-14837",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 18,
+              "originalHash": "75fe73172f92ff829522c4f43462f192c56777e2ab82634f81cb4bf18674a863",
+              "chunkKey": "p0-34db62144771bdeb0f93",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "e8ce82ae-5147-58c3-9365-d03a46b152a4",
+              "contentHash": "e39b1fcb95a1d10770dcb25e82177ef2ccb0eadc662c28fc8e63e090c96026a0",
+              "treatment": "detailed",
+              "originalCharacters": 1134,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「讚」得其所 – 鼓勵欣賞",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000125.html#transcript",
+      "materialIds": [
+        "fhs-14841",
+        "fhs-13048",
+        "fhs-14836",
+        "fhs-14837"
+      ],
+      "paragraphs": 15,
+      "originalsSha256": "5ca86606c25292d5204116b28969420aaa80972251cf9c740e6745d088357348",
+      "archivedParagraphs": 15,
+      "publishedOriginalParagraphs": 15,
+      "fullTextVectorParagraphs": 15,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14841",
+          "reason": "knowledge_age_uncertain"
+        },
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        },
+        {
+          "sourceId": "fhs-14837",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 15,
+              "originalHash": "8aee5ee04fc054762ac6bbcd6047cc718c2946ba3d4302726d299abf7be39d67",
+              "chunkKey": "p0-f73ee1c3a5c2af4fbf0a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "de9c3604-c656-5ebd-8075-ddb4673036b9",
+              "contentHash": "c417003625951db8a9174ff5bf4ca68461369a2d9f60563876f286f2e0df67cf",
+              "treatment": "detailed",
+              "originalCharacters": 1047,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「教」得其所 – 恰當引導",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000126.html#transcript",
+      "materialIds": [
+        "fhs-14841",
+        "fhs-13048",
+        "fhs-14836",
+        "fhs-14837"
+      ],
+      "paragraphs": 16,
+      "originalsSha256": "39927bcf05a2f6fa96497bcd155cdceb0b041e90b54317d186c74b10adab2ad4",
+      "archivedParagraphs": 16,
+      "publishedOriginalParagraphs": 16,
+      "fullTextVectorParagraphs": 16,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14841",
+          "reason": "knowledge_age_uncertain"
+        },
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        },
+        {
+          "sourceId": "fhs-14837",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 13,
+              "originalHash": "717893c7c0688e6bf44b9fc8f44e567efa40e2977c049fb55501ff22a3854c30",
+              "chunkKey": "p0-96a49682d0c58832ffb9",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "1529d09f-3e7d-589b-b092-d01af5dbfffd",
+              "contentHash": "6d28a2f6ba02126fdc4522ac6312ac400f75883e786f39373feb85013e381c50",
+              "treatment": "detailed",
+              "originalCharacters": 1190,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            },
+            {
+              "first": 14,
+              "last": 16,
+              "originalHash": "468d53a1222f32759a06f1b47c8f673c35698b4531fce7ffbc4793344a5d8db6",
+              "chunkKey": "p0-24f325861e19b7d47ae1",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "0ef77983-0cd2-5a1d-b769-0261ad284033",
+              "contentHash": "fd9b92fc7ed12c0faa9d7a0dd05bde3315a3fb02fe6bb216d165fa91ccc6ab9e",
+              "treatment": "detailed",
+              "originalCharacters": 151,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「納」得其所 – 尊重接納",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000127.html#transcript",
+      "materialIds": [
+        "fhs-13048",
+        "fhs-14836",
+        "fhs-14837"
+      ],
+      "paragraphs": 14,
+      "originalsSha256": "47371de97104a0ece654eb0c18afd5bd60e067f4cc042c35b0d2300196a0bcaf",
+      "archivedParagraphs": 14,
+      "publishedOriginalParagraphs": 14,
+      "fullTextVectorParagraphs": 14,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        },
+        {
+          "sourceId": "fhs-14837",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 14,
+              "originalHash": "3150f4f6764b1af8c86f022abd88dc625cb27b42442cf6e45ff881e1909b1449",
+              "chunkKey": "p0-035d602b975ba57a078a",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "697ac984-4695-5fa2-8851-6f831dc04500",
+              "contentHash": "363e5efd00f5a49285c2a8f6e9b7a0b2280a58e7a2c19e98af1a62c494949711",
+              "treatment": "detailed",
+              "originalCharacters": 1185,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "「顧」得其所 – 善待自己",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000128.html#transcript",
+      "materialIds": [
+        "fhs-13048",
+        "fhs-14836"
+      ],
+      "paragraphs": 13,
+      "originalsSha256": "b04a4af1b8330f45c7851b289817845aa7f26ce96a10c0f5e2936bb3ebe1a3e8",
+      "archivedParagraphs": 13,
+      "publishedOriginalParagraphs": 13,
+      "fullTextVectorParagraphs": 13,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-14836",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-13048",
+          "versionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 13,
+              "originalHash": "2ca86bedb7a3de88a8e0677311b921418d7cc6a01bc506f5932b43c6d8fbb8f0",
+              "chunkKey": "p0-616511dd562128ec146b",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "4502357a-32f0-54ce-af5f-f7f8b801eb17",
+              "contentHash": "2ad2e66b22143e20984ed99a93e1c2cf5228d8821d73991639e161d74eaa37e5",
+              "treatment": "detailed",
+              "originalCharacters": 1016,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配方奶沖調大揭秘",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript",
+      "materialIds": [
+        "fhs-12146"
+      ],
+      "paragraphs": 53,
+      "originalsSha256": "7fbcd31bde5bc9139edd5ecee92955295071da2feab205e66f1926d4e90052ce",
+      "archivedParagraphs": 53,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12146",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "奶瓶和用具消毒日常",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html#transcript",
+      "materialIds": [
+        "fhs-12146"
+      ],
+      "paragraphs": 66,
+      "originalsSha256": "34caf46099564824ab81bcd0ce399ac204347dbb6bd3dd9ed8e84806f4216324",
+      "archivedParagraphs": 66,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-12146",
+          "reason": "knowledge_age_one_sided"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "嬰兒與維他命D (完整版)",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000131.html#transcript",
+      "materialIds": [
+        "fhs-30078"
+      ],
+      "paragraphs": 17,
+      "originalsSha256": "627a1bb7304e1cf35ff1b982f2e600b6549e1e68579362e0826b08692d8aa2f9",
+      "archivedParagraphs": 17,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30078",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "如何給寶寶服用維他命D 補充劑？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000132.html#transcript",
+      "materialIds": [
+        "fhs-30078"
+      ],
+      "paragraphs": 7,
+      "originalsSha256": "a66a49442fa9a2f2095cc387918e5153d5c97041d479c9352356e818395d4752",
+      "archivedParagraphs": 7,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-30078",
+          "reason": "knowledge_age_uncertain"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "乳頭凹陷可以餵嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c2p3.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 6,
+      "originalsSha256": "994991258c9a4e16ce2d9018e076d5110e6784b802f8d99fddb9fb7641867624",
+      "archivedParagraphs": 6,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "母嬰肌膚接觸",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c4.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "4e5477e3b034a619e40597b8523ba2de05164c93127349a4f7ce7b91acf8ab63",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "初乳",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c5.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "729b1eb8df8fa7adc6a7ef437dc4341dd1acaa6d5ed27acad9f9925e3184bec2",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "肚餓的信號",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p2.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "123638499d8e770a43de19054551b7a23c77cb676d56a20fd349859b78c6055c",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "餵哺技巧: 技巧概要",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_1.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "d153a86e3b8a9b05a6646fff286f396954bc66e44afec1d3e2e2a5ca36320b91",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "餵哺技巧: 媽媽及寶寶的姿勢",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_2.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "9214864d9a52f5641604812275e911dc96d438431044245c2917084acf512a4a",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "餵哺技巧: 把寶寶帶到乳房",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_3.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "8fb17dfbe390afb8bfcc28b50580adcbb7871ec164c9803ae44f5d3982d92913",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "餵哺技巧: 正確地含乳",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_4.html#transcript",
+      "materialIds": [
+        "fhs-20000",
+        "fhs-30073"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "248bd7c7f545ecfb855c8b3ceda6aba34eaff947fb34652ce5d720fefeceb01b",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 2,
+      "fullTextVectorParagraphs": 2,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": [
+        {
+          "sourceId": "fhs-30073",
+          "versionId": "cc0f5448-7d1e-5b5d-82e2-3efb82255ea0",
+          "ranges": [
+            {
+              "first": 1,
+              "last": 2,
+              "originalHash": "9ccbfc26d889b8a6e682f5c990eba9dff8b5053e18060bbd21ffad1ec18f2017",
+              "chunkKey": "p0-ff0c40a8a5ff8099260b",
+              "vectorizedFullText": true,
+              "excerptCharacters": 150,
+              "chunkId": "801a0759-a340-52e2-a13a-78890ce87474",
+              "contentHash": "bd9dc2ea914297b800804e251db0d6bba99a35a41949a096fad9480582799cd3",
+              "treatment": "detailed",
+              "originalCharacters": 174,
+              "lexicalScope": "reviewed_summary_and_metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "餵哺技巧: 有效的吸吮",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_5.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "643a31e58290ad87da8857d3eca66133cb2f51cc5a27178c98f73b7ee857f5bf",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "吃得夠嗎？",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p5.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 2,
+      "originalsSha256": "67e7ee4572fa0390c0c56b5171197a7ed151dcb2bfdf8f29cf9b494bafc42cf2",
+      "archivedParagraphs": 2,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    },
+    {
+      "title": "其他支援",
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p8.html#transcript",
+      "materialIds": [
+        "fhs-20000"
+      ],
+      "paragraphs": 4,
+      "originalsSha256": "84b3c99242750eef39d8914b3b89fd8bea1034d7b834e77d4664c306030b197f",
+      "archivedParagraphs": 4,
+      "publishedOriginalParagraphs": 0,
+      "fullTextVectorParagraphs": 0,
+      "pendingMaterials": [
+        {
+          "sourceId": "fhs-20000",
+          "reason": "model_output_limit"
+        }
+      ],
+      "editions": []
+    }
+  ],
+  "productionOriginals": {
+    "materialCount": 22,
+    "scriptCount": 61,
+    "paragraphCount": 1695,
+    "verification": "Reassembled the committed Firestore observation parts at the same read time and compared every paragraph and its canonical hash to the official HTML archive."
+  },
+  "parentQuestions": {
+    "baseline": {
+      "at": "2026-11-21T12:20:10.133683Z",
+      "publicMaterialScope": 22,
+      "modelCalls": 0,
+      "productionFamilyWrites": 0,
+      "method": "Ordinary product tools and same-version context, with an opted-in local test parent and real Firestore public editions, chunks and lexical posting buckets from one snapshot. Query embeddings disabled for this test.",
+      "questions": [
+        {
+          "id": "baby-communication",
+          "text": "我個BB兩個月大，我同佢講嘢時應該點樣面對面、望住佢，同佢溝通？",
+          "material": "fhs-30119",
+          "script": "親子溝通 ( 1 至 4 個月 )",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": null
+        },
+        {
+          "id": "feeding",
+          "text": "我餵母乳時，點樣從BB個嘴同下巴睇到佢有冇正確含乳？",
+          "material": "fhs-30073",
+          "script": "餵哺技巧: 正確地含乳",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": null
+        },
+        {
+          "id": "play",
+          "text": "同歲半小朋友玩玩具茶壺，佢好快就冇興趣。親子溝通時可以點樣加入新玩法？",
+          "material": "fhs-12196",
+          "script": "加入新玩法",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": null
+        }
+      ]
+    },
+    "publishedSnapshot": {
+      "at": "2026-11-21T13:20:00.009208Z",
+      "publicMaterialScope": 22,
+      "modelCalls": 0,
+      "productionFamilyWrites": 0,
+      "method": "Ordinary product tools and same-version context, with an opted-in local test parent and real Firestore public editions, chunks and lexical posting buckets from one snapshot. Query embeddings disabled for this test.",
+      "questions": [
+        {
+          "id": "baby-communication",
+          "text": "我個BB兩個月大，我同佢講嘢時應該點樣面對面、望住佢，同佢溝通？",
+          "material": "fhs-30119",
+          "script": "親子溝通 ( 1 至 4 個月 )",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": 3,
+          "sourceId": "fhs-30119",
+          "versionId": "b7147072-c7a4-5f16-b39c-2abf5c0dc954",
+          "chunkId": "c8ba8e52-bce0-5e95-a7dd-f901cddc3e9b",
+          "scriptPassage": {
+            "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000024.html#transcript",
+            "title": "親子溝通 ( 1 至 4 個月 )",
+            "firstParagraph": 1,
+            "lastParagraph": 22,
+            "originalHash": "45510a56867805decec596d13c1c24422540633f54b541449eaf898768ecd78b"
+          },
+          "originalCoverage": "chunk_original",
+          "originalCharacters": 463,
+          "expandedCharacters": 463
+        },
+        {
+          "id": "feeding",
+          "text": "我餵母乳時，點樣從BB個嘴同下巴睇到佢有冇正確含乳？",
+          "material": "fhs-30073",
+          "script": "餵哺技巧: 正確地含乳",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": 1,
+          "sourceId": "fhs-30073",
+          "versionId": "cc0f5448-7d1e-5b5d-82e2-3efb82255ea0",
+          "chunkId": "801a0759-a340-52e2-a13a-78890ce87474",
+          "scriptPassage": {
+            "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/breastfeeding/bf_vid_c6p4_4.html#transcript",
+            "title": "餵哺技巧: 正確地含乳",
+            "firstParagraph": 1,
+            "lastParagraph": 2,
+            "originalHash": "9ccbfc26d889b8a6e682f5c990eba9dff8b5053e18060bbd21ffad1ec18f2017"
+          },
+          "originalCoverage": "chunk_original",
+          "originalCharacters": 174,
+          "expandedCharacters": 174
+        },
+        {
+          "id": "play",
+          "text": "同歲半小朋友玩玩具茶壺，佢好快就冇興趣。親子溝通時可以點樣加入新玩法？",
+          "material": "fhs-12196",
+          "script": "加入新玩法",
+          "returned": 3,
+          "mode": "keyword_degraded",
+          "locatorRank": 1,
+          "sourceId": "fhs-30130",
+          "versionId": "3fa5d934-78ab-5fc5-b0c1-6c71fb3af156",
+          "chunkId": "59ca2144-dc0f-5996-b59f-9c014d0c0b50",
+          "scriptPassage": {
+            "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000029_p3_p5.html#transcript",
+            "title": "加入新玩法",
+            "firstParagraph": 1,
+            "lastParagraph": 7,
+            "originalHash": "150a7d66982b82a04e750abce53969486825627cf901295b1e17996c85e2b716"
+          },
+          "originalCoverage": "chunk_original",
+          "originalCharacters": 227,
+          "expandedCharacters": 227
+        }
+      ]
+    }
+  }
+}

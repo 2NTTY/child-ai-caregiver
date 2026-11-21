@@ -1,6 +1,10 @@
 import type { ChatSendOptions } from '../../../src/shared/chat';
+import type { ChatAttachmentUpload } from '../../../src/client/chat-controller';
 import { readCitationPdf } from '../../../src/client/citation-original';
 import { openCitationPdf } from '../platform/file-export';
+import { openSpecialistArtifactPreview } from "../platform/specialist-artifact-preview";
+import type { SpecialistPreviewSession } from "../platform/specialist-artifact-preview-contract";
+import { createProductAgentApi, ProductAgentApiError } from "../../../src/client/product-agent-api.ts";
 import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useNativeChatPresence } from "./useNativeChatPresence";
 import { useWebChatPresence } from "./useWebChatPresence";
@@ -13,6 +17,7 @@ import { usePathname, useGlobalSearchParams, useRouter, type Href } from "expo-r
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import { resolveChatMode, type ChatMode } from "../../../src/shared/chat";
 import type { ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers";
 import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
@@ -21,6 +26,7 @@ import { DeleteChildDialog } from "../components/DeleteChildDialog";
 import { AppButton } from "../components/ui";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import type { PreviewScenario } from "../preview/fixture";
+import type { AgentProposalDraftEditInput } from "../agent-view-model";
 import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
@@ -37,6 +43,7 @@ function useProductionValue(owner: ProductionOwner) {
   const draft = useSyncExternalStore(owner.draftOwner.subscribe, owner.draftOwner.getSnapshot, owner.draftOwner.getSnapshot);
   const agent = useSyncExternalStore(owner.agentOwner.subscribe, owner.agentOwner.getSnapshot, owner.agentOwner.getSnapshot);
   const authorization = useSyncExternalStore(owner.authorizationOwner.subscribe, owner.authorizationOwner.getSnapshot, owner.authorizationOwner.getSnapshot);
+  const temporaryChat = useSyncExternalStore(owner.temporaryChatOwner.subscribe, owner.temporaryChatOwner.getSnapshot, owner.temporaryChatOwner.getSnapshot);
   const voiceUpload = useSyncExternalStore(owner.voiceOwner.subscribe,owner.voiceOwner.getSnapshot,owner.voiceOwner.getSnapshot);
   const fileUpload = useSyncExternalStore(owner.fileOwner.subscribe,owner.fileOwner.getSnapshot,owner.fileOwner.getSnapshot);
   const photoUpload = useSyncExternalStore(owner.photoOwner.subscribe,owner.photoOwner.getSnapshot,owner.photoOwner.getSnapshot);
@@ -51,6 +58,11 @@ function useProductionValue(owner: ProductionOwner) {
   const current = useRef({ scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname });
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
   const previousPath = useRef(pathname);
+  const specialistPreview = useRef<SpecialistPreviewSession | null>(null);
+  useLayoutEffect(() => () => {
+    specialistPreview.current?.close();
+    specialistPreview.current = null;
+  }, [owner, pathname, snapshot.scopeKey, snapshot.identityKey, snapshot.sessionGeneration]);
   useNativeChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
     pathname === "/chat" && !snapshot.sharedChild.target && snapshot.scopeKey ? snapshot.chat.selectedChildId : null, snapshot.records.online);
   useWebChatPresence(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null,
@@ -183,6 +195,36 @@ function useProductionValue(owner: ProductionOwner) {
     void openCitationPdf(load, citation.excerptPage ?? citation.pageStart, currentScope).then(message => { if (currentScope()) setLocalNotice(message); },
       error => { if (currentScope()) setLocalNotice(error instanceof Error && /[\u3400-\u9fff]/u.test(error.message) ? error.message : '未能開啟當時的 PDF。'); });
   };
+  const openSpecialistArtifact = (id: string, runId: string) => {
+    const childId = snapshot.activeChild?.id, userId = snapshot.records.user?.id;
+    const active = () => {
+      const latest = owner.getSnapshot();
+      return currentScope() && current.current.pathname === pathname
+        && latest.identityKey === snapshot.identityKey && latest.sessionGeneration === snapshot.sessionGeneration
+        && latest.activeChild?.id === childId && !latest.sharedChild.target && latest.records.online;
+    };
+    if (!active() || !childId || !userId) return;
+    const run = owner.agentOwner.getSnapshot().runs[runId];
+    const item = run?.specialistArtifacts?.find(artifact => artifact.id === id && artifact.contentState === "ready");
+    if (!item) { setLocalNotice("未能核對這份草稿，請更新原活動後再試。"); return; }
+    const { readSpecialistArtifact } = createProductAgentApi(owner.apiBaseUrl, owner.fetcher);
+    if (!readSpecialistArtifact) return;
+    const load = (signal: AbortSignal) => readSpecialistArtifact(childId, runId, id, signal, userId);
+    specialistPreview.current?.close();
+    const preview = openSpecialistArtifactPreview(item.format, item.fileName, load, active);
+    specialistPreview.current = preview;
+    void preview.ready.then(message => {
+      if (specialistPreview.current === preview && active()) setLocalNotice(message);
+    }, error => {
+      if (specialistPreview.current !== preview || !active()) return;
+      specialistPreview.current = null;
+      if (error instanceof ProductAgentApiError && error.code === "document_changed") {
+        setLocalNotice("原文件已更改，這份草稿已失效。請更新原活動。");
+        return;
+      }
+      setLocalNotice(error instanceof Error && /[㐀-鿿]/u.test(error.message) ? error.message : "未能開啟草稿預覽。");
+    });
+  };
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
@@ -210,6 +252,8 @@ function useProductionValue(owner: ProductionOwner) {
     dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
+    chatMode: resolveChatMode(snapshot.chat.selectedChildId ? snapshot.chat.chatModes?.[snapshot.chat.selectedChildId] : undefined),
+    setChatMode: (mode: ChatMode) => { if (currentScope()) owner.chatController.setChatMode(mode); },
     chatDraft: chatDraft?.text ?? "", setChatDraft: (value: string) => { if (currentScope()) owner.chatController.setText(value); },
     sendChat: async (options: ChatSendOptions = {}) => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
@@ -217,14 +261,30 @@ function useProductionValue(owner: ProductionOwner) {
       if(attachments.length&&(attachments.length!==1||!['voice','file','photo'].includes(attachments[0].kind)))return;
       const known=new Set(owner.chatController.getSnapshot().messages.map(item=>item.id));
       const attachment=attachments[0];
-      const voice=attachment?.kind==='voice'?await owner.voiceOwner.prepare(attachment):null;
-      const file=attachment?.kind==='file'?await owner.fileOwner.prepare(attachment):null;
-      const photo=attachment?.kind==='photo'?(attachment.photoReference
-        ?await owner.photoOwner.prepareReference(attachment.photoReference,attachment.id):attachment.photo?await owner.photoOwner.prepare({id:attachment.id,photo:attachment.photo}):null):null;
-      if(!currentScope()||attachments.length&&!voice&&!file&&!photo||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined, options);
-      if(currentScope()&&photo){const saved=owner.chatController.getSnapshot().messages.find(item=>!known.has(item.id)&&item.photo?.id===photo.id);
-        if(saved){owner.draftOwner.remove(snapshot.scopeKey,attachment.id);owner.photoOwner.linked(saved.id,photo.id);}}
+      let photoId: string | undefined;
+      let upload: ChatAttachmentUpload | undefined;
+      if (attachment && (attachment.kind === 'voice' || attachment.kind === 'file' || attachment.kind === 'photo')) {
+        upload = {
+          kind: attachment.kind,
+          label: attachment.kind === 'voice' ? '語音訊息' : attachment.fileName,
+          async prepare() {
+            let reference;
+            if (attachment.kind === 'voice') reference = await owner.voiceOwner.prepare(attachment);
+            else if (attachment.kind === 'file') reference = await owner.fileOwner.prepare(attachment);
+            else {
+              reference = attachment.photoReference ? await owner.photoOwner.prepareReference(attachment.photoReference, attachment.id)
+                : attachment.photo ? await owner.photoOwner.prepare({ id: attachment.id, photo: attachment.photo }) : null;
+              photoId = reference?.id;
+            }
+            return currentScope() && owner.chatWritesAllowed() ? reference ?? null : null;
+          },
+        };
+      }
+      await owner.chatController.send(undefined, undefined, undefined, options, upload);
+      if (currentScope() && photoId) {
+        const saved = owner.chatController.getSnapshot().messages.find(item => !known.has(item.id) && item.photo?.id === photoId);
+        if (saved) { owner.draftOwner.remove(snapshot.scopeKey, attachment.id); owner.photoOwner.linked(saved.id, photoId); }
+      }
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();
     },
     fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},
@@ -261,7 +321,9 @@ function useProductionValue(owner: ProductionOwner) {
       setSharedConfirmation: (id: string, checked: boolean) => { if (currentScope()) owner.agentOwner.setSharedConfirmation(id, checked); },
       decide: (id: string, decision: "accept" | "dismiss") => { if (currentScope()) owner.agentOwner.decide(id, decision); },
       retryOriginal: () => { if (currentScope()) owner.agentOwner.retryOriginal(); },
-      openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id) },
+      editProposal: (id: string, input: AgentProposalDraftEditInput) => currentScope() ? owner.agentOwner.editProposal(id, input) : Promise.resolve(false),
+      openSource: (id: string) => openOriginal(owner.agentOwner.getSnapshot().model.run?.id, id),
+      openSpecialistArtifact },
     selectAgentRun: (id: string) => { if (currentScope()) owner.agentOwner.selectRun(id); },
     openAgentSource: openOriginal,
     agentInboxActions: { refresh: () => { if (currentScope()) void owner.agentOwner.readInbox(); },
@@ -293,6 +355,15 @@ function useProductionValue(owner: ProductionOwner) {
       } else {owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}
     } },
     agentDraftScope: snapshot.scopeKey, composerFocusRequest, openAgentDraft,
+    temporaryChat,
+    temporaryChatActions: {
+      open: owner.temporaryChatOwner.open,
+      setDraft: owner.temporaryChatOwner.setDraft,
+      send: owner.temporaryChatOwner.send,
+      exitAndClear: owner.temporaryChatOwner.exitAndClear,
+      retryPendingRemoteCloses: owner.temporaryChatOwner.retryPendingRemoteCloses,
+      dismissCloseNotice: owner.temporaryChatOwner.dismissCloseNotice,
+    },
     logoutConfirmation: logoutConfirmation || snapshot.records.logoutConfirmation,
     cancelLogout: () => { setLogoutConfirmation(false); owner.controller.cancelLogout(); },
     // Legacy preview consumers are kept type-compatible while their routes are gated.
@@ -333,9 +404,10 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
       recheck();
     };
     const focus = recheck;
+    const pageHide = () => { owner.temporaryChatOwner.handlePageHide(); };
     const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.hasDomainPending() || owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
-    window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
-    return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
+    window.addEventListener("beforeunload", beforeUnload); window.addEventListener("pagehide", pageHide); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
+    return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("pagehide", pageHide); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
   useEffect(() => {
     if (activity.active === undefined) return;

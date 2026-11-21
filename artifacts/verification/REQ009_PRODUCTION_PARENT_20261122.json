@@ -1,0 +1,42 @@
+{
+  "requirement": "REQ-009",
+  "productionRelease": {
+    "observedHongKong": "2026-11-22T01:00:21+08:00",
+    "releaseId": "r44926747284-1",
+    "webApiWorkerSha": "7e41cf5c74c0bec771d5a5f919ff9cfa7c1bfb5a",
+    "receipt": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44926747284",
+    "discussionMerge": "7528aff9a192c89b1bca26fdb8bf4c5fe3acd5a8",
+    "sourceChecksAtDeployedSha": [
+      {"file": "frontend/src/screens/chatScreen.tsx", "line": 339, "result": "本人已完成的原回答下顯示「討論這個回答」。按鈕傳入該回答的 ID；已有討論時，同一回答的頁尾顯示討論。"},
+      {"file": "server/firestore-chat.ts", "line": 232, "result": "questionForDiscussion 核對本人、子女、原問及已完成的原答。在同一授權範圍及原回答下，重複要求會取回同一筆討論。"},
+      {"file": "frontend/src/components/chat/QuestionDiscussion.tsx", "line": 25, "result": "收合只切換頁尾顯示，保留原回答和來源；畫面要求時間軸保留閱讀位置。重新展開才按原 run ID 讀取收據。"},
+      {"file": "server/firestore-product-agent.ts", "line": 137, "result": "互動 run 按該使用者當時生效的政策選取預算，討論亦檢查當日餘額。"}
+    ]
+  },
+  "productionBrowser": {
+    "requested": "https://ex-machina.eu.org/chat",
+    "landed": "https://ex-machina.eu.org/login",
+    "visible": "歡迎回來",
+    "signedInInteractionObserved": false,
+    "effectiveTestAccountBudget": null,
+    "pending": "在已登入的指定測試帳號，以當時的普通預算由已有回答開討論；收合後確認仍看見同一回答和來源。",
+    "modelCallsInitiatedByThisCheck": 0
+  },
+  "originalScreenshot": {
+    "previousLookup": "REQ009_PARENT_BUDGET_20261121.json#/production",
+    "displayedStopCode": "model_limit",
+    "knownTime": "2026-11-21 香港 14:09:05 為上載時段終點。操作時間及 run ID 均未提供。",
+    "accountLookup": {
+      "scope": "已指定的正式測試帳號",
+      "result": "唯讀帳號查詢回傳 HTTP 403 PERMISSION_DENIED，未取得該帳號的運行索引。",
+      "accountRunIndexRead": false
+    },
+    "matchedRun": null,
+    "conclusion": "既有 Cloud Logging 時段查核沒有相符紀錄。截圖文案可辨認單次模型呼叫上限；原討論的生效上限、呼叫次數及已保存發言仍然未知。"
+  },
+  "priorParentAcceptance": {
+    "receipt": "REQ009_PARENT_BUDGET_20261121.json#/isolatedBrowser/anchoredOriginal/acceptedParentFlow",
+    "environment": "本機 Edge、合成家庭、Firebase Emulator、真 Vertex；平台政策 version 0，每次運行最多八次模型呼叫。",
+    "observed": "從已保存的原回答開討論，四次模型呼叫完成三席、主答及獨立核對。收合重開取回同一單，個人及平台用量各維持四次，下一條普通問題各增至五次。"
+  }
+}

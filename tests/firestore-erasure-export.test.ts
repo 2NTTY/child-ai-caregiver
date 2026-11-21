@@ -16,6 +16,8 @@ import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createAccountApi } from '../src/client/account-api.ts';
 import { FIREBASE_BACKUP_COLLECTION_SUFFIXES } from '../server/firestore-backup.ts';
+import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
+import { specialistDraftFixture } from './helpers/specialist-draft-fixture.ts';
 
 test('F04 scoped export and journal-backed erasure preserve original operations and isolate another owner', async () => {
   const fixture = serialFirestoreFixture(); let now = Date.parse('2026-10-12T12:00:00Z');
@@ -68,6 +70,20 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
     return (await authority.createChild({ userId: owner, operationId, displayName: '合成孩子' })).child.id;
   }
   const child = await identity('owner'), peerChild = await identity('peer');
+  const sibling = (await authority.createChild({ userId: 'owner', operationId: randomUUID(), displayName: '另一名合成孩子' })).child.id;
+  const data = new FirestoreDomainData(options);
+  const seedSpecialistDraft = (scope: Parameters<typeof specialistDraftFixture>[1]) => {
+    const row = specialistDraftFixture(data, scope);
+    fixture.records.set(row.path, row.data);
+    return row.path;
+  };
+  const childScope = await authority.runTransaction('owner', child, async b => b.scope);
+  const siblingScope = await authority.runTransaction('owner', sibling, async b => b.scope);
+  const peerScope = await authority.runTransaction('peer', peerChild, async b => b.scope);
+  const [currentDraft, oldEpochDraft, siblingDraft, peerDraft] = [
+    childScope, { ...childScope, storageEpoch: randomUUID() }, siblingScope, peerScope,
+  ].map(seedSpecialistDraft);
+  assert.ok([currentDraft, oldEpochDraft, siblingDraft, peerDraft].every(row => fixture.records.has(row)));
   async function submitRecord(owner: string, childId: string, text: string) {
     const path = '/api/children/' + childId + '/records', payload = { text };
     return online.submit(owner, { path, payload, operation: { ...await online.context(owner, { path, payload }), opId: randomUUID(), deviceId: randomUUID() } });
@@ -91,6 +107,10 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   let state = await cleaner.advance('owner', submission.operation.opId);
   for (let i = 0; state.state !== 'completed' && i < FIREBASE_BACKUP_COLLECTION_SUFFIXES.length + 8; i++) state = await cleaner.advance('owner', submission.operation.opId);
   assert.equal(state.state, 'completed');
+  assert.equal(fixture.records.has(currentDraft), false, 'Child erasure must physically remove unfinished artifact bytes');
+  assert.equal(fixture.records.has(oldEpochDraft), false, 'Child erasure must also remove old-epoch copies');
+  assert.equal(fixture.records.has(siblingDraft), true, 'Child erasure must not erase a sibling draft');
+  assert.equal(fixture.records.has(peerDraft), true, 'Child erasure must not erase a different parent draft');
   assert.equal([...fixture.records.keys()].filter(key => key.startsWith(options.namespace + '_document_operations/')).length, 0);
   await assert.rejects(authority.createChild({ userId: 'owner', operationId: creationIds.get('owner')!, displayName: '合成孩子' }),
     (error: any) => error.code === 'operation_erased');
@@ -98,7 +118,7 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   assert.equal([...fixture.records.keys()].filter(key => key.startsWith(options.namespace + '_care_records/')).length, 1);
   assert.equal((await exporter.page('peer', { section: 'care', childId: peerChild })).items.length, 1);
   const prepared = await client.prepareDeletion('owner', signal);
-  assert.equal(prepared.summary.childCount, 0);
+  assert.equal(prepared.summary.childCount, 1);
   const processing = await client.executeDeletion('owner', { password: 'synthetic-password', confirmation: '永久刪除我的帳戶' }, signal);
   assert.equal(processing.state, 'processing');
   await assert.rejects(authority.runTransaction('owner', null, async () => true));
@@ -106,6 +126,8 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   state = await cleaner.advance('owner', prepared.operationId);
   for (let i = 0; state.state !== 'completed' && i < FIREBASE_BACKUP_COLLECTION_SUFFIXES.length + 8; i++) state = await cleaner.advance('owner', prepared.operationId);
   assert.equal(state.state, 'completed'); assert.deepEqual(removedAuth, ['owner']);
+  assert.equal(fixture.records.has(siblingDraft), false, 'Account erasure must physically remove its remaining draft bytes');
+  assert.equal(fixture.records.has(peerDraft), true, 'Account erasure must not erase a different parent draft');
   assert.equal((await client.deletionStatus(prepared, signal)).state, 'completed');
   await assert.rejects(erasures.status('owner', prepared.operationId, 'z'.repeat(43)));
   assert.equal((await exporter.page('peer', { section: 'care', childId: peerChild })).items.length, 1);

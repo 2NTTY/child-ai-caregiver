@@ -10,7 +10,8 @@ import { adminKnowledgeStatusSchema, knowledgeCheckStatus, pdfEditionReviewSchem
 import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 import { createPlatformMediaStore } from './firestore-platform-media.ts';
-import { campaignMaterialWatches } from './platform-materials.ts';
+import { officialScript } from './fhs-source-forms.ts';
+import { campaignMaterialWatches, isReviewedExternalSuccessor } from './platform-materials.ts';
 
 const campaignSources = new Set(campaignMaterialWatches.map(source => source.id));
 
@@ -25,6 +26,7 @@ const definitionSchema = z.strictObject({ id, url: z.url(), kind: z.enum(["page"
 const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), title: z.string().min(1).max(300),
   text: z.string().max(256020).refine(text => text.isWellFormed()), nativeWindowMethod: z.literal("native-pdf-window/1").optional(), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
+  scripts: z.array(officialScript).min(1).max(128).optional(),
   rssItem: z.strictObject({ xml: z.string().min(1).max(48000), copyright: z.string().min(1).max(160) }).optional(),
   pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(32).optional() }).refine(doc => doc.nativeWindowMethod
     ? !doc.pages && doc.text === "" && doc.extraction?.format === "text_pdf" && doc.extraction.complete === false
@@ -387,7 +389,8 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },
-    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string) {
+    async process(raw: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal, scheduledFor?: string,
+      beforeRecord?: (tx:Transaction)=>Promise<void>) {
       if (scheduledFor !== undefined) date.parse(scheduledFor);
       const job = refreshJobSchema.parse(raw); z.uuid().parse(jobId);
       const token = randomUUID(), now = new Date().toISOString();
@@ -437,10 +440,15 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
           && Date.parse(row.lease.until) > Date.now() && control.enabled && control.generation === job.workerGeneration && !signal.aborted
           && (!scheduledFor || !row.manualOnly || await publishedCard(tx, row));
         const previous = new Map<string, Observation | null>();
+        if (eligible) await beforeRecord?.(tx);
         if (eligible) for (const item of prepared) {
           const snapshot = await tx.get(observationRef(item.sourceId));
           const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;
-          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId || observed.url !== item.document.url)) reject("knowledge_binding_invalid");
+          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId)) reject("knowledge_binding_invalid");
+          if (observed && observed.url !== item.document.url) {
+            if (observed.approved || !isReviewedExternalSuccessor(item.sourceId, await gate.content(tx, observed), item.document))
+              reject("knowledge_binding_invalid");
+          }
           previous.set(item.sourceId, observed);
         }
         const at = new Date().toISOString(); let changed = 0;
@@ -489,7 +497,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
               revision: fetched.status === "unavailable" && fetched.httpStatus === 410 && row.definition.kind !== "rss" ? randomUUID() : row.revision } : {}) } });
         }
         writes.push({ ref: checkRef(jobId), value: nextCheck }); bounded(writes.map(row => row.value));
-        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks);
+        if (eligible && fetched.status === 'ok' && fetched.mediaLinks !== undefined) await media.reconcile(tx, job.watchId, fetched.mediaLinks, fetched.mediaPages);
         for (const write of writes) tx.set(write.ref, write.value);
         return { status, items: nextCheck.itemCount, changed };
       });
