@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-125-image-count",
+  "base": {
+    "artifact": "candidate-123/out",
+    "htmlSha256": "220d897ae04d15d93b4e7533c9316b59102965aa60bb780a0d425b60740848a5",
+    "rawRecordsSha256": "3042977dfe13f125bbee676a885c4583b29ff9af72f47ed5e290bfdfe8d273c8",
+    "rawArtworkSha256": "914bb5c32f143cb53f6012f6346d08a69d7746ea8f263868d8ab8e3021e47287",
+    "topics": 60,
+    "choices": 123,
+    "images": 123
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-contact-results/assets.json",
+      "sha256": "3d26728a46d0a36063ff76124473fd7f86262daf659d444a42ccc63457a8c3e0"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "207055bdc9a10e38bd74fe8061f0d937bca4eb7cae89d952e858fb75e70f100f",
+    "PROVENANCE.md": "c2910974616233de20ee6ea0a1f9c2ba37c19dd9ae7c69ca6327c72e6eae496f"
+  },
+  "topics": [
+    {
+      "number": 61,
+      "title": "聯絡及收到紀錄：按投遞或事件查結果",
+      "choices": [
+        {
+          "name": "逐筆看同封電郵的投遞結果",
+          "note": "查看同一封外寄電郵的兩次投遞紀錄：先暫時失敗，後獲遠端郵件伺服器接受。郵件伺服器接受不等於本人收到或已讀。",
+          "links": [
+            {
+              "label": "固定版本原始碼：單封郵件的屬性詳頁",
+              "url": "https://github.com/postalserver/postal/blob/7cd8bf8f2def2bca6cb857b41cb5ec39cd855dfc/app/views/messages/show.html.haml#L63-L75"
+            },
+            {
+              "label": "同一版本：郵件狀態區",
+              "url": "https://github.com/postalserver/postal/blob/7cd8bf8f2def2bca6cb857b41cb5ec39cd855dfc/app/views/messages/_message_header.html.haml#L1-L31"
+            },
+            {
+              "label": "同一版本：歷次投遞結果",
+              "url": "https://github.com/postalserver/postal/blob/7cd8bf8f2def2bca6cb857b41cb5ec39cd855dfc/app/views/messages/_deliveries.html.haml#L27-L42"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/postalserver/postal/blob/7cd8bf8f2def2bca6cb857b41cb5ec39cd855dfc/MIT-LICENCE"
+            }
+          ],
+          "asset": {
+            "input": "draft-contact-results/contact-a-message-deliveries.png",
+            "sha256": "4f2f931e33e653b250f4d47730fdb09b8b4e8ce08f939b182cfb03b4f46c580b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "一封虛構外寄電郵的屬性頁。右側列出兩次投遞紀錄：先暫時失敗，後由遠端郵件伺服器接受；不代表接收者已讀。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供界面對照。"
+          }
+        },
+        {
+          "name": "沿時間線分開看渠道、值班回應和解決",
+          "note": "沿同一告警組時間線分開看短訊渠道結果、值班確認處理及告警解決。三者是獨立紀錄，不表示本人已讀，也不證明育兒事項已完成。",
+          "links": [
+            {
+              "label": "固定版本原始碼：告警組時間線",
+              "url": "https://github.com/grafana-cold-storage/oncall/blob/a89716ae4e66eda7f964a81f0a84b5bd2c5abd91/grafana-plugin/src/pages/incident/Incident.tsx#L190-L215"
+            },
+            {
+              "label": "同一版本：時間線呈現",
+              "url": "https://github.com/grafana-cold-storage/oncall/blob/a89716ae4e66eda7f964a81f0a84b5bd2c5abd91/grafana-plugin/src/pages/incident/Incident.tsx#L523-L595"
+            },
+            {
+              "label": "同一版本：渠道通知紀錄",
+              "url": "https://github.com/grafana-cold-storage/oncall/blob/a89716ae4e66eda7f964a81f0a84b5bd2c5abd91/engine/apps/base/models/user_notification_policy_log_record.py#L176-L226"
+            },
+            {
+              "label": "同一版本：告警事件類型",
+              "url": "https://github.com/grafana-cold-storage/oncall/blob/a89716ae4e66eda7f964a81f0a84b5bd2c5abd91/engine/apps/alerts/models/alert_group_log_record.py#L95-L111"
+            },
+            {
+              "label": "固定版本程式授權（非圖像授權）",
+              "url": "https://github.com/grafana-cold-storage/oncall/blob/a89716ae4e66eda7f964a81f0a84b5bd2c5abd91/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-contact-results/contact-b-alert-group-timeline.png",
+            "sha256": "c602ba85ce8491338602b703304ee4064dc7bcc790e21204d3ac2ba2e9a48ec2",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "虛構告警組的右側時間線依次列出短訊渠道結果、值班員確認處理及告警解決，三者是獨立紀錄，沒有接收者已讀或任務完成判定。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供界面對照。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 61 題 · 聯絡及收到紀錄兩幅自製合成示意",
+      "text": "兩幅為自製合成示意（非官方原圖），沒有使用原方畫素、品牌、實際訊息或收件人資料。Postal 3.5.0（MIT）和 Grafana OnCall OSS v1.16.11（AGPL-3.0、原始碼已封存）是兩個獨立的外部版式參考，不是同一次聯絡或育伴港實際服務。郵件伺服器接受不等於本人收到或已讀；渠道、值班回應和解決的紀錄亦不可互相代替，不證明育兒事項已完成或觸發自動後備。圖中所有資料均虛構，不含發送、重投、調度、指派或解決控制。"
+    }
+  ]
+}
