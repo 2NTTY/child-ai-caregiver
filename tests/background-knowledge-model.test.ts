@@ -161,6 +161,7 @@ test('a held web edition sends its intact sections, literal audiences and previo
   const webOriginal = {...registered,sourceId:c.watchId,url:observed.url,observationHash:current.observationHash,
     chapterReading:{...registered.chapterReading,chapter}};
   const notes = ['The earlier reading omitted the stated preschool audience.'];
+  const explanations = ['讀'.repeat(168), ' ' + '文'.repeat(1998) + ' '];
   const prepared = await prepareKnowledgeMaintenance({candidate:current, webOriginal, webReviewNotes:notes,
     baseline:null, fetchedAt, growthRules:[], async completeText(input) {
       assert.equal(input.role, 'knowledge_review');
@@ -168,13 +169,14 @@ test('a held web edition sends its intact sections, literal audiences and previo
       assert.deepEqual(p.priorOutcome.reviewNotes, notes);
       const keys = Object.keys(p.sourceComparison.facts);
       assert.equal(keys.length, 2);
-      return JSON.stringify({changes:Object.fromEntries(keys.map(k=>[k,{explanation:'Complete source section.'}])),
+      return JSON.stringify({changes:Object.fromEntries(keys.map((k,i)=>[k,{explanation:explanations[i]}])),
         questions:[{query:'Which audience is stated?',expectedKeys:keys,reason:'Original wording.'}],
         checks:{age:'Literal audience.',numbersAndUnits:'Exact.',timing:'Exact.',conditions:'Exact.',
           exceptions:'Exact.',prohibitions:'Exact.',withdrawal:'First edition.'},
         decision:'hold',decisionReason:'Independent hold.'});
     }});
   checkChapterReading(text,chapter,prepared.source.chunks,registered.chapterReading.audiences);
+  assert.deepEqual(prepared.assessment.changes.map(c=>c.explanation),explanations);
   assert.equal(prepared.review.decision,'hold_candidate');
 });
 

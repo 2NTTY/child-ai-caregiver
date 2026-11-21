@@ -9,7 +9,7 @@ import { campaign, campaignCredentials, matchesCampaignPublicationBinding, type 
 import { campaignMaterialWatches } from "./platform-materials.ts";
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, registeredChapterReading, verifiedScriptReading, type ScriptEdition } from './fhs-script-edition.ts';
 import { checkChapterReading } from './knowledge-web-chapter.ts';
-import { commissionedWebChapter, webChapterWorkId, type CommissionedWebChapter } from './fhs-web-reading.ts';
+import { commissionedWebChapter, webChapterWorkId, webChapterPublicationWorkId, recordedWebReviewStage, registeredWebReviewText, type CommissionedWebChapter } from './fhs-web-reading.ts';
 import { focusedKnowledgeWorkId, prepareFocusedKnowledgePage } from "./knowledge-pdf-focus.ts";
 import { NATIVE_PDF_READER_VERSION } from "./knowledge-pdf-output.ts";
 import type { Transaction } from "@google-cloud/firestore";
@@ -91,6 +91,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   const timeoutWeb = selectedPage && commissionedWebOriginal(selectedPage.sourceId);
   const chapter = options.webChapter;
   const web = chapter ?? timeoutWeb;
+  const chapterStage = chapter && recordedWebReviewStage(chapter.sourceId,webChapterWorkId(chapter));
+  const replay = chapterStage?.replayResponseHash ? chapterStage : undefined;
   if (chapter && (commissionedWebChapter(chapter.sourceId) !== chapter || options.retainedDraft || options.reviewedWindow
     || options.firstDispatch || options.reviseHeldPdf || options.pdfQuestion)) reject('knowledge_web_chapter_scope');
   if ((chapter || selectedPage) && (!web || selectedPage && knowledgeReviewHash(selectedPage) !== knowledgeReviewHash(web) || !options.campaignBudget || !options.providers
@@ -139,7 +141,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       if (options.campaignBudget) {
         const original = knowledgeReviewHash([campaignCredentials, request.watchId, registration.data.revision, request.workerGeneration]);
         const bound = chapter ? chapter.sourceId === request.watchId && definition.kind === 'page' && !reusedOrganizationFrom
-          && chapter.operationFingerprint === original && request.operationFingerprint === webChapterWorkId(chapter)
+          && chapter.operationFingerprint === original && request.operationFingerprint === webChapterPublicationWorkId(chapter)
           && recordedCheckId === knowledgeOperationId('knowledge-observation/1',original)
           : script ? script.sourceId === request.watchId && definition.kind === 'page' && !reusedOrganizationFrom
           && request.operationFingerprint === (options.reviseHeldScript ? currentScriptReadingWork(script) : scriptEditionWorkId(script))
@@ -320,7 +322,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const today = new Date().toISOString().slice(0, 10);
       const replaysCommunication = script?.sourceId === recordedCommunicationComparison.sourceId
         && request.operationFingerprint === communicationReplayWork;
-      const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) => replaysCommunication ||
+      const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) => Boolean(replay) || replaysCommunication ||
         ((!(firstDispatch || script || web) || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
         && reader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts));
       if (!publication && grant?.day !== today && previous?.configHash === configHash && previous.waitingForQuotaDay === today)
@@ -392,6 +394,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               ? new FirestoreAiUsage({...options,namespace:options.namespace+"_ai_usage",billingSource:"personal"}) : platformDaily;
             const completeText = async (input: Parameters<AgentGatewayModel["completeText"]>[0]) => {
               const stage = { system: input.system, user: input.user, attemptKey: input.attemptKey };
+              if (replay) {
+                if (input.role !== 'knowledge_review') reject('knowledge_web_chapter_review_binding');
+                const saved = await work.inspectWebChapterReview({...request,operationFingerprint:replay.operationFingerprint});
+                return registeredWebReviewText(replay,stage,saved);
+              }
               if (replaysCommunication) {
                 if (input.role !== 'knowledge_review') reject('knowledge_script_review_stage_binding');
                 const saved = await work.inspectCommunicationComparison({...request,operationFingerprint:recordedCommunicationComparison.work},stage);
@@ -544,6 +551,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
               async publish(candidate: BackgroundKnowledgeCandidate) {
                 const prepared = await session.readPrepared(candidate);
                 if (!prepared || !await authorize()) reject("knowledge_work_publication_mismatch");
+                if (replay && (prepared.provenance.reviewAttemptKey !== replay.attemptKey || prepared.review.decision !== 'approve_candidate'
+                  || prepared.assessment.decision !== 'approve' || prepared.assessment.observationHash !== replay.observationHash))
+                  reject('knowledge_web_chapter_review_binding');
                 if (chapter) checkChapterReading(candidate.observed.text, chapter.chapterReading.chapter,
                   prepared.source.chunks, chapter.chapterReading.audiences);
                 assertPreparedKnowledgePdfLayout(prepared, options.pdfQuestion, options.acceptance);

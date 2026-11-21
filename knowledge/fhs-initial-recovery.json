@@ -867,6 +867,7 @@
         "attemptKey": "knowledge-review:18c024f9287f8ca554fd4ec4a4f54577a792f1fd3c167627ad7ace3c4f71d51f",
         "stageHash": "7bffe8bb2503a351f6811b37487da8f6dc5cc61c4a7888eaf52419753f59bed5",
         "requestHash": "8ca0ab0f9f1bbae0e00f629b5486e1d286e1f9cc588192744b9fa09d419dd387",
+        "replayResponseHash": "a99e1f0f4e07f719835f4b1dc6b8577ed2a73da37e145bd936b4f64fe7f42ca3",
         "code": "knowledge_review_failed"
       },
       "chapterReading": {

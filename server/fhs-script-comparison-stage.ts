@@ -11,16 +11,23 @@ export const recordedExplanationKey = 'p0-fb6716d05520055ed5ba';
 export const recordedComparisonRequestHash = 'd6f65af5327ab93117d19fc4e6a396b00ac5a84dfb3b3df7c4da383de53cfbfb';
 
 /** Present a content-addressed note to the compact transport decoder and retain its entire reviewed wording for the assessment. */
-export function referenceRecordedExplanation(raw: unknown) {
+export function referenceRecordedExplanations(raw: unknown, keys: Iterable<string>) {
   const record = z.looseObject({changes:z.record(z.string(),z.unknown())}).safeParse(raw);
   if (!record.success) return null;
-  const entry = z.looseObject({explanation:knowledgeReviewAssessmentSchema.shape.changes.element.shape.explanation})
-    .safeParse(record.data.changes[recordedExplanationKey]);
-  if (!entry.success || entry.data.explanation.length <= 160) return null;
-  const explanation = entry.data.explanation;
-  const reference = 'sealed-note:' + knowledgeReviewHash(explanation);
-  const value = {...record.data,changes:{...record.data.changes,[recordedExplanationKey]:{...entry.data,explanation:reference}}};
-  return {value,reference,explanation};
+  const changes = { ...record.data.changes };
+  const notes = new Map<string, { reference:string; explanation:string }>();
+  const entrySchema = z.looseObject({explanation:z.string()});
+  for (const key of keys) {
+    const entry = entrySchema.safeParse(changes[key]);
+    if (!entry.success) continue;
+    const { explanation } = entry.data;
+    if (explanation.length <= 160 && explanation === explanation.trim()) continue;
+    knowledgeReviewAssessmentSchema.shape.changes.element.shape.explanation.parse(explanation);
+    const reference = 'sealed-note:' + knowledgeReviewHash(explanation);
+    changes[key] = { ...entry.data, explanation:reference };
+    notes.set(key, { reference, explanation });
+  }
+  return notes.size ? { value:{ ...record.data, changes }, notes } : null;
 }
 
 /** Drop a repeated structural label only when it exactly equals the independently recomputed fact. */

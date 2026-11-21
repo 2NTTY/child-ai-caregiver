@@ -21,7 +21,7 @@ import { backgroundKnowledgePdfCoverageIssue } from "./background-knowledge-main
 import { loadAgentPrompt, loadRecordedKnowledgePrompt } from "./agent-prompt.ts";
 import { knowledgeChunkInputSchema, knowledgeHash, originalOrganizerApplicability, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { observationHash } from "./knowledge-observation.ts";
-import { recordedCommunicationComparison, recordedExplanationKey, referenceRecordedExplanation } from './fhs-script-comparison-stage.ts';
+import { recordedCommunicationComparison, recordedExplanationKey, referenceRecordedExplanations } from './fhs-script-comparison-stage.ts';
 import {
   knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment,
   type KnowledgeReviewAssessment,
@@ -523,14 +523,12 @@ export async function prepareKnowledgeMaintenance(input: {
     && ("growthRuleImpact" in reviewed.value || "growthRuleReason" in reviewed.value))
     reject("knowledge_growth_rule_authority_invalid");
   const nativeReview = pdfReviewSchema?.parse(reviewed.value);
-  let retainedNote: ReturnType<typeof referenceRecordedExplanation> = null;
-  if (input.replayCommunication) {
-    if (!sourceComparisonSchema || candidate.watchId !== recordedCommunicationComparison.sourceId
-      || candidate.observationHash !== recordedCommunicationComparison.observationHash)
-      reject('knowledge_script_review_stage_binding');
-    retainedNote = referenceRecordedExplanation(reviewed.value);
-  }
-  const comparisonReview=sourceComparisonSchema?.parse(retainedNote?.value ?? reviewed.value);
+  if (input.replayCommunication && (!sourceComparisonSchema || candidate.watchId !== recordedCommunicationComparison.sourceId
+    || candidate.observationHash !== recordedCommunicationComparison.observationHash)) reject('knowledge_script_review_stage_binding');
+  const notes = sourceComparisonSchema && web && 'chapterReading' in web
+    ? referenceRecordedExplanations(reviewed.value, comparisonFacts.keys())
+    : input.replayCommunication ? referenceRecordedExplanations(reviewed.value, [recordedExplanationKey]) : null;
+  const comparisonReview=sourceComparisonSchema?.parse(notes?.value ?? reviewed.value);
   const publisherReview=publisherReviewSchema?.parse(comparisonReview ? {...comparisonReview,
     changes:Object.fromEntries(Object.entries(comparisonReview.changes).map(([key,change]) => [key,
       {...change,meaning:comparisonFacts.get(key) ?? ('meaning' in change ? change.meaning : undefined)}]))} : reviewed.value);
@@ -581,7 +579,8 @@ export async function prepareKnowledgeMaintenance(input: {
     changes: modelAssessment.changes.map(change => {
       const original = comparisonUnits.find(unit => unit.key === change.key);
       if (!original) reject("knowledge_maintenance_review_unit_mismatch");
-      if (retainedNote && change.key === recordedExplanationKey) {
+      const retainedNote = notes?.notes.get(change.key);
+      if (retainedNote) {
         if (change.explanation !== retainedNote.reference) reject('knowledge_script_review_stage_binding');
         return {...change,oldQuote:original.oldQuote,newQuote:original.newQuote,explanation:retainedNote.explanation};
       }

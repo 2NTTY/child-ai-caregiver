@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
-import { recordedWebReviewStage, commissionedWebChapter, webChapterWorkId } from '../server/fhs-web-reading.ts';
+import { recordedWebReviewStage, commissionedWebChapter, webChapterWorkId, webChapterPublicationWorkId, registeredWebReviewText } from '../server/fhs-web-reading.ts';
 import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
-import { normalizeRecordedComparison, recordedExplanationKey, referenceRecordedExplanation } from '../server/fhs-script-comparison-stage.ts';
+import { normalizeRecordedComparison, recordedExplanationKey, referenceRecordedExplanations } from '../server/fhs-script-comparison-stage.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
@@ -13,12 +13,13 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 test('a sealed explanation retains its entire wording under the durable assessment contract', () => {
   const key = recordedExplanationKey, explanation = 'Every printed condition remains qualified. '.repeat(5);
   const original = {decision:'hold',changes:{[key]:{explanation,meaning:'changed'},another:{explanation:'Retain this too.'}}};
-  const retained = referenceRecordedExplanation(original)!;
+  const referenced = referenceRecordedExplanations(original, [key])!;
+  const retained = referenced.notes.get(key)!;
   assert.equal(retained.reference,'sealed-note:'+knowledgeReviewHash(explanation));
   assert.equal(retained.explanation,explanation);
-  assert.deepEqual(retained.value,{...original,changes:{...original.changes,[key]:{meaning:'changed',explanation:retained.reference}}});
+  assert.deepEqual(referenced.value,{...original,changes:{...original.changes,[key]:{meaning:'changed',explanation:retained.reference}}});
   assert.equal(original.changes[key]!.explanation,explanation);
-  assert.equal(referenceRecordedExplanation({changes:{[key]:{explanation:'a'.repeat(2001)}}}),null);
+  assert.throws(()=>referenceRecordedExplanations({changes:{[key]:{explanation:'a'.repeat(2001)}}},[key]));
 });
 
 test('replay removes only repeated structural labels and preserves the independent assessment', () => {
@@ -40,6 +41,19 @@ test('only the registered chapter and its exact failed operation can be inspecte
   const other = commissionedWebChapter('fhs-30006')!;
   assert.equal(recordedWebReviewStage(other.sourceId,webChapterWorkId(other)),undefined);
   assert.equal(recordedWebReviewStage(other.sourceId,bcgWork),undefined);
+  assert.equal(webChapterPublicationWorkId(other),webChapterWorkId(other));
+  assert.notEqual(webChapterPublicationWorkId(bcgChapter),bcgWork);
+});
+
+test('a registered review replay binds the sealed response and its complete original request', () => {
+  const text = '{"decision":"hold"}', input = {system:'fixture',user:'original reading',attemptKey:'fixture-key'};
+  const pin = {...recordedWebReviewStage(bcgChapter.sourceId,bcgWork)!,attemptKey:input.attemptKey,
+    requestHash:knowledgeReviewHash(input),replayResponseHash:knowledgeReviewHash(text)};
+  const saved = {state:'ready',text};
+  assert.equal(registeredWebReviewText(pin,input,saved),text);
+  assert.throws(()=>registeredWebReviewText(pin,{...input,user:'changed prior reason'},saved));
+  assert.throws(()=>registeredWebReviewText(pin,input,{state:'ready',text:'{"decision":"approve"}'}));
+  assert.throws(()=>registeredWebReviewText(pin,input,{state:'unknown',text:null}));
 });
 
 for (const [label,pin] of [['script',recordedScriptReviewStage('fhs-12196')!],['web chapter',recordedWebReviewStage(bcgChapter.sourceId,bcgWork)!]] as const)
