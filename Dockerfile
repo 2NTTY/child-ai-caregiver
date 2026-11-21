@@ -74,7 +74,7 @@ COPY server ./server
 COPY src/shared ./src/shared
 COPY prompts ./prompts
 COPY knowledge ./knowledge
-COPY scripts/fhs-publication-receipt.mjs scripts/fhs-held-window-evidence.mjs ./scripts/
+COPY scripts/fhs-publication-receipt.mjs scripts/fhs-held-window-evidence.mjs scripts/fhs-script-review-stage.mjs ./scripts/
 COPY scripts/fhs-review-printed-pages.mjs scripts/fhs-printed-correction.mjs ./scripts/
 COPY scripts/firebase-control.mjs scripts/firebase-recovery.mjs scripts/firebase-photo-cleanup.mjs ./scripts/
 COPY scripts/knowledge.mjs scripts/knowledge-refresh.mjs scripts/knowledge-transfer-*.mjs ./scripts/

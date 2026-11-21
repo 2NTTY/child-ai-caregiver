@@ -53,7 +53,7 @@ export function createRegisteredDocumentTools(store: AgentSourceDocumentReader, 
     return citationId;
   }
   const find: AgentTool = { name: 'find_source_card_documents', effect: 'read', authorize: allowed,
-    description: '在本人指定的來源卡列出或按文字找已保存的文件。使用回傳的文件 ID 及版本續讀；要找其他頁可用 nextCursor。',
+    description: '在本人指定的來源卡列出或按文字找已保存的文件。分類供尋找文件，適用對象及條件須從原文核實。使用回傳的文件 ID 及版本續讀；要找其他頁可用 nextCursor。',
     parameters: z.strictObject({ cardId: z.uuid(), query: z.string().trim().min(1).max(160).optional(), cursor: z.string().max(256).optional() }),
     async execute(args) {
       const cardId = String(args.cardId), cursor = typeof args.cursor === 'string' ? args.cursor : null;

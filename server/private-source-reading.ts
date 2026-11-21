@@ -4,20 +4,29 @@ import { z } from 'zod';
 import { loadAgentPrompt } from './agent-prompt.ts';
 import { originalKnowledgePdf, type AgentKnowledgePdf } from './agent-model-gateway.ts';
 import type { createFirestoreSourceCardDocuments } from './firestore-source-card-documents.ts';
-import { privateFacts, type PrivateCursor } from './private-source-index-record.ts';
+import { privateFacts, privateTopic, type PrivateCursor, type PrivateTopic } from './private-source-index-record.ts';
 
 const draftSchema = z.strictObject({ facts: privateFacts });
 const verdictSchema = z.strictObject({ supported: z.array(z.boolean()).max(8) });
 export function parsePrivateFacts(reply: string, text: string | null) {
-  const { facts } = draftSchema.parse(JSON.parse(reply));
+  return parsePrivateDraft(reply, text).facts;
+}
+export function parsePrivateDraft(reply: string, text: string | null) {
+  const { facts, topic } = draftSchema.extend({ topic: z.unknown().optional() }).parse(JSON.parse(reply));
   if (text !== null && facts.some(fact => fact.type !== 'quotation' || !text.includes(fact.text)))
     throw new Error('private_source_unanchored');
-  return facts;
+  const parsed = privateTopic.safeParse(topic);
+  // A weak label cannot hold usable quotations, and a visual description cannot supply a verbatim anchor.
+  const anchored = parsed.success && facts.some(fact => fact.type === 'quotation' && fact.text.includes(parsed.data.evidence));
+  return { facts, topic: parsed.success && anchored ? parsed.data : undefined };
 }
 export function parsePrivateReview(reply: string, count: number) {
-  const { supported } = verdictSchema.parse(JSON.parse(reply));
+  return parsePrivateVerdict(reply, count).factsSupported;
+}
+export function parsePrivateVerdict(reply: string, count: number) {
+  const { supported, topicSupported } = verdictSchema.extend({ topicSupported: z.unknown().optional() }).parse(JSON.parse(reply));
   if (supported.length !== count) throw new Error('private_source_review_shape');
-  return supported.length > 0 && supported.every(Boolean);
+  return { factsSupported: supported.length > 0 && supported.every(Boolean), topicSupported: topicSupported === true };
 }
 export type PrivateWindow = { text: string | null; pdf?: AgentKnowledgePdf; next: PrivateCursor | null };
 const sha = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
@@ -48,10 +57,17 @@ export async function privateWindow(documents: Pick<ReturnType<typeof createFire
   return { text: content.text.slice(0,length), next: end < content.totalCharacters ? {page:null,offset:end} : null };
 }
 export async function privateReadingInput(role: 'organize'|'review', range: PrivateWindow, location: PrivateCursor,
-  facts: z.infer<typeof privateFacts>, attemptKey: string) {
+  facts: z.infer<typeof privateFacts>, attemptKey: string, title: string, considerTopic: boolean, topic?: PrivateTopic) {
   const prompt = await loadAgentPrompt('private-source-reading','structured',['run','scope','context','evidence','capabilities','outputContract']);
-  return { system: prompt.text, user: JSON.stringify({ role, location, originalText: range.text,
-    ...(role === 'review' ? { candidates: facts } : {}) }), attemptKey,
+  const observations = range.text === null ? draftSchema : draftSchema.extend({
+    facts: z.array(z.strictObject({ type: z.literal('quotation'), text: z.string().min(1).max(440) })).max(8),
+  });
+  const decisions = z.strictObject({ supported: z.array(z.boolean()).length(facts.length) });
+  const schema = role === 'review'
+    ? topic ? decisions.extend({ topicSupported: z.boolean() }) : decisions
+    : considerTopic ? observations.extend({ topic: privateTopic.extend({ label: z.string().min(1).max(24) }).nullable() }) : observations;
+  return { system: prompt.text, user: JSON.stringify({ role, location, title, originalText: range.text,
+    ...(role === 'review' ? { candidates: facts, ...(topic ? { proposedTopic: topic } : {}) } : { considerTopic }) }), attemptKey,
     ...(range.pdf ? { pdf: range.pdf } : {}), ...(role === 'review' ? {purpose:'knowledge_review' as const} : {}),
-    responseJsonSchema: z.toJSONSchema(role === 'review' ? verdictSchema : draftSchema, { target: 'openapi-3.0' }) };
+    responseJsonSchema: z.toJSONSchema(schema, { target: 'openapi-3.0' }) };
 }

@@ -30,7 +30,7 @@ const completedNotices = new Set(['聊天已保存，AI 已回覆。', '已在�
 type Panel = { page: string; scope: string | null; chosenChild?: string; privateChild?: string; includeItem: boolean; reminderId?: string;
   voice?: { item?: ChatPageContext['item']; label?: string }; focus?: boolean };
 
-export function SiteCompanion({ authorised, visible }: { authorised: boolean; visible: boolean }) {
+export function SiteCompanion({ authorised, visible, bounds }: { authorised: boolean; visible: boolean; bounds: { width: number; height: number } }) {
   const pathname = usePathname(), foreground = useChatForeground();
   const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState, online, chatWritesAllowed,
     agentAttachments, voiceUpload, fileUpload, photoUpload, chatDraft } = useProduction();
@@ -69,7 +69,7 @@ export function SiteCompanion({ authorised, visible }: { authorised: boolean; vi
       voice: start ? { item: selected?.item, label: selected?.label } : undefined, focus: !record });
     if (start) voice.current?.start();
   }
-  return <CharacterDock src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground && visible} panelOpen={open} inToolbar={quiet}
+  return <CharacterDock bounds={bounds} src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground && visible} panelOpen={open} inToolbar={quiet}
     listening={!!(open && panel.voice && listening)} performance={performance}
     onChat={() => open ? close() : show()} onCollapse={close}
     onVoice={childId && !canRecord || open && panel.voice ? undefined : () => show(true)}>

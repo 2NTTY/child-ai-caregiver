@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
+import { PDFDocument } from 'pdf-lib';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreRegisteredSourceCards } from '../server/firestore-registered-source-cards.ts';
@@ -32,6 +33,15 @@ test('scheduled catalogues verify a reading method against searchable editions a
   const feed = (url: string) => '<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Museum notice</title><link href="' + url + '"/></entry></feed>';
   const pages = new Map([[a, links(a + '/room')], [a + '/room', article('青松閱覽室星期一開放。')],
     [b, feed(b + '/latest')], [b + '/summer', article('夏季展覽在松木館舉行。')] ]);
+  const group = (heading: string) => '<section><h2>' + heading + '</h2><ul><li><a href="' + a + '/room">閱覽室公告</a></li></ul></section>';
+  const secondary = '<a href="' + a + '/services">其他館藏</a>';
+  pages.set(a, '<main>' + group('親子閱讀') + group('三至六歲') + secondary + '</main>');
+  pages.set(a + '/services', '<main>' + group('社區服務') + '</main>');
+  const annex = await PDFDocument.create();
+  annex.addPage().drawText('Independent room booking form');
+  const annexBytes = Buffer.from(await annex.save());
+  pages.set(a + '/room', '<article><h1>閱覽室公告</h1><p>本頁為現行正文。</p><p>青松閱覽室星期一開放。家庭可以於開放時間查閱借書安排及使用館內提供的設施。</p>'
+    + '<a href="room-print.pdf">本頁列印版（PDF）</a><a href="booking.pdf">獨立預約表格</a></article>');
   const requests: string[] = [];
   let firstRead = true;
   t.mock.module('../server/public-source-transport.ts', { namedExports: {
@@ -43,6 +53,8 @@ test('scheduled catalogues verify a reading method against searchable editions a
         return { status: 'response', response: { url, status: 503, contentType: 'text/plain', body: Buffer.alloc(0) } };
       }
       const resolved = url === b + '/latest' ? validate(b + '/summer').href : url;
+      if (resolved === a + '/booking.pdf') return { status: 'response',
+        response: { url: resolved, status: 200, contentType: 'application/pdf', body: annexBytes } };
       const body = pages.get(resolved);
       return { status: 'response', response: { url: resolved, status: body ? 200 : 404,
         contentType: body?.startsWith('<feed') ? 'application/atom+xml' : 'text/html', body: Buffer.from(body ?? '') } };
@@ -93,8 +105,28 @@ test('scheduled catalogues verify a reading method against searchable editions a
   assert.equal(requests.filter(url => url === a).length, 2);
   assert.equal(second.methods?.[0]?.parser, 'feed');
   await citation(bid, '夏季展覽在松木館舉行。');
+  const firstItems = (await documents.list(owner, aid)).items;
+  const room = firstItems.find(item => item.url === a + '/room')!;
+  assert.deepEqual(room.categories, { basis: 'publisher', labels: ['三至六歲', '社區服務', '親子閱讀'] });
+  assert.equal(firstItems.length, 2);
+  assert.equal(requests.filter(url => url === a + '/room').length, 1);
+  assert.ok(!requests.includes(a + '/room-print.pdf'));
+  assert.equal(requests.filter(url => url === a + '/booking.pdf').length, 1);
+  assert.deepEqual((await documents.list(owner, bid)).items[0]!.categories, { basis: 'document', labels: ['學習與活動'], evidence: '展覽' });
+  const indexWork = () => [...fixture.records].filter(([path]) => path.includes('background_work/')).map(([path, data]) =>
+    codec.decode({ path, data }).value as FirestoreBackgroundWork).filter(row => row.kind === 'source-card-index').length;
+  const workBefore = indexWork();
   clock += 61000;
-  pages.set(a, '<table><tr><td><a href="' + a + '/room">閱覽室</a></td></tr></table>');
+  pages.set(a, '<main>' + group('圖書館服務') + secondary + '</main>');
+  pages.set(a + '/services', links(a + '/room'));
+  assert.equal((await run(aid)).lastResult?.status, 'unchanged');
+  const movedRoom = (await documents.list(owner, aid)).items.find(item => item.url === room.url)!;
+  assert.deepEqual(movedRoom.categories, { basis: 'publisher', labels: ['圖書館服務'] });
+  assert.equal(movedRoom.documentId, room.documentId);
+  assert.equal(movedRoom.version, v1);
+  assert.equal(indexWork(), workBefore);
+  clock += 61000;
+  pages.set(a, '<table><tr><td><a href="' + a + '/room">閱覽室</a></td></tr><tr><td>' + secondary + '</td></tr></table>');
   pages.set(a + '/room', article('青松閱覽室星期四開放。'));
   pages.set(b, '<head><link rel="alternate" type="application/atom+xml" href="' + b + '/feed"/></head><main><h1>展覽通告</h1></main>');
   pages.set(b + '/feed', feed(b + '/summer'));

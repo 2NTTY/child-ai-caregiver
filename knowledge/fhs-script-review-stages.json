@@ -1,0 +1,20 @@
+[
+  {
+    "sourceId": "fhs-12196",
+    "observationHash": "90318c3a2becb2cab6bc36ebb3ce6c76ec7044bba219f23ad436eac3618b9772",
+    "operationFingerprint": "af7660c9d5649042657d1fa07c6668e34d84d6d037ee1531add55903e101d057",
+    "attemptKey": "knowledge-review:e1ce1094b8c84803c86cba868dbdd169d1f71bf0786e03395de7afe514791c12",
+    "requestHash": "046b6bc4d1fb8a1d0be090ee996fbff9d81e461b18c1c8a9c49b8e6b6fab68ba",
+    "stageHash": "d5e214647515ee47644d484317a3d4766d016bafdc613c733767e113dd832e57",
+    "code": "knowledge_review_failed"
+  },
+  {
+    "sourceId": "fhs-30092",
+    "observationHash": "bfd658600b4bbae14dc4863de513eb99ddadddda7b4e77cef4287d5844a7f289",
+    "operationFingerprint": "922adefcd2b9116e5184415a3caf7f80c8ff05bf05720bb4e3c760e9ac8878a1",
+    "attemptKey": "knowledge-review:847b40c6a3765efd96de4cd544eaf19ac1b0125b10e21169987c3242573c3e26",
+    "requestHash": "a6308365674b6ea79a473ff681f2f3b3a0f2410cfd6464b28cc3a6dffe4d979b",
+    "stageHash": "5b01f26a4c201f7833eea28b5a14cc9dc7adc1e6e47cd4f8c21d4a79a64c4cd2",
+    "code": "invalid_response"
+  }
+]

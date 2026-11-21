@@ -56,6 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="registered-source-categories"></a>
+**REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
+
+本機普通家長帳戶已驗 NHS 教材及香港生長圖表，各巡查兩次、各一份原件及一項索引工作。詞表外教材《兩個信封》的離線整理提出「財務管理」，獨立審核接納引文並否決主題。受控審核另驗接納後顯示主題及原句，網站加分類、改名、移除分類均沿用原整理和向量。正式 Gemini 語意效果待驗；主聊天統籌整合發布，正式批次及金額由 C 統籌。[逐站收據及卡內畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json) · [語意分類及重用收據](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/semantic-topic.json)
+
 <a id="assistant-discussion-companion-catalogue"></a>
 ### 三方討論、頁內助手與平台卡庫
 
@@ -138,9 +143,9 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 《奶瓶餵哺指引》的四個影片頁均有官方題名及劇本。v5 家長目錄沿原連結提供題名及 `#transcript`。文字審核按影片原頁及首末段號核對。隔離卡庫的助手工具可一次列出四個題名，亦可逐套擴讀原句。v4 保留四個原連結。兩版均已與家長閱讀頁實測對回。[來源及工具收據](artifacts/verification/FHS_SOURCE_FORMS_20261121.json) · [家長閱讀驗收](frontend/verification/parent-material-reading-20261121/browser.json)
 
-31 套未索引劇本由原單接續。精簡整理只產生有原文可核的適用條件，保留出版者對象及單邊年齡；條件未能支持照護建議的片段只供查閱和引用原文。獨立審核讀取完整候選、前版及既有保留意見。隔離環境已核回 12 份教材共 82 個劇本片段的審核輸入，正式修訂及逐套家長查回待驗。[原單、保留原因及修訂入口](docs/DEPLOYMENT.md#fhs-ingestion)
+首批未索引的 31 套沿原單處理。正式版 `7e41cf5c` 讓家長按題名或內容找教材，純原文片段保留原對象、條件及未知月齡。一般照護、建議及主動提醒排除這類片段。香港 11 月 22 日 01:05 查回 41 套、1,238 段，較首批增加 11 套、386 段。以整張卡的正式快照逐名測試，41 套均可展開同版原段；6 條內容查找有 4 條命中所問劇本。6 條一般照護查詢傳回純原文片段 0 個。[正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44926747284) · [逐套收據](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
 
-香港 11 月 22 日 00:28 查庫，《奶瓶餵哺指引》及《6至24個月嬰幼兒健康飲食》起步篇的修訂已生效。整卡正式快照內共 38 套、1,162 段逐名查回。餘下 23 套見於六份教材。五份獨立審核保留，須在用途隔離後按原觀測及候選版本覆核。母乳教材內容已獲獨立審核批准，一筆 US$0.000308 向量預留結果未明，保留原單。下一步以家長查教材和一般照護兩種用途分別驗正式查回。[已登記的六份原單](knowledge/fhs-publisher-script-editions.json) · [五份保留版本](knowledge/fhs-script-lookup-reviews.json)
+餘下 20 套、457 段有四份原單。《愛·從母乳開始》10 套通過內容審核，一筆 US$0.000308 向量預留未能結算。《新生嬰兒用品清單》8 套的審核傳回 `invalid_response`，《BB話你知》1 套記為 `knowledge_review_failed`，兩者均沒有可採用的審核決定。《建立睡前常規》1 套的獨立審核要求分開表達不同年齡示例的適用條件。保留上述原單及舊版。其他四份首批保留教材所載的同一套《情緒導航》已可經整卡查回。[原單入口](docs/DEPLOYMENT.md#fhs-ingestion) · [逐份費用及保留原因](artifacts/verification/FHS_SCRIPT_RECOVERY_20261122.json)
 
 普通文字問題使用發行者明示的現行網頁。《飲奶知多少？》的印刷本和網頁已按原件核對。34 組範本中，31 組是單張正文，3 組是分章目錄。查問印本、圖表或獨立附件時保留所問版本。兩個同範圍的合成矛盾段落已在一次實際工具回應中各自帶回原文。正式環境於香港 18:31 有上述兩個網頁生效版，共 4 個段落及 4 個向量。[出版者版本證據](knowledge/fhs-leaflet-editions.json)
 

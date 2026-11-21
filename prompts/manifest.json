@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.68",
+  "version": "0.1.69",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -116,7 +116,7 @@
     {
       "id": "module.private-source-reading",
       "path": "modules/private-source-reading.md",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": []
     },
     {
