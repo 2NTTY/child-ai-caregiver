@@ -1,0 +1,69 @@
+{
+  "group": {
+    "id": "backup-private-instruction-restore-deleted-keep-history",
+    "title": "從本人備份找回已刪的私人交代，原刪除紀錄會消失嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成例：本人備份中的一筆私人交代有已核實的刪除紀錄。比較只讀；選取並另行送出後，成功恢復會建立新項並保留備份來源，原刪除紀錄保留。再次比較連回已恢復的新項。A 沿用逐項比較和送出；B 是未實作的獨立確認頁，明示恢復 1 項、覆蓋 0 項。不自動勾選、不把衝突當成功、不處理未讀項目，例子不實際還原。",
+    "choices": [
+      {
+        "name": "A｜在比較頁逐項選，再送出",
+        "note": "在本人備份的原孩子、原資料類別中，先讀每列差異，再只勾「恢復此已刪項目」。同頁保留兩種動作的區別及選取數，送出後看逐項結果。WinMerge 原圖只參考完整比較窗和狀態欄，不沿用它的合併或覆寫功能。",
+        "source": "https://manual.winmerge.org/en/screenshots/foldercomp1.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://manual.winmerge.org/en/Compare_dirs.html"
+          },
+          {
+            "label": "育伴港：同一帳戶與原孩子、只讀比較、確認刪除後才可恢復",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/HandoverImportControls.tsx#L475-L485"
+          },
+          {
+            "label": "育伴港：分開選覆蓋與恢復，未讀不選，衝突不當完成",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/HandoverImportControls.tsx#L502-L532"
+          },
+          {
+            "label": "育伴港測試原碼：新項、來源保留、舊項仍不存在、重新比較連回新項",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/tests/handover-original-instructions.test.ts#L275-L303"
+          }
+        ],
+        "linkLabel": "查看 WinMerge 整個比較視窗原圖（需連網）",
+        "version": "WinMerge 2.16 官方手冊的 Folder Compare 原圖 600×408；整個應用視窗，畫面比較兩份程式目錄，未標截圖版號或拍攝日。2026-11-21 目視核對。",
+        "rights": "WinMerge 官方原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜獨立確認頁列明恢復與覆蓋數",
+        "note": "未實作提案：在選定這筆已刪交代後，另開確認畫面，寫清「恢復 1 項、覆蓋 0 項，建立新項、保留原刪除紀錄」。可返回修改選擇；明確確認才送出。WordPress.com 原圖只參考完整還原確認畫面；它的預先全選和覆蓋備份行為不沿用。",
+        "source": "https://en.support.wordpress.com/wp-content/uploads/2026/11/restore-backup-confirmation.jpg",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://wordpress.com/support/restore/#restore-from-a-backup"
+          },
+          {
+            "label": "育伴港：同一帳戶與原孩子、只讀比較、確認刪除後才可恢復",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/HandoverImportControls.tsx#L475-L485"
+          },
+          {
+            "label": "育伴港：分開選覆蓋與恢復，未讀不選，衝突不當完成",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/components/account/HandoverImportControls.tsx#L502-L532"
+          },
+          {
+            "label": "育伴港測試原碼：新項、來源保留、舊項仍不存在、重新比較連回新項",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/tests/handover-original-instructions.test.ts#L275-L303"
+          }
+        ],
+        "linkLabel": "查看 WordPress.com 完整還原確認畫面（需連網）",
+        "version": "WordPress.com 官方支援原圖 1302×1012，文章 2026-11-20 審閱；原圖顯示備份時間，不代表拍攝或軟件版號。畫面是完整確認步驟，不是整個控制台。2026-11-21 目視核對。",
+        "rights": "WordPress.com 官方原圖，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "9d96e015ff57a112d7c6e72c3ca4c78bf0998d0c91ac1dddea9e7e2585e50979"
+}
