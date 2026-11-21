@@ -1,5 +1,5 @@
 /** Whole recent messages only. Original history stays available through authorized cursor tools. */
-export function selectRecentConversation<T extends { id: string; role: string; text: string; inReplyTo?: string | null }>(
+export function selectRecentConversation<T extends { id: string; role: string; text: string; inReplyTo?: string | null; chatMode?: string }>(
   messages: readonly T[],
   currentIndex: number,
   options: { maxMessages?: number; maxCharacters?: number; upstreamHasEarlierMessages?: boolean } = {}
@@ -39,7 +39,7 @@ export function selectRecentConversation<T extends { id: string; role: string; t
       omittedTurnPromptMessageId,
       omittedTurnPromptMessageIds,
       // Same order as messages; preserve delayed-reply relationships without duplicating their text.
-      messageTopology: selected.map(({ id, role, inReplyTo }) => ({ id, role, inReplyTo: inReplyTo ?? null })),
+      messageTopology: selected.map(({ id, role, inReplyTo, chatMode }) => ({ id, role, inReplyTo: inReplyTo ?? null, ...(chatMode ? { chatMode } : {}) })),
     }
   };
 }

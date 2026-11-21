@@ -68,7 +68,71 @@ export const WORK_CONTINUATION_TOOL_CATALOG = {
     { id: "history", description: "搜尋本人可見歷史並分段讀取原訊息，歷史不代表新的同意。", toolNames: ["search_history", "read_history"], promptModuleIds: [] },
     { id: "memory", description: "讀取本人可見的事實及有效狀態，核對既有工作所依據的資料。", toolNames: ["read_memory_facts"], promptModuleIds: [] },
     { id: "documents", description: "讀取本人可見的準備單／報告、版本及照護摘要；長文按固定版本續讀，不修改或生成文件。", toolNames: ["read_family_documents", "read_family_document_content", "list_family_document_versions", "read_care_summary"], promptModuleIds: [] },
-    { id: "concerns", description: "查看目前孩子的持續關注及經過，只核對現況，不建立或更改。", toolNames: ["read_concerns"], promptModuleIds: [] },
+    { id: "concerns", description: "查看持續關注及經過，只核對現況，不建立或更改。", toolNames: ["read_concerns"], promptModuleIds: [] },
     { id: "private_sources", description: "查看本人已授權私人來源及引用，不新增、取得外網正文、修改或擴大分享。", toolNames: ["list_private_sources", "read_private_source"], promptModuleIds: [] },
+  ],
+} as const;
+
+/** Server-enforced tool subset for main-chat "chat_only" mode: Q&A and search only, zero writes or proposals. */
+export const CHAT_ONLY_ALLOWED_TOOL_NAMES = [
+  "search_knowledge",
+  "read_knowledge_context",
+  "show_official_help",
+  "present_answer",
+  "read_chat_file",
+  "read_chat_photo",
+  "list_chat_photos",
+  "search_history",
+  "read_history",
+  "read_account_context",
+  "read_conversation_window",
+] as const;
+
+export const CHAT_ONLY_TOOL_CATALOG = {
+  coreToolNames: [
+    "search_knowledge",
+    "read_knowledge_context",
+    "show_official_help",
+    "present_answer",
+    "read_chat_file",
+    "read_chat_photo",
+    "list_chat_photos",
+    "read_account_context",
+    "read_conversation_window",
+  ],
+  loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
+  groups: [
+    {
+      id: "history",
+      description: "查閱同一主聊天的較早對話原文以承接語境；只供問答參考，不執行保存或助手操作。",
+      toolNames: ["search_history", "read_history"],
+      promptModuleIds: ["module.product-history"],
+    },
+  ],
+} as const;
+
+export const COMPACT_CHAT_ONLY_TOOL_CATALOG = {
+  loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
+  coreToolNames: ["present_answer", "show_official_help", "read_account_context", "read_conversation_window"],
+  deferredRecipeModules: COMPACT_PRODUCT_AGENT_TOOL_CATALOG.deferredRecipeModules,
+  groups: [
+    {
+      id: "knowledge",
+      description: "搜尋公共知識及續讀原文。",
+      toolNames: ["search_knowledge", "read_knowledge_context"],
+      promptModuleIds: ["domain.childcare-hk.care-workflows", "module.knowledge-answering"],
+    },
+    {
+      id: "history",
+      description: "查閱同一主聊天的較早對話原文以承接語境；只供問答參考，不執行保存或助手操作。",
+      toolNames: ["search_history", "read_history"],
+      promptModuleIds: ["module.product-history"],
+    },
+    {
+      id: "chat_media",
+      description: "讀取這段聊天已有的附件或照片。",
+      toolNames: ["read_chat_file", "read_chat_photo", "list_chat_photos"],
+      promptModuleIds: [],
+    },
   ],
 } as const;
