@@ -9,6 +9,11 @@ const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 export const privateIndexBasis = z.tuple([digest, digest, z.uuid(), z.int().positive()]);
 export const privateFact = z.strictObject({ type: z.enum(['quotation', 'visual_description']), text: z.string().trim().min(1).max(440) });
 export const privateFacts = z.array(privateFact).max(8);
+export const privateTopic = z.strictObject({
+  label: z.string().trim().min(1).max(24).regex(/^[\p{L}\p{N}][\p{L}\p{N} ·及與、-]*$/u),
+  evidence: z.string().trim().min(1).max(180),
+});
+export type PrivateTopic = z.infer<typeof privateTopic>;
 const cursor = z.strictObject({ page: z.int().positive().nullable(), offset: z.int().nonnegative() });
 export type PrivateCursor = z.infer<typeof cursor>;
 const binding = { cardId: z.uuid(), documentId: digest, version: digest, incarnation: z.uuid(), accessRevision: z.int().positive(),
@@ -21,7 +26,7 @@ const location = { ordinal: z.int().positive(), ...cursor.shape };
 export const privateIndexRecord = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('progress'), ...binding, ...location,
     stage: z.enum(['organize','review','embed','complete','unreadable','unknown']),
-    next: cursor.nullable(), facts: privateFacts, proof, ready: z.int().nonnegative(), held: z.int().nonnegative(),
+    next: cursor.nullable(), facts: privateFacts, topic: privateTopic.optional(), proof, ready: z.int().nonnegative(), held: z.int().nonnegative(),
     attempt: z.strictObject({ rootRunId: z.uuid(), deadlineAtMs: z.int().positive(), lease: z.uuid(),
       stage: z.enum(['organize','review','embed']).optional(), model:receipt.shape.model.optional(),
       billingSource:receipt.shape.billingSource.optional(), settingsVersion:receipt.shape.settingsVersion.optional() }).nullable(),

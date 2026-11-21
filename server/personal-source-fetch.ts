@@ -9,11 +9,26 @@ export function personalSourceUrl(value:string,original:string):URL {
   url.hash="";
   return url;
 }
-export function parsePersonalPage(body:string,url:string):ObservedContent {
+export function parsePersonalPage(body:string,url:string,omitSourceCategories = false):ObservedContent {
   if(body.length>1024*1024)throw new Error("personal_source_too_large");
   const $=load(body);
   const title=$("title").first().text().trim()||$("h1").first().text().trim()||new URL(url).hostname;
   $("script,style,nav,header,footer,form,input,button,iframe,noscript,[hidden],[aria-hidden='true']").remove();
+  if (omitSourceCategories) {
+    // Preserve paragraph wording when an author uses a category link inline in prose.
+    $('a[rel~=category],[itemprop~=articleSection]').each((_, node) => {
+      const element = $(node), paragraph = element.closest('p,li,h1,h2,h3,h4,blockquote');
+      if (!element.is('a,span,meta') || element.children('p,div,section').length) return;
+      if (paragraph.length) {
+        if (paragraph.is('p,li') && paragraph.text().trim() === element.text().trim()) element.remove();
+        return;
+      }
+      const inlineText = element.parent().contents().toArray().some(sibling => sibling !== node &&
+        !$(sibling).is('div,section,article,p,ul,ol,h1,h2,h3,h4,nav,aside,a[rel~=category],[itemprop~=articleSection]') &&
+        $(sibling).text().trim());
+      if (!inlineText) element.remove();
+    });
+  }
   const section=$("main").length===1?$("main"):$("article").length===1?$("article"):$("body");
   section.find("br,hr").replaceWith("\n");
   section.find("h1,h2,h3,h4,p,li,div,section,article,blockquote,pre,tr,td,dt,dd").each((_,node)=>{$(node).prepend("\n").append("\n");});

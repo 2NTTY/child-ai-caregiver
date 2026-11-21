@@ -135,12 +135,16 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
       const pages = await readPageWindow(depth, cursor, current,
         next => api.getLibrary(env.childId!, signal, env.userId!, next));
       const page = pages[pages.length - 1], catalog = new Map((more ? before?.catalog ?? [] : []).map(item => [item.sourceId, item]));
+      const publisherOriginals = new Map((more ? before?.publisherOriginals ?? [] : []).map(link => [link.sourceId, link]));
       for (const item of pages.flatMap(page => page.items)) catalog.set(item.sourceId, item);
+      for (const link of pages.flatMap(page => page.publisherOriginals ?? [])) publisherOriginals.set(link.sourceId, link);
+      for (const sourceId of catalog.keys()) publisherOriginals.delete(sourceId);
       if (current()) {
         referenceCursor.current = page.nextCursor;
         pageDepth.current.references = more ? pageDepth.current.references + pages.length : pages.length;
       }
-      return { audience: "public" as const, items: [], catalog: [...catalog.values()], registered: more ? before?.registered : pages[0]?.registered, hasMore: !page.complete };
+      return { audience: "public" as const, items: [], catalog: [...catalog.values()], registered: more ? before?.registered : pages[0]?.registered,
+        publisherOriginals: [...publisherOriginals.values()], hasMore: !page.complete };
     }, !before);
   };
   const searchHistory = (query: string, more = false) => {

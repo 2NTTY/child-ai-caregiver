@@ -14,6 +14,19 @@ const origin = 'https://catalogue.example.test';
 const input = { cardId: 'synthetic-card', entryUrl: origin + '/books/index', kind: 'directory', allowedPath: '/books',
   login: { url: origin + '/signin', submitUrl: origin + '/signin/verify' } };
 
+test('only a current article and its individually identified print copy can displace a PDF', () => {
+  const url = input.entryUrl, pdf = origin + '/books/guide.pdf', annex = origin + '/books/form.pdf';
+  const notice = '<p>This page is the current version.</p>';
+  const body = '<p>Families can borrow books throughout the normal opening hours.</p>';
+  const links = '<a href="guide.pdf">Print version of this page (PDF)</a><a href="form.pdf">Independent registration form</a>';
+  assert.deepEqual(inspectSourcePage('<article>' + notice + body + links + '</article>', url).links, [annex]);
+  for (const page of ['<article>' + body + links + '</article>', '<main><h1>Contents</h1>' + notice + body + links + '</main>',
+    '<article>' + notice + links + '</article>', '<article><p>This page is not the current version.</p>' + body + links + '</article>',
+    '<article>' + notice + body + links + '<a href="guide.pdf">Separate handbook</a></article>']) {
+    assert.deepEqual(inspectSourcePage(page, url).links, [pdf, annex]);
+  }
+});
+
 test('source card enforces registered path boundaries and classifies manual gates', () => {
   const validate = sourceCardScope(input);
   const entryUrl = origin + '/landing?id=1';

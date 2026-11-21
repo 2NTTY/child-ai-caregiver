@@ -56,6 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+<a id="registered-source-categories"></a>
+**REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
+
+本機普通家長帳戶已驗 NHS 教材及香港生長圖表，各巡查兩次、各一份原件及一項索引工作。詞表外教材《兩個信封》的離線整理提出「財務管理」，獨立審核接納引文並否決主題。受控審核另驗接納後顯示主題及原句，網站加分類、改名、移除分類均沿用原整理和向量。正式 Gemini 語意效果待驗；主聊天統籌整合發布，正式批次及金額由 C 統籌。[逐站收據及卡內畫面](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/receipt.json) · [語意分類及重用收據](artifacts/verification/REGISTERED_SOURCE_CATEGORIES_20261122/semantic-topic.json)
+
 <a id="assistant-discussion-companion-catalogue"></a>
 ### 三方討論、頁內助手與平台卡庫
 
@@ -115,6 +120,10 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 <a id="fhs-official-source-forms"></a>
 #### 官方文字稿與同教材多格式
+
+家長卡按正式來源歸屬、登記、觀測及撤回狀態列出待收錄原文，與已發布教材共用游標及官方分類。香港 22:14 在隔離環境以普通家長開啟第十份《嬰兒的啼哭》，它在第 3 頁出現。隔離發布後，重新開卡可在同頁找到正式版本，待收錄原文由 10 份回到 9 份。[轉版查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
+
+首批現行網頁已按正式版本逐份對帳。香港 21:23，251 個來源中有 156 個生效版本；扣除 C2 劇本後，本線九份網頁仍待助手收錄。本機家長卡已從九個題名逐一開啟官網並核回全文。115 份印本對應本批網頁，3 份對應既有平台教材，另列 4 份獨立原件。五冊《共享育兒樂》的 94 個目錄連結按各自版本列明。家長入口待主聊天發布，助手仍須解決年齡及答題條件或接續已結算的 504 原單。[逐教材對照及家長查回](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)
 
 香港 11 月 21 日 21:20 從正式資料庫重組全部 22 份教材的文字觀測，61 套官方劇本的 1,695 段逐段對回原稿。10 份教材的新版本已上架，可按劇本及段號定位 30 套、852 段，分布於 43 個有全文向量的片段。關鍵詞索引採用已審摘要等欄位，短引最多 150 字，可再擴讀同版原文。整卡清單可跨已審教材命中同一劇本；指名教材時依該版列出。[61 套逐項覆蓋、正式版本及查回](artifacts/verification/FHS_SCRIPT_PUBLICATION_20261121.json) · [86 個來源連結及上架前基線](artifacts/verification/FHS_SCRIPT_COVERAGE_20261121.json)
 

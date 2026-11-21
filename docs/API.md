@@ -169,7 +169,9 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
 <a id="platform-source-follow"></a>
-家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v5+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v6+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+
+v6 的 `publisherOriginals` 與已發布文件 `items` 共用目錄游標，每頁合共最多 10 份。每項原文有 `sourceId`、官方題名 `title`、原文 `url` 及官方 `categories`。屬於兒童健康卡、符合公開分享條件的網頁，登記及觀測有效後便可點讀。當頁若只有未觀測或已撤回的來源，客戶端按 `nextCursor` 繼續。發布生效後，同一來源移入 `items`；停用及撤回會移除原文入口。採用、固定、助手引用及 ZIP 匯出繼續使用已發布版本。
 
 v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項對應同一筆 `media.links` 網址。題名取自已讀官方頁，該頁有可定位劇本才提供 `transcriptUrl`。文件的 `sourceDateText?` 沿用發布版所載的官方修訂字樣及精度。v4 保留分類及原連結，v1 至 v3 沿用各自欄位。回應以 `Vary: Accept` 區分版本。
 
@@ -971,6 +973,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | 操作 | 入口及結果 |
 |---|---|
 | 列出、查看 | `GET /api/account/source-cards?cursor=…` 回傳 `{items,nextCursor}`。用 `GET /api/account/source-cards/:cardId` 讀取一張卡的 `{card}`。 |
+| 本人卡內文件 | `GET /api/account/source-cards/:cardId/documents?cursor=…` 逐頁回傳現行文件及下一頁游標。每項含 `documentId,version,title,url,mimeType,preview,categories`。優先回 `publisher`；欠出版者分類時，`document` 可帶既有私人整理及獨立審核確認的主題和逐字引文，或按原文用詞所得的分類。欠證據回 `unclassified`。同版及授權有效期間，只改分類可重用已核實主題。瀏覽分類只供尋找文件，歷史引用按固定版本讀回。 |
 | 新增、修改 | `POST /api/account/source-cards`。共用命令帶 `action,operationId,cardId,expectedRevision`。新增用版本 0，修改沿已讀版本。`create/update` 的 `settings` 包含名稱、類型、HTTPS 網址、巡查相隔分鐘及選填的 `allowedPath`。 |
 | 開停、巡查、移除 | `set_enabled` 附 `enabled`；`check_now` 安排一次巡查；`remove` 清除卡及登入授權。回傳 `{card}`，移除後為 `null`。回應中斷，可用原命令和原操作 ID 查回目前卡片。 |
 | 提供位置、跳過求助 | `suggest_location` 附家長提供的 `url`，已有缺口時須附目前 `gap.checkId`。`skip_gap` 附同一 `checkId`。兩者沿用本人卡、原操作收據及預期版本。 |
