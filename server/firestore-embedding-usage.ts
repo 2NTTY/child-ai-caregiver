@@ -1,5 +1,6 @@
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER } from "./firestore-ai-usage.ts";
 import type { ManualPublicationPin } from './fhs-manual-publication.ts';
+import type { ScriptEdition } from './fhs-script-edition.ts';
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { EmbeddingUsage } from "./embedding-gateway.ts";
@@ -10,7 +11,7 @@ import type { CampaignDayAdmission } from "./knowledge-campaign-budget.ts";
 /** Host-operator gateway adapter, using the exact shared platform daily counters. */
 export function createFirestoreOperatorEmbeddingUsage(options: FirestoreDomainOptions, deadlineAtMs: number,
   sponsor?: { userId: string; dailyLimit: number; binding: string }, campaignAdmission?: CampaignDayAdmission,
-  manualPublication?: ManualPublicationPin): EmbeddingUsage {
+  manualPublication?: ManualPublicationPin | ScriptEdition): EmbeddingUsage {
   const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + "_ai_usage", billingSource: sponsor ? "personal" : "platform", campaignAdmission, manualPublication });
   let sequence = 0, current: { key: string; request: DurableAiUsageRequest } | null = null;
   return {
