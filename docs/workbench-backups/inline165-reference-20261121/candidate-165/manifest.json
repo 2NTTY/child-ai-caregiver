@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-165-image-count",
+  "base": {
+    "artifact": "candidate-163/out",
+    "htmlSha256": "82fc413fefb05971e4dcf5176fb26018e757ad872fa2e9844decd5607025d27e",
+    "rawRecordsSha256": "c05cad9b6fbd4274d2abf8194c01553d97f042525e29f74c8f1f70ee7e7650a5",
+    "rawArtworkSha256": "38d647cb0268b87674faa22680b54f35c153ce56e922eacaf17c6566ab9c3d33",
+    "topics": 80,
+    "choices": 163,
+    "images": 163
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-local-wallpaper/assets.json",
+      "sha256": "e9bd0434bc0a199eef5c71e944e5cdb995803cc0f9131b152d18939864265ca0"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "5c681b9f682c125f4bceafcc9abd24a68f088558b844fc0788db38080ea745b6",
+    "PROVENANCE.md": "177a53791b2309176937addd7caf0aaca25edf8cee19e0bc8ea9c48cd9edfa7c"
+  },
+  "topics": [
+    {
+      "number": 81,
+      "title": "本機應用背景：看清內容、換圖或恢復預設",
+      "choices": [
+        {
+          "name": "在縮小的聊天畫面預覽背景",
+          "note": "Signal 把目前的聊天背景放在縮小的模擬聊天畫面內，色彩、設定背景和重設入口仍在下方。圖中沒有開啟選圖或重設確認。",
+          "links": [
+            {
+              "label": "Signal Android v7.56.1：手機比例的小型聊天背景預覽",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/app/src/main/res/layout/chat_wallpaper_fragment.xml#L20-L44"
+            },
+            {
+              "label": "同版：預覽內的日期標記、聊天泡泡與外框",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/app/src/main/res/layout/chat_wallpaper_fragment.xml#L184-L220"
+            },
+            {
+              "label": "同版：預覽下方仍是一般設定",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/app/src/main/res/layout/chat_wallpaper_fragment.xml#L222-L312"
+            },
+            {
+              "label": "同版：目前背景和設定／重設入口",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/app/src/main/java/org/thoughtcrime/securesms/wallpaper/ChatWallpaperFragment.java#L77-L127"
+            },
+            {
+              "label": "同版：香港繁體中文設定標籤",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/app/src/main/res/values-zh-rHK/strings.xml#L5057-L5074"
+            },
+            {
+              "label": "Signal Android 原始碼的 AGPLv3 授權聲明",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/README.md#L55-L59"
+            },
+            {
+              "label": "Signal Android 授權全文：AGPL-3.0",
+              "url": "https://github.com/signalapp/Signal-Android/blob/21868878cf2307465ceb38525cd6b3607c3f294b/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-local-wallpaper/local-wallpaper-a.png",
+            "sha256": "8dff429013e4b9fe4cdab039f8ea60f0ee15c77d253482e03109ea412445f917",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Signal Android 的非官方手機設定示例：標題「聊天色彩與背景」，中央的小型聊天預覽有兩個空白泡泡，幾何圖案只在預覽內。下方保留淺色設定列，有聊天色彩、設定背景、深色模式調暗及重設入口。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在新分頁查看已套用桌布，右側仍可更換",
+          "note": "本機圖片已套用在瀏覽器的新分頁，搜尋欄及捷徑仍在。右側可另選圖片或恢復預設；不涉及整部裝置的桌布、雲端設定或裁切。",
+          "links": [
+            {
+              "label": "Firefox 148.0：新分頁內容及自訂面板並存",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/Base/Base.jsx#L948-L969"
+            },
+            {
+              "label": "同版：已選本機圖片成為新分頁背景",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/Base/Base.jsx#L544-L618"
+            },
+            {
+              "label": "同版：全高靠右自訂面板",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/CustomizeMenu/_CustomizeMenu.scss#L96-L106"
+            },
+            {
+              "label": "同版：從本機選擇圖片",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/WallpaperCategories/WallpaperCategories.jsx#L311-L355"
+            },
+            {
+              "label": "同版：恢復預設桌布",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/WallpaperCategories/WallpaperCategories.jsx#L241-L259"
+            },
+            {
+              "label": "同版：上載圖片方格與分類選項",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/components/WallpaperCategories/WallpaperCategories.jsx#L529-L626"
+            },
+            {
+              "label": "同版：在瀏覽器使用者設定檔內處理圖片",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/lib/Wallpapers/WallpaperFeed.sys.mjs#L287-L311"
+            },
+            {
+              "label": "同版：新分頁壁紙覆蓋背景",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/extensions/newtab/content-src/styles/activity-stream.scss#L26-L40"
+            },
+            {
+              "label": "同版：正式版本號",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/browser/config/version.txt"
+            },
+            {
+              "label": "Firefox 新分頁相關原始碼授權：MPL-2.0（非圖像授權）",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/b2a8a4ec986ce61fd15ab1db980381d04ba85ada/toolkit/content/license.html#L202-L650"
+            }
+          ],
+          "asset": {
+            "input": "draft-local-wallpaper/local-wallpaper-b.png",
+            "sha256": "b555e3c58aebcc3dc4b2e8c92023e15a4f4593eb3f9bc74f64e4f93d70a2ecb2",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Firefox 桌面示例：幾何桌布已鋪在新分頁的搜尋欄及虛構捷徑後方。右側打開自訂面板，有桌布分類、虛線「上載圖片」格和「恢復預設」按鈕；未顯示檔案選擇器。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 81 題 · 已套用本機背景的兩幅自製示意",
+      "input": "draft-local-wallpaper/DECLARATION.txt",
+      "sha256": "5c681b9f682c125f4bceafcc9abd24a68f088558b844fc0788db38080ea745b6"
+    }
+  ]
+}
