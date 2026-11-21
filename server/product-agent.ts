@@ -38,14 +38,14 @@ import { discoverDailyNeeds } from "./daily-needs-discovery.ts";
 import { discussionInstruction, discussionToolNames, isDiscussionDraftRejection } from './chat-discussion.ts';
 
 const EPHEMERAL_ALLOWED_TOOL_NAMES = new Set([
-  "search_knowledge",
+  "search_knowledge", "find_official_material",
   "read_knowledge_context",
   "show_official_help",
   "present_answer",
 ]);
 
 const CHAT_ONLY_ALLOWED_TOOL_NAMES = new Set([
-  "search_knowledge",
+  "search_knowledge", "find_official_material",
   "read_knowledge_context",
   "show_official_help",
   "present_answer",
@@ -687,7 +687,7 @@ export function createProductAgent(options: {
           : ({ role: item.role, text: (item.text || (item.voice ? item.id === topicId ? "[本次使用者語音，原音訊隨本輪提供]" : "[較早語音；本輪未載入原音訊，勿猜內容]" : "")) + (item.file ? "\n[私人附件 " + JSON.stringify(item.file) + "; 使用 read_chat_file 讀取，不能由檔名猜內容]" : "") + (item.photo ? "\n[私人照片 " + JSON.stringify(item.photo) + (item.id === topicId ? "; 原圖隨本輪提供]" : "; 用 read_chat_photo 讀原圖，不猜內容]") : "") })),
         ...(discussion ? { requireDeliveryReview: true } : {}),
         toolCatalog: discussion ? { ...PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames] } : PRODUCT_AGENT_TOOL_CATALOG,
-        compactToolCatalog: discussion ? { ...COMPACT_PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...COMPACT_PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames, 'search_knowledge', 'read_knowledge_context'],
+        compactToolCatalog: discussion ? { ...COMPACT_PRODUCT_AGENT_TOOL_CATALOG, coreToolNames: [...COMPACT_PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, ...discussionToolNames, 'search_knowledge', 'find_official_material', 'read_knowledge_context'],
           groups: COMPACT_PRODUCT_AGENT_TOOL_CATALOG.groups.filter(group => group.id !== 'knowledge') } : COMPACT_PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
           if (discussion && run.budget.remainingModelCalls < 2) throw new AgentStopped('discussion_budget');

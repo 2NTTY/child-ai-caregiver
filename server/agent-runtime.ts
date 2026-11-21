@@ -680,7 +680,7 @@ export function createAgentRuntime(options: {
               const toolStartMs = Date.now();
               if (tool.name === "load_capabilities") traceCollector.handle.noteLoaderCall("capabilityLoads");
               else if (tool.name === "read_history" || tool.name === "search_history") traceCollector.handle.noteLoaderCall("historyReads");
-              else if (tool.name === "search_knowledge") traceCollector.handle.noteLoaderCall("knowledgeSearches");
+              else if (tool.name === "search_knowledge" || tool.name === "find_official_material") traceCollector.handle.noteLoaderCall("knowledgeSearches");
               traceCollector.emit({
                 role: runtimeTraceRole,
                 phase: "tool_start",

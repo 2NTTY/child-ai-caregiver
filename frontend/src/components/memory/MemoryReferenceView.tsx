@@ -131,6 +131,7 @@ function readableReferenceUrl(value: string): string | null {
   } catch { return null; }
 }
 function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
+  const readingScope=source.applicability?.ageBasis === 'publisher' || source.applicability?.ageBasis === 'unconfirmed';
   const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const sourceUrl = readableReferenceUrl(source.url);
   return <View testID={`memory-reference-source-${source.sourceId}-${source.chunkId}`} style={styles.card}>
@@ -149,8 +150,11 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
       <Metadata label="來源更新">{memoryDateLabel(source.sourceUpdatedAt)}</Metadata><Metadata label="最近覆核">{memoryDateLabel(source.checkedAt)}</Metadata>
       <Metadata label="最近成功取得">{memoryDateLabel(source.lastSuccessfulCheckAt)}</Metadata>{source.validUntil ? <Metadata label="有效至">{memoryDateLabel(source.validUntil)}</Metadata> : null}
       <Metadata label="地區">{source.applicability.region || "未提供"}</Metadata>
-      <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>
-      <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>
+      {readingScope
+        ? <Metadata label="原文對象">{source.applicability.publisherAudiences?.join('、') ?? '未有指明'}</Metadata>
+        : <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>}
+      {readingScope ? <><Metadata label="月齡範圍">{source.applicability.maxAgeMonths===null?'未確定':`少於 ${source.applicability.maxAgeMonths} 個月，下限未指明`}</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
+        : <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>}
       {source.applicability.conditions.length ? <Metadata label="適用條件">{source.applicability.conditions.join("；")}</Metadata> : null}
       <AppButton label={technical ? "收起版本識別" : "查看版本識別"} expanded={technical} variant="quiet" density="compact" onPress={() => setTechnical(value => !value)} />
       {technical ? <View style={styles.details}><Metadata label="來源">{source.sourceId}</Metadata><Metadata label="版本">{source.versionId}</Metadata><Metadata label="片段">{source.chunkId}</Metadata>

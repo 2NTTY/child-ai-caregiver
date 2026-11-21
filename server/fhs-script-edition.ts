@@ -37,6 +37,47 @@ export function heldScriptRevision(pin: ScriptEdition) {
 export function scriptRevisionWorkId(pin: ScriptEdition) {
   return knowledgeReviewHash(['fhs-official-script-reading/1',heldScriptRevision(pin)]);
 }
+const publisherScope = z.strictObject({sourceId:schema.shape.sourceId,
+  previousCode:z.enum(['input_limit','knowledge_review_failed','review_hold']).nullable(),previousVersionHash:digest.nullable(),
+  audiences:z.array(z.strictObject({title:z.string().min(1).optional(),audience:z.string().min(1).max(240)})),
+  amendUnits:z.array(z.string().regex(/^p0-[a-f0-9]{20}$/u)).optional()});
+const publisherScopes = new Map(z.array(publisherScope).parse(JSON.parse(readFileSync(new URL('../knowledge/fhs-publisher-script-editions.json',import.meta.url),'utf8')))
+  .map(row=>[row.sourceId,row]));
+export function publisherScriptWork(pin:ScriptEdition) {
+  const previous=scriptRevisionWorkId(pin), scope=publisherScopes.get(pin.sourceId);
+  return scope ? knowledgeReviewHash(['fhs-publisher-script-reading/1',previous,scope]) : previous;
+}
+const lookupReview = z.strictObject({sourceId:schema.shape.sourceId,priorVersionHash:digest,amendUnits:publisherScope.shape.amendUnits,
+  upperBound:z.strictObject({audience:z.string().min(1),beforeMonths:z.int().positive().max(120)}).optional()});
+const lookupReviews=new Map(z.array(lookupReview).parse(JSON.parse(readFileSync(new URL('../knowledge/fhs-script-lookup-reviews.json',import.meta.url),'utf8')))
+  .map(row=>[row.sourceId,row]));
+export function currentScriptReadingWork(pin:ScriptEdition) {
+  const publisher=publisherScriptWork(pin), lookup=lookupReviews.get(pin.sourceId);
+  return lookup?knowledgeReviewHash(['fhs-script-reading-access/1',publisher,lookup]):publisher;
+}
+type RecordedHold = Parameters<typeof verifyHeldScript>[1];
+export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerprint:string)=>Promise<RecordedHold>) {
+  const original=verifyHeldScript(pin,await inspect(scriptEditionWorkId(pin))),scope=publisherScopes.get(pin.sourceId);
+  if(!scope)return original;
+  const previous=await inspect(scriptRevisionWorkId(pin));
+  if(scope.previousCode===null ? previous!==null : !previous || previous.receipt || previous.lease ||
+    previous.result?.status!=='candidate_held' || previous.result.code!==scope.previousCode ||
+    previous.result.observationHash!==pin.observationHash || (previous.prepared?.versionHash??null)!==scope.previousVersionHash ||
+    (scope.previousCode==='review_hold' ? previous.prepared?.review.decision!=='hold_candidate' : Boolean(previous.prepared)))
+    throw Error('knowledge_script_publisher_predecessor_changed');
+  const lookup=lookupReviews.get(pin.sourceId);
+  const publisher=lookup?await inspect(publisherScriptWork(pin)):null;
+  if(lookup && (!publisher || publisher.receipt || publisher.lease || publisher.result?.status!=='candidate_held'
+    || publisher.result.code!=='review_hold' || publisher.result.observationHash!==pin.observationHash
+    || publisher.prepared?.versionHash!==lookup.priorVersionHash || publisher.prepared.review.decision!=='hold_candidate'))
+    throw Error('knowledge_script_lookup_predecessor_changed');
+  return {...original,notes:[...original.notes,...(previous?.prepared?.review.notes??[]),...(publisher?.prepared?.review.notes??[])],
+    ...(previous?{previousReading:{work:scriptRevisionWorkId(pin),reason:scope.previousCode,version:scope.previousVersionHash}}:{}),
+    ...(lookup?{priorPublisherReview:{work:publisherScriptWork(pin),versionHash:lookup.priorVersionHash}}:{}),
+    publisherScope:{audiences:scope.audiences.map(label=>lookup?.upperBound?.audience===label.audience?{...label,beforeMonths:lookup.upperBound.beforeMonths}:label),
+      amendUnits:[...(scope.amendUnits??[]),...(lookup?.amendUnits??[])],
+      ...(lookup?{exclusiveLookup:true as const}:{})}};
+}
 export function verifyHeldScript(pin: ScriptEdition, original: {
   receipt:unknown; lease:unknown; result?:{status:string;code?:string|null;observationHash?:string|null}|null;
   prepared?:{versionHash:string;review:{decision:string;notes:readonly string[]}}|null;

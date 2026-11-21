@@ -17,7 +17,7 @@ import { readAgentWorkSchema, type AgentHistoryMessage } from "../src/shared/age
 import type { ChatMessage } from "../src/shared/chat.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema, MAX_ANSWER_PARAGRAPHS } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation, AgentProposalValue } from "../src/shared/product-agent.ts";
-import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
+import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor, KnowledgeQueryAge } from "../src/shared/knowledge.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
 import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
@@ -726,6 +726,33 @@ export function createProductAgentTools(options: {
       presentation: { kind: 'private_reference', citationIds: [id] } };
   }
   const discussion = options.discussion ? createQuestionDiscussion(permitted, acceptPresentedAnswer) : undefined;
+  async function searchLibrary(query: string, classification: KnowledgeFilter['classification'], queryAge: KnowledgeQueryAge | undefined,
+    attemptKey: string | undefined, purpose?: KnowledgeFilter['purpose']) {
+    const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), queryAge,
+      { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
+        budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
+    const filter: KnowledgeFilter = { ...resolved.filter, classification, ...(purpose ? { purpose } : {}) };
+    const result = { complete: true, omittedChunks: 0, returned: 0, hasMore: false,
+      ...await retrieval.search(query, filter, attemptKey), queryContext: resolved.queryContext };
+    result.returned = result.chunks.length;
+    if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
+    const allowance = Math.max(0, budget.toolResponseCharacters - 512);
+    while (result.chunks.length && JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) {
+      result.chunks.pop(); result.omittedChunks++; result.complete = false; result.hasMore = true; result.returned = result.chunks.length;
+    }
+    if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
+    for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+    if (result.chunks.length > 0) {
+      deliveryReview.require("review");
+      if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
+    }
+    const progressSources = result.chunks
+      .map(chunk => toAgentProgressSource(chunk, "found"))
+      .filter((item): item is AgentProgressSource => item !== null)
+      .slice(0, 6);
+    if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
+    return result;
+  }
   const tools: AgentTool[] = [...discussion?.tools ?? []];
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;
@@ -919,31 +946,13 @@ export function createProductAgentTools(options: {
           if (run.trace && usable && !budget.signal.aborted) run.trace.markUsableSource(usable);
           return { acquisition: 'live', classification, sources, ...(limitations.length ? { limitations } : {}) };
         }
-        const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
-          { childId: scope.childId, visibility: options.mixedTasks ? 'family' : options.visibility ?? "private", readHistory: (messageId, offset) =>
-            budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
-        const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
-        const result = { complete: true, omittedChunks: 0, returned: 0, hasMore: false,
-          ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext };
-        result.returned = result.chunks.length;
-        if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
-        const allowance = Math.max(0, budget.toolResponseCharacters - 512);
-        while (result.chunks.length && JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) {
-          result.chunks.pop(); result.omittedChunks++; result.complete = false; result.hasMore = true; result.returned = result.chunks.length;
-        }
-        if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
-        for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
-        if (result.chunks.length > 0) {
-          deliveryReview.require("review");
-          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
-        }
-        const progressSources = result.chunks
-          .map(chunk => toAgentProgressSource(chunk, "found"))
-          .filter((item): item is AgentProgressSource => item !== null)
-          .slice(0, 6);
-        if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
-        return result;
+        return searchLibrary(query, args.classification as KnowledgeFilter['classification'], args.queryAge as KnowledgeQueryAge | undefined,
+          context.queryEmbeddingAttemptKey);
       }) },
+    ...(options.background ? [] : [{ name: 'find_official_material', effect: 'read', description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.find_official_material,
+      parameters: z.strictObject({ query: shortText(300), queryAge: knowledgeQueryAgeSchema.optional() }), authorize: permitted,
+      execute: (args, context) => guard(async () => searchLibrary(assertPublicKnowledgeQuery(args.query as string, [...knownPrivateIdentifiers]),
+        'official_guidance', args.queryAge as KnowledgeQueryAge | undefined, context.queryEmbeddingAttemptKey, 'read_originals')) } satisfies AgentTool]),
     { name: "read_knowledge_context", effect: "read", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
       parameters: z.object({ anchorChunkId: z.uuid(), cursor: z.object({ versionId: z.uuid(), anchorChunkId: z.uuid(),
         afterKey: z.string().max(80).nullable(), chunkId: z.uuid().nullable(), offset: z.number().int().min(0).max(4000) }).strict().nullable().optional() }).strict(),
@@ -1381,8 +1390,8 @@ export function createProductAgentTools(options: {
       answer = partial;
     },
     recalledFactsCurrent: () => Date.now() < recalledFactsValidUntil,
-    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
-      : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
+    tools: options.mixedTasks ? tools.filter(tool => ['read_selected_tasks','prepare_selected_tasks','search_selected_care','search_selected_materials','search_knowledge','find_official_material','read_knowledge_context','show_official_help','present_answer'].includes(tool.name))
+      : options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "find_official_material", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,

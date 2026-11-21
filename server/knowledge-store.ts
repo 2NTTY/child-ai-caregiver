@@ -188,9 +188,12 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
          WHERE ${knowledgeEligibility("$11::boolean")}
            AND c.document->'treatment'->>'kind' IS DISTINCT FROM 'excluded'
+           AND ($19::boolean OR c.document->'applicability'->>'use' IS DISTINCT FROM 'original_lookup')
            AND (e.input_hash IS NOT NULL OR c.document->'treatment'->>'kind' = 'structured')
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
-           AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
+           AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown'
+             OR (c.document->'applicability'->>'use' = 'original_lookup' AND c.document->'applicability'->>'ageBasis' IN ('publisher','unconfirmed'))
+             OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
              AND (c.document->'applicability'->>'minAgeMonths')::numeric <= CASE WHEN $12='overlap' THEN $9::numeric ELSE $8::numeric END
              AND CASE WHEN COALESCE((c.document->'applicability'->>'maxAgeMonthsExclusive')::boolean, false)
@@ -209,7 +212,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          ) ${ranked}`,
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
           filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal, filter.ageMatch ?? "contained",
-          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null, omittedLeafletPrints(selection.query)]));
+          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null, omittedLeafletPrints(selection.query), filter.purpose==='read_originals']));
       return rows.rows.map(row => ({ ...row.document, series: sourceSeries(row.source_document), chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
         versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, termsUrl: row.source_document.termsUrl, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,

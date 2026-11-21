@@ -47,7 +47,7 @@ export interface KnowledgeReferenceView {
   readonly usageScope?: "public_noncommercial" | "internal_noncommercial";
   readonly reviewState: "reviewed";
   readonly applicability: {
-    readonly region: string; readonly ageBasis: "actual" | "corrected" | "any";
+    readonly region: string; readonly ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed"; readonly publisherAudiences?: readonly string[];
     readonly minAgeMonths: number | null; readonly maxAgeMonths: number | null;
     readonly maxAgeMonthsExclusive?: boolean;
     readonly topics: readonly string[]; readonly conditions: readonly string[];

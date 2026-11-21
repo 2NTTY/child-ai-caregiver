@@ -1,6 +1,6 @@
 /** Server-authored capability descriptions; user text never selects this catalog. */
 export const PRODUCT_AGENT_TOOL_CATALOG = {
-  coreToolNames: ["read_chat_file", "read_chat_photo", "list_chat_photos", "show_official_help", "read_context", "read_memory_facts", "propose_fact", "propose_fact_revision", "propose_fact_deactivation", "search_history", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation", "read_account_context", "read_conversation_window"],
+  coreToolNames: ["read_chat_file", "read_chat_photo", "list_chat_photos", "show_official_help", "read_context", "read_memory_facts", "propose_fact", "propose_fact_revision", "propose_fact_deactivation", "search_history", "search_knowledge", "find_official_material", "read_knowledge_context", "present_answer", "read_work", "request_confirmation", "read_account_context", "read_conversation_window"],
   loader: {
     name: "load_capabilities",
     description: "依目前對話、前文指向及工具結果，載入所需的產品能力。可一次選多個能力；載入只提供工具及指引，不執行業務操作或取得授權。需要讀上下文／知識時可在同一輪分別調用讀取與載入；載入成功後才使用新增工具。只載入相關能力，不必按固定順序或把每種能力都載入。",
@@ -49,7 +49,7 @@ export const COMPACT_PRODUCT_AGENT_TOOL_CATALOG = {
       if (group.id === 'work') return { ...group, toolNames: ['read_work', ...group.toolNames] };
       return group;
     }),
-    { id: 'knowledge', description: '搜尋公共知識及續讀原文。', toolNames: ['search_knowledge', 'read_knowledge_context'],
+    { id: 'knowledge', description: '照護依據檢索；家長查教材、找原文及核引用。', toolNames: ['search_knowledge', 'find_official_material', 'read_knowledge_context'],
       promptModuleIds: ['domain.childcare-hk.care-workflows', 'module.knowledge-answering'] },
     { id: 'memory_facts', description: '讀取、準備新增、更正或停用孩子事實。',
       toolNames: ['read_memory_facts', 'propose_fact', 'propose_fact_revision', 'propose_fact_deactivation'],

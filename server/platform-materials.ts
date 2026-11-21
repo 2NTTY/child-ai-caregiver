@@ -45,6 +45,13 @@ export function reviewedExternalEdition(url: string, hash: string) {
   const edition = entry?.currentEdition;
   return entry?.disposition === 'public_noncommercial' && edition?.url === url && edition.sha256 === hash ? edition : undefined;
 }
+export function isReviewedExternalSuccessor(sourceId: string, previous: Pick<KnowledgeSourceInput, 'url' | 'extraction'>,
+  next: Pick<KnowledgeSourceInput, 'url' | 'extraction'>) {
+  const entry = externalById.get(sourceId);
+  return entry?.disposition === 'public_noncommercial' && entry.url === previous.url && previous.extraction?.format === 'text_pdf'
+    && previous.extraction.contentHash === entry.sha256 && entry.currentEdition?.url === next.url && next.extraction?.format === 'text_pdf'
+    && next.extraction.contentHash === entry.currentEdition.sha256;
+}
 export function externalMaterialAllowed(source: Pick<KnowledgeSourceInput, 'sourceId' | 'url' | 'termsUrl' | 'publisher' | 'extraction' | 'classification'>) {
   const entry = externalById.get(source.sourceId) ?? externalByUrl.get(source.url);
   if (!entry) return priorSourceHosts.has(new URL(source.url).hostname);
