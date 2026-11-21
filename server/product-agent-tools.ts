@@ -1469,11 +1469,15 @@ export function createProductAgentTools(options: {
         const labels: string[] = [];
         for (const id of paragraph.citationIds) {
           const label = citationLabel(id);
-          if (discussion && evidence.has(id) && body.includes('[' + id + ']')) {
-            body = body.replaceAll('[' + id + ']', label);
-          } else {
-            labels.push(label);
+          if (discussion && evidence.has(id)) {
+            const raw = '[' + id + ']';
+            if (body.includes(raw)) {
+              body = body.replaceAll(raw, label);
+              continue;
+            }
+            if (body.trimEnd().endsWith(label)) continue;
           }
+          labels.push(label);
         }
         const suffix = labels.join('');
         return suffix ? body + ' ' + suffix : body;

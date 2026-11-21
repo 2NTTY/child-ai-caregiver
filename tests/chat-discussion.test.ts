@@ -84,7 +84,8 @@ test('a question binds three successive native turns, the main reply and one ind
         }
         if (finish && truncateClosing) return { content: { role: 'model', parts: [{text:'truncated output'}] }, finishReason: FinishReason.MAX_TOKENS };
         if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
-        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]}],
+        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
+          {text:main[1] + ' [1]', citationIds:[chunkId]}],
           closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
         return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP};
       }
@@ -209,7 +210,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const capped = await reply();
   assert.equal(capped?.status, 'completed', JSON.stringify({stop:capped?.stopReason, tools:capped?.tools}));
   assert.deepEqual(capped.discussion?.map(t => t.text), turns.map(text => text+' [1]'));
-  assert.equal(capped.text, main[0] + ' [1]');
+  assert.equal(capped.text, main.slice(0, 2).map(text => text + ' [1]').join('\n\n'));
   assert.equal(capped.counts.modelCalls, 4);
   assert.deepEqual(await reply(), capped);
   assert.equal(calls, 4);

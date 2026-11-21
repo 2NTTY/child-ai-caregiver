@@ -1,6 +1,7 @@
 {
-  "candidate": "6997564f3fbf031eeeba89cb6e44a0adc469d38f",
-  "observedHongKong": "2026-11-21T15:29:00+08:00",
+  "candidate": "da7cf6e6202233fd045b6a0199fded69bc0cc3ef",
+  "firstOfflineCandidate": "6997564f3fbf031eeeba89cb6e44a0adc469d38f",
+  "observedHongKong": "2026-11-21T16:54:30+08:00",
   "production": {
     "display": "家長截圖顯示「這次處理的 AI 調用次數已達上限」，沒有可讀發言。當時版本的共享文案對應 model_limit。",
     "lastSiteReceiptBeforeCapture": {
@@ -48,6 +49,72 @@
       "personalDailyBeforeAfter": [20, 20],
       "platformDailyBeforeAfter": [21, 21]
     },
+    "authorizedFixtureCopies": {
+      "sameFamily": "各隔離 Firebase 測試副本均從同一專用本機合成家庭匯出啟動，沿用同一測試身份、孩子、教材選擇及已保存的運行。各副本均在第一次模型請求前，原子保存 24 筆舊用量及 1 筆明細，再開始各自的測試帳期。",
+      "sourceFirestoreExportSha256": "90130f0ae61c1a80939d37338d86764383ec45c250505238e7dcdd85454172a2",
+      "sourceOwnerPlatformAttempts": [20, 21],
+      "newFixtureOwnerPlatformAttempts": [0, 0],
+      "policy": {"version": 0, "maxModelCalls": 8, "maxModelRetries": 3, "dailyUserAttempts": 20, "dailyGlobalAttempts": 100}
+    },
+    "providerBudgetCheck": {
+      "windowUtc": ["2026-11-20T20:50:07.771Z", "2026-11-21T08:50:07.771Z"],
+      "source": "Vertex Cloud Monitoring 的 publisher/online_serving/token_count，項目內各線共計；此讀數供核對 US$5／12 小時的測試上限，並非已結算帳單。",
+      "tokenCountsInOut": {"gemini-3.1-flash-lite": [776118, 11843], "gemini-3.8-flash": [222352, 31478], "gemini-embedding-001": [9666, 0]},
+      "pricing": "https://cloud.google.com/model-garden/pricing"
+    },
+    "earlyMainBeforeStageGuard": {
+      "version": "615e2c1625ac923575645488afbc0928e5b51d2f",
+      "originalRun": "b918e5d4-e4af-4bf0-afae-508bd6d028ef",
+      "discussionRun": "6135b19e-38b3-4bca-9cd5-46c4c5bc4f7a",
+      "result": "日額充足。討論用了兩次模型呼叫、一次工具，主答通過獨立核對，三席發言為零。首個原生回合可直接提交主答。"
+    },
+    "afterStageGuardBeforeOrdinaryQuestionFix": {
+      "originalRun": "3d090888-e64e-4a09-bdd6-7120e33fb4e0",
+      "discussionRun": "4a4fb930-8bf0-46da-849a-e9787c3ad412",
+      "modelToolEmbeddingCounts": [6, 4, 0],
+      "discussion": "Edge 顯示育兒知識與經驗、新手家長、不同育兒方法及主答。家長問孩子抗拒時是否應該停下，末席直接回應。一次主答參數被拒，同一運行修正後通過獨立核對。有段落用了「最有效」的比較字眼，來源未確認這項比較，亦有正文顯示原始引用識別。",
+      "reopenOwnerPlatform": {"before": [17, 17], "after": [17, 17], "linkedDiscussions": 1},
+      "nextOrdinaryRun": "632d6490-afdf-4000-ad22-308ddcab26be",
+      "nextResult": "沒有呼叫角色工具。三次模型、一次主答工具、零向量，主答被 citation_required 拒絕，最終 invalid_response。"
+    },
+    "ordinaryOriginalRejectedBeforeReusedPassageFix": {
+      "version": "fee8f5b6eca15706081acbbf90ca14a61720789f",
+      "run": "a610b7cc-6d9a-43a9-a406-afd49f98f132",
+      "counts": {"modelCalls": 5, "toolCalls": 3, "queryEmbeddings": 0},
+      "result": "新副本首題兩次提交欠合資格的段落引用，第三次工具受理，育兒回答最終由獨立核對拒絕。家長入口未發起討論。",
+      "investigation": "重用有效的教材時，生成輸入只附引句「你的孩子是獨一無二的，有自己的發展速度。」；獨立核對則會收到同一片段包含圖畫書及童謠的內文。修正後生成輸入連同已重新驗證、長度有上限的教材段落。沒有保存該次核對的逐項拒絕理由。"
+    },
+    "ordinaryOriginalAfterReusedPassageFix": {
+      "version": "5b8805e0d5bd684e1f0ae004075ba1bbe260bcca",
+      "run": "0ce14690-bdf6-4688-b9e8-806d2948f90c",
+      "counts": {"modelCalls": 5, "toolCalls": 3, "queryEmbeddings": 1},
+      "result": "在已用六次的同一測試帳期，家長重述育兒問題並指定之前的教材。載入工具、檢索官方材料及帶來源提交均成功，獨立核對仍然拒絕新原答。沒有在這個失敗回答上建立討論。"
+    },
+    "anchoredOriginal": {
+      "run": "3d090888-e64e-4a09-bdd6-7120e33fb4e0",
+      "receiptSha256": "50691e84ef7d9da1ef8034edd1baa41f97f3e0abde1abbc16a72b1b8fbaf8306",
+      "setup": "家長按鈕覆驗由已存在的真模型原答開始。從首個副本取出早前已通過核對的原問、原答、運行、認領及回覆關聯，在全新合成副本還原。家長 API 讀回的整張原答收據 SHA-256 相同。開始時該答尚未開討論，沒有匯入角色發言、小結、下一題或其結果。",
+      "beforeNativeParagraphKinds": {
+        "version": "5b8805e0d5bd684e1f0ae004075ba1bbe260bcca",
+        "run": "479a4d2a-6918-4c01-80dd-f1910624fbac",
+        "result": "兩個觀點工具成功。末席提交 mixed 主答時，兩個有引用的文字段落均欠各自的 kind；相同參數再次被拒，第三次由重複呼叫保護停止。收據記錄 tool_limit、模型五次、工具五次、零向量，沒有可交付的發言。"
+      },
+      "acceptedParentFlow": {
+        "version": "da7cf6e6202233fd045b6a0199fded69bc0cc3ef",
+        "completedUtc": "2026-11-21T08:54:30.146Z",
+        "originalRun": "3d090888-e64e-4a09-bdd6-7120e33fb4e0",
+        "discussionRun": "5a98aaed-3c2f-4d5c-a20d-5399f31939d7",
+        "discussionCounts": {"modelCalls": 4, "toolCalls": 3, "queryEmbeddings": 0},
+        "tools": ["share_knowledge_view", "ask_parent_view", "present_answer"],
+        "roles": ["knowledge", "parent", "methods"],
+        "review": {"decision": "pass", "draftHash": "ee5442527738d0eaeb6655da2ba126fd69940d73f5cbf9a0ffe0ce4b158f1d39", "issues": 0},
+        "visible": "在原回答展開三個標示為 AI 的發言和討論小結。家長席問只讀兩頁便走是否算未完成，方法席及主答均回應陪伴本身的目標。畫面顯示來源編號；其中一些段尾重複顯示同一個編號。已用定向測試補驗新答案的尾號去重。",
+        "screenshot": "REQ009_PARENT_BUDGET_THREE_20261121.png",
+        "reopen": {"sameRunAndText": true, "linkedDiscussions": 1, "ownerBeforeAfter": [4, 4], "platformBeforeAfter": [4, 4]},
+        "ordinaryNext": {"run": "d3958624-e810-4981-a729-8557cb02efb8", "question": "多謝你。下次我可以繼續用廣東話問你嗎？", "visibleAnswerStartsWith": "當然可以，你隨時可以用廣東話同我傾。", "status": "completed", "modelCalls": 1, "toolCalls": 1, "queryEmbeddings": 0, "roleTools": 0, "tools": ["present_answer"]},
+        "ownerPlatformAfterNext": [5, 5]
+      }
+    },
     "finalCandidateAtDailyLimit": {
       "run": "d9401a80-0951-47d5-8293-b9524434757f",
       "stopReason": "discussion_daily_budget",
@@ -65,8 +132,11 @@
     "passed": 36,
     "serverTypecheck": "passed",
     "coverage": "真 ADK Runner 配腳本供應商。四次呼叫取得三席、主答、獨立核對及同 run 重讀。三次保留兩席，無效末席引用與截斷均只交付已核對部分；使用者日額只餘三次時提前收尾。一個原生回合不能提交兩席。單次上限一時零派送，普通問句不帶討論。",
-    "baselineFailure": "另跑 agent-presentation-repair 的 primary max-tokens，原基線 cc766108 及候選均回傳 model_output_limit；舊斷言要求 invalid_response。"
+    "baselineFailure": "另跑 agent-presentation-repair 的 primary max-tokens，原基線 cc766108 及候選均回傳 model_output_limit；舊斷言要求 invalid_response。",
+    "stageGuardAndCitationDisplay": {"commit": "fee8f5b6eca15706081acbbf90ca14a61720789f", "passed": 37, "serverTypecheck": "passed", "checks": "以上四份測試新增首回合不可跳過發言，明確單一選擇可在發言後收尾。終段必須交當席觀點，顯示時只將段落實際綁定的官方引用識別轉成來源編號。"},
+    "revalidatedPassage": {"commit": "5b8805e0d5bd684e1f0ae004075ba1bbe260bcca", "scope": ["tests/chat-discussion.test.ts", "tests/req002-batch-reuse-and-repair.test.ts"], "passed": 15, "serverTypecheck": "passed", "checks": "已重新核實的段落可達下一題的模型輸入，舊版本、撤回或其他身份的來源沿既有規則隔離。"},
+    "closingAndFinalDisplay": {"scope": ["tests/chat-discussion.test.ts", "tests/chat-stop-feedback.test.ts", "tests/agent-observer.test.ts", "tests/firestore-ai-usage.test.ts", "tests/req002-batch-reuse-and-repair.test.ts"], "passed": 47, "serverTypecheck": "passed", "checks": "確認末席的文字段落類型為原生必填、歷史引句保留獨立格式，亦核對新交付段落的已核實來源尾號只出現一次。"}
   },
   "entryPointCopy": "15:40 補核首題亦可開啟討論。日額提示現指向「本人模型設定」及香港時間早上 8 時重置，單次額度提示可關閉討論再提問。已對照 Firestore 的 UTC 日期、用量頁、兩個停止原因的前端投影及兩項保存／重讀測試。上述 Edge 收據保留實測當時的舊文案。",
-  "pending": "原正式運行尚欠可按已授權測試帳戶對應的後台收據。完整真模型驗收沿用同一隔離身份及普通政策；2026-11-21 帳期本人已用 20/20，下一次日額更新為香港 11 月 22 日早上 8 時。尚待最終候選從家長入口取得三席、主答、重開及後續普通回覆。"
+  "pending": "正式舊截圖欠可按獲授權家庭或運行識別配對的原單，該家庭當時的實際政策與扣帳仍待核實。正式站發布由主對話處理。"
 }
