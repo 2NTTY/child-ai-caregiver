@@ -7,6 +7,7 @@ import { AppButton } from "../ui";
 import { LocalAudioPreview } from "./LocalAudioPreview";
 import { createLocalVoiceCapture, type VoiceCaptureState } from "./local-voice-capture";
 import { AssistantAttachmentPicker } from "./AssistantAttachmentPicker";
+import { CompanionVoiceControls } from "./CompanionVoiceControls";
 import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
 export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
@@ -48,6 +49,8 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = 
     discard(); onPick(attachment);
   }
   if (!visible) return null;
+  if (sendRecording) return <CompanionVoiceControls state={state} uri={recording?.localUri} error={error} available={available} confirmDisabled={confirmDisabled}
+    start={start} stop={() => controller.stop()} cancel={() => discard()} confirm={() => { if (current.current) pick(current.current); }} />;
   return <View testID="voice-capture" style={styles.stack}>
     {state === "permission" || state === "stopping" ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等候咪高峰權限…" : "正在準備錄音…"}</Text> : null}
     {state === "recording" ? <VoiceRecordingTimer /> : null}
@@ -55,10 +58,10 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = 
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => controller.stop()} /> :
-      !recording ? (!sendRecording || !busy) && <AppButton label="開始錄音" disabled={!available || busy} onPress={start} /> :
-      <AppButton label={sendRecording ? "送出語音" : "使用錄音"} disabled={confirmDisabled} onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
+      !recording ? <AppButton label="開始錄音" disabled={!available || busy} onPress={start} /> :
+      <AppButton label="使用錄音" onPress={() => { const attachment = current.current; if (attachment) pick(attachment); }} />}
       <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
-    </View>{!sendRecording && !recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} /> : null}
+    </View>{!recording && state === "idle" ? <AssistantAttachmentPicker kind="voice" disabled={busy} onPick={pick} onError={setError} /> : null}
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

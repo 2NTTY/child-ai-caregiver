@@ -5,7 +5,7 @@ import { chineseFont, colors } from "../../theme";
 
 export type VoiceCaptureHandle = { start(): void; cancel(): void };
 
-export function VoiceRecordingTimer() {
+export function VoiceRecordingTimer({ compact = false }: { compact?: boolean }) {
   const started = useRef(Date.now());
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
@@ -15,7 +15,7 @@ export function VoiceRecordingTimer() {
     return () => clearTimeout(timer);
   }, []);
   const label = `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
-  return <View style={styles.row}><View style={styles.dot} /><Text style={styles.timer}>錄音中</Text>
+  return <View style={styles.row}><View style={styles.dot} />{!compact && <Text style={styles.timer}>錄音中</Text>}
     <Text testID="voice-recording-time" accessibilityLabel={`錄音時間 ${label}`} style={styles.timer}>{label}</Text></View>;
 }
 const styles = StyleSheet.create({ row: { flexDirection: "row", alignItems: "center", gap: 7 },

@@ -48,6 +48,7 @@ function setup(platform) {
     '../photos/PhotoFilePicker': { PhotoFilePicker: ({ renderTrigger, disabled }) => renderTrigger({ disabled, reading: false, onPress() {} }) },
     '../navigation/DirectionalPressable': { DirectionalPressable: 'DirectionalPressable' },
     '../AppIcon': { AppIcon: 'Icon' },
+    'lucide-react-native/icons/headphones': { default: 'Headphones', __esModule: true },
     '../AppDialog': { AppDialog: Object.assign(({ visible, children }) => visible ? children : null,
       { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) },
     '../AppScrollView': { AppScrollView: 'ScrollView' },
@@ -103,6 +104,26 @@ test('composer voice click starts once in place, then stops for preview and expl
       s.h.unmount(); await flush(s.h);
     }
   } finally { for (const [key, descriptor] of originals) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } }
+});
+
+test('direct send adopts one final clip while preview, cancellation and loss of send eligibility keep it local', () => {
+  const { h } = setup('android');
+  const { CompanionVoiceControls } = h.load('src/components/agent/CompanionVoiceControls.tsx');
+  let stops = 0, sends = 0;
+  const props = { state: 'recording', confirmDisabled: false, start() {}, stop() { stops++; }, cancel() {}, confirm() { sends++; } };
+  const render = (patch = {}) => { Object.assign(props, patch); h.render(jsx(CompanionVoiceControls, props)); };
+  const action = label => h.hosts().find(node => node.props.accessibilityLabel === label).props.onPress;
+  render(); const send = action('送出語音'); send(); send();
+  assert.equal(stops, 1); assert.equal(sends, 0);
+  render({ state: 'ready', uri: 'local://clip' }); h.render(); assert.equal(sends, 1);
+  render({ state: 'recording', uri: undefined }); action('停止並試聽')();
+  render({ state: 'ready', uri: 'local://preview' }); assert.equal(sends, 1);
+  render({ state: 'recording', uri: undefined }); action('送出語音')(); action('取消錄音')();
+  render({ state: 'ready', uri: 'local://late' }); assert.equal(sends, 1);
+  render({ state: 'recording', uri: undefined }); action('送出語音')();
+  render({ state: 'ready', uri: 'local://blocked', confirmDisabled: true }); render({ confirmDisabled: false });
+  assert.equal(sends, 1);
+  h.unmount();
 });
 
 test('homepage voice uses the same in-place capture and cancels pending permission or route departure without adopting audio', async () => {

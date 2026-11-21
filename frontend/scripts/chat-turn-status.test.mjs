@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CHAT_REPLY_ERROR_COPY } from '../../src/client/chat-controller.ts';
+import { CHAT_REPLY_ERROR_COPY, chatDraftIsSubmitted } from '../../src/client/chat-controller.ts';
 import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../src/components/chat/chat-turn-status.ts';
 import { harness } from './scope-transition-harness.mjs';
 
@@ -54,6 +54,7 @@ function companionHarness(overrides = {}) {
     '../agent/ChatComposerInput': { ChatComposerInput: 'Input' },
     './CompanionSelection': { useCompanionSelection: () => undefined },
     './CharacterDock': { CharacterDock: 'Dock' },
+    '../../../../src/client/chat-controller': { chatDraftIsSubmitted },
     ...overrides,
   });
   const { SiteCompanion } = h.load('src/components/companion/SiteCompanion.tsx');
@@ -83,6 +84,20 @@ test('the single-child companion replaces the waiting line with the saved failur
   assert.equal(copy().split('服務暫時未能使用').length - 1, 1);
   assert.doesNotMatch(copy(), /這次回覆未完成，請查核原結果/);
   assert.deepEqual(h.hosts().filter(node => node.type === 'Action').map(node => node.props.label), ['查核原訊息', '送出']);
+});
+
+test('the outgoing echo leaves the field editable for the next text before the first save is confirmed', () => {
+  const { h, chat } = companionHarness();
+  h.hosts().find(n => n.type === 'Dock').props.onChat(); h.render();
+  chat.busy = 'save'; chat.outgoing = { childId: 'child', text: '第一題' };
+  chat.drafts.child = { phase: 'saving', text: '第一題' }; h.render();
+  const input = () => h.hosts().find(n => n.type === 'Input').props;
+  assert.equal(h.node('companion-outgoing').props.children, '第一題');
+  assert.equal(input().value, ''); assert.equal(input().disabled, false);
+  chat.drafts.child.nextText = '下一題'; h.render();
+  assert.equal(input().value, '下一題');
+  chat.outgoing = { childId: 'other', text: '另一個孩子' }; h.render();
+  assert.equal(h.node('companion-outgoing'), undefined);
 });
 
 test('refreshing the selected detail preserves a local voice preview and its original item until explicit send', () => {

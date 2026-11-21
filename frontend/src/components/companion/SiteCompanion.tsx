@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'reac
 import { usePathname } from 'expo-router';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { chatDraftIsSubmitted } from '../../../../src/client/chat-controller';
 import { useChatExposure, useChatForeground } from '../../production/useChatExposure';
 import { assistantPages, sameChatPageContext, type ChatPageContext } from '../../../../src/shared/chat-page-context';
 import { useProduction } from '../../production/ProductionProvider';
@@ -114,16 +115,17 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
   const activity = chatReplyActivity(chat);
   const activeReply = activity.activeReplyId;
   const targetId = activeReply ?? draft?.savedUserMessageId;
-  const question = panel && [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'user' && !m.discussionOf
-    && (targetId ? m.id === targetId : beforeSend.current && !beforeSend.current.has(m.id)));
+  const outgoing = chat.outgoing?.childId === childId ? chat.outgoing : undefined;
+  const question = panel && !outgoing ? [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'user' && !m.discussionOf
+    && (targetId ? m.id === targetId : beforeSend.current && !beforeSend.current.has(m.id))) : undefined;
   const reply = question && [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'model' && m.inReplyTo === question.id);
   const reason = reply && failedChatReply(reply.text, reply.agentRunId ? agentRuns[reply.agentRunId]?.stopReasonLabel : undefined);
-  const submitted = !!draft?.savedUserMessageId && (phase === 'replying' || phase === 'reply_failed');
+  const submitted = chatDraftIsSubmitted(chat, draft);
   const upload = [voiceUpload, fileUpload, photoUpload].find(u => u.busy || u.unknown || u.notice);
   const reminder = panel?.reminderId ? chat.messages.find(m => m.id === panel.reminderId && m.childId === childId && m.proactive) : undefined;
   const [exposed, setExposed] = useState(false);
   const foreground = useChatForeground();
-  const exposedIds = useMemo(() => exposed && reminder && !question && !panel?.voice ? [reminder.id] : [], [exposed, reminder?.id, question?.id, panel?.voice]);
+  const exposedIds = useMemo(() => exposed && reminder && !question && !outgoing && !panel?.voice ? [reminder.id] : [], [exposed, reminder?.id, question?.id, outgoing, panel?.voice]);
   useChatExposure(foreground && exposed, exposedIds);
   const validPage = assistantPages.find(p => p === page);
   const pageContext: ChatPageContext | undefined = validPage ? { page: validPage, ...(item ? { item } : {}) } : undefined;
@@ -135,7 +137,7 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
     beforeSend.current = new Set(chat.messages.map(message => message.id));
     try { await sendChat({ pageContext }); } finally { sending.current = false; }
   }
-  const composerText = submitted ? draft.nextText ?? '' : chatDraft;
+  const composerText = submitted ? draft?.nextText ?? '' : chatDraft;
   const queued = !!activeReply && chat.queuedText?.afterMessageId === activeReply;
   const canQueue = !!pageContext && chatWritesAllowed && chat.online && !chat.cancelling && !chat.cancelAcceptedFor
     && chat.busy === 'reply' && phase === 'replying' && !!activeReply && draft?.savedUserMessageId === activeReply
@@ -153,7 +155,7 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
     }
   }, [recording, currentItem, validPage, pageContext, voice, endVoice]);
   const canSend = editable && !!validPage && (!!chatDraft.trim() || !!agentAttachments.length) && chatDraft.length <= 10_000;
-  const canType = chatWritesAllowed && (submitted || phase === 'draft' && chat.online && !!chat.loadedAt && chat.busy !== 'save' && !upload?.unknown);
+  const canType = !!outgoing || chatWritesAllowed && (submitted || phase === 'draft' && chat.online && !!chat.loadedAt && chat.busy !== 'save' && !upload?.unknown);
   const input = useRef<ChatComposerInputHandle>(null), focusedPanel = useRef<Panel | null>(null);
   useLayoutEffect(() => {
     if (!input.current?.focus || !panel || !canType || recording || panel.focus === false || panel === focusedPanel.current) return;
@@ -165,13 +167,14 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
     else if (canSend) void send();
   };
   const speech = reason?.body || (!reason && reply?.text);
-  const showBubble = !!(reminder || question || turnStatus || notice || needsRecovery);
+  const showBubble = !!(outgoing || reminder || question || turnStatus || notice || needsRecovery);
   const itemLabel = item && (({ task: '待辦', record: '記錄', document: '文件' })[item.kind] + ' · ' + ((recording ? panel?.voice?.label : selected?.label) || '目前選取的項目'));
   return <>
     {panel && !recording && showBubble && <View testID="companion-turn" style={styles.bubble}>
-      {reminder && !question && <View testID="companion-reminder" onLayout={() => setExposed(true)}>
+      {reminder && !question && !outgoing && <View testID="companion-reminder" onLayout={() => setExposed(true)}>
         <Text style={styles.context}>助手提醒</Text><Text numberOfLines={3} style={styles.body}>{reminder.text}</Text></View>}
-      {question && <Text numberOfLines={1} style={styles.context}>{question.text || (question.voice ? '你的語音訊息' : '你的附件')}</Text>}
+      {outgoing ? <Text testID="companion-outgoing" numberOfLines={2} style={styles.context}>{[outgoing.attachmentLabel, outgoing.text].filter(Boolean).join(' · ')}</Text>
+        : question && !reply && <Text numberOfLines={1} style={styles.context}>{question.text || (question.voice ? '你的語音訊息' : '你的附件')}</Text>}
       {!!reason && <Text accessibilityRole="alert" numberOfLines={2} style={styles.warning}>{reason.reason}</Text>}
       {!!speech && <Text numberOfLines={4} selectable style={styles.body}>{speech}</Text>}
       {turnStatus && turnStatus.text !== notice && <ChatTurnStatusLine status={turnStatus} />}
@@ -194,9 +197,8 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
             icon={queued ? 'close' : 'arrow-up'} iconOnly />}
       </View>
     </View>}
-    {(canRecord || recording) && <View style={recording ? styles.bubble : undefined} pointerEvents={recording ? 'auto' : 'none'}>
-      {recording && (childName || itemLabel) && <Text numberOfLines={2} style={styles.context}>{[childName, itemLabel].filter(Boolean).join(' · ')}</Text>}
-      {recording && !!chatDraft.trim() && <Text numberOfLines={2} style={styles.body}>{chatDraft}</Text>}
+    {(canRecord || recording) && <View style={recording ? styles.voice : undefined} pointerEvents={recording ? 'auto' : 'none'}>
+      {recording && !!chatDraft.trim() && <Text numberOfLines={1} style={styles.context}>{chatDraft}</Text>}
       <VoiceCapture ref={voice} visible={recording} sendRecording confirmDisabled={!canRecord} onDismiss={endVoice} onPick={a => void send(a)} />
     </View>}
   </>;
@@ -207,6 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13, paddingVertical: 8, gap: 3, shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowRadius: 5, shadowOpacity: .1, elevation: 2 },
   entry: { backgroundColor: colors.white, borderColor: colors.sage, borderWidth: 1, borderRadius: 20, paddingHorizontal: 7,
     shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowRadius: 5, shadowOpacity: .12, elevation: 2 },
+  voice: { backgroundColor: colors.white, borderColor: colors.line, borderWidth: 1, borderRadius: 24, paddingHorizontal: 8 },
   row: { flexDirection: 'row', alignItems: 'center' }, input: { flex: 1, minWidth: 0 },
   body: { color: colors.ink, fontSize: 15, lineHeight: 22 }, warning: { color: colors.warningInk, fontSize: 13, lineHeight: 19 },
   context: { color: colors.muted, fontSize: 12, lineHeight: 18 },

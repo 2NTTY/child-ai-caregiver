@@ -20,5 +20,26 @@
   "reply": "Local text fixture read the selected task and persisted a long answer through the real chat store. Voice used the local no-model reply endpoint.",
   "clampedHeight": 88,
   "fullTextHeight": 154,
-  "readOriginalInFullChat": true
+  "readOriginalInFullChat": true,
+  "integration": {
+    "companionBase": "e406e66c",
+    "sharedSendCommit": "968fdeef",
+    "browser": "158.0.4370.33",
+    "width": 1280,
+    "height": 800,
+    "emulatedTouch": false,
+    "heldSave": true,
+    "echoBeforeSaveReceipt": true,
+    "nextDraftPreserved": true,
+    "answerOmitsQuestion": true,
+    "recordControlsOnOneRow": true,
+    "previewControlsOnOneRow": true,
+    "previewPlaybackAfterOnePress": true,
+    "discardedPreviewUploads": 0,
+    "onePressSendDuringRecording": true,
+    "voiceContentUploads": 1,
+    "originalMessageWrites": 2,
+    "selectedChildAndTaskVerifiedFromStore": true,
+    "media": "Synthetic Edge microphone; real local MediaRecorder, playback, upload and message save"
+  }
 }
