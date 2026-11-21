@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-149-image-count",
+  "base": {
+    "artifact": "candidate-147/out",
+    "htmlSha256": "668b35e44f30e493d123af0605915d39a09c973eb945b09a278461a6efa86f3b",
+    "rawRecordsSha256": "6c6eaecfe2e8f19d436dee7eb18279a45f5657741ecd29f4ca14b8394b4136cb",
+    "rawArtworkSha256": "823938cb248f0dd0582148d83b239ede76841a4bea4ca8f91593d70efee7c0b7",
+    "topics": 72,
+    "choices": 147,
+    "images": 147
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-avatar-crop/assets.json",
+      "sha256": "c4d48987c75fa945d74a453008e9664cbda3af7738e91bafe68434f087f37010"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "380c29bb89a8ea8efc1d7eda358ed5c9621f891e121830895ab84a5a1d3f9209",
+    "PROVENANCE.md": "c0f883bffd3130f8fde0a1a2b9699277fcac0094ff91c4717a364cdbf1682109"
+  },
+  "topics": [
+    {
+      "number": 73,
+      "title": "更換本人頭像，保存前先看裁切",
+      "choices": [
+        {
+          "name": "個人資料頁內的方框裁剪",
+          "note": "在個人資料頁上打開裁剪視窗，拖動圖片，或用縮小、放大按鈕調整取景；方形裁剪框固定不動。尚未套用新頭像。",
+          "links": [
+            {
+              "label": "GitLab v18.5.0：個人資料頁的裁剪視窗",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/views/user_settings/profiles/show.html.haml#L179-L207"
+            },
+            {
+              "label": "固定方形裁剪框及移動圖片",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/app/assets/javascripts/profile/gl_crop.js#L88-L115"
+            },
+            {
+              "label": "GitLab 程式授權：MIT Expat（限所列檔案）",
+              "url": "https://github.com/gitlabhq/gitlabhq/blob/a2f69d15ebab6fda20fef41f44707ee920510ae8/LICENSE#L3-L10"
+            }
+          ],
+          "asset": {
+            "input": "draft-avatar-crop/avatar-a.png",
+            "sha256": "f44ccd27d53eef2ddad3e11ddeeb211b131316a7d760299e1e1caae50bde848a",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "GitLab 的編輯個人資料頁被遮暗，中央裁剪視窗顯示米白底的帆船插畫。方框外的圖片較暗，框內有移動游標，下方有縮小、放大和設定新頭像按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在專頁裁切，右側看預覽",
+          "note": "在更改頭像專頁調整方形裁切框，寬畫面右側會顯示所選範圍。尚未套用新頭像。",
+          "links": [
+            {
+              "label": "BuddyPress 14.0.0：會員頭像裁切專頁",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-templates/bp-nouveau/buddypress/members/single/profile/change-avatar.php#L49-L67"
+            },
+            {
+              "label": "同一版本：裁切影像、頭像預覽及裁切按鈕",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-templates/bp-nouveau/buddypress/assets/_attachments/avatars/crop.php#L12-L23"
+            },
+            {
+              "label": "同一版本：可調裁切框與寬畫面右側預覽條件",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-core/js/avatar.js#L700-L739"
+            },
+            {
+              "label": "同一版本：以相同裁切座標更新右側預覽",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-core/js/avatar.js#L742-L769"
+            },
+            {
+              "label": "同一版本：預覽與套用頭像分開",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-core/js/avatar.js#L229-L260"
+            },
+            {
+              "label": "同一版本：會員個人資料選單及更改頭像路由",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-templates/bp-nouveau/buddypress/members/single/profile.php#L9-L33"
+            },
+            {
+              "label": "同一版本：寬畫面裁切區及預覽排列",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-core/css/avatar.css#L301-L315"
+            },
+            {
+              "label": "同一版本：頭像上載頁籤及刪除頁籤",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-core/bp-core-attachments.php#L824-L837"
+            },
+            {
+              "label": "同一版本：版本、作者及授權聲明",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/bp-loader.php#L16-L24"
+            },
+            {
+              "label": "BuddyPress 程式授權：GPL-2.0-or-later（非圖像授權）",
+              "url": "https://github.com/buddypress/buddypress/blob/8b15774c315c5bf7ae74f3b00e082e17088f2a5d/src/license.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-avatar-crop/avatar-b.png",
+            "sha256": "aaf706a3cd5d8aa6896609b5b9818b842ec7f6f504efdcd188236e16182d5815",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：更改會員頭像專頁左側是小帆船原圖及可調整的方形裁切框，右側是同一範圍的方形頭像預覽，下方有「Crop Image」按鈕。尚未套用新頭像。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 73 題 · 頭像裁切的兩幅自製合成示意",
+      "input": "draft-avatar-crop/DECLARATION.txt",
+      "sha256": "380c29bb89a8ea8efc1d7eda358ed5c9621f891e121830895ab84a5a1d3f9209"
+    }
+  ]
+}
