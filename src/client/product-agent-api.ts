@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { librarySeriesMediaType, personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
+import { childHealthSeries } from '../shared/source-series.ts';
 import { privateSourceCitationSchema } from "../shared/product-agent.ts";
 import { agentDecisionSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
@@ -85,8 +86,8 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     async setLibraryPreference(childId, signal, userId, change) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new ProductAgentApiError(400, 'invalid_input');
       const result = await request(`/children/${encodeURIComponent(childId)}/library`, signal, userId, change);
-      if (!object(result) || !z.int().positive().safeParse(result.revision).success
-        || !('action' in change) && result.revision !== change.expectedRevision + 1) throw new ProductAgentApiError();
+      if (!object(result) || !('action' in change && change.action === 'manage' ? z.int().nonnegative() : z.int().positive()).safeParse(result.revision).success
+        || !('action' in change) && !(change.imported && change.seriesId === childHealthSeries.id) && result.revision !== change.expectedRevision + 1) throw new ProductAgentApiError();
     },
     async getLibrary(childId, signal, userId, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success

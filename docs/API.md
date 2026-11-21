@@ -169,6 +169,10 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
 <a id="platform-source-follow"></a>
+家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v4+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁，v1 至 v3 維持原有欄位。
+
+整卡操作向同一個人目錄端點提交 `{action:"manage", seriesId:"fhs-child-health", operation, expectedState}`。Server 在本人及孩子授權交易內核對成員、已發布版本及個人選擇。首次 `join` 跟隨已展示範圍，再次明確採用只加入缺少的教材；全數已選時回傳現況。`fixed` 明確選取已採用教材的目前版本，`follow` 跟隨已選範圍，`enable`、`disable` 和 `remove` 操作已選教材。選擇衝突回傳 `409 library_selection_changed`。版本參照及合法分享 ZIP 繼續逐份核查原件、版本與權利，每包最多 100 份。
+
 **免費加入平台來源卡。** 家長在來源庫或聊天點按加入時，客戶端直接向 `POST /api/children/{childId}/library` 提交 `{action:"join", seriesId, expectedRevision, editions:[{sourceId,versionId}]}`，沿用登入帳戶前置條件及孩子讀權。首次加入在同一交易核對整個系列目前可讀的已發布版本，將同範圍跟隨寫入本人原有偏好。已停用的系列保留停用。已跟隨或已固定（包括匯入 ZIP）的系列重複加入會回傳現有 `revision`。未發布、已撤回、首次加入時版本不符，或需要轉移其他系列的個人選擇，均回傳 `409 library_selection_changed`。
 
 本人聊天可用 `read_platform_source_cards` 列出系列，再用 `join_platform_source_card` 按本輪讀到的版本加入；完成收據可重開同一系列。加入只引用平台現有的原件、已審內容及向量，沒有私人巡查或額外模型工作。平台負擔公共維護費。聊天內直接點按免費加入毋須產生 AI 回覆；主動送出自然語言要求助手代辦，對話推理沿用當前聊天的用量安排。
