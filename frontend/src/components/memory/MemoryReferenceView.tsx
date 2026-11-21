@@ -4,7 +4,7 @@ import { pickImportPackage } from '../../platform/package-import';
 import { exportSeriesReferences, libraryPickLimit, readSeriesReferences } from '../../production/library-package';
 import { EmptyListCard } from "../EmptyListCard";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SourceDocumentCard } from "./SourceDocumentCard";
 import { PlatformCardJoin } from './PlatformCardJoin';
 import { AppDialog } from "../AppDialog";
@@ -165,40 +165,78 @@ const topicArt: Record<string, { icon: AppIconName; tint: string }> = {
   vision: { icon: 'eye', tint: colors.paleTeal },
   checkup: { icon: 'clipboard-check-outline', tint: colors.paleTeal },
 };
+function MaterialLink({ url, label, title, onFailure }: { url: string; label: string; title?: boolean; onFailure(url: string): void }) {
+  return <Pressable accessibilityRole="link" accessibilityLabel={label}
+    {...(Platform.OS === 'web' ? { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } }
+      : { onPress: () => { void Linking.openURL(url).catch(() => onFailure(url)); } })}
+    style={({ pressed }) => [styles.materialLink, title ? styles.materialTitleLink : styles.mediaLink, pressed && styles.sourcePressed]}>
+    <Text style={title ? styles.materialTitle : styles.mediaLabel}>{label}</Text>
+  </Pressable>;
+}
 function CatalogDocument({ item, maintenanceEntry }: { item: PersonalLibraryItem; maintenanceEntry?: MaintenanceEntry }) {
-  const [metadata, setMetadata] = useState(false), [linkFailed, setLinkFailed] = useState(false);
+  const [metadata, setMetadata] = useState(false), [failedUrl, setFailedUrl] = useState('');
   const fetched = item.lastSuccessfulCheckAt ?? item.fetchedAt;
   const choice = libraryDocumentChoice(item);
+  const links = item.media?.links ?? [];
+  const version = metadata ? <View style={styles.historyEntry}>
+    <Metadata label="發布版本">{item.versionId}</Metadata>
+    {choice?.mode === 'fixed' && choice.selectedVersionId ? <Metadata label="已選快照">{choice.selectedVersionId}</Metadata> : null}
+    {item.publishedAt ? <Metadata label="發布">{memoryDateLabel(item.publishedAt)}</Metadata> : null}
+    {fetched ? <Metadata label="最近取得">{memoryDateLabel(fetched)}</Metadata> : null}
+    {item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}
+    {item.methods?.length ? <Metadata label="整理方式">{item.methods.join('、')}</Metadata> : null}
+  </View> : null;
+  const warning = failedUrl ? <Text selectable style={styles.warning}>未能開啟：{failedUrl}</Text> : null;
+  if (item.childHealth) {
+    const status = !choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用'
+      : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新';
+    return <View testID={`memory-catalog-source-${item.sourceId}`} style={styles.materialRow}>
+      <View style={styles.materialHeading}><View style={styles.materialMain}>
+        <MaterialLink url={item.url} label={item.title} title onFailure={setFailedUrl} />
+        <Text style={styles.meta}>{status}{links.length ? ` · ${links.length} 項影音` : ''}</Text>
+      </View><Pressable accessibilityRole="button" accessibilityLabel={item.title + '的教材詳情'}
+        accessibilityState={{ expanded: metadata }} aria-expanded={metadata}
+        onPress={() => { setMetadata(!metadata); setFailedUrl(''); }}
+        style={({ pressed }) => [styles.materialToggle, pressed && styles.sourcePressed]}>
+        <AppIcon name={metadata ? 'chevron-up' : 'chevron-down'} size={20} />
+      </Pressable></View>
+      {metadata ? <View style={styles.materialDetails}>
+        {links.length ? <View style={styles.mediaLinks}>{links.map((url, index) =>
+          <MaterialLink key={url} url={url} label={`影音 ${index + 1}`} onFailure={setFailedUrl} />)}</View> : null}
+        <Text style={styles.meta}>{item.coverage ?? '部分收錄'} · {item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}</Text>
+        {version}
+      </View> : null}
+      {warning}
+    </View>;
+  }
   return <SourceDocumentCard testID={`memory-catalog-source-${item.sourceId}`} title={item.title}
     byline={`${item.coverage ?? '部分收錄'} · ${item.classification === 'official_guidance' ? '官方指引' : '近期資訊'}`}>
     <View style={styles.actions}>
       <AppButton label="開啟來源網站" variant="secondary" density="compact" onPress={() => {
-        setLinkFailed(false); void Linking.openURL(item.url).catch(() => setLinkFailed(true));
+        setFailedUrl(''); void Linking.openURL(item.url).catch(() => setFailedUrl(item.url));
       }} />
       <AppButton label={metadata ? '收起資料' : '版本資料'} expanded={metadata} variant="quiet" density="compact" onPress={() => setMetadata(value => !value)} />
     </View>
-    {linkFailed ? <Text selectable style={styles.warning}>未能開啟：{item.url}</Text> : null}
+    {warning}
     {item.media?.links.map((url, index) => <AppButton key={url} label={'影音原連結 ' + (index + 1)} accessibilityLabel={'開啟影音 ' + url}
-      variant="quiet" density="compact" onPress={() => { void Linking.openURL(url).catch(() => setLinkFailed(true)); }} />)}
-    {metadata ? <View style={styles.historyEntry}>
-      <Metadata label="發布版本">{item.versionId}</Metadata>
-      {choice?.mode === 'fixed' && choice.selectedVersionId ? <Metadata label="已選快照">{choice.selectedVersionId}</Metadata> : null}
-      {item.publishedAt ? <Metadata label="發布">{memoryDateLabel(item.publishedAt)}</Metadata> : null}
-      {fetched ? <Metadata label="最近取得">{memoryDateLabel(fetched)}</Metadata> : null}
-      {item.lastCheckedAt ? <Metadata label="最近檢查">{memoryDateLabel(item.lastCheckedAt)}</Metadata> : null}
-      {item.methods?.length ? <Metadata label="整理方式">{item.methods.join('、')}</Metadata> : null}
-    </View> : null}
+      variant="quiet" density="compact" onPress={() => { void Linking.openURL(url).catch(() => setFailedUrl(url)); }} />)}
+    {version}
     {maintenanceEntry?.(item.sourceId)}
   </SourceDocumentCard>;
 }
-function CatalogChoice({ label, value, onChange, options }: {
+function CatalogChoice({ label, value, onChange, options, action }: {
   label: string; value: string; onChange(value: string): void; options: { value: string; label: string }[];
+  action?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
-  return <View><AppSelectionTrigger label={label + '：' + (options.find(row => row.value === value)?.label ?? value)}
-    expanded={expanded} onPress={() => setExpanded(!expanded)} />
+  const trigger = useRef<View>(null);
+  const filter = <AppSelectionTrigger ref={trigger} label={label + '：' + (options.find(row => row.value === value)?.label ?? value)}
+    expanded={expanded} onPress={() => setExpanded(!expanded)} />;
+  return <View>{action ? <View style={styles.seriesTools}><View style={styles.seriesFilter}>{filter}</View>{action}</View> : filter}
     {expanded ? <View accessibilityRole="radiogroup" accessibilityLabel={label}>{options.map(row =>
-      <AppRadioItem key={row.value} {...row} checked={row.value === value} onPress={() => { onChange(row.value); setExpanded(false); }} />)}</View> : null}
+      <AppRadioItem key={row.value} {...row} checked={row.value === value} onPress={() => {
+        onChange(row.value); setExpanded(false); if (Platform.OS === 'web') trigger.current?.focus();
+      }} />)}</View> : null}
   </View>;
 }
 function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenanceEntry, width, requestedDocument }: {
@@ -260,20 +298,17 @@ function CatalogSeries({ items, workspace, details, onOpen, onClose, maintenance
       </View>
       <View style={styles.coverFooter}><Text style={styles.count}>{fileCount}</Text><AppIcon name="arrow-right" size={18} /></View>
     </Pressable>
-    {details ? <AppDialog visible onDismiss={onClose} accessibilityLabel={series.name}>
+    {details ? <AppDialog visible onDismiss={onClose} accessibilityLabel={series.name} style={managed ? styles.materialDialog : undefined}>
       <AppDialog.Title>{series.name}</AppDialog.Title>
       <AppDialog.Content style={styles.dialogTabs}><UnderlineTabs id={tabsId} label="來源內容" items={[{key:'files',label:'文件'}, {key:'settings',label:'設定與匯出'}]} value={section} onChange={setSection} /></AppDialog.Content>
       <AppDialog.ScrollArea style={styles.scrollArea}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
       {requiresSelection && enabled ? <Text style={styles.warning}>收錄範圍已更改。請在「設定與匯出」選用新版本。</Text> : null}
       <AppTabPanel tabsId={tabsId} tabKey="files" active={section === 'files'}><View style={styles.section}>
-        <PlatformCardJoin seriesId={series.id} />
-        {managed && categories.length > 0 ? <CatalogChoice label="教材分類" value={category} onChange={setCategory}
-          options={[{ value: 'all', label: '全部分類' }, ...categories.map(value => ({ value, label: value }))]} /> : null}
-        {documents.map(item => {
-          const choice = libraryDocumentChoice(item);
-          return <View key={item.sourceId}><CatalogDocument item={item} maintenanceEntry={maintenanceEntry} />
-            {managed ? <Text style={styles.meta}>{!choice?.selectedVersionId ? '未採用' : !choice.enabled ? '已停用' : !choice.eligible ? '待選版本' : choice.mode === 'fixed' ? '已固定版本' : '已跟隨更新'}</Text> : null}</View>;
-        })}
+        {managed && categories.length > 0 ? <CatalogChoice label="分類" value={category} onChange={setCategory}
+          options={[{ value: 'all', label: '全部' }, ...categories.map(value => ({ value, label: value }))]}
+          action={<PlatformCardJoin seriesId={series.id} compact />} /> : <PlatformCardJoin seriesId={series.id} compact={Boolean(managed)} />}
+        <View style={managed ? styles.materialList : styles.section}>{documents.map(item =>
+          <CatalogDocument key={item.sourceId} item={item} maintenanceEntry={maintenanceEntry} />)}</View>
         {managed && items.length < managed.total && workspace.model.references.data?.hasMore && workspace.reads?.loadMoreReferences ? <AppButton label="載入更多教材" variant="quiet" disabled={busy} onPress={workspace.reads.loadMoreReferences} /> : null}
       </View></AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="settings" active={section === 'settings'}><View style={styles.section}>
@@ -503,6 +538,21 @@ const styles = StyleSheet.create({
   coverFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs, minHeight: 44, paddingHorizontal: spacing.lg },
   count: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, flexShrink: 1 },
   dialogTabs: { paddingBottom: 0 },
+  materialDialog: { maxWidth: 720 },
+  seriesTools: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  seriesFilter: { maxWidth: '100%', flexShrink: 1 },
+  materialList: { minWidth: 0, borderTopWidth: 1, borderColor: colors.line },
+  materialRow: { minWidth: 0, paddingVertical: spacing.xs, borderBottomWidth: 1, borderColor: colors.softLine },
+  materialHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  materialMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.sm },
+  materialLink: { minWidth: 48, minHeight: 48, justifyContent: 'center', paddingVertical: spacing.xs },
+  materialTitleLink: { flexBasis: 300, flexGrow: 1, flexShrink: 1, maxWidth: '100%' },
+  materialTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, textDecorationLine: 'underline' },
+  materialToggle: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.small },
+  materialDetails: { gap: spacing.sm, paddingVertical: spacing.sm },
+  mediaLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  mediaLink: { paddingHorizontal: spacing.sm, borderRadius: radius.small, backgroundColor: colors.quietSurface },
+  mediaLabel: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool, textDecorationLine: 'underline' },
   scrollArea: { paddingHorizontal: 0, flexShrink: 1 },
   dialogContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
   document: { gap: spacing.sm, padding: spacing.md, backgroundColor: colors.canvas, borderRadius: radius.small, minWidth: 0 },

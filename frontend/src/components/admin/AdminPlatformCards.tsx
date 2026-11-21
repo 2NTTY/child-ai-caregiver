@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import type { PlatformCardPreview } from '../../../../src/shared/admin-platform-cards';
 import { mediaTimestamp } from '../../../../src/shared/platform-media';
 import { adminError, type AdminOwner } from '../../production/AdminOwner';
+import { AdminEntry } from '../../production/AdminEntry';
 import { AppButton, AppSelect, AppTextField, SectionHeader } from '../ui';
 import { AppCheckbox } from '../AppCheckbox';
 import { spacing } from '../../theme';
@@ -55,6 +56,7 @@ export function AdminPlatformCards({ admin, locked }: { admin: AdminOwner; locke
             if (live.current) { setMedia(entry); setActiveEdition(active); if (active) setVersion(active.versionId); } }); }} />
       {selected ? <>
         <AppButton label="開啟教材原文" variant="quiet" onPress={() => { void Linking.openURL(selected.url).catch(() => setNotice('未能開啟原文。')); }} />
+        {activeEdition ? <AdminEntry sourceId={sourceId} /> : null}
         {media ? <>
           <AppCheckbox label="由平台處理本卡影音" checked={media.enabled} disabled={disabled} onChange={enabled => void run(async () => {
             const entry = await admin.platformMedia(sourceId, { enabled, revision: media.revision }); if (live.current) setMedia(entry);
