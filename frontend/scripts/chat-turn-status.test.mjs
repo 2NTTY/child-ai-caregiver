@@ -44,11 +44,12 @@ test('child names disambiguate multiple or explicitly chosen private conversatio
 
 function companionHarness(overrides = {}) {
   const h = harness({
-    'react-native': { View: 'View', ScrollView: 'ScrollView', Platform: { OS: 'web' },
+    'react-native': { View: 'View', Pressable: 'Pressable', ScrollView: 'ScrollView', Platform: { OS: 'web' },
       StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 390 }) },
     '../../theme': { colors: {}, mobileLayout: { breakpoint: 650 } },
     '../../production/useChatExposure': { useChatExposure() {}, useChatForeground: () => true },
     '../chat/chat-turn-status': { chatReplyActivity, chatTurnStatus, privateChatChildName },
+    '../AppIcon': { AppIcon: 'Icon' },
     '../chat/ChatTurnStatusLine': { ChatTurnStatusLine: 'TurnStatus' },
     '../chat/ChatAction': { ChatAction: 'Action' }, '../agent/VoiceCapture': { VoiceCapture: 'Voice' },
     '../agent/ChatComposerInput': { ChatComposerInput: 'Input' },
@@ -59,11 +60,12 @@ function companionHarness(overrides = {}) {
   });
   const { SiteCompanion } = h.load('src/components/companion/SiteCompanion.tsx');
   const chat = { selectedChildId: 'child', drafts: {}, messages: [], online: true };
-  h.production({ chatState: chat, selectedChildId: 'child', scopeKey: 'private', sharedChild: {},
+  const production = { chatState: chat, selectedChildId: 'child', scopeKey: 'private', sharedChild: {},
     chatDraft: '', agentAttachments: [], agentRuns: {}, recordsState: { children: [{ id: 'child', displayName: '小晴' }] },
-    chatWritesAllowed: true, voiceUpload: {}, photoUpload: {}, fileUpload: {} });
+    chatWritesAllowed: true, voiceUpload: {}, photoUpload: {}, fileUpload: {} };
+  h.production(production);
   h.route('/tasks'); h.render(h.jsx(SiteCompanion, {authorised:true,visible:true}));
-  return { h, chat };
+  return { h, chat, production };
 }
 
 test('the single-child companion replaces the waiting line with the saved failure and one original-message action', () => {
@@ -72,7 +74,7 @@ test('the single-child companion replaces the waiting line with the saved failur
   const ask = { id: question, childId: 'child', role: 'user', text: '你是誰' };
   Object.assign(chat, replying, { messages: [ask], drafts: { child: savedDraft } });
   h.render();
-  const statuses = () => h.hosts().filter(node => node.type === 'TurnStatus').map(node => node.props.status.text);
+  const statuses = () => h.hosts().filter(node => node.props.testID === 'companion-wait').map(node => node.props.accessibilityLabel);
   const copy = () => h.hosts().filter(node => node.type === 'Text').flatMap(node => [node.props.children].flat()).filter(value => typeof value === 'string').join('');
   assert.deepEqual(statuses(), ['正在回覆…']); assert.doesNotMatch(copy(), /私人對話|小晴|等候 AI 回覆|想問甚麼/);
   chat.feedback = { messageId: question, phase: 'reading' }; h.render();
@@ -83,7 +85,25 @@ test('the single-child companion replaces the waiting line with the saved failur
   assert.deepEqual(statuses(), []);
   assert.equal(copy().split('服務暫時未能使用').length - 1, 1);
   assert.doesNotMatch(copy(), /這次回覆未完成，請查核原結果/);
-  assert.deepEqual(h.hosts().filter(node => node.type === 'Action').map(node => node.props.label), ['查核原訊息', '送出']);
+  assert.deepEqual(h.hosts().filter(node => node.type === 'Pressable').map(node => node.props.accessibilityLabel), ['在完整對話查核原訊息', '錄製語音訊息']);
+});
+
+test('a saved short answer replaces the dots even when a completion notice accompanies the next draft', () => {
+  const { h, chat, production } = companionHarness();
+  chat.loadedAt = 'ready';
+  Object.assign(production, { chatDraft: '帶甚麼？', sendChat: async () => {} });
+  h.hosts().find(node => node.type === 'Dock').props.onChat(); h.render();
+  const field = () => h.hosts().find(node => node.type === 'Input').props;
+  field().onSubmit();
+  chat.messages = [{ id: question, role: 'user', childId: 'child', text: '帶甚麼？' },
+    { id: 'reply', role: 'model', childId: 'child', inReplyTo: question, text: '帶畫紙。' }];
+  production.chatDraft = '下一句';
+  chat.drafts.child = { phase: 'draft', text: '下一句', notice: '聊天已保存，AI 已回覆。' };
+  h.render();
+  assert.equal(field().value, '下一句'); assert.equal(field().disabled, false);
+  assert.equal(h.node('companion-answer').props.children.props.children, '帶畫紙。');
+  assert.equal(h.node('companion-wait'), undefined);
+  assert.equal(h.hosts().filter(node => node.type === 'TurnStatus').length, 0);
 });
 
 test('the outgoing echo leaves the field editable for the next text before the first save is confirmed', () => {

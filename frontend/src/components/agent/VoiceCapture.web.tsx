@@ -10,7 +10,7 @@ import { AssistantAttachmentPicker } from "./AssistantAttachmentPicker";
 import { CompanionVoiceControls } from "./CompanionVoiceControls";
 import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
-export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
+export function VoiceCapture({ onPick, visible, onDismiss, onListening, ref, sendRecording = false, confirmDisabled = false }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onListening?(active: boolean): void; onDismiss(): void; sendRecording?: boolean; confirmDisabled?: boolean; ref?: Ref<VoiceCaptureHandle> }) {
   const [state, setState] = useState<VoiceCaptureState>("idle"), [error, setError] = useState<string>();
   const [recording, setRecording] = useState<AssistantAttachment | null>(null);
   const current = useRef<AssistantAttachment | null>(null), active = useRef(true), engaged = useRef(false);
@@ -48,6 +48,12 @@ export function VoiceCapture({ onPick, visible, onDismiss, ref, sendRecording = 
     if (current.current === attachment) current.current = null;
     discard(); onPick(attachment);
   }
+  useEffect(() => {
+    if (visible && state === 'recording') {
+      onListening?.(true);
+      return () => onListening?.(false);
+    }
+  }, [visible, state, onListening]);
   if (!visible) return null;
   if (sendRecording) return <CompanionVoiceControls state={state} uri={recording?.localUri} error={error} available={available} confirmDisabled={confirmDisabled}
     start={start} stop={() => controller.stop()} cancel={() => discard()} confirm={() => { if (current.current) pick(current.current); }} />;
