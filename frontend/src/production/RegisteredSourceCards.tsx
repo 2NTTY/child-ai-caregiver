@@ -15,6 +15,7 @@ import { chineseFont, colors, readingType, spacing } from '../theme';
 import { useProduction } from './ProductionProvider';
 import { useDomainEnvironment, useDomainWriteGuard } from './useDomainEnvironment';
 import { useSettingsRequests } from './SettingsDomainSupport';
+import { RegisteredSourceDirectory } from './RegisteredSourceDirectory';
 import { createRegisteredSourceCardsApi, RegisteredSourceCardsError, type SourceCardMutation, type SourceCardSettings } from './registered-source-cards-api';
 
 const kinds = [{ value: 'document', label: '單份文件' }, { value: 'directory', label: '文件目錄' }, { value: 'bulletin', label: '公告' }] as const;
@@ -238,6 +239,8 @@ function SourceCards({ active, renderLibrary }: { active: boolean; renderLibrary
         <View style={styles.actions}><AppButton label="保存來源" disabled={!canWrite || !!settingsStale} onPress={() => { void saveSettings(); }} /><AppButton label="取消修改" variant="quiet" disabled={!!pending || requests.busy} onPress={() => { setEditing(null); settings.reset(emptySettings); }} /></View>
       </View> : null}
       {!editing && !authCard && items.filter(card => card.cardId === opened).map(card => <View key={card.cardId} style={styles.card}>
+        {!management && card.enabled && env.userId && env.online && !env.sharedMode && <RegisteredSourceDirectory
+          key={JSON.stringify([env.identityKey, env.scopeKey, card.cardId, card.revision])} card={card} />}
         {(!card.gap || card.gap.skipped || card.checking) && <Text style={styles.body}>{sourceCardResultLabel(card)}</Text>}
         <Text selectable style={styles.meta}>{card.url}</Text>
         <Text style={styles.meta}>{kinds.find(kind => kind.value === card.kind)?.label} · 每 {card.frequencyMinutes} 分鐘 · {card.enabled ? '巡查已開啟' : '巡查已關閉'} · {card.credentialRef ? '已提供本人登入授權' : '未提供登入授權'}</Text>

@@ -62,7 +62,7 @@ function setup(params = {}) {
     if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 800, ref: null, onLayout() {} }) };
     if (name === 'expo-router') return { useLocalSearchParams: () => params, useFocusEffect: callback => { focusCallback = callback; react.useEffect(() => { focusCleanup = callback(); return () => focusCleanup?.(); }, []); } };
     if (name.endsWith('/AppDialog')) return { AppDialog: Object.assign('AppDialog', {}) };
-    if (name.endsWith('/SourceLibrary') || name.endsWith('/AppRadioItem') || name.endsWith('/FormErrorSummary') || name.endsWith('/ui')) return components;
+    if (name === './RegisteredSourceDirectory' || name.endsWith('/SourceLibrary') || name.endsWith('/AppRadioItem') || name.endsWith('/FormErrorSummary') || name.endsWith('/ui')) return components;
     if (name.endsWith('/theme')) return { chineseFont: '', colors: {}, readingType: { body: {}, meta: {} }, spacing: {} };
     if (name === './ProductionProvider') return { useProduction: () => production };
     if (name === './useDomainEnvironment') return { useDomainEnvironment: () => env, useDomainWriteGuard: (...args) => {

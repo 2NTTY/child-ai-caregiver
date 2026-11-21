@@ -5,10 +5,9 @@ import { exportSeriesReferences, libraryPickLimit, readSeriesReferences } from '
 import { EmptyListCard } from "../EmptyListCard";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { SourceLibrary, LibraryAction, LibraryRow, LibrarySheet, type PersonalCardRows } from './SourceLibrary';
+import { SourceLibrary, CatalogChoice, LibraryAction, LibraryRow, LibrarySheet, type PersonalCardRows } from './SourceLibrary';
 import { PlatformCardJoin } from './PlatformCardJoin';
 import { AppDialog } from "../AppDialog";
-import { AppRadioItem } from "../AppRadioItem";
 import { childHealthSeries, libraryArchiveMaxEditions, sourceSeries, type LibrarySelectionCommand, type ManageSeries } from "../../../../src/shared/source-series";
 import { useFocusEffect, useRouter, useLocalSearchParams, type Href } from "expo-router";
 import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
@@ -25,7 +24,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton, AppSelectionTrigger, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
+import { AppButton, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
@@ -222,21 +221,6 @@ function CatalogDocument({ item, onRead }: {
       </View> : null}
     </View> : null}
     {failedUrl ? <Text selectable style={styles.warning}>未能開啟：{failedUrl}</Text> : null}
-  </View>;
-}
-function CatalogChoice({ label, value, onChange, options, action }: {
-  label: string; value: string; onChange(value: string): void; options: { value: string; label: string }[];
-  action?: ReactNode;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const trigger = useRef<View>(null);
-  const filter = <AppSelectionTrigger ref={trigger} label={label + '：' + (options.find(row => row.value === value)?.label ?? value)}
-    expanded={expanded} onPress={() => setExpanded(!expanded)} />;
-  return <View>{action ? <View style={styles.seriesTools}><View style={styles.seriesFilter}>{filter}</View>{action}</View> : filter}
-    {expanded ? <View accessibilityRole="radiogroup" accessibilityLabel={label}>{options.map(row =>
-      <AppRadioItem key={row.value} {...row} checked={row.value === value} onPress={() => {
-        onChange(row.value); setExpanded(false); if (Platform.OS === 'web') trigger.current?.focus();
-      }} />)}</View> : null}
   </View>;
 }
 function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, maintenanceEntry, requestedDocument }: {
@@ -608,8 +592,6 @@ const styles = StyleSheet.create({
   dialogTabs: { paddingBottom: 0 },
   sheetHeading: { marginTop: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.lg },
   materialDialog: { maxWidth: 720 },
-  seriesTools: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  seriesFilter: { maxWidth: '100%', flexShrink: 1 },
   materialList: { minWidth: 0, borderTopWidth: 1, borderColor: colors.line },
   materialRow: { minWidth: 0, paddingVertical: spacing.xs, borderBottomWidth: 1, borderColor: colors.softLine },
   materialHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },

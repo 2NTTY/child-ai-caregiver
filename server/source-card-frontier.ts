@@ -3,7 +3,7 @@ import type { FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import type { RegisteredSourceJob } from './firestore-registered-source-cards.ts';
 import {
-  scanItemSchema, sourceCardDocumentRecord, sourceDocumentUrl, sourceDocumentKey, sourceDocumentRecordId,
+  scanItemSchema, scanItemKey, sourceCardDocumentRecord, sourceDocumentUrl, sourceDocumentKey, sourceDocumentRecordId,
   scanItemIssue, type SourceCardDocumentRecord, type SourceScanItem
 } from './source-card-document-record.ts';
 import type { SourceMethodCandidate } from './source-card-acquire.ts';
@@ -52,33 +52,50 @@ export function sourceCardFrontier(data: FirestoreDomainData) {
       return row.item;
     });
   }
-  async function plan(b: FirestoreAuthorityTransaction, job: RegisteredSourceJob, grant: string, prior: Receipt | null, batch: SourceScanBatch) {
+  async function plan(b: FirestoreAuthorityTransaction, job: RegisteredSourceJob, grant: string, prior: Receipt | null, batch: SourceScanBatch, originals: Set<string>) {
     const limit = prior?.pending ?? 1;
     const discoveries = [...batch.next, ...(batch.extra ?? [])];
     if (batch.sequence !== (prior?.sequence ?? 0) || !Number.isSafeInteger(batch.consumed) || batch.consumed < 1 || batch.consumed > batch.items.length
       || batch.items.length > 8 || batch.consumed > limit || discoveries.length > 256) return invalid();
     const selected = await pending(b, job, grant, prior, batch.startUrl);
     if (firestoreDomainHash(selected) !== firestoreDomainHash(batch.items)) return invalid();
-    const next = new Map(discoveries.map(raw => { const item = normalized(job, raw); return [firestoreDomainHash(item), item]; }));
+    const next = new Map<string, SourceScanItem>();
+    function merge(item: SourceScanItem, other?: SourceScanItem) {
+      const sections = [...new Set([...(item.sections ?? []), ...(other?.sections ?? [])])].sort().slice(0, 12);
+      return sections.length ? { ...item, sections } : item;
+    }
+    for (const raw of discoveries) {
+      const item = normalized(job, raw), key = scanItemKey(item);
+      next.set(key, merge(item, next.get(key)));
+    }
     const multi = !!prior || next.size > 0 || !!batch.issue;
     const updates: SourceCardDocumentRecord[] = [];
+    const memberships = new Map<string, string[]>();
     let discovered = prior?.discovered ?? 1, remaining = limit - batch.consumed;
     if (multi) {
-      const consumed = batch.items.slice(0, batch.consumed);
-      for (const item of consumed) next.delete(firestoreDomainHash(item));
+      const consumed = batch.items.slice(0, batch.consumed).map(item => merge(item, next.get(scanItemKey(item))));
+      for (const item of consumed) next.delete(scanItemKey(item));
       const items = [...consumed, ...next.values()];
-      const ids = items.map(item => sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'frontier', job.revision, job.checkId, firestoreDomainHash(item)));
+      const ids = items.map(item => sourceDocumentKey(job.ownerUserId, job.cardId, grant, 'frontier', job.revision, job.checkId, scanItemKey(item)));
       const snaps = await b.transaction.getAll(...ids.map(id => data.ref(suffix, family, id)));
       items.forEach((item, i) => {
         const previous = snaps[i]!.exists ? open(b, ids[i]!, snaps[i]!) : null;
+        item = merge(item, previous?.item);
+        const resolved = batch.redirects?.find(r => r.from === item.url)?.to ?? item.url;
+        const originalUrl = i < consumed.length && originals.has(resolved) ? resolved : previous?.originalUrl;
+        if (originalUrl && item.sections?.length) {
+          const labels = memberships.get(originalUrl) ?? [];
+          memberships.set(originalUrl, [...new Set([...labels, ...item.sections])].sort().slice(0, 12));
+        }
         const fields = { kind: 'frontier' as const, cardId: job.cardId, grant, revision: job.revision, checkId: job.checkId, item };
         if (i < consumed.length) {
           if (prior && !previous?.pending) return corrupt();
-          updates.push({ ...fields, ordinal: previous?.ordinal ?? 0, pending: false, ...(batch.issue ? { issue: batch.issue } : {}) });
+          updates.push({ ...fields, ordinal: previous?.ordinal ?? 0, pending: false, ...(originalUrl ? { originalUrl } : {}), ...(batch.issue ? { issue: batch.issue } : {}) });
         } else if (!previous) { updates.push({ ...fields, ordinal: discovered++, pending: true }); remaining++; }
+        else if (JSON.stringify(item.sections) !== JSON.stringify(previous.item.sections)) updates.push({ ...previous, item });
       });
     }
-    return { updates, discovered, pending: remaining, multi };
+    return { updates, discovered, pending: remaining, multi, memberships };
   }
   return { pending, plan };
 }
