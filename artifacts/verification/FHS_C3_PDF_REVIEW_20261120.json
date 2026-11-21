@@ -5275,5 +5275,236 @@
         "newEmbeddingMicros": 203
       }
     ]
+  },
+  "originalQuoteReadback": {
+    "workerSource": "18299569c3f6dea4ca50e36a4f06640e7d91aac5",
+    "releaseRun": "44882194026",
+    "inputIndexSha256": "944affb50ce17f9bf8cb2328248b81ee5a84feaf9732a81c382c2a7983e03561",
+    "registrationPull": 751,
+    "originalSources": 6,
+    "settledOriginalGenerations": 12,
+    "inspectionNewModelCalls": 0,
+    "entries": [
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "sourceSha256": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2",
+        "pages": 4,
+        "originalOperation": "087edc22f8959f5c80522ec9c087315ed05b84272ad8ef00a188f680f3d3d4fa",
+        "observationHash": "82a0bea4fd603a2538f9715177a18e99ede52ccc2fc650b1fce5741c84afc49d",
+        "originalSettledGenerationStages": [
+          "09ef4cdb1158ae937c305ad35a17e22e64aa5d7fa1edc8ebcec866fc82362d2c",
+          "50d1b19d9cb991dd6679676a281eb47098ca38fa0731a242e7b14c9d08e88f4c"
+        ],
+        "inspectionReceiptSha256": "468ee8b417c08c05f5231d8a2cb55518c5d86642a8cc72d2cd31ad345f4c9d2b",
+        "verifiedWindow": [
+          1,
+          4
+        ],
+        "physicalPagesWithPairedQuotes": [
+          2,
+          3,
+          4
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "registered_original_passages",
+        "registrationBinding": "2bf7723a1ecc839931640c9e5e6e5008aa73c28c9eb584696a752fd7d6ed3aa9",
+        "registeredPassages": 3,
+        "printedProofs": 3,
+        "textLayerProofs": 0,
+        "privateInputArchiveSha256": "37a1bfbd8d91998197c3c559c9cd5133f057f1e0d22a9f4862a136fdf74c6c1e",
+        "inputIndexSha256": "ac5c938f834d61af447d2403ff38fb66c4ff3ffc0fec4fa26f6c1bce90e6c88e",
+        "operatorReadDirectory": "fhs-c3-ready-pdf-1d48962862d76b3ffc07490b-ac5c938f834d",
+        "verifiedInputReads": [
+          {
+            "key": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2.1.4.text",
+            "recordSha256": "87be682164e17f8b25f6ae6c62bd66e35886afa2f78c301626b4710e1500d198"
+          },
+          {
+            "key": "78db30715e78c127bb638490e67b4e30b3457ef0330ddc80073bc5d341240da2.1.4.slice",
+            "recordSha256": "a6f90650f314550fb38d8d7ca8d15338ec5f2bfb44420369af6d6e2225f1437f"
+          },
+          {
+            "key": "685fe2d9987bf83074e4131daa5610e7e2cb4c7400c15f3271a1081ecd1ec2d8.1.8.text",
+            "recordSha256": "8707bd9e3afcb950bd1bc24171c5e99a7225e35385395a3fc9eb197d14598e62"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "sourceSha256": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd",
+        "pages": 8,
+        "originalOperation": "0e53006aae167996589f71ee76fdec69efd5235e0f2a2d41b903c40e2100c580",
+        "observationHash": "d7293e06acc48fe60fbdfdc1cc1b699fbfc77da75ca1fd8f7ea401d06fb77d5a",
+        "originalSettledGenerationStages": [
+          "13549094b522df13fe8cce7c047e965f712c84b976daa56ee6c94e011e9f386f",
+          "3a6c209d6742ef00f90f5cd6266b3ca1d3fb1d09c89c0b57b8963cabf8baf516"
+        ],
+        "inspectionReceiptSha256": "0ed0cc2c8a948596dd1fef749bc45dfbb7fec78e0af2e81aeeba9ca939c6130f",
+        "verifiedWindow": [
+          1,
+          8
+        ],
+        "physicalPagesWithPairedQuotes": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "registered_original_passages",
+        "registrationBinding": "0f27f8589c65c10cfd4fe42dde7863bcfa5fcecdaa052341acdd4350f53e4812",
+        "registeredPassages": 7,
+        "printedProofs": 7,
+        "textLayerProofs": 0,
+        "privateInputArchiveSha256": "ca46117fe11fa4689bcad4c20222ec54d1f221e03d75973a188fd365173fa001",
+        "inputIndexSha256": "99c4e216196c5632a4ae63debb14a25bdfcfcbb9d638fa14f962221aebae6607",
+        "operatorReadDirectory": "fhs-c3-ready-pdf-65148c48ab4b294035fb977a-99c4e216196c",
+        "verifiedInputReads": [
+          {
+            "key": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd.1.8.text",
+            "recordSha256": "6b7e67ba8ecbe364dde272683572a760806d367658213c70f0eeeb3ac034a9af"
+          },
+          {
+            "key": "e7d6f446205dd1c67ad3194e3cd2fc4e448571cb91e72f2bfbca19b3f6fdf7cd.1.8.slice",
+            "recordSha256": "c090e211f0cf2fd28be93aacbfe8d587f8378ddb68373d8f798c0a261bcd5172"
+          },
+          {
+            "key": "f119c9191640c603a419d7df7bc5517cf635c176d6d5afeff05740ca4496ffba.1.8.text",
+            "recordSha256": "d54e8b44b37ba62a2811018864948b3e168d3f803d91d681fffe076f77f71cea"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "sourceSha256": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860",
+        "pages": 8,
+        "originalOperation": "053975a27113c4f564e3440ee1279944b2bcaf20f4e31ea5ed3e1e78f9489e9c",
+        "observationHash": "ec13832e46f5dd82039c7fabe06151e53625f697e1c4b70fbdbfe8340c091e9b",
+        "originalSettledGenerationStages": [
+          "0c4d9cd980bffa4e67ef678c3332f4662620be573bc98cdd6ebd45cee9beba6c",
+          "99ee7d14a29b6acf657f04623823c8c09059dbe89ab9c3f175d8c22d51ec99e3"
+        ],
+        "inspectionReceiptSha256": "f5881df990233ad6a6b0fd655fd834cbe2665ca31095872769435a2508a77a88",
+        "verifiedWindow": [
+          1,
+          8
+        ],
+        "physicalPagesWithPairedQuotes": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "registered_original_passages",
+        "registrationBinding": "1416861268e2970a7b1182e9aa18573c4683333978c6e1f8c8f2743d4c503243",
+        "registeredPassages": 7,
+        "printedProofs": 6,
+        "textLayerProofs": 1,
+        "privateInputArchiveSha256": "249546db9ba52df830466df16e628a6af6ecb2b33c8d4759c1c62582f5ca5e7f",
+        "inputIndexSha256": "fcd381655296c074c083ddeb73ec95716930a0f68be905f17f264bbfb40054bd",
+        "operatorReadDirectory": "fhs-c3-ready-pdf-27dda724b8a16c0794cd0ffe-fcd381655296",
+        "verifiedInputReads": [
+          {
+            "key": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860.1.8.text",
+            "recordSha256": "c65c6493691e442c69d7bddbe82da7c1e5cd520ff0c223866e52af86a72d9ea5"
+          },
+          {
+            "key": "1ae76012365ac1d40167b8143e7aed9b2d5c1acf4d15c8389b90f2ee2c6a1860.1.8.slice",
+            "recordSha256": "83f92eb92b07f4998fae37c38e6ee83a8c0de0afa15fde0725a1d619bf4bbbf6"
+          },
+          {
+            "key": "66173dca2af40bf60930299db4806793563a25c6ef895bdfd2159ca1ad4c09ae.1.8.text",
+            "recordSha256": "87d56f487aa7ad4d76458a0e9a6f2e053cc90b6e8af00baca43b5296610a65a4"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "sourceSha256": "1b7ff10371bc9e8ccdac687f434aae288294cd59da535db29f5ec370a245d4ac",
+        "pages": 7,
+        "originalOperation": "802ee246dbec88357bc1cc539f8c89396f9940ad77855eaa60ee6c836a6788e0",
+        "observationHash": "ff4c5c69748a8908421798ea66779ec705b36234d43ebd93060880e7adde3904",
+        "originalSettledGenerationStages": [
+          "76304437fd832d1dda1c16708acd7595e824c54d3c0f887b74673800087561c4",
+          "85f67aebaf6b3557a920ffe23cc711802cbfa43d6e4bcb7c18b3539e906f8020"
+        ],
+        "inspectionReceiptSha256": "32bebcc13bd028593b6d3e309af0ec333ff644a6f82ac5d296636fe8f24d7963",
+        "verifiedWindow": [
+          1,
+          7
+        ],
+        "physicalPagesWithPairedQuotes": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "held_distinct_printed_passages",
+        "separatePassages": [
+          {
+            "physicalPage": 6,
+            "organizerExcerptSha256": "eb565dd200bcf55a4419efd0c8c3d67564ce2b141d6022036ac44d6749771b5e",
+            "reviewerExcerptSha256": "98a3b03aa36441d5a9aaae0e36fee5467660e8334524f9042c8b2d6662641a8b"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "sourceSha256": "0e4649f5fe7519e215ec33e2c153b811ffb9243d6fe863478a03e998625b3428",
+        "pages": 84,
+        "originalOperation": "51cc61f246c83fbd20cccdf05f4f657a0e5fd4da24bcd45baf4b05ae05a55c55",
+        "observationHash": "e4ca92fe3c3fdbd5b6f210cb4fc2ad10660d953dd78fd2047fba72b1d67817b5",
+        "originalSettledGenerationStages": [
+          "57a7def9ec3327b0e0b7633bd361165cb715ceab5bc58d4d278a632808de5a56",
+          "bd6010a8ef342b528b1490e083b498b4f1ec73edb15821af8910f82af6f4cb0f"
+        ],
+        "inspectionReceiptSha256": "4329552d294145028558ca5cbf09531607e6009bcf062074cdd57b101ad80c88",
+        "verifiedWindow": [
+          1,
+          12
+        ],
+        "physicalPagesWithPairedQuotes": [
+          3,
+          6,
+          7,
+          12
+        ],
+        "allSupportedByIndependentReviewer": true,
+        "disposition": "held_distinct_printed_passages",
+        "separatePassages": [
+          {
+            "physicalPage": 3,
+            "organizerExcerptSha256": "1489c8567390da98a5d7865baf7a391148ef18e32e20855d8f90a59e06122e17",
+            "reviewerExcerptSha256": "2783e3ebf6d678830adcafe55d37deda1b0267bd9a1fb6252026416e304d607c"
+          },
+          {
+            "physicalPage": 6,
+            "organizerExcerptSha256": "e66da8e1d190b6d04326e873954d2bac31c6743d15b413e9593cb26adf318ff2",
+            "reviewerExcerptSha256": "6928e02e929ebd80da258ba9a306d8f5501e86bc1ed8708b11b4068b93f9e6c5"
+          }
+        ]
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "sourceSha256": "83ce2362f98781358409a7ede25afbdafd7e5268da007116f848da76885f9bf7",
+        "pages": 4,
+        "originalOperation": "ec8b8dd5c42c99cfcc6cae1354123592b287d94f2aedc248b6b259618dfb464d",
+        "observationHash": "489754d082370c2b269c6516d3a7d915bebaa457e57ff2d68c4971f53ba889ae",
+        "originalSettledGenerationStages": [
+          "46cf743ef6113029ad6457075f0d632d6d9ee7c5a60c750d30f3ab697fc9b8c4",
+          "597e1707da73873b1b64f462e1b5cf62e04853c0cbacf6cfcbb7ecbfb018725b"
+        ],
+        "disposition": "inspection_pending"
+      }
+    ]
   }
 }
