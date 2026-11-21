@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-151-image-count",
+  "base": {
+    "artifact": "candidate-149/out",
+    "htmlSha256": "b89fe0738bfbd4a7eb96a4834ba0d9c4ef89a7ae9b10ec1e38aa290d23e7f301",
+    "rawRecordsSha256": "e9274cac184671d171ac0c093acf30eda040fb3efc4cfb232a13812065c34744",
+    "rawArtworkSha256": "a99c16fa8138c8e1095c9a1b40e8a3900924b1c20ec972aaefdc7a787cefbe96",
+    "topics": 73,
+    "choices": 149,
+    "images": 149
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-motion-settings/assets.json",
+      "sha256": "f7dc12be909f80ca53aa8b6c08fbbe981fbf886ef3a1f61f76bd5232f6acf514"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b23356ba7ffaf59e7c68a4ff905a39490a509e9a947202c016ce40fe5e03bb9f",
+    "PROVENANCE.md": "c5dc806852a55727f145db94375d86ce3e8aecabaa8a2ac564dc7c41d684fd42"
+  },
+  "topics": [
+    {
+      "number": 74,
+      "title": "減少動畫：跟隨系統，還是只在這個瀏覽器開啟？",
+      "choices": [
+        {
+          "name": "搜尋設定後選擇三態模式",
+          "note": "Code – OSS 的設定搜尋結果提供 on、off、auto 三個選項。圖中選中預設的 auto，按作業系統設定決定是否減少動畫。 這是 Code – OSS 的行為，育伴港不能強制關閉系統的減少動畫。",
+          "links": [
+            {
+              "label": "Code – OSS 1.107.1：工作台的三個選項與預設",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/browser/workbench.contribution.ts#L664-L675"
+            },
+            {
+              "label": "設定列的下拉選單",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/preferences/browser/settingsTree.ts#L1839-L1862"
+            },
+            {
+              "label": "選單說明與預設標記",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/preferences/browser/settingsTree.ts#L1888-L1924"
+            },
+            {
+              "label": "設定頁的搜尋欄",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/preferences/browser/settingsEditor2.ts#L708-L729"
+            },
+            {
+              "label": "搜尋結果與左側目錄",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/workbench/contrib/preferences/browser/settingsEditor2.ts#L946-L971"
+            },
+            {
+              "label": "自動模式跟隨作業系統",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/src/vs/platform/accessibility/browser/accessibilityService.ts#L113-L120"
+            },
+            {
+              "label": "MIT 程式碼授權",
+              "url": "https://github.com/microsoft/vscode/blob/994fd12f8d3a5aa16f17d42c041e5809167e845a/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-motion-settings/motion-a.png",
+            "sha256": "4ca63f9c385cc676761a66a205d67e3bd06d270594f2082a9089797e62510b88",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Code – OSS 深色桌面設定頁，搜尋 workbench.reduceMotion 後只顯示一項結果。下拉選單由上而下列出 on、off、auto；auto 被選中並標為預設，下方說明會跟隨作業系統設定。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "外觀設定的核取方塊",
+          "note": "在外觀設定內，減少動畫與 GIF 自動播放分開勾選，再用「儲存修改」送出。這是 Mastodon 的表單，不是育伴港目前的瀏覽器開關。",
+          "links": [
+            {
+              "label": "Mastodon v4.4.5：動畫和輔助功能的獨立選項",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/views/settings/preferences/appearance/show.html.haml#L48-L62"
+            },
+            {
+              "label": "同一版本：外觀表單和頁首儲存按鈕",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/views/settings/preferences/appearance/show.html.haml#L1-L7"
+            },
+            {
+              "label": "同一版本：頁底亦提交同一表單",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/views/settings/preferences/appearance/show.html.haml#L89-L99"
+            },
+            {
+              "label": "同一版本：設定頁側欄、標題和內容",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/views/layouts/admin.html.haml#L10-L38"
+            },
+            {
+              "label": "同一版本：偏好設定中的外觀選單",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/config/navigation.rb#L15-L21"
+            },
+            {
+              "label": "同一版本：英文減少動畫選項",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/config/locales/simple_form.en.yml#L245-L249"
+            },
+            {
+              "label": "同一版本：香港繁中外觀章節",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/config/locales/zh-HK.yml#L1003-L1013"
+            },
+            {
+              "label": "同一版本：香港繁中減少動畫選項",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/config/locales/simple_form.zh-HK.yml#L201-L223"
+            },
+            {
+              "label": "同一版本：一般勾選方格樣式",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/javascript/styles/mastodon/forms.scss#L125-L165"
+            },
+            {
+              "label": "同一版本：提交網站偏好設定",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/app/controllers/settings/preferences/base_controller.rb#L3-L18"
+            },
+            {
+              "label": "同一版本：程式版本號",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/lib/mastodon/version.rb#L7-L17"
+            },
+            {
+              "label": "同一版本：原作者及授權聲明",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/README.md#L78-L90"
+            },
+            {
+              "label": "Mastodon 程式授權：AGPL-3.0-or-later（非圖像授權）",
+              "url": "https://github.com/mastodon/mastodon/blob/dc6d8f882528803c06b2a71c23d6c1467880a7e1/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-motion-settings/motion-b.png",
+            "sha256": "51cc17732ecc24ce16b876dd446cce3dc08b001341c0f571ccbaf02e638a1a74",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：深色外觀設定頁左側是偏好設定選單，右側「動畫和輔助功能」一節勾選了「減少動畫效果」，上下是 GIF 自動播放和滑動手勢選項。頁首和頁底各有一個提交同一表單的「儲存修改」按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 74 題 · 減少動畫設定的兩幅自製示意",
+      "input": "draft-motion-settings/DECLARATION.txt",
+      "sha256": "b23356ba7ffaf59e7c68a4ff905a39490a509e9a947202c016ce40fe5e03bb9f"
+    }
+  ]
+}
