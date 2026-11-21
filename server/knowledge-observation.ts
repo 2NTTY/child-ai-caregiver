@@ -1,4 +1,5 @@
 import { knowledgeHash } from "./knowledge-inputs.ts";
+import { damagedPdfText } from "./knowledge-pdf-quotes.ts";
 import { knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import type { ObservedContent, SourceWatchDefinition } from "./knowledge-refresh-types.ts";
@@ -48,6 +49,8 @@ export function checkKnowledgeObservation(document: KnowledgeSourceInput,
     || document.sourcePublishedAt !== observed.document.sourcePublishedAt || document.sourceUpdatedAt !== observed.document.sourceUpdatedAt
     || (document.sourceDateText ?? null) !== observed.document.sourceDateText) throw new Error("knowledge_observation_review_mismatch");
   if (watch.definition.kind === "pdf") {
+    if (document.chunks.some(chunk => !chunk.mediaClip && damagedPdfText.test(chunk.sourceExcerpt)))
+      throw Error("knowledge_pdf_no_reliable_quote");
     const expected = document.extraction, actual = observed.document.extraction;
     if (observed.document.nativeWindowMethod) {
       if (!windowedReview || !actual || actual.complete || !expected?.complete || expected.pageStart !== 1
