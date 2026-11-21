@@ -41,14 +41,15 @@ function namedVideoMaterial(query: string, ranked: KnowledgeEvidence[]) {
   return named.size === 1 ? [...named.values()][0] : undefined;
 }
 
-/** Put the requested title inside the response budget even when similar material names scored higher. */
-function preferRequestedScript(query: string, ranked: KnowledgeEvidence[]) {
+function normalizeScriptTitle(title: string) {
+  return title.normalize('NFKC').toLowerCase().replace(/\s+/gu, '');
+}
+function requestedScriptTitle(query: string) {
   const quoted = [...query.matchAll(/《([^《》]+)》/gu)];
-  if (quoted.length > 1) return ranked;
-  const normalize = (value: string) => value.normalize('NFKC').toLowerCase().replace(/\s+/gu, '');
-  const title = normalize(quoted[0]?.[1] ?? query);
-  const index = ranked.findIndex(row => row.scriptPassage && normalize(row.scriptPassage.title) === title);
-  return index > 0 ? [ranked[index]!, ...ranked.slice(0,index), ...ranked.slice(index+1)] : ranked;
+  return quoted.length > 1 ? null : normalizeScriptTitle(quoted[0]?.[1] ?? query);
+}
+function exactScriptHit(title: string, rows: KnowledgeEvidence[]) {
+  return rows.find(row => row.scriptPassage && normalizeScriptTitle(row.scriptPassage.title) === title);
 }
 
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates"> & { readonly enforcesPersonalLibrarySelection?: boolean }, embeddings: EmbeddingGateway) {
@@ -112,10 +113,23 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           const videoList = requestsVideoList(query);
           const rawCandidates = await budget.wait(() => readCandidates(filter, vector, { query, ...(videoList ? { preferDistinctSources: true } : {}) }));
           const now = Date.now();
-          const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now)
-            && includeLeafletInSearch(query, candidate.url, candidate.extraction));
+          const searchable = (candidate: KnowledgeEvidence) => isKnowledgeEvidenceFresh(candidate, now)
+            && includeLeafletInSearch(query, candidate.url, candidate.extraction);
+          const candidates = rawCandidates.filter(searchable);
           let ranked = rankKnowledge(query, candidates), omittedScripts = 0;
-          if (!videoList) ranked = preferRequestedScript(query, ranked);
+          const title = !videoList && requestedScriptTitle(query);
+          if (title) {
+            let exact = exactScriptHit(title, ranked);
+            const films = ranked.flatMap(row => row.scriptPassage ? [row.scriptPassage.url] : []);
+            // One long film can occupy several of the first six places. Check other eligible materials with the same query vector.
+            if (!exact && filter.purpose === 'read_originals' && new Set(films).size < films.length
+              && (query.includes('《') || !/[。！？!?]\s*\S/u.test(query))) {
+              const distinct = await budget.wait(() => readCandidates(filter, vector, {query,preferDistinctSources:true}));
+              exact = exactScriptHit(title, rankKnowledge(query, distinct.filter(searchable)));
+            }
+            if (exact && ranked[0]?.chunkId !== exact.chunkId)
+              ranked = [exact, ...ranked.filter(row => row.chunkId !== exact.chunkId)].slice(0,6);
+          }
           const anchor = videoList ? namedVideoMaterial(query, ranked) : undefined;
           if (anchor) {
             // Expand only a uniquely named material, through the same family and applicability gates.
