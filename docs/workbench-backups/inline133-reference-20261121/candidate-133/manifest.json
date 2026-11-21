@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-133-image-count",
+  "base": {
+    "artifact": "candidate-131/out",
+    "htmlSha256": "8a705a91195b1c38eebdabb60dffa002b460ad989f653726c9dc11bf5080ac7e",
+    "rawRecordsSha256": "af725b941a31ff14f28f7aec005ceff94da3a1e2e3b80c04a251ec8a97e3137d",
+    "rawArtworkSha256": "1f1b584ac3af84b762fb7533314637635ac1f7388f1b30146046f3caea297cde",
+    "topics": 64,
+    "choices": 131,
+    "images": 131
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-review-resubmission/assets.json",
+      "sha256": "21171ca47ee3d921e08a7d77119510cf2d2c1e52fa470b1cd7243fdd0f96858a"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "53ec5f026e3089e49a52a17516edb0d600dd707a71916b76d481cc8e9ff23c31",
+    "PROVENANCE.md": "a199fe4dc1aee66c2e86908b658aeda041fa3bd99e941a22225aa00a4a5fe6d0"
+  },
+  "topics": [
+    {
+      "number": 65,
+      "title": "已儲存與重新覆核：兩種介面",
+      "choices": [
+        {
+          "name": "已儲存的改動，等候覆核",
+          "note": "這些頁面曾通過覆核；後來的改動已儲存，仍待人工覆核。清單上的版本比較只供查看，不會批准改動。",
+          "links": [
+            {
+              "label": "MediaWiki FlaggedRevs（REL1_43 snapshot）：完整待覆核頁面",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/includes/frontend/specialpages/reports/PendingChanges.php#L30-L73"
+            },
+            {
+              "label": "同一版本：該頁的篩選條件",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/includes/frontend/specialpages/reports/PendingChanges.php#L95-L182"
+            },
+            {
+              "label": "同一版本：待覆核頁面查詢",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/includes/frontend/specialpages/reports/PendingChangesPager.php#L93-L109"
+            },
+            {
+              "label": "同一版本：清單的頁面、覆核、大小與等候時間",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/includes/frontend/specialpages/reports/PendingChangesPager.php#L207-L219"
+            },
+            {
+              "label": "同一版本：打開版本比較",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/includes/frontend/specialpages/reports/PendingChanges.php#L389-L398"
+            },
+            {
+              "label": "同一版本：待覆核頁文字",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/i18n/pendingchanges/en.json#L7-L34"
+            },
+            {
+              "label": "同一版本：版本相容性及授權聲明",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/extension.json#L1-L13"
+            },
+            {
+              "label": "FlaggedRevs 程式授權：GPL-2.0-or-later（非圖像授權）",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-FlaggedRevs/blob/afe4e02273238909dc4d72bbec43ad002d1931de/COPYING"
+            }
+          ],
+          "asset": {
+            "input": "draft-review-resubmission/review-a-pending-pages.png",
+            "sha256": "cdf389ffcde1c3e841f3615c768451239d24704452833d6d5c679449be47e0e9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構文件手冊的完整待覆核頁面，上方顯示篩選條件，下方列出已儲存但未覆核的三項頁面改動、版本比較欄、大小與等候時間。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "舊票留在歷史，新版再覆核",
+          "note": "本例的實質改動不沿用舊票。修訂一的 +1 留在歷史，只是當時的覆核票，不是最終批准；修訂二仍待這位覆核員重新覆核。",
+          "links": [
+            {
+              "label": "Gerrit v3.13.0：單筆改動詳情",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/Documentation/user-review-ui.txt#L9-L32"
+            },
+            {
+              "label": "同一版本：覆核票何時沿用",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/Documentation/config-labels.txt#L15-L34"
+            },
+            {
+              "label": "同一版本：覆核票未沿用時誰需要再覆核",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/Documentation/user-attention-set.txt#L51-L60"
+            },
+            {
+              "label": "同一版本：覆核員的注意標記",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/Documentation/user-review-ui.txt#L119-L130"
+            },
+            {
+              "label": "同一版本：改動的檔案清單",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/polygerrit-ui/app/elements/change/gr-change-view/gr-change-view.ts#L1437-L1472"
+            },
+            {
+              "label": "同一版本：上傳與覆核在變更紀錄顯示",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/Documentation/user-review-ui.txt#L579-L586"
+            },
+            {
+              "label": "同一版本：詳情頁的變更紀錄",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/polygerrit-ui/app/elements/change/gr-change-view/gr-change-view.ts#L1532-L1547"
+            },
+            {
+              "label": "Gerrit 程式授權：Apache-2.0（非圖像授權）",
+              "url": "https://github.com/GerritCodeReview/gerrit/blob/b8869cf21dd43599c921d1c42454e4d93ebff050/COPYING#L1-L5"
+            }
+          ],
+          "asset": {
+            "input": "draft-review-resubmission/review-b-noncarried-vote.png",
+            "sha256": "44cb543896ed0c67a3c0ccd9ea178cf21ce12a43114576337396ae2422d19e03",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構版面專案的完整改動詳情，修訂二的覆核員仍未投票並需要重新覆核；下方歷史紀錄保留修訂一的舊票，不計入新版。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 65 題 · 儲存與重新覆核的兩幅自製合成示意",
+      "input": "draft-review-resubmission/DECLARATION.txt",
+      "sha256": "53ec5f026e3089e49a52a17516edb0d600dd707a71916b76d481cc8e9ff23c31"
+    }
+  ]
+}
