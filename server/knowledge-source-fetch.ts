@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
 import { readLinkedOfficialPages } from './fhs-source-forms.ts';
 import { oralPrint,verifiedOralExcerpts } from './fhs-verified-oral-excerpts.ts';
-import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalOriginal } from './platform-materials.ts';
+import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalEdition, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
 import { extractKnowledgePdf, KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
@@ -147,6 +147,7 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
         if (!/^application\/pdf(?:;|$)/i.test(result.contentType) || result.body.subarray(0, 5).toString("ascii") !== "%PDF-")
           return { status: "failed", reason: "response" };
         if (definition.leafletPage) {
+          if (approvedHash) revision = reviewedExternalEdition(definition.url, approvedHash)?.dateText ?? revision;
           const original = await observeKnowledgeLeaflet(definition, result.body, title!, revision, readMethod!, signal, adapters.pdfReader);
           const landing = definition.leafletPage === definition.url && fhsPdfMediaPages.get(definition.url);
           if (original.status === 'ok' && landing) {

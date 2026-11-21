@@ -11,6 +11,7 @@ import {
 import { agentStopMessage } from '../../../src/shared/agent-stop-message';
 import { failedChatReply } from '../components/chat/failed-reply';
 import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../components/chat/chat-turn-status';
+import { chatDraftIsSubmitted } from '../../../src/client/chat-controller';
 import { ChatTurnStatusLine } from '../components/chat/ChatTurnStatusLine';
 import { CHILD_PROFILES_CHAT_TEXT, matchesLegacyDirectoryQuestion } from '../../../src/shared/chat-workspace-view';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +59,7 @@ export default function ChatPage() {
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { messageId: notificationMessageId } = useLocalSearchParams<{ messageId?: string }>();
-  const { model, actions, owner, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+  const { model, actions, owner, scopeKey, sharedChild, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const { height: viewportHeight, fontScale = 1 } = useWindowDimensions();
@@ -111,8 +112,8 @@ function ChatContents({ compact }: { compact: boolean }) {
   usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", voiceUpload.busy || voiceUpload.unknown || fileUpload.busy || fileUpload.unknown || photoUpload.busy || photoUpload.unknown, "child", attachmentLeaveCopy);
   const activity = chatReplyActivity(chat);
   const { replyRunning, activeReplyId, stopPending } = activity;
-  const submittedDraft = !!draft?.savedUserMessageId && (phase === "replying" || phase === "reply_failed");
-  const composerText = submittedDraft ? draft.nextText ?? "" : chatDraft;
+  const submittedDraft = chatDraftIsSubmitted(chat, draft);
+  const composerText = submittedDraft ? draft?.nextText ?? "" : chatDraft;
   const canSend = !replyRunning && !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
     && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file", "photo"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file"||v.kind==="photo")) && chatDraft.length <= 10_000;
   function send() {
@@ -199,13 +200,13 @@ function ChatContents({ compact }: { compact: boolean }) {
     savedFailure && currentReply?.inReplyTo ? { questionId: currentReply.inReplyTo, reason: savedFailure.reason } : undefined,
     chatWritesAllowed) : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
-    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在保存照片…</Text>:null}
+    {photoUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳照片…</Text>:null}
     {photoUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{photoUpload.notice}</Text>:null}
     {photoUpload.unknown?<AppButton label="查核原照片上傳" disabled={photoUpload.busy||!chat.online} onPress={checkPhotoUpload}/>:null}
-    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
+    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳檔案…</Text>:null}
     {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
     {fileUpload.unknown?<AppButton label="查核原檔案上傳" disabled={fileUpload.busy||!chat.online} onPress={checkFileUpload}/>:null}
-    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
+    {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳錄音…</Text>:null}
     {voiceUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{voiceUpload.notice}</Text>:null}
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
     {chat.available === false && !turnStatus && !savedFailure ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
@@ -232,7 +233,12 @@ function ChatContents({ compact }: { compact: boolean }) {
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
 
   </BackgroundSurface> : null;
-  const timelineFooter = feedback ? <View style={styles.feedback}>{feedback}</View> : null;
+  const outgoing = childScopedChat && scopeKey && !sharedChild?.target ? chat.outgoing : undefined;
+  const timelineFooter = <View style={styles.feedback}>
+    {outgoing && <ChatMessage testID="chat-outgoing" message={{ id: "outgoing", role: "user",
+      text: [outgoing.attachmentLabel, outgoing.text].filter(Boolean).join("\n") }} />}
+    {feedback}
+  </View>;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
     && !chat.loadingOlder && !chat.nextCursor && !chat.error;
   const welcome = confirmedEmptyChat && !busy && !agentAttachments.length && phase === 'draft';
@@ -362,7 +368,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       icon={discussNext ? 'check' : 'account-group-outline'} compact disabled={busy || !chat.online || !chatWritesAllowed}
       onPress={() => setDiscussNext(value => !value)} />}
       enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft" && !replyRunning} compact={compact} draft={composerText}
-      allowTyping={childScopedChat && pathname === "/chat" && (replyRunning || submittedDraft) && chatWritesAllowed && chat.busy !== "save" && (submittedDraft || phase === "draft")}
+      allowTyping={childScopedChat && pathname === "/chat" && (!!outgoing || chatWritesAllowed && (replyRunning || submittedDraft) && (submittedDraft || phase === "draft"))}
       onStop={childScopedChat && replyRunning ? () => { void chatController.cancelReply(); } : undefined}
       queueAction={childScopedChat && chatWritesAllowed && chat.online && !stopPending && phase === "replying" && activeReplyId && draft?.savedUserMessageId === activeReplyId && !!composerText.trim() && composerText.length <= 10_000
         ? { queued: chat.queuedText?.afterMessageId === activeReplyId, press: () => chat.queuedText?.afterMessageId === activeReplyId ? chatController.unqueueNextText() : chatController.queueNextText() } : undefined}

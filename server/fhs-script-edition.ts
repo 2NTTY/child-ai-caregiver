@@ -24,6 +24,32 @@ export function scriptEditionWorkId(pin: ScriptEdition) {
   return knowledgeReviewHash(['fhs-official-script-edition/1', pin.sourceId, pin.observationHash]);
 }
 
+const heldSchema = z.strictObject({ sourceId:schema.shape.sourceId, observationHash:digest, operationFingerprint:digest,
+  reason:z.enum(['knowledge_age_uncertain','knowledge_age_one_sided','model_output_limit','review_hold']), candidateVersionHash:digest.nullable() });
+const revisions = new Map(z.array(heldSchema).parse(JSON.parse(readFileSync(new URL('../knowledge/fhs-held-script-editions.json', import.meta.url),'utf8')))
+  .map(pin => [pin.sourceId,Object.freeze(pin)]));
+export function heldScriptRevision(pin: ScriptEdition) {
+  const row = revisions.get(pin.sourceId);
+  if (!row || approvedScriptEdition(pin.sourceId) !== pin || row.observationHash !== pin.observationHash
+    || row.operationFingerprint !== scriptEditionWorkId(pin)) throw Error('knowledge_script_revision_not_commissioned');
+  return row;
+}
+export function scriptRevisionWorkId(pin: ScriptEdition) {
+  return knowledgeReviewHash(['fhs-official-script-reading/1',heldScriptRevision(pin)]);
+}
+export function verifyHeldScript(pin: ScriptEdition, original: {
+  receipt:unknown; lease:unknown; result?:{status:string;code?:string|null;observationHash?:string|null}|null;
+  prepared?:{versionHash:string;review:{decision:string;notes:readonly string[]}}|null;
+} | null) {
+  const row = heldScriptRevision(pin);
+  if (!original || original.receipt || original.lease || original.result?.status !== 'candidate_held'
+    || original.result.code !== row.reason || original.result.observationHash !== pin.observationHash
+    || (original.prepared?.versionHash ?? null) !== row.candidateVersionHash
+    || (row.reason === 'review_hold' ? original.prepared?.review.decision !== 'hold_candidate' : Boolean(original.prepared)))
+    throw Error('knowledge_script_revision_original_changed');
+  return { priorWork:row.operationFingerprint,reason:row.reason,notes:original.prepared?.review.notes ?? [] };
+}
+
 export function assertScriptObservation(pin: ScriptEdition, definition: SourceWatchDefinition, fetched: SourceFetchResult | null) {
   if (approved.get(definition.id) !== pin || definition.kind !== 'page' || definition.audience !== 'public_noncommercial'
     || fetched?.status !== 'ok' || fetched.items.length !== 1 || !fetched.items[0]?.scripts?.length

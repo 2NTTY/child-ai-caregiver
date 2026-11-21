@@ -5,6 +5,7 @@ export type { TimelyEventKind, TimelyEventLifecycle, TimelyEventStatus };
 export const KNOWLEDGE_EMBEDDING = Object.freeze({ model: "gemini-embedding-001", dimensions: 1024, pipeline: "section-v1" });
 export type KnowledgeClass = "official_guidance" | "recent_information";
 export interface KnowledgeApplicability {
+  use?: 'original_lookup';
   region: string;
   ageBasis: "actual" | "corrected" | "any";
   minAgeMonths: number | null;

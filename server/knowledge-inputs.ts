@@ -25,7 +25,7 @@ export const originalOrganizerApplicability = z.strictObject({
 });
 // An official source can extend beyond the families' 0–10 query range, e.g. a 0–18 growth chart.
 // Keep the historical organizer grammar stable so its sealed requests can be resumed.
-const applicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable() });
+const applicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable(), use:z.literal('original_lookup').optional() });
 const publicSourceUrl = z.url().refine(value => {
   const url = new URL(value);
   return url.protocol === "https:" && !url.username && !url.password && !url.port

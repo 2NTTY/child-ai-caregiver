@@ -29,7 +29,8 @@ def commands(args, manifest):
     if args.action == "script":
         if args.reads or not any(row["sourceId"] == args.source and row["observationHash"] == args.observation for row in manifest):
             raise ValueError("Unassigned script edition")
-        verb = "publish-script-edition" if args.mode == "run" else "inspect-script-edition"
+        verb = {"run":"publish-script-edition", "inspect":"inspect-script-edition",
+                "revise":"revise-script-edition", "inspect-revision":"inspect-script-revision"}[args.mode]
         yield ["scripts/fhs-initial-campaign.mjs", verb, args.source, args.observation]
         return
     groups = {group["id"]: group["sources"] for group in manifest["lanes"]}
@@ -197,7 +198,7 @@ def main():
     lane.add_argument("source", nargs="?")
     sub.add_parser("accounting")
     script = sub.add_parser("script")
-    script.add_argument("mode", choices=["inspect", "run"])
+    script.add_argument("mode", choices=["inspect", "run", "revise", "inspect-revision"])
     script.add_argument("source")
     script.add_argument("observation")
     sub.add_parser("inspect").add_argument("source")

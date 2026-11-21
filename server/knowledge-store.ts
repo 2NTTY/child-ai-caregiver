@@ -220,7 +220,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         lastSuccessfulCheckAt: row.last_successful_check_at?.toISOString() ?? null, usageScope: row.usage_scope,
         reviewState: "reviewed", extraction: row.source_document.extraction,
         originalCoverage: row.document.originalText && !row.document.originalKind ? "chunk_original" : "excerpt_only",
-        applicabilityStatus: row.document.applicability.ageBasis === "any" ? "applicable"
+        applicabilityStatus: row.document.applicability.use === 'original_lookup' ? 'requires_clarification' : row.document.applicability.ageBasis === "any" ? "applicable"
           : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable",
         distance: row.distance, ...(row.rank_score === null ? {} : { rankScore: Number(row.rank_score) }) }));
     },

@@ -53,9 +53,9 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
     return () => observer.disconnect();
   }, []);
   return <><style>{`.chat-composer-input::placeholder { color: ${chatColors.secondary}; opacity: 1; }`}</style>
-    <textarea autoFocus={props.autoFocus} className="chat-composer-input" ref={input} aria-label="撰寫對話問題" placeholder="補充情況，或加入附件…"
+    <textarea autoFocus={props.autoFocus} className="chat-composer-input" ref={input} aria-label="撰寫對話問題" placeholder={props.placeholder ?? "補充情況，或加入附件…"}
     rows={1} disabled={props.disabled} value={props.value} onChange={event => props.onChangeText(event.currentTarget.value)}
-    onFocus={props.onFocus} onBlur={() => { lastEscape.current = null; props.onBlur(); }} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
+    onFocus={props.onFocus} onBlur={() => { lastEscape.current = null; props.onBlur?.(); }} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
     onPaste={event => {
       const files = Array.from(event.clipboardData.files);
       if (files.length) { event.preventDefault(); void addFiles(files); }
