@@ -19,6 +19,7 @@ import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type Ret
 import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
 import { firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
 import { campaign } from './knowledge-campaign-budget.ts';
+import { recordedScriptReviewStage } from './fhs-script-edition.ts';
 import { parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { backgroundKnowledgeReviewBindingSchema } from "../src/shared/background-knowledge-maintenance.ts";
 
@@ -100,6 +101,23 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
+    /** Read the exact model stage of a commissioned public script with a settled, unsuccessful review. */
+    async inspectScriptReview(raw: BackgroundKnowledgeRunRequest) {
+      const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      const pin = recordedScriptReviewStage(request.watchId);
+      if (!pin || request.operationFingerprint !== pin.operationFingerprint || request.publishMode !== 'live')
+        reject('knowledge_script_review_stage_binding');
+      const root = ref('work', pin.operationFingerprint), stage = ref('model', pin.operationFingerprint, pin.attemptKey);
+      return database.runTransaction(async tx => {
+        const [work, model] = await tx.getAll(root, stage);
+        if (!work.exists || !model.exists) reject('knowledge_script_review_stage_missing');
+        const old = open(root, work.data(), workSchema), saved = open(stage, model.data(), stageSchema);
+        if (knowledgeReviewHash(old.request) !== knowledgeReviewHash(request) || old.lease || old.receipt || old.preparedHash
+          || old.result?.status !== 'candidate_held' || old.result.code !== pin.code || old.result.observationHash !== pin.observationHash
+          || old.budget.modelCalls !== 1 || saved.requestHash !== pin.requestHash) reject('knowledge_script_review_stage_binding');
+        return { state: saved.state, text: saved.text };
+      }, { readOnly: true });
+    },
     /** A terminal independent print reading remains inspectable after its lease expires. */
     async inspectPrintedStage(raw: BackgroundKnowledgeRunRequest, input: {system:string; user:string; attemptKey:string}) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);
