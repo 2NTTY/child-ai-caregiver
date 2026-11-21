@@ -220,6 +220,12 @@
         "originalSchemaBytes": 3309,
         "expandedOriginalSchemaBytes": 18174,
         "originalFirstAttachmentBytes": 5320430,
+        "packet": {
+          "indexSha256": "cc0dd622c617bb9a4cda62f9eb46b56c8d142cd9db2365ee1611cfb0193818f3",
+          "archiveSha256": "a26283a7ef460e886f4ad694f661b3d133fd9c26057e2d7954659873e0b234c8",
+          "bytes": 11877769,
+          "records": 9
+        },
         "priorRequiredGenerationCalls": 2,
         "newRequiredGenerationCalls": 4,
         "windows": [
@@ -258,6 +264,12 @@
         "originalSchemaBytes": 3517,
         "expandedOriginalSchemaBytes": 21768,
         "originalFirstAttachmentBytes": 882159,
+        "packet": {
+          "indexSha256": "b52db319d3ea69268309f2e3742ea4c413e9afd80b2f61fd2e1fe559fcfe2716",
+          "archiveSha256": "ef629e71c3462f6f77cba267d4f6445ab1c5b37ae8fee08283207de528e2afef",
+          "bytes": 1898915,
+          "records": 9
+        },
         "priorRequiredGenerationCalls": 2,
         "newRequiredGenerationCalls": 4,
         "windows": [
@@ -296,6 +308,12 @@
         "originalSchemaBytes": 3517,
         "expandedOriginalSchemaBytes": 21768,
         "originalFirstAttachmentBytes": 7837614,
+        "packet": {
+          "indexSha256": "3034c17e57c019f121b14e989b62c963afa7edbab062c17f4fb1791a33f77bf9",
+          "archiveSha256": "37efd23b9908cf18313c50e8da6164589ad52d3493de8d4a7d44291fb5e1fc2c",
+          "bytes": 16405120,
+          "records": 9
+        },
         "priorRequiredGenerationCalls": 2,
         "newRequiredGenerationCalls": 4,
         "windows": [
@@ -334,6 +352,12 @@
         "originalSchemaBytes": 3725,
         "expandedOriginalSchemaBytes": 25362,
         "originalFirstAttachmentBytes": 4926570,
+        "packet": {
+          "indexSha256": "b40110077a47ac492ad55842dd40f3675ee6186d4e06767d4ed51edff3ed857d",
+          "archiveSha256": "a0ef73e5bbcb0ae99ac3d09042f7fd8dbfb683397e5bc977eb20967b4fe08790",
+          "bytes": 13286124,
+          "records": 12
+        },
         "priorRequiredGenerationCalls": 4,
         "newRequiredGenerationCalls": 4,
         "windows": [
