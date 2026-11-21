@@ -7,7 +7,7 @@ export type KnowledgeClass = "official_guidance" | "recent_information";
 export interface KnowledgeApplicability {
   use?: 'original_lookup';
   region: string;
-  ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed";
+  ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed" | "per_instruction";
   publisherAudiences?: string[];
   ageExamples?: import('./knowledge-age-example.ts').KnowledgeAgeExample[];
   minAgeMonths: number | null;

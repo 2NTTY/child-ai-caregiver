@@ -2,10 +2,22 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
+import { normalizeRecordedComparison } from '../server/fhs-script-comparison-stage.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+
+test('replay removes only repeated structural labels and preserves the independent assessment', () => {
+  const user = JSON.stringify({sourceComparison:{facts:{added:'new', absent:'removed', conflict:'unchanged', edited:null}}});
+  const output = {decision:'hold', decisionReason:'Check the leaflet.', checks:{age:'Retain the printed upper bound.'},
+    changes:{added:{meaning:'new',explanation:'New film.'}, absent:{meaning:'removed',explanation:'Former film.'},
+      conflict:{meaning:'changed',explanation:'Reviewer disputes the comparison.'},
+      edited:{meaning:'unchanged',explanation:'Same scope.'}}};
+  const expected = {...output,changes:{...output.changes,added:{explanation:'New film.'},absent:{explanation:'Former film.'}}};
+  assert.deepEqual(JSON.parse(normalizeRecordedComparison(JSON.stringify(output), user)), expected);
+  assert.equal(normalizeRecordedComparison(JSON.stringify(expected), user), JSON.stringify(expected));
+});
 
 test('a terminal public review exposes only the stage bound to its work and observation', async () => {
   const { database, records } = firestoreDomainFixture();
@@ -31,4 +43,6 @@ test('a terminal public review exposes only the stage bound to its work and obse
   store('work','',{...root,result:{...result,observationHash:'b'.repeat(64)}});
   await assert.rejects(work.inspectScriptReview(request),/knowledge_script_review_stage_binding/u);
   await assert.rejects(work.inspectScriptReview({...request,watchId:'fhs-20000'}),/knowledge_script_review_stage_binding/u);
+  await assert.rejects(work.inspectCommunicationComparison(request,{system:'another review', user:'{}', attemptKey:pin.attemptKey}),
+    /knowledge_script_review_stage_binding/u);
 });

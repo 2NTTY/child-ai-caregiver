@@ -32,5 +32,8 @@ export const printedAge = z.strictObject({
 export const knowledgeAgeExample = z.strictObject({
   age: printedAge, quote: z.string().min(1).max(600), start: z.int().nonnegative().max(3999),
   paragraph: z.int().positive().optional(),
-});
+  procedure:z.strictObject({relation:z.enum(['milestone','deadline_before','upper_group','lower_group']),months:z.int().nonnegative().max(216)}).optional(),
+}).refine(item=>!item.procedure || item.paragraph !== undefined && item.age.values.length===1
+  && item.procedure.months===item.age.values[0]!*(item.age.unit==='years'?12:1)
+  && ({milestone:'age',deadline_before:'before',upper_group:'upper',lower_group:'lower'} as const)[item.procedure.relation]===item.age.form);
 export type KnowledgeAgeExample = z.infer<typeof knowledgeAgeExample>;

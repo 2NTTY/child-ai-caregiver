@@ -27,11 +27,14 @@ export const originalOrganizerApplicability = z.strictObject({
 // An official source can extend beyond the families' 0–10 query range, e.g. a 0–18 growth chart.
 // Keep the historical organizer grammar stable so its sealed requests can be resumed.
 const establishedApplicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable(), use:z.literal('original_lookup').optional() });
-const applicability = z.strictObject({...establishedApplicability.shape,ageBasis:z.enum(['actual','corrected','any','publisher','unconfirmed']),
+const applicability = z.strictObject({...establishedApplicability.shape,ageBasis:z.enum(['actual','corrected','any','publisher','unconfirmed','per_instruction']),
   publisherAudiences:z.array(text(240)).min(1).max(8).optional(),
   ageExamples:z.array(knowledgeAgeExample).min(1).max(32).optional()}).superRefine((value,ctx)=>{
   const {publisherAudiences,ageExamples,...scope}=value;
-  const valid=scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
+  const valid=scope.ageBasis==='per_instruction'
+    ? scope.use==='original_lookup' && scope.minAgeMonths===null && scope.maxAgeMonths===null && scope.maxAgeMonthsExclusive===undefined
+      && Boolean(ageExamples?.length && ageExamples.every(e=>e.procedure))
+    : ageExamples?.some(e=>e.procedure) ? false : scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
     ? scope.use==='original_lookup' && scope.minAgeMonths===null && (scope.maxAgeMonths===null ? scope.maxAgeMonthsExclusive===undefined
       : scope.ageBasis==='publisher' && scope.maxAgeMonthsExclusive===true)
       && (scope.ageBasis==='publisher')===Boolean(publisherAudiences)
@@ -85,7 +88,7 @@ const sourceSchema = z.strictObject({
         || example.paragraph !== undefined && example.quote.includes('\n'))
         ctx.addIssue({code:'custom',message:'Printed age example must identify an exact original passage'});
     }
-    if (chunk.applicability.ageBasis === 'publisher' || chunk.applicability.ageBasis === 'unconfirmed') {
+    if (chunk.applicability.ageBasis === 'publisher' || chunk.applicability.ageBasis === 'unconfirmed' || chunk.applicability.ageBasis === 'per_instruction') {
       const audiences=chunk.applicability.publisherAudiences??[];
       if(chunk.treatment?.kind!=='overview' || audiences.some(audience=>!value.title.includes(audience) &&
         !value.chunks.some(c=>(c.originalText??c.sourceExcerpt).includes(audience) || c.scriptPassage?.title.includes(audience))))

@@ -4,6 +4,7 @@ import { printedAge, type KnowledgeAgeExample } from '../src/shared/knowledge-ag
 export const ageExampleRegistration = z.strictObject({
   scope: z.union([z.strictObject({unitKey:z.string().min(1)}),z.strictObject({scriptTitle:z.string().min(1)})]),
   age: printedAge, quote: z.string().min(1).max(600).optional(),
+  procedure:z.enum(['milestone','deadline_before','upper_group','lower_group']).optional(),
 });
 export type AgeExampleRegistration = z.infer<typeof ageExampleRegistration>;
 type Unit = {id:string; originalText:string; scriptPassage?:{title:string;firstParagraph?:number}};
@@ -26,7 +27,8 @@ export function bindPublisherAgeExamples(units: readonly Unit[], registrations: 
         const paragraph = unit.scriptPassage?.firstParagraph === undefined ? undefined
           : unit.scriptPassage.firstParagraph + original.slice(0,start).split('\n').length - 1;
         const list = result.get(unit.id) ?? [];
-        list.push({age:registration.age,quote,start,...(paragraph !== undefined ? {paragraph} : {})});
+        const procedure=registration.procedure?{relation:registration.procedure,months:registration.age.values[0]!*(registration.age.unit==='years'?12:1)}:undefined;
+        list.push({age:registration.age,quote,start,...(paragraph !== undefined ? {paragraph} : {}),...(procedure?{procedure}:{})});
         result.set(unit.id,list);
         matches++;
       }

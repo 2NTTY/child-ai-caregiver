@@ -326,6 +326,11 @@ test('reference links use the exact existing URL and reveal the real URL after o
   const scoped=referenceCard({...source,applicability:{...source.applicability,ageBasis:'publisher',publisherAudiences:['學前兒童'],use:'original_lookup'}});
   button(scoped.tree,'查看來源資料').props.onPress();rerender(scoped);
   assert.deepEqual(metadata(scoped.tree,'原文對象'),['學前兒童']);
+  const procedure = referenceCard({...source,applicability:{...source.applicability,ageBasis:'per_instruction',use:'original_lookup',
+    ageExamples:[{quote:'一歲以下閱讀甲組原句。'}]}});
+  button(procedure.tree,'查看來源資料').props.onPress(); rerender(procedure);
+  assert.deepEqual(metadata(procedure.tree,'操作分齡'),['一歲以下閱讀甲組原句。']);
+  assert.deepEqual(metadata(procedure.tree,'月齡範圍'),[]);
   assert.match(content(view.tree), /限內部非商業參考/); assert.match(content(view.tree), /Exact applicability condition/);
   linkReject = false;
   const absent = referenceCard({ ...source, url: '' });
