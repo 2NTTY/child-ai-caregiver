@@ -70,8 +70,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **11 月 21 日家長實際使用後的修訂。** 三線沿原工作包接續，正式使用的驗收如下。
 
 - A 核對家長在已收回答按「討論」時觸及模型次數上限的原操作。按實際帳戶政策驗一題能看見三方交流和主答，再問普通問題。遇到預算不足時保留已交付的發言，給一個可行的下一步。
-  - 11 月 21 日候選 `6997564f` 已用同一個四次上限離線驗三席、主答及獨立核對。本機 Edge 真模型曾交付一席，收合重開零增量；日額用盡後，最終候選在派送前提供下一步。正式原收據、最終版三席及後續普通回覆仍待原測試帳戶核對。[分環境收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json)
-- B 以 assistant-ui 的 [Base demo](https://www.assistant-ui.com/demos/base) 及 [Floating Modal Chat](https://www.assistant-ui.com/examples/modal) 作全頁與頁內聊天的視覺基準。共用輸入列、圖示按鈕及送出／停止位置。討論附在原回答，失敗只提示一次。角色在桌面和窄屏均清楚可辨，點身體能留在待辦頁提問。驗收從一筆待辦問「這個」、讀答、接回主頁、展開討論及恢復輸入，以實際操作和畫面核對。
+- B 以 assistant-ui 的 [Base demo](https://www.assistant-ui.com/demos/base) 及 [Floating Modal Chat](https://www.assistant-ui.com/examples/modal) 作全頁與頁內聊天的視覺基準。共用輸入列、圖示按鈕及送出／停止位置。討論附在原回答，失敗只提示一次。角色在桌面和窄屏均清楚可辨，點身體能留在待辦頁提問。驗收從一筆待辦問「這個」、讀答、接回主頁、展開討論及恢復輸入，以實際操作和畫面核對。本地桌面及窄屏已用青綠、暖黃版面走通問答、討論、來源及失敗恢復。普通回覆用本地 Agent 核對，完整畫面流程使用受控回應。[動圖及驗收邊界](artifacts/verification/ASSISTANT_CONVERSATION_20261121/verification.md)
 - C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。既有單項選擇和固定版本沿用。
 
 C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 [149 份相異 PDF、1,800 頁](knowledge/fhs-child-inventory.json)。3 個指定原網址回傳 404。11 月 20 日晚補核的專題目錄、公開帖文及其一頁附件只列連結。該附件未列入[原報價](artifacts/verification/FHS_CHILD_CATALOG_ESTIMATE_20261120.json)，本批新增模型成本為零。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
