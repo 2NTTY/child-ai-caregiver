@@ -732,6 +732,28 @@ test('an exact film title remains in the returned results when related materials
   assert.equal((answer.data as any).result.chunks[0].scriptPassage.title,title);
 });
 
+test('a long transcript cannot crowd an exact short-film title out of original lookup', async t => {
+  const budget = new AgentBudget(); t.after(() => budget.close());
+  const title = '親子溝通 ( 1 至 4 個月 )';
+  const variants = Array.from({length:6},(_,i) => mockChunk('77777777-8888-4999-8aaa-11111111111'+i,{
+    section:'親子溝通',rankScore:10-i,distance:null,scriptPassage:{title:'親子溝通完整版',
+      url:'https://www.fhs.gov.hk/tc_chi/mulit_med/000029.html#transcript',firstParagraph:i+1,lastParagraph:i+1}}));
+  const exact = mockChunk('77777777-8888-4999-8aaa-111111111117',{section:title,rankScore:1,distance:null,
+    scriptPassage:{title,url:'https://www.fhs.gov.hk/tc_chi/mulit_med/000024.html#transcript',firstParagraph:1,lastParagraph:10}});
+  const selections: boolean[] = [];
+  const tools = createProductAgentTools({authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
+    memory:{context:async()=>emptyMemoryContext()} as any,tasks:{} as any,store:{} as any,
+    knowledge:createKnowledgeRetriever({async candidates(filter,_vector,selection) {
+      assert.equal(filter.purpose,'read_originals'); assert.equal(selection?.libraryUserId,scope.userId);
+      selections.push(Boolean(selection?.preferDistinctSources));
+      return selection?.preferDistinctSources ? [variants[0]!,exact] : variants;
+    }},fakeEmbeddingGateway())});
+  const tool=tools.tools.find(tool=>tool.name==='find_official_material')!;
+  const answer=await tool.execute({query:title},{callId:'separate-films'} as any);
+  assert.deepEqual(selections,[false,true]);
+  assert.equal((answer.data as any).result.chunks[0].chunkId,exact.chunkId);
+});
+
 test("long documents, tables and exception conditions maintain end-to-end traceability across chunks (REQ-001 §7 Line 5)", async (t) => {
   const gateway = fakeEmbeddingGateway();
   const anchorChunkId = "77777777-8888-4999-8aaa-111111111111";
