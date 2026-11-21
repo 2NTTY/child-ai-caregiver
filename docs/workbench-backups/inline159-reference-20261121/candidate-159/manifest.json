@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-159-image-count",
+  "base": {
+    "artifact": "candidate-157/out",
+    "htmlSha256": "75e8cd1c85b863d1c3a9840215259aedd75861aa91a123adfcc5e43527fe7f57",
+    "rawRecordsSha256": "5b4d44e234d4c7a20ff18b4c70849e0ab1693fb20a94b3d6f007a75084ea2d43",
+    "rawArtworkSha256": "cc9782cd2968c124a9a593b884910b77fc5a30bddbec9bae2fed2f0426518fbb",
+    "topics": 77,
+    "choices": 157,
+    "images": 157
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-withheld-report/assets.json",
+      "sha256": "bd71f7a2285c53512a0823ad625b42547b557d8c88c0f42712690f5e5490797f"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "66e6e0ffbe6d5caff5de181b091347e8bc67cff509aeea24e8a01cd6c22988c8",
+    "PROVENANCE.md": "613a7453b4873d7c58e6a8926458f52fc5fd1923bf17141a801cf7fe00aa872f"
+  },
+  "topics": [
+    {
+      "number": 78,
+      "title": "歷史報告仍列在索引，來源失效後不顯示正文",
+      "choices": [
+        {
+          "name": "保留修訂時間，停用正文連結",
+          "note": "修訂正文被隱藏後，該列與時間仍留在紀錄，日期不再連至正文，也不能選來比較。這個例子只隱藏正文，編輯者和編輯摘要仍可見。",
+          "links": [
+            {
+              "label": "MediaWiki 1.44.1：整頁修訂紀錄及導覽",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/HistoryAction.php#L302-L338"
+            },
+            {
+              "label": "同版：保留使用者、大小及編輯摘要",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/pagers/HistoryPager.php#L449-L477"
+            },
+            {
+              "label": "同版：不可查看正文時，日期及比較連結的處理",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/pagers/HistoryPager.php#L545-L587"
+            },
+            {
+              "label": "同版：不可查看的修訂不供勾選比較",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/actions/pagers/HistoryPager.php#L603-L640"
+            },
+            {
+              "label": "同版：保留有樣式的日期，但不連至正文",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/recentchanges/ChangesList.php#L504-L533"
+            },
+            {
+              "label": "同版：正文不可見時的日期刪除線樣式",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/resources/src/mediawiki.interface.helpers.styles/linker.styles.less#L62-L79"
+            },
+            {
+              "label": "同版：無權讀取時不提供修訂正文",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/includes/page/Article.php#L1671-L1698"
+            },
+            {
+              "label": "MediaWiki 程式碼授權：GPL-2.0-or-later",
+              "url": "https://github.com/wikimedia/mediawiki/blob/02f60e14ba59bfe6d4533054d7951887bc5f3702/COPYING"
+            }
+          ],
+          "asset": {
+            "input": "draft-withheld-report/withheld-report-a.png",
+            "sha256": "4f41fbd8489d0716499c3b3a77bee4416d6de0bd3ee3b6c4a10456679cf314eb",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "MediaWiki 的非官方「海濱展板導覽」修訂紀錄示例。三筆同日修訂中，第二筆 15:10 的日期是灰色刪除線文字，旁邊的比較選項不可選；上一筆和下一筆日期仍為藍色連結。第二筆的虛構編輯者及摘要仍顯示。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "留下撤回原因與書目資料，不顯示正文",
+          "note": "已撤回的這一版仍保留標題、原因（如有）及書目資料，窄欄資料卡取代正文預覽。頁首的通用下載圖示不代表撤回檔案可下載。",
+          "links": [
+            {
+              "label": "OSF Angular 26.19.0：撤回後仍保留標題",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/pages/preprint-details/preprint-details.component.html#L1-L22"
+            },
+            {
+              "label": "同版：撤回後以窄欄資料卡取代正文預覽",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/pages/preprint-details/preprint-details.component.html#L96-L133"
+            },
+            {
+              "label": "同版：撤回原因、作者、摘要與日期",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/components/preprint-details/preprint-tombstone/preprint-tombstone.component.html#L1-L52"
+            },
+            {
+              "label": "同版：保留版本選擇及 DOI 欄位",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/components/preprint-details/preprint-doi-section/preprint-doi-section.component.html#L1-L32"
+            },
+            {
+              "label": "同版：公開讀者不會看到管理用狀態橫幅",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/pages/preprint-details/preprint-details.component.ts#L275-L293"
+            },
+            {
+              "label": "同版：頁首仍沿用通用下載及分享圖示",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/features/preprints/components/preprint-details/share-and-download/share-and-download.component.html#L1-L25"
+            },
+            {
+              "label": "同版：桌面側欄、頁首及頁尾",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/src/app/core/components/layout/layout.component.html#L1-L21"
+            },
+            {
+              "label": "同版：正式版本號",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/package.json#L1-L5"
+            },
+            {
+              "label": "OSF Angular 程式授權：Apache-2.0（非圖像授權）",
+              "url": "https://github.com/CenterForOpenScience/angular-osf/blob/4e6fe442a807a3cfb683dfff76d04044be69bc67/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-withheld-report/withheld-report-b.png",
+            "sha256": "f190c93d9bf080088ec1472e5e78443dc68a49698af8b8781f64ac577375d516",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 OSF 桌面示例：「社區展板排版研究」標題仍在。左側窄欄資料卡保留撤回原因、作者、摘要、版本及日期；右側留白，沒有正文或 PDF。頁首仍有通用下載及分享圖示，但不表示撤回檔案可下載。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 78 題 · 保留歷史索引、隱藏正文的兩幅自製示意",
+      "input": "draft-withheld-report/DECLARATION.txt",
+      "sha256": "66e6e0ffbe6d5caff5de181b091347e8bc67cff509aeea24e8a01cd6c22988c8"
+    }
+  ]
+}
