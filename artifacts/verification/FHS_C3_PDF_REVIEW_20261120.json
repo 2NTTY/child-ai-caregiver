@@ -6431,5 +6431,1429 @@
     "priorLongReadback": "The 36-page production receipt and 112-/192-page offline readbacks recorded before the font map release used the previous parser. Opening those indexes with the current worker fails fhs_pdf_index_integrity.",
     "paidShortPassagesVerified": 20,
     "derivativePdfWindowsRecreated": 29
+  },
+  "restoredEditionAndInitialScope": {
+    "sourceReadTime": "2026-11-21T13:59:59.678699Z",
+    "originalSourceCount": 116,
+    "originalPhysicalPages": 1471,
+    "activeSourceCount": 35,
+    "activePhysicalPages": 158,
+    "unservedPdfSourceCount": 81,
+    "unservedPdfPhysicalPages": 1313,
+    "longOriginals": [
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "pages": 24,
+        "disposition": "reserved_unknown",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "pages": 24,
+        "disposition": "rejected_504",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "pages": 40,
+        "disposition": "current_publisher_web",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "pages": 96,
+        "disposition": "age",
+        "webRelation": "current_web_unpublished"
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "pages": 36,
+        "disposition": "current_publisher_web",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "pages": 84,
+        "disposition": "age",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "pages": 84,
+        "disposition": "conflicting_passages",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "pages": 192,
+        "disposition": "publisher_chapters",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "pages": 112,
+        "disposition": "publisher_chapters",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "pages": 80,
+        "disposition": "publisher_chapters",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "pages": 28,
+        "disposition": "current_publisher_web",
+        "webRelation": "current_reviewed_web"
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "pages": 32,
+        "disposition": "current_publisher_web",
+        "webRelation": "current_reviewed_web"
+      }
+    ],
+    "longActiveCount": 0,
+    "activeByLane": {
+      "C1": 2,
+      "C3": 5,
+      "C2": 10,
+      "C": 18
+    },
+    "matchedCitationsAndVectors": 80,
+    "citationsByEvidence": {
+      "independent_printed_correction": 4,
+      "text_exact": 40,
+      "recorded_independent_transcription": 36
+    },
+    "previous34CheckedAt": "2026-11-21T13:33:16.789468Z",
+    "previous34SourceRowsUnchanged": true,
+    "previousReader": "35eb34f19dc168debccb2859bea6113eebf00d90564abef86625c63d03f3d644",
+    "checkedReader": "4e5d2d51168172b6567198645cadbde6016d77bce1985662fb76871106a1194e",
+    "all140ExistingPhysicalPageLayersIdentical": true,
+    "sourceReceipt": {
+      "ownerCommit": "56a3a10b962da25192bb567283870c8137a5581c",
+      "file": "artifacts/verification/FHS_PROVIDER_RECONCILIATION_20261121.json",
+      "sha256": "7aabd1c3882e095ca7d0b1f0c490897d487a34805b68c36d447a5b4f6c7a741e",
+      "ownerCatalogueTime": "2026-11-21T13:50:55.896685Z"
+    },
+    "grossMicros": {
+      "held": 3268608,
+      "spent": 12010120,
+      "limit": 30000000,
+      "available": 14721272
+    },
+    "localVerificationProviderCalls": 0,
+    "localProductionWrites": 0,
+    "restored": {
+      "sourceId": "resource-af8c3e8cc813be",
+      "sourceSha256": "79ff818d17f7da0898a2dfeb52330caca99ae51818026cddb97c9413444b7998",
+      "pages": 18,
+      "originalOperation": "17d6080c2c028426e39ec34d0fbb870038cf5aa04a15c67e03748430ca36a283",
+      "independentReviewStage": "b2b95214d21abd36a79607e6f691b03b97b35414d0fe8c550a0a36c635262df1",
+      "independentReviewCostMicros": 8256,
+      "readTime": "2026-11-21T13:59:59.678699Z",
+      "familyReadbackAt": "2026-11-21T13:51:20.177Z",
+      "versionId": "1bdda264-8ff9-5040-b353-760d73167ff1",
+      "versionHash": "a9b92b17f8c58a238023ab416116871931a93de2789aa9aa94bd4050178789c0",
+      "publishedAt": "2026-11-21T13:50:34.742Z",
+      "oldVersion": "9ed10ac8-bdd2-52e8-a113-9472215880f1",
+      "oldVersionState": "withdrawn",
+      "familyActiveCards": 1,
+      "allOther115SourceRowsUnchanged": true,
+      "reusedVectors": 4,
+      "ownerCommit": "56a3a10b962da25192bb567283870c8137a5581c",
+      "release": {
+        "attempt": 2,
+        "conclusion": "success",
+        "headSha": "9f4ab5b6476514dcbeeaf6ff9684f7f143213206",
+        "status": "completed",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44907701414"
+      },
+      "physical": [
+        {
+          "physicalPage": 1,
+          "chunkId": "5cd7560b-8781-5ba4-91f8-122778475d51",
+          "oldChunkId": "5e692584-3600-58bf-bc1b-0c901d82541a",
+          "contentHash": "312014f5fa046da1700e87de0a2006ca2bff1c536a957891a55c25cbc23327d8",
+          "excerptSha256": "844b3f69002305e13193334b8144b7ef0831d95f4357fc90ff7e5238dc541e1e",
+          "printedReviewQuoteHash": "0cbd24cfe200977efc2082021b949e29a4357838602ee10151df1cea0af0771c",
+          "embeddingHash": "db4b454c60e7a54ae88dfa5858483448d500d5386df6b99a30c30426f6436ae8",
+          "vectorHash": "ce5bb687898573a5757db47d112ec94725f296d652a710d5fa1f60bb3863465e",
+          "newResolves": true,
+          "oldResolves": false
+        },
+        {
+          "physicalPage": 6,
+          "chunkId": "4260eafa-639a-5636-8429-338c3e93a544",
+          "oldChunkId": "ba55576a-24bb-5e71-a701-28658cd0f7f9",
+          "contentHash": "9f738f79203f1767dc83206afda3ce99a675e3a6d77ac524310cfd8fae0626b7",
+          "excerptSha256": "71fa19aac34cf603313e769183b45f4f5ac40bac91d221989ed19956fd61f069",
+          "printedReviewQuoteHash": "cb12751df99e3d9ae9b322d7a74e1e3bdfac344427a4a42023682039a1864c99",
+          "embeddingHash": "0a4098f21ec1bb33dce74b6f2e1d621747b4eb974ce0878819574b6dc0bfa9bc",
+          "vectorHash": "78f025ce3fa523dc57eb3d0d3135b0d575f25c4e683bd2f5f98066dcef40e577",
+          "newResolves": true,
+          "oldResolves": false
+        },
+        {
+          "physicalPage": 12,
+          "chunkId": "bf7c9f0a-ed22-5bfb-ad31-0e7f83618675",
+          "oldChunkId": "b19b63bc-da67-5b3c-9c0d-dd0d18307e1f",
+          "contentHash": "3f8fad19a3864725ea4f0e1ceb08949711b1cb0468125f32b643ff10e3b63ed8",
+          "excerptSha256": "67863821aea642c46290d9b77d0f71022eb0cc0b59a5e54472e22da1a98af6d4",
+          "printedReviewQuoteHash": "c3b0fb6a2563091cca6e309f5100ef515e0b8e8b132e9c780bc8cca24ac124fa",
+          "embeddingHash": "f4ef61e0a3795436aaf4144b704aa0ae0908d7ab0c0892eb402beb7fffba0f90",
+          "vectorHash": "4f1e063682b9f4d3f23b28bf40ef6f8d47ff51470a1996f051aebc934001f5cc",
+          "newResolves": true,
+          "oldResolves": false
+        },
+        {
+          "physicalPage": 15,
+          "chunkId": "3f79d97f-ca33-51f6-b0ab-723eaac3c6cb",
+          "oldChunkId": "f9ee1631-86cb-5e45-b3d4-7f9b89339638",
+          "contentHash": "cc328e87ae4db98e19231f1356b798974d8717245fbb81e871bb13b748df9497",
+          "excerptSha256": "752218e46606a71994b2b0bae2aa432f86ea65fabcda3ed1508a5f892a89c45a",
+          "printedReviewQuoteHash": "bd8e8248ef7819602e2979bbec8c014d2a9353f34f960c8176a3664c40ef2548",
+          "embeddingHash": "7f309fb56420f869cc66a25265ea256cbb752cc0bab6e434a812445bb7c1a89a",
+          "vectorHash": "f002501818ed8af2784c6eaf05585256396d5f8878e542b91d54b2a0a118605b",
+          "newResolves": true,
+          "oldResolves": false
+        }
+      ]
+    },
+    "dispositions": {
+      "interrupted": 2,
+      "rejected_400": 6,
+      "review": 5,
+      "reserved_unknown": 2,
+      "conflicting_passages": 5,
+      "current_publisher_web": 26,
+      "terminal_unknown": 1,
+      "age": 21,
+      "rejected_504": 4,
+      "publisher_web_pending": 3,
+      "format": 3,
+      "publisher_chapters": 3
+    },
+    "publisherRelations": {
+      "current_reviewed_web": 72,
+      "publisher_print_under_revision": 1,
+      "current_web_unpublished": 8
+    },
+    "approvedCompanionPublications": {
+      "count": 72,
+      "chapterDirectories": 5,
+      "additionalScriptEditionsWithMatchingArticle": 6
+    },
+    "evidenceDigests": {
+      "layer-comparison.json": "75b07dbeeb2f1191c0ae5e8e17def395018ded39e791e5483d7a3eea99a31ad9",
+      "live-chunks.json": "62df9e2153fb2f3f74cdd65156fcbc816f38df4d7de9529085cf60ab2bb2b6bb",
+      "restored-live.json": "1e131bf84e3e59503d65180148da292bdbe8f4bfe81072f38fbccb83e7dabe62",
+      "publisher-heads.json": "edfc9ab3cda594dbac4c6d92bfe7b1a2573899c6a441f2123bb6b985a67cdb65"
+    },
+    "checkedChunkDigestMethod": "SHA-256 of compact UTF-8 JSON containing ordered [chunkId, physicalPage, contentHash, SHA-256(excerpt UTF-8), vectorHash] tuples.",
+    "active": [
+      {
+        "sourceId": "resource-af8c3e8cc813be",
+        "versionId": "1bdda264-8ff9-5040-b353-760d73167ff1",
+        "physicalCitationPages": [
+          1,
+          6,
+          12,
+          15
+        ],
+        "checkedChunkDigest": "b3c50bd1c83976c593e96209bdccdf855769153632c30242275e52b6c299ae50"
+      },
+      {
+        "sourceId": "resource-1ba127a119f802",
+        "versionId": "6c933b79-2ae9-5e2b-8986-8e90af34c79f",
+        "physicalCitationPages": [
+          1,
+          3
+        ],
+        "checkedChunkDigest": "3120026ebfb193c1135947d24079699019cd113393609c53b6f15a27ae95de50"
+      },
+      {
+        "sourceId": "pdf-b1e19bee54f42ee9de413a78",
+        "versionId": "f98f56ae-0f8b-5f52-b01c-564eae5187fc",
+        "physicalCitationPages": [
+          2,
+          3,
+          4
+        ],
+        "checkedChunkDigest": "970f76da3980b1fe1004a6ba1607e0da16ffaa22e66b6e5488de7e26ac353385"
+      },
+      {
+        "sourceId": "pdf-0669ab4cf34bd1b3b598db64",
+        "versionId": "04654663-9af2-58d2-b97f-3af935eccf14",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "41efb36b79066eba360ecfcfba8fa90b4afaf6c709bdc5e89c7e153166087a56"
+      },
+      {
+        "sourceId": "pdf-b71d332f80742e47d347f21a",
+        "versionId": "c48c00e2-876d-544a-bda9-32bc89d2bf84",
+        "physicalCitationPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "checkedChunkDigest": "c3acd57fb5e1650bc7c42828d51f41ca692ae0652e95a72bd4897eb0b934aa81"
+      },
+      {
+        "sourceId": "pdf-ade31647bbc60577ac26ecc9",
+        "versionId": "ce395045-308d-5eeb-b775-248438d4a9f9",
+        "physicalCitationPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "checkedChunkDigest": "e31b9d38cf7b44314b930213eda3e18240dce162083f46e7a67b80f5edc25295"
+      },
+      {
+        "sourceId": "pdf-a8b1017b75ded7e02814cdb2",
+        "versionId": "d3a5b281-d111-512b-996e-129239404ad2",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "f1a8727bae97143d007e27b80f6bbefcdccd867c2ab89b762d6b3ca61c62d004"
+      },
+      {
+        "sourceId": "pdf-66d4917b4892792da0ea028d",
+        "versionId": "b74dde5e-c4fb-5e62-a1c9-1c985648d341",
+        "physicalCitationPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "checkedChunkDigest": "3c4db1be57664a3f0c9d428947e4f7ba07f8b3c381d9a87a70374c43922d11ab"
+      },
+      {
+        "sourceId": "pdf-e429ac892c396fb798ad7132",
+        "versionId": "7837d94a-9620-5405-a956-d9c63af807a3",
+        "physicalCitationPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "checkedChunkDigest": "fd0c69fc2c9654f6c9097ac4c219c0bb80719758aaf73d0ea65c4efceed1fb70"
+      },
+      {
+        "sourceId": "pdf-f43b59147093cacef5308dcd",
+        "versionId": "1a76b995-30d0-5690-bdf0-1fd087bff807",
+        "physicalCitationPages": [
+          4
+        ],
+        "checkedChunkDigest": "77592159373340ff5728bad5b66457b459711b9164e7987740c860dff45c3aaf"
+      },
+      {
+        "sourceId": "pdf-2771b734a7f4ab0e2c4fd4ef",
+        "versionId": "2954778f-aad7-5ddd-bfed-2e7e60b081cf",
+        "physicalCitationPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "checkedChunkDigest": "ba57d3bed29c778601975e005cbcbf4fd5e70333b085caf73f62cf21593c99df"
+      },
+      {
+        "sourceId": "pdf-bd15166fe03791ef9ff7c062",
+        "versionId": "6a81ecbb-2091-5bbe-b492-fc155dffe453",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "d98c4f4a0b539b0ebe7900bd8ba612aeb4299a8145fa65829e4e23c5b37e1a00"
+      },
+      {
+        "sourceId": "pdf-e7427b7b969a37e3d8e889a1",
+        "versionId": "2e9e06cc-24d6-5ab5-8cc9-d506767a9cab",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "e2c18522f5d96a7da73c6a575666151966797a1a57090577e24409001edd6227"
+      },
+      {
+        "sourceId": "pdf-f2ed89529922c1ab403f28d2",
+        "versionId": "17641a63-feab-5c46-9778-8123a26f7979",
+        "physicalCitationPages": [
+          2,
+          3,
+          4
+        ],
+        "checkedChunkDigest": "a4985fffd3287534df1eba118d1fe6cfcebc8222ca6cf69473e36c2ca48c7001"
+      },
+      {
+        "sourceId": "pdf-c7613adf22dbbbbb29fee66c",
+        "versionId": "d6451592-d4b2-5964-bdb7-02544319b936",
+        "physicalCitationPages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "checkedChunkDigest": "85abda0a0ff734a16d326839a17c6f7c3f43948ec80f8a106bd1174be464ca16"
+      },
+      {
+        "sourceId": "pdf-231c869513252fae5e5ce54e",
+        "versionId": "02bb8559-7f1f-5a29-8a4d-f19f5dfb2721",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "408ee119868c8383a8c1544cae582cf151b5ff751fb9d190812add9414683d30"
+      },
+      {
+        "sourceId": "pdf-0c2d0deb2abdeb1d5949e661",
+        "versionId": "dd8983bc-ca0b-5163-8560-97f3c6aa6cd6",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "974c669c5421e94dfe6f514fb40693cc93b8335192458220729c26e8a4dfc2fa"
+      },
+      {
+        "sourceId": "pdf-f4804bcf1d97c9f5c624043a",
+        "versionId": "5708cc78-1a33-5db5-a8bd-6075dee4de4d",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "b41325b0c63bb234d60a8c93aea1a119bc13fe9e6d4685d83e3d75c3fece6aee"
+      },
+      {
+        "sourceId": "pdf-40e5eb1a042e9dee765714ef",
+        "versionId": "3f868796-d569-51bd-979d-f839c13f10c8",
+        "physicalCitationPages": [
+          1,
+          7
+        ],
+        "checkedChunkDigest": "a5c806319539a43a144e604054ab696ad9bc1c334a4b4b5f57f4fd6a34c0440c"
+      },
+      {
+        "sourceId": "pdf-51a3b0aebacc5c2f6a002561",
+        "versionId": "59953c98-8f50-5298-a579-861533b4f5cc",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "1e2e1b8f09fa4126fb2389948ffa8cf5b74e2477e52b004644549e439f787922"
+      },
+      {
+        "sourceId": "pdf-28468771ad2490f045bd5d56",
+        "versionId": "1b669df4-9af1-5a23-a2ff-db4a977ff137",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "188571c8bc77e416b81ad40b3e3780e44d56fff0b8f2fb36311a7f4f6d7c5707"
+      },
+      {
+        "sourceId": "pdf-902a9652db3c94e03ea54d75",
+        "versionId": "815fe89c-e7c3-58d2-81c0-c9fdfa0a9e6a",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "2cb46eba30dddc4b369b14bb07faf0da05607c2d40fa03cf910ca1d50ea107cd"
+      },
+      {
+        "sourceId": "pdf-780e4c1676a794ee6e89c6db",
+        "versionId": "e83b43ba-9c61-59dd-bbef-b26c14d11940",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "ded2bb59f9fae31ed15acbdaa8a67e70a3893a73d65b1ead53308d01905c81fb"
+      },
+      {
+        "sourceId": "pdf-3fca76df105dc64c4e94f76c",
+        "versionId": "fef2b2bc-0322-52a5-9d3f-90caace8683c",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "ec9faf59afec7ec9ceabdf69eacf02617c663a47250cccf4290b1421f43cc094"
+      },
+      {
+        "sourceId": "pdf-c35022f4755f452c3ab6ca7c",
+        "versionId": "b2abf3ee-8f95-553f-9b9a-be87fe67c5c8",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "687454b658816ee0fe04b6b342cb89d49be4de8f1b40a2031d9649b9d32ac34d"
+      },
+      {
+        "sourceId": "pdf-b50a158f021811e4c7daafba",
+        "versionId": "39b303d4-e61c-5e6d-bc34-d715cf61dfdc",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "18636f05f46b5f9204cdd107d24354d953cfd8a324fa6000011cd8de21d09193"
+      },
+      {
+        "sourceId": "pdf-c2c12e4018ee7099064622d4",
+        "versionId": "7e205598-5d7e-5a8e-8ed5-e4d95dd51e68",
+        "physicalCitationPages": [
+          3,
+          8
+        ],
+        "checkedChunkDigest": "4b76bdd7cfcba044e567fa258a098e08c7dd4680434562fcdc20249f519a7875"
+      },
+      {
+        "sourceId": "pdf-4158ea5c2f138e45a4a7568d",
+        "versionId": "62398efd-1815-5746-95c7-9393bd247305",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "2437d2525994657b5510ec9c69af468c70b1dc9134af7c5c107885030ac9ec08"
+      },
+      {
+        "sourceId": "pdf-a5681663d0428e3b6cd5f674",
+        "versionId": "9179e8d9-b8ce-5aca-b4c5-bd71bffce938",
+        "physicalCitationPages": [
+          1,
+          3,
+          5
+        ],
+        "checkedChunkDigest": "29ccbda0c349462f6ed6d9133dd12f0137b6f2c1283f4cb65cdb6ae0f09b8cc3"
+      },
+      {
+        "sourceId": "pdf-16ecfbe91853bb20831c4b97",
+        "versionId": "ed702acb-0f4e-5765-9ae4-15ffafa3a05a",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "3196dd76b28778654ed376491f1a2f524aac06aa2e62d6550fbd7766506bd50a"
+      },
+      {
+        "sourceId": "pdf-d6cb530c2cc3605fb28a0241",
+        "versionId": "dd70e395-9086-5f4e-bed6-dfff16512317",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "7a24a45d4b4a9c40188a2cac6d5333c91f36d28aa22efe55d0aa94e2f9a5355f"
+      },
+      {
+        "sourceId": "pdf-258dbc8a8c69d4f66dd0ab05",
+        "versionId": "c8984965-13ee-5add-aa24-ee8e5c0eb70e",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "0062fee9bdb9257facfae1a01eb57d232996b4592016292a92b7f8edfb30155f"
+      },
+      {
+        "sourceId": "pdf-8d229a086ffa572923ed027f",
+        "versionId": "c78e7b03-66fc-52d9-8aca-6a634557bbba",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "e6148b0642a0003daf6fb6d1c71a0bd6933286049378e93ef50b49c450404bf4"
+      },
+      {
+        "sourceId": "pdf-5acb6474a38d19249e4933d6",
+        "versionId": "74d94903-fab3-5f2c-91df-5e1a4f980a8b",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "8510167ca3ebf30f773c441947d3a33103750baecdf0a362027dbca0ef79d3fc"
+      },
+      {
+        "sourceId": "pdf-5a08a58cc4bef28ff2dc3c0d",
+        "versionId": "c1f8b503-4a75-53f8-89cb-593c49f25778",
+        "physicalCitationPages": [
+          1
+        ],
+        "checkedChunkDigest": "e234b425865ca44f2f60527fd72150720f3adcbe7f0635531370863ff1a087bb"
+      }
+    ],
+    "awaitingOriginalPdf": [
+      {
+        "sourceId": "pdf-2fcfc6f5232e6a7858a730f2",
+        "sourceOwner": "C2",
+        "originalOperation": "8ad0288500708977face2bcdff7e01c5722c063c39bc4af05d7a0c2a60ae81b4",
+        "disposition": "interrupted",
+        "reason": "256 MiB 容器中斷；原整理稿 ready，原獨立審核 pending，沒有已保存的審稿或第二張票。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-20038",
+        "webVersionId": "b2476bc0-d1f8-54cf-b08b-b034cb20542c",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-142c907be41886853278155e",
+        "sourceOwner": "C3",
+        "originalOperation": "6a72a57c80f295d9a345e2184f9bcff8a3d48253c8eb172ad22c00244ab19e19",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30031",
+        "webVersionId": "fb9fcdc0-0ca6-57b2-ba17-350b4044ffa7",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-978f5df8a09640d894087117",
+        "sourceOwner": "C2",
+        "originalOperation": "9574c361335c66a381886ecc29db164e014df8df7c1ed8e696471ac963a40436",
+        "disposition": "review",
+        "reason": "獨立審核已退回原候選；目前沒有獲批准的版本。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30037",
+        "webVersionId": "38e53e41-d32b-5632-9c1e-9a4f15ffaf8d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-3af602cff5d00f305e7cc95e",
+        "sourceOwner": "C3",
+        "originalOperation": "55052da35fbc02982ab8881d89868cb4342e35183786873d265d9d9b8f16cec9",
+        "disposition": "reserved_unknown",
+        "reason": "找不到可歸屬於原供應商請求的終態，保留原預留及原操作。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12146",
+        "webVersionId": "77384ed2-1cce-5133-af13-924b2174c251",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-b6c2b4fa02c969d6fc39eec3",
+        "sourceOwner": "C2",
+        "originalOperation": "120aba799e60580625016f91da7fc62aaa8d90fc0ba89bdc430362612b438b44",
+        "disposition": "conflicting_passages",
+        "reason": "第 6 頁一段講上奶、一段講紓緩腫痛，最長相同文字為「、」。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12172",
+        "webVersionId": "15ad182a-3303-59a5-93d9-c60ed99b2b00",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-3b3c1043ac8e7aa74b5a7beb",
+        "sourceOwner": "C2",
+        "originalOperation": "31a1bbe7372c95ffb0249c98a455bb6319d56679ed53567e6a88b42e6bb8d286",
+        "disposition": "review",
+        "reason": "整理與獨立審核對原頁涵蓋範圍有歧見。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12185",
+        "webVersionId": "93053d1d-10c3-5904-bdc2-44fbe3c4a241",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-2f68a230d9e7115440b2b241",
+        "sourceOwner": "C2",
+        "originalOperation": "1a8c57d84c3e6abcc7b98199ba53b3a19a81f51d7960d9cc31196200fde3c549",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12196",
+        "webVersionId": "61c90b6a-8634-5390-a8d3-b8d6e17763dc",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-d4b4d1ea690e2d05702625a1",
+        "sourceOwner": "C",
+        "originalOperation": "d35cd496870b1bf1565cfca54d8542b93fdf399d84f2be10e266b1d5a4889e43",
+        "disposition": "review",
+        "reason": "獨立審核已退回原候選；目前沒有獲批准的版本。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12549",
+        "webVersionId": "169c7a81-baf4-539d-8c49-1d56ce2932e0",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-10198577dd00f5dbce4da010",
+        "sourceOwner": "C1",
+        "originalOperation": "bbb9310997e19c3357dc918f67293d3335c2c74e62658989f370a24392e7bc35",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-12566",
+        "webVersionId": "e68d773b-1969-57b4-b67d-d33fd391fdc4",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-5e65881f402bf4ae0ca22646",
+        "sourceOwner": "C2",
+        "originalOperation": "0636424676ac88b04709bddf8866f055c7a65171b669b321eb61d8a22094c9a3",
+        "disposition": "conflicting_passages",
+        "reason": "第 5 頁兩段原引文沒有共同的完整段落。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13034",
+        "webVersionId": "da3fb137-c82f-5218-a136-b047d12e82fe",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-f1650fc45fbebcf0e6a88b20",
+        "sourceOwner": "C1",
+        "originalOperation": "5334debd416c6d6d066db47096f7c8a2084fd4c4cb020c15a3c77e5eb0aa5ad6",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13035",
+        "webVersionId": "3160e3d9-8daa-524d-a68f-40b6d5c2fe19",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-ada8186dcfa6ee9e23e9f7cb",
+        "sourceOwner": "C3",
+        "originalOperation": "30ca73d5dd41e7e3be214032255e1ade1ddc5b67d0d26bb557463ef150122805",
+        "disposition": "terminal_unknown",
+        "reason": "原工作錄得兩個模型步驟，只有一張已結算票；原階段記錄的結果未知。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13036",
+        "webVersionId": "e9acdc1d-2223-5b18-94f6-9b4d571e4667",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-881ea5c99f3479c6d5e67047",
+        "sourceOwner": "C2",
+        "originalOperation": "eaf5cbf6e59379fb208640fb61684968f2d6c48c12973be6fc7ec7a65ad7091f",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13037",
+        "webVersionId": "393ce7f6-d830-53f0-bbfc-3cfadfe067de",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-7265fd820fae618428179c2f",
+        "sourceOwner": "C3",
+        "originalOperation": "b4f2aa6f91cdd64be510a0a7f8395aec338db0d17c524e599c288ce07f0f9e1a",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13038",
+        "webVersionId": "1f766cbf-0543-5c3f-814c-e3d71fd75ad6",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-c79a394b580ec9e870d63319",
+        "sourceOwner": "C",
+        "originalOperation": "d75d3ae2e7eae857e380c29831796517adeecdf919b567b84cfb364f36a2499e",
+        "disposition": "reserved_unknown",
+        "reason": "找不到可歸屬於原供應商請求的終態，保留原預留及原操作。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13040",
+        "webVersionId": "118e0250-4548-5c9b-a796-89ba01ef350d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-681fb8a2f0ebdf8fba8bd55f",
+        "sourceOwner": "C1",
+        "originalOperation": "39532e5673ffd316bafa172df6d580f0263ce36cd0015dea37987cc78a7d07b6",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13041",
+        "webVersionId": "a9612d73-ef96-5f11-9cc0-cb89e7dc08d9",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-a4f95c292efe280c21220172",
+        "sourceOwner": "C2",
+        "originalOperation": "5316f2e35a8f7b0952b8a0b102e8f57a66a7614a19bafd9631bfbd98929b5ac5",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13043",
+        "webVersionId": "4b0d5348-ceef-537e-bbb2-a9b1e80cad26",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-e4e9735e1a0ba0923750e633",
+        "sourceOwner": "C2",
+        "originalOperation": "dcf23d62b3812c311a31e831bf7aebb996a68bad536e97d1c93e2fe681435041",
+        "disposition": "review",
+        "reason": "獨立審核已退回原候選；目前沒有獲批准的版本。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13044",
+        "webVersionId": "9e8dee48-ffa0-5d49-9002-f2b2600b5ab4",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-83ee5bc5318ca28cbbf5598a",
+        "sourceOwner": "C3",
+        "originalOperation": "ca72ca001f065e07e1960c88f342adf8a075b71c04f49ab692a14a0742698d49",
+        "disposition": "age",
+        "reason": "The cover addresses parents of infants under one year of age. The cover states an upper limit.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13046",
+        "webVersionId": "d82269b0-c3e5-5181-b634-31482a195736",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-db6902edaf415c9e24a2438a",
+        "sourceOwner": "C3",
+        "originalOperation": "1009bf885784841baaaf3b03c35b761052cc81d6999d6af83fc8a9a982faa3bc",
+        "disposition": "age",
+        "reason": "Page 2 describes changes in a toddler beginning at about one year and continuing until kindergarten entry. The end condition is a school-entry stage.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-13048",
+        "webVersionId": "1eb54d2b-af6a-55ab-a294-ce601324db2b",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-7d1aab663a0d1e17c4e6b5d1",
+        "sourceOwner": "C3",
+        "originalOperation": "f035ed7ce721ce251045e7a538e746ca1210acaf41317dcd2103ef6c559135bc",
+        "disposition": "age",
+        "reason": "The number of days or weeks describes the duration of a newborn care event. It supplies no upper age bound for the audience of the care instructions.",
+        "webRelation": "publisher_print_under_revision",
+        "webSourceId": "fhs-13050"
+      },
+      {
+        "sourceId": "pdf-f3051ac61ad97b50bf629775",
+        "sourceOwner": "C2",
+        "originalOperation": "2c47cb2e5d33e42eb027de45d2f8d7d49b38361fcafe2f143eae9684e31e5729",
+        "disposition": "rejected_504",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14722",
+        "webVersionId": "1bf2febd-b6dd-5172-9851-d3eca2c05989",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-c212ef9814e180c2794a4aa1",
+        "sourceOwner": "C1",
+        "originalOperation": "5f59adadf66d26eb6a3283817b96ba1c8ebfbfe0fd2830189b2cf8cd5c19ce81",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14727",
+        "webVersionId": "6d122965-e73c-5e4a-bc8d-678338f8f3f2",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-26b0e8f671d6ce5d3d2159d1",
+        "sourceOwner": "C1",
+        "originalOperation": "462e96ea0cec8394e8340b6dc14fc3b03340032c39c2918dd3331b08b04c30c0",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14732",
+        "webVersionId": "11c45294-c3fa-5ec1-a5e4-854bbbc1843d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-811789c9be36ae025ee7e2a2",
+        "sourceOwner": "C1",
+        "originalOperation": "9130fd3b92bdccb2b68be48ff3598b35e475d024d7d2d105431a7793265a64af",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14743",
+        "webVersionId": "2a960319-9c7b-5b2d-9312-109b99541c05",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-5b0a73131bf6fc9120d7dd48",
+        "sourceOwner": "C2",
+        "originalOperation": "1a31c60f1f07346e45657e81a6ce5f812802c66bc796cf1cae066bf9540136a1",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14799",
+        "webVersionId": "dc98ae25-36bf-59da-851a-faec6ee2f9c5",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-3428e3d13ed575680a0fa8a5",
+        "sourceOwner": "C1",
+        "originalOperation": "72f840a8b57daf95b623b3c19e9cb85de734078b320000b40ae701f80f2c5ce0",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-child-vision",
+        "webVersionId": "16e41ea5-7480-53ea-8de0-1bd234cdb070",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-75f4948b23d797f1e6883149",
+        "sourceOwner": "C3",
+        "originalOperation": "8802d37f28eaabb827e73a4362cba652b55c674fae33ff4f5a63f610d045f1d0",
+        "disposition": "age",
+        "reason": "The printed checklists on pages 4, 5 and 6 address children already attending the named kindergarten class for some time, with approximate ages 3–4, 4–5 and 5–6 respectively. Page 8 specifies preschool children aged two or above for a separate parenting course. All eight page text layers are empty.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-preschool-development",
+        "webVersionId": "a0bd6f17-20b9-50de-add0-6d4e0fa67f7d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-3342882b79f7108a67ee08e1",
+        "sourceOwner": "C3",
+        "originalOperation": "c4632aa0f23ccbb6312b4413c3a1cce15270ecadffe42cc62a5f90559fab5fb1",
+        "disposition": "age",
+        "reason": "The birth-to-five interval identifies a clinic service. The same paragraph describes a separate school service for primary pupils.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14828",
+        "webVersionId": "07696143-9eff-553a-9523-b64382fa5c38",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-1de70dac6945f17a3891a257",
+        "sourceOwner": "C2",
+        "originalOperation": "f1dfe3aca51c92df0beccc4a140bc7555734d106e4c9e93d750bf3ed9cf69092",
+        "disposition": "age",
+        "reason": "整理稿或原件不足以界定整個單元的適用年齡。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-14836"
+      },
+      {
+        "sourceId": "pdf-110b0452a51c2bc488fbe7f5",
+        "sourceOwner": "C3",
+        "originalOperation": "a450cef9ed35709bbeed53e08af82b695189b35f1d1362f5c0bfd4630b7991d6",
+        "disposition": "age",
+        "reason": "The printed page addresses consequences for preschool children. The numeric examples on this page measure waiting time in minutes.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14837",
+        "webVersionId": "d20d10b8-284a-570a-9dbe-a8d0a0420fb0",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-0964fd47800bc6931d69b130",
+        "sourceOwner": "C1",
+        "originalOperation": "9a7e4c642dd823c94558d4d832d9794bc1daa6267544ea56e7c11e840bad99aa",
+        "disposition": "publisher_web_pending",
+        "reason": "出版社標示現行文字，完整網頁尚待上架。保留同份印本及其既有審稿，交多格式負責線。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-14838"
+      },
+      {
+        "sourceId": "pdf-b23cd70ace657d574bfaa15b",
+        "sourceOwner": "C1",
+        "originalOperation": "d7141aaaf4abddfac863f2a4c886aa1a9f0e2e54ddb3f86375e16791dc8e3eba",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14839",
+        "webVersionId": "38c12bd6-08e6-5079-a499-49080c304ae4",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-942362fc743b07c81abe9109",
+        "sourceOwner": "C3",
+        "originalOperation": "907da1c6a96e6487dd2c0c43a4f0bec84e8183b08c8b20c7f647a7d89c386658",
+        "disposition": "age",
+        "reason": "The registered text layer includes a three-to-five-year qualifier in a linked leaflet title. The corresponding printed reference describes preschool children. It is a related resource.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14841",
+        "webVersionId": "5cd7e04e-b3d2-596e-b02c-5b0a5d70bb1a",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-72a78af063b2df4ff8d129a3",
+        "sourceOwner": "C3",
+        "originalOperation": "77c1730bba362cec335544533a8303362044e71360bcc7acb68c922b4d593c49",
+        "disposition": "age",
+        "reason": "The registered text layer includes a three-to-five-year qualifier in a linked leaflet title. The corresponding printed reference describes preschool children. It is a related resource.",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14842",
+        "webVersionId": "2b0237da-167c-5275-8317-39d95c815cf5",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-6e8e1ad611db9680f7aed43e",
+        "sourceOwner": "C2",
+        "originalOperation": "ab1da0f697b4dc651c5289a6be83f09fd7eb350a8d7351d750fb17b3de32b486",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-14846",
+        "webVersionId": "7e28468a-fbec-588e-b1af-a55c2a0593f9",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-7592835baac4ee7ce94b5f7a",
+        "sourceOwner": "C1",
+        "originalOperation": "b8dda26c53fb4bc6a8555fac802b61f2528d78bf033abfa077d05ac6ede899b4",
+        "disposition": "publisher_web_pending",
+        "reason": "出版社標示現行文字，完整網頁尚待上架。保留同份印本及其既有審稿，交多格式負責線。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-14851"
+      },
+      {
+        "sourceId": "pdf-3092d527ec85e55ab2b16b6e",
+        "sourceOwner": "C1",
+        "originalOperation": "5b5d81259f3c261d9b0e8dd3fd70e3c2e31ed2f22b70ba39f88129d45f83c826",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15648",
+        "webVersionId": "b90d4c3d-8ff0-5350-9ba5-aef148bd90b5",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-1d48962862d76b3ffc07490b",
+        "sourceOwner": "C3",
+        "originalOperation": "087edc22f8959f5c80522ec9c087315ed05b84272ad8ef00a188f680f3d3d4fa",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15650",
+        "webVersionId": "8eda5fb4-1a0c-5f1d-9024-5d711cd6139e",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-b2dd7935c763e5df68d2420e",
+        "sourceOwner": "C3",
+        "originalOperation": "8c7ffd616ad6642e74920702793a2e90c7d3e4dac012ce00dd2f8ca1bc99d72a",
+        "disposition": "review",
+        "reason": "獨立審核已退回原候選；目前沒有獲批准的版本。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-toddler-development",
+        "webVersionId": "46c4d086-3f2d-5320-837f-548e7c271765",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-01991cbeb3f85382c992d63a",
+        "sourceOwner": "C1",
+        "originalOperation": "9f1a9b29f79fbb73def547c0bf390032a2af4162d598a40b8418ac7ddf86297b",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15662",
+        "webVersionId": "3b0c4e68-cc60-5a4b-9fae-f43a058f05ba",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-4dd05b4a01c8e51c441412fc",
+        "sourceOwner": "C1",
+        "originalOperation": "2fa43b0ee0cc84db58ff905821d3e5f61c770cba3ee0ea3320a017482df3064c",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15663",
+        "webVersionId": "92f92956-c4d9-5a2e-98a2-f5b75c827431",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-7ec6555f74acfc4995a8cd65",
+        "sourceOwner": "C",
+        "originalOperation": "cb8496fd3159ab784370c5595b55147b9a333e5e053af7d9147622aa23687906",
+        "disposition": "conflicting_passages",
+        "reason": "《臍帶護理》第 2 頁的兩段原轉錄引用不同段落。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15669",
+        "webVersionId": "5815b02f-897f-5e4b-910b-c534a09de645",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-65148c48ab4b294035fb977a",
+        "sourceOwner": "C3",
+        "originalOperation": "0e53006aae167996589f71ee76fdec69efd5235e0f2a2d41b903c40e2100c580",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15670",
+        "webVersionId": "8876a611-b011-5135-8067-f2219d77d4e1",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-27dda724b8a16c0794cd0ffe",
+        "sourceOwner": "C3",
+        "originalOperation": "053975a27113c4f564e3440ee1279944b2bcaf20f4e31ea5ed3e1e78f9489e9c",
+        "disposition": "publisher_web_pending",
+        "reason": "出版社標示現行文字，完整網頁尚待上架。保留同份印本及其既有審稿，交多格式負責線。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-15672"
+      },
+      {
+        "sourceId": "pdf-c14775c9c48ecdeff6f8b0bb",
+        "sourceOwner": "C1",
+        "originalOperation": "33a6fb0ebfc5a0c1882ad87b2da8995fe8523260255fb7b41439beb1c6d32637",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15678",
+        "webVersionId": "f58a3b14-96d0-5379-88d6-944e199f5b93",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-70dea78a211cdeaabc57c4dc",
+        "sourceOwner": "C",
+        "originalOperation": "2b6c0bf79af1c1cf8f246924eb7d2fa96d0830ca663d7b1a6d3d07bf912ce4f1",
+        "disposition": "rejected_504",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15686",
+        "webVersionId": "ff7c28e6-99b1-5572-be2c-d199b8f34edd",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-6488540e32c5e926ecee6787",
+        "sourceOwner": "C1",
+        "originalOperation": "75f3200c6ebd4640314f209f521f0c54153d0432f2f06bc24afcd63d1ee266d1",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-15697",
+        "webVersionId": "34c2fab0-cabe-5752-b704-010759e55455",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-a98acb33a6e913bf871a6b5a",
+        "sourceOwner": "C1",
+        "originalOperation": "cfb14d5b603b74654aea6c30a81da256216d2facd745f0bc3038c703ac0b7e28",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-16051",
+        "webVersionId": "95eed46b-c620-5556-9733-c7ba78088c62",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-f545d1be1fbbbe60d939ccde",
+        "sourceOwner": "C2",
+        "originalOperation": "fec66ca315d7b3976e977ded6d57f052111ac6cc7fb5bd30509897cc9927fd3f",
+        "disposition": "interrupted",
+        "reason": "400 MiB 容器中斷；原整理稿已保存，原獨立審核 pending，未有已保存的審稿。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-16301",
+        "webVersionId": "d27e5088-2c98-5430-bea2-2ef047af3f69",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-82798af3747e7b5fb61b4127",
+        "sourceOwner": "C3",
+        "originalOperation": "4e88c4e2c9a1e205344fdad8fd0f3cef945020865b5cfd119209eae5853f70cb",
+        "disposition": "age",
+        "reason": "The opening window mixes infant-feeding phases on physical page 5 with prenatal development at roughly 20 gestational weeks on physical page 12. The age of two years on page 5 is expressly open-ended.",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-20000"
+      },
+      {
+        "sourceId": "pdf-96b158a588a4b294cbbd010b",
+        "sourceOwner": "C",
+        "originalOperation": "4eeed8b217790c67150936660df1299f35d0460f09403efed1454d14cb5c452b",
+        "disposition": "age",
+        "reason": "整理稿或原件不足以界定整個單元的適用年齡。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-20033"
+      },
+      {
+        "sourceId": "pdf-15f80bcfe4c3560a68c19a89",
+        "sourceOwner": "C",
+        "originalOperation": "d690f08d091cbd8793bf7e91a66e4092ea6c7303387200b8a68f194a1fa4b790",
+        "disposition": "format",
+        "reason": "原整理稿列出 12 個條件，合約上限為 8。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30004",
+        "webVersionId": "a8cbcaf8-02eb-543a-89ee-2a41b3001a31",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-5855948c00226584d5e57f2c",
+        "sourceOwner": "C3",
+        "originalOperation": "802ee246dbec88357bc1cc539f8c89396f9940ad77855eaa60ee6c836a6788e0",
+        "disposition": "conflicting_passages",
+        "reason": "第 6 頁的整理與獨立審核指向不同段落。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-30006"
+      },
+      {
+        "sourceId": "pdf-4ace9fb38791edb68e91ac3b",
+        "sourceOwner": "C",
+        "originalOperation": "9f5b7bf2033744d5a03b1c023ad8a2647d22ca947b1913eac45d95d767093b4f",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30007",
+        "webVersionId": "8ca78e43-21e1-557e-9e15-47db5333c517",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-88bcbb29830a2b0bf2bda335",
+        "sourceOwner": "C1",
+        "originalOperation": "3630b57e08ce66bf6200ee59f7d230f3c9fbd8f7ed1ad6dc47454f0d89e9a2a3",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30009",
+        "webVersionId": "9df44612-702b-5df9-8859-b8cdac30572e",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-6637fb9890bacf75064562bd",
+        "sourceOwner": "C",
+        "originalOperation": "8a72a9fabe7504529c2233fc538c196ce4632c3fd6385ee9548299c850c6e3a9",
+        "disposition": "rejected_504",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30011",
+        "webVersionId": "56ad5405-1ac2-5dc1-aefb-f8c553b49465",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-48e37ddf27a8864e98362fa9",
+        "sourceOwner": "C2",
+        "originalOperation": "914510f8ffa181fb66386cbdf95ef2ec987c6fed6618c8ddf3c0aa5cd23c5dfb",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30018",
+        "webVersionId": "32567434-57aa-5177-8284-490c57977a61",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-b6f9316f1c8290578e0fc387",
+        "sourceOwner": "C2",
+        "originalOperation": "6a517a44a6b939ef96e202b3e6f2b7406a7af9b2d438a365ddc8d7cd5c69f945",
+        "disposition": "age",
+        "reason": "整理稿或原件不足以界定整個單元的適用年齡。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30032",
+        "webVersionId": "a8f01827-1e9c-5f60-b0ac-b352659c4f51",
+        "chapterDirectory": true
+      },
+      {
+        "sourceId": "pdf-b061777e96a27e5124285ba5",
+        "sourceOwner": "C3",
+        "originalOperation": "51cc61f246c83fbd20cccdf05f4f657a0e5fd4da24bcd45baf4b05ae05a55c55",
+        "disposition": "conflicting_passages",
+        "reason": "第 3、6 頁的整理與獨立審核指向不同段落。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30033",
+        "webVersionId": "8fed26ee-0c8c-5b2d-92ad-ad60d9b8e2cb",
+        "chapterDirectory": true
+      },
+      {
+        "sourceId": "pdf-63e7d5463521682636a066e5",
+        "sourceOwner": "C1",
+        "originalOperation": "125245f585eeaf703109aea65cabee42c92edee169617a7c2e4aaa647a58de41",
+        "disposition": "publisher_chapters",
+        "reason": "印本目錄與網頁的分章連結對上；保留整本下載及各章獨立圖表。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30034",
+        "webVersionId": "2fb5db6d-5d5e-521f-b4b0-f8f7d34b6ff9",
+        "chapterDirectory": true
+      },
+      {
+        "sourceId": "pdf-836e9d989e83046a43059df7",
+        "sourceOwner": "C2",
+        "originalOperation": "d42f0548d481504a27a4fa8ffe17b421e753140ae407c8be4910064149a20612",
+        "disposition": "publisher_chapters",
+        "reason": "印本目錄與網頁的分章連結對上；保留整本下載及各章獨立圖表。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30035",
+        "webVersionId": "529959e6-8e71-5734-9354-01bd933c4037",
+        "chapterDirectory": true
+      },
+      {
+        "sourceId": "pdf-0fe7441f2dc6adec1299fad4",
+        "sourceOwner": "C3",
+        "originalOperation": "23a849e46d7c917ef2d60e66d03103d9ec2294452d61525ae4767d838bd59077",
+        "disposition": "publisher_chapters",
+        "reason": "印本目錄與網頁的分章連結對上；保留整本下載及各章獨立圖表。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30036",
+        "webVersionId": "5075d8ff-794b-5e15-b584-9b113e496c3f",
+        "chapterDirectory": true
+      },
+      {
+        "sourceId": "pdf-a195a3e5ac7644036bdaf073",
+        "sourceOwner": "C1",
+        "originalOperation": "4a589c653a28270ec74b2f10caca72f5b264b5dba3f626fe9e2421944a3e5688",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30047",
+        "webVersionId": "95c0c0ee-a386-5c72-b628-68afd8a30c39",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-25f6d14e786c74f161e631d1",
+        "sourceOwner": "C3",
+        "originalOperation": "a2e5d9efbf02ee7ecf7f3eb53d61e701b2265fda294b90e6005b94082ab6b05d",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30073",
+        "webVersionId": "cc0f5448-7d1e-5b5d-82e2-3efb82255ea0",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-9aef95ce230e1ad16ec567f0",
+        "sourceOwner": "C",
+        "originalOperation": "0383d18366884796ed1929db9fd9097295e994146588b9a51295cfd4a8d34bfe",
+        "disposition": "format",
+        "reason": "整理稿地區欄寫「全單元通用」，未提供適用地區。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30074",
+        "webVersionId": "c9bb8969-0ecb-54f1-8695-3da701596b3f",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-a251b7696c8d6660d7aad77e",
+        "sourceOwner": "C3",
+        "originalOperation": "ec8b8dd5c42c99cfcc6cae1354123592b287d94f2aedc248b6b259618dfb464d",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30121",
+        "webVersionId": "ef5371f6-7e2b-55d7-8402-8fa9fc3c9ff0",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-877466905d56f6616266ffb5",
+        "sourceOwner": "C2",
+        "originalOperation": "a6d8a93bb22a71f7263e3bae061bcf5f951e78da585ffffd87a4f12ef1fc3809",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30136",
+        "webVersionId": "9a807917-8318-556e-8768-ff44cad1e561",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-4bdbc1ab6341b2e2f08bf986",
+        "sourceOwner": "C",
+        "originalOperation": "c927122661418f7047cc28e7556ef9dedfa8da5738ee34a3c13c42a1e1ac7775",
+        "disposition": "format",
+        "reason": "原整理稿列出 9 個條件，合約上限為 8。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30152",
+        "webVersionId": "b3aa6e89-5ea4-54ed-9941-869961dfa676",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-ce75ff9d0a4c5b0ac1410b26",
+        "sourceOwner": "C1",
+        "originalOperation": "0dc6d4567ab35b58a4d4ad29f8f164551d655e3f9b4047e99d4ec98093b02076",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30155",
+        "webVersionId": "28828c4c-6ae2-585e-a3d3-eec66d5b6736",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-512682e6652f267b32fb90ce",
+        "sourceOwner": "C3",
+        "originalOperation": "1c23965d2dd0c37681cba2f6f38253229bd620701dacd26a7cae50f03f81c552",
+        "disposition": "rejected_400",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30156",
+        "webVersionId": "a3d77499-a335-57fe-ae20-5ace2520bff2",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-26a1e80e0727a8e30c63f634",
+        "sourceOwner": "C1",
+        "originalOperation": "34565798b7ab49b43da84544429376f9c72c74c7ea7279fe31814b1fbfaf84fe",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30157",
+        "webVersionId": "49e345eb-9b70-5b62-b949-e521129ed35e",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-422bb3fc181398ac29e0f914",
+        "sourceOwner": "C1",
+        "originalOperation": "3c4ae9c1b387b60d8f3900c52e3545d53978788eafca041836e9e85997553eb5",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30159",
+        "webVersionId": "0f88df72-ea49-5d69-836a-0a97de117f6d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-c39b13bedaeb458f138ffd0b",
+        "sourceOwner": "C1",
+        "originalOperation": "418c9b9d5619b24aa4236267367869b9582b860a05d7dfb5aa88cd69856c152b",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30160",
+        "webVersionId": "fa482847-1b37-51fe-82ff-4de23f7cb51d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-4fd38b86578fa01ebbd32579",
+        "sourceOwner": "C",
+        "originalOperation": "794d7d1b977a0893650e8d594736eaf51607772295dae1dffde2c838b391bbc7",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30178",
+        "webVersionId": "ee366304-d0ba-554f-8a23-b7738dcf9fc8",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-2f4882d5b08bb9bffb40fedf",
+        "sourceOwner": "C",
+        "originalOperation": "ca39c447d40537629024f3498e2288b7e2ca1fa0e0c818163d03e9a933a4207e",
+        "disposition": "rejected_504",
+        "reason": "已按原生 HTTP 回應證實沒有生成費用；原工作沒有供發布的有效審核結果。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-480",
+        "webVersionId": "756315f9-d139-526d-9136-aded5e0df00b",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-0036bc862846cdd19984930b",
+        "sourceOwner": "C",
+        "originalOperation": "9ede850b350079751386efa3ce01815a19cd1452b1769f9aa76c3bb9ec8021e1",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_web_unpublished",
+        "webSourceId": "fhs-481"
+      },
+      {
+        "sourceId": "pdf-7f87c9a89affbaa23d8a1864",
+        "sourceOwner": "C",
+        "originalOperation": "8c64e381adf5852436d7dabadb0de68f0d08afada344e6df7e7bc3a76ccc6e26",
+        "disposition": "age",
+        "reason": "海報將睡眠分項的年齡套用全張，原審引文亦不相符。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30164",
+        "webVersionId": "0f73df62-5ccd-527e-a22c-b5c335ed8aa4",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-d6050975ffe38c8275c7c121",
+        "sourceOwner": "C1",
+        "originalOperation": "eea3cb4a3d1dc0580064cd2996b7413659c8c89fa3c9103e9dfa5dbd821c65f9",
+        "disposition": "age",
+        "reason": "原整理只給出其中一端年齡界限，未有獨立核實的整段年齡範圍。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30148",
+        "webVersionId": "1e82ee05-31e1-5c7c-9f1d-acdf5a672b1d",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-4babcb808d4f1cc595abef5d",
+        "sourceOwner": "C1",
+        "originalOperation": "76486aa5e7fd64948af67258dd5334e073f4d6429241324fefa3363e73aa8115",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-20036",
+        "webVersionId": "1e135ac4-ec4c-5c3a-a1a8-e65462e56a7b",
+        "chapterDirectory": false
+      },
+      {
+        "sourceId": "pdf-3cd2fe462bb00b222ab7a420",
+        "sourceOwner": "C1",
+        "originalOperation": "a2e1b949097f0f2e9a5e929be57421dbeac4257cc4f962f57515244ad388977d",
+        "disposition": "current_publisher_web",
+        "reason": "本印本的現行官方網頁已上架，審核版本的正文指紋與出版者頁面一致。",
+        "webRelation": "current_reviewed_web",
+        "webSourceId": "fhs-30146",
+        "webVersionId": "3fdeecd7-d9df-5082-a386-d961e4e5ae99",
+        "chapterDirectory": false
+      }
+    ]
   }
 }
