@@ -6,6 +6,7 @@ import type { KnowledgeChunkInput } from '../src/shared/knowledge.ts';
 import { embeddingForChunk } from './knowledge-inputs.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 import { ageExampleRegistration } from './knowledge-age-examples.ts';
+import { chapterReadingSchema } from './knowledge-web-chapter.ts';
 import { rejectedScriptEmbedding } from './fhs-script-embedding-receipt.ts';
 import { communicationReplayWork,recordedCommunicationComparison } from './fhs-script-comparison-stage.ts';
 
@@ -43,12 +44,17 @@ export function scriptRevisionWorkId(pin: ScriptEdition) {
 const publisherScope = z.strictObject({sourceId:schema.shape.sourceId,
   previousCode:z.enum(['input_limit','knowledge_review_failed','review_hold']).nullable(),previousVersionHash:digest.nullable(),
   audiences:z.array(z.strictObject({title:z.string().min(1).optional(),audience:z.string().min(1).max(240)})),
+  chapter:chapterReadingSchema.optional(),ageExamples:z.array(ageExampleRegistration).min(1).optional(),
   amendUnits:z.array(z.string().regex(/^p0-[a-f0-9]{20}$/u)).optional()});
 const publisherScopes = new Map(z.array(publisherScope).parse(JSON.parse(readFileSync(new URL('../knowledge/fhs-publisher-script-editions.json',import.meta.url),'utf8')))
   .map(row=>[row.sourceId,row]));
 export function publisherScriptWork(pin:ScriptEdition) {
   const previous=scriptRevisionWorkId(pin), scope=publisherScopes.get(pin.sourceId);
   return scope ? knowledgeReviewHash(['fhs-publisher-script-reading/1',previous,scope]) : previous;
+}
+export function registeredChapterReading(pin:ScriptEdition) {
+  const scope = publisherScopes.get(pin.sourceId);
+  return scope?.chapter ? { chapter: scope.chapter, audiences: scope.audiences.map(row => row.audience) } : undefined;
 }
 const lookupReview = z.strictObject({sourceId:schema.shape.sourceId,priorVersionHash:digest,amendUnits:publisherScope.shape.amendUnits,
   upperBound:z.strictObject({audience:z.string().min(1),beforeMonths:z.int().positive().max(120)}).optional()});
@@ -158,7 +164,7 @@ export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerpri
       || approved.prepared.review.decision !== 'approve_candidate') throw Error('knowledge_script_embedding_receipt_binding');
     notes.push('The previous independent review approved the original publication. Check the new non-film retrieval text, the complete unchanged original and all film passages.');
   }
-  let examples = edition?.examples ?? repair?.examples;
+  let examples = edition?.examples ?? repair?.examples ?? scope.ageExamples;
   const procedures = pin.sourceId===procedureEdition.sourceId && workId===currentScriptReadingWork(pin);
   if (procedures) {
     const old=await inspect(procedureEdition.priorWork);
@@ -177,6 +183,7 @@ export async function verifiedScriptReading(pin:ScriptEdition,inspect:(fingerpri
     ...(previous?{previousReading:{work:scriptRevisionWorkId(pin),reason:scope.previousCode,version:scope.previousVersionHash}}:{}),
     ...(lookup?{priorPublisherReview:{work:publisherScriptWork(pin),versionHash:lookup.priorVersionHash}}:{}),
     publisherScope:{audiences:scope.audiences.map(label=>lookup?.upperBound?.audience===label.audience?{...label,beforeMonths:lookup.upperBound.beforeMonths}:label),
+      ...(scope.chapter ? {chapter:scope.chapter,exclusiveLookup:true as const,sourceComparison:true as const} : {}),
       amendUnits:[...(scope.amendUnits??[]),...(lookup?.amendUnits??[]),...(repair?.amendUnits??[]),...(embedding?[embedding.chunkKey]:[])],
       ...(lookup||embedding?{exclusiveLookup:true as const}:{}),...(examples?{ageExamples:examples}:{}),
       ...(repair?{sourceComparison:true as const}:{}),...(procedures?{procedureLookup:true as const}:{})}};

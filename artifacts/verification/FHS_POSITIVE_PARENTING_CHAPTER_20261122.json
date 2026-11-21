@@ -1,0 +1,101 @@
+{
+  "asOf": "2026-11-22T05:32:00+08:00",
+  "sourceId": "fhs-14836",
+  "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14836.html",
+  "priorHostInspection": {
+    "work": "2357ad13a1fa2afafd8cb9f5a63b6be14ffd102d7b281ad37f36c3e27b54dd17",
+    "disposition": "candidate_held",
+    "code": "model_output_limit",
+    "activeVersionId": null,
+    "lease": null,
+    "reservations": [],
+    "priorRevisionStarted": false
+  },
+  "offlineComparison": {
+    "originalWork": "2357ad13a1fa2afafd8cb9f5a63b6be14ffd102d7b281ad37f36c3e27b54dd17",
+    "revision": "f3e9a90c7011c45402deb54210a71ac1762192c65fe047eae156d9902baa5161",
+    "observationHash": "36b3cbdf13243b681a57d54d0eb73a924d6f461398a1b3f56e191b06e2b15bb0",
+    "combinedScripts": 7,
+    "textSha256": "87a69dceb01e69cd8208329a10f9fca855c0c777bf9b095b63e5ed54f54d4ca2",
+    "characters": 3010,
+    "audiences": [
+      "學前兒童"
+    ],
+    "sections": [
+      {
+        "heading": "正面親職（二）：學前階段的實踐",
+        "key": "p0-252a20b02f688c612051",
+        "length": 344,
+        "vectorInput": "02cf730cebd2cc76a19d4202c27be287cda8c84553aa17357e1540a35acc5bb7"
+      },
+      {
+        "heading": "認識你的孩子",
+        "key": "p0-c14471155382ac704bff",
+        "length": 136,
+        "vectorInput": "c53f3936b8241612b271ef7710b8c897e93b0695df09d4572e07271953d64b3c"
+      },
+      {
+        "heading": "DEAR 共享時光",
+        "key": "p0-8b1c50b645c50fd1e7fb",
+        "length": 263,
+        "vectorInput": "2b49d7d82fcc8157a05d29c854f823cada1fcfa325a27d7fe79eb40f5036f020"
+      },
+      {
+        "heading": "DEAR 鼓勵欣賞",
+        "key": "p0-9b26c2817e80bbf4cc4e",
+        "length": 435,
+        "vectorInput": "7de67d7ac4d2fc900ba48a2e7b68186b775d208083c1ace5a480326817ff47dc"
+      },
+      {
+        "heading": "DEAR 恰當引導",
+        "key": "p0-1e6693347d42d7c069df",
+        "length": 522,
+        "vectorInput": "891a2e2f0618ccc56fe75c19210e5fb8dd99b39e7349bee7032daa9fb50d5e71"
+      },
+      {
+        "heading": "DEAR 尊重接納",
+        "key": "p0-fcdc8f2f3765bd7a5ca7",
+        "length": 433,
+        "vectorInput": "44c0b3966bc0349d34b42da09b68001f2d771ed3870539c17cc472183860d479"
+      },
+      {
+        "heading": "善待自己",
+        "key": "p0-40586b3934508c1c9fb3",
+        "length": 199,
+        "vectorInput": "327c49587dcaf8cf34f417fa5797b89a9b37daddcbb35f5a912060ab3f08b2ef"
+      },
+      {
+        "heading": "獎勵計劃",
+        "key": "p0-45ce1587adc512f4440d",
+        "length": 545,
+        "vectorInput": "6bf0981e47616689a4bfc460e6c38c023a0d9bfed796dd83faba4dba60852518"
+      },
+      {
+        "heading": "調整目標和獎賞",
+        "key": "p0-7ef8093f6c1df2359c8b",
+        "length": 133,
+        "vectorInput": "78f94d3b4f6baccb246135f8bc13afdd484a466ced4ce0c89a9404a8101f8260"
+      }
+    ],
+    "lastQuote": "調整目標和獎賞：當孩子能穩定地達成目標，可提高難度，以協助他逐步建立良好習慣。你也可調整給予獎勵及換取獎賞的頻率，原則是維持孩子的興趣：初期較為頻密，待理想行為逐漸穩定後，可逐步減少獎賞，例如改為五次達標才有一個貼紙。最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵",
+    "paidCalls": 0
+  },
+  "films": {
+    "newFilmStages": 0,
+    "verifiedExistingReceipt": "FHS_SCRIPT_FINAL_PARENT_LOOKUP_20261122.json",
+    "sourceId": "fhs-14842",
+    "versionId": "800d6021-ce74-5e81-9f3e-d7074c274ff7",
+    "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000115.html#transcript",
+    "ranges": [
+      [
+        1,
+        42
+      ],
+      [
+        43,
+        52
+      ]
+    ]
+  },
+  "independentReview": "Awaiting deployed worker and original independent review."
+}

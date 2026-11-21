@@ -1,4 +1,11 @@
 [
+  {
+    "sourceId":"fhs-14836","previousCode":null,"previousVersionHash":null,"audiences":[{"audience":"學前兒童"}],
+    "chapter":{"textSha256":"87a69dceb01e69cd8208329a10f9fca855c0c777bf9b095b63e5ed54f54d4ca2",
+      "headings":["正面親職（二）：學前階段的實踐","認識你的孩子","DEAR 共享時光","DEAR 鼓勵欣賞","DEAR 恰當引導","DEAR 尊重接納","善待自己","獎勵計劃","調整目標和獎賞"],
+      "finalSentence":"最終更可轉為不定時獎賞，避免孩子長期依賴物質獎勵"},
+    "ageExamples":[{"scope":{"unitKey":"p0-45ce1587adc512f4440d"},"age":{"wording":"3歲","unit":"years","form":"age","values":[3]},"quote":"例如要求3歲的孩子吃飯前自行洗手"}]
+  },
   {"sourceId":"fhs-14842","previousCode":"review_hold","previousVersionHash":"35fabd9fc0ca870ad83dc2c876a83efe066cd756356d5a54f4b53e67b7dc94d4","audiences":[{"audience":"學前兒童"}]},
   {"sourceId":"fhs-12196","previousCode":null,"previousVersionHash":null,"audiences":[{"audience":"給兩歲前幼兒的父母"}]},
   {"sourceId":"fhs-20000","previousCode":"input_limit","previousVersionHash":null,"audiences":[{"title":"餵哺技巧: 媽媽及寶寶的姿勢","audience":"媽媽及寶寶"}]},

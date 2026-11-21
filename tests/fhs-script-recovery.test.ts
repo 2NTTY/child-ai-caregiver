@@ -1,10 +1,27 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
+import { chapterOriginalUnits, checkChapterReading } from '../server/knowledge-web-chapter.ts';
 import { compactPublisherReview, publisherScriptReading, scriptReadingContract } from '../server/knowledge-script-reading.ts';
 import { approvedScriptEdition, currentScriptReadingWork, heldScriptRevision, publisherScriptWork, scriptEditionWorkId, scriptRevisionWorkId, verifiedScriptReading, verifyHeldScript } from '../server/fhs-script-edition.ts';
 import { ageExampleRegistration, bindPublisherAgeExamples } from '../server/knowledge-age-examples.ts';
 import { procedureReadingPreview } from '../server/knowledge-procedure-reading.ts';
 import type { KnowledgeEvidence, KnowledgeFilter } from '../src/shared/knowledge.ts';
+
+test('a chapter keeps every character and the whole last sentence on its own published section', () => {
+  const text = '學前階段 ' + '甲'.repeat(2980) + ' 調整獎賞 可逐步調整。最終保留完整末句。';
+  const chapter = {textSha256:createHash('sha256').update(text).digest('hex'),headings:['學前階段','調整獎賞'],finalSentence:'最終保留完整末句。'};
+  const units = chapterOriginalUnits(text,chapter);
+  assert.equal(units.map(unit=>unit.originalText).join(''),text);
+  const audiences = ['學前階段'];
+  const chunks = publisherScriptReading(units,'學前階段',[{audience:'學前階段'}],text,true,[],'official-material')
+    .map((row,i)=>({...row,key:row.unitId,originalText:units[i]!.originalText,sourceExcerpt:row.text.trim().slice(0,150)}));
+  checkChapterReading(text,chapter,chunks,audiences);
+  assert.equal(chunks[1]!.text,units[1]!.originalText);
+  assert.throws(()=>checkChapterReading(text.slice(0,-1),chapter,chunks,audiences),/original_changed/u);
+  assert.throws(()=>checkChapterReading(text,chapter,chunks.slice(0,1),audiences),/readback_mismatch/u);
+  assert.throws(()=>checkChapterReading(text,chapter,chunks,['三歲']),/readback_mismatch/u);
+});
 
 test('the commissioned procedure labels resolve to the paid production operation in every locale', () => {
   assert.equal(currentScriptReadingWork(approvedScriptEdition('fhs-30092')!),'8ed6a70e97a40c02b2ba951822f03bfb5b470bcd97c5b1f1240e570fe4791509');
