@@ -34,7 +34,7 @@ const failure = (code: string): never => { throw Object.assign(new Error(code), 
 export function registeredReviewedWindow(pin: ManualPublicationPin | undefined, original: string, observation: string | null | undefined) {
   if (!pin || pin.resumeOnly || !observation || manualPublicationPin(pin.sourceId)?.lane !== pin.lane) return undefined;
   return registered.find(row => row.sourceId === pin.sourceId && row.sha256 === pin.sha256 && row.pages === pin.pages
-    && (pin.lane === 'C2' || pin.lane === 'C3' && row.action === 'retain_window_quotes')
+    && (pin.lane === 'C2' || (pin.lane === 'C1' || pin.lane === 'C3') && row.action === 'retain_window_quotes')
     && row.bindingHash === knowledgeReviewHash(['fhs-reviewed-window/1',pin.sourceId,original,observation]));
 }
 
