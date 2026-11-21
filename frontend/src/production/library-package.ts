@@ -6,7 +6,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { readBlobBytes } from '../../../src/client/blob-bytes.ts';
 import { selectedLibraryEditions, type PersonalLibraryItem } from '../../../src/shared/personal-library.ts';
-import { sourceSeries } from '../../../src/shared/source-series.ts';
+import { childHealthSeries, sourceSeries } from '../../../src/shared/source-series.ts';
 import type { SelectedPackage } from './HandoverImportOwner';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/u);
@@ -82,8 +82,10 @@ export async function readSeriesReferences(file: SelectedPackage, catalog: reado
     if (sourceId !== row.sourceId || payload.versionHash !== row.versionHash) throw Error('invalid_library_package');
     items.push(item);
   }
-  const series = items[0]!.series ?? sourceSeries(items[0]!);
-  if (items.some(item => (item.series ?? sourceSeries(item)).id !== series.id)) throw Error('library_package_multiple_series');
+  const grouped = items.every(item => item.childHealth);
+  const series = grouped ? childHealthSeries : items[0]!.series ?? sourceSeries(items[0]!);
+  if (!grouped && items.some(item => (item.series ?? sourceSeries(item)).id !== series.id)) throw Error('library_package_multiple_series');
   // Only these immutable references reach the personal endpoint. It resolves them against its own reviewed editions.
-  return { series, revision: items[0]!.preference?.revision ?? 0, editions: declared.entries.map(({ sourceId, versionHash }) => ({ sourceId, versionHash })) };
+  return { series, revision: (grouped ? items[0]!.childHealth?.revision : items[0]!.preference?.revision) ?? 0,
+    editions: declared.entries.map(({ sourceId, versionHash }) => ({ sourceId, versionHash })) };
 }

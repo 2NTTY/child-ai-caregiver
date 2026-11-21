@@ -160,12 +160,12 @@ try {
       const saved = await work.inspect(request), active = await knowledge.publishedEdition(id);
       const pin = manualPublicationPin(id), reads = process.env.FHS_CAMPAIGN_PDF_READS;
       let recordedWindow;
-      if (command === 'inspect' && reads && pin?.lane === 'C2' && saved?.windowed
-        && ['knowledge_review_failed', 'knowledge_window_quote_mismatch'].includes(saved.result?.code)
-        && !active && !reservations.length) {
-        const { inspectHeldWindowEvidence } = await import('./fhs-held-window-evidence.mjs');
-        recordedWindow = await inspectHeldWindowEvidence({ domain, refresh, job: job.data, pin, definition, original, saved,
-          reads, indexHash: process.env.FHS_CAMPAIGN_PDF_READS_SHA256 });
+      if (command === 'inspect' && reads && !active && !reservations.length && saved?.windowed) {
+        const { canInspectHeldWindow, inspectHeldWindowEvidence } = await import('./fhs-held-window-evidence.mjs');
+        if (canInspectHeldWindow(pin, saved)) {
+          recordedWindow = await inspectHeldWindowEvidence({ domain, refresh, job: job.data, pin, definition, original, saved,
+            reads, indexHash: process.env.FHS_CAMPAIGN_PDF_READS_SHA256 });
+        }
       }
       console.log(JSON.stringify({ id, registered: true, operationFingerprint, approved: saved?.prepared?.review?.decision, prepared: Boolean(saved?.prepared),
         versionHash: saved?.prepared?.versionHash, result: saved?.result?.status, code: saved?.result?.code, modelCalls: saved?.budget.modelCalls,
