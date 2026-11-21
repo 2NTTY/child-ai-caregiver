@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-181-image-count",
+  "base": {
+    "artifact": "candidate-179/out",
+    "htmlSha256": "ff97b8bd5d2b877f97dd5f51b73e71927d387e87cfe3b44d667de7eb79ab6385",
+    "rawRecordsSha256": "35336e9e26a06612b80e8da2dcfd5cfb72731b62d02d977436e21edc6b02ff54",
+    "rawArtworkSha256": "f167101699adde34a30d70ef2b70624980c2df6035444a7e30dc92fadb272336",
+    "topics": 88,
+    "choices": 179,
+    "images": 179
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-local-voice/assets.json",
+      "sha256": "c8f71a55007ba3be554e0f01d53ede8640f8566e2356e8e67d0e0071628ae085"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "d21a7b22611a4d037dc992661dd67df8d300420d67d412baa5b149022aac7f4f",
+    "PROVENANCE.md": "7ae55930196d7f95142e3507eedf0cdb0a468496e7c65a5fcfbf638b5598705c"
+  },
+  "topics": [
+    {
+      "number": 89,
+      "title": "手機首頁錄音：停止後先試聽，再加入未送出草稿",
+      "choices": [
+        {
+          "name": "停止錄音後先試聽，再決定附加",
+          "note": "Moodle 停止錄音後可先試聽；按「附加錄音」才把錄音上載至編輯器，並不等於發帖。育伴港的「使用錄音」只把錄音放入本機聊天草稿，傳送仍是另一步。",
+          "links": [
+            {
+              "label": "Moodle 5.3.0：完整討論編輯頁",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/mod/forum/post.php#L1094-L1111"
+            },
+            {
+              "label": "同版：主旨和訊息編輯器",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/mod/forum/classes/post_form.php#L109-L118"
+            },
+            {
+              "label": "同版：錄音視窗的播放器及各個按鈕",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/lib/editor/tiny/plugins/recordrtc/templates/audio_recorder.mustache#L33-L86"
+            },
+            {
+              "label": "同版：停止錄音後可試聽或重錄",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/lib/editor/tiny/plugins/recordrtc/amd/src/base_recorder.js#L526-L544"
+            },
+            {
+              "label": "同版：附加錄音會上載並插入編輯器",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/lib/editor/tiny/plugins/recordrtc/amd/src/base_recorder.js#L565-L589"
+            },
+            {
+              "label": "同版：討論區發帖是另一個動作",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/mod/forum/classes/post_form.php#L200-L229"
+            },
+            {
+              "label": "Moodle RecordRTC 程式碼授權：GPL-3.0-or-later",
+              "url": "https://github.com/moodle/moodle/blob/42622298fe06f9626d988d60b2bf589bd8f850e8/public/lib/editor/tiny/plugins/recordrtc/amd/src/base_recorder.js#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-local-voice/local-voice-a.png",
+            "sha256": "4c6a54d788256f1a0d9e83f4a5afd41efbc511249505c5241e4d8817e4f2d8b6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Moodle 非官方桌面重繪。虛構展覽討論的編輯器上方開着錄製音訊視窗；播放器停在 0:00，可見重新錄音、附加、下載和取消，全部未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "語音先試聽，傳送是另一個動作",
+          "note": "Telegram 暫停錄音後，語音先留在輸入列，可試聽、捨棄或另行傳送。育伴港只參考先試聽再決定；「使用錄音」把片段帶回輸入列，不等於送出。",
+          "links": [
+            {
+              "label": "Telegram Android 11.4.2 (5469)：Android 版本與組建號",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/gradle.properties#L16-L17"
+            },
+            {
+              "label": "輸入列的語音預覽和捨棄",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L3432-L3470"
+            },
+            {
+              "label": "獨立播放鍵、波形和時長",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L3511-L3555"
+            },
+            {
+              "label": "暫停錄音的本機草稿",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/messenger/MediaController.java#L3992-L4035"
+            },
+            {
+              "label": "載入草稿的波形和時長",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L11375-L11427"
+            },
+            {
+              "label": "繼續錄音控制",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L1541-L1579"
+            },
+            {
+              "label": "另行提交的傳送流程",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L6485-L6506"
+            },
+            {
+              "label": "原始碼 GPL v2 或更新版本聲明",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java#L1-L7"
+            },
+            {
+              "label": "GNU GPL v2 授權全文（GPL-2.0-or-later 程式）",
+              "url": "https://github.com/TelegramMessenger/Telegram-Android/blob/fb2e545101f41303f1e2712de2e7611a9335f1c3/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-local-voice/local-voice-b.png",
+            "sha256": "29bf55795297ca7f69ff4068d3723bdaedf2312048e72c3df877014baf993646",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Telegram Android 直向群組聊天重繪。底部的語音預覽有捨棄、播放、模擬波形和 0:18；右側另有傳送鍵，上方有繼續錄音鍵。語音仍在輸入列，尚未播放或傳送。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 89 題 · 錄音停止、尚未送出的兩幅自製示意",
+      "input": "draft-local-voice/DECLARATION.txt",
+      "sha256": "d21a7b22611a4d037dc992661dd67df8d300420d67d412baa5b149022aac7f4f"
+    }
+  ]
+}
