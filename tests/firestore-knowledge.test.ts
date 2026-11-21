@@ -1261,6 +1261,47 @@ test('the March 2026 SWD leaflet uses the existing card and binds each edition t
   assert.ok(!allowed(current,historicalHash) && !allowed(historical,currentHash));
 });
 
+test('a held external observation moves to its registered successor while preserving the old check and original text', async t => {
+  const { reviewedExternalOriginal, isReviewedExternalSuccessor } = await import('../server/platform-materials.ts');
+  const id = 'resource-6c18c8d7a17495', current = publicMaintenanceWatch(id)!;
+  const oldUrl = 'https://www.swd.gov.hk/vs/doc/vs/20200330/Leaflet_CP.pdf';
+  const previous = { ...current, url: oldUrl, leafletPage: oldUrl };
+  const f = fixture([id]), generation = crypto.randomUUID();
+  const settings = { ...f.options, readControl: async () => ({enabled:true,generation}) };
+  async function capture(definition: typeof current, contentHash: string) {
+    const refresh = createFirestoreKnowledgeRefresh({...settings, definitions:[definition]});
+    // The archive port supplies the verified digest; PDF download and storage have independent byte-level tests.
+    t.mock.method(refresh.originals, 'save', async () => contentHash);
+    await refresh.register(id, 'fixture-operator', true);
+    const [job] = await refresh.jobs(id), check = crypto.randomUUID();
+    const fetched: SourceFetchResult = {status:'ok', original:{mimeType:'application/pdf',bytes:Buffer.from('%PDF-fixture')},
+      items:[{url:definition.url, title:'Child protection',text:'Printed guidance.', pages:[{page:1,text:'Printed guidance.',status:'text'}],
+        sourcePublishedAt:null,sourceUpdatedAt:null,sourceDateText:null,
+        extraction:{format:'text_pdf',contentHash,totalPages:1,pageStart:1,pageEnd:1,complete:true,extractionQuality:'requires_review'}}]};
+    return {refresh,check,job:job!.data, run:()=>refresh.process(job!.data,check,async()=>fetched,new AbortController().signal)};
+  }
+  const old = await capture(previous, reviewedExternalOriginal(oldUrl)!);
+  assert.equal((await old.run()).status, 'changed');
+  const retained = (await old.refresh.inspect(id))!.observation!;
+  const now = await capture(current, reviewedExternalOriginal(current.url)!);
+  assert.equal((await now.run()).status, 'changed');
+  assert.equal((await now.run()).status, 'already_recorded');
+  const active = await now.refresh.inspect(id);
+  assert.equal(active?.document?.url, current.url);
+  assert.equal(active?.observation?.approved,null);
+  const original = await f.database.runTransaction(tx=>old.refresh.gate.content(tx,retained));
+  assert.equal(original.url, oldUrl);
+  assert.equal(original.extraction?.contentHash, reviewedExternalOriginal(oldUrl));
+  const updated = active!.document!;
+  assert.equal(isReviewedExternalSuccessor(id,original,updated),true);
+  assert.equal(isReviewedExternalSuccessor('different-card',original,updated),false);
+  assert.equal(isReviewedExternalSuccessor(id,{...original,extraction:updated.extraction},updated),false);
+  assert.equal(isReviewedExternalSuccessor(id,original,{...updated,extraction:original.extraction}),false);
+  assert.equal((await now.refresh.list()).checks.filter(entry=>entry.state==='recorded').length,2);
+  const rollback = await capture(previous, reviewedExternalOriginal(oldUrl)!);
+  await assert.rejects(rollback.run(), /knowledge_binding_invalid/);
+});
+
 test('published campaign cards get observation-only weekly checks and retain a changed original for review', async t => {
   const { campaignMaterialWatches, platformMaterials } = await import('../server/platform-materials.ts');
   const { createFirestoreBackgroundMaintenance } = await import('../server/firestore-background-maintenance.ts');

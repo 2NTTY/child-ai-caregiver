@@ -11,7 +11,7 @@ import { domainReject } from './firestore-domain-data.ts';
 import { TIMELY_KNOWLEDGE_POLICY_DEFAULTS } from "./knowledge-timely-policy.ts";
 import { createPlatformMediaStore } from './firestore-platform-media.ts';
 import { officialScript } from './fhs-source-forms.ts';
-import { campaignMaterialWatches } from './platform-materials.ts';
+import { campaignMaterialWatches, isReviewedExternalSuccessor } from './platform-materials.ts';
 
 const campaignSources = new Set(campaignMaterialWatches.map(source => source.id));
 
@@ -444,7 +444,11 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         if (eligible) for (const item of prepared) {
           const snapshot = await tx.get(observationRef(item.sourceId));
           const observed = snapshot.exists ? parse(observationSchema, snapshot.data()) : null;
-          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId || observed.url !== item.document.url)) reject("knowledge_binding_invalid");
+          if (observed && (observed.sourceId !== item.sourceId || observed.watchId !== job.watchId)) reject("knowledge_binding_invalid");
+          if (observed && observed.url !== item.document.url) {
+            if (observed.approved || !isReviewedExternalSuccessor(item.sourceId, await gate.content(tx, observed), item.document))
+              reject("knowledge_binding_invalid");
+          }
           previous.set(item.sourceId, observed);
         }
         const at = new Date().toISOString(); let changed = 0;
