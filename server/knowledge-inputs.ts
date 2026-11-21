@@ -30,7 +30,8 @@ const applicability = z.strictObject({...establishedApplicability.shape,ageBasis
   publisherAudiences:z.array(text(240)).min(1).max(8).optional()}).superRefine((value,ctx)=>{
   const {publisherAudiences,...scope}=value;
   const valid=scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
-    ? scope.use==='original_lookup' && scope.minAgeMonths===null && scope.maxAgeMonths===null && scope.maxAgeMonthsExclusive===undefined
+    ? scope.use==='original_lookup' && scope.minAgeMonths===null && (scope.maxAgeMonths===null ? scope.maxAgeMonthsExclusive===undefined
+      : scope.ageBasis==='publisher' && scope.maxAgeMonthsExclusive===true)
       && (scope.ageBasis==='publisher')===Boolean(publisherAudiences)
     : publisherAudiences===undefined && establishedApplicability.safeParse(scope).success;
   if(!valid)ctx.addIssue({code:'custom',message:'Invalid publisher or numeric age applicability'});
@@ -113,6 +114,7 @@ const sourceSchema = z.strictObject({
     || Date.parse(value.fetchedAt) > Date.now()) ctx.addIssue({ code: "custom", message: "Future source date" });
 });
 const filterSchema = z.strictObject({ region, classification: z.enum(["official_guidance", "recent_information"]).default("official_guidance"),
+  purpose:z.literal('read_originals').optional(),
   age: z.strictObject({ basis: z.enum(["actual", "corrected"]), minMonths: z.number().min(0).max(120), maxMonths: z.number().min(0).max(120) })
     .refine(value => value.minMonths <= value.maxMonths).nullable(), topics: topicList,
   ageMatch: z.enum(["contained", "overlap", "unknown"]).default("contained") });

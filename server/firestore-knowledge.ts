@@ -153,6 +153,7 @@ function writeBudget(values: unknown[]): void {
     reject("knowledge_document_too_large", 413);
 }
 function applies(a: KnowledgeChunkInput["applicability"], filter: KnowledgeFilter): boolean {
+  if (a.use === 'original_lookup' && filter.purpose !== 'read_originals') return false;
   if (a.region !== filter.region || filter.topics.length && !filter.topics.some(topic => a.topics.includes(topic))) return false;
   if (a.use === 'original_lookup' && (a.ageBasis === 'publisher' || a.ageBasis === 'unconfirmed')) return true;
   if (a.ageBasis === "any" || filter.ageMatch === "unknown") return true;

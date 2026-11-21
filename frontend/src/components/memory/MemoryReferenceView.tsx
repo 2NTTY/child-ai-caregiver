@@ -153,7 +153,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
       {readingScope
         ? <Metadata label="原文對象">{source.applicability.publisherAudiences?.join('、') ?? '未有指明'}</Metadata>
         : <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>}
-      {readingScope ? <><Metadata label="月齡範圍">未確定</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
+      {readingScope ? <><Metadata label="月齡範圍">{source.applicability.maxAgeMonths===null?'未確定':`少於 ${source.applicability.maxAgeMonths} 個月，下限未指明`}</Metadata><Metadata label="用途">只供查閱原文</Metadata></>
         : <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>}
       {source.applicability.conditions.length ? <Metadata label="適用條件">{source.applicability.conditions.join("；")}</Metadata> : null}
       <AppButton label={technical ? "收起版本識別" : "查看版本識別"} expanded={technical} variant="quiet" density="compact" onPress={() => setTechnical(value => !value)} />

@@ -1,0 +1,7 @@
+[
+  {"sourceId":"fhs-14842","priorVersionHash":"6dabeeb2530c16751befbb7f66437da0f45f463f494356e70913d7bba71dd27e"},
+  {"sourceId":"fhs-12196","priorVersionHash":"2d199cc3128eeb81a271f4c8314a7ff1f75bdd454001bfe4d8f6d2ee0219673e","upperBound":{"audience":"給兩歲前幼兒的父母","beforeMonths":24}},
+  {"sourceId":"fhs-13043","priorVersionHash":"b9aa1e711bae261d260ca76661a23d88b80c6fad9ad0eeacf06379f1b1f665eb"},
+  {"sourceId":"fhs-30078","priorVersionHash":"ac41b324e7c96b1f8c8b946e78128ce3eaf5e34771dff1545462a32dc3958551","amendUnits":["p0-8e97c1489375cdd7a739"]},
+  {"sourceId":"fhs-30092","priorVersionHash":"641dc182641ed6c94cc3f9b74a21daeb454458dcbbd3aa22b845ae52c280e8b6"}
+]
