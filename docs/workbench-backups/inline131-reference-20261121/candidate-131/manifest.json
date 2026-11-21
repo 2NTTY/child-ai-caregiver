@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-131-image-count",
+  "base": {
+    "artifact": "candidate-129/out",
+    "htmlSha256": "90f0fa3f19392b2110c01eae5490f4dae7cf7abe07b43d7a86b4ec262b183972",
+    "rawRecordsSha256": "db46c43abd4195fc1556454e7250e79210889fd9c26db5d724b711eabd72057b",
+    "rawArtworkSha256": "fd1337b30cbb2c43f85347ebd7b718b61bf0d4df3e63cf69e76080e7b0e31f58",
+    "topics": 63,
+    "choices": 129,
+    "images": 129
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-class-task-query/assets.json",
+      "sha256": "b0c467a02c0be2c33a428489635bd49182f9ab22b903a0c92ade00978f245f88"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "f1d1818bad843f6f09e1ba1a653836f9a561cf465f1694bffda0e16d78be29e4",
+    "PROVENANCE.md": "2c8b02101daf8641eb0777ab6919e922d5eee18abb859dfaa136ce805d97331d"
+  },
+  "topics": [
+    {
+      "number": 64,
+      "title": "工作清單：按負責人查詢或分組續頁",
+      "choices": [
+        {
+          "name": "先選負責人，再套用查詢",
+          "note": "先選兩位負責人，再按「套用」。下方按人分組顯示已套用的工作；頁底的範圍屬於整份結果，不設分組續頁。",
+          "links": [
+            {
+              "label": "Redmine 6.1.0：查詢表單與整份結果分頁",
+              "url": "https://github.com/redmine/redmine/blob/872d7816955d5d3d6c7d7e3a4a70d4b50c275993/app/views/issues/index.html.erb#L20-L35"
+            },
+            {
+              "label": "同一版本：負責人多選欄位",
+              "url": "https://github.com/redmine/redmine/blob/872d7816955d5d3d6c7d7e3a4a70d4b50c275993/app/assets/javascripts/application-legacy.js#L224-L262"
+            },
+            {
+              "label": "同一版本：套用查詢",
+              "url": "https://github.com/redmine/redmine/blob/872d7816955d5d3d6c7d7e3a4a70d4b50c275993/app/views/queries/_query_form.html.erb#L61-L63"
+            },
+            {
+              "label": "同一版本：分組標題與工作數目",
+              "url": "https://github.com/redmine/redmine/blob/872d7816955d5d3d6c7d7e3a4a70d4b50c275993/app/views/issues/_list.html.erb#L22-L39"
+            },
+            {
+              "label": "Redmine 程式授權：GPL-2.0-or-later（非圖像授權）",
+              "url": "https://github.com/redmine/redmine/blob/872d7816955d5d3d6c7d7e3a4a70d4b50c275993/LICENSE.txt#L1-L15"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-task-query/class-task-a-query.png",
+            "sha256": "e73c92bd8f3492e4642a12bfbcce08f3b76d6814218a98ffef8c66ff7cbc6a67",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構展區專案的完整工作清單，上方多選兩個負責角色並設有套用，下方是已套用後的分組結果與整份結果的分頁範圍。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        },
+        {
+          "name": "依負責人分組，各組續頁",
+          "note": "這是另一個專案的工作清單。畫面已捲到第一組末段，只有第一組可載入更多；第二組的兩項工作已列齊。",
+          "links": [
+            {
+              "label": "Plane v1.5.0：在個別分組載入更多",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/components/issues/issue-layouts/list/list-group.tsx#L111-L142"
+            },
+            {
+              "label": "同一版本：專案工作清單入口",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/app/routes/core.ts#L135-L142"
+            },
+            {
+              "label": "同一版本：清單與篩選條件",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/components/issues/issue-layouts/roots/project-layout-root.tsx#L67-L90"
+            },
+            {
+              "label": "同一版本：按負責人篩選及分組",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/packages/constants/src/issue/filter.ts#L206-L228"
+            },
+            {
+              "label": "同一版本：何時顯示分組的載入按鈕",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/components/issues/issue-layouts/list/list-group.tsx#L301-L329"
+            },
+            {
+              "label": "同一版本：讀取指定分組的下一頁",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/store/issue/project/issue.store.ts#L131-L162"
+            },
+            {
+              "label": "同一版本：分組查詢條件",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/store/issue/helpers/issue-filter-helper.store.ts#L299-L335"
+            },
+            {
+              "label": "同一版本：僅追加該組的結果",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/apps/web/store/issue/helpers/base-issues.store.ts#L1361-L1382"
+            },
+            {
+              "label": "Plane 程式授權：AGPL-3.0-only（非圖像授權）",
+              "url": "https://github.com/makeplane/plane/blob/18caf808a3af3fcabeeba7d1e8473f1367bff2d4/LICENSE.txt"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-task-query/class-task-b-group-continuation.png",
+            "sha256": "03d9d7338da100a44cc76673b1af46a4600f8e624a4ade31788c63bf64cc8113",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "獨立示例：虛構展示專案按兩個負責角色分組，已捲到首組末段。只有首組的下方可載入更多，第二組完整列出兩項。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖",
+            "credit": "本工作台依開源實作重繪，非官方截圖；僅供版式比較。"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 64 題 · 專案工作清單的兩幅自製合成示意",
+      "input": "draft-class-task-query/DECLARATION.txt",
+      "sha256": "f1d1818bad843f6f09e1ba1a653836f9a561cf465f1694bffda0e16d78be29e4"
+    }
+  ]
+}
