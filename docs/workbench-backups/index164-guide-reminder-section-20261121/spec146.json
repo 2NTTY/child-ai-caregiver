@@ -1,0 +1,61 @@
+{
+  "group": {
+    "id": "guide-read-reminder-section-direct-vs-sequential",
+    "title": "想先看怎樣開啟提醒，一定要讀完頭兩步嗎？",
+    "index": "external-comparison",
+    "readerNote": "合成例：由使用引導第一節開始。A 點目錄直接到第三節「按需要開啟提醒」；B 按兩次「下一步」順序到達。兩種入口在育伴港原碼並存，不是兩個設定。數字表示閱讀次序，不是完成率；讀到第三節不會開啟提醒。「前往設定」是另一個按鈕。兩個方案比較版面上的閱讀路徑，沒有呼叫通知權限或修改設定。",
+    "choices": [
+      {
+        "name": "A｜目錄直接跳到第三節",
+        "note": "使用引導整頁保留目錄和閱讀區。按第三步直接到「按需要開啟提醒」，上面兩步不需要先讀。Material for MkDocs 原圖只參考目錄與正文並列；不引入文件站的程式導覽或進度。",
+        "source": "https://raw.githubusercontent.com/squidfunk/mkdocs-material/bcc3f28764178139b4cee96b9fb0c2ccd9bf2bd2/docs/assets/screenshots/navigation-sections.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://github.com/squidfunk/mkdocs-material/blob/bcc3f28764178139b4cee96b9fb0c2ccd9bf2bd2/docs/setup/setting-up-navigation.md#L279-L303"
+          },
+          {
+            "label": "育伴港：第三節內容與設定入口分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/guideScreen.tsx#L18-L33"
+          },
+          {
+            "label": "育伴港：直接選節、上一節、下一節及獨立設定按鈕",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/guideScreen.tsx#L109-L132"
+          }
+        ],
+        "linkLabel": "查看 Material for MkDocs 整個文件視窗（需連網）",
+        "version": "官方文件提交 bcc3f28764178139b4cee96b9fb0c2ccd9bf2bd2，截圖內顯示 7.0.5；未以提交當拍攝日期。2026-11-21 核對原圖像素。",
+        "rights": "Material for MkDocs 官方圖片，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      },
+      {
+        "name": "B｜逐節翻到第三節",
+        "note": "從第一節按兩次「下一步」到第三節；仍可返回，閱讀不是強制流程。Hugo Learn 官方原圖可見右側下一節箭嘴，亦有側邊導覽；只參考順序閱讀入口，不沿用它的勾選標記、不把已閱讀當已完成。",
+        "source": "https://raw.githubusercontent.com/matcornic/hugo-theme-learn/3202533a746f91c67de1a8fa373c0328ec1b403d/images/screenshot.png",
+        "sourceNotes": [
+          {
+            "label": "官方原網站及原圖出處",
+            "url": "https://github.com/matcornic/hugo-theme-learn/blob/3202533a746f91c67de1a8fa373c0328ec1b403d/README.md#L18-L42"
+          },
+          {
+            "label": "育伴港：第三節內容與設定入口分開",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/guideScreen.tsx#L18-L33"
+          },
+          {
+            "label": "育伴港：直接選節、上一節、下一節及獨立設定按鈕",
+            "url": "https://github.com/2NTTY/child-ai-caregiver/blob/6e91757e5f66fded6dc3f8bfe58602f2d26daf7a/frontend/src/screens/guideScreen.tsx#L109-L132"
+          }
+        ],
+        "linkLabel": "查看 Hugo Learn 完整閱讀視窗（需連網）",
+        "version": "Hugo Learn 歷史官方提交 3202533a746f91c67de1a8fa373c0328ec1b403d 的 1500×1000 截圖，未標產品版號；2026-11-21 核對原圖像素。",
+        "rights": "Hugo Learn 官方圖片，僅外連，不內嵌、不轉載。",
+        "externalOnly": true,
+        "images": []
+      }
+    ],
+    "notices": []
+  },
+  "notices": [],
+  "expectedSha256": "53aecaebcaa78dead49682dafffc19689118d7b6fd7ea585bb1fed971d4e985d"
+}
