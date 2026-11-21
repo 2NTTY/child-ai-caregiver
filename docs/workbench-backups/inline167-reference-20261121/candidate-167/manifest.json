@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-167-image-count",
+  "base": {
+    "artifact": "candidate-165/out",
+    "htmlSha256": "2d86d1afa90c7bcc6694489dbd15945bcc48c8f32d160924d43fe0d19c187153",
+    "rawRecordsSha256": "93d36a68bb861f04b96f2fe394f512be26030c5e81fa275a3af87c5dca6c942d",
+    "rawArtworkSha256": "12f81cf0d0f9fce6905c31c6cb29663cbaf0e94118fdd3c22fe8f5264f28806d",
+    "topics": 81,
+    "choices": 165,
+    "images": 165
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-unsent-photo/assets.json",
+      "sha256": "f204bee3630cb6709896163bc8d6a2eec134d63fd546fdd8c06fc833a79bda03"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "1f39c9f24ae444c05d1aa496581a65a294b45fa840a8f133d95b398a14a6a50f",
+    "PROVENANCE.md": "1c7daa8b7d14d14ab672db8712def958d86051f19571929851bf7ab7df869521"
+  },
+  "topics": [
+    {
+      "number": 82,
+      "title": "從首頁拍照給助手：先核對，尚未上傳或送出",
+      "choices": [
+        {
+          "name": "相片先進入全頁預覽",
+          "note": "Element X 拍照後可先在全頁預覽核對，圖中的傳送鍵尚未按下。育伴港自己的附件預覽沒有傳送鍵；這裏只比較分享前先看清相片。",
+          "links": [
+            {
+              "label": "Element X Android v26.11.0：相機照片先作為本機媒體",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/messagecomposer/MessageComposerPresenter.kt#L200-L210"
+            },
+            {
+              "label": "同版：單一附件先進入預覽",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/messagecomposer/MessageComposerPresenter.kt#L654-L666"
+            },
+            {
+              "label": "同版：全頁預覽、返回及裁剪工具",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/attachments/preview/AttachmentsPreviewView.kt#L158-L195"
+            },
+            {
+              "label": "同版：說明欄和預覽內的傳送鍵",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/attachments/preview/AttachmentsPreviewView.kt#L522-L548"
+            },
+            {
+              "label": "同版：明確按下傳送才開始附件傳送",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/attachments/preview/AttachmentsPreviewPresenter.kt#L228-L276"
+            },
+            {
+              "label": "同版：此檔案提供 AGPL-3.0-only 授權選項",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/features/messages/impl/src/main/kotlin/io/element/android/features/messages/impl/attachments/preview/AttachmentsPreviewView.kt#L1-L6"
+            },
+            {
+              "label": "Element X Android 所引程式授權：AGPL-3.0-only 選項的 AGPL v3 全文",
+              "url": "https://github.com/element-hq/element-x-android/blob/5d1af53a6c8dd6234cbb51e44282d5902b6d4ff3/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-unsent-photo/unsent-photo-a.png",
+            "sha256": "962f650c5b6f92e9035e3d3306bf0ecab5f2b84cc94fb97c034315607c530c10",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Element X Android 的非官方深色手機預覽示例。上方有返回和裁剪圖示，中間是一張虛構的幾何紙藝相片；下方有空白說明欄和未按下的綠色傳送鍵。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "把未傳送圖片留在聊天輸入區",
+          "note": "選取的圖片先在輸入區顯示成可移除的小縮圖，不會出現在對話記錄。圖中未按傳送；只有明確傳送時才會附上圖片。",
+          "links": [
+            {
+              "label": "OpenClaw v2026.6.5：聊天記錄與輸入區分開",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/views/chat.ts#L2000-L2081"
+            },
+            {
+              "label": "同版：輸入區的圖片縮圖及移除鍵",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/views/chat.ts#L932-L969"
+            },
+            {
+              "label": "同版：瀏覽器本機檔案選擇及讀取",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/views/chat.ts#L866-L905"
+            },
+            {
+              "label": "同版：獨立傳送按鈕",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/chat/run-controls.ts#L69-L90"
+            },
+            {
+              "label": "同版：明確傳送時才將附件加入請求",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/controllers/chat.ts#L917-L939"
+            },
+            {
+              "label": "同版：桌面聊天頁首和側欄",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/ui/app-render.ts#L2230-L2330"
+            },
+            {
+              "label": "同版：縮圖與移除鍵樣式",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/ui/src/styles/chat/layout.css#L1601-L1643"
+            },
+            {
+              "label": "同版：正式版本號",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/package.json#L1-L10"
+            },
+            {
+              "label": "OpenClaw 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/openclaw/openclaw/blob/5181e4f7c82bd373cb215a5619b0fa03c13862b7/LICENSE#L1-L12"
+            }
+          ],
+          "asset": {
+            "input": "draft-unsent-photo/unsent-photo-b.png",
+            "sha256": "edd51ef3a3e4c2367a1621173d28f04d38cb90497cc52014f89ed94cfb0fb373",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 OpenClaw 桌面聊天示例：上方是虛構的展板文字對話。底部草稿有一句紙藝展品的問題，左上有一張原創小紙船縮圖及移除鍵，右下的傳送圖示未按，聊天記錄沒有這張圖片。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 82 題 · 照片尚未送出的兩幅自製示意",
+      "input": "draft-unsent-photo/DECLARATION.txt",
+      "sha256": "1f39c9f24ae444c05d1aa496581a65a294b45fa840a8f133d95b398a14a6a50f"
+    }
+  ]
+}
