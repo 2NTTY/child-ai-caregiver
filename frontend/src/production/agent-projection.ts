@@ -81,7 +81,7 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
       source.sourceUpdatedAt ? `更新：${source.sourceUpdatedAt}` : null].filter(Boolean).join("；") || null,
     validUntil: source.validUntil ?? null, ...(source.timelyEvent ? { timelyEvent: source.timelyEvent } : {}), internalOnly: source.usageScope === "internal_noncommercial", url: source.url,
     applicabilityLabel: [age.region, ...(age.ageBasis === 'publisher' || age.ageBasis === 'unconfirmed'
-      ? [age.publisherAudience ? `原文對象：${age.publisherAudience}` : '原文未指明對象','月齡範圍未確定','只供查閱原文']
+      ? [age.publisherAudiences ? `原文對象：${age.publisherAudiences.join('、')}` : '原文未指明對象','月齡範圍未確定','只供查閱原文']
       : [age.ageBasis === "any" ? "不限年齡基準" : age.ageBasis === "corrected" ? "矯正月齡" : "實際月齡",
       age.minAgeMonths === null ? "沒有最低月齡" : `最低 ${age.minAgeMonths} 個月`,
       age.maxAgeMonths === null ? "沒有最高月齡" : `${age.maxAgeMonthsExclusive ? "少於" : "最高"} ${age.maxAgeMonths} 個月`]),

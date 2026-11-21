@@ -8,7 +8,7 @@ export interface KnowledgeApplicability {
   use?: 'original_lookup';
   region: string;
   ageBasis: "actual" | "corrected" | "any" | "publisher" | "unconfirmed";
-  publisherAudience?: string;
+  publisherAudiences?: string[];
   minAgeMonths: number | null;
   maxAgeMonths: number | null;
   maxAgeMonthsExclusive?: boolean;

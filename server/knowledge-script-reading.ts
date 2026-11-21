@@ -37,13 +37,14 @@ export function publisherScriptReading(units:readonly Unit[],materialTitle:strin
   }
   return units.map(unit=>{
     const title=unit.scriptPassage?.title ?? materialTitle;
-    const label=labels.find(l=>l.title===title) ?? labels.find(l=>l.title===undefined);
+    const specific=labels.filter(l=>l.title===title);
+    const audiences=(specific.length?specific:labels.filter(l=>l.title===undefined)).map(l=>l.audience);
     const sentences=(unit.originalText.match(/[^。！？；\n]+[。！？；]?/gu)??[]).map(s=>s.trim());
     const conditions=[...new Set(sentences.filter(s=>s.length<=600 &&
       /(?:[\d零〇一二兩三四五六七八九十百半]+\s*(?:個?月|歲|星期大|週大|日大)|學前|初生|新生)/u.test(s)))].slice(0,8);
     const applicability:KnowledgeChunkInput['applicability']={region:'HK',topics:['official-transcript'],conditions,
-      use:'original_lookup',ageBasis:label?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:null,
-      ...(label?{publisherAudience:label.audience}:{})};
+      use:'original_lookup',ageBasis:audiences.length?'publisher':'unconfirmed',minAgeMonths:null,maxAgeMonths:null,
+      ...(audiences.length?{publisherAudiences:audiences}:{})};
     return {unitId:unit.id,section:[...title].slice(0,100).join(''),text:unit.originalText,
       keywords:[title.slice(0,80).toWellFormed()],applicability,treatment:{kind:'overview' as const,policyVersion:1 as const}};
   });

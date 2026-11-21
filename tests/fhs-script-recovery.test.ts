@@ -7,7 +7,7 @@ test('a publisher audience remains visible without creating age endpoints or adv
   const unit = {id:'p0-12345678901234567890',originalText:'家長可參考原文。',scriptPassage:{title:'情緒導航（學前兒童篇）'}};
   const [chunk]=publisherScriptReading([unit],'官方教材',[{title:unit.scriptPassage.title,audience:'學前兒童'}]);
   assert.equal(chunk!.applicability.ageBasis,'publisher');
-  assert.equal(chunk!.applicability.publisherAudience,'學前兒童');
+  assert.deepEqual(chunk!.applicability.publisherAudiences,['學前兒童']);
   assert.equal(chunk!.applicability.minAgeMonths,null);
   assert.equal(chunk!.applicability.maxAgeMonths,null);
   assert.equal(chunk!.applicability.use,'original_lookup');

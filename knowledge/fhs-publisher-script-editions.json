@@ -3,6 +3,6 @@
   {"sourceId":"fhs-12196","previousCode":null,"previousVersionHash":null,"audiences":[{"audience":"給兩歲前幼兒的父母"}]},
   {"sourceId":"fhs-20000","previousCode":"input_limit","previousVersionHash":null,"audiences":[{"title":"餵哺技巧: 媽媽及寶寶的姿勢","audience":"媽媽及寶寶"}]},
   {"sourceId":"fhs-30078","previousCode":"knowledge_review_failed","previousVersionHash":null,"audiences":[{"audience":"嬰幼兒"}]},
-  {"sourceId":"fhs-30092","previousCode":"review_hold","previousVersionHash":"718bfb50ad083b7f71be43e327f57e8d722f37a71db7a240510dc5128c4a76a6","audiences":[{"title":"替初生寶寶清潔臍帶","audience":"初生寶寶"},{"title":"紅外線耳温計的使用步驟","audience":"一歲以下的BB要把耳朵向後拉直；一歲以上的小朋友及成人，就要把耳朵向後和向上拉直。"}]},
+  {"sourceId":"fhs-30092","previousCode":"review_hold","previousVersionHash":"718bfb50ad083b7f71be43e327f57e8d722f37a71db7a240510dc5128c4a76a6","audiences":[{"title":"替初生寶寶清潔臍帶","audience":"初生寶寶"},{"title":"紅外線耳温計的使用步驟","audience":"一歲以下的BB"},{"title":"紅外線耳温計的使用步驟","audience":"一歲以上的小朋友及成人"}]},
   {"sourceId":"fhs-13043","previousCode":null,"previousVersionHash":null,"audiences":[],"amendUnits":["p0-0397be2575110d272930"]}
 ]

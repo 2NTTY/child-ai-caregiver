@@ -27,12 +27,12 @@ export const originalOrganizerApplicability = z.strictObject({
 // Keep the historical organizer grammar stable so its sealed requests can be resumed.
 const establishedApplicability = originalOrganizerApplicability.safeExtend({ maxAgeMonths: z.number().min(0).max(216).nullable(), use:z.literal('original_lookup').optional() });
 const applicability = z.strictObject({...establishedApplicability.shape,ageBasis:z.enum(['actual','corrected','any','publisher','unconfirmed']),
-  publisherAudience:text(240).optional()}).superRefine((value,ctx)=>{
-  const {publisherAudience,...scope}=value;
+  publisherAudiences:z.array(text(240)).min(1).max(8).optional()}).superRefine((value,ctx)=>{
+  const {publisherAudiences,...scope}=value;
   const valid=scope.ageBasis==='publisher'||scope.ageBasis==='unconfirmed'
     ? scope.use==='original_lookup' && scope.minAgeMonths===null && scope.maxAgeMonths===null && scope.maxAgeMonthsExclusive===undefined
-      && (scope.ageBasis==='publisher')===Boolean(publisherAudience)
-    : publisherAudience===undefined && establishedApplicability.safeParse(scope).success;
+      && (scope.ageBasis==='publisher')===Boolean(publisherAudiences)
+    : publisherAudiences===undefined && establishedApplicability.safeParse(scope).success;
   if(!valid)ctx.addIssue({code:'custom',message:'Invalid publisher or numeric age applicability'});
 });
 const publicSourceUrl = z.url().refine(value => {
@@ -74,9 +74,9 @@ const sourceSchema = z.strictObject({
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
     if (chunk.applicability.ageBasis === 'publisher' || chunk.applicability.ageBasis === 'unconfirmed') {
-      const audience=chunk.applicability.publisherAudience;
-      if(chunk.treatment?.kind!=='overview' || audience && !value.title.includes(audience) &&
-        !value.chunks.some(c=>(c.originalText??c.sourceExcerpt).includes(audience) || c.scriptPassage?.title.includes(audience)))
+      const audiences=chunk.applicability.publisherAudiences??[];
+      if(chunk.treatment?.kind!=='overview' || audiences.some(audience=>!value.title.includes(audience) &&
+        !value.chunks.some(c=>(c.originalText??c.sourceExcerpt).includes(audience) || c.scriptPassage?.title.includes(audience))))
         ctx.addIssue({code:'custom',message:'Original reading requires a source-bound publisher scope'});
     }
     if (chunk.scriptPassage && (new URL(value.url).origin !== new URL(chunk.scriptPassage.url).origin
