@@ -4,7 +4,7 @@ import { Storage } from "@google-cloud/storage";
 import { z } from "zod";
 import { KNOWLEDGE_PDF_MAX_BYTES } from "./knowledge-pdf.ts";
 import { createFirebasePhotoBucketPort, readFirebaseStorageResponse, type FirebasePhotoBucketPort } from "./firebase-photo-objects.ts";
-import { readChatFileCiphertext } from "./firebase-chat-file-objects.ts";
+import { readChatFileCiphertext, verifyPinnedObjectBytes } from "./firebase-chat-file-objects.ts";
 import { largeFhsPdf, largestFhsOriginalBytes } from './platform-materials.ts';
 
 const digest = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
@@ -102,10 +102,13 @@ export function createFirestoreKnowledgeOriginals({ database, projectId, namespa
       || m.mimeType !== mimeType || m.bucketName !== target().bucketName) throw Error("knowledge_original_binding");
     return m;
   }
-  async function find(sourceId: string, contentHash: string, mimeType: Mime) {
+  async function findManifest(sourceId: string, contentHash: string, mimeType: Mime) {
     const snapshot = await reference(sourceId, contentHash).get();
-    if (!snapshot.exists) return null;
-    const m = valid(snapshot.data(), sourceId, contentHash, mimeType);
+    return snapshot.exists ? valid(snapshot.data(), sourceId, contentHash, mimeType) : null;
+  }
+  async function find(sourceId: string, contentHash: string, mimeType: Mime) {
+    const m = await findManifest(sourceId, contentHash, mimeType);
+    if (!m) return null;
     return readKnowledgeOriginalObject(target(), knowledgeOriginalName(m), m, m.generation);
   }
   async function read(sourceId: string, contentHash: string, mimeType: Mime) {
@@ -114,6 +117,13 @@ export function createFirestoreKnowledgeOriginals({ database, projectId, namespa
     return bytes;
   }
   return {
+    async verifyPdf(sourceId: string, contentHash: string) {
+      const m = await findManifest(sourceId, contentHash, "application/pdf");
+      if (!m) throw Error("knowledge_original_missing");
+      const bucket = target(), name = knowledgeOriginalName(m);
+      checkedMetadata(bucket, name, m, await bucket.bucket.metadata(name, m.generation), m.generation);
+      await verifyPinnedObjectBytes(bucket.bucket, name, m.generation, m.size, m.contentHash, largestFhsOriginalBytes);
+    },
     findPdf: (sourceId: string, hash: string) => find(sourceId, hash, "application/pdf"),
     readPdf: (sourceId: string, hash: string) => read(sourceId, hash, "application/pdf"),
     readFeed: (sourceId: string, hash: string) => read(sourceId, hash, "application/rss+xml"),

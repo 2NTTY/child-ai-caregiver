@@ -120,6 +120,25 @@ class PublicationTests(unittest.TestCase):
             service = json.loads(proc.stdin.write.call_args.args[0])["services"]["worker"]
             self.assertEqual(service["environment"], {"FHS_CAMPAIGN_LANE":"C1","FHS_CAMPAIGN_ORIGINAL_OPERATION":op})
 
+    def test_only_a_registered_staged_book_gets_the_smaller_no_swap_slot(self):
+        pins = json.loads((Path(__file__).resolve().parents[2] / "knowledge/fhs-staged-book-indexes.json").read_text())
+        self.host.run.return_value = json.dumps(pins)
+        for source, index in pins.items():
+            args = SimpleNamespace(action="lane", mode="run", lane="C1", reads=publication.CACHE+"/reads", reads_hash=index)
+            command = ["scripts/fhs-initial-campaign.mjs", "publish-approved", source]
+            required = publication.STAGED_BOOK_MIB + publication.FAMILY_HEADROOM_MIB + publication.LAUNCHER_HEADROOM_MIB
+            with patch("publication.Path.read_text", return_value=f"MemAvailable: {required*1024} kB\n"), patch("publication.subprocess.Popen") as run:
+                proc = run.return_value.__enter__.return_value
+                proc.wait.return_value = 0
+                publication.compose_job(self.host, args, command, original="a"*64, pdf_bytes=53090252)
+                service = json.loads(proc.stdin.write.call_args.args[0])["services"]["worker"]
+                self.assertEqual((service["mem_limit"], service["memswap_limit"]), (f"{publication.STAGED_BOOK_MIB}m",)*2)
+                self.assertEqual(service["environment"]["FHS_CAMPAIGN_STAGED_WINDOWS"], "1")
+                args.reads_hash = "e"*64
+                with self.assertRaises(publication.OriginalCapacityError):
+                    publication.compose_job(self.host, args, command, original="a"*64, pdf_bytes=53090252)
+                self.assertEqual(run.call_count, 1)
+
     def test_each_assigned_source_gets_a_separate_turn_in_page_order(self):
         short, long = ("pdf-" + digit * 24 for digit in ("1", "2"))
         manifest = {"lanes": [{"id": "C1", "sources": [{"sourceId": long, "pages": 12}, {"sourceId": short, "pages": 3}]}]}

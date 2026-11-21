@@ -30,14 +30,18 @@ function fixture() {
 test('original edition lookup distinguishes absent descriptor, missing generation and damaged bytes',async()=>{
   const {primary,store,reference}=fixture();
   assert.equal(await store.findPdf(sourceId,contentHash),null);
+  await assert.rejects(store.verifyPdf(sourceId,contentHash),/missing/);
   primary.lose();
   assert.equal(await store.save(sourceId,'application/pdf',file),contentHash);
   assert.deepEqual(await store.findPdf(sourceId,contentHash),file);
+  await store.verifyPdf(sourceId,contentHash);
   await store.save(sourceId,'application/pdf',file);assert.equal(primary.writes(),1);
   const m=knowledgeOriginalManifest.parse((await reference.get()).data()),name=knowledgeOriginalName(m);
   const object=primary.records.get(name)!; object.bytes=Buffer.alloc(file.length);
+  await assert.rejects(store.verifyPdf(sourceId,contentHash));
   await assert.rejects(store.findPdf(sourceId,contentHash));
   object.bytes=file;object.metadata.generation='9876';
+  await assert.rejects(store.verifyPdf(sourceId,contentHash));
   await assert.rejects(store.findPdf(sourceId,contentHash));
   primary.records.delete(name);await assert.rejects(store.findPdf(sourceId,contentHash));
   await reference.set({...m,sourceId:'different'});await assert.rejects(store.findPdf(sourceId,contentHash),/binding/);

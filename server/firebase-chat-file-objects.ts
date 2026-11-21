@@ -35,8 +35,26 @@ export function chatFileObjectAddress(config: FirebasePhotoObjectsConfig, scopeI
 /** Bounded encrypted media read shared by original file objects and their pinned backup artifacts. */
 export async function readChatFileCiphertext(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>,objectName:string,revision:string,maximum:number,sha256:string,
   objectLimit = CHAT_FILE_OBJECT_MAX_BYTES) {
+  const chunks: Buffer[] = [];
+  await consumePinnedObject(bucket, objectName, revision, maximum, objectLimit, chunk => chunks.push(chunk));
+  const bytes = Buffer.concat(chunks, maximum);
+  if (digest(bytes) !== sha256) throw new ChatFileObjectError();
+  return bytes;
+}
+
+/** Check a specific immutable generation without retaining its body when only the digest is needed. */
+export async function verifyPinnedObjectBytes(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>, objectName: string,
+  revision: string, maximum: number, sha256: string, objectLimit: number) {
+  const hash = createHash('sha256');
+  await consumePinnedObject(bucket, objectName, revision, maximum, objectLimit, chunk => hash.update(chunk));
+  if (hash.digest('hex') !== sha256) throw new ChatFileObjectError();
+}
+
+async function consumePinnedObject(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>, objectName: string,
+  revision: string, maximum: number, objectLimit: number, consume: (chunk: Buffer) => void) {
   if (!Number.isSafeInteger(objectLimit)||objectLimit>64*1024*1024||!Number.isSafeInteger(maximum)||maximum<1||maximum>objectLimit) throw new ChatFileObjectError();
-  const stream=bucket.readPinned(objectName,revision),chunks:Buffer[]=[];let size=0,accepted=false;
+  const stream = bucket.readPinned(objectName, revision);
+  let size=0,accepted=false;
   stream.once('response',(response:{statusCode?:number;headers?:Record<string,string>})=>{
     const h=response.headers??{},length=h['content-length'];
     if (![200,206].includes(response.statusCode??0)||h['content-encoding']!==undefined&&h['content-encoding']!=='identity'
@@ -44,8 +62,13 @@ export async function readChatFileCiphertext(bucket: Pick<FirebasePhotoBucketPor
       ||length!==undefined&&(!/^[0-9]+$/u.test(length)||BigInt(length)>BigInt(maximum)))stream.destroy(new ChatFileObjectError());else accepted=true;
   });
   const timer=setTimeout(()=>stream.destroy(new ChatFileObjectError()),15000);
-  try {for await(const part of stream){if(!accepted||!Buffer.isBuffer(part)||size+part.length>maximum)throw new ChatFileObjectError();size+=part.length;chunks.push(part);}
-    const bytes=Buffer.concat(chunks,size);if(!accepted||size!==maximum||digest(bytes)!==sha256)throw new ChatFileObjectError();return bytes;
+  try {
+    for await (const part of stream) {
+      if (!accepted || !Buffer.isBuffer(part) || size + part.length > maximum) throw new ChatFileObjectError();
+      size += part.length;
+      consume(part);
+    }
+    if (!accepted || size !== maximum) throw new ChatFileObjectError();
   }finally{clearTimeout(timer);stream.destroy();}
 }
 /** Object integrity only. Caller must establish current Firestore authority before and after I/O. */
