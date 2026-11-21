@@ -7365,3 +7365,7 @@ Web 及 Server 沿 REQ-006 將已發布教材歸入「衛生署 兒童健康」�
 - 在分支 `codex/req003-acceptance-closeout`（基於 PR 4 最新同步版本 `5013853b`）新增跨 PR 合成驗收測試 `tests/req003-acceptance-closeout.test.ts`（6 項案例：PR 1＋PR 2 草稿確認編輯與七類操作撤銷邊界、PR 3 純聊天與 REQ-009 三角色討論正交性、切換回助手引用「把剛才那份記下來」、PR 4 臨時聊天隔離與 `server/firebase-runtime.ts`／`server/index.ts` 雙運行環境接線、`PLAN.md#req003-closeout01` 二十一項場景與七項待決結構檢查，以及 `docs/REQUIREMENTS_BACKLOG.md` 同步與清潔度檢查）。
 - 更新 `PLAN.md`（新增 `<a id="req003-closeout01"></a>` 五支 PR 堆疊總覽、`S7-01`–`S7-21` 對照、`D8-01`–`D8-07` 決議與單實例／sticky routing、第三方供應商留存及離線邊界揭示）並同步 `docs/REQUIREMENTS_BACKLOG.md` 索引列與 REQ-003 狀態列（只改兩行並保留真模型／實網／實機待驗前提）。
 - 新增離線 CI 驗收腳本 `scripts/ci/verify-req003-acceptance-closeout-offline.sh` 與 `.github/workflows/req003-acceptance-closeout-offline.yml`，離線通過全部 18 份測試共 181 項案例與 Server／Root／Frontend 三份嚴格 `tsc --noEmit`（離線合成測試不代替真模型、外網抓取、多實例部署與實機驗收）。
+
+### 2026-11-22｜角色切頁修正交付
+
+原站發布 `r44934163597-1` 已交付 #784。版本 8 的 Android preview 公開更新清單於香港 02:50 回傳 HTTP 200，更新 ID 和 runtime 與本次 EAS 發布吻合。切頁畫格來自 Edge；手機實際套用和觸控效果待驗。[版本及查回收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)
