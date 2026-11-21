@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-179-image-count",
+  "base": {
+    "artifact": "candidate-177/out",
+    "htmlSha256": "63b3ef9a9f3a4738cf3de97c76cbecf89277f144fc803ec7acb565c4c19e3e0f",
+    "rawRecordsSha256": "85203bc4581689fa048e39b05d3dedab319b071ef5c2face2f25c039cf74f265",
+    "rawArtworkSha256": "e3c1c7eb566e519b28a33d4e302f7154a5182dac448d905d8f5816155ac94b61",
+    "topics": 87,
+    "choices": 177,
+    "images": 177
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-task-reschedule/assets.json",
+      "sha256": "02d8b0bed506e040faf5fdf12174e0943b118d1a0edf2f941c9525851765d2b0"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "c55874d5aa491f013e46cf5d01313c9bd1bfa8006620f503c1ee203025898744",
+    "PROVENANCE.md": "e540502b98eb2adceeab1bbb56c0feb3f442509fc2587908c0ab4db2e9fc746d"
+  },
+  "topics": [
+    {
+      "number": 88,
+      "title": "單項待辦改期／轉派：先核對誰接手、何時到期，再保存",
+      "choices": [
+        {
+          "name": "在現有問題表單修改負責人和到期日",
+          "note": "MantisBT 在現有問題表單帶入負責人和到期日，備註可留空；圖中的「更新資訊」尚未按下。育伴港重排事項須另填原因，預覽及確認後才保存。",
+          "links": [
+            {
+              "label": "MantisBT 2.28.1：現有問題的完整更新表單",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update_page.php#L157-L197"
+            },
+            {
+              "label": "同版：可編輯的負責人和到期日",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update_page.php#L311-L360"
+            },
+            {
+              "label": "同版：新增說明並非必填",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update_page.php#L734-L745"
+            },
+            {
+              "label": "同版：新增說明按條件驗證",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update.php#L406-L421"
+            },
+            {
+              "label": "同版：手動更新按鈕及已有活動區",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update_page.php#L784-L803"
+            },
+            {
+              "label": "MantisBT 程式碼授權：GPL-2.0-or-later",
+              "url": "https://github.com/mantisbt/mantisbt/blob/61082fb5bc65fbc35973a4b08d63d7e9db1e3f97/bug_update_page.php#L1-L15"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-reschedule/task-reschedule-a.png",
+            "sha256": "09413a5dcb119e877b724d2a7f9a0e55a0aa0e8c1235a6b6550ad2a4f4842264",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "MantisBT 的非官方桌面介面重繪。藍色標題下是虛構展板事項的更新表單，帶有負責人選單和到期日；下方是空白的新增說明、未按下的更新資訊鍵，以及一條已有活動。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "保留清單，在右側單獨改負責人",
+          "note": "OpenProject 保留左側清單，右側可單獨打開負責人欄位；日期另用選擇器保存。育伴港的更改原因、合併預覽和確認保存是另一套流程；圖中尚未改動，也沒有通知送出的提示。",
+          "links": [
+            {
+              "label": "OpenProject v17.9.8：左清單、右詳情的分割檢視",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/docs/user-guide/work-packages/work-package-views/README.md#L44-L52"
+            },
+            {
+              "label": "分割畫面原始參考",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/docs/user-guide/work-packages/work-package-views/openproject-user-guide-work-packages-split-screen-view.png"
+            },
+            {
+              "label": "所選項目的右側詳情",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/app/components/work_packages/split_view_component.html.erb#L13-L24"
+            },
+            {
+              "label": "詳情中的逐欄編輯",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/docs/user-guide/work-packages/edit-work-package/README.md#L23-L47"
+            },
+            {
+              "label": "負責人欄位的個別提交",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/frontend/src/app/shared/components/fields/edit/field-types/user-edit-field.component.ts#L61-L72"
+            },
+            {
+              "label": "獨立的日期選擇器",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/docs/user-guide/work-packages/set-change-dates/README.md#L24-L42"
+            },
+            {
+              "label": "日期保存和活動紀錄",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/docs/user-guide/work-packages/set-change-dates/README.md#L166-L178"
+            },
+            {
+              "label": "OpenProject 授權聲明",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/COPYRIGHT#L1-L18"
+            },
+            {
+              "label": "GPL v3 授權（GPL-3.0-only 程式）",
+              "url": "https://github.com/opf/openproject/blob/3f94937cd2d24d053167c5fee25ff84934ea8ff2/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-reschedule/task-reschedule-b.png",
+            "sha256": "a5f5508d4c15c82d2f0330c5eba9666fbf867a0f81c703c7bc518ca66b802e87",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "OpenProject 桌面分割畫面：左側清單藍色選取「調整海岸模型展板標籤」，右側概覽打開負責人選單，原有的場務小組仍被選取。起迄日期保持顯示，沒有打開日期選擇器。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 88 題 · 改期或轉派前的兩幅自製示意",
+      "input": "draft-task-reschedule/DECLARATION.txt",
+      "sha256": "c55874d5aa491f013e46cf5d01313c9bd1bfa8006620f503c1ee203025898744"
+    }
+  ]
+}
