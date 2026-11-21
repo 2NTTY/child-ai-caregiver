@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-157-image-count",
+  "base": {
+    "artifact": "candidate-155/out",
+    "htmlSha256": "38f98b62e296c1fb682f5911f4a800ac6ab64a1db896093923ddf21265e2ab39",
+    "rawRecordsSha256": "0364837c5c566cd482cd65610b56c59a0121396d3dd1a7bd9e04bcfe6aa30aa8",
+    "rawArtworkSha256": "52c969bbb3babe483e28e1a2c6100a798d116ff881e091bc9d4a75a9bf139b13",
+    "topics": 76,
+    "choices": 155,
+    "images": 155
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-class-handoff/assets.json",
+      "sha256": "fbed1e2eb7cf958a8fe3c45f63c5ab50fb0506f441ec4d350a64884882e24ce2"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b5ff7a06346c3ff3ff2f287f8c6ab624ed1738239e316a1cd11f44166da5e7f7",
+    "PROVENANCE.md": "894f8d6ff354b64e62bab3f08263011e3a4effc451bee5aac6c4e77f604effeb"
+  },
+  "topics": [
+    {
+      "number": 77,
+      "title": "班級移出教師空間：指定成員接手前，甚麼還沒改？",
+      "choices": [
+        {
+          "name": "等候具名接手人，保留現有擁有者",
+          "note": "待轉移的儲存庫仍顯示原有擁有者及名稱。「危險操作區」列出正等候哪位接手人；發起人不能代為接受。圖中的「取消轉移」是 Gitea 的功能，不代表育伴港已有同一操作。",
+          "links": [
+            {
+              "label": "Gitea v1.24.6：待轉移的接手人及取消轉移",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/templates/repo/settings/options.tmpl#L816-L838"
+            },
+            {
+              "label": "儲存庫頁首仍讀取目前的擁有者與名稱",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/templates/repo/header.tmpl#L8-L12"
+            },
+            {
+              "label": "發起人沒有接受或拒絕轉移的權限時，按鈕停用",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/templates/repo/header.tmpl#L40-L59"
+            },
+            {
+              "label": "個人接手人須以本人身分接受或拒絕",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/models/repo/transfer.go#L138-L157"
+            },
+            {
+              "label": "區分等待確認與直接轉移的條件",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/services/repository/transfer.go#L424-L474"
+            },
+            {
+              "label": "危險操作區與可見性設定",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/templates/repo/settings/options.tmpl#L768-L791"
+            },
+            {
+              "label": "Gitea 程式授權：MIT",
+              "url": "https://github.com/go-gitea/gitea/blob/08c6ea6728ee35a16f9a39588e725044b7f389cd/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-handoff/class-handoff-a.png",
+            "sha256": "db3be04f4952995109c8a05d309bafe23e942e99c0141071f0dacf36da2b669b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Gitea 設定頁。頁首仍顯示 paper-moon-demo / exhibit-texts，接受和拒絕轉移按鈕呈灰色；危險操作區顯示儲存庫正等候墨燕（示例）確認，右側有紅色「取消轉移」按鈕。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在通知中查看移交並回應",
+          "note": "收件人在頁首通知看見提出者、要移交的資料夾和回應鍵。此時尚未接受；Nextcloud 只容許指定收件人接受，然後才排程轉移。這是檔案擁有權參考，不代表育伴港有拒絕班級移交功能。",
+          "links": [
+            {
+              "label": "Nextcloud Server 31.0.12：通知的提出者、資料夾及回應",
+              "url": "https://github.com/nextcloud/server/blob/6b72bb307e91390c6efe4072b2829bbd1028651c/apps/files/lib/Notification/Notifier.php#L73-L124"
+            },
+            {
+              "label": "同版：只限收件人接受，接受後才排程轉移",
+              "url": "https://github.com/nextcloud/server/blob/6b72bb307e91390c6efe4072b2829bbd1028651c/apps/files/lib/Controller/TransferOwnershipController.php#L111-L132"
+            },
+            {
+              "label": "同版：已登入頁首的通知入口",
+              "url": "https://github.com/nextcloud/server/blob/6b72bb307e91390c6efe4072b2829bbd1028651c/core/templates/layout.user.php#L65-L84"
+            },
+            {
+              "label": "同版：登入後的檔案導覽與清單",
+              "url": "https://github.com/nextcloud/server/blob/6b72bb307e91390c6efe4072b2829bbd1028651c/apps/files/src/FilesApp.vue#L5-L11"
+            },
+            {
+              "label": "Notifications 4.0.0：適用於 Nextcloud 31",
+              "url": "https://github.com/nextcloud/notifications/blob/ae4d38cac517c88270a9c1015c07c225f0d1d8c7/appinfo/info.xml#L23-L38"
+            },
+            {
+              "label": "同版通知外掛：頁首浮窗及通知清單",
+              "url": "https://github.com/nextcloud/notifications/blob/ae4d38cac517c88270a9c1015c07c225f0d1d8c7/src/NotificationsApp.vue#L5-L42"
+            },
+            {
+              "label": "同版通知外掛：訊息內直接顯示回應鍵",
+              "url": "https://github.com/nextcloud/notifications/blob/ae4d38cac517c88270a9c1015c07c225f0d1d8c7/src/Components/Notification.vue#L43-L67"
+            },
+            {
+              "label": "同版通知外掛：主要及次要回應鍵",
+              "url": "https://github.com/nextcloud/notifications/blob/ae4d38cac517c88270a9c1015c07c225f0d1d8c7/src/Components/Action.vue#L67-L78"
+            },
+            {
+              "label": "通知外掛程式授權（所列元件）：AGPL-3.0-or-later",
+              "url": "https://github.com/nextcloud/notifications/blob/ae4d38cac517c88270a9c1015c07c225f0d1d8c7/COPYING"
+            },
+            {
+              "label": "Server 所列檔案程式：AGPL-3.0-or-later；登入版面另為 AGPL-3.0-only",
+              "url": "https://github.com/nextcloud/server/blob/6b72bb307e91390c6efe4072b2829bbd1028651c/COPYING"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-handoff/class-handoff-b.png",
+            "sha256": "9858ab41f0afa70c859faacf0829ef90fd02eabd2ab57d8333e645cc2b28fd7a",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Nextcloud 的非官方檔案頁重繪。右上方通知浮窗顯示「紙舟編輯室」提出轉移「海風展覽素材」資料夾的擁有權。通知有藍色「接受」鍵及次要「拒絕」鍵，兩者均未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 77 題 · 指定接手前的兩幅自製示意",
+      "input": "draft-class-handoff/DECLARATION.txt",
+      "sha256": "b5ff7a06346c3ff3ff2f287f8c6ab624ed1738239e316a1cd11f44166da5e7f7"
+    }
+  ]
+}
