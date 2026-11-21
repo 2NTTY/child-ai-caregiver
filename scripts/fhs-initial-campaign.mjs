@@ -307,7 +307,9 @@ try {
           const saved = await work.inspect(request);
           const held = result.code === 'review_hold' ? saved?.prepared?.review?.decision === 'hold_candidate' : !saved?.prepared;
           const confirmedHold = saved?.result?.status === 'candidate_held' && saved.result.code === result.code && held && !saved.receipt;
-          if (confirmedHold && saved.budget.modelCalls > 0 && (await gate.sourceStatus(id)).admissible) process.exitCode = 3;
+          const retainedHold = operationFingerprint === communicationReplayWork && result.code === 'review_hold'
+            && knowledgeReviewHash(saved?.prepared?.provenance.reviewAttemptKey) === recordedCommunicationComparison.stageHash;
+          if (confirmedHold && (saved.budget.modelCalls > 0 || retainedHold) && (await gate.sourceStatus(id)).admissible) process.exitCode = 3;
         }
       }
     }

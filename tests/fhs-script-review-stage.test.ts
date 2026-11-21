@@ -2,11 +2,22 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { recordedScriptReviewStage } from '../server/fhs-script-edition.ts';
-import { normalizeRecordedComparison } from '../server/fhs-script-comparison-stage.ts';
+import { normalizeRecordedComparison, recordedExplanationKey, referenceRecordedExplanation } from '../server/fhs-script-comparison-stage.ts';
 import { createFirestoreKnowledgeWork } from '../server/firestore-knowledge-work.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+
+test('a sealed explanation retains its entire wording under the durable assessment contract', () => {
+  const key = recordedExplanationKey, explanation = 'Every printed condition remains qualified. '.repeat(5);
+  const original = {decision:'hold',changes:{[key]:{explanation,meaning:'changed'},another:{explanation:'Retain this too.'}}};
+  const retained = referenceRecordedExplanation(original)!;
+  assert.equal(retained.reference,'sealed-note:'+knowledgeReviewHash(explanation));
+  assert.equal(retained.explanation,explanation);
+  assert.deepEqual(retained.value,{...original,changes:{...original.changes,[key]:{meaning:'changed',explanation:retained.reference}}});
+  assert.equal(original.changes[key]!.explanation,explanation);
+  assert.equal(referenceRecordedExplanation({changes:{[key]:{explanation:'a'.repeat(2001)}}}),null);
+});
 
 test('replay removes only repeated structural labels and preserves the independent assessment', () => {
   const user = JSON.stringify({sourceComparison:{facts:{added:'new', absent:'removed', conflict:'unchanged', edited:null}}});

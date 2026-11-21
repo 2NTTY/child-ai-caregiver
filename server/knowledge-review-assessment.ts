@@ -13,12 +13,12 @@ export const knowledgeReviewAssessmentSchema = z.strictObject({
   decision: z.enum(["approve", "hold"]),
 }).refine(value => (value.comparedVersionId === null) === (value.comparedHash === null));
 export type KnowledgeReviewAssessment = z.infer<typeof knowledgeReviewAssessmentSchema>;
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical);
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)]));
+function canonical(value: unknown, locale?: string): unknown {
+  if (Array.isArray(value)) return value.map(item => canonical(item, locale));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b, locale)).map(([key, item]) => [key, canonical(item, locale)]));
   return value;
 }
-export function knowledgeReviewHash(value: unknown): string { return knowledgeHash(canonical(value) ?? null); }
+export function knowledgeReviewHash(value: unknown, locale?: string): string { return knowledgeHash(canonical(value, locale) ?? null); }
 export function knowledgeOperationId(scope: string, fingerprint: string) {
   const id = knowledgeReviewHash([scope, fingerprint]);
   return `${id.slice(0, 8)}-${id.slice(8, 12)}-5${id.slice(13, 16)}-8${id.slice(17, 20)}-${id.slice(20, 32)}`;
