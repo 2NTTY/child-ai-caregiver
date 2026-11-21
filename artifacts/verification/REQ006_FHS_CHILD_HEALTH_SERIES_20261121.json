@@ -1,0 +1,40 @@
+{
+  "observedAt": "2026-11-21T15:14:53+08:00",
+  "branch": "codex/fhs-child-health-series",
+  "integrationBase": "d16cf056b0f65b800cd20c8c74197a2310361597",
+  "runtime": {
+    "browser": "Microsoft Edge 158.0.4370.33",
+    "node": "24.22.3",
+    "services": ["Expo Web", "Node API", "Firebase Auth emulator", "Firestore emulator", "Firebase Storage emulator"],
+    "account": "Isolated parent. The authenticated admin session endpoint returned administrator=false.",
+    "chat": "Scripted local provider, real Runner, account selection, keyword retrieval, same-edition context, delivery review and persisted conversation.",
+    "fixtures": "Three frozen official development editions. Synthetic document vectors in the isolated store. The PDF bytes were already available locally.",
+    "externalModelRequests": 0,
+    "productionMutations": 0
+  },
+  "series": { "id": "fhs-child-health", "displayName": "衛生署 兒童健康" },
+  "editions": {
+    "fhs-child-vision": "a6432201467e9ace706af530150446fdd2d51694be9e1a6fabb756c5f772027e",
+    "fhs-toddler-development": "91365018235f8e28d39d5cce6f191cdd927b0da61a16e85be9b2f0b647974479",
+    "fhs-feeding-booklet-en": "e14d3a06106b4e8ebb28b02a740db717d67b746bb57b179e52f1e3fe7e18fd98"
+  },
+  "observations": [
+    { "action": "Open the platform library from chat", "topLevelCards": 1, "published": 3, "adopted": 1, "fixed": 1, "enabled": 0 },
+    { "action": "Find the same toddler development document in two official categories", "filters": ["兒童發展", "共享育兒樂小冊子 1 - 5"], "sourceId": "fhs-toddler-development", "entriesPerFilter": 1 },
+    { "action": "Filter to 營養及健康生活習慣 and open the booklet version details", "sourceId": "fhs-feeding-booklet-en", "coverage": { "start": 3, "end": 3, "originalPages": 20 } },
+    { "action": "Adopt the remaining materials, then return to the personal library", "topLevelCards": 1, "adopted": 3, "fixed": 1, "enabled": 2 },
+    { "action": "Retrieve and save the booklet citation in chat", "succeededTools": ["search_knowledge", "read_knowledge_context", "present_answer"], "deliveryReview": "pass", "physicalPage": 3 },
+    { "action": "Follow selected documents within scope", "adopted": 3, "fixed": 0, "enabled": 2 },
+    { "action": "Remove the series and reopen the personal library", "topLevelCards": 0, "newRetrievalCandidates": 0 },
+    { "action": "Open the saved source card and its original PDF from chat after removal", "httpStatus": 200, "bytes": 7944671, "viewerFragment": "#page=3", "sha256": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f" },
+    { "action": "Reopen the platform card and filter the published materials by age", "availableCategories": 6, "selectedCategory": "一歲至三歲", "matchingDocuments": 2, "adopted": 0 }
+  ],
+  "screenshot": { "file": "REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png", "sha256": "3e64d916cc26e7c93b54806e6f36592a7341c258d4143cd7ec734f4168979a23" },
+  "checks": {
+    "passed": 69,
+    "suites": ["tests/firestore-knowledge.test.ts", "tests/firestore-personal-library.test.ts", "tests/library-citation-roundtrip.test.mjs", "tests/agent-registered-source-tools.test.ts", "frontend/scripts/memory-reference.test.mjs", "frontend/scripts/memory-source-display.test.mjs"],
+    "typechecks": ["tsconfig.server.json", "frontend/tsconfig.json"],
+    "targetedCases": ["stale roster and repeat adoption", "fixed, disabled and legacy native controls", "another account and another publisher", "new documents require selection", "fixed ZIP imports preserve individual editions", "110 editions in one native series", "later-page category counts and unique agent card across pages"]
+  },
+  "limitations": ["Local integrated Web acceptance. Production deployment and physical mobile device acceptance were outside this package.", "The scripted provider verifies retrieval, citation identity and delivery wiring. It does not evaluate live-model answer quality."]
+}
