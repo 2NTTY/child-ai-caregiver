@@ -13,7 +13,7 @@ const registration = z.object({
 export type CommissionedWebChapter = Readonly<z.infer<typeof registration>>;
 const failedReviewStage = z.strictObject({
   operationFingerprint: digest, attemptKey: z.string().regex(/^knowledge-review:[a-f0-9]{64}$/u),
-  stageHash: digest, requestHash: digest, code: z.literal('knowledge_review_failed'),
+  stageHash: digest, requestHash: digest, code: z.literal('knowledge_review_failed'), replayResponseHash: digest.optional(),
 });
 type RecordedWebReview = Readonly<z.infer<typeof failedReviewStage> & {
   sourceId:string; observationHash:string; originalOperation:string;
@@ -42,4 +42,18 @@ export const commissionedWebChapter = (id: string) => registered.get(id);
 export function recordedWebReviewStage(sourceId: string, operationFingerprint: string) {
   const stage = recordedReviews.get(sourceId);
   return stage?.operationFingerprint === operationFingerprint ? stage : undefined;
+}
+
+export function webChapterPublicationWorkId(chapter: CommissionedWebChapter) {
+  const original = webChapterWorkId(chapter);
+  const stage = recordedWebReviewStage(chapter.sourceId, original);
+  return stage?.replayResponseHash ? knowledgeReviewHash(['fhs-recorded-web-review/1', stage]) : original;
+}
+
+export function registeredWebReviewText(pin: RecordedWebReview, input: {system:string;user:string;attemptKey:string},
+  saved: {state:string;text:string|null}) {
+  if (!pin.replayResponseHash || input.attemptKey !== pin.attemptKey || knowledgeReviewHash(input) !== pin.requestHash
+    || saved.state !== 'ready' || !saved.text || knowledgeReviewHash(saved.text) !== pin.replayResponseHash)
+    throw Error('knowledge_web_chapter_review_binding');
+  return saved.text;
 }

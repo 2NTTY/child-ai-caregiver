@@ -7,7 +7,7 @@ import { embeddingForChunk } from '../server/knowledge-inputs.ts';
 import { operatorEmbeddingRequest } from '../server/firestore-embedding-usage.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { normalizeRecordedComparison, recordedCommunicationComparison, recordedExplanationKey } from '../server/fhs-script-comparison-stage.ts';
-import { recordedWebReviewStage } from '../server/fhs-web-reading.ts';
+import { recordedWebReviewStage, registeredWebReviewText } from '../server/fhs-web-reading.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 
 /** Replay the original public review locally. Only structural diagnostics leave the operator process. */
@@ -34,12 +34,14 @@ export async function inspectFailedScriptReview({ script, chapter, request, job,
   if (observation?.contentHash !== pin.observationHash) throw Error('knowledge_script_review_stage_binding');
   const scriptRevision = script && await verifiedScriptReading(script, operationFingerprint => work.inspect({ ...request, operationFingerprint }),
     request.operationFingerprint,operationFingerprint=>work.inspectScriptReview({...request,operationFingerprint}));
+  const prior = chapter?.chapterReading.priorReview
+    ? await work.inspect({...request,operationFingerprint:chapter.chapterReading.priorReview}) : null;
   let matched = false, reviewedText, facts;
   try {
     const result = await prepareKnowledgeMaintenance({
       candidate: { watchId: pin.sourceId, observed: verified.items[0], definition, observationHash: pin.observationHash,
         previousObservationHash: baseline?.observationHash ?? null },
-      baseline, fetchedAt: observation.fetchedAt, growthRules: GROWTH_RULES, explicitAgeScope: !chapter, scriptRevision, webOriginal:chapter,
+      baseline, fetchedAt: observation.fetchedAt, growthRules: GROWTH_RULES, explicitAgeScope: !chapter, scriptRevision, webOriginal:chapter, webReviewNotes:prior?.prepared?.review.notes,
       replayCommunication: comparison && normalize,
       completeText: async ({system, user, attemptKey, role}) => {
         if (matched || role !== 'knowledge_review' || attemptKey !== 'knowledge-review:' + knowledgeReviewHash({system, user}))
@@ -59,6 +61,7 @@ export async function inspectFailedScriptReview({ script, chapter, request, job,
         facts = JSON.parse(user).sourceComparison?.facts;
         reviewedText = comparison && normalize ? normalizeRecordedComparison(saved.text,user) : saved.text;
         if (chapter) {
+          if (pin.replayResponseHash) registeredWebReviewText(pin,bound,saved);
           receipt.responseHash = knowledgeReviewHash(reviewedText);
           receipt.responseCharacters = reviewedText.length;
         }
@@ -72,6 +75,16 @@ export async function inspectFailedScriptReview({ script, chapter, request, job,
       if (full !== result.assessment.changes.find(change => change.key === recordedExplanationKey)?.explanation)
         throw Error('knowledge_script_explanation_changed');
       preservedExplanation = {key:recordedExplanationKey,characters:full.length,hash:knowledgeReviewHash(full)};
+    }
+    if (chapter) {
+      const original = JSON.parse(reviewedText.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/u,'$1'));
+      if (result.assessment.decision !== original.decision || result.assessment.changes.length !== Object.keys(original.changes).length)
+        throw Error('knowledge_web_chapter_assessment_changed');
+      receipt.assessedExplanations = result.assessment.changes.map(({key, explanation}) => {
+        if (explanation !== original.changes[key]?.explanation) throw Error('knowledge_web_chapter_explanation_changed');
+        return {key, characters:explanation.length, hash:knowledgeReviewHash(explanation)};
+      });
+      receipt.assessmentHash = knowledgeReviewHash(result.assessment);
     }
     return { ...receipt, retainedText: true, validation: 'valid', decision: result.review.decision, versionHash: result.versionHash,
       ...(chapter ? { reviewNotes:result.review.notes } : {}), preservedExplanation };

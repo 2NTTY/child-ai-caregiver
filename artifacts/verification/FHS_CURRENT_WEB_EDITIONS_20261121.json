@@ -6190,6 +6190,50 @@
           }
         ]
       }
+    },
+    "bcgRecordedReview": {
+      "sourceId": "fhs-481",
+      "familyStatus": "publisher_original",
+      "checkedAt": "2026-11-21T23:18:56.099011Z",
+      "site": {
+        "at": "2026-11-21T23:17:11+00:00",
+        "worker": "7fa1d973eef5b613af5ecdb766195dabe4c5c498",
+        "release": "r44960103301-1",
+        "url": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44960103301"
+      },
+      "originalOperation": "1e00a0f40665890c2fd1d405932354055e38f418bf4fccac52ead94127cdac2c",
+      "publicationOperation": "7acf97ab245e93bb44cc7784b2afb403d312abb4405a6d8072244bb1c669e943",
+      "observationHash": "2ebebce84a6c9fad0a5b27345aaffa8ba4dd256e6783f6e5748b6c131fe6e5ff",
+      "inspection": {
+        "stageHash": "7bffe8bb2503a351f6811b37487da8f6dc5cc61c4a7888eaf52419753f59bed5",
+        "requestHash": "8ca0ab0f9f1bbae0e00f629b5486e1d286e1f9cc588192744b9fa09d419dd387",
+        "state": "ready",
+        "modelCalls": 0,
+        "responseHash": "a99e1f0f4e07f719835f4b1dc6b8577ed2a73da37e145bd936b4f64fe7f42ca3",
+        "responseCharacters": 1758,
+        "retainedText": true,
+        "validation": "invalid",
+        "issues": [
+          {
+            "path": "changes.p0-9864b8298b84d6e110f0.explanation",
+            "code": "too_big",
+            "structuralFact": "new",
+            "maximum": 160,
+            "characters": 168
+          }
+        ],
+        "unvalidatedDecision": "approve",
+        "active": null,
+        "prepared": false,
+        "originalCode": "knowledge_review_failed",
+        "originalRecordedModelCalls": 1,
+        "openReservations": []
+      },
+      "sourceTicketCountBefore": 2,
+      "sourceTicketCountAfter": 2,
+      "originalReviewTicketState": "settled",
+      "newProviderTickets": 0,
+      "newChargesMicros": 0
     }
   }
 }

@@ -27,7 +27,7 @@ import { campaignRecoveryPlan } from './fhs-recovery-plan.mjs';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { approvedScriptEdition, assertScriptBaseline, assertScriptObservation, scriptEditionCoverage, scriptEditionWorkId, currentScriptReadingWork, publisherScriptWork, recordedScriptReviewStage, registeredChapterReading } from '../server/fhs-script-edition.ts';
 import { checkChapterReading } from '../server/knowledge-web-chapter.ts';
-import { commissionedWebChapter, webChapterWorkId } from '../server/fhs-web-reading.ts';
+import { commissionedWebChapter, webChapterWorkId, webChapterPublicationWorkId, recordedWebReviewStage } from '../server/fhs-web-reading.ts';
 import { rejectedScriptEmbedding } from '../server/fhs-script-embedding-receipt.ts';
 import { communicationReplayWork, recordedCommunicationComparison } from '../server/fhs-script-comparison-stage.ts';
 import { publicationAssignments } from './fhs-publication-lanes.mjs';
@@ -36,6 +36,8 @@ import { inspectFailedScriptReview, readOriginalScriptEmbedding } from './fhs-sc
 const [invocation, id, expected, ...extra] = process.argv.slice(2);
 const chapterCommand = invocation === 'publish-web-chapter' || invocation === 'inspect-web-chapter';
 const chapter = chapterCommand ? commissionedWebChapter(id) : undefined;
+const chapterStage = chapter && recordedWebReviewStage(id,webChapterWorkId(chapter));
+const chapterReplay = chapterStage?.replayResponseHash ? chapterStage : undefined;
 if (chapterCommand && (!chapter || expected !== chapter.operationFingerprint)) throw Error('knowledge_web_chapter_scope');
 const reviseHeldScript = invocation === 'revise-script-edition' || invocation === 'inspect-script-revision';
 const scriptCommand = reviseHeldScript || invocation === 'publish-script-edition' || invocation === 'inspect-script-edition';
@@ -158,7 +160,7 @@ try {
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
     const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
     const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior) : undefined;
-    const operationFingerprint = chapter ? webChapterWorkId(chapter) : scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
+    const operationFingerprint = chapter ? webChapterPublicationWorkId(chapter) : scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
     const laneObservation = laneSource ? await resolveFhsPdfObservation(refresh, job.data, original, laneSource) : null;
@@ -198,8 +200,9 @@ try {
       const comparison = failedStage && id === recordedCommunicationComparison.sourceId;
       const validationWork = comparison ? recordedCommunicationComparison.work : failedStage?.operationFingerprint;
       const inspection = {script:scriptEdition,request:{...request,operationFingerprint:validationWork},job,definition,checkId,refresh,work,knowledge};
-      const reviewStage = chapter && saved?.result?.code === 'knowledge_review_failed' && !saved.receipt
-        ? await inspectFailedScriptReview({...inspection, chapter, request})
+      const inspectChapter = chapterStage && !active && (chapterReplay || saved?.result?.code === 'knowledge_review_failed');
+      const reviewStage = inspectChapter
+        ? await inspectFailedScriptReview({...inspection,chapter,request:{...request,operationFingerprint:chapterStage.operationFingerprint}})
         : validationWork && !saved?.receipt ? await inspectFailedScriptReview(inspection) : undefined;
       const comparisonReplay = comparison && reviewStage?.retainedText && reviewStage.validation === 'invalid'
         ? await inspectFailedScriptReview({...inspection,normalize:true}) : undefined;
@@ -227,6 +230,12 @@ try {
       let result = canResumeRetainedPromptFailure(saved, draftRevision) ? null : saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {
+        if (chapterReplay && !saved?.prepared) {
+          const replay = await inspectFailedScriptReview({chapter,request:{...request,operationFingerprint:chapterReplay.operationFingerprint},
+            job,definition,checkId,refresh,work,knowledge});
+          if (replay?.validation !== 'valid' || replay.decision !== 'approve_candidate')
+            throw Error('knowledge_web_chapter_original_review_not_approved');
+        }
         if ((repairing || recovering || reviewedWindow || firstDispatch) && await knowledge.publishedEdition(id)) throw Error('knowledge_campaign_source_already_published');
         if (scriptEdition) {
           const predecessor = await work.inspect(originalRequest);
@@ -326,6 +335,11 @@ try {
           reviewDecision: recorded?.prepared?.review.decision ?? null, ...(recovering || scriptEdition || chapter ? { reviewNotes: recorded?.prepared?.review.notes ?? [] } : {}),
           ...(recorded?.prepared?.provenance.organizeAttemptKey.startsWith('publisher-originals:') ? {
             publisherOriginals:recorded.prepared.provenance.organizeAttemptKey, independentReview:recorded.prepared.provenance.reviewAttemptKey } : {}),
+          ...(chapterReplay && recorded?.prepared ? {
+            sealedReviewOperation:chapterReplay.operationFingerprint, originalResponseHash:chapterReplay.replayResponseHash,
+            replayModelCalls:recorded.budget.modelCalls, assessmentHash:knowledgeReviewHash(recorded.prepared.assessment),
+            assessedExplanations:recorded.prepared.assessment.changes.map(({key,explanation})=>({key,characters:explanation.length,hash:knowledgeReviewHash(explanation)}))
+          } : {}),
           ...(chapter ? {priorOperationFingerprint:chapter.operationFingerprint} : reviseHeldScript ? {priorOperationFingerprint:scriptEditionWorkId(scriptEdition)} : {}) };
       }
       console.log(JSON.stringify({ sourceId: id, operationFingerprint, ...readback, ...(repairing ? { priorOperationFingerprint: original } : {}),
