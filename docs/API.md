@@ -169,7 +169,9 @@ ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog �
 ### P2-A04 語義查詢、同版擴讀及新版核對
 
 <a id="platform-source-follow"></a>
-家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v4+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁，v1 至 v3 維持原有欄位。
+家長目錄以 `Accept: application/vnd.yuyoufang.library-series.v5+json` 取得文件及管理系列。家庭健康服務兒童健康教材沿用原有文件 ID、來源系列及獨立版本。合資格的已發布文件另帶 `childHealth`，包括該文件可屬的官方分類、各分類的教材數目，以及整張「衛生署 兒童健康」的文件數、已採用、啟用及固定數、修訂和 `stateHash`。數目涵蓋後續分頁。
+
+v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項對應同一筆 `media.links` 網址。題名取自已讀官方頁，該頁有可定位劇本才提供 `transcriptUrl`。文件的 `sourceDateText?` 沿用發布版所載的官方修訂字樣及精度。v4 保留分類及原連結，v1 至 v3 沿用各自欄位。回應以 `Vary: Accept` 區分版本。
 
 整卡操作向同一個人目錄端點提交 `{action:"manage", seriesId:"fhs-child-health", operation, expectedState}`。Server 在本人及孩子授權交易內核對成員、已發布版本及個人選擇。首次 `join` 跟隨已展示範圍，再次明確採用只加入缺少的教材；全數已選時回傳現況。`fixed` 明確選取已採用教材的目前版本，`follow` 跟隨已選範圍，`enable`、`disable` 和 `remove` 操作已選教材。選擇衝突回傳 `409 library_selection_changed`。版本參照及合法分享 ZIP 繼續逐份核查原件、版本與權利，每包最多 100 份。
 
@@ -822,7 +824,7 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 `POST /api/children/:childId/library` 的 `action=join` 把已發布系列加入本人參考資料。選擇只屬該帳戶，下載復用平台向量。普通教材須已下載、已啟用並符合適用範圍才進入新問答。跟版採用同範圍的審核更新，固定版本沿已選快照。停用可再啟用，移除以 `mode=platform` 清除本人版本選擇。未載齊目錄時，`wholeSeries=true` 讓 Server 在同一交易核對畫面所示版本及系列成員。固定新快照或匯入指定版本須提交完整選擇。個人動作保留已交付主聊天訊息及其原引用。重開 PDF 再核本人 run、原版本、片段、授權和原件 SHA-256，平台撤回後回傳 404。
 
-管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音初始關閉，已確認的頁面查核可更新連結，網絡或解析失敗保留上次結果。啟用後優先讀官方時間字幕，其次以官方講稿對齊影音。已核對片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
+管理員使用 `GET /api/admin/platform-cards` 選教材，以 `source` 配 `view=active`、`view=media` 或 `version` 查看已上架版本、影音或候選差異。同源、最近重新認證的管理員可向同一路徑提交 `draft`、`review`、`sync` 或 `media`。審核綁定原文／條款、候選雜湊及比較基線。同步在索引齊備後以交易切換發布版本。影音分析初始關閉。原頁查核可更新連結及題名，並將可定位的官方劇本按原頁段號送入文字審核。未標時間的對白只附劇本位置。啟用影音處理後優先讀官方時間字幕，已有劇本的對白毋須派發整片分析。已核對的有時間片段隨版本保存來源網址、原件識別及起訖秒數。[管理命令](../src/shared/admin-platform-cards.ts) · [家長選擇](../src/shared/source-series.ts)
 
 
 <a id="firestore-target"></a>

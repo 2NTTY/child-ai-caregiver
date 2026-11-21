@@ -10,6 +10,54 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { randomUUID } from 'node:crypto';
 import { knowledgeHash } from '../server/knowledge-inputs.ts';
 import { mediaPlaybackUrl } from '../src/shared/platform-media.ts';
+import { readLinkedOfficialPages, readOfficialMediaPage } from '../server/fhs-source-forms.ts';
+import { librarySeriesV3Page, librarySeriesV4Page, type PersonalLibraryPage } from '../src/shared/personal-library.ts';
+
+test('verified script pages are readable with analysis off and older catalogue clients receive the original links', async () => {
+  const url = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html';
+  const html = '<div id="content"><h2 class="title">Official title</h2><iframe src="https://www.youtube.com/embed/J9dAb6KPN2w"></iframe><div id="transcript"><h3>劇本</h3><h4 id="wcag-audio-toggle">Listen</h4><p>Speaker: first paragraph.</p><p>Second paragraph.</p></div></div>';
+  const read = readOfficialMediaPage(url, html)!;
+  assert.deepEqual(read.script?.paragraphs, ['Speaker: first paragraph.', 'Second paragraph.']);
+  assert.equal(read.page.transcriptUrl, url + '#transcript');
+  assert.equal(readOfficialMediaPage(url, html.replace(/<p>.*<\/p>/, ''))?.page.transcriptUrl, undefined);
+  const { database } = firestoreDomainFixture(), store = createPlatformMediaStore(database, 'test');
+  const id = 'fhs-12146';
+  await database.runTransaction(tx => store.reconcile(tx, id, [url], [read.page]));
+  let card = await database.runTransaction(tx => store.read(tx, id));
+  assert.equal(card.enabled, false);
+  assert.deepEqual(card.pages, [read.page]);
+  const view = { items: [{ media: card, sourceDateText: '04/2025' }], nextCursor: null, complete: true } as PersonalLibraryPage;
+  for (const legacy of [librarySeriesV3Page(view), librarySeriesV4Page(view)]) {
+    assert.deepEqual(legacy.items[0]?.media?.links, [url]);
+    assert.ok(!('pages' in legacy.items[0]!.media!) && !('sourceDateText' in legacy.items[0]!));
+  }
+  await database.runTransaction(tx => store.toggle(tx, id, true, card.revision));
+  await createPlatformMediaProcessor(store, 'test', async () => assert.fail('Untimed script must not dispatch video analysis'),
+    async () => [{ url, hash: knowledgeHash(html), transcript: 'Speaker: first paragraph.', captions: [] }])(id, new AbortController().signal);
+  card = await database.runTransaction(tx => store.read(tx, id));
+  assert.equal(card.clips?.length ?? 0, 0);
+  await database.runTransaction(tx => store.reconcile(tx, id, []));
+  assert.equal((await database.runTransaction(tx => store.read(tx, id))).pages, undefined);
+});
+
+test('direct links share one official page fetch and only inherit the verified player script', async () => {
+  const page = 'https://www.fhs.gov.hk/tc_chi/mulit_med/000002.html';
+  const direct = 'https://www.youtube.com/watch?v=zKcYlmle4gI';
+  const html = '<div id="content"><h2 class="title">Official title</h2><iframe src="' + direct
+    + '"></iframe><div id="transcript"><p>Original paragraph.</p></div></div>';
+  let requests = 0;
+  const read = await readLinkedOfficialPages([direct, page], async url => {
+    assert.equal(url, page);
+    requests++;
+    return { status: 'response', response: { status: 200, contentType: 'text/html', body: Buffer.from(html) } };
+  }, new AbortController().signal);
+  assert.equal(requests, 1);
+  assert.deepEqual(read.pages.map(p => [p.url, p.transcriptUrl]), [[direct, page + '#transcript'], [page, page + '#transcript']]);
+  assert.equal(read.scripts.length, 1);
+  const changed = html.replace('zKcYlmle4gI', 'J9dAb6KPN2w');
+  assert.equal(readOfficialMediaPage(page, changed, direct), null);
+  assert.equal(readOfficialMediaPage(page, changed.replace('id="transcript"', ''), direct), null);
+});
 
 test('a fresh source check alone replaces discovered links and never starts media when disabled', async () => {
   const id = 'fhs-14799', definition = fhsMaterialWatches.find(w => w.id === id)!;
@@ -40,7 +88,7 @@ test('only enabled platform cards process media and both cards reuse one timed o
   let fetches = 0, calls = 0;
   const measured = [{ start: 1.25, end: 3.1, text: 'Example quote' }];
   const process = createPlatformMediaProcessor(store, 'test', async () => { calls++; return measured; }, async () => {
-    fetches++; return [{ url, transcript: 'Example quote', captions: [], hash: knowledgeHash(url), duration: 4 }];
+    fetches++; return [{ url, transcript: '', captions: [], hash: knowledgeHash(url), duration: 4 }];
   });
   for (const id of ids) {
     await database.runTransaction(tx => store.reconcile(tx, id, [url]));

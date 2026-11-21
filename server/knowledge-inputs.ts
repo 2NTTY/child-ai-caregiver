@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mediaClip } from '../src/shared/platform-media.ts';
+import { mediaClip, scriptPassage } from '../src/shared/platform-media.ts';
 import { z } from "zod";
 import { platformPublisherHosts } from '../src/shared/platform-material.ts';
 import type { KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -55,7 +55,7 @@ const sourceSchema = z.strictObject({
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
   validUntil: date.nullable().optional(), timelyEvent: timelyEventLifecycleSchema.optional(), fetchedAt: date, termsUrl: publicSourceUrl, extraction: knowledgeExtractionSchema.optional(),
   chunks: z.array(z.strictObject({ key: id, treatment: chunkTreatmentSchema.optional(), section: text(240), sourceExcerpt: z.union([text(300), z.literal("")]),
-    mediaClip: mediaClip.optional(), originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
+    mediaClip: mediaClip.optional(), scriptPassage: scriptPassage.optional(), originalKind: z.enum(["page_excerpt","page_transcription","visual_page"]).optional(), excerptPage: z.int().positive().optional(), text: text(4000),
     originalText: text(4000).optional(), pageStart: z.number().int().min(1).optional(), pageEnd: z.number().int().min(1).optional(),
     keywords: z.array(text(80)).min(1).max(24), applicability }).refine(chunk => chunk.originalKind === "visual_page"
       ? !chunk.sourceExcerpt && !chunk.originalText : Boolean(chunk.sourceExcerpt.trim()))).min(1).max(32),
@@ -64,6 +64,9 @@ const sourceSchema = z.strictObject({
   if (value.series && value.series.institutionId !== new URL(value.url).hostname)
     ctx.addIssue({ code: 'custom', message: 'Series institution must match its registered source' });
   for (const chunk of value.chunks) {
+    if (chunk.scriptPassage && (new URL(value.url).origin !== new URL(chunk.scriptPassage.url).origin
+      || chunk.mediaClip || chunk.pageStart || chunk.pageEnd || chunk.originalKind || chunk.excerptPage || !chunk.originalText?.includes(chunk.sourceExcerpt)))
+      ctx.addIssue({ code: 'custom', message: 'Invalid official script passage' });
     if ((chunk.applicability.maxAgeMonths ?? 0) > 120 && value.classification !== 'official_guidance') {
       ctx.addIssue({ code: 'custom', message: 'Only official guidance may retain an upper age beyond the family query range' });
     }

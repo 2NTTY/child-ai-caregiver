@@ -285,6 +285,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       };
       const runner = createBackgroundKnowledgeMaintenanceRunner({
         enabled: true, liveFetch: base.backgroundKnowledgeLiveFetch, livePublish: base.backgroundKnowledgeLivePublish,
+        printedPageReview: Boolean(options.pdfQuestion || focus),
         isolatedFixturePublish: options.isolatedFixturePublish,
       }, {
         fetch: fetchThroughObservation(options.fetch),

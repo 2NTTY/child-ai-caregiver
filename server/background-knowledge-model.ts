@@ -87,7 +87,8 @@ export function assertPreparedKnowledgePdfLayout(prepared: PreparedKnowledgeMain
       reject("knowledge_native_visual_sample_mismatch");
   }
 }
-type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null };
+type OriginalUnit = { id: string; originalText: string; page: number | null; pageEnd: number | null;
+  scriptPassage?: import('../src/shared/platform-media.ts').ScriptPassage };
 type Applicability = KnowledgeSourceInput["chunks"][number]["applicability"];
 export function includePriorRetrieval(current: Applicability, prior: Applicability[]): Applicability {
   if (!prior.length) return current;
@@ -173,6 +174,19 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
       occurrences.set(id, occurrence + 1);
       units.push({ id: `p${part.page ?? 0}-${knowledgeReviewHash([id, occurrence]).slice(0, 20)}`, originalText, page: part.page, pageEnd: ends.get(part.page!) ?? part.page });
       if (units.length > 32) reject("knowledge_maintenance_batch_too_large");
+    }
+  }
+  for (const script of candidate.observed.scripts ?? []) {
+    if (candidate.definition.kind !== 'page') reject('knowledge_script_original_mismatch');
+    for (let first = 0; first < script.paragraphs.length;) {
+      let last = first, originalText = script.paragraphs[first]!;
+      while (last + 1 < script.paragraphs.length && originalText.length + 1 + script.paragraphs[last + 1]!.length <= 1200)
+        originalText += '\n' + script.paragraphs[++last]!;
+      const scriptPassage = { url: script.page.transcriptUrl!, title: script.page.title, firstParagraph: first + 1, lastParagraph: last + 1 };
+      units.push({ id: 'p0-' + knowledgeReviewHash(['official-script/1', scriptPassage, originalText]).slice(0, 20), originalText,
+        page: null, pageEnd: null, scriptPassage });
+      if (units.length > 32) reject('knowledge_maintenance_batch_too_large');
+      first = last + 1;
     }
   }
   if (!units.length) reject("knowledge_maintenance_no_readable_content");
@@ -305,6 +319,7 @@ export async function prepareKnowledgeMaintenance(input: {
     // Reuse only an unambiguous, exact original range on the same PDF page.
     // Similar wording, a short excerpt or a different location is not enough.
     const matches = baseline?.source.chunks.filter(chunk => chunk.originalText === unit.originalText
+      && (!unit.scriptPassage && !chunk.scriptPassage || unit.scriptPassage && chunk.key === unit.id)
       && (chunk.pageStart ?? null) === unit.page && (chunk.pageEnd ?? null) === unit.page) ?? [];
     if (!pdf && matches.length === 1 && units.filter(other => other.originalText === unit.originalText && other.page === unit.page).length === 1)
       reusable.set(unit.id, matches[0]!);
@@ -365,7 +380,9 @@ export async function prepareKnowledgeMaintenance(input: {
       // eligibility. The independent review sees the resulting scope and text.
       const applicability = pdf ? includePriorRetrieval(draft.applicability, samePages(unit).map(chunk => chunk.applicability))
         : draft.applicability;
-      return { key: unit.id, section: draft.section, ...evidence,
+      const script = unit.scriptPassage;
+      const section = script ? `影片《${script.title}》劇本第 ${script.firstParagraph}–${script.lastParagraph} 段 · ${draft.section}`.slice(0, 240).toWellFormed() : draft.section;
+      return { key: unit.id, section, ...evidence, ...(script ? { scriptPassage: script } : {}),
         text, keywords: draft.keywords, applicability,
         ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.pageEnd! } : {}) };
     }),

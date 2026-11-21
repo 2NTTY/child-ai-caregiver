@@ -110,6 +110,13 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 
 聯驗已在 Edge 從待辦角色送出，於主聊天讀回回答、展開三個真模型觀點，並從討論點閱當時的官方原文。桌面及窄屏重開都沒有重新生成。C 依首批帳本接續攝取；原生裝置點按仍待驗。後續從[共同驗收收據](artifacts/verification/THREE_LINE_INTEGRATION_20261120.json)及[首批入庫帳本](artifacts/verification/FHS_INITIAL_CAMPAIGN_20261120.json)接手。
 
+<a id="fhs-official-source-forms"></a>
+#### 官方文字稿與同教材多格式
+
+《奶瓶餵哺指引》的四個影片頁均有官方題名及劇本。v5 家長目錄沿原連結提供題名及 `#transcript`。文字審核按影片原頁及首末段號核對。隔離卡庫的助手工具可一次列出四個題名，亦可逐套擴讀原句。v4 保留四個原連結。兩版均已與家長閱讀頁實測對回。[來源及工具收據](artifacts/verification/FHS_SOURCE_FORMS_20261121.json) · [家長閱讀驗收](frontend/verification/parent-material-reading-20261121/browser.json)
+
+普通文字問題使用發行者明示的現行網頁。《飲奶知多少？》的印刷本和網頁已按原件核對。34 組範本中，31 組是單張正文，3 組是分章目錄。查問印本、圖表或獨立附件時保留所問版本。兩個同範圍的合成矛盾段落已在一次實際工具回應中各自帶回原文。正式環境於香港 18:31 有上述兩個網頁生效版，共 4 個段落及 4 個向量。新劇本尚待正式版本整理、獨立審核及索引，發布由主對話統籌。[出版者版本證據](knowledge/fhs-leaflet-editions.json)
+
 <a id="fhs-c2-publication-lane"></a>
 #### C2 本批 28 份 PDF
 

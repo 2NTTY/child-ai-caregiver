@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { createHash } from 'node:crypto';
 import { platformMediaLink } from '../src/shared/platform-media.ts';
+import { readLinkedOfficialPages } from './fhs-source-forms.ts';
 import { fhsPdfMediaPages, largeFhsPdf, reviewedExternalOriginal } from './platform-materials.ts';
 import type { SourceFetcher,SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 import { parseSourceContent, parsedKnowledgePdfContent } from "./knowledge-source-parser.ts";
@@ -154,7 +155,14 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
               }
             } catch { signal.throwIfAborted(); }
           }
-          return original.status === 'ok' && mediaLinks ? { ...original, mediaLinks } : original;
+          if (original.status !== 'ok' || !mediaLinks) return original;
+          try {
+            const { pages } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+            return { ...original, mediaLinks, mediaPages: pages };
+          } catch {
+            signal.throwIfAborted();
+            return { ...original, mediaLinks };
+          }
         }
         const parsed = await (adapters.pdfReader ?? extractKnowledgePdf)(result.body, { startPage: window!.startPage,
           pageLimit: window!.endPage - window!.startPage + 1, signal });
@@ -168,6 +176,11 @@ export function createKnowledgeSourceFetcher(adapters: { transport?: typeof fetc
       if (definition.kind === 'page' && definition.selector && new URL(definition.url).hostname === 'www.fhs.gov.hk'
         && (result.url ?? definition.url) === definition.url) {
         mediaLinks = mediaLinksFromPage(load(html), definition.selector, definition.url);
+        if (mediaLinks?.length) {
+          const { pages, scripts } = await readLinkedOfficialPages(mediaLinks, transport, signal);
+          if (scripts.length) items[0]!.scripts = scripts;
+          return { status: 'ok', mediaLinks, mediaPages: pages, items };
+        }
       }
       return { status: "ok", ...(mediaLinks ? { mediaLinks } : {}), ...(definition.id === "chp-recent"
         ? { original: { mimeType: "application/rss+xml" as const, bytes: result.body } } : {}), items };

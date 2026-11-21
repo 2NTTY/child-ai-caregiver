@@ -5,6 +5,7 @@ import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { knowledgeTokens } from "./knowledge-ranking.ts";
+import { omittedLeafletPrints } from "./fhs-leaflet-editions.ts";
 import { reviewKnowledgeVersion, publishKnowledgeVersion } from "./knowledge-version-review.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
@@ -137,6 +138,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
       const items = result.rows.slice(0, 10).map(row => personalLibraryItemSchema.parse({
         sourceId: row.source_id, series: sourceSeries(row.source_document), versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
         url: row.source_document.url, classification: row.source_document.classification, checkedAt: row.checked_at.toISOString(),
+        ...(row.source_document.sourceDateText ? { sourceDateText: row.source_document.sourceDateText } : {}),
         sourceUpdatedAt: row.source_document.sourceUpdatedAt, validUntil: row.source_document.validUntil ?? null,
       }));
       return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
@@ -194,6 +196,9 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
                ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
            AND $16::text[] IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM jsonb_to_recordset($18::jsonb) AS counterpart(url text, hash text)
+             WHERE v.document->'extraction'->>'format'='text_pdf' AND v.document->>'url'=counterpart.url
+               AND v.document->'extraction'->>'contentHash'=counterpart.hash)
            AND ($13::uuid[] IS NULL OR c.id=ANY($13::uuid[]))
            AND ($14::uuid IS NULL OR v.id=$14)
            AND ($17::text IS NULL OR ord.chunk_order>(SELECT listed.chunk_order
@@ -202,7 +207,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
          ) ${ranked}`,
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
           filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal, filter.ageMatch ?? "contained",
-          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null]));
+          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null, omittedLeafletPrints(selection.query)]));
       return rows.rows.map(row => ({ ...row.document, series: sourceSeries(row.source_document), chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
         versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, termsUrl: row.source_document.termsUrl, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,

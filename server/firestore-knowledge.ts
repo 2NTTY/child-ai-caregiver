@@ -1,4 +1,5 @@
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
+import { includeLeafletInSearch } from './fhs-leaflet-editions.ts';
 import type { PlatformMediaStore } from './firestore-platform-media.ts';
 import { createHash, randomUUID } from "node:crypto";
 import { FieldPath, FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
@@ -10,7 +11,7 @@ import { knowledgeTokens, questionAgeTokens, structuredQueryMatches } from "./kn
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
-import { checkKnowledgeObservation, observationHash } from "./knowledge-observation.ts";
+import { checkKnowledgeObservation, observationHash, observedPassageText } from "./knowledge-observation.ts";
 import { extractKnowledgePdf } from './knowledge-pdf.ts';
 import { parsedKnowledgePdfContent } from './knowledge-source-parser.ts';
 import { parseKnowledgeObservation } from './firestore-knowledge-refresh.ts';
@@ -503,7 +504,8 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const previous = previousChoice && { ...previousChoice, ...(previousSnapshot && pinnedAllowed(previousSnapshot, edition)
           ? { eligible: true, selectedVersionHash: previousSnapshot.version.versionHash } : {}) };
         return personalLibraryItemSchema.parse({ sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
-          ...(media ? { media: { enabled: media.enabled, revision: media.revision, links: media.links } } : {}),
+          ...(media ? { media: { enabled: media.enabled, revision: media.revision, links: media.links, ...(media.pages?.length ? { pages: media.pages } : {}) } } : {}),
+          ...(document.sourceDateText ? { sourceDateText: document.sourceDateText } : {}),
           series: sourceSeries(document), ...(managed && categories ? { childHealth: { ...managed, categories, ...(previous ? { previousChoice: previous } : {}) } } : {}),
           ...(owner && selections ? { preference: { ...preference, ...(pinnedVersion ? { selectedVersionHash: pinnedVersion.version.versionHash } : {}) } } : {}),
           title: document.title, publisher: document.publisher, url: document.url, classification: document.classification, checkedAt: version.checkedAt,
@@ -979,9 +981,9 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           && document.chunks.some(chunk => !assessment.changes.some(change => change.key === chunk.key)))
           reject("knowledge_withdrawn_full_review_required");
         if (original && !checkedWindows && assessment.changes.some(change => {
-          const clip = document.chunks.find(chunk => chunk.key === change.key)?.mediaClip;
-          const evidence = clip && edition.permittedClips?.includes(knowledgeHash(clip)) ? clip.text : original.text;
-          return change.newQuote !== null && !evidence.includes(change.newQuote);
+          const chunk = document.chunks.find(chunk => chunk.key === change.key), clip = chunk?.mediaClip;
+          const evidence = clip && edition.permittedClips?.includes(knowledgeHash(clip)) ? clip.text : observedPassageText(original, chunk?.scriptPassage);
+          return change.newQuote !== null && !evidence?.includes(change.newQuote);
         })) reject("knowledge_review_observation_quote_mismatch");
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
@@ -1184,6 +1186,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const eligible = new Map<string, { edition: Edition; manifest: Version["chunks"][number] }>();
         for (const edition of current.editions) {
           if (edition.document.classification !== filter.classification || selection.versionId && edition.version.versionId !== selection.versionId) continue;
+          if (query && !includeLeafletInSearch(query, edition.document.url, edition.document.extraction)) continue;
           if (edition.version.search?.completed !== KNOWLEDGE_LEXICAL_BUCKETS) reject("knowledge_search_rebuild_required", 503);
           const after = selection.afterKey ? edition.version.chunks.findIndex(chunk => chunk.key === selection.afterKey) : -1;
           if (selection.afterKey && after < 0) continue;

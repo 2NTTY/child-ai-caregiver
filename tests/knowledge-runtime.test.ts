@@ -7,6 +7,7 @@ import { createEmbeddingGateway, EmbeddingFailure } from "../server/embedding-ga
 import type { EmbeddingActor, EmbeddingProvider, EmbeddingUsage } from "../server/embedding-gateway.ts";
 import { parseKnowledgeFilter, parseKnowledgeQuery, parseKnowledgeSource, sourceVersionHash } from "../server/knowledge-inputs.ts";
 import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
+import { includeLeafletInSearch, publisherCurrentText } from '../server/fhs-leaflet-editions.ts';
 import type { KnowledgeCandidate, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 
 const vector = [1, ...Array<number>(1023).fill(0)];
@@ -50,6 +51,35 @@ function fakeUsage() {
   return { usage, reservations, records, deny: () => { available = false; } };
 }
 function fakeProvider(embed: EmbeddingProvider["embed"]): EmbeddingProvider { return { embed }; }
+
+test('a request for a video list returns distinct scripts from the authorized edition within the search limit', async t => {
+  const anchor = candidate('anchor', 0, { keywords: ['影片清單'] });
+  const rows = [anchor, ...Array.from({ length: 7 }, (_, i) => candidate('part' + i, null, {
+    scriptPassage: { title: 'Film ' + i, url: 'https://www.fhs.gov.hk/tc_chi/mulit_med/' + i + '.html#transcript', firstParagraph: 1, lastParagraph: 2 },
+  }))];
+  const gateway = createEmbeddingGateway({ config, usage: fakeUsage().usage,
+    provider: fakeProvider(async () => ({ values: vector, inputTokens: 1, billableCharacters: 4 })) });
+  const run = createKnowledgeRetriever({ candidates: async (_filter, _vector, selection) => {
+    assert.equal(selection?.libraryUserId, queryActor.actorId);
+    if (selection?.query) return [anchor];
+    assert.equal(selection?.versionId, anchor.versionId);
+    return [...rows, rows[1]!];
+  } }, gateway).createRun({ actor: queryActor, budget: budget(t), authorize: async () => true });
+  const result = await run.search('影片清單', filter);
+  assert.equal(new Set(result.chunks.map(c => c.scriptPassage?.url)).size, 6);
+  assert.equal(result.omittedChunks, 1);
+  assert.equal(result.complete, false);
+});
+
+test('publisher priority binds one exact print edition and preserves explicit print and separate attachment scope', () => {
+  const url = 'https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf';
+  const extraction = { format: 'text_pdf' as const, contentHash: '247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355', complete: true };
+  assert.equal(publisherCurrentText(url, extraction), url.replace('.pdf', '.html'));
+  assert.equal(includeLeafletInSearch('現行飲奶建議', url, extraction), false);
+  assert.equal(includeLeafletInSearch('舊版圖表', url, extraction), true);
+  assert.equal(publisherCurrentText(url, { ...extraction, contentHash: 'f'.repeat(64) }), undefined);
+  assert.equal(publisherCurrentText('https://www.chp.gov.hk/files/her/hand_hygiene_pamphlet.pdf', extraction), undefined);
+});
 
 test("one run reuses its query vector but rereads publication and filter state; another run embeds anew", async t => {
   const usage = fakeUsage();

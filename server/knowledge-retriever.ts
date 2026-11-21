@@ -6,6 +6,7 @@ import type { EmbeddingActor, EmbeddingGateway } from "./embedding-gateway.ts";
 import { parseKnowledgeFilter, parseKnowledgeQuery } from "./knowledge-inputs.ts";
 import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { rankKnowledge } from "./knowledge-ranking.ts";
+import { includeLeafletInSearch } from './fhs-leaflet-editions.ts';
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
 import { isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
@@ -19,6 +20,11 @@ function canonicalFilterKey(filter: KnowledgeFilter): string {
     ageMatch: filter.ageMatch ?? null,
     topics: [...filter.topics].sort(),
   });
+}
+
+function requestsVideoList(query: string) {
+  return /影片|短片|視像|视频|videos?/iu.test(query)
+    && /題名|片名|名稱|列表|目錄|清單|列出|邊[幾啲]|哪[幾些]|有[咩乜]|[\d一二兩三四五六七八九十幾]+(?:個|套|條|段)|list|titles?|which/iu.test(query);
 }
 
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates"> & { readonly enforcesPersonalLibrarySelection?: boolean }, embeddings: EmbeddingGateway) {
@@ -78,14 +84,37 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           // Only the vector is cached. Publication, withdrawal, freshness and applicability are always read anew.
           const rawCandidates = await budget.wait(() => readCandidates(filter, vector, { query }));
           const now = Date.now();
-          const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now));
-          const chunks = rankKnowledge(query, candidates).map(({ originalText: _originalText, ...chunk }) => ({
+          const candidates = rawCandidates.filter(candidate => isKnowledgeEvidenceFresh(candidate, now)
+            && includeLeafletInSearch(query, candidate.url, candidate.extraction));
+          let ranked = rankKnowledge(query, candidates), omittedScripts = 0;
+          if (ranked.length && requestsVideoList(query)) {
+            // Names in a list may have no words in common. Read the matched edition through the same family and applicability gates.
+            const anchor = ranked[0]!;
+            const edition = await budget.wait(() => readCandidates(filter, null, { versionId: anchor.versionId, limit: 32 }));
+            if (!edition.some(row => row.chunkId === anchor.chunkId && row.contentHash === anchor.contentHash && row.versionHash === anchor.versionHash))
+              throw new FamilyError(409, 'knowledge_context_source_changed');
+            const firstPerPage = new Map<string, KnowledgeEvidence>();
+            for (const row of edition) {
+              const script = row.scriptPassage;
+              if (script && row.versionId === anchor.versionId && row.versionHash === anchor.versionHash && row.sourceId === anchor.sourceId
+                && !firstPerPage.has(script.url) && isKnowledgeEvidenceFresh(row, now)) {
+                const { distance: _distance, rankScore: _rank, ...chunk } = row;
+                firstPerPage.set(script.url, { ...chunk, text: chunk.sourceExcerpt });
+              }
+            }
+            if (firstPerPage.size) {
+              ranked = [...firstPerPage.values()].slice(0, 6);
+              omittedScripts = firstPerPage.size - ranked.length;
+            }
+          }
+          const chunks = ranked.map(({ originalText: _originalText, ...chunk }) => ({
             ...chunk, readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false },
           }));
           for (const chunk of chunks) loaded.set(chunk.chunkId, chunk);
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           budget.check();
-          return { mode: vector ? "vector_keyword" : "keyword_degraded", degradationReason: vector ? null : "embedding_unavailable", chunks };
+          return { mode: vector ? "vector_keyword" : "keyword_degraded", degradationReason: vector ? null : "embedding_unavailable", chunks,
+            ...(omittedScripts ? { complete: false, hasMore: true, omittedChunks: omittedScripts } : {}) };
         },
         async readContext(anchor: KnowledgeEvidence, applicability: KnowledgeFilter, cursor: KnowledgeContextCursor | null = null, maxResponseCharacters = 8000): Promise<KnowledgeContextResult> {
           const known = loaded.get(anchor.chunkId);
