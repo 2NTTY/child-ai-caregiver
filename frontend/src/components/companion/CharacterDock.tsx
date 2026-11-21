@@ -14,15 +14,18 @@ class RenderBoundary extends Component<{ children: ReactNode }, { failed: boolea
   render() { return this.state.failed ? null : this.props.children; }
 }
 
+// Keep the WebGL drawing surface at its largest presentation size. Resizing the
+// iframe on route changes can leave its new compositor surface empty until repaint.
+const webModelHeight = 232, webModelWidth = Math.round(webModelHeight * .71);
+
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 
-export function CharacterDock({ src, page, unread, foreground, panelOpen = false, inToolbar = false, listening = false, performance, onChat, onVoice, onCollapse, children }: {
-  src: string; page: string; unread?: string; foreground: boolean; panelOpen?: boolean; inToolbar?: boolean; onChat?(): void;
+export function CharacterDock({ src, bounds, page, unread, foreground, panelOpen = false, inToolbar = false, listening = false, performance, onChat, onVoice, onCollapse, children }: {
+  src: string; bounds: { width: number; height: number }; page: string; unread?: string; foreground: boolean; panelOpen?: boolean; inToolbar?: boolean; onChat?(): void;
   listening?: boolean; performance?: { action: CharacterAction; serial: number }; onVoice?(): void; onCollapse?(): void; children?: ReactNode;
 }) {
   const quiet = page === '/chat', small = useWindowDimensions().width < mobileLayout.breakpoint;
   const insets = useSafeAreaInsets();
-  const [bounds, setBounds] = useState({ width: 0, height: 0 });
   const [placement, setPosition] = useState<{ x: number; y: number } | null>(null);
   const position = placement ?? { x: small ? .96 : page === '/tasks' ? .49 : .32, y: 1 };
   const [minimized, setMinimized] = useState(false), [ready, setReady] = useState(false);
@@ -37,6 +40,10 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen = false
   const headHeight = Math.min(height / 2, Math.max(44, height * .39));
   const width = Math.round(height * .71), trayHeight = quiet ? 0 : 40;
   const dockWidth = collapsed ? 46 : Math.max(quiet ? 0 : 102, width), dockHeight = collapsed ? 46 : height + trayHeight;
+  const frameSize = Platform.OS === 'web' ? {
+    width: webModelWidth, height: webModelHeight, transformOrigin: 'top left',
+    transform: [{ scaleX: width / webModelWidth }, { scaleY: height / webModelHeight }],
+  } : { width, height };
   const margin = small ? 8 : 15;
   const travelX = Math.max(0, bounds.width - dockWidth - 2 * margin);
   const travelY = Math.max(0, room - dockHeight - 2 * margin);
@@ -101,14 +108,13 @@ export function CharacterDock({ src, page, unread, foreground, panelOpen = false
     const repeat = setInterval(() => play('wave'), 18000);
     return () => clearInterval(repeat);
   }, [unread, ready, paused, quiet, panelOpen, play]);
-  return <View ref={surface} pointerEvents="box-none" style={StyleSheet.absoluteFill} onLayout={({ nativeEvent: { layout } }) =>
-    setBounds(b => b.width === layout.width && b.height === layout.height ? b : { width: layout.width, height: layout.height })}>
+  return <View ref={surface} pointerEvents="box-none" style={StyleSheet.absoluteFill}>
     <View testID="companion-dock" pointerEvents={hideDock ? 'none' : 'box-none'} style={[s.dock, {
       width: dockWidth, height: dockHeight, left: x,
       top: y, opacity: hideDock || !bounds.width ? 0 : 1,
     }]}>
       <View pointerEvents="none" style={[s.ground, { width: width * .42, height: width * .42, transform: [{ scaleY: .12 }], bottom: trayHeight + height * .027 - width * .21 }, collapsed && s.invisible]} />
-      <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[s.frame, { left: (dockWidth - width) / 2, width, height }, (!ready || collapsed) && s.invisible]}>
+      <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[s.frame, frameSize, { left: (dockWidth - width) / 2 }, (!ready || collapsed) && s.invisible]}>
         <RenderBoundary><CharacterFrame src={src} mode={paused ? 'hidden' : quiet ? 'quiet' : listening ? (leftOfFace ? 'listen-left' : 'listen-right') : 'idle'}
           action={gesture.action} serial={gesture.serial} onState={async value => setReady(value)}
           dom={{ style: { width: '100%', height: '100%', backgroundColor: 'transparent' }, scrollEnabled: false }} /></RenderBoundary>

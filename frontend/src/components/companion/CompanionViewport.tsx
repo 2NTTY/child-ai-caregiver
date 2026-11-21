@@ -80,7 +80,7 @@ export function CompanionViewport({ children }: { children: ReactNode }) {
         importantForAccessibility={available ? 'auto' : 'no-hide-descendants'} style={[styles.overlay, {
           left: box?.x ?? 0, top: box?.y ?? 0, width: box?.width ?? 0, height: box?.height ?? 0, opacity: available ? 1 : 0,
         }]}>
-        <Suspense fallback={null}><SiteCompanion key={identityKey} authorised={authorised} visible={available} /></Suspense>
+        <Suspense fallback={null}><SiteCompanion key={identityKey} bounds={box ?? { width: 0, height: 0 }} authorised={authorised} visible={available} /></Suspense>
       </View>}
   </View></SlotContext.Provider>;
 }
