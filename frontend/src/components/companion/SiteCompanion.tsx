@@ -11,6 +11,8 @@ import { AgentComposer } from '../agent/AgentComposer';
 import { AssistantByline } from '../chat/AssistantByline';
 import { ChatAction } from '../chat/ChatAction';
 import { failedChatReply } from '../chat/failed-reply';
+import { chatReplyActivity, chatTurnStatus, privateChatChildName } from '../chat/chat-turn-status';
+import { ChatTurnStatusLine } from '../chat/ChatTurnStatusLine';
 import { CharacterDock } from './CharacterDock';
 import { AppButton } from '../ui';
 import { AppIcon } from '../AppIcon';
@@ -90,11 +92,12 @@ function QuickConversation({ page, childId, includeItem, reminderId, focusReques
   const item = includeItem && selected?.page === page && selected.childId === childId ? selected.item : undefined;
   const draft = chat.drafts[childId], phase = draft?.phase ?? 'draft';
   const [previousIds] = useState(() => new Set(chat.messages.map(m => m.id)));
-  const activeReply = chat.replyingMessageId ?? (chat.remoteReply?.status === 'running'
-    && !chat.messages.some(m => m.role === 'model' && m.inReplyTo === chat.remoteReply?.messageId) ? chat.remoteReply.messageId : null);
+  const activity = chatReplyActivity(chat);
+  const activeReply = activity.activeReplyId;
+  const targetId = activeReply ?? draft?.savedUserMessageId;
   const question = [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'user' && !m.discussionOf
-    && (!previousIds.has(m.id) || m.id === activeReply || m.id === draft?.savedUserMessageId));
-  const reply = question && [...chat.messages].reverse().find(m => m.inReplyTo === question.id);
+    && (targetId ? m.id === targetId : !previousIds.has(m.id)));
+  const reply = question && [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'model' && m.inReplyTo === question.id);
   const reason = reply && failedChatReply(reply.text, reply.agentRunId ? agentRuns[reply.agentRunId]?.stopReasonLabel : undefined);
   const submitted = !!draft?.savedUserMessageId && (phase === 'replying' || phase === 'reply_failed');
   const upload = [voiceUpload, fileUpload, photoUpload].find(u => u.busy || u.unknown || u.notice);
@@ -111,29 +114,30 @@ function QuickConversation({ page, childId, includeItem, reminderId, focusReques
     const context: ChatPageContext = { page: validPage, ...(item ? { item } : {}) };
     return sendChat({ pageContext: context });
   };
-  const notice = upload?.notice || chat.error || (!reason && (chat.replyError || (phase !== 'draft' || !!chatDraft.trim()) && draft?.notice));
+  const turnStatus = chatTurnStatus(chat, draft, activity, reason && question ? { questionId: question.id, reason: reason.reason } : undefined, chatWritesAllowed);
+  const notice = upload?.notice || chat.error;
+  const childName = privateChatChildName(recordsState.children, childId, !includeItem);
+  const needsRecovery = phase === 'save_unknown' || phase === 'checked' || upload?.unknown || phase === 'reply_failed';
   const openFull = () => { close(); openAgentDraft(); };
   return <>
     <View style={styles.heading}>
-      <View style={styles.identity}><AppIcon name="message-text-outline" size={18} /><Text style={styles.headingText}>小助手</Text></View>
-      <View style={styles.identity}><ChatAction label="完整對話" accessibilityLabel="開啟助手頁" onPress={openFull} icon="arrow-right" />
+      <View style={[styles.identity, styles.title]}><AppIcon name="message-text-outline" size={18} /><Text style={styles.headingText}>小助手{childName ? ` · ${childName}` : ''}</Text></View>
+      <View style={styles.identity}><ChatAction label={needsRecovery ? '查核原訊息' : '完整對話'}
+        accessibilityLabel={needsRecovery ? '在完整對話查核原訊息' : '開啟助手頁'} onPress={openFull} icon="arrow-right" />
         <ChatAction label="收起小助手對話" onPress={close} icon="close" iconOnly /></View>
     </View>
-    {(reminder || question || activeReply || notice) && <ScrollView testID="companion-turn" style={styles.preview} keyboardShouldPersistTaps="handled">
+    {(reminder || question || turnStatus || notice) && <ScrollView testID="companion-turn" style={styles.preview} keyboardShouldPersistTaps="handled">
       {reminder && <View testID="companion-reminder" onLayout={() => setExposed(true)} style={styles.reply}>
         <Text style={styles.byline}>助手提醒</Text><Text selectable style={styles.body}>{reminder.text}</Text></View>}
       {question && <View style={styles.question}><Text selectable style={styles.body}>{question.text || '附件訊息'}</Text></View>}
       {reply && <View style={styles.reply}><AssistantByline />
         {reason && <Text accessibilityRole="alert" style={styles.warning}>{reason.reason}</Text>}
         {!!(reason ? reason.body : reply.text) && <Text selectable style={styles.body}>{reason ? reason.body : reply.text}</Text>}</View>}
-      {activeReply && !reply && <Text accessibilityLiveRegion="polite" style={styles.byline}>正在回覆…</Text>}
-      {!!notice && <Text accessibilityLiveRegion="polite" style={styles.warning}>{notice}</Text>}
+      {turnStatus && turnStatus.text !== notice && <ChatTurnStatusLine status={turnStatus} />}
+      {!!notice && <Text accessibilityRole="alert" style={styles.warning}>{notice}</Text>}
     </ScrollView>}
-    {(phase === 'save_unknown' || phase === 'checked' || upload?.unknown || phase === 'reply_failed') &&
-      <ChatAction label="在完整對話查核原訊息" icon="arrow-right" onPress={openFull} />}
-    {!question && !reminder && !activeReply && <Text style={styles.prompt}>想問甚麼？</Text>}
-    <Text style={styles.context}>{item ? ({ task: '待辦', record: '記錄', document: '文件' })[item.kind] + ' · ' + (selected?.label || '目前選取的項目')
-      : (recordsState.children.find(c => c.id === childId)?.displayName ?? '孩子') + '的私人對話'}</Text>
+    {!question && !reminder && !turnStatus && !notice && <Text style={styles.prompt}>想問甚麼？</Text>}
+    {item && <Text style={styles.context}>{({ task: '待辦', record: '記錄', document: '文件' })[item.kind]} · {selected?.label || '目前選取的項目'}</Text>}
     <AgentComposer embedded compact={compact} enabled={editable} allowTyping={submitted && chatWritesAllowed && !chat.busy && !activeReply}
       focusRequest={focusRequest} draft={submitted ? draft.nextText ?? '' : chatDraft} attachments={submitted ? [] : agentAttachments}
       onChangeDraft={setChatDraft} onPreview={send} submitLabel="送出" suggestionsAvailable={false}
@@ -146,7 +150,7 @@ function QuickConversation({ page, childId, includeItem, reminderId, focusReques
 const styles = StyleSheet.create({
   chooser: { gap: 8 }, heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.paleTeal, borderBottomWidth: 1, borderColor: colors.sage,
     marginTop: -12, marginHorizontal: -12, paddingHorizontal: 12, borderTopLeftRadius: 19, borderTopRightRadius: 19 },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 6 }, headingText: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 6 }, title: { flexShrink: 1 }, headingText: { fontSize: 16, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   preview: { maxHeight: 170, flexShrink: 1 }, byline: { fontSize: 12, fontWeight: '600', color: colors.muted },
   reply: { paddingVertical: 6, gap: 3 }, question: { alignSelf: 'flex-end', maxWidth: '90%', borderRadius: 12, padding: 8, backgroundColor: colors.sage },
   body: { color: colors.ink, fontSize: 15, lineHeight: 22 }, warning: { color: colors.warningInk, fontSize: 13, lineHeight: 19 },

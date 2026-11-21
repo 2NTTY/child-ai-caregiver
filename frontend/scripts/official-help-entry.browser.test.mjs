@@ -782,7 +782,7 @@ test('E2E 7: an unrelated running turn does not lock dismissal of an older retry
   backend.seedTurn('仍在處理的另一則提問', null, 'running');
   const { context, page, errors } = await openChatPage(browser, serverInfo.baseUrl, backend);
   try {
-    const ongoing = page.getByText('原回覆仍在處理，毋須重新發送。', { exact: true });
+    const ongoing = page.getByTestId('chat-operation-status').getByText('正在回覆…', { exact: true });
     const olderRetry = page.getByTestId('chat-message').filter({ hasText: olderText })
       .getByRole('button', { name: '要求這則已保存訊息的回覆', exact: true });
     const retained = page.getByTestId('chat-progress-sources-retained-notice');

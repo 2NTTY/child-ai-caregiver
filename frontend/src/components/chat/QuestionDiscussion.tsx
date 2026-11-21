@@ -13,7 +13,7 @@ const icons = { knowledge: 'book-open-variant', parent: 'account-group-outline',
 
 export function QuestionDiscussion({ runId, status, state, online, read, onToggle, onOpenSource, onLocateSource, initiallyExpanded = false, summary, checkOriginal, checkDisabled }: {
   initiallyExpanded?: boolean; summary?: string; checkOriginal?(): void; checkDisabled?: boolean;
-  runId?: string; status?: AgentRunView['status']; state: string; online: boolean;
+  runId?: string; status?: AgentRunView['status']; state?: string; online: boolean;
   read(id: string, signal: AbortSignal): Promise<AgentRunView | undefined>;
   onToggle(): void; onLocateSource?: LocateAnswerSource;
   onOpenSource?(runId: string, id: string): void;
@@ -37,7 +37,7 @@ export function QuestionDiscussion({ runId, status, state, online, read, onToggl
     <ChatAction label={expanded ? '收合三方討論' : '查看三方討論'}
       icon="account-group-outline" disclosure expanded={expanded} onPress={() => { onToggle(); setFresh(undefined); setExpanded(!expanded); }} />
     {expanded && <View style={styles.thread}>
-      {turns.length < 3 && <Text accessibilityLiveRegion="polite" style={styles.status}>
+      {turns.length < 3 && (state || !online || fresh === null || run?.stopReasonLabel) && <Text accessibilityLiveRegion="polite" style={styles.status}>
         {!online ? '連線後可核對原討論。' : fresh === null ? '暫時無法讀取原討論。' : run?.stopReasonLabel
           ?? (runId && fresh === undefined ? '正在核對原討論…' : state)}
       </Text>}
