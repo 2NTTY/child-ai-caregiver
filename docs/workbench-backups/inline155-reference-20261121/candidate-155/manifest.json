@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-155-image-count",
+  "base": {
+    "artifact": "candidate-153/out",
+    "htmlSha256": "f8721ac02688e368045013217befaeb5262e9901a73d25d1e49a476fbd5727a4",
+    "rawRecordsSha256": "f820693ec94c38d2b9f08862ceb0a37c1714a106ba2d4a297286fe7f00aa7988",
+    "rawArtworkSha256": "f2184f68e644ceb4f6d8b6583e0c2597f88fb5c02b09aac9eb71017f6e3f115e",
+    "topics": 75,
+    "choices": 153,
+    "images": 153
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-child-read-error/assets.json",
+      "sha256": "31a364ac7a2abf2baa5030ad4cbed40eeef58947be07a407bc62279f5ae97d1c"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b05753d75dae04785f6c4111b1ce571c3eb1d103258ddc4a16b23ce616a7801c",
+    "PROVENANCE.md": "33cc44f7af8feaf6162f655beb469420e9d0cf040489bb0a6c19fc1fe86364c3"
+  },
+  "topics": [
+    {
+      "number": 76,
+      "title": "切換孩子後未能載入：重讀新對象，或返回上一位",
+      "choices": [
+        {
+          "name": "留在所選工作區重新連線",
+          "note": "切換後隱藏上一個工作區的內容；所選工作區未能連線時，留在原位顯示名稱及錯誤。「重新連線」只重試同一個工作區，這個錯誤畫面沒有專用返回按鈕。",
+          "links": [
+            {
+              "label": "Freelens v2.0.0：切換到所選工作區，未就緒時顯示狀態",
+              "url": "https://github.com/freelensapp/freelens/blob/b9b53e16056578c5407312eba5823a089972f6d5/packages/core/src/renderer/components/cluster-manager/cluster-view.tsx#L87-L126"
+            },
+            {
+              "label": "同版：立即隱藏原畫面，所選工作區準備好才顯示內容",
+              "url": "https://github.com/freelensapp/freelens/blob/b9b53e16056578c5407312eba5823a089972f6d5/packages/core/src/renderer/components/cluster-manager/cluster-frame-handler.ts#L115-L144"
+            },
+            {
+              "label": "同版：連線錯誤、重新連線及代理設定連結",
+              "url": "https://github.com/freelensapp/freelens/blob/b9b53e16056578c5407312eba5823a089972f6d5/packages/core/src/renderer/components/cluster-manager/cluster-status.tsx#L130-L172"
+            },
+            {
+              "label": "同版：重新連線只重試所選工作區",
+              "url": "https://github.com/freelensapp/freelens/blob/b9b53e16056578c5407312eba5823a089972f6d5/packages/core/src/renderer/components/cluster-manager/cluster-status.tsx#L95-L112"
+            },
+            {
+              "label": "Freelens 程式碼授權：MIT",
+              "url": "https://github.com/freelensapp/freelens/blob/b9b53e16056578c5407312eba5823a089972f6d5/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-child-read-error/child-read-a.png",
+            "sha256": "c34d35891e1bcb6c51bfc568726f7fb311ca42a4025132cad77fc91b682e524b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Freelens 的非官方深色桌面示例：左側有選中的「展」捷徑；主畫面只有「展板工作區」、紅色斜線雲朵、連線錯誤訊息、青綠色「重新連線」按鈕和代理設定連結。沒有上一個工作區的內容。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "保留原錯誤，手動重開選擇器",
+          "note": "找不到本機儲存庫時，手動重開選擇器，仍看得到原來的錯誤及另一個未選取的儲存庫。先關閉選擇器，才能在原畫面再檢查同一個儲存庫。",
+          "links": [
+            {
+              "label": "GitHub Desktop 3.6.10：工具列與內容分開",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/app.tsx#L3369-L3393"
+            },
+            {
+              "label": "同版：目前儲存庫與全高選擇器",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/app.tsx#L3510-L3565"
+            },
+            {
+              "label": "同版：選中的儲存庫找不到時換成錯誤內容",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/app.tsx#L4040-L4055"
+            },
+            {
+              "label": "同版：本機儲存庫的尋找位置及移除選項",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/missing-repository.tsx#L76-L112"
+            },
+            {
+              "label": "同版：顯示同一儲存庫的名稱、上次位置及再檢查",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/missing-repository.tsx#L139-L169"
+            },
+            {
+              "label": "同版：選擇儲存庫後會關閉選擇器",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/app.tsx#L4108-L4111"
+            },
+            {
+              "label": "同版：選擇器保留選中列、篩選及新增按鈕",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/repositories-list/repositories-list.tsx#L330-L381"
+            },
+            {
+              "label": "同版：選擇器的遮罩及焦點範圍",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/src/ui/toolbar/dropdown.tsx#L411-L446"
+            },
+            {
+              "label": "同版：深色遮罩及路徑樣式",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/styles/themes/_dark.scss#L375-L405"
+            },
+            {
+              "label": "同版：正式版本號",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/app/package.json#L1-L9"
+            },
+            {
+              "label": "GitHub Desktop 程式授權：MIT（非圖像授權）",
+              "url": "https://github.com/desktop/desktop/blob/ffeefe5de3861d3d33c85607eff1fbccf737a2f6/LICENSE"
+            }
+          ],
+          "asset": {
+            "input": "draft-child-read-error/child-read-b.png",
+            "sha256": "690a80a75d6ca6288afc0bda1168bb923fa24037a1cef37fb9b48e46e8a8d539",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方深色桌面示例：左上目前儲存庫是 leaflet-layout；手動重開的左側選擇器仍選中同一列，sample-pages 可見但未選取。右方背景較暗，仍顯示找不到 leaflet-layout、上次記錄的示例相對路徑、再檢查一次、尋找位置及移除，需關閉選擇器才可操作。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 76 題 · 切換對象後讀取失敗的兩幅自製示意",
+      "input": "draft-child-read-error/DECLARATION.txt",
+      "sha256": "b05753d75dae04785f6c4111b1ce571c3eb1d103258ddc4a16b23ce616a7801c"
+    }
+  ]
+}
