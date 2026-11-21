@@ -1,0 +1,65 @@
+{
+  "browser": "158.0.4370.33",
+  "mode": "current",
+  "source": "fhs-12146",
+  "screens": [
+    {
+      "width": 1280,
+      "headingLines": 1,
+      "links": 9,
+      "openedTranscript": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript"
+    },
+    {
+      "width": 390,
+      "headingLines": 2,
+      "links": 9,
+      "openedTranscript": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript"
+    }
+  ],
+  "libraryWrites": 0,
+  "pages": [
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html",
+      "title": "怎樣替嬰兒掃風",
+      "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000005.html#transcript"
+    },
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html",
+      "title": "BB教餵奶 － 回應式餵哺",
+      "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000067.html#transcript"
+    },
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html",
+      "title": "配方奶沖調大揭秘",
+      "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000129.html#transcript"
+    },
+    {
+      "url": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html",
+      "title": "奶瓶和用具消毒日常",
+      "transcriptUrl": "https://www.fhs.gov.hk/tc_chi/mulit_med/000130.html#transcript"
+    }
+  ],
+  "environment": "Local Expo Web and application API, existing ordinary parent account. Compared returned media pages with the current official HTML h2 and #transcript. No model or media analysis.",
+  "date": "2026-11-21",
+  "readerBlob": "96e56e7a232aabcbdf78a9749860d3db772ec5ce",
+  "contract": {
+    "current": "application/vnd.yuyoufang.library-series.v5+json",
+    "legacy": "application/vnd.yuyoufang.library-series.v4+json",
+    "candidateBase": "1daa69f4d72618b31d6cd91d84e2ee65c626ce55",
+    "candidateMediaSchema": "3ce94ee16ac727fd7abda603c25cb8913f897967",
+    "candidateLibrarySchema": "f557ea6f7b66dae2cf9fa39929eda1eb238ab8c9",
+    "candidateOfficialPageReader": "8984223f1ebe1ba34ee8be8cb1aba50aae53c96a",
+    "candidateStore": "7cd30664ae6c364a3a225ba6900972ca70e124a8",
+    "candidateCatalog": "e05be3bacf7199b347a54f47873eb04e8f0ba6fb",
+    "candidateApi": "80bb29e783cfc6efc24d07b0e602a2950ae4b607"
+  },
+  "checks": [
+    "The parent used the real source list, opened the series, focused the original title and expanded the selected material with the keyboard.",
+    "The four media records were extracted with the C2 candidate from the four live official HTML pages and reconciled into the isolated Firestore card. The app read all four back through its ordinary catalogue request.",
+    "The original, four named media links and four matching transcript links were the only links in the open material. The official transcript opened from the card in each viewport.",
+    "Entering the settings tab selected the same material for version management. No library POST was sent.",
+    "A v4 read of the same populated card returned four original media URLs. The UI linked to all four and did not show an unverified transcript or title.",
+    "No revision label is present on the local published test edition. The reader omitted it; the component regression separately verifies preservation of a month-only publisher label.",
+    "The local public media fixture was restored and read back after verification."
+  ]
+}

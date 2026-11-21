@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
 import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
+import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 
 const digest = /^[a-f0-9]{64}$/u;
@@ -180,6 +181,11 @@ async function main() {
     const work = createFirestoreKnowledgeWork(domain);
     const inspect = operationFingerprint => work.inspect({ watchId: sourceId, workerGeneration: job.data.workerGeneration, publishMode: 'live', operationFingerprint });
     async function verifyRepair(original, delivery) {
+      if (delivery===firstDispatchWorkId(original)) {
+        const [prior,child]=await Promise.all([inspect(original),inspect(delivery)]);
+        const grant=bindFirstDispatch(manualPublicationPin(sourceId),original,prior);
+        return Boolean(grant && child?.firstDispatchFrom===original && (!child.result || child.result.observationHash===grant.observation));
+      }
       const truncated = knowledgeTruncatedOutputRepairId(original);
       let parent = original;
       if (delivery === retainedDraftWorkId(truncated)) parent = truncated;
@@ -208,6 +214,10 @@ async function main() {
       }, { readOnly: true }), exportEdition: (...args) => store.exportPublishedEdition(...args),
       resolve: citation => store.citedPdf(citation), readOriginal: (id, hash) => refresh.originals.readPdf(id, hash), extract };
     let deliveryOperation = requestedDelivery ?? originalOperation;
+    if (!requestedDelivery && ports.originalOperation===originalOperation && hasUndispatchedOriginal(sourceId)) {
+      const child=firstDispatchWorkId(originalOperation);
+      if (await inspect(child)) deliveryOperation=child;
+    }
     if (!requestedDelivery && ports.originalOperation === originalOperation && hasReviewedWindowSource(sourceId)
       && bindReviewedWindow(manualPublicationPin(sourceId),originalOperation,await inspect(originalOperation))) {
       const child = retainedDraftWorkId(originalOperation);

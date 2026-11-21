@@ -19,6 +19,7 @@ import { createFirestoreOperatorEmbeddingUsage } from "./firestore-embedding-usa
 import { createFirestoreAdmin } from "./firestore-admin.ts";
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER as OPERATOR, KNOWLEDGE_PUBLICATION_PAYER } from "./firestore-ai-usage.ts";
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
+import { bindFirstDispatch, firstDispatchWorkId, type FirstDispatch } from './fhs-undispatched-original.ts';
 import { registeredReviewedWindow, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
 import { FirestoreRootBudget } from "./firestore-root-budget.ts";
 import { requireDurableUsage, type PlatformProviderFactory, type FirestoreModelRouting } from "./firestore-model-routing.ts";
@@ -65,6 +66,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   campaignAdmission?: CampaignDayAdmission;
   campaignBudget?: ReturnType<typeof createKnowledgeCampaignBudget>;
   manualPublication?: ManualPublicationPin;
+  firstDispatch?: FirstDispatch;
   truncatedOutput?: { priorWork: string; observationHash: string };
   reviseHeldPdf?: { priorWork: string; priorVersionHash: string; feedback: string; amendments?: PdfAmendment[] };
   isolatedFixturePublish?: boolean;
@@ -77,6 +79,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
   if ((options.campaignAdmission || options.campaignBudget) && options.sponsor) reject("knowledge_campaign_payer_mismatch");
   const manual = options.manualPublication;
   const revisedWindow = options.reviewedWindow;
+  const firstDispatch = options.firstDispatch;
+  if (firstDispatch && (!manual || manual.resumeOnly || revisedWindow || options.retainedDraft || options.truncatedOutput
+    || options.isolatedComparison || options.focusedPage || options.reviseHeldPdf || options.pdfQuestion || options.acceptance
+    || options.isolatedFixturePublish)) reject('knowledge_manual_publication_scope');
+  const commissionedParent = firstDispatch?.original ?? revisedWindow?.operationFingerprint;
   if (revisedWindow && (!manual || options.retainedDraft || options.truncatedOutput || options.focusedPage || options.reviseHeldPdf
     || options.isolatedComparison || options.pdfQuestion || options.acceptance || options.isolatedFixturePublish)) reject('knowledge_manual_publication_scope');
   if (manual && (manualPublicationPin(manual.sourceId) !== manual || !options.campaignBudget || !options.explicitAgeScope
@@ -106,7 +113,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const transcript = retained?.action === 'retain_pdf_transcription' ? retained : undefined;
       if (options.campaignBudget) {
         const original = knowledgeReviewHash([campaignCredentials, request.watchId, registration.data.revision, request.workerGeneration]);
-        const bound = revisedWindow ? revisedWindow.operationFingerprint === original && request.operationFingerprint === retainedDraftWorkId(original)
+        const bound = firstDispatch ? firstDispatch.original === original && request.operationFingerprint === firstDispatchWorkId(original)
+          && !reusedOrganizationFrom && bindFirstDispatch(manual,original,await work.inspect({...request,operationFingerprint:original}))?.observation === firstDispatch.observation
+          : revisedWindow ? revisedWindow.operationFingerprint === original && request.operationFingerprint === retainedDraftWorkId(original)
           && revisedWindow.registration === registeredReviewedWindow(manual,original,revisedWindow.observationHash) && !reusedOrganizationFrom
           : retained ? matchesRegisteredRetainedDraft(retained, original, request.operationFingerprint)
           : options.truncatedOutput ? options.truncatedOutput.priorWork === original && request.operationFingerprint === knowledgeTruncatedOutputRepairId(original)
@@ -168,7 +177,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const pinned = recordedCheckId && definition.leafletPage ? await options.refresh.resumeCheck(registration.data,recordedCheckId) : null;
       let verifyCommission: ((tx: Transaction) => Promise<void>) | undefined;
       if (manual) {
-        const commissionOperation = revisedWindow?.operationFingerprint ?? request.operationFingerprint;
+        const commissionOperation = commissionedParent ?? request.operationFingerprint;
         const check = knowledgeOperationId('knowledge-observation/1', commissionOperation);
         const recovered = recordedCheckId === knowledgeOperationId('knowledge-observation/parser-recovery/1', commissionOperation);
         const original = recovered ? await options.refresh.resumeCheck(registration.data, check) : null;
@@ -178,6 +187,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
           || item?.url !== definition.url || item.extraction?.contentHash !== manual.sha256 || item.extraction.totalPages !== manual.pages)
           reject('knowledge_manual_publication_binding');
         const expectedObservation = observationHash(item);
+        if (firstDispatch && expectedObservation !== firstDispatch.observation) reject('knowledge_manual_publication_binding');
         if (revisedWindow && (expectedObservation !== revisedWindow.observationHash || item.nativeWindowMethod !== PDF_WINDOW_METHOD))
           reject('knowledge_manual_publication_binding');
         verifyCommission = async tx => {
@@ -196,7 +206,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const windowed = Boolean(previous?.windowed || (pinned?.status === "ok" && pinned.items[0]?.nativeWindowMethod === PDF_WINDOW_METHOD));
       if (transcript && !windowed) reject('knowledge_retained_transcription_binding');
       // A resumed job or retained reading must reconstruct its original page and stage keys.
-      const priorReading = revisedWindow?.operationFingerprint ?? retained?.operationFingerprint ?? recovery?.priorWork ?? reusedOrganizationFrom;
+      const priorReading = commissionedParent ?? retained?.operationFingerprint ?? recovery?.priorWork ?? reusedOrganizationFrom;
       const planOwner = previous ?? (windowed && priorReading ? await work.inspect({ ...request, operationFingerprint: priorReading }) : null);
       const rangeLimit = planOwner ? planOwner.windowRangeLimit ?? 14 : PDF_WINDOW_RANGE_LIMIT;
       const windowPlan = windowed && rangeLimit === PDF_WINDOW_RANGE_LIMIT ? {windowRangeLimit:rangeLimit} : {};
@@ -234,6 +244,9 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const configHash = previous?.prepared && previous.publicationConfigHash === publicationConfigHash
         ? previous.configHash : readerConfigHash;
       const today = new Date().toISOString().slice(0, 10);
+      const generationCapacity = async (tx:Transaction, reader:FirestoreAiUsage) =>
+        (!firstDispatch || await options.campaignBudget!.hasGenerationCapacity(tx,config.maxOutputTokens))
+        && reader.modelCapacity(tx,payerId,config.dailyUserAttempts,config.dailyGlobalAttempts);
       if (!manual && grant?.day !== today && previous?.configHash === configHash && previous.waitingForQuotaDay === today)
         return { status: "budget_exhausted" as const, code: previous.quotaPhase === "model" ? "knowledge_model_daily_admission" : "knowledge_embedding_daily_admission", published: false, budget: previous.budget };
       let budget: AgentBudget | undefined;
@@ -283,7 +296,8 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
             const session = await work.bind(boundRequest, leaseToken, configHash,
               { modelCalls: limits.modelCalls, deadlineMs: limits.deadlineMs, publicationConfigHash, ...windowPlan, ...(windowed ? { windowed:true as const } : {}), ...(definition.leafletPage ? {
                 maxUnits: manualWindows?.maxUnits ?? 2 + Math.min(current.maxToolCalls, personal?.runLimits.toolCalls ?? current.maxToolCalls) } : {}) }, reusedOrganizationFrom,
-              manual || grant?.day === today ? tx => platformDaily.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts) : undefined, retained);
+              manual || grant?.day === today ? tx => generationCapacity(tx,platformDaily) : undefined, retained,
+              firstDispatch && verifyCommission ? {...firstDispatch,verify:verifyCommission} : undefined);
             const authorize = async () => {
               if (signal.aborted || !await session.authorize()) return false;
               const latest = await policy.readPolicy();
@@ -291,7 +305,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 : latest.enabled && latest.version === current.version;
             };
             const providers = personal ? { agent: personal.provider, embedding: personal.maintenanceEmbedding! } : options.providers?.(config);
-            const meter = options.campaignBudget?.meter({ sourceId: boundRequest.watchId, operationFingerprint: revisedWindow?.operationFingerprint ?? boundRequest.operationFingerprint,
+            const meter = options.campaignBudget?.meter({ sourceId: boundRequest.watchId, operationFingerprint: commissionedParent ?? boundRequest.operationFingerprint,
               async assertLease(tx) {
                 await session.assertLease(tx);
                 await verifyCommission?.(tx);
@@ -327,7 +341,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                   usage: requireDurableUsage, userId: payerId, childId: NIL, authorize,
                   durableDailyUsage: { adapter: daily, context } });
                 return model.completeText(input);
-              }, tx => quotaReader.modelCapacity(tx, payerId, config.dailyUserAttempts, config.dailyGlobalAttempts));
+              }, tx => generationCapacity(tx,quotaReader));
             };
             const reviewer = createModelKnowledgeReviewPort({ completeText, explicitAgeScope: options.explicitAgeScope, readPdf: options.refresh.originals.readPdf, pdfQuestion: options.pdfQuestion, acceptance: options.acceptance, baseline: readBaseline, growthRules: GROWTH_RULES,
               ...(retained && retained.action !== 'retain_pdf_transcription' ? { retainedDraft: { revision: retained,

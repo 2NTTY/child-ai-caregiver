@@ -8,9 +8,9 @@
 
 **記憶頁與聊天引用（2026-11-19）。** 短期脈絡以待續事項呈現，長期記憶按事實逐條核對。回答下每項引用各有一張小卡，顯示文件、已知頁碼及能與已讀原文對上的摘錄。點卡開啟當時版本，可再開同版 PDF。
 
-**家長參考資料頁（2026-11-21，PR #752 待整合）。** 「目前的卡」合併已啟用的平台及本人來源，下方保留「未啟用的個人卡」。平台卡可在右上角列表加入；寫入並讀回後關窗，把焦點移到該卡。平台與個人來源各自讀完所有分頁。已用本機正式 Web／API、跨兩頁的十二份教材及三張個人卡核對加入、重開、停用、再加入、單份固定版本，以及第二頁讀取失敗後重試。[驗收紀錄](verification/source-library-20261121/browser.json) · [390 px 混合清單](verification/source-library-20261121/current-390.png) · [1280 px 平台卡列表](verification/source-library-20261121/store-1280.png)
+**家長參考資料頁（2026-11-21，PR #752 已合併）。** 「目前的卡」合併已啟用的平台及本人來源，下方保留「未啟用的個人卡」。平台卡可在右上角列表加入；寫入並讀回後關窗，把焦點移到該卡。平台與個人來源各自讀完所有分頁。已用本機正式 Web／API、跨兩頁的十二份教材及三張個人卡核對加入、重開、停用、再加入、單份固定版本，以及第二頁讀取失敗後重試。[驗收紀錄](verification/source-library-20261121/browser.json) · [390 px 混合清單](verification/source-library-20261121/current-390.png) · [1280 px 平台卡列表](verification/source-library-20261121/store-1280.png)
 
-**衛生署兒童健康教材清單（2026-11-21）。** 標題直達原文，清單顯示每份教材的採用狀態和影音數目。展開該列可閱影音、收錄範圍及版本。系列採用與分類放在清單頂部，文件整理入口移至後台所選教材。本機普通家長以十份教材核對 1440 和 390 px 畫面、鍵盤及分類。採用其餘九份後，原有一份已停用的固定版本仍然保留。[瀏覽器結果](verification/fhs-compact-material-list-20261121/browser.json) · [寬屏清單](verification/fhs-compact-material-list-20261121/wide-list.png) · [窄屏展開影音](verification/fhs-compact-material-list-20261121/narrow-details.png)
+**衛生署兒童健康教材閱讀（2026-11-21）。** 標題開原文，展開後按官方題名列出影音及已核實的文字稿連結。有來源日期才顯示；個別教材的固定版本在「設定與匯出」處理。本機 Edge 以 C2 候選 v5 目錄核對《奶瓶餵哺指引》的四個官方題名和四個劇本入口，1280 及 390 px 均由清單成功開啟文字稿。相同卡以 v4 讀取時保留四個原連結。新版家長頁與 C2 目錄待整合發布。[桌面](verification/parent-material-reading-20261121/reading-1280.png) · [窄屏](verification/parent-material-reading-20261121/reading-390.png) · [版本及瀏覽器結果](verification/parent-material-reading-20261121/browser.json) · [早前分類及採用驗收](verification/fhs-compact-material-list-20261121/browser.json)
 
 **管理後台與 REQ-005。** 維護者在正式站見到「目前沒有用量告警」。首宗真人收件仍待實際事件。管理首頁改為先讀告警與分項用量，AI 設定、帳戶邀請、知識管理和通知示範各有分頁。以本機合成管理員核對桌面和窄屏、切頁保留設定草稿及重新驗證入口。正式用量政策和收據沿[根驗收表](../PLAN.md#req005-closeout01)追蹤。
 
