@@ -11,7 +11,7 @@ import { firstHitPerSource, knowledgeTokens, questionAgeTokens, structuredQueryM
 import { emptyLexicalHash, knowledgeLexicalIndex, KNOWLEDGE_LEXICAL_BATCH, KNOWLEDGE_LEXICAL_BUCKETS, KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket, lexicalTokenHash } from "./knowledge-lexical-index.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment, type KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
-import { checkKnowledgeObservation, observationHash, observedPassageText } from "./knowledge-observation.ts";
+import { checkKnowledgeObservation, observationHash, observedPassageText, type PdfReviewProof } from "./knowledge-observation.ts";
 import { extractKnowledgePdf } from './knowledge-pdf.ts';
 import { parsedKnowledgePdfContent } from './knowledge-source-parser.ts';
 import { parseKnowledgeObservation } from './firestore-knowledge-refresh.ts';
@@ -89,7 +89,7 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   missingDocuments(versionId: string): Promise<{ hash: string; title: string; text: string }[]>;
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
-    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<boolean> }, treatmentGuard?: (tx: Transaction) => Promise<void>): Promise<{ status: "reviewed" | "held"; reason?: string }>;
+    expectedObservation?: { sourceId: string; contentHash: string; verifyWindowedReview?: (tx:Transaction, versionHash:string)=>Promise<PdfReviewProof> }, treatmentGuard?: (tx: Transaction) => Promise<void>): Promise<{ status: "reviewed" | "held"; reason?: string }>;
   publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[],
     fence?: FirestoreKnowledgePublicationFence): Promise<{ status: "published" }>;
   disable(sourceId: string, reason: string): Promise<void>;
@@ -1015,9 +1015,9 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const retainedWindows = windowBaseline && windowBaseline.version.versionId === assessment.comparedVersionId
           && windowBaseline.version.versionHash === assessment.comparedHash && publication(windowBaseline)
           && treatmentContentHash(document) === treatmentContentHash(windowBaseline.document);
-        const checkedWindows = Boolean(original?.nativeWindowMethod &&
-          (retainedWindows || assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash ||
-            expectedObservation?.verifyWindowedReview && await expectedObservation.verifyWindowedReview(tx, expectedHash)));
+        const proof = await expectedObservation?.verifyWindowedReview?.(tx, expectedHash);
+        const checkedWindows = typeof proof === 'object' ? proof : Boolean(original?.nativeWindowMethod &&
+          (retainedWindows || assessment.decision === "hold" && version.review?.assessment.observationHash === assessment.observationHash || proof));
         checkKnowledgeObservation(document, observed?.watch, original && observed?.observation ? {
           document: original, content_hash: observed.observation.contentHash, unavailable: observed.observation.unavailable, url: observed.observation.url } : undefined, assessment.observationHash,checkedWindows);
         if (version.reviewState === "reviewed" && version.review?.assessmentHash === assessmentHash

@@ -54,6 +54,9 @@ def commands(args, manifest):
             sources = [source for source in sources if source["sourceId"] == args.source]
         if not sources:
             raise ValueError("Invalid publication lane source")
+        page = getattr(args, "page", None)
+        if page is not None and (not args.source or not 1 <= page <= sources[0]["pages"]):
+            raise ValueError("Select one source and a physical page within its frozen edition")
         for row in sources:
             yield ["scripts/fhs-catalog-batch.mjs", "--lane", args.lane, args.mode, row["sourceId"]]
         return
@@ -142,6 +145,8 @@ def compose_job(host, args, command, *, original=None, pdf_bytes=0):
             service["environment"]["FHS_CAMPAIGN_STAGED_WINDOWS"] = "1"
     if original:
         service.setdefault("environment", {}).update(FHS_CAMPAIGN_LANE=args.lane, FHS_CAMPAIGN_ORIGINAL_OPERATION=original)
+    if args.action == "lane" and getattr(args, "page", None) is not None:
+        service.setdefault("environment", {})["FHS_CAMPAIGN_PRINT_PAGE"] = str(args.page)
     if args.action == "accounting":
         service.setdefault("environment", {})["FHS_CAMPAIGN_DAY_ADMISSION"] = "2026-11-20"
     overlay = {"services": {"worker": service}, "volumes": {"fhs_publication_cache": {"external": True, "name": volume["Name"]}}}
@@ -222,6 +227,7 @@ def main():
     lane.add_argument("lane", choices=["C1", "C2", "C3"])
     lane.add_argument("mode", choices=["status", "prepare", "run"])
     lane.add_argument("source", nargs="?")
+    lane.add_argument("--page", type=int, help="Read only this commissioned physical page of one original")
     sub.add_parser("accounting")
     web = sub.add_parser("web-original")
     web.add_argument("mode", choices=["inspect", "run"])

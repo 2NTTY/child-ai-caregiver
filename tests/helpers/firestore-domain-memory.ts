@@ -13,11 +13,11 @@ export function firestoreDomainFixture() {
   }
   const records = new Map<string, any>();
   const versions = new Map<string, number>(); let revision = 0;
-  type Ref = { id: string; path: string; collection(name: string): Query };
+  type Ref = { id: string; path: string; get():Promise<any>; collection(name: string): Query };
   type Query = Ref & { query: true; filters: [string, string, any][]; orders: [string, string][]; count: number; cursor: any[] | null;
     doc(id: string): Ref; where(key: string, op: string, value: any): Query; orderBy(key: string, direction?: string): Query;
     get(): Promise<any>; select(...fields: string[]): Query; limit(count: number): Query; startAfter(...values: any[]): Query };
-  const ref = (path: string): Ref => ({ id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name) });
+  const ref = (path: string): Ref => ({ id: path.split('/').at(-1)!, path, async get() { return snapshot(path); }, collection: name => query(path + '/' + name) });
   const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, cursor: any[] | null = null): Query => ({
     id: path.split('/').at(-1)!, path, collection: name => query(path + '/' + name), query: true, filters, orders, count, cursor, doc: id => ref(path + '/' + id),
     async get() { return read(this); },

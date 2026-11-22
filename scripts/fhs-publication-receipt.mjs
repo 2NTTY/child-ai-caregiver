@@ -4,9 +4,10 @@ import { pathToFileURL } from 'node:url';
 import { needsKnowledgeVector } from '../src/shared/source-series.ts';
 import { bindReviewedWindow, hasReviewedWindowSource, registeredPrintedPassage } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
-import { bindFirstDispatch, firstDispatchWorkId, hasUndispatchedOriginal } from '../server/fhs-undispatched-original.ts';
+import { bindFirstDispatch, firstDispatchScopeHash, firstDispatchWorkId, hasUndispatchedOriginal, registeredPrintPage } from '../server/fhs-undispatched-original.ts';
 import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
-import { PDF_WINDOW_METHOD, planKnowledgePdfWindows } from '../server/knowledge-pdf-windows.ts';
+import { PDF_WINDOW_METHOD, planKnowledgePdfWindows, matchesSelectedReading } from '../server/knowledge-pdf-windows.ts';
+import { selectedPrintWindow } from '../server/knowledge-pdf-layout.ts';
 import { campaign, campaignTicketId } from '../server/knowledge-campaign-budget.ts';
 import { hasSettledGenerationOutput } from './fhs-held-window-evidence.mjs';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
@@ -27,7 +28,8 @@ function pageEvidence(chunk, physical, windows, pin) {
       && reading.originalLocations[chunk.key].kind === chunk.originalKind);
     const hasContent = pages => pages.some(page => page.page === physical.page && page.status === 'content');
     if (!window?.organizeKey || !window.reviewKey || window.organizeKey === window.reviewKey
-      || physical.status === 'text' && !(chunk.originalKind === 'page_transcription' && window.registeredRequests
+      || physical.status === 'text' && !(chunk.originalKind === 'visual_page' && window.selectedPage && matchesSelectedReading(window,window.selectedPage.scope))
+        && !(chunk.originalKind === 'page_transcription' && window.registeredRequests
         && registeredPrintedPassage(pin.sha256,physical.page,excerpt))
       || !hasContent(window.pages) || !hasContent(window.organizePages)
       || !window.chunks.some(saved => saved.key === chunk.key && saved.sourceExcerpt === excerpt && saved.originalKind === chunk.originalKind))
@@ -109,10 +111,14 @@ function recordedWholePdfReadings(pdf, provenance) {
 async function recordedWindowReadings(pdf, work, sourceId, originalOperation, confirmGenerations) {
   const provenance = work.prepared.provenance;
   const windows = provenance.windows;
-  if (pdf.totalPages <= 20 || !work.windowed || !windows?.length || typeof confirmGenerations !== 'function'
+  const scope = windows?.[0]?.selectedPage?.scope;
+  if (scope && (work.firstDispatchFrom !== originalOperation || windows.length !== 1 || !matchesSelectedReading(windows[0],scope)
+    || pdf.pages.length !== 1 || pdf.pages[0].page !== scope.physicalPage)) return undefined;
+  if ((!scope && pdf.totalPages <= 20) || !work.windowed || !windows?.length || typeof confirmGenerations !== 'function'
     || provenance.retainedDraft || provenance.nativePdf || work.reusedOrganizationFrom)
     return undefined;
-  const plan = planKnowledgePdfWindows(pdf.totalPages, AGENT_RUN_LIMITS.modelCalls.max, work.windowRangeLimit ?? 14);
+  const plan = scope ? [selectedPrintWindow(scope,pdf.totalPages)]
+    : planKnowledgePdfWindows(pdf.totalPages, AGENT_RUN_LIMITS.modelCalls.max, work.windowRangeLimit ?? 14);
   if (windows.length !== plan.length
     || provenance.organizeAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.organizeKey))
     || provenance.reviewAttemptKey !== 'window-set:' + knowledgeReviewHash(windows.map(w => w.reviewKey)))
@@ -196,7 +202,8 @@ export async function readFhsDelivery({ sourceId, originalOperation, deliveryOpe
     const windowReadings = await recordedWindowReadings(pdf, work, sourceId, originalOperation, ports.confirmOriginalGenerations);
     if (windowReadings) pdf.recordedWindowReadings = windowReadings;
   }
-  return { ...row, readback: pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
+  const receiptsPresent = !prepared.provenance.windows?.some(w => w.selectedPage) || Boolean(pdf.recordedWindowReadings);
+  return { ...row, readback: receiptsPresent && pdf.pages.every(item => confirmedPages.has(item.proof)) ? 'verified' : 'citation_incomplete',
     card: { ...metadata, seriesId: card.seriesId }, vectors: { required: expected.length, exported: actual.length, chunkKeys: actual }, pdf };
 }
 
@@ -237,8 +244,11 @@ async function main() {
     async function verifyRepair(original, delivery) {
       if (delivery===firstDispatchWorkId(original)) {
         const [prior,child]=await Promise.all([inspect(original),inspect(delivery)]);
-        const grant=bindFirstDispatch(manualPublicationPin(sourceId),original,prior);
-        return Boolean(grant && child?.firstDispatchFrom===original && (!child.result || child.result.observationHash===grant.observation));
+        const grant=bindFirstDispatch(manualPublicationPin(sourceId),original,prior,registeredPrintPage(sourceId)?.physicalPage);
+        const windows=child?.prepared?.provenance.windows;
+        return Boolean(grant && child?.firstDispatchFrom===original && child.firstDispatchScopeHash===firstDispatchScopeHash(grant)
+          && (!child.result || child.result.observationHash===grant.observation)
+          && (!child.prepared || (grant.scope ? windows?.length===1 && matchesSelectedReading(windows[0],grant.scope) : !windows?.some(w=>w.selectedPage))));
       }
       const truncated = knowledgeTruncatedOutputRepairId(original);
       let parent = original;

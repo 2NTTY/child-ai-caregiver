@@ -4,15 +4,30 @@ import type { BackgroundKnowledgeRunRequest, BackgroundKnowledgeRunResult } from
 import { manualPublicationPin, type ManualPublicationPin } from './fhs-manual-publication.ts';
 import { knowledgeReviewHash } from './knowledge-review-assessment.ts';
 
-const commitments = z.record(z.string(),z.string().regex(/^[a-f0-9]{64}$/u)).parse(JSON.parse(
+import { printPageScopeSchema, type PrintPageScope } from './knowledge-pdf-layout.ts';
+
+const digest = z.string().regex(/^[a-f0-9]{64}$/u);
+const commitments = z.record(z.string(),z.union([digest,z.strictObject({commitment:digest,scope:printPageScopeSchema})])).parse(JSON.parse(
   readFileSync(new URL('../knowledge/fhs-undispatched-originals.json',import.meta.url),'utf8')));
 
 type OriginalWork = {request:BackgroundKnowledgeRunRequest; result:BackgroundKnowledgeRunResult|null; budget:{modelCalls:number};
   lease:unknown; receipt:unknown; preparedHash:string|null; waitingForQuotaDay?:string; firstDispatchFrom?:string};
 
-export type FirstDispatch = {original:string; observation:string};
+export type FirstDispatch = {original:string; observation:string; scope?:PrintPageScope};
 export const firstDispatchWorkId = (original:string) => knowledgeReviewHash(['fhs-first-dispatch/1',original]);
 export const hasUndispatchedOriginal = (sourceId:string) => Object.hasOwn(commitments,sourceId);
+export const firstDispatchScopeHash = (grant?:FirstDispatch) => grant?.scope ? knowledgeReviewHash(grant.scope) : undefined;
+
+export function registeredPrintPage(sourceId:string) {
+  const entry = commitments[sourceId];
+  return typeof entry === 'object' ? printPageScopeSchema.parse(entry.scope) : undefined;
+}
+
+export function requestedPrintPage(value:string|undefined) {
+  if (value === undefined) return undefined;
+  if (!/^[1-9][0-9]*$/u.test(value) || !Number.isSafeInteger(Number(value))) throw Error('knowledge_print_page_invalid');
+  return Number(value);
+}
 
 export function isUndispatchedParent(work:OriginalWork|null, request:BackgroundKnowledgeRunRequest, observation:string) {
   return Boolean(work && !work.lease && !work.receipt && !work.preparedHash && !work.firstDispatchFrom && !work.waitingForQuotaDay
@@ -22,11 +37,16 @@ export function isUndispatchedParent(work:OriginalWork|null, request:BackgroundK
 }
 
 /** Public commitments bind only the commissioned originals whose private admission history was verified. */
-export function bindFirstDispatch(pin:ManualPublicationPin|undefined, original:string, work:OriginalWork|null): FirstDispatch|undefined {
+export function bindFirstDispatch(pin:ManualPublicationPin|undefined, original:string, work:OriginalWork|null, physicalPage?:number): FirstDispatch|undefined {
   const observation=work?.result?.observationHash;
   if (!pin || pin.resumeOnly || manualPublicationPin(pin.sourceId)!==pin || !work || !observation
     || work.request.watchId!==pin.sourceId || work.request.operationFingerprint!==original
     || !isUndispatchedParent(work,work.request,observation)) return;
-  if (commitments[pin.sourceId]===knowledgeReviewHash(['fhs-verified-no-dispatch/1',pin.lane,pin.sourceId,pin.sha256,pin.pages,original,observation]))
+  const entry = commitments[pin.sourceId];
+  const binding = [pin.lane,pin.sourceId,pin.sha256,pin.pages,original,observation];
+  if (physicalPage === undefined && entry === knowledgeReviewHash(['fhs-verified-no-dispatch/1',...binding]))
     return {original,observation};
+  if (typeof entry === 'object' && entry.scope.physicalPage === physicalPage && physicalPage <= pin.pages
+    && entry.commitment === knowledgeReviewHash(['fhs-first-print-page/1',...binding,entry.scope]))
+    return {original,observation,scope:printPageScopeSchema.parse(entry.scope)};
 }

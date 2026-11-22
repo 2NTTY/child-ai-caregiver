@@ -199,6 +199,13 @@ sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAM
 sudo python3 -I "$tool" --reads "$FHS_CAMPAIGN_PDF_READS" --reads-hash "$FHS_CAMPAIGN_PDF_READS_SHA256" lane C1 run SOURCE_ID
 ```
 
+<a id="fhs-first-selected-page"></a>
+**首次只整理指定印本實頁。** 原操作已有固定觀測、在派送前以 `unavailable` 停止且查無票據時，原批次負責人可按既有審批入口登記一個實頁。以 PDF 首頁為第 1 頁。印刷頁碼可與 PDF 實頁不同。已批准的單頁可用 `lane C1 status SOURCE_ID --page 5` 查單，再用相同來源與頁碼執行 `prepare`、`run`。每張原單沿用一個首次派送工作編號。工作中斷後查回同一頁，未明票據由原帳本保留。
+
+單頁審批在[首次派送登記](../knowledge/fhs-undispatched-originals.json)按來源保存 `{commitment, scope}`。範圍含 `physicalPage`、供家長檢索的 `question` 及依次排列的 `fields`。每欄的 `key` 供兩次閱讀逐欄核對，`label` 是索引內的欄名。核對原件、原工作及零派送證據後，用 `knowledgeReviewHash(['fhs-first-print-page/1', lane, sourceId, sha256, pages, originalOperation, observationHash, scope])` 綁定該次審批。工位核對同一來源的既有派送、在用版本、候選及授權。兩次閱讀各自只取得指定頁的切片，欄值一致後才按該頁建索引。來源或頁碼欠授權時，交原入口處理。
+
+需要預備切片時，可在持有已核原件的本機執行 `node scripts/fhs-stage-pdf-reads.mjs ORIGINALS --from-original OUTPUT_PARENT SOURCE_ID --page 5`。輸出含單頁 PDF 及家長回查該頁所需的一段原件資料，沿用原有索引指紋、掛載及大型原件限制。切片準備只讀原件，正式派送、費用及出版繼續由工位決定。
+
 `prepare` 登記原操作、保存官方原件及核對實頁，全程零模型。已有成功觀測便直接讀回。`run` 按頁數由少至多，逐份使用伺服器受命製卡入口，在共用毛額帳本預留。已刊登或有確實保留結果的工作會讀回原收據。全組的 US$30 為抵免前毛額，結果未明的票據逐張足額預留。自動維護的每日次數適用於排程及自動查新。
 
 網頁沿[首批原單](../knowledge/fhs-initial-recovery.json)的 `sourceId` 及 `operationFingerprint`，以 `sudo python3 -I "$tool" web-original inspect SOURCE_ID ORIGINAL_OPERATION` 查單。獲分配後，以同一組參數把 `inspect` 改為 `run`。第二及第五冊的舊 504 原單須核實原票已零費用結算。登記了 `chapterReading` 的網頁則核對原保留原因、觀測及先前修訂，逐字拼回各節，連同出版者對象和原審核意見送審。通過後查回生效版、家長卡、全文及索引。保留或派送結果未明時，用 `inspect` 查回同一工作。

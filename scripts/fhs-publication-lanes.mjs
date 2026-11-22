@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { campaignMaterialWatches } from '../server/platform-materials.ts';
+import { requestedPrintPage } from '../server/fhs-undispatched-original.ts';
 
 const laneIDs = ['C1', 'C2', 'C3'];
 const digest = /^[a-f0-9]{64}$/u;
@@ -71,10 +72,12 @@ export async function runLaneCommand(args) {
   const rows = publicationAssignments().get(lane);
   const sources = sourceId === undefined ? rows.sort((a, b) => a.pages - b.pages) : rows.filter(s => s.sourceId === sourceId);
   if (!sources.length) throw Error('fhs_lane_source');
+  const page = requestedPrintPage(process.env.FHS_CAMPAIGN_PRINT_PAGE);
+  if (page && (!sourceId || page > sources[0].pages)) throw Error('knowledge_print_page_invalid');
   if (process.env.FIRESTORE_EMULATOR_HOST || process.env.AI_KNOWLEDGE_MAINTENANCE_PAYER !== 'platform')
     throw Error('knowledge_campaign_environment_mismatch');
   const { openLaneRuntime } = await import('./fhs-lane-operations.mjs');
-  const runtime = await openLaneRuntime(lane, action);
+  const runtime = await openLaneRuntime(lane, action, page);
   try { return await runPublicationLane(sources, action, runtime); }
   finally { await runtime.close(); }
 }
