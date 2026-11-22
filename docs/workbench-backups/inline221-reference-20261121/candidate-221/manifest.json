@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-221-image-count",
+  "base": {
+    "artifact": "candidate-219/out",
+    "htmlSha256": "c20e10e5484fcb396703e6cf88896be598e75793c83a77e2d3c90c57e39923a6",
+    "rawRecordsSha256": "4c5625c3445a69e0be80528bddcfc8ae8107418aff603b31625d95e30cfa12ec",
+    "rawArtworkSha256": "86c78166470b54af5391ce61542b8a723b10ed09b7b322b39862d52d0c945c8e",
+    "topics": 108,
+    "choices": 219,
+    "images": 219
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-child-context/assets.json",
+      "sha256": "cfdb07216f7d35d7bd77400452b5bc1ec52febc9ba6a69df9f2ac9eb717b1d32"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "140e6d2fb653eb5779fe02679fc0fb971eed7ee5074c39553ab0d29975ec512b",
+    "PROVENANCE.md": "7d26b36b22c018fb9179354fc1ea9d157045d764f0facb6166ffff2d24a322ff"
+  },
+  "topics": [
+    {
+      "number": 109,
+      "title": "概況：切換孩子，下一頁仍沿用",
+      "choices": [
+        {
+          "name": "在頁面上方顯示所選範圍",
+          "note": "Sentry 可在問題動態內切換或多選專案。育伴港在「概況」切換已可查看的孩子時，保留頁面及分頁，改讀該孩子的資料；再到「關注」也沿用所選孩子，不會混看多個孩子或新增權限。",
+          "links": [
+            {
+              "label": "Sentry 自託管 26.11.0：完整 Issues 工作區",
+              "url": "https://github.com/getsentry/sentry/blob/c54c3cec809a38cc3a72d6a51e303f35b35b8b5e/static/app/views/issueList/overview.tsx#L990-L1026"
+            },
+            {
+              "label": "專案選擇在工作區內，同行保留環境和日期",
+              "url": "https://github.com/getsentry/sentry/blob/c54c3cec809a38cc3a72d6a51e303f35b35b8b5e/static/app/views/issueList/filters.tsx#L33-L65"
+            },
+            {
+              "label": "套用專案範圍更新同一頁篩選",
+              "url": "https://github.com/getsentry/sentry/blob/c54c3cec809a38cc3a72d6a51e303f35b35b8b5e/static/app/components/pageFilters/project/projectPageFilter.tsx#L472-L490"
+            },
+            {
+              "label": "專案選單可多選；無待套用改動不顯示套用按鈕",
+              "url": "https://github.com/getsentry/sentry/blob/c54c3cec809a38cc3a72d6a51e303f35b35b8b5e/static/app/components/pageFilters/project/projectPageFilter.tsx#L590-L654"
+            },
+            {
+              "label": "Sentry 程式授權：FSL-1.1-Apache-2.0",
+              "url": "https://github.com/getsentry/sentry/blob/c54c3cec809a38cc3a72d6a51e303f35b35b8b5e/LICENSE.md#L1-L32"
+            }
+          ],
+          "asset": {
+            "input": "draft-child-context/child-context-a.png",
+            "sha256": "63a6e88f090c06f05ca8a0252e338061c36b564e35c74502320ee5ce1f7a3156",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Sentry 桌面全頁重繪。問題動態仍可見，左上已展開專案選單，四個虛構專案中只有 paper-gallery 已勾選；後方列表為該專案的合成紙藝展問題。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "底部清單標出目前範圍",
+          "note": "Home Assistant Android 在原控制台上方打開伺服器清單，以頭像勾號標出目前選項。選另一部會載入其預設頁；此圖尚未切換。育伴港則在「概況」切換已有權限的孩子，留在概況，之後開啟其他模組時沿用所選孩子，不改變存取權限。",
+          "links": [
+            {
+              "label": "Home Assistant Android 2026.11.1：從底部選擇已登記伺服器",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/settings/server/ServerChooser.kt#L74-L144"
+            },
+            {
+              "label": "同版：目前伺服器的頭像附勾號",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/settings/server/ServerChooser.kt#L183-L204"
+            },
+            {
+              "label": "同版：主控制台接上切換入口",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/util/compose/HANavHost.kt#L111-L136"
+            },
+            {
+              "label": "同版：傳回所選伺服器",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/util/compose/HANavHost.kt#L171-L187"
+            },
+            {
+              "label": "同版：選擇後載入另一個伺服器",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/frontend/FrontendViewModel.kt#L632-L636"
+            },
+            {
+              "label": "同版：預設載入目標是所選伺服器的預設頁",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/app/src/main/kotlin/io/homeassistant/companion/android/frontend/FrontendViewModel.kt#L848-L855"
+            },
+            {
+              "label": "Home Assistant Android 所列程式授權：Apache-2.0",
+              "url": "https://github.com/home-assistant/android/blob/743db58e8749709c187d33b2192be9fcc149997b/LICENSE.md#L1-L5"
+            }
+          ],
+          "asset": {
+            "input": "draft-child-context/child-context-b.png",
+            "sha256": "38c70a5d5be252ed5073cd989c627726aaff4908a988332b079b9085c17196b1",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Home Assistant Android 的非官方全手機重繪。原控制台在遮罩後仍可見；下方選擇伺服器面板列出虛構的紙舟展場及海風工房。第一列頭像有勾號，第二列尚未選。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 109 題 · 設定目前所看範圍的兩幅自製示意",
+      "input": "draft-child-context/DECLARATION.txt",
+      "sha256": "140e6d2fb653eb5779fe02679fc0fb971eed7ee5074c39553ab0d29975ec512b"
+    }
+  ]
+}
