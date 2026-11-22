@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-215-image-count",
+  "base": {
+    "artifact": "candidate-213/out",
+    "htmlSha256": "12c3374b346b80c1da52ebccea3844720b9808466f193347cc85e99f02c840e2",
+    "rawRecordsSha256": "c85e1ee9f969e63bd99c1de4a79f81df0c05f3238706a3345436547abe0d0fa7",
+    "rawArtworkSha256": "d6adf9418243826cc5b43b0016d5205770c3c80d1f13f34d59c01540b7e5aff6",
+    "topics": 105,
+    "choices": 213,
+    "images": 213
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-amount/assets.json",
+      "sha256": "3e9c07ed3401b357294dc3cc193060cc7629fe47fdb5206ddeebd4a5bd3d3ef5"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "521ad69b70bc8522aa806247da2e644195e91c07eb6ed2f1731101b1aa04b85a",
+    "PROVENANCE.md": "00dd18e967cb043e543633f47912ea8755d573bf2676507e8325837c987296f8"
+  },
+  "topics": [
+    {
+      "number": 106,
+      "title": "手動飲食記錄：約數照記，不知道就留空",
+      "choices": [
+        {
+          "name": "數量和單位並排",
+          "note": "Tandoor 停用某項食材的數量時，會一併停用數量及單位欄，食材和備註仍在。育伴港則要求數量原文與單位一起填寫或一起留空，可標為「約數」，並先預覽共享內容，再確認。",
+          "links": [
+            {
+              "label": "Tandoor Recipes 2.7.6：完整食譜編輯器的步驟分頁",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/components/model_editors/RecipeEditor.vue#L87-L126"
+            },
+            {
+              "label": "完整桌面編輯頁的返回及查看按鈕",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/pages/ModelEditPage.vue#L1-L17"
+            },
+            {
+              "label": "網站上方工具列及左側導覽",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/apps/tandoor/Tandoor.vue#L8-L73"
+            },
+            {
+              "label": "食材列：一起停用數量與單位，保留食材與備註",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/components/inputs/StepEditor.vue#L58-L85"
+            },
+            {
+              "label": "食材選單原有的停用數量開關",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/components/inputs/StepEditor.vue#L88-L104"
+            },
+            {
+              "label": "食材新增控制與做法編輯器",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/components/inputs/StepEditor.vue#L119-L145"
+            },
+            {
+              "label": "整份食譜的獨立儲存按鈕",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/vue3/src/components/model_editors/ModelEditorBase.vue#L14-L25"
+            },
+            {
+              "label": "AGPLv3 + Commons Clause v1.0：所參考程式碼的授權",
+              "url": "https://github.com/TandoorRecipes/recipes/blob/89c07f26bb168221e41d409224976960cf344289/LICENSE.md#L1-L13"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-amount/care-amount-a.png",
+            "sha256": "ee291697113bf84cb89da796660f66706a1cdf800bd0714e322279f246195ddc",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Tandoor 食譜步驟頁非官方重繪：薄荷葉一列的選單開着，「停用數量」開關已開；其數量及單位欄變淡，食材及備註仍顯示，下方儲存按鈕未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "用滿版表單逐項填寫",
+          "note": "Wikibase 把數字與選填單位分開，量度值可另寫誤差範圍。育伴港只參考做清楚的區分：手動記錄飲食時，數量原文與單位一起填，再選「約數」或「精確」；未知就兩欄留空，不當作零。預覽不等於保存。",
+          "links": [
+            {
+              "label": "Wikibase Suite 8.3.0 的固定擴充版本：編輯陳述",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-Wikibase/blob/f4439bff9baebaa027a7b37be2bcaa8019b8f861/repo/resources/wikibase.wbui2025/components/editStatementGroup.vue#L1-L77"
+            },
+            {
+              "label": "編輯器填滿整個網頁視窗",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-Wikibase/blob/f4439bff9baebaa027a7b37be2bcaa8019b8f861/repo/resources/wikibase.wbui2025/components/modalOverlay.vue#L169-L178"
+            },
+            {
+              "label": "數值欄與獨立單位欄",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-Wikibase/blob/f4439bff9baebaa027a7b37be2bcaa8019b8f861/repo/resources/wikibase.wbui2025/components/editableQuantitySnakValue.vue#L1-L26"
+            },
+            {
+              "label": "數量解析與單位選項",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-Wikibase/blob/f4439bff9baebaa027a7b37be2bcaa8019b8f861/repo/resources/wikibase.wbui2025/store/snakValueStrategies.js#L65-L95"
+            },
+            {
+              "label": "擴充視圖程式授權：GPL-2.0-or-later",
+              "url": "https://github.com/wikimedia/mediawiki-extensions-Wikibase/blob/f4439bff9baebaa027a7b37be2bcaa8019b8f861/view/src/ItemView.php#L14-L21"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-amount/care-amount-b.png",
+            "sha256": "388b5ac7c4854f12848316b04687e69c7f251130e72c2133aa75730112eebb98",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Wikibase Suite 8.3.0 中填滿網頁視窗的陳述編輯器重繪。虛構的展板闊度有兩組數值 42 和 60±2，各有獨立的厘米單位欄。底部的發布按鈕尚未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 106 題 · 保留已知的原文和單位的兩幅自製示意",
+      "input": "draft-care-amount/DECLARATION.txt",
+      "sha256": "521ad69b70bc8522aa806247da2e644195e91c07eb6ed2f1731101b1aa04b85a"
+    }
+  ]
+}
