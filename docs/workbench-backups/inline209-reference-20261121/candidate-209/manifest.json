@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-209-image-count",
+  "base": {
+    "artifact": "candidate-207/out",
+    "htmlSha256": "655fbc32e644380c300ecd7c69b011f631d1153f582f98429338c21c76550a45",
+    "rawRecordsSha256": "a3d7e56cf4ae0669453abde09744653a738281d79122af00630f89b75e39e6a6",
+    "rawArtworkSha256": "4a6d6a3a800508c99e9cdd29c7e9749511642d3981cf50d7db9b114de0517ab1",
+    "topics": 102,
+    "choices": 207,
+    "images": 207
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-shared-file/assets.json",
+      "sha256": "1e648b72b9c9cc53a7e8e69fab02a40a559a10c293b4282423ad10833dfea014"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "94dc8abaf7837583f83ec3458a5c175708c994087e03203e7003b2ed25681e27",
+    "PROVENANCE.md": "9df386b3df4dbd4738c3cb3dc8104b1c7cb74f2f80a202f25e0a6ab8fcd0ebe8"
+  },
+  "topics": [
+    {
+      "number": 103,
+      "title": "家庭附件庫：先看清家庭與孩子，再選檔",
+      "choices": [
+        {
+          "name": "在現有列表上方辨認目的地",
+          "note": "Nextcloud 在現有資料夾內開啟「新增」，路徑仍可見。育伴港先顯示「家庭名稱 · 孩子名稱」，只供已有附件權限的人選取原件；選取便開始保存，不另作預覽，也不因此取得新權限。圖中未選檔或保存。",
+          "links": [
+            {
+              "label": "Nextcloud Files v32.0.0：現有目的地路徑及新增選單",
+              "url": "https://github.com/nextcloud/server/blob/5ee29decb00508122f008abacea26fb3e122b13c/apps/files/src/views/FilesList.vue#L7-L37"
+            },
+            {
+              "label": "選檔前保留現有資料夾內容",
+              "url": "https://github.com/nextcloud/server/blob/5ee29decb00508122f008abacea26fb3e122b13c/apps/files/src/views/FilesList.vue#L73-L106"
+            },
+            {
+              "label": "路徑階層與同行操作",
+              "url": "https://github.com/nextcloud/server/blob/5ee29decb00508122f008abacea26fb3e122b13c/apps/files/src/components/BreadCrumbs.vue#L7-L33"
+            },
+            {
+              "label": "Nextcloud Files 程式授權：AGPL-3.0-or-later",
+              "url": "https://github.com/nextcloud/server/blob/5ee29decb00508122f008abacea26fb3e122b13c/apps/files/src/views/FilesList.vue#L1-L4"
+            }
+          ],
+          "asset": {
+            "input": "draft-shared-file/shared-file-a.png",
+            "sha256": "e573dc20c30d960eae3b57b10ca9c3cce6b330c716eaa4cd2b99d1bacbdec66c",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Nextcloud Files 桌面重繪。上方路徑停在「展板原件」，列表顯示已有的合成紙藝展檔案。「新增」選單開啟並列出上傳檔案或資料夾；未進入選檔器或上傳。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "用獨立頁集中顯示選檔",
+          "note": "WordPress 專用媒體頁可選擇檔案或拖放。這裏還未選檔，沒有上載結果。育伴港只在已有合資格共享權限時，「影片與文件」才顯示家庭及孩子，選定檔案便開始保存到該家庭附件庫，不會開預覽、傳給助手、辨識文字、建立照顧記錄或匯出，也不等同網站發佈或批次上載。",
+          "links": [
+            {
+              "label": "WordPress 6.9.1：專用新增媒體上載頁",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/wp-admin/media-new.php#L65-L90"
+            },
+            {
+              "label": "同版：拖放區與「選擇檔案」按鈕",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/wp-admin/includes/media.php#L2252-L2259"
+            },
+            {
+              "label": "同版：閒置拖放區的框線及位置",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/wp-admin/css/media.css#L404-L430"
+            },
+            {
+              "label": "同版：選擇或放入檔案後開始上載",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/wp-includes/js/plupload/handlers.js#L599-L629"
+            },
+            {
+              "label": "同版：瀏覽器上載工具只是備用入口",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/wp-admin/includes/media.php#L3032-L3044"
+            },
+            {
+              "label": "WordPress 所列程式授權：GPL-2.0-or-later",
+              "url": "https://github.com/WordPress/WordPress/blob/034dcde94c906b65266b79306694fced11d9c3da/license.txt#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-shared-file/shared-file-b.png",
+            "sha256": "13619b23a89b7255334b343281126958fb7d798befd2b570070ec283117bd639",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "WordPress 管理介面的非官方全頁重繪。「媒體」已展開，「新增媒體檔案」選中。主區是空白的拖放框和「選擇檔案」按鈕。瀏覽器上載入口未選用，沒有檔案、進度或上載結果。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 103 題 · 選檔前看清附件庫目的地的兩幅自製示意",
+      "input": "draft-shared-file/DECLARATION.txt",
+      "sha256": "94dc8abaf7837583f83ec3458a5c175708c994087e03203e7003b2ed25681e27"
+    }
+  ]
+}
