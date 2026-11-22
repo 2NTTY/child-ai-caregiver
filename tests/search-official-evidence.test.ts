@@ -715,6 +715,10 @@ test('same-card citations retain each passage and its conditions for independent
     const single = {kind: 'public_information', paragraphs: [{text: rows[1]!.text, citationIds: [rows[1]!.chunkId]}]};
     assert.equal((await followup.tools.find(tool => tool.name === 'present_answer')!.execute(single, {callId: 'prior'} as any)).status, 'succeeded');
     assert.deepEqual(followup.deliveryDraft()!.sources.map(s => s.citationId).sort(), rows.map(row => row.chunkId).sort());
+    const parentFollowup = createProductAgentTools({ ...configuration, trustedUserMessage: '親子體驗日朝早要跟哪份？',
+      seededOfficialEvidence: [{ chunk: rows[1]!, filter: { region: 'HK', classification: 'official_guidance', age: null, topics: [] } }] });
+    assert.equal((await parentFollowup.tools.find(tool => tool.name === 'present_answer')!.execute(single, {callId: 'prior-only'} as any)).data?.code,
+      'knowledge_comparison_required');
     const otherSession = { ...rows[0]!, section: '另一場活動・上午入場',
       applicability: { ...rows[0]!.applicability, conditions: ['另一場活動', '上午入場'] } };
     const changedTopic = createProductAgentTools({ ...configuration, trustedUserMessage: '另一場活動朝早呢？',

@@ -636,6 +636,8 @@ export function createProductAgentTools(options: {
       }
       if (error instanceof FamilyError && error.code === 'knowledge_question_changed') return { status: 'rejected', data: {
         code: error.code, nextAction: '先按本輪所問的活動或條件查找教材。用不含私人資料的本輪主題呼叫 find_official_material 或 search_knowledge，讀取相關原段後再回答。' } };
+      if (error instanceof FamilyError && error.code === 'knowledge_comparison_required') return { status: 'rejected', data: {
+        code: error.code, nextAction: '這次引用來自舊答，同卡還有你在本輪未讀的同範圍原段。用 find_official_material 或 search_knowledge 搜尋本輪所問活動及條件，對照兩份教材後才提交。若有明示取代，寫應跟哪份及具體做法，再引出版者原句說明適用範圍。' } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
@@ -1238,6 +1240,12 @@ export function createProductAgentTools(options: {
               condition.length > 1 && request.includes(condition)
               && !citedChunks.some(chunk => chunk.applicability.conditions.includes(condition) || chunk.section.includes(condition))));
             if (namedConditionMissing) throw new FamilyError(400, 'knowledge_question_changed');
+            const unseenSameSection = peerIds.some(id => {
+              const peer = evidence.get(id)?.chunk;
+              return peer && !cited.has(id) && !seeded.some(item => item.chunk.chunkId === id)
+                && citedChunks.some(chunk => chunk.section === peer.section);
+            });
+            if (unseenSameSection) throw new FamilyError(400, 'knowledge_comparison_required');
           }
           acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
           if (closing) discussion!.acceptClosing(closing);
