@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-229-image-count",
+  "base": {
+    "artifact": "candidate-227/out",
+    "htmlSha256": "d78c1507dc07f0107b015117944b7499eb07d3935ba1be955a243bab8f79895a",
+    "rawRecordsSha256": "40ae3ad4a7a1cf793e7287bf1e2eab6cbde0545e9283255271cefbed75c9bec0",
+    "rawArtworkSha256": "e58b89751274afe9c68e01376ad0524785a1ae3118d5a1cfd2d99d259baebee2",
+    "topics": 112,
+    "choices": 227,
+    "images": 227
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-companion-position/assets.json",
+      "sha256": "873d76002b1305cc4d12147969bb642f26edd5a45cc1f26d227affc4d10b0c3a"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "24c6c2fe7cd451489874d3e1934e4034918c94e6914016f7671be2df0df64bdc",
+    "PROVENANCE.md": "9121c0e8dcc08c891a7e3dab4cf305e0524661da0dd39fc583b3e4929adaa0bc"
+  },
+  "topics": [
+    {
+      "number": 113,
+      "title": "小助手：移開後，切頁仍可再展開",
+      "choices": [
+        {
+          "name": "縮成停在邊沿的小泡泡",
+          "note": "Android 的系統泡泡收起後可停在畫面邊緣，點按可展開。育伴港的小助手只在支援的站內頁面移動、收起或展開；同一次載入內切換這些頁面可保留調整，不是跨應用程式浮層。",
+          "links": [
+            {
+              "label": "Android 15.0.0 r1：泡泡的收起與展開",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubbleStackView.java#L568-L593"
+            },
+            {
+              "label": "Android 系統泡泡使用原生視窗浮層",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubbleController.java#L831-L901"
+            },
+            {
+              "label": "移動後停在畫面邊緣",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubbleStackView.java#L666-L730"
+            },
+            {
+              "label": "收起時停靠的畫面範圍",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubblePositioner.java#L792-L802"
+            },
+            {
+              "label": "原生小泡泡與來源圖標的尺寸",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/res/values/dimen.xml#L132-L142"
+            },
+            {
+              "label": "泡泡圖標及來源應用程式徽章",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BadgedImageView.java#L164-L174"
+            },
+            {
+              "label": "原生無障礙移動、展開與收起操作",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubbleStackView.java#L1731-L1789"
+            },
+            {
+              "label": "Apache-2.0：所參考的泡泡程式碼授權",
+              "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/4e43ad12e1b211f15152e9c5b16b0fe88e6b93f3/libs/WindowManager/Shell/src/com/android/wm/shell/bubbles/BubbleStackView.java#L1-L15"
+            }
+          ],
+          "asset": {
+            "input": "draft-companion-position/companion-position-a.png",
+            "sha256": "8a3aacfca2342fa233f2e8f3b919259771275f5713aa44f77ecb3662e9988e88",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Android 手機非官方重繪：紙藝展筆記保持全頁可見，右側邊緣有一個收起的幾何角色泡泡和小徽章，沒有展開面板。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "工具窗藏起後可從選單找回",
+          "note": "OBS 可用「停駐視窗」選單重開隱藏的「狀態」面板；圖中尚未點選。育伴港則在同一登入階段的適用頁面內保留同一個小助手，可拖動、收起，再按小圖示展開。不會跨應用程式，也不承諾重開後仍保留位置。",
+          "links": [
+            {
+              "label": "OBS Studio 32.0.4：主視窗的停駐視窗選單",
+              "url": "https://github.com/obsproject/obs-studio/blob/dcdbd2e9048ae66237fdab32dbba72b745b1b9c5/frontend/forms/OBSBasic.ui#L944-L974"
+            },
+            {
+              "label": "同版：將各面板的顯示開關加入選單",
+              "url": "https://github.com/obsproject/obs-studio/blob/dcdbd2e9048ae66237fdab32dbba72b745b1b9c5/frontend/widgets/OBSBasic.cpp#L501-L513"
+            },
+            {
+              "label": "同版：未顯示的面板可從選單重新開啟",
+              "url": "https://github.com/obsproject/obs-studio/blob/dcdbd2e9048ae66237fdab32dbba72b745b1b9c5/frontend/widgets/OBSBasic_Docks.cpp#L24-L43"
+            },
+            {
+              "label": "同版：重設後隱藏狀態面板，以及停駐視窗鎖定規則",
+              "url": "https://github.com/obsproject/obs-studio/blob/dcdbd2e9048ae66237fdab32dbba72b745b1b9c5/frontend/widgets/OBSBasic_Docks.cpp#L88-L125"
+            },
+            {
+              "label": "OBSBasic_Docks.cpp 原始碼授權：GPL-2.0-or-later",
+              "url": "https://github.com/obsproject/obs-studio/blob/dcdbd2e9048ae66237fdab32dbba72b745b1b9c5/frontend/widgets/OBSBasic_Docks.cpp#L1-L17"
+            }
+          ],
+          "asset": {
+            "input": "draft-companion-position/companion-position-b.png",
+            "sha256": "99ecd53c612a716d5b4fcba22ce7a97032bfb1d0c3544a47a612d0e1b894cdb2",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "OBS 32.0.4 的非官方全工作區重繪。虛構摺紙展板在預覽中央，下方五個主要停駐視窗可見。左上「停駐視窗」選單已展開，游標指向未勾選的「狀態」，該面板仍然隱藏；串流與錄製未開始。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 113 題 · 移動、收起和還原的入口的兩幅自製示意",
+      "input": "draft-companion-position/DECLARATION.txt",
+      "sha256": "24c6c2fe7cd451489874d3e1934e4034918c94e6914016f7671be2df0df64bdc"
+    }
+  ]
+}
