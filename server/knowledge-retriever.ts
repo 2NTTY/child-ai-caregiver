@@ -115,7 +115,8 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           const rawCandidates = await budget.wait(() => readCandidates(filter, vector, { query, ...(videoList ? { preferDistinctSources: true } : {}) }));
           const now = Date.now();
           const searchable = (candidate: KnowledgeEvidence) => isKnowledgeEvidenceFresh(candidate, now)
-            && includeLeafletInSearch(query, candidate.url, candidate.extraction);
+            && ((filter.purpose === 'read_originals' && candidate.applicability.use === 'original_lookup')
+              || includeLeafletInSearch(query, candidate.url, candidate.extraction));
           const candidates = rawCandidates.filter(searchable);
           let ranked = rankKnowledge(query, candidates), omittedScripts = 0;
           const title = !videoList && requestedScriptTitle(query);

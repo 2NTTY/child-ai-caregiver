@@ -113,6 +113,22 @@ test('publisher priority binds one exact print edition and preserves explicit pr
   assert.equal(publisherCurrentText('https://www.chp.gov.hk/files/her/hand_hygiene_pamphlet.pdf', extraction), undefined);
 });
 
+test('a request for original material can find a lookup-only print page by its subject', async t => {
+  const print = candidate('printed-text', 0, {
+    url: 'https://www.fhs.gov.hk/tc_chi/health_info/child/12549.pdf',
+    extraction: { format: 'text_pdf', contentHash: '247801fba869828a4f114e4b8425f112141a5e4127ed843aaacf1892a34fd355', complete: true },
+    rankScore: 1,
+  });
+  const chart = { ...print, chunkId: 'lookup-only-page', applicability: { ...print.applicability, use: 'original_lookup' as const } };
+  const gateway = createEmbeddingGateway({ config, usage: fakeUsage().usage,
+    provider: fakeProvider(async () => ({ values: vector, inputTokens: 1, billableCharacters: 4 })) });
+  const run = createKnowledgeRetriever({ candidates: async () => [print, chart] }, gateway)
+    .createRun({ actor: queryActor, budget: budget(t), authorize: async () => true });
+  const query = '單張裡面嗰個例子點樣做？';
+  assert.deepEqual((await run.search(query, { ...filter, purpose: 'read_originals' })).chunks.map(row => row.chunkId), [chart.chunkId]);
+  assert.deepEqual((await run.search(query, filter)).chunks, []);
+});
+
 test("one run reuses its query vector but rereads publication and filter state; another run embeds anew", async t => {
   const usage = fakeUsage();
   let providerCalls = 0;

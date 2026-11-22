@@ -201,9 +201,10 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
                ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
            AND $16::text[] IS NOT NULL
-           AND NOT EXISTS (SELECT 1 FROM jsonb_to_recordset($18::jsonb) AS counterpart(url text, hash text)
+           AND (($19::boolean AND c.document->'applicability'->>'use' = 'original_lookup') OR NOT EXISTS (
+             SELECT 1 FROM jsonb_to_recordset($18::jsonb) AS counterpart(url text, hash text)
              WHERE v.document->'extraction'->>'format'='text_pdf' AND v.document->>'url'=counterpart.url
-               AND v.document->'extraction'->>'contentHash'=counterpart.hash)
+               AND v.document->'extraction'->>'contentHash'=counterpart.hash))
            AND ($13::uuid[] IS NULL OR c.id=ANY($13::uuid[]))
            AND ($14::uuid IS NULL OR v.id=$14)
            AND ($17::text IS NULL OR ord.chunk_order>(SELECT listed.chunk_order

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { TestContext } from "node:test";
-import type { LlmRequest } from "@google/adk";
+import { FunctionTool, type LlmRequest } from "@google/adk";
 import { ThinkingLevel } from "@google/genai";
 import { GoogleAuth } from "google-auth-library";
+import { createRegisteredDocumentTools, type AgentSourceDocumentReader } from '../server/agent-registered-document-tools.ts';
 import { readAiConfig } from "../server/ai-config.ts";
 import { createVertexAgentProvider } from "../server/agent-model-gateway.ts";
 import { createVertexProvider } from "../server/vertex-provider.ts";
@@ -33,6 +34,25 @@ function syntheticRequest(): LlmRequest {
 function mockAuth(context: TestContext) {
   context.mock.method(GoogleAuth.prototype, "getRequestHeaders", async () => new Headers({ authorization: "Bearer synthetic" }));
 }
+
+test('loading source card tools sends a Vertex v1 compatible lower bound for document pages', async context => {
+  mockAuth(context);
+  const tools = createRegisteredDocumentTools({} as AgentSourceDocumentReader, 'parent', 'run', async () => true, () => {}, () => null);
+  const read = tools.find(tool => tool.name === 'read_source_card_document')!;
+  const declaration = new FunctionTool({ name: read.name, description: read.description, parameters: read.parameters, execute: () => ({}) })._getDeclaration();
+  const request = syntheticRequest();
+  request.config!.tools = [{ functionDeclarations: [declaration] }];
+  let pageSchema: Record<string, unknown> | undefined;
+  context.mock.method(globalThis, 'fetch', async (_url: unknown, init: RequestInit) => {
+    pageSchema = JSON.parse(String(init.body)).tools[0].functionDeclarations[0].parameters.properties.page;
+    return Response.json(response);
+  });
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
+  await createVertexAgentProvider(config).generate(request, new AbortController().signal);
+  assert.equal(pageSchema?.type, 'INTEGER');
+  assert.equal(pageSchema?.exclusiveMinimum, undefined);
+  assert.equal(pageSchema?.minimum, 1);
+});
 
 for (const scenario of [
   { model: "gemini-3.1-flash-lite", level: undefined, agent: "MINIMAL", defaultLevel: "MINIMAL" },

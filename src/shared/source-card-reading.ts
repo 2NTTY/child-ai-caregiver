@@ -13,7 +13,7 @@ export const sourceDirectoryPageSchema = z.object({
 /** A chat keeps a version and location. Opening it reads the account's then-authorized original. */
 export const sourceFactType = z.enum(['quotation', 'visual_description']);
 export const sourceReadingSchema = z.strictObject({
-  cardId: z.uuid(), documentId: digest, version: digest, page: z.int().positive().optional(), offset: z.int().nonnegative(),
+  cardId: z.uuid(), documentId: digest, version: digest, page: z.int().min(1).optional(), offset: z.int().nonnegative(),
   fact: z.strictObject({ type: sourceFactType, hash: digest, incarnation: z.uuid() }).optional(),
 });
 export type SourceReading = z.infer<typeof sourceReadingSchema>;
