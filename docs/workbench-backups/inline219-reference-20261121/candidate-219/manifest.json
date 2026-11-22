@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-219-image-count",
+  "base": {
+    "artifact": "candidate-217/out",
+    "htmlSha256": "29271e0ba20a73aeadb4bf8bd4b34c6cc557f79449290cc72582ba8f357b391d",
+    "rawRecordsSha256": "f6e1c34c60854163082200ee35b7a25965a7140b704d23a41425cebef5cff8b3",
+    "rawArtworkSha256": "78a4f930e7e8f75651bc69de52c56bb0f7f763e9676785640fe2fc6275669e8b",
+    "topics": 107,
+    "choices": 217,
+    "images": 217
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-overview-original/assets.json",
+      "sha256": "579f08888788fd809b1c7723f6a105f70d0f37a747aa57ab1a9aef0a5be5a06e"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "a7d96aafb83f3049196861b86a508d107e2c52e9f40b01c58450c64c5e864f4c",
+    "PROVENANCE.md": "755c108003ed459b710709898ae0f9178ceac64d43dad2ae2cbbd5aacc7c8a18"
+  },
+  "topics": [
+    {
+      "number": 108,
+      "title": "概況：從生活片段查回原記錄",
+      "choices": [
+        {
+          "name": "在桌面概覽上放原記錄連結",
+          "note": "Gitea 的最近提交摘要連到該次提交的固定 SHA。育伴港「最近生活片段」最多列出三項合資格的最新已確認記錄；「查看原記錄」開啟同一孩子現時可讀的原記錄，不會定格在片段當時的版本。",
+          "links": [
+            {
+              "label": "Gitea v1.25.4：儲存庫完整首頁",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/home.tmpl#L1-L31"
+            },
+            {
+              "label": "儲存庫標題及導覽",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/header.tmpl#L1-L15"
+            },
+            {
+              "label": "分支、轉到檔案及其他原生工具",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/view_content.tmpl#L13-L50"
+            },
+            {
+              "label": "檔案列表前的最近提交列",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/view_list.tmpl#L1-L13"
+            },
+            {
+              "label": "提交主旨連向該次提交的完整 SHA",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/latest_commit.tmpl#L19-L31"
+            },
+            {
+              "label": "顯示短 SHA，連向相同的完整提交",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/commit_sign_badge.tmpl#L58-L61"
+            },
+            {
+              "label": "首頁右欄和儲存庫說明",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/templates/repo/home_sidebar_top.tmpl#L1-L24"
+            },
+            {
+              "label": "MIT：參考原始碼的授權",
+              "url": "https://github.com/go-gitea/gitea/blob/369830bada2fd8826a5135cb2fc66660a9bef708/LICENSE#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-overview-original/overview-original-a.png",
+            "sha256": "cc373529191a2aec4bf637601d6d75586cf6bce94749ad0bfb5a5de612bb5d5e",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Gitea 儲存庫首頁非官方重繪：虛構紙藝展的檔案表上方顯示最近一次提交的作者、短 SHA 及可連往指定提交的主旨，下方是讀我檔案。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "從手機短文開啟指定條目",
+          "note": "Mastodon 的時間軸可按貼文正文，開啟以該帖為主的頁面。育伴港只參考這種回到來源的做法：概況最多顯示三則合資格的已確認片段，按「查看原記錄」會按該筆記錄開啟目前有權查看的內容；無法讀取時會提示。這不是固定版本，也不是完整日誌。",
+          "links": [
+            {
+              "label": "Mastodon for Android v2.13.7：固定版本",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/build.gradle#L10-L17"
+            },
+            {
+              "label": "首頁時間軸與底部導覽",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/src/main/java/org/joinmastodon/android/fragments/HomeFragment.java#L115-L145"
+            },
+            {
+              "label": "按貼文正文傳入所選識別碼",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/src/main/java/org/joinmastodon/android/ui/displayitems/StatusDisplayItem.java#L329-L337"
+            },
+            {
+              "label": "按識別碼找回對應貼文",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/src/main/java/org/joinmastodon/android/fragments/StatusListFragment.java#L58-L64"
+            },
+            {
+              "label": "將選定貼文交給討論頁",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/src/main/java/org/joinmastodon/android/fragments/BaseStatusListFragment.java#L520-L527"
+            },
+            {
+              "label": "討論頁以該則貼文為主",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/mastodon/src/main/java/org/joinmastodon/android/fragments/ThreadFragment.java#L107-L122"
+            },
+            {
+              "label": "程式碼授權：GNU GPL v3 · GPL-3.0",
+              "url": "https://github.com/mastodon/mastodon-android/blob/9ae49ec403719a8894903e011a9ad71c91c71c0d/LICENSE#L1-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-overview-original/overview-original-b.png",
+            "sha256": "9594628977c06fe075878870473d0138cb6ece6cbf4a79b711428d3069fa8880",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Mastodon Android 2.13.7 首頁重繪。一部直向手機顯示「跟隨中」時間軸、四則帶幾何頭像的虛構紙藝展場短訊、未按下的撰寫按鈕和底部導覽；未開啟任何貼文。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 108 題 · 從短文找到原記錄的兩幅自製示意",
+      "input": "draft-overview-original/DECLARATION.txt",
+      "sha256": "a7d96aafb83f3049196861b86a508d107e2c52e9f40b01c58450c64c5e864f4c"
+    }
+  ]
+}
