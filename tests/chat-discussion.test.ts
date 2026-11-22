@@ -8,7 +8,8 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
 import { assembleDiscussionRepair, createQuestionDiscussion, discussionRepairClauses, discussionToolNames } from '../server/chat-discussion.ts';
 import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
-import { discussionMainIssue, discussionMainReviewInput } from '../server/chat-discussion-main-review.ts';
+import { discussionMainIssue, discussionMainReviewInput, discussionMainReviewSchema, discussionOutcomeSchema, discussionSentenceOptions } from '../server/chat-discussion-main-review.ts';
+import type { z } from 'zod';
 import { chatDeliveryContentHash, chatDeliveryDraftHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
 import { agentAnswerSchema, type ProductAgentResult } from '../src/shared/product-agent.ts';
@@ -17,14 +18,16 @@ import { productAgentResultSchema } from '../src/shared/product-agent-result.ts'
 const base = { id: '7de5a0e8-e106-4485-b7d2-3b572741da39', childId: '1ebcb39d-a2db-4b8c-a432-7ffcb3de5808',
   authorUserId: 'parent', role: 'user', text: 'Which book should we start with?', inReplyTo: null, createdAt: '2026-11-19T00:00:00Z' };
 
-function adviceOnly(paragraphs: readonly unknown[]) {
-  return paragraphs.map(() => ({ basis: 'no_outcome_claim', wording: '', sourceQuote: '' }));
+function adviceOnly(paragraphs: readonly unknown[]): (z.infer<typeof discussionOutcomeSchema> & { clauseIndex: number })[] {
+  return paragraphs.map(() => ({ basis: 'no_outcome_claim', clauseIndex: -1 }));
 }
 
-function controlledMainReview(input: {requestClauses: string[]; mainClauses: {text: string}[]}) {
+function controlledMainReview(input: ReturnType<typeof discussionMainReviewInput>): z.infer<typeof discussionMainReviewSchema> {
   return {
-    requestChecks: input.requestClauses.map(() => ({ status: 'addressed' as const, mainQuote: input.mainClauses[0]?.text ?? '' })),
-    clauseChecks: input.mainClauses.map(() => ({ basis: 'no_outcome_claim' as const, sourceQuote: '' })),
+    sourceReadings: [],
+    requestChecks: input.requestClauses.map(({ id }) => ({ requestId: id, status: 'addressed', mainId: 0 })),
+    clauseChecks: input.mainClauses.map(({ id }) => ({ mainId: id, basis: 'no_outcome_claim',
+      ...(id === 0 && { requestLinks: input.requestClauses.map(r => ({ requestId: r.id, role: 'answers' })) }) })),
   };
 }
 
@@ -365,14 +368,19 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   }), rejected('delivery_review_incomplete'));
   const pass = (draftHash: string, claimedAppChanges?: number[]) => ({ decision: 'pass', issues: [], draftHash, claimedAppChanges, outcomeChecks: adviceOnly(draft.paragraphs) });
   const wording = '這能延長共處時間而不構成對立';
-  const compare = (basis: string, sourceQuote: string) => review(draft, p => {
+  const compare = (basis: 'supported_outcome' | 'unsupported', sourceId?: number) => review(draft, p => {
     const verdict = pass(p.draftHash, []);
-    verdict.outcomeChecks[2] = { basis, wording, sourceQuote };
-    return verdict;
+    const clauseIndex = p.outcomeClauses[2].findIndex((text: string) => text.includes(wording));
+    assert(clauseIndex >= 0);
+    verdict.outcomeChecks[2] = { basis, clauseIndex, ...(sourceId !== undefined && { support: { sourceId, match:'same_result_and_conditions' } }) };
+    const mainReview = controlledMainReview(p);
+    if (sourceId !== undefined) mainReview.sourceReadings.push({first:sourceId,last:sourceId,meaning:'outcome'});
+    return { ...verdict, mainReview };
   });
-  await assert.rejects(compare('unsupported_outcome', ''), rejected('delivery_review_budget'));
-  await assert.rejects(compare('source_supported', 'A result missing from the excerpt'), rejected('delivery_review_incomplete'));
-  await assert.rejects(compare('source_supported', '放工後只得十分鐘'), rejected('delivery_review_incomplete'));
+  await assert.rejects(compare('unsupported'), rejected('delivery_review_budget'));
+  await assert.rejects(compare('supported_outcome', 99999), rejected('delivery_review_incomplete'));
+  const taskPassage = discussionMainReviewInput(draft).sourceSegments.find(p => p.citationId === 'page-item')!;
+  await assert.rejects(compare('supported_outcome', taskPassage.id), rejected('delivery_review_incomplete'));
   await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), outcomeChecks: [] })), rejected('delivery_review_incomplete'));
   await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), approvedSentenceIds: [99999] })), rejected('delivery_review_incomplete'));
   const twoSentences = withClaim(1, '從家長的角度，時間很緊。孩子想走開時可以停下來嗎？');
@@ -383,8 +391,8 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   await assert.rejects(review(twoSentences, p => {
     const option = p.sentenceOptions.find((s: { text: string }) => s.text === '孩子想走開時可以停下來嗎？');
     const verdict = pass(p.draftHash, []);
-    verdict.outcomeChecks[1].wording = '時間很緊';
-    return { ...verdict, approvedSentenceIds: [option.id] };
+    verdict.outcomeChecks[1] = { basis:'open_hypothesis', clauseIndex:1 };
+    return { ...verdict, approvedSentenceIds: [option.id], selectionPreservesMeaning:true };
   }), rejected('delivery_review_incomplete'));
   for (const index of [1, 4]) {
     // An implicit notification is still an external action; a citation cannot serve as its receipt.
@@ -404,33 +412,86 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   await assert.rejects(review(workspace, p => ({ decision:'pass', issues:[], draftHash:p.draftHash, claimedAppChanges:[], observedReadOnly:false })), rejected('delivery_review_rejected'));
 });
 
-test('a constraint in a role and evidence for an adjacent activity do not cover the main answer', async () => {
-  const { draft } = await archivedDiscussion();
-  draft.userRequest = '要保持安靜，有哪兩個選擇？';
-  const id = draft.sources[0].citationId;
-  draft.paragraphs[1] = { kind:'clarification', text:'要保持安靜。', citationIds:[id] };
-  draft.paragraphs.splice(3, Infinity, {kind:'caregiving',text:'可以指圖，也可看相片，兩種方式的命中率一致。',citationIds:[id]});
-  draft.sources[0].excerpt = '可以指圖，也可看相片。';
+test('semantic positions cover a paraphrased constraint and bind comparative evidence to one actual passage', async () => {
+  const { draft, scope, presentation } = await archivedDiscussion();
+  draft.userRequest = '只有十分鐘，要怎樣選？';
+  const source = draft.sources[0];
+  source.excerpt = '可以指圖，也可看相片。低光測試用指圖及看相片，兩種方式命中率相同。另一試驗比較拍手及敲鈴，兩者辨識率相若。';
+  draft.paragraphs.splice(3, Infinity, {kind:'caregiving', text:'得 10 分鐘時，可以先指圖。若光線較暗，兩種方式的命中率一樣。', citationIds:[source.citationId]});
   const input = discussionMainReviewInput(draft);
-  assert.deepEqual(input.requestClauses, ['要保持安靜，','有哪兩個選擇？']);
-  assert.equal(input.mainClauses.length,3);
-  const checks = controlledMainReview(input);
-  checks.requestChecks[0].mainQuote = '保持安靜';
-  assert.match(discussionMainIssue(draft,draft,checks)!.reason,/主答未回應/u);
-  checks.requestChecks[0].mainQuote = '可以指圖';
-  const limit = {status:'constraint_applied' as const, constraintAnchor:'保持安靜', mainQuote:'可以指圖'};
-  assert.match(discussionMainIssue(draft,draft,{...checks,requestChecks:[limit,checks.requestChecks[1]]})!.reason,/保持安靜/u);
-  assert.ok(discussionMainIssue(draft,draft,{ ...checks, clauseChecks: checks.clauseChecks.slice(0,2) }));
-  const comparison = {basis:'supported_comparison' as const, sourceQuote:draft.sources[0].excerpt};
-  const clauseChecks = [...checks.clauseChecks.slice(0,2),comparison];
-  assert.match(discussionMainIssue(draft,draft,{...checks,clauseChecks})!.reason,/兩種方式的命中率一致/u);
-  draft.paragraphs[3].text = '要保持安靜時可以指圖，也可看相片，兩種方式的命中率一致。';
-  limit.mainQuote = '保持安靜時可以指圖';
-  draft.sources[0].excerpt = '同一測試中，指圖和看相片的命中率一致。';
-  assert.equal(discussionMainIssue(draft,draft,{...checks,requestChecks:[limit,checks.requestChecks[1]],clauseChecks:[...clauseChecks.slice(0,2),{
-    ...comparison, sourceQuote:draft.sources[0].excerpt,
-    comparison:{firstApproach:'指圖',secondApproach:'看相片',relativeOutcome:'命中率一致'},
-  }]}),undefined);
+  assert.deepEqual(input.requestClauses.map(c => c.text), ['只有十分鐘，','要怎樣選？']);
+  const [time, action, condition, result] = input.mainClauses.map(c => c.id);
+  const [advice, otherActivity, methods, relative, alternateMethods, alternateResult] = input.sourceSegments.filter(s => s.citationId === source.citationId).map(s => s.id);
+  const review = controlledMainReview(input);
+  review.requestChecks = [{requestId:0,status:'constraint_applied',mainId:time,actionId:action},
+    {requestId:1,status:'addressed',mainId:action}];
+  review.clauseChecks[time].requestLinks = [{requestId:0,role:'states_condition'}];
+  review.clauseChecks[action].requestLinks = [{requestId:0,role:'adapts_action'}, {requestId:1,role:'answers'}];
+  review.sourceReadings = [{first:advice,last:otherActivity,meaning:'activity_only'},
+    {first:methods,last:relative,meaning:'direct_comparison',comparison:{firstMethod:methods,secondMethod:methods,relativeResult:relative}},
+    {first:alternateMethods,last:alternateResult,meaning:'direct_comparison',comparison:{firstMethod:alternateMethods,secondMethod:alternateMethods,relativeResult:alternateResult}}];
+  const support = {sourceId:relative,match:'both_methods_and_relative_result' as const,methods:{first:methods,second:methods}};
+  review.clauseChecks[result] = {mainId:result,basis:'supported_comparison',support};
+  assert.equal(discussionMainIssue(input,draft,review),undefined);
+  const reject = (mutate: (changed: typeof review) => void) => {
+    const changed = structuredClone(review);
+    mutate(changed);
+    assert.ok(discussionMainIssue(input,draft,changed));
+  };
+  reject(r => { r.requestChecks[0].mainId = condition; });
+  reject(r => { r.requestChecks[0] = {requestId:0,status:'background'}; });
+  reject(r => { r.requestChecks[0].actionId = time; });
+  reject(r => { r.requestChecks[0].requestId = 100; });
+  reject(r => { r.clauseChecks.pop(); });
+  reject(r => { r.clauseChecks[result].mainId = action; });
+  reject(r => { r.clauseChecks[result].support!.sourceId = advice; });
+  reject(r => { r.clauseChecks[result].support!.sourceId = methods; });
+  reject(r => { r.clauseChecks[result].support!.sourceId = alternateResult; });
+  reject(r => { r.clauseChecks[result].support!.methods!.second = alternateMethods; });
+  reject(r => { r.sourceReadings[1].comparison!.relativeResult = methods; });
+  reject(r => { r.clauseChecks[result].support!.match = 'different_or_unclear'; });
+  reject(r => { r.sourceReadings[1].comparison!.relativeResult = otherActivity; });
+  reject(r => { r.sourceReadings[1].last = input.sourceSegments.find(s => s.citationId !== source.citationId)!.id; });
+  reject(r => { r.clauseChecks[result].support!.sourceId = 99_999; });
+  const otherSource = input.sourceSegments.find(s => s.citationId !== source.citationId)!;
+  reject(r => {
+    r.sourceReadings[1] = {first:otherSource.id,last:otherSource.id,meaning:'direct_comparison',
+      comparison:{firstMethod:otherSource.id,secondMethod:otherSource.id,relativeResult:otherSource.id}};
+    r.clauseChecks[result].support!.sourceId = otherSource.id;
+  });
+  assert.equal(discussionMainReviewSchema.safeParse({...review, clauseChecks:[
+    ...review.clauseChecks.slice(0,-1), {...review.clauseChecks[result],sourceQuote:'拼接的引句'}]}).success,false);
+  const selected = discussionSentenceOptions(draft).find(s => s.paragraph === 3 && s.text.includes('光線'))!;
+  const candidate = {...draft, paragraphs:draft.paragraphs.map((p,i) => i === 3 ? {...p,text:selected.text} : p)};
+  assert.ok(discussionMainIssue(input,candidate,review,new Map([[3,selected]])));
+
+  const checks = adviceOnly(draft.paragraphs);
+  checks[3] = {basis:'supported_comparison',clauseIndex:input.mainClauses[result].clauseIndex,support};
+  const submittedHash = chatDeliveryDraftHash(draft);
+  async function judge(edition: ChatDeliveryDraft) {
+    const budget = new AgentBudget();
+    budget.take('modelCalls', budget.remainingModelCalls - 1);
+    try {
+      return await enforceChatDeliveryReview({presentation, provenance:{packVersion:'test',model:'controlled'},
+        tools:{deliveryDraft:() => edition,presentation:async () => presentation,replaceDeliveryAnswer:() => assert.fail('Unexpected repair')},
+        context:{budget,scope,completeText:async ({user,responseJsonSchema}) => {
+          const payload = JSON.parse(user.slice(user.indexOf('{')));
+          assert.deepEqual(payload.sourceSegments, input.sourceSegments);
+          assert.doesNotMatch(JSON.stringify(responseJsonSchema), /"(?:mainQuote|sourceQuote|wording|constraintAnchor)"/u);
+          budget.take('modelCalls');
+          return JSON.stringify({draftHash:submittedHash,decision:'pass',issues:[],claimedAppChanges:[],mainReview:review,outcomeChecks:checks});
+        }} as AgentRunContext,
+      });
+    } finally { budget.close(); }
+  }
+  const approved = await judge(draft);
+  assert.ok(approved.review && chatDeliveryReviewAllows(approved.review,draft,approved.review.promptVersion));
+  const incompleteComparison = structuredClone(checks);
+  incompleteComparison[3] = {basis:'no_outcome_claim',clauseIndex:-1};
+  assert.ok(discussionMainIssue(input,draft,review,new Map(),incompleteComparison));
+  const newEdition = structuredClone(draft);
+  newEdition.sources[0].version += '-revised';
+  await assert.rejects(judge(newEdition), (error: unknown) => error instanceof AgentStopped && error.reason === 'delivery_review_incomplete');
 });
 
 test('a main repair requests exactly the original paragraph fields and rejects surplus output before rereview', async () => {
@@ -485,7 +546,7 @@ test('the last independent review can approve the original parent question witho
         const option = payload.sentenceOptions?.find((s: { text: string; paragraph: number }) => s.paragraph === 1 && s.text === question);
         assert.ok(option, 'The review must receive the exact independent question as a complete deliverable sentence');
         return JSON.stringify({ draftHash: payload.draftHash, decision:'pass', issues:[], approvedSentenceIds:[option.id],
-          claimedAppChanges:[], mainReview:controlledMainReview(payload), outcomeChecks:adviceOnly(live.paragraphs) });
+          selectionPreservesMeaning:true, claimedAppChanges:[], mainReview:controlledMainReview(payload), outcomeChecks:adviceOnly(live.paragraphs) });
       } } as AgentRunContext });
     assert.deepEqual(seen, ['delivery_review']);
     assert.equal(live.paragraphs[1].text, question);
@@ -499,8 +560,8 @@ test('a conflicting sentence selection requires a fresh verdict on the fixed tex
   const { draft, presentation, scope } = await archivedDiscussion();
   const question = '如果他選了藍色，我應該跟着他找藍色的積木嗎？';
   draft.paragraphs[1] = { ...draft.paragraphs[1], text:'我想從綠色積木開始。' + question };
-  for (const scenario of ['selected', 'invented', 'refused', 'invalid_index'] as const) {
-    const selected = scenario === 'selected' || scenario === 'refused';
+  for (const scenario of ['selected', 'invented', 'refused', 'meaning_lost', 'invalid_index'] as const) {
+    const selected = scenario !== 'invented';
     const budget = new AgentBudget();
     budget.take('modelCalls', budget.remainingModelCalls - 2);
     let live = structuredClone(draft);
@@ -515,8 +576,9 @@ test('a conflicting sentence selection requires a fresh verdict on the fixed tex
           const data = JSON.parse(user.slice(user.indexOf('{')));
           const checks = adviceOnly(data.paragraphs);
           if (attempts.length === 1) {
-            checks[1].wording = selected ? '綠色積木' : '評核者自行加上的效果';
+            checks[1] = {clauseIndex:selected ? 0 : 99999, basis:'open_hypothesis'};
             return JSON.stringify({decision:'pass',issues:[],draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks,
+              selectionPreservesMeaning:scenario !== 'meaning_lost',
               ...(selected && { approvedSentenceIds:[data.sentenceOptions.find((p: {text:string}) => p.text === question).id] })});
           }
           assert.equal(data.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
@@ -525,21 +587,21 @@ test('a conflicting sentence selection requires a fresh verdict on the fixed tex
           assert.equal(data.sentenceOptions,undefined);
           assert.equal(data.draftHash,chatDeliveryDraftHash({...draft,paragraphs:draft.paragraphs.map((p,i) => i === 1 && selected ? {...p,text:question} : p)}));
           const decision = scenario === 'refused' ? 'insufficient_evidence' : 'pass';
-          const indexed = checks.map(() => ({clauseIndex:-1,basis:'no_outcome_claim',sourceQuote:''}));
-          indexed[1] = {clauseIndex:scenario === 'invalid_index' ? 99 : data.outcomeClauses[1].length - 1,basis:'open_hypothesis',sourceQuote:''};
+          const indexed = adviceOnly(checks);
+          indexed[1] = {clauseIndex:scenario === 'invalid_index' ? 99 : data.outcomeClauses[1].length - 1,basis:'open_hypothesis'};
           return JSON.stringify({decision,issues:decision === 'pass' ? [] : [{paragraph:1,reason:'Missing context',support:'Preserve the original choice'}],
-            draftHash:data.draftHash,claimedAppChanges:[],mainReview:controlledMainReview(data),outcomeChecks:indexed});
+            draftHash:data.draftHash,claimedAppChanges:[],selectionPreservesMeaning:true,mainReview:controlledMainReview(data),outcomeChecks:indexed});
         }} as AgentRunContext});
-      if (scenario === 'selected' || scenario === 'invented') {
+      if (scenario === 'selected') {
         const {review} = await result;
         assert.ok(review && chatDeliveryReviewAllows(review,live,review.promptVersion));
         assert.equal(live.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
       } else {
-        const stopReason = scenario === 'invalid_index' ? 'delivery_review_incomplete' : 'delivery_review_rejected';
+        const stopReason = scenario === 'invalid_index' || scenario === 'invented' ? 'delivery_review_incomplete' : 'delivery_review_rejected';
         await assert.rejects(result,(error: unknown) => error instanceof AgentStopped && error.reason === stopReason);
         assert.deepEqual(live,draft);
       }
-      assert.equal(new Set(attempts).size,2);
+      assert.equal(new Set(attempts).size,scenario === 'invented' || scenario === 'meaning_lost' ? 1 : 2);
     } finally { budget.close(); }
   }
 });
@@ -583,7 +645,16 @@ test('repairs the archived duration claim while preserving the original three sp
       budget.take('modelCalls');
       steps.push(purpose!);
       const payload = JSON.parse(user.slice(user.indexOf('{')));
-      if (steps.length === 1) return JSON.stringify(originalWithOutcomeChecks.verdict);
+      if (steps.length === 1) {
+        const outcomeChecks = adviceOnly(draft.paragraphs);
+        for (const issue of originalWithOutcomeChecks.verdict.issues) {
+          const wording = originalWithOutcomeChecks.verdict.outcomeChecks[issue.paragraph].wording;
+          const clauseIndex = payload.outcomeClauses[issue.paragraph].findIndex((part: string) => part.includes(wording));
+          assert(clauseIndex >= 0);
+          outcomeChecks[issue.paragraph] = {basis:'unsupported',clauseIndex};
+        }
+        return JSON.stringify({...originalWithOutcomeChecks.verdict,outcomeChecks,mainReview:controlledMainReview(payload)});
+      }
       if (purpose === 'delivery_repair') {
         assert.deepEqual(payload.speakerClauses.map((s: {speakerIndex:number}) => s.speakerIndex), [1,2]);
         assert.equal(payload.speakerClauses[1].clauses[11], '參與他的探索，');
@@ -594,7 +665,15 @@ test('repairs the archived duration claim while preserving the original three sp
       assert.deepEqual(payload.previousDraft.paragraphs.map((p: { text: string }) => p.text), draft.paragraphs.map(p => p.text));
       assert.deepEqual(payload.repairIssues, originalWithOutcomeChecks.verdict.issues);
       // The paired live control used the same wording; the repair replay needs its own context-bound hash.
-      return JSON.stringify({ ...corrected.verdict, mainReview:controlledMainReview(payload), draftHash: payload.draftHash });
+      const outcomeChecks = adviceOnly(current.paragraphs);
+      const hypothesis = corrected.verdict.outcomeChecks[4].wording;
+      const clauseIndex = payload.outcomeClauses[4].findIndex((part: string) => hypothesis.endsWith(part));
+      assert(clauseIndex >= 0);
+      outcomeChecks[4] = {basis:'open_hypothesis',clauseIndex};
+      const mainReview = controlledMainReview(payload);
+      const mainId = payload.mainClauses.find((c: {paragraph:number;clauseIndex:number}) => c.paragraph === 4 && c.clauseIndex === clauseIndex).id;
+      mainReview.clauseChecks[mainId].basis = 'open_hypothesis';
+      return JSON.stringify({ ...corrected.verdict, outcomeChecks, mainReview, draftHash: payload.draftHash });
     } } as AgentRunContext, presentation, provenance: { packVersion:'test', model:'recorded' },
       tools: { deliveryDraft: () => current, presentation: async () => ({ ...presentation, ...discussion.render(current.paragraphs.map(p => p.text)) }),
         bindRepairEvidence: () => async () => true,
@@ -607,10 +686,14 @@ test('repairs the archived duration claim while preserving the original three sp
     assert.deepEqual(result.presentation.discussion?.map(p => p.text), next.paragraphs.slice(0,3).map(p => p.text));
     assert.match(result.presentation.text, /一本藍色圖畫書和一個沙槌/u);
     assert.equal(result.review?.decision, 'pass');
-    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/3');
+    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/4');
     assert.equal(chatDeliveryReviewAllows(result.review!, current, result.review!.promptVersion,
       { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), true);
-    assert.equal(chatDeliveryReviewAllows({ ...result.review!, policyVersion:'p3-m01-chat-delivery-review/2' }, current, result.review!.promptVersion,
+    assert.equal(chatDeliveryReviewAllows({ ...result.review!, policyVersion:'p3-m01-chat-delivery-review/2/discussion-outcomes/3' }, current, result.review!.promptVersion,
+      { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), false);
+    const changed = structuredClone(current);
+    changed.sources[0].version += '-new';
+    assert.equal(chatDeliveryReviewAllows(result.review!, changed, result.review!.promptVersion,
       { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), false);
   } finally { budget.close(); }
 });
