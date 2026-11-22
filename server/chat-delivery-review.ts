@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import type { ChatMode } from "../src/shared/chat.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
@@ -94,6 +95,7 @@ export interface ChatDeliverySource extends ChatDeliverySourceVersion {
   classification: "official_guidance" | "recent_information" | "private";
   excerpt: string;
   excerptComplete: boolean;
+  libraryPassage?: { title: string; section: string; conditions: string[] };
 }
 export interface ChatDeliveryVerifiedOperation {
   kind: "action_receipt" | "pending_confirmation";
@@ -1838,7 +1840,8 @@ export function chatDeliveryDraftHash(draft: ChatDeliveryDraft, repairContext?: 
     paragraphs: draft.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
     sources: draft.sources.map(source => ({ citationId: source.citationId, version: source.version, contentHash: source.contentHash,
       classification: source.classification, excerptHash: chatDeliveryContentHash(source.excerpt), excerptComplete: source.excerptComplete,
-      ...(source.chart && {chart:source.chart}) }))
+      ...(source.chart && { chart: source.chart }),
+      ...(source.libraryPassage ? { libraryPassage: source.libraryPassage } : {}) }))
       .sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0),
   });
 }
@@ -1857,6 +1860,9 @@ export function chatDeliveryReviewAllows(record: ChatDeliveryReviewBinding, draf
 
 function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
   return {
+    ...(draft.sources.filter(source => source.libraryPassage).length > 1 ? {
+      comparisonPolicy: '按家長所問的對象、活動、條件和時段核對每份教材。交叉核對已提供但草稿漏引的同卡原段。相同條件有實質分歧，且出版者沒有明示就該規定取代舊說時，答案須說清未一致之處，分別引用雙方。僅憑較新日期、檢索排名或另一活動的通告選一方，要求修訂。若只有條件不同、互補或明示取代，按其實際範圍判斷。'
+    } : {}),
     ...(draft.discussionRoles?.length ? { discussionRoles: draft.discussionRoles,
       discussionReviewPolicy: 'The first paragraphs are visible AI viewpoints in this order. The rest is the assistant answer. Check every speaker independently against the bound evidence. Reject invented firsthand parenting experience and comparative efficacy claims unsupported by a direct comparison in the sources. Another speaker is never independent evidence.' } : {}),
     ...(draft.userRequest !== undefined ? { userRequest: draft.userRequest } : {}),
@@ -1876,6 +1882,7 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
       citationId: source.citationId, version: source.version, contentHash: source.contentHash,
       classification: source.classification, excerptComplete: source.excerptComplete, excerpt: source.excerpt,
       ...(source.chart && {chart:source.chart}),
+      ...(source.libraryPassage ? { libraryPassage: source.libraryPassage } : {}),
     })),
   };
 }
@@ -1887,7 +1894,8 @@ export function repairSourcesRemainBound(original: readonly ChatDeliverySource[]
       const previous = allowed.get(item.citationId);
       return previous !== undefined && previous.version === item.version && previous.contentHash === item.contentHash
         && previous.classification === item.classification && previous.excerpt === item.excerpt && previous.excerptComplete === item.excerptComplete
-        && JSON.stringify(previous.chart) === JSON.stringify(item.chart);
+        && JSON.stringify(previous.chart) === JSON.stringify(item.chart)
+        && isDeepStrictEqual(previous.libraryPassage, item.libraryPassage);
     });
 }
 function repairContextPayload(context: ChatDeliveryRepairContext) {

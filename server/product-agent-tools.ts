@@ -1,4 +1,4 @@
-import { bindRepairSourceChecks } from "./agent-evidence-reuse.ts";
+import { bindRepairSourceChecks, comparableCardPassages } from "./agent-evidence-reuse.ts";
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
@@ -240,6 +240,21 @@ export function createProductAgentTools(options: {
   const liveReader = options.background || options.mixedTasks || options.reviewedGrowthPresentation || options.visibility === 'family' ? undefined
     : typeof options.liveSourceReader === 'function' ? options.liveSourceReader(scope.userId) : options.liveSourceReader;
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
+  const comparisonPeers = new Map<string, Set<string>>();
+  const checkedSeedComparisons = new Set<string>();
+  function recordComparisons(chunks: readonly KnowledgeEvidence[]) {
+    const compared = [];
+    for (const chunk of chunks) {
+      const peers = chunks.filter(other => comparableCardPassages(chunk, other));
+      if (!peers.length) continue;
+      const known = comparisonPeers.get(chunk.chunkId) ?? new Set<string>();
+      for (const peer of peers) known.add(peer.chunkId);
+      comparisonPeers.set(chunk.chunkId, known);
+      compared.push({ chunkId: chunk.chunkId, title: chunk.title, section: chunk.section,
+        conditions: chunk.applicability.conditions, sourceExcerpt: chunk.sourceExcerpt });
+    }
+    return compared;
+  }
   const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
   let groundingLoaded = false;
   let recalledFactsValidUntil = Infinity;
@@ -504,7 +519,8 @@ export function createProductAgentTools(options: {
     const cited = value.paragraphs.flatMap(paragraph => paragraph.citationIds);
     // The reviewer needs the actual preceding subject to interpret a subjectless reply.
     // A chronological neighbour is context, never an automatic claim or a citation in the parent's answer.
-    for (const id of new Set(cited.flatMap(id => [id, ...(precedingHistoryMatch.has(id) ? [precedingHistoryMatch.get(id)!] : [])]))) {
+    for (const id of new Set(cited.flatMap(id => [id, ...(precedingHistoryMatch.has(id) ? [precedingHistoryMatch.get(id)!] : []),
+      ...(comparisonPeers.get(id) ?? [])]))) {
       const source = deliverySource(id, quotes);
       if (source) sources.push(source);
     }
@@ -771,7 +787,9 @@ export function createProductAgentTools(options: {
     return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
       contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
       classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
-      ...(chart && {chart}), excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
+      ...(chart && { chart }),
+      libraryPassage: { title: item.chunk.title, section: item.chunk.section, conditions: item.chunk.applicability.conditions },
+      excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
   }
   function registerWorkspaceEvidence(id: string, data: Record<string, unknown>) {
     const json = JSON.stringify(data);
@@ -804,6 +822,8 @@ export function createProductAgentTools(options: {
     }
     if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
     for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+    // Keep both already-read materials available to the reviewer even if the draft cites only one.
+    const compare = options.background || options.reviewedGrowthPresentation ? [] : recordComparisons(result.chunks);
     if (result.chunks.length > 0) {
       deliveryReview.require("review");
       if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
@@ -813,7 +833,8 @@ export function createProductAgentTools(options: {
       .filter((item): item is AgentProgressSource => item !== null)
       .slice(0, 6);
     if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
-    return result;
+    const comparisonResult = { comparePassages: compare, ...result };
+    return compare.length && JSON.stringify({ status: 'succeeded', data: { result: comparisonResult } }).length <= allowance ? comparisonResult : result;
   }
   const tools: AgentTool[] = (discussion?.tools ?? []).map(tool => ({
     ...tool, execute: (args, context) => guardResult(() => tool.execute(args, context), tool.name),
@@ -1185,6 +1206,17 @@ export function createProductAgentTools(options: {
           await refreshVerifiedOperations(false);
         }
         if (parsed.kind !== "no_action") {
+          // An earlier reply may have cited only one document. Check the current parent's enabled library
+          // when that passage is actually used again. This read uses its public section and no embedding.
+          const cited = new Set(parsed.paragraphs.flatMap(p => p.citationIds));
+          for (const { chunk, filter } of seeded) {
+            if (!cited.has(chunk.chunkId) || !chunk.series || chunk.series.id === chunk.sourceId
+              || checkedSeedComparisons.has(chunk.chunkId) || comparisonPeers.has(chunk.chunkId) || !retrieval.readComparablePassages) continue;
+            const peers = await retrieval.readComparablePassages(chunk, filter);
+            for (const peer of peers) if (!evidence.has(peer.chunkId)) evidence.set(peer.chunkId, { chunk: peer, filter });
+            recordComparisons([chunk, ...peers]);
+            checkedSeedComparisons.add(chunk.chunkId);
+          }
           acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
           if (closing) discussion!.acceptClosing(closing);
           originalQuotes = quotes;
@@ -1546,6 +1578,8 @@ export function createProductAgentTools(options: {
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
       for (const id of new Set([...ids, ...selectedSources.map(source => source.citationId)])) {
+        const peer = !ids.includes(id) && evidence.get(id);
+        if (peer && !await retrieval.revalidateCitations([peer.chunk], peer.filter)) throw new AgentStopped('invalid_response');
         const household = householdEvidence.get(id);
         if (household && !await household.isCurrent()) throw new AgentStopped("delivery_review_incomplete");
       }
@@ -1670,9 +1704,7 @@ export function createProductAgentTools(options: {
         const bound = previous.get(id)!;
         const grounded = [...memoryGrounding.values()].find(value => value.source.citationId === id);
         const staged = grounded?.source ?? deliverySource(id, originalQuotes);
-        if (!staged || staged.version !== bound.version || staged.contentHash !== bound.contentHash
-          || staged.classification !== bound.classification || staged.excerpt !== bound.excerpt
-          || staged.excerptComplete !== bound.excerptComplete) return undefined;
+        if (!staged || !repairSourcesRemainBound([bound], [staged])) return undefined;
         const household = householdEvidence.get(id);
         if (household) return household.isCurrent;
         const personal = privateSources?.evidence.get(id);
