@@ -49,7 +49,7 @@ test('the packaged character keeps its ears, hands and shoes inside the canvas d
   }
 });
 
-test('enabling reduced motion during a reply closes the mouth before the model rests', async () => {
+test('thinking keeps the mouth closed and reduced motion returns a speaking model to rest', async () => {
   const browser = await chromium.launch({
     ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : { channel: 'msedge' }),
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
@@ -66,11 +66,18 @@ test('enabling reduced motion during a reply closes the mouth before the model r
       window.sample = { mouth: 0, updates: 0 };
       prototype.update = function () {
         const { ids, values } = this.parameters;
-        window.sample = { mouth: values[ids.indexOf('ParamMouthOpenY')], updates: window.sample.updates + 1 };
+        window.sample = { mouth: values[ids.indexOf('ParamMouthOpenY')], gaze: values[ids.indexOf('ParamEyeBallY')],
+          tilt: values[ids.indexOf('ParamAngleZ')], updates: window.sample.updates + 1 };
         return update.call(this);
       };
+      window.postMessage('thinking', '*');
       window.postMessage('answer', '*');
     });
+    await page.waitForFunction(() => window.sample.updates >= 3);
+    const thinking = await page.evaluate(() => window.sample);
+    assert.equal(thinking.mouth, 0);
+    assert(thinking.gaze > .2 && thinking.tilt < -2);
+    await page.evaluate(() => { window.postMessage('dialogue', '*'); window.postMessage('answer', '*'); });
     await page.waitForFunction(() => window.sample.mouth > .08);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.waitForFunction(() => window.sample.mouth === 0);

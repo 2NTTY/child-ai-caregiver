@@ -3,6 +3,7 @@ import { usePathname } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { chatDraftIsSubmitted } from '../../../../src/client/chat-controller';
+import { isIncompleteModelReplyText } from '../../../../src/shared/agent-feedback';
 import { useChatExposure, useChatForeground } from '../../production/useChatExposure';
 import { assistantPages, sameChatPageContext, type ChatPageContext } from '../../../../src/shared/chat-page-context';
 import { useProduction } from '../../production/ProductionProvider';
@@ -30,7 +31,7 @@ const completedNotices = new Set(['聊天已保存，AI 已回覆。', '已在�
 type Panel = { page: string; scope: string | null; chosenChild?: string; privateChild?: string; includeItem: boolean; reminderId?: string;
   voice?: { item?: ChatPageContext['item']; label?: string }; focus?: boolean };
 
-export function SiteCompanion({ authorised, visible, bounds }: { authorised: boolean; visible: boolean; bounds: { width: number; height: number } }) {
+export function SiteCompanion({ authorised, visible, bounds, toolbar }: { authorised: boolean; visible: boolean; bounds: { x: number; y: number; width: number; height: number }; toolbar: boolean }) {
   const pathname = usePathname(), foreground = useChatForeground();
   const { apiBaseUrl, scopeKey, sharedChild, selectedChildId, chatState, online, chatWritesAllowed,
     agentAttachments, voiceUpload, fileUpload, photoUpload, chatDraft } = useProduction();
@@ -43,6 +44,7 @@ export function SiteCompanion({ authorised, visible, bounds }: { authorised: boo
   const canRecord = editable && assistantPages.some(page => page === pathname) && !agentAttachments.length && chatDraft.length <= 10_000;
   const [panel, setPanel] = useState<Panel | null>(null);
   const [listening, setListening] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [performance, setPerformance] = useState<{ action: CharacterAction; serial: number }>({ action: 'nod', serial: 0 });
   const perform = useCallback((action: CharacterAction) => setPerformance(previous => ({ action, serial: previous.serial + 1 })), []);
   const voice = useRef<VoiceCaptureHandle>(null);
@@ -69,13 +71,14 @@ export function SiteCompanion({ authorised, visible, bounds }: { authorised: boo
       voice: start ? { item: selected?.item, label: selected?.label } : undefined, focus: !record });
     if (start) voice.current?.start();
   }
-  return <CharacterDock bounds={bounds} src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground && visible} panelOpen={open} inToolbar={quiet}
+  return <CharacterDock bounds={bounds} src={characterSource(apiBaseUrl)} page={pathname} unread={unread || undefined} foreground={foreground && (visible || quiet)}
+    placed={visible} panelOpen={open} inToolbar={toolbar} thinking={open && thinking}
     listening={!!(open && panel.voice && listening)} performance={performance}
     onChat={() => open ? close() : show()} onCollapse={close}
     onVoice={childId && !canRecord || open && panel.voice ? undefined : () => show(true)}>
     {authorised && visible && !quiet && childId
       ? <QuickConversation key={JSON.stringify([pathname, scope, childId])} page={pathname} childId={childId} panel={open ? panel : null}
-          editable={editable} startVoice={() => show(true)} perform={perform} onListening={setListening} canRecord={canRecord} voice={voice} endVoice={() => setPanel(p => p && { ...p, voice: undefined, focus: false })} close={close} />
+          editable={editable} startVoice={() => show(true)} perform={perform} onThinking={setThinking} onListening={setListening} canRecord={canRecord} voice={voice} endVoice={() => setPanel(p => p && { ...p, voice: undefined, focus: false })} close={close} />
       : open && <DialogueSlot chooser><ConversationChoices close={close} onChoose={chosenChild => setPanel({ page: pathname, scope, chosenChild, includeItem: false })} /></DialogueSlot>}
   </CharacterDock>;
 }
@@ -110,8 +113,9 @@ function ConversationChoices({ close, onChoose }: { close(): void; onChoose(id: 
   </View>;
 }
 
-function QuickConversation({ page, childId, panel, editable, canRecord, voice, endVoice, startVoice, perform, onListening, close }: {
+function QuickConversation({ page, childId, panel, editable, canRecord, voice, endVoice, startVoice, perform, onThinking, onListening, close }: {
   startVoice(): void; perform(action: CharacterAction): void; onListening(active: boolean): void;
+  onThinking(active: boolean): void;
   page: string; childId: string; panel: Panel | null; editable: boolean; canRecord: boolean; voice: RefObject<VoiceCaptureHandle | null>; endVoice(): void; close(): void;
 }) {
   const { chatState: chat, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, sendChat,
@@ -121,9 +125,10 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
   const item = panel?.voice ? panel.voice.item : currentItem;
   const draft = chat.drafts[childId], phase = draft?.phase ?? 'draft';
   const beforeSend = useRef<Set<string> | null>(null), sending = useRef(false);
+  const turn = useRef<{ id?: string } | null>(null), followQueue = useRef(false);
   const activity = chatReplyActivity(chat);
   const activeReply = activity.activeReplyId;
-  const targetId = activeReply ?? draft?.savedUserMessageId;
+  const targetId = activeReply ?? draft?.savedUserMessageId ?? turn.current?.id;
   const outgoing = chat.outgoing?.childId === childId ? chat.outgoing : undefined;
   const question = panel && !outgoing ? [...chat.messages].reverse().find(m => m.childId === childId && m.role === 'user' && !m.discussionOf
     && (targetId ? m.id === targetId : beforeSend.current && !beforeSend.current.has(m.id))) : undefined;
@@ -134,6 +139,22 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
   const reminder = panel?.reminderId ? chat.messages.find(m => m.id === panel.reminderId && m.childId === childId && m.proactive) : undefined;
   const [exposed, setExposed] = useState(false);
   const foreground = useChatForeground();
+  const watchTurn = !!panel && foreground;
+  useLayoutEffect(() => {
+    if (!watchTurn) return;
+    // Capture the controller's save receipt even when React batches save and reply.
+    const unsubscribe = chatController.subscribe(() => {
+      const state = chatController.getSnapshot(), owned = state.drafts[childId];
+      if (state.selectedChildId !== childId || state.cancelling || state.cancelAcceptedFor && state.cancelAcceptedFor === turn.current?.id || state.replyError ||
+          owned?.phase === 'save_unknown' || owned?.phase === 'checked' || owned?.phase === 'reply_failed' && !state.busy) {
+        turn.current = null; followQueue.current = false;
+      } else if (state.busy === 'save' && state.outgoing?.childId === childId) {
+        if (followQueue.current) { turn.current = {}; followQueue.current = false; }
+        if (turn.current && !turn.current.id && owned?.savedUserMessageId) turn.current.id = owned.savedUserMessageId;
+      }
+    });
+    return () => { unsubscribe(); turn.current = null; followQueue.current = false; onThinking(false); };
+  }, [watchTurn, childId, chatController, onThinking]);
   const exposedIds = useMemo(() => exposed && reminder && !question && !outgoing && !panel?.voice ? [reminder.id] : [], [exposed, reminder?.id, question?.id, outgoing, panel?.voice]);
   useChatExposure(foreground && exposed, exposedIds);
   const validPage = assistantPages.find(p => p === page);
@@ -143,7 +164,7 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
     if (!editable || !pageContext || !panel || sending.current) { recording?.dispose?.(); return; }
     if (recording && !addAgentAttachment(recording)) return;
     sending.current = true;
-    perform('acknowledge');
+    turn.current = {};
     beforeSend.current = new Set(chat.messages.map(message => message.id));
     try { await sendChat({ pageContext }); } finally { sending.current = false; }
   }
@@ -173,11 +194,12 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
     return () => cancelAnimationFrame(frame);
   }, [panel, canType, recording]);
   const submit = () => {
-    if (canQueue) { if (queued) chatController.unqueueNextText(); else chatController.queueNextText(pageContext); }
+    if (canQueue) { followQueue.current = !queued; if (queued) chatController.unqueueNextText(); else chatController.queueNextText(pageContext); }
     else if (canSend) { void send(); input.current?.focus?.({ preventScroll: true }); }
   };
   const speech = reason?.body || (!reason && reply?.text) || (!question && !outgoing && reminder?.text) || '';
-  const spokenReply = panel && !recording && !reason && reply?.id;
+  const ownsQuestion = !!question && turn.current?.id === question.id;
+  const spokenReply = watchTurn && ownsQuestion && !recording && !reason && !!reply?.text.trim() && !isIncompleteModelReplyText(reply.text) && reply.id;
   const lastReply = useRef<string | undefined>(undefined);
   useLayoutEffect(() => {
     if (spokenReply && spokenReply !== lastReply.current) { lastReply.current = spokenReply; perform('answer'); }
@@ -191,6 +213,9 @@ function QuickConversation({ page, childId, panel, editable, canRecord, voice, e
   const long = speech !== preview || preview.length > budget || preview.split('\n').length > 3;
   const progress = turnStatus?.kind === 'progress' ? turnStatus.text : outgoing ? '正在傳送…' : undefined;
   const waiting = !!progress && !speech && !reason && !notice && !needsRecovery;
+  useLayoutEffect(() => {
+    onThinking(watchTurn && !!turn.current && !recording && !activity.stopPending && (!!outgoing || ownsQuestion && waiting));
+  }, [watchTurn, recording, activity.stopPending, outgoing, ownsQuestion, waiting, onThinking]);
   const showBubble = !!(speech || reason || progress || turnStatus || notice || needsRecovery);
   const itemLabel = item && (({ task: '待辦', record: '記錄', document: '文件' })[item.kind] + ' · ' + ((recording ? panel?.voice?.label : selected?.label) || '目前選取的項目'));
   const hasContent = !!composerText.trim() || !submitted && !!agentAttachments.length;

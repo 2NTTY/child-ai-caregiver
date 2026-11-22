@@ -1,0 +1,548 @@
+{
+  "viewport": [
+    390,
+    844
+  ],
+  "browser": "158.0.4370.33",
+  "fixture": "Signed-in local Web export; synthetic family and task; real saved questions, controlled saved model replies; no external model.",
+  "sameIframeCanvasAndWebGLContext": true,
+  "projectedNontransparentSilhouettePx": {
+    "home": [
+      85.8,
+      172.7
+    ],
+    "growth": [
+      86.5,
+      172.7
+    ],
+    "tasks": [
+      86.5,
+      172.7
+    ]
+  },
+  "homeRoute": {
+    "from": [
+      229.6,
+      509.4,
+      141.6,
+      199.2
+    ],
+    "to": [
+      16.8,
+      82.8,
+      66,
+      93.6
+    ],
+    "travelMs": 237,
+    "capturedRouteFrames": 21,
+    "distinctIntermediatePositions": 10,
+    "largestHairDisplacementPx": 61,
+    "travelDistanceHairPx": 438,
+    "minVisibleHairPixels": 127,
+    "trajectory": [
+      {
+        "ms": -25,
+        "modelPixels": 706,
+        "hair": [
+          268,
+          532,
+          329,
+          617
+        ]
+      },
+      {
+        "ms": 2,
+        "modelPixels": 714,
+        "hair": [
+          268,
+          532,
+          328,
+          617
+        ]
+      },
+      {
+        "ms": 22,
+        "modelPixels": 714,
+        "hair": [
+          268,
+          532,
+          328,
+          617
+        ]
+      },
+      {
+        "ms": 72,
+        "modelPixels": 713,
+        "hair": [
+          268,
+          532,
+          328,
+          617
+        ]
+      },
+      {
+        "ms": 129,
+        "modelPixels": 701,
+        "hair": [
+          268,
+          532,
+          321,
+          564
+        ]
+      },
+      {
+        "ms": 149,
+        "modelPixels": 623,
+        "hair": [
+          241,
+          482,
+          297,
+          561
+        ]
+      },
+      {
+        "ms": 165,
+        "modelPixels": 547,
+        "hair": [
+          213,
+          431,
+          259,
+          458
+        ]
+      },
+      {
+        "ms": 185,
+        "modelPixels": 458,
+        "hair": [
+          189,
+          385,
+          232,
+          411
+        ]
+      },
+      {
+        "ms": 202,
+        "modelPixels": 378,
+        "hair": [
+          156,
+          324,
+          196,
+          346
+        ]
+      },
+      {
+        "ms": 219,
+        "modelPixels": 304,
+        "hair": [
+          129,
+          272,
+          164,
+          293
+        ]
+      },
+      {
+        "ms": 232,
+        "modelPixels": 262,
+        "hair": [
+          108,
+          232,
+          141,
+          251
+        ]
+      },
+      {
+        "ms": 249,
+        "modelPixels": 213,
+        "hair": [
+          84,
+          188,
+          113,
+          205
+        ]
+      },
+      {
+        "ms": 262,
+        "modelPixels": 180,
+        "hair": [
+          69,
+          157,
+          96,
+          172
+        ]
+      },
+      {
+        "ms": 275,
+        "modelPixels": 163,
+        "hair": [
+          52,
+          128,
+          77,
+          142
+        ]
+      },
+      {
+        "ms": 292,
+        "modelPixels": 140,
+        "hair": [
+          44,
+          111,
+          68,
+          125
+        ]
+      },
+      {
+        "ms": 305,
+        "modelPixels": 134,
+        "hair": [
+          37,
+          98,
+          60,
+          112
+        ]
+      },
+      {
+        "ms": 315,
+        "modelPixels": 127,
+        "hair": [
+          35,
+          94,
+          58,
+          108
+        ]
+      },
+      {
+        "ms": 325,
+        "modelPixels": 132,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      },
+      {
+        "ms": 339,
+        "modelPixels": 132,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      },
+      {
+        "ms": 349,
+        "modelPixels": 132,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      },
+      {
+        "ms": 535,
+        "modelPixels": 132,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      }
+    ]
+  },
+  "draggedRoute": {
+    "from": [
+      117.6,
+      365.4,
+      141.6,
+      199.2
+    ],
+    "to": [
+      16.8,
+      82.8,
+      66,
+      93.6
+    ],
+    "travelMs": 239,
+    "capturedRouteFrames": 23,
+    "distinctIntermediatePositions": 12,
+    "largestHairDisplacementPx": 35,
+    "travelDistanceHairPx": 294,
+    "minVisibleHairPixels": 131,
+    "trajectory": [
+      {
+        "ms": -123,
+        "modelPixels": 712,
+        "hair": [
+          152,
+          388,
+          216,
+          473
+        ]
+      },
+      {
+        "ms": -30,
+        "modelPixels": 712,
+        "hair": [
+          152,
+          388,
+          217,
+          473
+        ]
+      },
+      {
+        "ms": 64,
+        "modelPixels": 714,
+        "hair": [
+          152,
+          388,
+          216,
+          473
+        ]
+      },
+      {
+        "ms": 124,
+        "modelPixels": 712,
+        "hair": [
+          152,
+          388,
+          216,
+          472
+        ]
+      },
+      {
+        "ms": 140,
+        "modelPixels": 709,
+        "hair": [
+          152,
+          388,
+          217,
+          472
+        ]
+      },
+      {
+        "ms": 160,
+        "modelPixels": 708,
+        "hair": [
+          154,
+          385,
+          215,
+          468
+        ]
+      },
+      {
+        "ms": 177,
+        "modelPixels": 681,
+        "hair": [
+          148,
+          372,
+          209,
+          454
+        ]
+      },
+      {
+        "ms": 194,
+        "modelPixels": 622,
+        "hair": [
+          142,
+          355,
+          201,
+          433
+        ]
+      },
+      {
+        "ms": 207,
+        "modelPixels": 568,
+        "hair": [
+          132,
+          331,
+          178,
+          359
+        ]
+      },
+      {
+        "ms": 224,
+        "modelPixels": 503,
+        "hair": [
+          122,
+          309,
+          174,
+          380
+        ]
+      },
+      {
+        "ms": 240,
+        "modelPixels": 433,
+        "hair": [
+          110,
+          276,
+          150,
+          301
+        ]
+      },
+      {
+        "ms": 257,
+        "modelPixels": 355,
+        "hair": [
+          94,
+          241,
+          132,
+          263
+        ]
+      },
+      {
+        "ms": 270,
+        "modelPixels": 308,
+        "hair": [
+          84,
+          213,
+          119,
+          234
+        ]
+      },
+      {
+        "ms": 287,
+        "modelPixels": 248,
+        "hair": [
+          69,
+          180,
+          101,
+          199
+        ]
+      },
+      {
+        "ms": 300,
+        "modelPixels": 207,
+        "hair": [
+          61,
+          157,
+          89,
+          174
+        ]
+      },
+      {
+        "ms": 317,
+        "modelPixels": 175,
+        "hair": [
+          50,
+          132,
+          77,
+          148
+        ]
+      },
+      {
+        "ms": 330,
+        "modelPixels": 152,
+        "hair": [
+          42,
+          114,
+          67,
+          127
+        ]
+      },
+      {
+        "ms": 347,
+        "modelPixels": 137,
+        "hair": [
+          38,
+          104,
+          62,
+          116
+        ]
+      },
+      {
+        "ms": 360,
+        "modelPixels": 137,
+        "hair": [
+          36,
+          96,
+          59,
+          109
+        ]
+      },
+      {
+        "ms": 370,
+        "modelPixels": 135,
+        "hair": [
+          35,
+          94,
+          58,
+          108
+        ]
+      },
+      {
+        "ms": 380,
+        "modelPixels": 131,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      },
+      {
+        "ms": 390,
+        "modelPixels": 131,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      },
+      {
+        "ms": 404,
+        "modelPixels": 131,
+        "hair": [
+          35,
+          94,
+          58,
+          107
+        ]
+      }
+    ]
+  },
+  "stages": {
+    "success": {
+      "thinkingFrames": 24,
+      "eyeUp": 0.38,
+      "waitingMouthMax": 0,
+      "answerGestures": 1,
+      "replyVisibleMs": 461,
+      "firstOpenMouthMs": 530,
+      "maxOpen": 0.156
+    },
+    "cancel": {
+      "thinkingFrames": 24,
+      "answerGestures": 0,
+      "maxOpen": 0
+    },
+    "late": {
+      "thinkingFrames": 24,
+      "answerGestures": 0,
+      "maxOpen": 0
+    },
+    "failure": {
+      "thinkingFrames": 24,
+      "answerGestures": 0,
+      "maxOpen": 0
+    }
+  },
+  "baseCommit": "042dd3155ffe2e333c96bf27b6c9a62a22559914",
+  "artifactSha256": {
+    "frontend/public/companion/zundamon.html": "76c9a1d7733aac3148204c04d2212475ff715839c55eb00d10d411244abff5e1",
+    "frontend/verification/companion-thinking-motion-2026-11-22/touch.webp": "bb391a5e1165531e64898734aafd0e2672f8f1782e51ac77e345945483290c1a"
+  },
+  "measurement": {
+    "route": "Chromium compositor screencast, every emitted frame. Count the green hair pixels throughout each entry. DOM animation-frame samples separately track position and non-increasing frame height. Travel time runs from the first sample on /chat until within one CSS pixel of its settled toolbar coordinate.",
+    "silhouette": "WebGL alpha >= 64, projected onto the displayed canvas in CSS pixels. The small width difference across pages is due to the idle pose.",
+    "expression": "Observe real Cubism parameter values during the saved local question and controlled response. The success clock begins when the local reply fixture is released. The first visible text and first mouth opening above 0.04 use that same clock.",
+    "recording": "One browser session. The WebP contains three consecutive-frame excerpts: home to chat, touch drag from tasks to chat, and the waiting-to-speaking turn."
+  },
+  "limits": [
+    "Desktop and full chat evidence are linked in frontend/PLAN.md. No physical device, live model or deployment.",
+    "During preliminary synthetic drag runs some taps on the navigation icon produced pointerdown/up without a click. The recorded normal-paced drag and tap on the tab label navigated on the first tap. Physical high-speed touch remains unverified."
+  ]
+}
