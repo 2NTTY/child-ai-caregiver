@@ -57,7 +57,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 當前工作
 
 <a id="parent-assistant-walkthrough"></a>
-**A｜家長連續使用助手。** 同一普通合成家庭已用真 Web 及 Vertex 查子女、轉問助手身份、補問家庭語言及更正私人記憶。帳戶工具按本輪問題核對範圍，選錯發話者或名冊均受同一檢查。家長確認私人記憶後，聊天顯示交易版本。家長在同一手作班待辦重問「呢個要準備啲咩？」時，助手曾只覆述舊問句；修後首次提交已引用待辦原文，獨立審核通過，主聊天顯示借書證、藍色圍裙及報到地點。較早兩次無效引用的原參數未有留存。修正已於香港 04:26 在原站發布。真人家長及手機操作待驗。[修前修後的原訊息及收據](artifacts/verification/PARENT_ASSISTANT_WALKTHROUGH_20261122.json)
+**A｜從正式 Web 像家長一樣使用助手。** A 使用指定測試帳戶，從畫面上已有的待辦、記錄或來源著手，依助手實際回答追問、改口或換題。以家長能完成事情、能在原對話接續為驗收；每次記錄當時的 Web、API 版本和發布收據，修後回到同一對話驗收。香港 11 月 22 日，在正式站由待辦頁請助手安排翌日下午四時去圖書館還書。兩張確認草稿都落在星期二凌晨零時，兩張均未執行。香港 18:28 正式 Web、API、worker 已切到含 #817 的 f231c267。A 在原對話重新交代時間，只確認新版草稿。確認卡、待辦詳情與重新載入的月曆均為 11 月 23 日星期一 16:00，當日一項，24 日零項。尚未到點，手機實收待驗。[正式站收據](https://github.com/2NTTY/child-ai-caregiver/actions/runs/45011809238) · [時區修正](https://github.com/2NTTY/child-ai-caregiver/pull/817)
+
+此前在隔離環境以 Web 和 Vertex 查子女、轉問助手身份、補問家庭語言及更正私人記憶。帳戶工具按本輪問題核對範圍，選錯發話者或名冊均受同一檢查。家長確認私人記憶後，聊天顯示交易版本。家長在同一手作班待辦重問「呢個要準備啲咩？」時，助手曾只覆述舊問句；修後首次提交已引用待辦原文，獨立審核通過，主聊天顯示借書證、藍色圍裙及報到地點。較早兩次無效引用的原參數未有留存。修正已於香港 04:26 在原站發布。真人家長及手機操作待驗。[修前修後的原訊息及收據](artifacts/verification/PARENT_ASSISTANT_WALKTHROUGH_20261122.json)
 
 <a id="registered-source-categories"></a>
 **REQ-004／006 已登記網站的文件分類。** 本人來源卡優先沿用出版者的分類、導覽路徑及分組目錄。欠分類時，既有私人整理可讀標題、小標及原段，提出六組詞表以外的主題。獨立審核須確認原句及主題；未有獲核實主題時，沿用可核對的原文用詞，欠線索則顯示未分類。跨分類共用原件，年齡導覽只供尋找文件。
@@ -82,13 +84,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - #807 的引用、修訂及再審已合併。其後本機讓獨立審核直接批准整段或完整原句，按家長實際點按的討論操作啟動首席。原判詞已離線重放，普通原答、首席及家長席各有真模型收據。至香港 10:16，三宗操作遇 Vertex 429，兩宗停於討論、一宗停於普通答核對。三席及主答仍待一宗完整的新操作，保留原八次上限。[本輪操作及用量](artifacts/verification/REQ009_GROUNDED_DISCUSSION_20261122.json) · [較早未交付的原單](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json)
 - 主聊天沿用青綠、暖黃的 [Base demo](https://www.assistant-ui.com/demos/base) 佈局。送出立即呈現原訊息並清空輸入框，等待期間可寫下一句。完整記錄、討論及引用留在主聊天。既有桌面及窄屏流程已核對。[先前驗收](artifacts/verification/ASSISTANT_CONVERSATION_20261121/verification.md)
 - B 在其他頁面以同一隻角色承接提問。點身體顯示單一輸入框，當輪回答出現在角色旁的氣泡。麥克風輕點即開始收音，錄音中可取消或送出。點頭互動、主動提醒時招手及助手頁安靜模式沿用。驗收從一項待辦問「這個」、點麥克風錄音並送出、讀氣泡，再回助手頁核對原對話。以前的浮動聊天窗收據只作歷史記錄。
-  同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。助手頁固定，真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
-- C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。沿[REQ-004](docs/REQUIREMENTS_BACKLOG.md#req-004)以《飲奶知多少？》核對出版者指定的現行網頁，以《奶瓶餵哺指引》核對獨立附件和官方劇本。[REQ-006](docs/REQUIREMENTS_BACKLOG.md#req-006) 三題已由同一隔離家長在主聊天用真模型查回。開放日按時段回答，體驗日列明兩份原文分歧，同樂日按出版者通告採用綠色。Android 實機點按雙引用待驗。[家長問題、答覆及逐段引用](artifacts/verification/REQ006_PARENT_MULTI_MATERIAL_20261122.json)　既有單項選擇和固定版本沿用。
+  同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。390 × 844 觸控瀏覽器中，主頁、關注、待辦的角色可見高度均為 172.7 px。從主頁及拖動後的待辦位置移到助手頁分別需 237、239 毫秒，44 個畫格均見同一角色。等候時抬眼歪頭，正文出現後才張嘴。手機實機快速拖放與切頁待驗。[逐幀收據與限制](https://github.com/2NTTY/child-ai-caregiver/pull/816) · [裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
+- C 的卡庫及本人參考資料均以一張「衛生署 兒童健康」管理這個系列。從卡內分類找到教材，驗採用、跟隨、移除及歷史引用點回原頁。沿[REQ-004](docs/REQUIREMENTS_BACKLOG.md#req-004)以《飲奶知多少？》核對出版者指定的現行網頁，以《奶瓶餵哺指引》核對獨立附件和官方劇本。[REQ-006](docs/REQUIREMENTS_BACKLOG.md#req-006) 三題已由同一隔離家長在主聊天用真模型查回。開放日按時段回答，體驗日列明兩份原文分歧，同樂日按出版者通告採用綠色。重開後五處引用均點回當時原段。Android 實機點按雙引用待驗。[家長問題、答覆及逐段引用](artifacts/verification/REQ006_PARENT_MULTI_MATERIAL_20261122.json)　既有單項選擇和固定版本沿用。
 - [衞生署入庫手冊](docs/DEPLOYMENT.md#fhs-ingestion)記錄首批的實際做法。自訂來源以兩種網站結構驗證在用戶零介入下完成首次入庫、改版後更新及無變更時復用。另以一個現有讀法都失敗的私人來源，驗卡內求助、從原對話補線索、核實後接續同一工作。錯誤線索保留已驗版本，同一障礙只求助一次。
-  - 本人網站已在本機完成兩站首次入庫、改版、無變更重跑及固定版引文讀回。錯誤位置未入庫；正確位置沿原巡查接續；一份公告讀取失敗時，另一份更新仍可引用。Edge 已核對私人卡求助開啟原助手草稿及跳過後的帳戶收據。正式發布由主聊天接續。[兩站原文與適用範圍](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [窄屏求助](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
+  - 本人網站已在本機完成兩站首次入庫、改版、無變更重跑及固定版引文讀回。錯誤位置未入庫；正確位置沿原巡查接續；一份公告讀取失敗時，另一份更新仍可引用。Edge 已核對私人卡求助開啟原助手草稿及跳過後的帳戶收據。正式 Web、API 和 worker 的發布收據已含私人來源讀法 `d2472324`。正式排程派送已回 HTTP 200。同一 worker 映像在隔離容器內按卡的巡查時間讀到改版：家長從舊回答點開是「星期一」，新回答是「星期四」，另一帳戶兩次均讀不到。真實外站改版、正式私人帳戶及本人密鑰建立向量仍待連貫驗收。[原站版本](https://github.com/2NTTY/child-ai-caregiver/actions/runs/45001697044) · [兩站原文與適用範圍](artifacts/verification/SOURCE_READING_METHODS_20261121/receipt.json) · [窄屏求助](artifacts/verification/SOURCE_READING_METHODS_20261121/private-gap-390.png)
 - 參考資料首頁列「目前的卡」及「未啟用的個人卡」。右上「平台卡列表」在彈窗選卡，加入後回到目前清單。停用平台卡後從彈窗重新選取，停用個人卡後可在首頁再次啟用。卡內來源、版本、影音按[操作角色](frontend/DESIGN_SYSTEM.md#control-roles)呈現。以同一帳戶核對加入、停用、再加入及原有局部採用狀態。
 
-  `codex/fhs-child-health-series` 已接回原有文件及個人訂閱。本機 Edge 以三份已發布教材核對局部採用、整卡採用、同範圍跟隨及移除。移除後新召回為零，原聊天仍可開啟同版 PDF 第 3 頁。正式站待主對話整合發布。[家長操作及原頁收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json)
+  `codex/fhs-child-health-series` 已接回原有文件及個人訂閱。本機 Edge 以三份已發布教材核對局部採用、整卡採用、同範圍跟隨及移除。移除後新召回為零，原聊天仍可開啟同版 PDF 第 3 頁。系列已在原站發布，實機手機兩步點讀仍待驗。[原站發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026) · [家長操作及原頁收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json)
 
 C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.html)的 201 項教材及入口，連附件共有 [149 份相異 PDF、1,800 頁](knowledge/fhs-child-inventory.json)。3 個指定原網址回傳 404。11 月 20 日晚補核的專題目錄、公開帖文及其一頁附件只列連結。該附件未列入[原報價](artifacts/verification/FHS_CHILD_CATALOG_ESTIMATE_20261120.json)，本批新增模型成本為零。2026-11-20 用戶批准首批最多 **US$30，按抵免前模型用量計**，涵蓋整理、獨立審核及向量。此批的生成模型為 Vertex global Gemini 3.8 Flash，影音關閉。C 依可用餘額分批，每次預留最大費用，保留已有進度及交送未知的支出；餘額不足時交回已入庫與剩餘清單，由用戶決定後續。日常聊天及後續更新沿用各自的政策。
 
@@ -138,7 +140,7 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 <a id="fhs-official-source-forms"></a>
 #### 兒童健康首批整庫交接
 
-2026 年 11 月 22 日香港 08:09 核對正式公開庫。首批有 **251 個來源，168 個有自己的生效版本**。家長採用「衛生署 兒童健康」卡後，助手可按各版本獲批的用途引用。由卡或目錄開啟出版者網頁，只代表家長可自行閱讀原文。
+2026 年 11 月 22 日香港 08:09 核對正式公開庫，下表保留當時全庫基線。首批有 **251 個來源，168 個有自己的生效版本**。家長採用「衛生署 兒童健康」卡後，助手可按各版本獲批的用途引用。由卡或目錄開啟出版者網頁，只代表家長可自行閱讀原文。
 
 | 材料 | 可直接引用的原件 | 只可開原連結或仍欠的內容 |
 |---|---|---|
@@ -147,6 +149,8 @@ C 已盤點[兒童健康目錄](https://www.fhs.gov.hk/sc_chi/health_info/child.
 | 五冊《共享育兒樂》 | 按目錄連結出現次數，第一至五冊各有 18/20、14/15、31/33、15/15、11/11 項可引用。共 89/94 項，其中 88 項有已審網頁，1 項採用上述問卷印本。 | 其餘 5 項為三處公眾健康講座連結、一處母嬰健康院服務資料及一處預防中毒的站外參考。家長可開原址；需要合訂本實頁時另查該冊。[逐冊章節及服務連結](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json) |
 | 86 個影音相關連結 | 22 份教材附有 61 套官方劇本，共 1,695 段。隔離家長採用正式公開卡後，以篇名查回 61/61 套，以內容查回 6/6 例，可展開同版原句。 | 3 個本署連結未找到官方劇本，22 個站外連結只登記原址。影音畫面及聲軌未分析。劇本屬所附教材，不另計入 251 個來源。[原連結](artifacts/verification/FHS_SCRIPT_COVERAGE_20261121.json) · [家長查回](artifacts/verification/FHS_SCRIPT_FINAL_PARENT_LOOKUP_20261122.json) |
 | 首批以外 | 沿用 5 份已有生效版本的教材。 | 另有 71 項只登記處置，其中 27 份 PDF、20 個網頁、13 個目錄、7 個譯本連結、1 則外部帖文及 3 個當時無法讀取的原址。[逐項用途及原址](knowledge/fhs-external-rights.json) |
+
+**香港 16:30 後的增量。** 《品德培育之一》第 5 實頁（印刷頁 29）已上架。整理及獨立覆核分別只讀該頁，家長可從正式教材開到原版獎勵表。目標是幫忙做家務，表列星期一至日，三個貼紙可換去公園。此次新增一份有可引實頁的印本；其餘七頁未作整冊驗收。助手讀取圖表欄值的修正已隨原站 `042dd315` 發布。第一次自然提問在檢索前收到 HTTP 400。修後在隔離 Web 採用同一份已發布卡，Vertex 回答去公園需三個貼紙，獨立覆核通過，從已保存回覆的引文可開回同版第 5 實頁，檔案雜湊相符。[查詢、失敗原單與最終讀回](https://github.com/2NTTY/child-ai-caregiver/blob/689982bced00f2bd58f037cc1858affc1e2a08b9/artifacts/verification/PARENT_OFFICIAL_CHART_WEB_20261122.json) · [原件第 5 頁](https://www.fhs.gov.hk/tc_chi/health_info/child/14838.pdf#page=5) · [單頁登記](https://github.com/2NTTY/child-ai-caregiver/pull/812) · [入庫發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/45001697044) · [助手修正發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/45004671918)
 
 逐份核對 PDF 時，先看[網頁與印本對照](artifacts/verification/FHS_CURRENT_WEB_EDITIONS_20261121.json)各教材的 `print` 欄。當時列有 38 份生效印本，其後上架的兩份為《幼兒口腔護理全接觸》修訂版 `1bdda264-8ff9-5040-b353-760d73167ff1` 及《保護兒童 你我有責》三月版 `614e94ae-6038-5091-ae0b-3fa8f72cf9c8`。08:09 查庫時其餘 38 份的版本相符。原 PDF 工位的 116 份是整批 122 份的一部分，其中 35 份已上架。
 
