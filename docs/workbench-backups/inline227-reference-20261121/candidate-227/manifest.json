@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-227-image-count",
+  "base": {
+    "artifact": "candidate-225/out",
+    "htmlSha256": "f31c5eab6c10cae77f225ba0ef7b07f525bbce63366e6252adb8c577dc754d73",
+    "rawRecordsSha256": "fd89be51925ac87786792ef16e6904703e73a4b5aa2718fc2973b24ea87e018e",
+    "rawArtworkSha256": "6c156bdc03626fb5bebabc7d22b12e911f2c33573d374373e2d3d687e0043417",
+    "topics": 111,
+    "choices": 225,
+    "images": 225
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-class-reminder/assets.json",
+      "sha256": "32ad4444d5038a6728a27378684cfc309e76409f5679227669111b4ebf0dc970"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "bed40779b16e80c36858854f4c7231d8bdcb1976faae399bae8a1edee3f32b6d",
+    "PROVENANCE.md": "231a564ee4de8161b63c59b07cb45e8e51cdda159c74414d9bf1fe18aa1ff028"
+  },
+  "topics": [
+    {
+      "number": 112,
+      "title": "手機提醒：回到指定的班級待辦",
+      "choices": [
+        {
+          "name": "直接進入單一詳情頁",
+          "note": "Etar 按事件識別碼開啟事件詳情。育伴港的 Android 班級事項提醒只用通用文案；點開後重新核對現有班級權限，再按班級、孩子及事項的識別碼開啟原事項。不按名稱替代，也不把提示當成送達、已讀或完成證明。",
+          "links": [
+            {
+              "label": "Etar Calendar v1.0.57：手機全屏事件詳情",
+              "url": "https://github.com/Etar-Group/Etar-Calendar/blob/dcc308671852a7ac7f0f3bf096ef2dab580e7b43/app/src/main/res/layout/event_info.xml#L16-L82"
+            },
+            {
+              "label": "通知點開時按事件識別碼開啟目的地",
+              "url": "https://github.com/Etar-Group/Etar-Calendar/blob/dcc308671852a7ac7f0f3bf096ef2dab580e7b43/app/src/main/java/com/android/calendar/alerts/AlertReceiver.java#L212-L237"
+            },
+            {
+              "label": "讀取事件識別碼，按支援配置載入全屏內容",
+              "url": "https://github.com/Etar-Group/Etar-Calendar/blob/dcc308671852a7ac7f0f3bf096ef2dab580e7b43/app/src/main/java/com/android/calendar/EventInfoActivity.java#L90-L166"
+            },
+            {
+              "label": "Etar 所引事件詳情版面授權：Apache-2.0",
+              "url": "https://github.com/Etar-Group/Etar-Calendar/blob/dcc308671852a7ac7f0f3bf096ef2dab580e7b43/app/src/main/res/layout/event_info.xml#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-reminder/class-reminder-a.png",
+            "sha256": "bd5bd10c67998c4ebecd7dd5136d8f3d8d256ddf23181c43ddf556e7edd03eaf",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Etar Calendar 手機全屏重繪。上方為「紙雕展板校對」的虛構日期和地點，下方顯示說明及原有提醒欄。沒有通知橫幅、點按、傳送、編輯或完成狀態。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在完整工作頁顯示指定卡片",
+          "note": "Nextcloud Deck Android 的通知可定位至指定卡片；圖中只顯示唯讀詳細資料。點開育伴港的通用通知時，仍要按原識別碼重新核對班級、孩子和事項的現時存取權限；不代表已送達、已讀或已完成，也不會更改權限或狀態。育伴港不沿用這組分頁或舊資料回退。",
+          "links": [
+            {
+              "label": "Nextcloud Deck Android 1.26.3：完整卡片頁及分頁",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/res/layout/activity_edit.xml#L8-L55"
+            },
+            {
+              "label": "同版：詳情、附件、留言、動態",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/java/it/niedermann/nextcloud/deck/ui/card/EditActivity.java#L47-L62"
+            },
+            {
+              "label": "同版：圖示分頁與唯讀標題",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/java/it/niedermann/nextcloud/deck/ui/card/EditActivity.java#L237-L271"
+            },
+            {
+              "label": "同版：由通知找回對應卡片",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/java/it/niedermann/nextcloud/deck/ui/PushNotificationViewModel.java#L48-L71"
+            },
+            {
+              "label": "同版：開啟指定卡片頁",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/java/it/niedermann/nextcloud/deck/ui/PushNotificationActivity.java#L83-L87"
+            },
+            {
+              "label": "同版：詳情欄及到期日期位置",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/app/src/main/res/layout/fragment_card_edit_tab_details.xml#L16-L99"
+            },
+            {
+              "label": "Nextcloud Deck Android 所列程式授權：GPL-3.0-or-later",
+              "url": "https://github.com/stefan-niedermann/nextcloud-deck/blob/569df67203a54fc60125495b7570dd217a79d99f/README.md#L57-L60"
+            }
+          ],
+          "asset": {
+            "input": "draft-class-reminder/class-reminder-b.png",
+            "sha256": "f69c3ff600a033883dd480fd0d4df4ac03d5c88baee29b6fecd064dba2abce28",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Nextcloud Deck Android 的非官方全手機重繪。顯示虛構卡片「核對紙展板圖例」，上方有四個圖示分頁：詳細資料、附件、留言、活動。詳細資料分頁已選，只有靜態標籤、日期和校樣說明，沒有編輯或操作結果。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 112 題 · 提醒之後的指定條目的兩幅自製示意",
+      "input": "draft-class-reminder/DECLARATION.txt",
+      "sha256": "bed40779b16e80c36858854f4c7231d8bdcb1976faae399bae8a1edee3f32b6d"
+    }
+  ]
+}
