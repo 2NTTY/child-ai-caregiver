@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-211-image-count",
+  "base": {
+    "artifact": "candidate-209/out",
+    "htmlSha256": "e689fc1e39fface51a753ec921b2faafa026898a80a6e60e64d8eed188c0a7e6",
+    "rawRecordsSha256": "96c9b3e50eb7fe78e80ce23c1c95346736d5cc4320bce2a8eccd6bd16ed5578e",
+    "rawArtworkSha256": "c03bd21254035252891adf360e4f9f2dd6724d5c910a3186dc3f88baa4adf02f",
+    "topics": 103,
+    "choices": 209,
+    "images": 209
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-growth-mode/assets.json",
+      "sha256": "f822f8753284eff26757e2050000e3b38c4786542ae17215695ca971968485da"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "148f0006ac5378ff66fe2a6c5047efd5fbd024b3afcede02718be330b6c57866",
+    "PROVENANCE.md": "5866c4b0ae73e347da4f30d2a6f5dcad137ab8b7d921855ab21240965b1b79f6"
+  },
+  "topics": [
+    {
+      "number": 104,
+      "title": "成長報告：日常檔案或指定期間？",
+      "choices": [
+        {
+          "name": "在現行報告旁另列快照設定",
+          "note": "Grafana 可把當時的儀表板資料存成快照並以連結分享，圖中尚未發佈。育伴港的「日常檔案」從所選起日延展至香港當日，沿同一份報告更新；「指定期間」有明確結束日，但期內來源仍可修訂，兩者都不是公開快照。",
+          "links": [
+            {
+              "label": "Grafana v12.3.0：完整儀表板及上層介面",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/scene/DashboardSceneRenderer.tsx#L82-L111"
+            },
+            {
+              "label": "在儀表板上開啟右側分享抽屜",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareDrawer/ShareDrawer.tsx#L64-L92"
+            },
+            {
+              "label": "未發佈的快照表單與現有管理連結",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareButton/share-snapshot/ShareSnapshot.tsx#L87-L117"
+            },
+            {
+              "label": "分享說明、快照名稱及到期選項",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareButton/share-snapshot/UpsertSnapshot.tsx#L34-L72"
+            },
+            {
+              "label": "到期選項及預設一星期",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareSnapshotTab.tsx#L28-L50"
+            },
+            {
+              "label": "獨立的發佈快照及取消操作",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareButton/share-snapshot/ShareSnapshot.tsx#L122-L151"
+            },
+            {
+              "label": "使用儀表板時間範圍建立分享快照",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/public/app/features/dashboard-scene/sharing/ShareSnapshotTab.tsx#L108-L156"
+            },
+            {
+              "label": "AGPL-3.0-only：此場景及分享程式碼的授權範圍",
+              "url": "https://github.com/grafana/grafana/blob/20051fb1fc604fc54aae76356da1c14612af41d0/LICENSING.md#L1-L9"
+            }
+          ],
+          "asset": {
+            "input": "draft-growth-mode/growth-mode-a.png",
+            "sha256": "733c134ec87d2dbb1c49284b9812e63a6b994a069bb88344ea6f9580ac8abef6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Grafana 深色儀表板非官方重繪：左側是虛構紙藝展的圖表及列表；右側「分享快照」有名稱和到期設定，選中一星期，發佈按鈕未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在獨立視窗區分連結和複製",
+          "note": "Calc 插入工作表前可選擇加連結或插入副本。育伴港不匯入檔案，只參考先講清楚更新方式：「日常檔案」從所選開始日延展到香港當日，沿用同一份檔案；「指定期間」則指定起訖日，期間內的資料仍可更正。",
+          "links": [
+            {
+              "label": "26.2.0.3：LibreOffice 26.2.0 第 3 個組建",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/configure.ac#L14-L21"
+            },
+            {
+              "label": "插入工作表對話框與操作按鈕",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/sc/uiconfig/scalc/ui/insertsheet.ui#L20-L75"
+            },
+            {
+              "label": "來源檔案及工作表清單",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/sc/uiconfig/scalc/ui/insertsheet.ui#L314-L393"
+            },
+            {
+              "label": "「連結」選項與副本的分別",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/sc/uiconfig/scalc/ui/insertsheet.ui#L429-L442"
+            },
+            {
+              "label": "按「確定」後才插入",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/sc/source/ui/view/tabvwshf.cxx#L879-L919"
+            },
+            {
+              "label": "程式來源授權：MPL-2.0，含 Apache-2.0 通知 · MPL-2.0 with incorporated Apache-2.0 notice",
+              "url": "https://github.com/LibreOffice/core/blob/afbbd0df0edb6d40b450b0337ac646b0913a760c/sc/source/ui/view/tabvwshf.cxx#L1-L18"
+            }
+          ],
+          "asset": {
+            "input": "draft-growth-mode/growth-mode-b.png",
+            "sha256": "ed6cd125374d75a2092649b84f09127013fb3095fa4126019bd9736b9e419da4",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "LibreOffice Calc 的虛構紙藝工作簿重繪。「插入工作表」視窗開啟，已選「從檔案」及示例清單中的「試排記錄」；「連結」未勾選，「確定」也未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 104 題 · 選擇成長報告更新方式的兩幅自製示意",
+      "input": "draft-growth-mode/DECLARATION.txt",
+      "sha256": "148f0006ac5378ff66fe2a6c5047efd5fbd024b3afcede02718be330b6c57866"
+    }
+  ]
+}
