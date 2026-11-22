@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-205-image-count",
+  "base": {
+    "artifact": "candidate-203/out",
+    "htmlSha256": "fc5fd480cc20c2d7b1c045050171b36a19c9f618736e6454f920c2e043c8d9fc",
+    "rawRecordsSha256": "b3e3e224676d4d4a70d7811ddead3af05820b5f286f11298d41e66f0f22e53d7",
+    "rawArtworkSha256": "e9656617c5101ac5e0a5ed5130470374e157a4a8c52082d355098eaa21c236c7",
+    "topics": 100,
+    "choices": 203,
+    "images": 203
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-reference-transcript/assets.json",
+      "sha256": "dd40155ffeee7aaedee3651f9bbc16f8f54d41fe3b60edc9047ed6d9009aaab9"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "9b430c07c3c55c85b7139503c4cacc414f57706ac4533139fc063a5793be0db8",
+    "PROVENANCE.md": "f45359bcfb400b656dcf3840adcf48bc18b314e7e346b5320a7cd8a9f4748a1d"
+  },
+  "topics": [
+    {
+      "number": 101,
+      "title": "官方親子教材：看影片，還是讀官方文字稿？",
+      "choices": [
+        {
+          "name": "影片旁可讀文字稿",
+          "note": "PeerTube 把可搜尋的分段文字稿放在播放器旁。育伴港只在官方教材的相關影音已附官方稿連結時另列「文字稿」，並開啟發布者網站；不在頁內播放、同步、提供下載或自動轉寫。",
+          "links": [
+            {
+              "label": "PeerTube v8.1.1：播放器和並排文字稿窗格",
+              "url": "https://github.com/Chocobozzz/PeerTube/blob/0d4d8bb9841a83477dae800df2aba4c5fc222b87/client/src/app/%2Bvideo-watch/video-watch.component.html#L13-L59"
+            },
+            {
+              "label": "獨立文字稿的搜尋欄及分段時間",
+              "url": "https://github.com/Chocobozzz/PeerTube/blob/0d4d8bb9841a83477dae800df2aba4c5fc222b87/client/src/app/%2Bvideo-watch/shared/player-widgets/video-transcription.component.html#L39-L60"
+            },
+            {
+              "label": "文字稿窗格的標題及獨立關閉",
+              "url": "https://github.com/Chocobozzz/PeerTube/blob/0d4d8bb9841a83477dae800df2aba4c5fc222b87/client/src/app/%2Bvideo-watch/shared/player-widgets/video-transcription.component.html#L3-L18"
+            },
+            {
+              "label": "PeerTube 程式授權：AGPL-3.0-or-later",
+              "url": "https://github.com/Chocobozzz/PeerTube/blob/0d4d8bb9841a83477dae800df2aba4c5fc222b87/README.md#L167-L180"
+            }
+          ],
+          "asset": {
+            "input": "draft-reference-transcript/reference-transcript-a.png",
+            "sha256": "0c5377f73788fd4e7fa8d8253d20d5c41d2c4a51c884366a6cd045a7d009041d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 PeerTube 桌面重繪。左邊是暫停的合成紙藝展台畫面，右邊是獨立的文字稿窗格，列有空白搜尋欄和多段時間標記。頁面沒有實際播放或搜尋。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "影片下方另列文字稿入口",
+          "note": "Open edX 在課程播放器下方另列文字稿下載，此圖未播放或下載。育伴港只在「相關影音」有來源文字稿連結時顯示「文字稿」，另開發布者頁面；不設課程播放器、檔案下載、同步字幕或自動生成文字稿。",
+          "links": [
+            {
+              "label": "Open edX Sumac.1：完整課程單元與影音所在頁面",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/lms/templates/courseware/courseware.html#L212-L285"
+            },
+            {
+              "label": "同版：頂部課程導覽及左側綱要",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/lms/templates/courseware/courseware.html#L157-L211"
+            },
+            {
+              "label": "同版：有提供時，播放器下方另列文字稿",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/lms/templates/video.html#L124-L141"
+            },
+            {
+              "label": "同版：文字稿來源連結或下載路徑",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/xmodule/video_block/video_block.py#L165-L185"
+            },
+            {
+              "label": "同版：將文字稿路徑及格式交給影片樣板",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/xmodule/video_block/video_block.py#L474-L508"
+            },
+            {
+              "label": "Open edX 所列程式來源授權：GNU AGPL v3（AGPL-3.0-only）",
+              "url": "https://github.com/edx/edx-platform/blob/bc17b35afb0ff65cd1783fa83b4e4dbb10624378/LICENSE#L1-L8"
+            }
+          ],
+          "asset": {
+            "input": "draft-reference-transcript/reference-transcript-b.png",
+            "sha256": "5dc2d5d1a8a6b37d469b66565173180e2f07b9db77432c7ba86f3eecb48396a9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Open edX 課程的非官方全頁重繪。左側是課程綱要，右側顯示一個未播放的紙展板示例。播放器下方另列「文字稿」及「下載文字稿」。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 101 題 · 影片和文字稿的獨立入口的兩幅自製示意",
+      "input": "draft-reference-transcript/DECLARATION.txt",
+      "sha256": "9b430c07c3c55c85b7139503c4cacc414f57706ac4533139fc063a5793be0db8"
+    }
+  ]
+}
