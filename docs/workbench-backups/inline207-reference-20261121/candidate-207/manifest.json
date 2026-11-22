@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-207-image-count",
+  "base": {
+    "artifact": "candidate-205/out",
+    "htmlSha256": "8e060ad1c63836f9226415c2ee442d831428c245526b8b311331d78d7dd017b2",
+    "rawRecordsSha256": "025a5c5051334ba90bd401efc3f8c873ab33d2278bddb9b8c01243fea36618af",
+    "rawArtworkSha256": "d3cafe96ec183fca9d055c00ca0368b0974465c2413409579cad05bc96880323",
+    "topics": 101,
+    "choices": 205,
+    "images": 205
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-offline-care/assets.json",
+      "sha256": "6eef9f9014d53d0a305bc0a43b7a72b51c79f04f07fb4e93be0b96ebb225676b"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "dce2260b0c3f9569b3454b5fa2c9fbfb1f527ad18a484a38b3c90e790f6506ca",
+    "PROVENANCE.md": "5175a2f4a121db1c33fa5f984e4a98b5ef602e641c75d065abf8cffc0596a396"
+  },
+  "topics": [
+    {
+      "number": 102,
+      "title": "照顧記錄：斷線時保留已載入內容",
+      "choices": [
+        {
+          "name": "列表保留，閱讀窗提示缺少正文",
+          "note": "Thunderbird 仍顯示郵件清單，但選中未下載內文的郵件時，閱讀區會說明為何暫時看不到。育伴港離線時會保留同一孩子上次載入的照顧記錄並標明尚未核對，不搜尋或翻頁，只顯示可用的快取詳情；未載入不代表沒有記錄。",
+          "links": [
+            {
+              "label": "Thunderbird 159.0：完整郵件介面中的郵件列表",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/about3Pane.xhtml#L153-L176"
+            },
+            {
+              "label": "桌面合一工具列與郵件分頁",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/messenger.xhtml#L495-L531"
+            },
+            {
+              "label": "左側資料夾與原生控制",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/about3Pane.xhtml#L63-L124"
+            },
+            {
+              "label": "經典配置：左側資料夾、列表在閱讀區之上",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/themes/shared/mail/about3Pane.css#L73-L86"
+            },
+            {
+              "label": "郵件閱讀區與分隔線",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/about3Pane.xhtml#L354-L362"
+            },
+            {
+              "label": "未下載內文遇上離線時，隱藏信頭並顯示指定訊息",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/aboutMessage.js#L322-L355"
+            },
+            {
+              "label": "提示只指這封郵件的內文未下載",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/locales/en-US/chrome/messenger/messenger.properties#L149-L160"
+            },
+            {
+              "label": "MPL-2.0：此閱讀區檔案的原始碼授權",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/aboutMessage.js#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-offline-care/offline-care-a.png",
+            "sha256": "5b1560ebccc68b394c05127695dd91d16053c46f2df089a39a977d9fd5645f01",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Thunderbird 經典郵件介面非官方重繪：左側是資料夾，上方仍列出虛構郵件；選中的展板郵件沒有顯示內文，下方閱讀區說明須連線才可查看。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "手機歷史頁保留項目和提示",
+          "note": "Wikipedia 的歷史仍會列出舊條目，同時以短暫提示和灰色標出未備妥離線副本的條目。育伴港只參考保留同一孩子上次載入的照顧記錄並標示尚未核對；離線不能搜尋或翻頁，只可查看已載入且仍可用的詳情，不代表已離線保存。",
+          "links": [
+            {
+              "label": "r/50603-r-2026-08-25：Wikipedia Android 50603（2026-08-25 發行）",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/app/build.gradle#L38-L43"
+            },
+            {
+              "label": "完整歷史清單版面",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/app/src/main/res/layout/fragment_history.xml#L18-L65"
+            },
+            {
+              "label": "離線時的短暫提示",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/app/src/main/java/org/wikipedia/history/HistoryFragment.kt#L182-L188"
+            },
+            {
+              "label": "未備有離線副本的條目變淡",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/app/src/main/java/org/wikipedia/history/HistoryFragment.kt#L300-L313"
+            },
+            {
+              "label": "只把已備妥的離線副本視為可用",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/app/src/main/java/org/wikipedia/page/PageAvailableOfflineHandler.kt#L18-L31"
+            },
+            {
+              "label": "程式來源授權：Apache-2.0",
+              "url": "https://github.com/wikimedia/apps-android-wikipedia/blob/12d1dd2bffea3db7ead5a69b2025bcbf287fe64d/COPYING#L2-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-offline-care/offline-care-b.png",
+            "sha256": "adf2982a8380d0625e38e1e8025c44c612bc3cc44df65d27f247e8c762ae259a",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Wikipedia Android 手機歷史頁重繪。搜尋列下仍可見四筆虛構紙藝條目，其中兩筆的標題、描述與縮圖變淡；下方短暫提示指出部分歷史條目未必可以離線閱讀。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 102 題 · 已載入內容與未能讀取的提示的兩幅自製示意",
+      "input": "draft-offline-care/DECLARATION.txt",
+      "sha256": "dce2260b0c3f9569b3454b5fa2c9fbfb1f527ad18a484a38b3c90e790f6506ca"
+    }
+  ]
+}
