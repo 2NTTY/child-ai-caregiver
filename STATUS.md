@@ -12,7 +12,7 @@
 
 **2026-11-22 香港 04:58 查庫**　61 套官方劇本、1,695 段全部獲獨立批准並上架。隔離家長用正式版逐套查回 61 個片名，六個內容問題全部命中。《替寶寶換尿片》及《建立睡前常規》均首位命中、可展開全篇。已核對親子溝通完整版與 1 至 4 個月短片各自的首位結果。[逐套片名及內容收據](artifacts/verification/FHS_SCRIPT_FINAL_PARENT_LOOKUP_20261122.json) · [原審核及結算](artifacts/verification/FHS_SCRIPT_RECORDED_REVIEW_20261122.json)
 
-**2026-11-22 香港 09:43，回答後討論。** #806 已發布。本機修訂後，隔離家長從待辦重問原題，看到正確物品。點一次討論後，修訂稿在第八次模型呼叫被再審退回。新手家長席稱調整心態「能減少不少壓力」，教材未支持這項說法。畫面保留原答並顯示停止原因，三席及主答仍未交付。本次修訂未發布；正式測試帳號及手機仍待點按。[本題收據](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json) · [家長畫面](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.png) · [既有成功個案](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [正式站及舊單查核](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json)
+**2026-11-22 香港 10:16，回答後討論。** 本機已接回家長實際按下的討論指令，獨立審核可逐段保留完整原句。普通答曾指出待辦內的藍色圖畫書及沙槌，知識席及新手家長席已各自發言。其後三宗操作遇 Vertex 429，成功交付三席及主答仍待驗。62 項相關測試及 Server 型別通過。[本輪操作及用量](artifacts/verification/REQ009_GROUNDED_DISCUSSION_20261122.json) · [較早未交付的原單](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json)
 
 **2026-11-21 香港**　家長平台卡庫及本人參考資料以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。系列已發布，手機實際點按待驗。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026)
 

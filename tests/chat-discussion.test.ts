@@ -8,7 +8,7 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
 import { assembleDiscussionRepair, createQuestionDiscussion, discussionRepairClauses, discussionToolNames } from '../server/chat-discussion.ts';
 import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
-import { chatDeliveryContentHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
+import { chatDeliveryContentHash, chatDeliveryDraftHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
 import { agentAnswerSchema, type ProductAgentResult } from '../src/shared/product-agent.ts';
 import { productAgentResultSchema } from '../src/shared/product-agent-result.ts';
@@ -57,6 +57,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
       if (modelLimit !== 7) {
+        const separateMain = (dailySlots ?? modelLimit) >= 7;
         if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"passage":' + JSON.stringify(chunk.text))),
           'a reused citation must carry the revalidated passage containing the activity choices');
         if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"presentation":{"kind":"caregiving","citationIds":["' + chunkId + '"]}')));
@@ -65,23 +66,30 @@ test('a question binds three successive native turns, the main reply and one ind
           .findLast(p => p?.contribution);
         if (review) {
           const payload = JSON.parse(review.slice(review.indexOf('{')));
-          const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (invalidClosing || truncateClosing ? 1 : 0);
+          const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (!separateMain && (invalidClosing || truncateClosing) ? 1 : 0);
           assert.deepEqual(payload.discussionRoles, ['knowledge','parent','methods'].slice(0, expected));
           assert.deepEqual(payload.paragraphs.slice(0,expected).map((p: { text: string }) => p.text), turns.slice(0,expected));
           return { content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash:payload.draftHash, decision:'pass', issues:[], claimedAppChanges:[], outcomeChecks:adviceOnly(payload.paragraphs) }) }] }, finishReason:FinishReason.STOP };
         }
         if (i > 0) assert.equal(previous?.contribution?.text, turns[i - 1]);
         const view = { text:turns[i], citationIds:[chunkId] };
-        const finish = i === Math.min(2, (dailySlots ?? modelLimit) - 2);
+        const finish = i === (separateMain ? 3 : Math.min(2, (dailySlots ?? modelLimit) - 2));
         const name = finish ? 'present_answer' : discussionToolNames[i];
         const allowed = request.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames ?? [];
         if (finish) {
           assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
           const declaration = request.config?.tools?.flatMap(t => 'functionDeclarations' in t ? t.functionDeclarations ?? [] : []).find(d=>d.name==='present_answer');
-          assert.ok(declaration?.parameters?.required?.includes('closingView'));
-          const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
-          assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
-          assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
+          assert.equal(!!declaration?.parameters?.properties?.closingView,!separateMain);
+          assert.equal(!!declaration?.parameters?.required?.includes('closingView'),!separateMain);
+          assert.equal(!!declaration?.parameters?.properties?.selectedItemText,separateMain);
+          if (separateMain) {
+            assert.deepEqual(Object.keys(declaration!.parameters!.properties!).sort(),['officialAdviceText','selectedItemText']);
+            assert.deepEqual(declaration?.parameters?.required,['selectedItemText','officialAdviceText']);
+          } else {
+            const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
+            assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
+            assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
+          }
         } else {
           assert.ok(allowed.includes(name));
           assert.ok(allowed.includes('show_official_help'));
@@ -89,9 +97,9 @@ test('a question binds three successive native turns, the main reply and one ind
         }
         if (finish && truncateClosing) return { content: { role: 'model', parts: [{text:'truncated output'}] }, finishReason: FinishReason.MAX_TOKENS };
         if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
-        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
+        const args = finish && separateMain ? {selectedItemText:taskRestatement,officialAdviceText:main[0]} : finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
           {text:main[1] + ' [1]', citationIds:[chunkId]}],
-          closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
+          ...(!separateMain && { closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } }) } : view;
         if (modelLimit === 6) await new Promise(resolve => setTimeout(resolve, 5));
         return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP,
           ...(modelLimit === 6 && i === 1 && {usageMetadata:{promptTokenCount:16500,totalTokenCount:16600}})};
@@ -102,6 +110,8 @@ test('a question binds three successive native turns, the main reply and one ind
       if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
         assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
+        assert.ok(inputs.some(p => p.text === linkedQuestion.text), 'the follow-up button must be the actual user turn');
+        assert.ok(context.includes('"originalQuestion":' + JSON.stringify(base.text)));
         assert.ok(context.includes('Prepare the picture book') && context.includes('page-item'), 'selected task and its reviewable citation must reach the first model request');
         assert.ok(context.includes('"excerptComplete":true'), 'a complete excerpt must not describe the task as completed');
       }
@@ -238,14 +248,21 @@ test('a question binds three successive native turns, the main reply and one ind
     assert.equal(calls, 3);
   }
   invalidClosing = false;
-  truncateClosing = true; modelLimit = 8; claimed = false; calls = 0;
+  modelLimit = 8; claimed = false; calls = 0;
+  const separate = await reply();
+  assert.equal(separate?.status,'completed',JSON.stringify(separate));
+  assert.deepEqual(separate.discussion,capped.discussion);
+  assert.equal(separate.text,taskRestatement + '\n\n' + main[0] + ' [1]');
+  assert.deepEqual(separate.tools.map(t => t.name),[...discussionToolNames,'present_answer']);
+  assert.equal(calls,5);
+  truncateClosing = true; claimed = false; calls = 0;
   const truncated = await reply();
   assert.equal(truncated?.status, 'completed', JSON.stringify(truncated));
-  assert.deepEqual(truncated.discussion, capped.discussion?.slice(0,2));
+  assert.deepEqual(truncated.discussion, capped.discussion);
   assert.equal(truncated.text, capped.discussion?.[0].text);
   assert.equal(truncated.deliveryReview?.decision, 'pass');
   assert.deepEqual(await reply(), truncated);
-  assert.equal(calls, 4);
+  assert.equal(calls, 5);
   truncateClosing = false;
   dailySlots = 3; claimed = false; calls = 0;
   const dailyLimited = await reply();
@@ -346,6 +363,18 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   await assert.rejects(compare('source_supported', 'A result missing from the excerpt'), rejected('delivery_review_incomplete'));
   await assert.rejects(compare('source_supported', '放工後只得十分鐘'), rejected('delivery_review_incomplete'));
   await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), outcomeChecks: [] })), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), approvedSentenceIds: [99999] })), rejected('delivery_review_incomplete'));
+  const twoSentences = withClaim(1, '從家長的角度，時間很緊。孩子想走開時可以停下來嗎？');
+  await assert.rejects(review(twoSentences, p => {
+    const option = p.sentenceOptions.find((s: { paragraph: number }) => s.paragraph === 1);
+    return { ...pass(p.draftHash, []), approvedSentenceIds: [option.id, option.id] };
+  }), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(twoSentences, p => {
+    const option = p.sentenceOptions.find((s: { text: string }) => s.text === '孩子想走開時可以停下來嗎？');
+    const verdict = pass(p.draftHash, []);
+    verdict.outcomeChecks[1].wording = '時間很緊';
+    return { ...verdict, approvedSentenceIds: [option.id] };
+  }), rejected('delivery_review_incomplete'));
   for (const index of [1, 4]) {
     // An implicit notification is still an external action; a citation cannot serve as its receipt.
     await assert.rejects(review(withClaim(index, '已經通知其他家庭成員。'), p => pass(p.draftHash, [index])), rejected('delivery_review_rejected'));
@@ -362,6 +391,90 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   const workspace: ChatDeliveryDraft = { ...draft, kind: 'private_reference', sources: [workspaceSource], userRequest: '我登記了哪些孩子？',
     paragraphs: draft.paragraphs.map(() => ({ text: '你帳戶登記了小悠。', citationIds: [workspaceSource.citationId] })) };
   await assert.rejects(review(workspace, p => ({ decision:'pass', issues:[], draftHash:p.draftHash, claimedAppChanges:[], observedReadOnly:false })), rejected('delivery_review_rejected'));
+});
+
+test('the last independent review can approve the original parent question without its unsupported stress claim', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const { corrected } = JSON.parse(await readFile(
+    new URL('../artifacts/verification/REQ009_DISCUSSION_OUTCOME_REVIEW_20261122.json', import.meta.url), 'utf8'));
+  for (const { index, ...change } of corrected.paragraphChanges) Object.assign(draft.paragraphs[index], change);
+  const question = '如果不介意多問一個細節，如果他因為當時情緒不太好，直接把準備好的沙槌推開，這時候是否應該嘗試轉移注意力，還是乾脆讓他自己平靜一下會比較好？';
+  draft.paragraphs[1] = { ...draft.paragraphs[1], text: '確實，將十分鐘視為陪伴而非任務，能減少不少壓力。' + question };
+  const budget = new AgentBudget();
+  budget.take('modelCalls', budget.remainingModelCalls - 1);
+  let live = structuredClone(draft);
+  const seen: string[] = [];
+  try {
+    const result = await enforceChatDeliveryReview({ presentation, provenance: { packVersion:'test', model:'controlled' },
+      tools: { deliveryDraft: () => live, bindRepairEvidence: () => async () => true, presentation: async () => presentation,
+        replaceDeliveryAnswer(next, approved) {
+          assert.deepEqual(approved, new Set([1]));
+          live = { ...live, paragraphs: next.paragraphs };
+        } },
+      context: { budget, scope, completeText: async ({ user, purpose }) => {
+        budget.take('modelCalls');
+        seen.push(purpose!);
+        const payload = JSON.parse(user.slice(user.indexOf('{')));
+        const option = payload.sentenceOptions?.find((s: { text: string; paragraph: number }) => s.paragraph === 1 && s.text === question);
+        assert.ok(option, 'The review must receive the exact independent question as a complete deliverable sentence');
+        return JSON.stringify({ draftHash: payload.draftHash, decision:'pass', issues:[], approvedSentenceIds:[option.id],
+          claimedAppChanges:[], outcomeChecks:adviceOnly(live.paragraphs) });
+      } } as AgentRunContext });
+    assert.deepEqual(seen, ['delivery_review']);
+    assert.equal(live.paragraphs[1].text, question);
+    assert.deepEqual(live.paragraphs[1].citationIds, draft.paragraphs[1].citationIds);
+    assert.equal(chatDeliveryReviewAllows(result.review!, live, result.review!.promptVersion), true);
+    assert.equal(chatDeliveryReviewAllows(result.review!, draft, result.review!.promptVersion), false);
+  } finally { budget.close(); }
+});
+
+test('a conflicting sentence selection requires a fresh verdict on the fixed text before delivery', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const question = '如果他選了藍色，我應該跟着他找藍色的積木嗎？';
+  draft.paragraphs[1] = { ...draft.paragraphs[1], text:'我想從綠色積木開始。' + question };
+  for (const scenario of ['selected', 'invented', 'refused', 'invalid_index'] as const) {
+    const selected = scenario === 'selected' || scenario === 'refused';
+    const budget = new AgentBudget();
+    budget.take('modelCalls', budget.remainingModelCalls - 2);
+    let live = structuredClone(draft);
+    const attempts: string[] = [];
+    try {
+      const result = enforceChatDeliveryReview({presentation, provenance:{model:'controlled',packVersion:'test'},
+        tools:{deliveryDraft:() => live, bindRepairEvidence:() => async () => true, presentation:async () => presentation,
+          replaceDeliveryAnswer(next) { assert.equal(attempts.length,2); live = {...live,paragraphs:next.paragraphs}; }},
+        context:{budget,scope,completeText:async ({user,attemptKey}) => {
+          budget.take('modelCalls');
+          attempts.push(attemptKey);
+          const data = JSON.parse(user.slice(user.indexOf('{')));
+          const checks = adviceOnly(data.paragraphs);
+          if (attempts.length === 1) {
+            checks[1].wording = selected ? '綠色積木' : '評核者自行加上的效果';
+            return JSON.stringify({decision:'pass',issues:[],draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks,
+              ...(selected && { approvedSentenceIds:[data.sentenceOptions.find((p: {text:string}) => p.text === question).id] })});
+          }
+          assert.equal(data.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
+          assert.equal(data.unabridgedParagraphs?.[1].text,selected ? draft.paragraphs[1].text : undefined);
+          assert.equal(data.outcomeClauses[1].join(''),data.paragraphs[1].text);
+          assert.equal(data.sentenceOptions,undefined);
+          assert.equal(data.draftHash,chatDeliveryDraftHash({...draft,paragraphs:draft.paragraphs.map((p,i) => i === 1 && selected ? {...p,text:question} : p)}));
+          const decision = scenario === 'refused' ? 'insufficient_evidence' : 'pass';
+          const indexed = checks.map(() => ({clauseIndex:-1,basis:'no_outcome_claim',sourceQuote:''}));
+          indexed[1] = {clauseIndex:scenario === 'invalid_index' ? 99 : data.outcomeClauses[1].length - 1,basis:'open_hypothesis',sourceQuote:''};
+          return JSON.stringify({decision,issues:decision === 'pass' ? [] : [{paragraph:1,reason:'Missing context',support:'Preserve the original choice'}],
+            draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:indexed});
+        }} as AgentRunContext});
+      if (scenario === 'selected' || scenario === 'invented') {
+        const {review} = await result;
+        assert.ok(review && chatDeliveryReviewAllows(review,live,review.promptVersion));
+        assert.equal(live.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
+      } else {
+        const stopReason = scenario === 'invalid_index' ? 'delivery_review_incomplete' : 'delivery_review_rejected';
+        await assert.rejects(result,(error: unknown) => error instanceof AgentStopped && error.reason === stopReason);
+        assert.deepEqual(live,draft);
+      }
+      assert.equal(new Set(attempts).size,2);
+    } finally { budget.close(); }
+  }
 });
 
 test('repairs the archived duration claim while preserving the original three speakers and the supported advice', async () => {
@@ -427,7 +540,7 @@ test('repairs the archived duration claim while preserving the original three sp
     assert.deepEqual(result.presentation.discussion?.map(p => p.text), next.paragraphs.slice(0,3).map(p => p.text));
     assert.match(result.presentation.text, /一本藍色圖畫書和一個沙槌/u);
     assert.equal(result.review?.decision, 'pass');
-    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/1');
+    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/2');
     assert.equal(chatDeliveryReviewAllows(result.review!, current, result.review!.promptVersion,
       { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), true);
     assert.equal(chatDeliveryReviewAllows({ ...result.review!, policyVersion:'p3-m01-chat-delivery-review/2' }, current, result.review!.promptVersion,

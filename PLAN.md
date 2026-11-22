@@ -79,7 +79,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - A 核對家長在已收回答按「討論」時觸及模型次數上限的原操作。按實際帳戶政策驗一題能看見三方交流和主答，再問普通問題。遇到預算不足時保留已交付的發言，給一個可行的下一步。#749 已發布；隔離家庭的三席、主答及下一題已驗。原截圖未能配對；正式測試帳號的發起及收合仍待登入後點按。[收尾收據](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json)
 - A 的成效核對已隨 #806 發布。真模型指出原第三席「能延長共處時間」欠據，亦接納人工對照稿。[原稿及對照稿](artifacts/verification/REQ009_DISCUSSION_OUTCOME_REVIEW_20261122.json) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44968305896)
-- 09:43 隔離家長從同一項「親子活動準備」重問原題，兩次模型呼叫後看到藍色圖畫書和沙槌。點一次「討論這個回答」後，第六次呼叫要求修訂第三席及主答，第七次完成修訂，第八次再審指出新手家長席「能減少不少壓力」欠據。原答保留，家長看到停止提示，三席及主答的交付驗收未通過。本機已修訂引用提示、摘錄標記及修訂流程；餘下缺口是首審漏判第二席的成效說法。單輪上限維持八次，驗收後隔離帳戶日限已還原為 20。[逐輪判詞](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json) · [家長畫面](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.png)
+- #807 的引用、修訂及再審已合併。其後本機讓獨立審核直接批准整段或完整原句，按家長實際點按的討論操作啟動首席。原判詞已離線重放，普通原答、首席及家長席各有真模型收據。至香港 10:16，三宗操作遇 Vertex 429，兩宗停於討論、一宗停於普通答核對。三席及主答仍待一宗完整的新操作，保留原八次上限。[本輪操作及用量](artifacts/verification/REQ009_GROUNDED_DISCUSSION_20261122.json) · [較早未交付的原單](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json)
 - 主聊天沿用青綠、暖黃的 [Base demo](https://www.assistant-ui.com/demos/base) 佈局。送出立即呈現原訊息並清空輸入框，等待期間可寫下一句。完整記錄、討論及引用留在主聊天。既有桌面及窄屏流程已核對。[先前驗收](artifacts/verification/ASSISTANT_CONVERSATION_20261121/verification.md)
 - B 在其他頁面以同一隻角色承接提問。點身體顯示單一輸入框，當輪回答出現在角色旁的氣泡。麥克風輕點即開始收音，錄音中可取消或送出。點頭互動、主動提醒時招手及助手頁安靜模式沿用。驗收從一項待辦問「這個」、點麥克風錄音並送出、讀氣泡，再回助手頁核對原對話。以前的浮動聊天窗收據只作歷史記錄。
   同一登入階段共用一個角色。正常登入後待辦 → 助手 → 關注 → 待辦及管理後台實測同一 iframe、WebGL context 和模型，初始化一次。待辦與關注的送出上下文、撤回分享及登出清草稿已核對。點頭、點身體開小窗、直接拖動、笑臉與伸手取景已在桌面及 390px 觸控模擬核對。助手頁固定，真機待驗。[裁切對照及手勢驗收](artifacts/verification/ZUNDAMON_INTERACTION_20261120/framing-drag-20261121/verification.md)
