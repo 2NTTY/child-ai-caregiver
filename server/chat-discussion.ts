@@ -52,14 +52,19 @@ export type DiscussionPresentationStage = 'speaker' | 'closing';
 export function closingDiscussionDeclaration(declaration: FunctionDeclaration, includeSpeaker: boolean, sourcePair = false): FunctionDeclaration {
   const fields = declaration.parameters?.properties;
   if (declaration.name !== 'present_answer' || !fields?.closingView) return declaration;
+  if (sourcePair && fields.selectedItemText && fields.officialAdviceText) {
+    return { ...declaration, description:'Finish the main answer in two plain text fields. State only the facts in the selected item and give practical advice supported by the supplied official passage.',
+      parameters:{...declaration.parameters, properties:{selectedItemText:fields.selectedItemText,officialAdviceText:fields.officialAdviceText},
+        required:['selectedItemText','officialAdviceText']} };
+  }
   const paragraphs = fields.paragraphs;
   const { closingView, selectedItemText, officialAdviceText, ...mainFields } = fields;
   // Text paragraphs in a mixed main answer need individual kinds. Verbatim history quotes keep their own shape.
   const forms = paragraphs?.items?.anyOf?.map(form => form.properties?.kind
     ? { ...form, required: [...new Set([...(form.required ?? []), 'kind'])] } : form);
-  return { ...declaration, ...(sourcePair && { description: 'Finish the main answer after the three speakers. For the selected item and the single official passage, give the parent two plain text answers in selectedItemText and officialAdviceText. The server binds each to its source. Use kind and paragraphs only if a different citation arrangement is needed.' }), parameters: { ...declaration.parameters,
-    required: sourcePair ? [] : ['kind','paragraphs', ...(includeSpeaker ? ['closingView'] : [])],
-    properties: { ...(sourcePair && {selectedItemText, officialAdviceText}), ...mainFields, ...(includeSpeaker && {closingView}),
+  return { ...declaration, parameters: { ...declaration.parameters,
+    required: ['kind','paragraphs', ...(includeSpeaker ? ['closingView'] : [])],
+    properties: { ...mainFields, ...(includeSpeaker && {closingView}),
       ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
   } };
 }

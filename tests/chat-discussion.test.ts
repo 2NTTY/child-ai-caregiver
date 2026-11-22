@@ -82,9 +82,14 @@ test('a question binds three successive native turns, the main reply and one ind
           assert.equal(!!declaration?.parameters?.properties?.closingView,!separateMain);
           assert.equal(!!declaration?.parameters?.required?.includes('closingView'),!separateMain);
           assert.equal(!!declaration?.parameters?.properties?.selectedItemText,separateMain);
-          const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
-          assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
-          assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
+          if (separateMain) {
+            assert.deepEqual(Object.keys(declaration!.parameters!.properties!).sort(),['officialAdviceText','selectedItemText']);
+            assert.deepEqual(declaration?.parameters?.required,['selectedItemText','officialAdviceText']);
+          } else {
+            const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
+            assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
+            assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
+          }
         } else {
           assert.ok(allowed.includes(name));
           assert.ok(allowed.includes('show_official_help'));

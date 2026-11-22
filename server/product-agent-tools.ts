@@ -209,6 +209,7 @@ export function createProductAgentTools(options: {
   knownPrivateIdentifiers?: readonly string[];
   /** Previously validated public citations scoped cleanly to this child's conversation turn. */
   seededOfficialEvidence?: readonly { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[];
+  priorSourcePair?: string;
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const isChatOnly = options.chatMode === "chat_only";
@@ -762,8 +763,9 @@ export function createProductAgentTools(options: {
   const discussion = options.discussion ? createQuestionDiscussion(permitted, acceptPresentedAnswer) : undefined;
   function canPresentSourcePair() {
     return discussion?.remainingSpeakers() === 0 && options.pageEvidence?.source.citationId === 'page-item'
-      && seeded.length === 1 && evidence.size === 1 && evidence.has(seeded[0]!.chunk.chunkId)
-      && !liveEvidence.size && !privateSources?.evidence.size && !selectedOfficialHelp.size;
+      && seeded.length === 1 && options.priorSourcePair === seeded[0]!.chunk.chunkId && evidence.size === 1 && evidence.has(seeded[0]!.chunk.chunkId)
+      && !liveEvidence.size && !privateSources?.evidence.size && !workspaceEvidence.size && !memoryGrounding.size
+      && !run.images?.references().length && !run.voice && !selectedOfficialHelp.size;
   }
   async function searchLibrary(query: string, classification: KnowledgeFilter['classification'], queryAge: KnowledgeQueryAge | undefined,
     attemptKey: string | undefined, purpose?: KnowledgeFilter['purpose']) {
@@ -1484,7 +1486,7 @@ export function createProductAgentTools(options: {
     discussionInstruction: discussion && ((finishing: boolean) => selectedOfficialHelp.size
       ? '已選取正式求助入口，現在用 present_answer 直接提交所需的求助回覆。'
       : canPresentSourcePair()
-        ? '三席已各自發言。現在用 present_answer 的 selectedItemText 回答所選項目的事實，再用 officialAdviceText 回答家長的實際選擇。兩欄直接填家長會看到的完整說話。Server 會分別連結所選項目及唯一已讀的官方片段。若需要不同引文組合，仍可用 kind 和 paragraphs。忠於原文所列的活動，清楚說明你會如何嘗試及何時轉換做法。'
+        ? '三席已各自發言。現在用 present_answer 的 selectedItemText 回答原題所問的項目事實，只依 selectedItem 的實際內容。officialAdviceText 則寫給家長一個可以嘗試的做法及轉換條件，清楚分辨你的建議與教材的原話。兩欄都直接填家長會看到的文字。家長尚未選擇任何一席的做法。Server 會分別連結所選項目及唯一已讀的官方片段。'
         : discussion.instruction(finishing)),
     beginDiscussionTurn: discussion?.beginNativeTurn,
     discussionEndedEarly: () => !!discussion?.noTradeoff() || selectedOfficialHelp.size > 0,

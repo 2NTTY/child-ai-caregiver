@@ -523,6 +523,7 @@ export function createProductAgent(options: {
         } finally { beforeDispatch.close(); }
       }
       let seededOfficialEvidence: { chunk: KnowledgeEvidence; filter: KnowledgeFilter }[] = [];
+      let priorSourcePair: string | undefined;
       let reusedEvidenceInvalidated = false;
       if (!pureGreetingTurn && conversationMode !== "ephemeral") {
         const evidenceMessages = discussion && priorAnswer ? [priorAnswer] : recent.messages;
@@ -546,6 +547,13 @@ export function createProductAgent(options: {
             for (const prevRunId of priorRunIds) {
               const prevRun = await readCurrent(() => options.store.get(userId, childId, prevRunId));
               if (!prevRun || prevRun.runId !== prevRunId || prevRun.status !== "completed" || !prevRun.citations?.length) continue;
+              const bound = prevRun.deliveryReview?.sourceVersions;
+              if (discussion && priorAnswer?.agentRunId === prevRunId && prevRun.deliveryReview?.decision === 'pass'
+                && pageEvidence && bound?.length === 2 && prevRun.citations.length === 1
+                && bound.some(s => s.citationId === pageEvidence.source.citationId && s.version === pageEvidence.source.version && s.contentHash === pageEvidence.source.contentHash)
+                && bound.some(s => s.citationId === prevRun.citations[0]!.chunkId && s.version === prevRun.citations[0]!.versionId)) {
+                priorSourcePair = prevRun.citations[0]!.chunkId;
+              }
               for (const citation of prevRun.citations) {
                 if (seenChunkIds.has(citation.chunkId)) continue;
                 seenChunkIds.add(citation.chunkId);
@@ -814,7 +822,7 @@ export function createProductAgent(options: {
             ...modeToolOptions,
             chatMode: currentChatMode,
             run, authorize, discussion,
-            ...(seededOfficialEvidence.length ? { seededOfficialEvidence } : {}),
+            ...(seededOfficialEvidence.length ? { seededOfficialEvidence, priorSourcePair } : {}),
             pageEvidence,
             trustedUserMessage: page.messages[index]!.text, currentMessageId: topicId, recentQuoteSources: recentQuotes,
             conversationWindow: { messages: recent.messages.length, complete: recent.coverage.complete && available.length === currentPage.messages.length },

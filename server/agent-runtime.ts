@@ -916,6 +916,7 @@ export function createAgentRuntime(options: {
                   signal: budget.signal,
                   canCompact: () => {
                     if (!terminalToolNames.size) return true;
+                    if (input.discussion?.canPresentSourcePair?.()) return false;
                     const plan = budget.planningSnapshot(true, { reserveDeliveryReview });
                     // Optional summarization must leave the discussion room for a revision and its independent re-review.
                     const separateSpeakerTurns = Math.max(0, (input.discussion?.remainingSpeakers() ?? 0) - 1);
