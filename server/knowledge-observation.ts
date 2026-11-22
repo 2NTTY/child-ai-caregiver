@@ -26,7 +26,7 @@ export function definitionHash(definition: SourceWatchDefinition): string {
 }
 
 /** Shared semantic-review boundary; storage adapters supply their transaction-bound observation. */
-export type PdfReviewProof = boolean | {physicalPage:number};
+export type PdfReviewProof = boolean | {physicalPage:number;fieldBounds?:{label:number;value:number}[]};
 export function checkKnowledgeObservation(document: KnowledgeSourceInput,
   watch: { enabled: boolean; definition: SourceWatchDefinition } | undefined,
   observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null, windowedReview:PdfReviewProof = false) {

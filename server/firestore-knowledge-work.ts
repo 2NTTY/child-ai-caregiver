@@ -452,8 +452,12 @@ export function createFirestoreKnowledgeWork(options: Options) {
           if (!valid || !windows) return false;
           if (!firstDispatch?.scope) return windows.every(w => !w.selectedPage);
           await firstDispatch.verify(tx);
-          return row.firstDispatchFrom === firstDispatch.original && windows.length === 1 && matchesSelectedReading(windows[0]!,firstDispatch.scope)
-            ? {physicalPage:firstDispatch.scope.physicalPage} : false;
+          const window=windows[0];
+          if (row.firstDispatchFrom !== firstDispatch.original || windows.length !== 1 || !window?.selectedPage
+            || !matchesSelectedReading(window,firstDispatch.scope)) return false;
+          const facts=window.selectedPage.review;
+          return {physicalPage:firstDispatch.scope.physicalPage,
+            fieldBounds:firstDispatch.scope.fields.map(({key,label})=>({label:label.length,value:facts[key]!.length}))};
         },
         async waitForQuota() {
           await database.runTransaction(async tx => {

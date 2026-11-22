@@ -1,5 +1,7 @@
 import { EmbeddingAdmissionDeferred } from "./embedding-failure.ts";
 import { includeLeafletInSearch } from './fhs-leaflet-editions.ts';
+import { chartFieldBoundsSchema, legacyChartFields, readChartFields } from './knowledge-pdf-layout.ts';
+import { registeredPrintPage } from './fhs-undispatched-original.ts';
 import type { PlatformMediaStore } from './firestore-platform-media.ts';
 import { createHash, randomUUID } from "node:crypto";
 import { FieldPath, FieldValue, VectorValue, type Firestore, type Transaction } from "@google-cloud/firestore";
@@ -117,7 +119,7 @@ const versionSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, ve
     completed: z.number().int().min(0).max(KNOWLEDGE_LEXICAL_BUCKETS), termCount: z.number().int().nonnegative() }).optional(),
   reviewState: z.enum(["draft", "reviewed", "withdrawn"]), checkedAt: date.nullable(), publishedAt: date.nullable(),
   review: z.strictObject({ assessment: knowledgeReviewAssessmentSchema, assessmentHash: hash, reviewer: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/),
-    reviewedAt: date, watchRevision: uuid.nullable().optional() }).nullable() });
+    reviewedAt: date, watchRevision: uuid.nullable().optional(), chartFieldBounds:chartFieldBoundsSchema.optional() }).nullable() });
 const chunkSchema = z.strictObject({ ...binding, sourceId, versionId: uuid, chunkId: uuid, order: z.number().int().min(1).max(32),
   document: z.custom<KnowledgeChunkInput>(value => Boolean(value && typeof value === "object" && !Array.isArray(value))),
   contentHash: hash, embeddingHash: hash, embedding: z.custom<VectorValue>((value): value is VectorValue => value instanceof VectorValue).nullable(), vectorHash: hash.nullable(),
@@ -429,13 +431,20 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   function candidate(edition: Edition, chunk: Chunk, filter: KnowledgeFilter): KnowledgeCandidate {
     const { document, version } = edition;
+    const page = chunk.document;
+    let chartFields;
+    if (page.originalKind === 'visual_page' && page.applicability.use === 'original_lookup') {
+      chartFields = version.review?.chartFieldBounds
+        ? readChartFields(page.section,page.text,version.review.chartFieldBounds)
+        : legacyChartFields(page.section,page.text,page.excerptPage,registeredPrintPage(document.sourceId));
+    }
     return { ...chunk.document, series: sourceSeries(document), chunkId: chunk.chunkId, sourceId: document.sourceId, versionId: version.versionId, versionHash: version.versionHash,
       contentHash: chunk.contentHash, url: document.url, termsUrl: document.termsUrl, title: document.title, publisher: document.publisher, classification: document.classification,
       sourcePublishedAt: document.sourcePublishedAt, sourceUpdatedAt: document.sourceUpdatedAt, sourceDateText: document.sourceDateText ?? null,
       validUntil: document.validUntil ?? null, ...(document.timelyEvent ? { timelyEvent: document.timelyEvent } : {}), fetchedAt: document.fetchedAt, checkedAt: version.checkedAt!,
       lastSuccessfulCheckAt: edition.observed?.observation?.lastSuccessfulCheckAt ?? null,
       usageScope: internalKnowledgeSource(document.url) || edition.observed?.watch.definition.audience === "internal_noncommercial" ? "internal_noncommercial" : "public_noncommercial",
-      reviewState: "reviewed", ...(document.extraction ? { extraction: document.extraction } : {}),
+      reviewState: "reviewed", ...(chartFields ? {chartFields} : {}), ...(document.extraction ? { extraction: document.extraction } : {}),
       originalCoverage: chunk.document.originalText && !chunk.document.originalKind ? "chunk_original" : "excerpt_only",
       applicabilityStatus: chunk.document.applicability.use === 'original_lookup' ? 'requires_clarification' : chunk.document.applicability.ageBasis === "any" ? "applicable"
         : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable", distance: null };
@@ -1037,8 +1046,10 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           return change.newQuote !== null && !evidence?.includes(change.newQuote);
         })) reject("knowledge_review_observation_quote_mismatch");
         const approved = assessment.decision === "approve" && assessment.growthRuleImpact !== "requires_review";
+        const chartFieldBounds = typeof proof === 'object' && proof.fieldBounds ? proof.fieldBounds : version.review?.chartFieldBounds;
         const next: Version = { ...version, reviewState: approved ? "reviewed" : version.reviewState === "draft" ? "draft" : "withdrawn",
-          checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null } };
+          checkedAt: approved ? reviewedAt : version.checkedAt, review: { assessment, assessmentHash, reviewer, reviewedAt, watchRevision: observed?.watch.revision ?? null,
+            ...(chartFieldBounds ? {chartFieldBounds} : {}) } };
         const nextSource = bump(source);
         if (nextSource.heldGrowthUpdate?.candidateId === versionId) delete nextSource.heldGrowthUpdate;
         if (reviewer === "agent-knowledge-maintenance" && treatmentGuard && expectedObservation && compared && compared.version.versionId !== versionId

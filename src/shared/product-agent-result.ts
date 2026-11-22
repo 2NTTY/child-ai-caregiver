@@ -45,7 +45,7 @@ export const agentCitationSchema = z.object({
   extraction: z.object({ format: z.enum(['html', 'text_pdf']), contentHash: z.string(),
     extractionQuality: z.literal('requires_review').optional(), totalPages: count.optional(), pageStart: count.optional(),
     pageEnd: count.optional(), complete: z.boolean() }).optional(),
-  readCoverage: z.object({ kind: z.enum(['reviewed_text_and_excerpt', 'original_segment']), complete: z.boolean(),
+  readCoverage: z.object({ kind: z.enum(['reviewed_text_and_excerpt', 'original_segment', 'reviewed_visual_page']), complete: z.boolean(),
     offset: count.optional(), nextOffset: count.nullable().optional(), totalCharacters: count.optional(),
     ranges: z.array(range).optional() }).optional(),
 });

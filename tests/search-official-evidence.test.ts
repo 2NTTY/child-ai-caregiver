@@ -718,6 +718,82 @@ test('a transcript restricted to original lookup can quote a number without endo
   assert.equal((await answer('public_information',`《玩具教材》原文：「${quote}」`)).status,'succeeded');
 });
 
+test('chart answers require a read, an intact field and a current personal source', async t => {
+  const question='活動獎勵表', fields=[{label:'遊公園所需貼紙',value:'7 張'},{label:'參觀所需貼紙',value:'2 張'}];
+  const item=mockChunk(chunkSolidId,{key:'pages-5-5', title:question, section:question, keywords:['貼紙'],
+    originalKind:'visual_page',sourceExcerpt:'',pageStart:5,pageEnd:5,excerptPage:5,chartFields:fields,
+    text:[question,...fields.map(f=>f.label+'：'+f.value)].join('\n'),
+    extraction:{format:'text_pdf',contentHash:'a'.repeat(64),pageStart:5,pageEnd:5,totalPages:8,complete:false},
+    applicability:{region:'HK',ageBasis:'unconfirmed',use:'original_lookup',minAgeMonths:null,maxAgeMonths:null,topics:[],conditions:[]},
+    treatment:{kind:'overview',policyVersion:1}});
+  const note=mockChunk(chunkVomitId,{key:'venue',section:'地點',text:'換領地點在前台。',originalText:'換領地點在前台。',sourceExcerpt:'換領地點在前台。'});
+  let available=true;
+  const knowledge=createKnowledgeRetriever({candidates:async(_filter,_vector,selection)=>{
+    if (!available) return [];
+    if (selection?.chunkIds) return [item,note].filter(c=>selection.chunkIds!.includes(c.chunkId));
+    if (selection?.afterKey) return selection.afterKey===item.key ? [note] : [];
+    return [item];
+  }},fakeEmbeddingGateway());
+  const budget=new AgentBudget();
+  t.after(()=>budget.close());
+  const tools=createProductAgentTools({knowledge,authorize:async()=>true,run:{scope,budget,runId,authorize:async()=>true},
+    memory:{context:async()=>emptyMemoryContext()} as any,tasks:{} as any,store:{} as any});
+  const execute=(name:string,args:Record<string,unknown>)=>tools.tools.find(tool=>tool.name===name)!.execute(args,{callId:name} as any);
+  const answer=(text:string, kind='public_information',quote?:string)=>execute('present_answer',{kind,
+    paragraphs:[{text,citationIds:[item.chunkId]}],...(quote && {originalQuotes:[{chunkId:item.chunkId,text:quote}]})});
+  const supported='按第 5 頁的圖表，遊公園所需貼紙是 7 張。';
+  assert.equal((await execute('find_official_material',{query:'貼紙'})).status,'succeeded');
+  const preview=await answer(supported);
+  assert.deepEqual([preview.status,preview.data?.code],['rejected','chart_read_required']);
+  const read=await execute('read_knowledge_context',{anchorChunkId:item.chunkId});
+  const chunk=(read.data?.result as any).chunks[0];
+  assert.equal(chunk.original.text,'');
+  assert.equal(chunk.reviewedChart.reading,item.text);
+  assert.deepEqual(chunk.reviewedChart.fields,fields);
+  assert.equal((read.data?.result as any).chunks[1].chunkId,note.chunkId);
+  const park={index:0,value:'7 張'}, checked={paragraph:0,citationId:item.chunkId,supported:true,fields:[park],passages:[]};
+  async function review(checks?:unknown[]) {
+    return enforceChatDeliveryReview({presentation:(await tools.presentation())!,tools,
+      context:{scope,budget,runId,authorize:async()=>true,completeText:async({user})=>{
+        const payload=JSON.parse(user.slice(user.indexOf('{')));
+        assert.deepEqual(payload.sources.find((s:any)=>s.citationId===item.chunkId).chart.fields,item.chartFields ?? []);
+        return JSON.stringify({draftHash:payload.draftHash,decision:'pass',issues:[],chartChecks:checks});
+      }},provenance:{packVersion:'fixture',model:'fixture'}});
+  }
+  for (const [claim,check] of [
+    ['遊公園要兩張貼紙。',{...checked,fields:[{index:0,value:'2 張'}]}],
+    ['遊公園要七盒貼紙。',{...checked,fields:[{index:0,value:'7 盒'}]}],
+    ['遊公園要七張，參觀要兩張，所以遊公園少五張。',{...checked,fields:[park,{index:1,value:'2 張'}],supported:false}],
+    ['你的小朋友每天都需要 7 張貼紙。',{...checked,supported:false}],
+    ['出版者原文：「遊公園要七張。」',{...checked,supported:false}],
+  ] as const) {
+    assert.equal((await answer(claim)).status,'succeeded');
+    await assert.rejects(()=>review([check]),(e:unknown)=>e instanceof AgentStopped && e.reason==='delivery_review_rejected');
+  }
+  assert.equal((await answer(supported,'caregiving')).status,'rejected');
+  assert.equal((await answer(supported,'public_information','遊公園所需貼紙：7 張')).status,'rejected');
+  const twoSources=await execute('present_answer',{kind:'public_information',paragraphs:[{
+    text:'儲足七張貼紙就可以去公園，換領請到前台。',citationIds:[item.chunkId,note.chunkId]}]});
+  assert.equal(twoSources.status,'succeeded');
+  await assert.rejects(()=>review(),(e:unknown)=>e instanceof AgentStopped && e.reason==='delivery_review_incomplete');
+  assert.equal((await review([checked])).review?.decision,'pass');
+  assert.equal((await tools.presentation())?.citations[0]?.versionHash,item.versionHash);
+  // Historical editions without trustworthy field boundaries can support a paraphrase from the reviewed reading.
+  delete item.chartFields;
+  await assert.rejects(()=>tools.presentation(),(e:unknown)=>e instanceof AgentStopped && e.reason==='invalid_response');
+  await execute('read_knowledge_context',{anchorChunkId:item.chunkId});
+  assert.equal((await answer('去公園要儲七張貼紙。')).status,'succeeded');
+  const legacyCheck={...checked,fields:[],passages:['遊公園所需貼紙：7 張']};
+  assert.equal((await review([legacyCheck])).review?.decision,'pass');
+  await assert.rejects(()=>review([{...legacyCheck,passages:['遊公園所需貼紙：2 張']}]),(e:unknown)=>e instanceof AgentStopped && e.reason==='delivery_review_rejected');
+  const priorHash=item.versionHash;
+  item.versionHash='b'.repeat(64);
+  await assert.rejects(()=>tools.presentation(),(error:unknown)=>error instanceof AgentStopped && error.reason==='invalid_response');
+  item.versionHash=priorHash;
+  available=false;
+  await assert.rejects(()=>tools.presentation(),(error:unknown)=>error instanceof AgentStopped && error.reason==='invalid_response');
+});
+
 test('an exact film title remains in the returned results when related materials rank ahead of its script', async t => {
   const title='家居安全',budget=new AgentBudget();t.after(()=>budget.close());
   const hits=Array.from({length:4},(_,index)=>mockChunk(`77777777-8888-4999-8aaa-11111111111${index}`,{

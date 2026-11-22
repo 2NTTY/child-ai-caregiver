@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-11-22T08:13:07.408Z",
+  "fixture": "Synthetic workshop reward chart",
+  "browser": "Headless Microsoft Edge",
+  "provider": "Local scripted provider",
+  "retrieval": "keyword_degraded",
+  "runId": "cc59011b-0fd6-4219-ad09-fb7510d6ae68",
+  "tools": [
+    "find_official_material",
+    "read_knowledge_context",
+    "present_answer"
+  ],
+  "answer": "按第 5 頁的圖表，去公園所需的貼紙張數是 6。 [1]",
+  "review": "pass",
+  "versionId": "0abcb218-d2b9-5bed-8ff8-3358a0cca1c9",
+  "versionHash": "de7e5082d5a0ece6082ee8c82c662cc6b59a62db984252ee8ca74b38188eacb2",
+  "chunkId": "7e1194b8-b6b0-56f9-997f-ee2c614e910c",
+  "contentHash": "df943e9cd7ffda0b53c34984885c8dddbfa05e57d3559ef9022b1849079068af",
+  "pdfSha256": "44f3bb81bf1e3944c00cd95d63e949387f0d6bde2a00b29b912916992ccaa300",
+  "page": 5,
+  "totalPages": 8,
+  "openedFragment": "#page=5",
+  "originalQuote": null,
+  "undownloadedMatches": 0,
+  "removedMatches": 0,
+  "historicalPdfAfterRemoval": true,
+  "publisherDisabledPdfAvailable": false
+}
