@@ -34,10 +34,11 @@ function freeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); for (const next of Object.values(value)) freeze(next); }
   return value;
 }
-function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion, tabActions, width = 1440, params = {} } = {}) {
+function renderView(workspace, { tab = 'long', expanded = false, category = 'all', onPrepareQuestion, tabActions, width = 1440, params = {} } = {}) {
   const buttons = [], controls = [], panels = [], tabLists = [], toolbars = [];
   const nativeElement = tag => ({ children, accessibilityRole, accessibilityLabel }) => React.createElement(tag, { role: accessibilityRole === 'header' ? 'heading' : undefined, 'aria-label': accessibilityLabel }, children);
   const ui = {
+    AppSelectionTrigger: props => React.createElement('button', null, props.label),
     AppButton: props => { buttons.push(props); return React.createElement('button', null, props.label); },
     TabToolbar: props => { toolbars.push(props); return React.createElement('div', null, props.children, props.actions); },
     AppTabPanel: props => { panels.push(props); return props.active ? React.createElement('div', null, props.children) : null; },
@@ -45,7 +46,7 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     UnderlineTabs: props => { tabLists.push(props); return React.createElement('nav', null, props.items.map(item => item.label).join(' / ')); },
   };
   const dependencies = name => {
-    if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : expanded && initial === false ? true : initial) };
+    if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : initial === 'all' ? category : expanded && initial === false ? true : initial) };
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: nativeElement('div'), ScrollView: nativeElement('div'), Platform: { OS: 'web' }, Pressable: props => { controls.push(props); return nativeElement('button')(props); }, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
@@ -190,6 +191,23 @@ test('the personal deck shows one partially adopted health card across native se
   const { html } = renderView(freeze(value), { tab: 'references' });
   assert.equal((html.match(/aria-label="衛生署 兒童健康，3 份教材"/gu) ?? []).length, 1);
   assert.doesNotMatch(html, /aria-label="(?:vision|feeding)，/u);
+});
+
+test('the open materials list shows that more catalog pages are loading', () => {
+  const value = snapshot();
+  const item = { sourceId: 'vision', title: 'Vision', url: 'https://www.fhs.gov.hk/vision', publisher: 'FHS',
+    childHealth: { total: 172, adopted: 1, enabled: 1, fixed: 0, categories: ['視力'], categoryCounts: [{ name: '視力' }, { name: '玩樂與學習' }] } };
+  const data = { audience: 'public', items: [], hasMore: true, catalog: [item] };
+  value.model.references = { scopeKey, state: 'ready', data };
+  const dialog = () => renderView(value, {
+    tab: 'references', category: '玩樂與學習', params: { series: sourceSeries.childHealthSeries.id },
+  }).html.match(/<dialog\b[^>]*>([\s\S]*?)<\/dialog>/u)?.[1] ?? '';
+  assert.match(dialog(), /正在載入其餘教材/u);
+  assert.doesNotMatch(dialog(), /Vision/u);
+  data.catalog.push({ ...item, sourceId: 'play', title: 'Learning through play', childHealth: { ...item.childHealth, categories: ['玩樂與學習'] } });
+  assert.match(dialog(), /Learning through play/u);
+  data.hasMore = false;
+  assert.doesNotMatch(dialog(), /正在載入其餘教材/u);
 });
 
 test('read provider passes the exact owner value and masks all scope, child and access mismatches', () => {

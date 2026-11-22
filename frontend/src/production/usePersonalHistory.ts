@@ -16,6 +16,7 @@ type PagedReadKind = Exclude<ReadKind, "message">;
 // Never publish a partial refresh or merge an old page into a new snapshot.
 async function readPageWindow<T extends { nextCursor: string | null; complete: boolean }>(
   depth: number, cursor: string | null, current: () => boolean, readPage: (cursor: string | null) => Promise<T>,
+  onPage?: (page: T, pageCount: number) => void,
 ): Promise<T[]> {
   const pages: T[] = [], seen = new Set(cursor === null ? [] : [cursor]);
   for (let index = 0; index < depth; index++) {
@@ -23,11 +24,12 @@ async function readPageWindow<T extends { nextCursor: string | null; complete: b
     const page = await readPage(cursor);
     if (!current()) throw new Error("Obsolete personal read");
     if (page.nextCursor !== null && seen.has(page.nextCursor)) throw new Error("Repeated personal read cursor");
+    if (!page.complete && page.nextCursor === null) throw new Error("Incomplete personal read without a cursor");
     pages.push(page);
+    onPage?.(page, pages.length);
     if (page.complete) break;
     cursor = page.nextCursor;
-    if (cursor === null) throw new Error("Incomplete personal read without a cursor");
-    seen.add(cursor);
+    if (cursor !== null) seen.add(cursor);
   }
   return pages;
 }
@@ -132,19 +134,29 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
         await api.setLibraryPreference(env.childId!, signal, env.userId!, change);
         if (!current()) throw new Error('Library scope changed');
       }
-      const pages = await readPageWindow(depth, cursor, current,
-        next => api.getLibrary(env.childId!, signal, env.userId!, next));
-      const page = pages[pages.length - 1], catalog = new Map((more ? before?.catalog ?? [] : []).map(item => [item.sourceId, item]));
+      const previousDepth = more ? pageDepth.current.references : 0;
+      const catalog = new Map((more ? before?.catalog ?? [] : []).map(item => [item.sourceId, item]));
       const publisherOriginals = new Map((more ? before?.publisherOriginals ?? [] : []).map(link => [link.sourceId, link]));
-      for (const item of pages.flatMap(page => page.items)) catalog.set(item.sourceId, item);
-      for (const link of pages.flatMap(page => page.publisherOriginals ?? [])) publisherOriginals.set(link.sourceId, link);
-      for (const sourceId of catalog.keys()) publisherOriginals.delete(sourceId);
+      let registered = more ? before?.registered : undefined;
+      const snapshot = (hasMore: boolean): KnowledgeReferencesView => ({
+        audience: "public", items: [], catalog: [...catalog.values()], registered, publisherOriginals: [...publisherOriginals.values()], hasMore,
+      });
+      const pages = await readPageWindow(depth, cursor, current, next => api.getLibrary(env.childId!, signal, env.userId!, next), (page, count) => {
+        if (!more && count === 1) registered = page.registered;
+        for (const item of page.items) { catalog.set(item.sourceId, item); publisherOriginals.delete(item.sourceId); }
+        for (const link of page.publisherOriginals ?? []) if (!catalog.has(link.sourceId)) publisherOriginals.set(link.sourceId, link);
+        if (all && more && !page.complete) {
+          referenceCursor.current = page.nextCursor;
+          pageDepth.current.references = previousDepth + count;
+          setReferences(loadedRead(env.scopeKey, snapshot(true)));
+        }
+      });
+      const last = pages[pages.length - 1];
       if (current()) {
-        referenceCursor.current = page.nextCursor;
-        pageDepth.current.references = more ? pageDepth.current.references + pages.length : pages.length;
+        referenceCursor.current = last.nextCursor;
+        pageDepth.current.references = previousDepth + pages.length;
       }
-      return { audience: "public" as const, items: [], catalog: [...catalog.values()], registered: more ? before?.registered : pages[0]?.registered,
-        publisherOriginals: [...publisherOriginals.values()], hasMore: !page.complete };
+      return snapshot(!last.complete);
     }, !before);
   };
   const searchHistory = (query: string, more = false) => {
