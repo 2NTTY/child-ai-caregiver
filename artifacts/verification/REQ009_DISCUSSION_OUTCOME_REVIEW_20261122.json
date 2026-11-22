@@ -1,0 +1,176 @@
+{
+  "testedBase": "1077b9901389b341ad9105a358480f8a12a7fd24",
+  "originalReceipt": "REQ009_DISCUSSION_REVIEW_REPLAY_20261120.json",
+  "originalRun": "aa2e6f02-3cb7-460e-bc7b-6b0a52ce9278",
+  "source": {
+    "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+    "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+    "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313"
+  },
+  "method": "Isolated reviewer-only replay of the recorded synthetic discussion. All five paragraphs, the question, source excerpts and speaker order were reused for each negative control. Native Vertex, AgentGatewayModel.completeText and enforceChatDeliveryReview. Ordinary limit of eight model calls, with the original six prior steps represented in the local budget; no generator, tool, embedding or family writes.",
+  "baseline": {
+    "utc": "2026-11-22T00:11:13.924Z",
+    "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+    "systemSha256": "52ed6ef2924c36e80201899096655828905b07f5c13948fb8152a08b5f7e1c9e",
+    "payloadSha256": "c38dc1fd075def54a3df35aac5f034c25caadadc93d81b33982cfd124d539705",
+    "inputTokens": 7168,
+    "outputTokens": 71,
+    "decision": "pass",
+    "issues": 0
+  },
+  "instructionOnly": {
+    "utc": "2026-11-22T00:12:44.090Z",
+    "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+    "systemSha256": "8ec7cf62d1c46f52dbfcfa0733525e8d0238c65683f28718645afc32e3c13f8b",
+    "payloadSha256": "c38dc1fd075def54a3df35aac5f034c25caadadc93d81b33982cfd124d539705",
+    "inputTokens": 7372,
+    "outputTokens": 71,
+    "decision": "pass",
+    "issues": 0
+  },
+  "originalWithOutcomeChecks": {
+    "utc": "2026-11-22T00:15:35.536Z",
+    "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+    "systemSha256": "2f5c1c00a5ad150765714d7cfcf05c7dafd3b87a413a6b69daffc45c978962d6",
+    "payloadSha256": "1c3e71690c15220a9f9165dca18d26bcd1fcef6d78fb7a741270b5ade03552db",
+    "inputTokens": 7832,
+    "outputTokens": 542,
+    "decision": "revise",
+    "issues": 4,
+    "verdict": {
+      "outcomeChecks": [
+        {
+          "wording": "十分鐘的短暫相處已很有意義",
+          "sourceQuote": "",
+          "basis": "no_outcome_claim"
+        },
+        {
+          "wording": "這種順應孩子興趣的互動方式確實能減輕不少壓力",
+          "sourceQuote": "",
+          "basis": "unsupported_outcome"
+        },
+        {
+          "wording": "這能延長共處時間而不構成對立",
+          "sourceQuote": "",
+          "basis": "unsupported_outcome"
+        },
+        {
+          "wording": "能減少要求他坐定定帶來的對立",
+          "sourceQuote": "",
+          "basis": "unsupported_outcome"
+        },
+        {
+          "wording": "這便是一個成功的互動訊號",
+          "sourceQuote": "",
+          "basis": "unsupported_outcome"
+        }
+      ],
+      "draftHash": "fbb161af79503437ef07ea584a0a165c852a2fe6097e8afc610efe70ce48cc6f",
+      "decision": "revise",
+      "issues": [
+        {
+          "paragraph": 1,
+          "reason": "斷言順應方式能減輕壓力，未有證據支持其特定因果效果。",
+          "support": "來源僅建議透過談話、圖畫書等支持探索。"
+        },
+        {
+          "paragraph": 2,
+          "reason": "斷言參與式過渡能延長時間且不構成對立，缺乏官方證據支持。",
+          "support": "無證據表明參與式過渡能直接導致延長時間或消除對立。"
+        },
+        {
+          "paragraph": 3,
+          "reason": "重申參與式過渡能減少對立的因果斷言。",
+          "support": "缺乏關於特定互動方式對減少對立效果的實證支持。"
+        },
+        {
+          "paragraph": 4,
+          "reason": "將特定的互動反應斷言為成功的互動訊號。",
+          "support": "未有證據定義什麼是成功的互動訊號。"
+        }
+      ],
+      "claimedAppChanges": []
+    },
+    "gate": "The initial parser rejected a verbatim non-outcome observation in the optional wording of the first paragraph. The final parser accepts it. The identical native verdict was replayed with the same system and payload hashes. The result requires revision, and the remaining historical allowance is one call, so delivery stops with delivery_review_budget."
+  },
+  "corrected": {
+    "utc": "2026-11-22T00:17:33.876Z",
+    "draftHash": "f91996c514c8e07f4029239f04e6d311bcdb913a682be8bcba7cd8205620a034",
+    "systemSha256": "2f5c1c00a5ad150765714d7cfcf05c7dafd3b87a413a6b69daffc45c978962d6",
+    "payloadSha256": "476a4cc3d3622d044ef5642d8b27b00dae4fc00236ba871cdfe26cf343b4932d",
+    "inputTokens": 7508,
+    "outputTokens": 285,
+    "decision": "pass",
+    "issues": 0,
+    "paragraphChanges": [
+      {
+        "index": 1,
+        "text": "若我有時候太累，想在孩子想行開時適度引導他回來玩多一兩分鐘，除了順應他的意願之外，會不會有甚麼簡單的方法能讓這個過程不那麼「推拉」？"
+      },
+      {
+        "index": 2,
+        "text": "不強行留住孩子，而是帶著他正在玩的沙槌或圖畫書，跟著他走到他想去的地方，參與他的探索。"
+      },
+      {
+        "index": 3,
+        "text": "待辦列明檯面上有一本藍色圖畫書和一個沙槌。",
+        "kind": "private_reference",
+        "citationIds": [
+          "page-item"
+        ]
+      },
+      {
+        "index": 4,
+        "text": "今晚只得十分鐘，可以先拿起圖畫書跟他看一頁。如果他想走，可以帶著玩具跟他走，看看他會否想邀你一起玩。你們會否因此玩久一點，要看他當時的反應。"
+      }
+    ],
+    "verdict": {
+      "outcomeChecks": [
+        {
+          "wording": "十分鐘的短暫相處已很有意義",
+          "sourceQuote": "",
+          "basis": "no_outcome_claim"
+        },
+        {
+          "wording": "",
+          "sourceQuote": "",
+          "basis": "no_outcome_claim"
+        },
+        {
+          "wording": "",
+          "sourceQuote": "",
+          "basis": "no_outcome_claim"
+        },
+        {
+          "wording": "",
+          "sourceQuote": "",
+          "basis": "no_outcome_claim"
+        },
+        {
+          "wording": "你們會否因此玩久一點，要看他當時的反應。",
+          "sourceQuote": "",
+          "basis": "open_hypothesis"
+        }
+      ],
+      "draftHash": "f91996c514c8e07f4029239f04e6d311bcdb913a682be8bcba7cd8205620a034",
+      "decision": "pass",
+      "issues": [],
+      "claimedAppChanges": []
+    },
+    "gate": "pass",
+    "provenance": "A manually prepared paired control. The first speaker is unchanged, the next two contributions use continuous excerpts of the original speakers, and the main answer identifies the private task items and an open observation. This is a reviewer acceptance, not a regenerated parent conversation."
+  },
+  "usage": {
+    "model": "gemini-3.1-flash-lite",
+    "region": "global",
+    "reviewCalls": 4,
+    "extraTools": 0,
+    "embeddings": 0,
+    "inputTokens": 29880,
+    "outputTokens": 969,
+    "estimatedUSD": 0.0089235,
+    "pricing": "https://cloud.google.com/model-garden/pricing",
+    "shared12hMeterUtc": "2026-11-22T00:09:31.661Z",
+    "funding": "Existing platform reservation, shared USD 5 per rolling 12 hours. Global uncached estimate, not an invoice."
+  }
+}
