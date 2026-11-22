@@ -687,7 +687,7 @@ export function createProductAgent(options: {
           ...(page.messages[index].pageContext && conversationMode !== 'ephemeral' ? {
             currentPage: page.messages[index].pageContext,
             selectedItem: pageEvidence ? { citationId: pageEvidence.source.citationId, excerpt: pageEvidence.source.excerpt,
-              complete: pageEvidence.source.excerptComplete, presentation: { kind: 'private_reference', citationIds: [pageEvidence.source.citationId] } } : undefined,
+              excerptComplete: pageEvidence.source.excerptComplete, presentation: { kind: 'private_reference', citationIds: [pageEvidence.source.citationId] } } : undefined,
             pagePolicy: '本輪的「這個」可指家長選取的畫面項目。家長問該項內容時，從 selectedItem.excerpt 找出答案，用自己的話寫入 paragraphs 的 text，依 selectedItem.presentation 填 kind 和 citationIds。舊問句可提供背景；引述同一句提問仍欠答案。家長明確要找舊話時可引用歷史原句。照護建議另段引用已讀官方資料。若所選項目已改變而沒有原文，請家長重新選取。',
           } : {}),
           ...(page.messages[index].voice ? { currentVoice: page.messages[index].voice,
@@ -701,6 +701,7 @@ export function createProductAgent(options: {
               chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId,
               title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt,
               passage: chatDeliveryExcerpt(chunk.text).excerpt,
+              ...(discussion && { presentation: { kind: 'caregiving', citationIds: [chunk.chunkId] } }),
               sourceDateText: chunk.sourceDateText ?? null,
             })),
           } : {}),
@@ -710,7 +711,9 @@ export function createProductAgent(options: {
             : "直接回應目前這句。第一人稱指發話的使用者，與目前選取的孩子分開。問身份時根據已知身份回答，稱呼或意思不明可直接問。舊回答中的頁面入口只屬當時的問題。交辦若缺對象、欄位或內容，先用 present_answer 的 clarification 和一個不帶斷言的問題問齊缺項，citationIds 可留空，等家長補充再寫入。早前的聊天供理解，沒有新交代便不補寫記錄或補報完成。若目前對話已有答案，直接回答；引用短原句可用 messageTopology 的 quoteHistory。問某件事最後定下甚麼安排，即使同時要求引用舊話，先核對目前孩子的有效事實。未知記憶鍵名時用 read_memory_facts({})；若工具未載入，先載入 memory_facts。按意思選相關項，需要原句時按 factId 讀回。已有主題詞也可用 search_history(kind=memory_fact)。若目標是找某次對話，或事實未有答案，才查對話原文。search_history 的 followingMessages 是當時緊接的原話，currentFactTopics 是可按 factId 續讀的主題。引用原句用 present_answer，kind=private_reference，paragraphs=[{quoteHistory: 所選原句的識別}]。另寫回答時，每段引用支持該段的原話。需要按訊息 ID 續讀才載入 history，再用 read_history。"
               + (options.actions ? " 本次明確交辦的日常記錄、私人交代或待辦按 operationPolicy 載入相應工具辦理。重要更改沿既有確認流程；只為影響執行的缺項追問。完成後按收據回報。" : "")
               + " 每則歷史訊息已在 messageTopology 標記產生模式（chatMode=assistant 或 chat_only）。先前在「只是聊天」模式產生的討論或純文字內容可供理解與承接，但本身不是保存授權、已確認事實或待執行指令：本輪使用者未明確提及時，切勿自動補存、重播操作或將其升格為正式資料。若使用者本輪明確要求保存或辦理先前的「只是聊天」內容（例如「把剛才那份記下來」），可直接引用該段原聊天內容而不要求完整重述，只有在目標或必要欄位存在實質歧義時才作必要澄清，並按當前確認或有效自動授權（operationPolicy）規則處理。",
-          outputPolicy: "用 present_answer 直接回應本句。若只問可用的聊天語言或怎樣向助手提問，以 operation 回答操作問題，citationIds 留空。家長可用廣東話提問。實際照護建議逐段引用適用官方來源。回答文字不能執行操作。",
+          outputPolicy: discussion
+            ? "跟隨當前發言次序，每席只交自己的觀點。到收尾才用 present_answer 的 paragraphs 回答整條原題。家庭資料和照護建議分段，各用已核對的相應引用。"
+            : "用 present_answer 直接回應本句。若只問可用的聊天語言或怎樣向助手提問，以 operation 回答操作問題，citationIds 留空。家長可用廣東話提問。實際照護建議逐段引用適用官方來源。回答文字不能執行操作。",
           conversationMode,
           turnBackground: formatTurnBackgroundForPrompt(turnBackground),
           ...(dailyNeeds.suppressedForUrgency || dailyNeeds.signals.length > 0 || dailyNeeds.suggestOptionalDiscussion ? { dailyNeedsDiscovery: dailyNeeds } : {}),

@@ -7,10 +7,47 @@ import { FamilyError } from './family-access.ts';
 
 export const viewpointParameters = z.strictObject({
   kind: agentAnswerSchema.shape.paragraphs.element.shape.kind.describe('Optional. Omit for the ordinary speaker role. If specified, use exactly one enum value.'),
-  text: z.string().trim().min(1).max(900),
-  citationIds: z.array(z.string().min(1).max(80)).max(6),
+  text: z.string().trim().min(1).max(900).describe('Only this speaker’s one or two sentences. The independent main answer goes in present_answer.paragraphs.'),
+  citationIds: z.array(z.string().min(1).max(80)).max(6).describe('Use the official passage chunkId for caregiving. A selected task has its own private_reference paragraph. Copy the corresponding presentation.citationIds from the current evidence.'),
 });
 export const discussionToolNames = ['share_knowledge_view', 'ask_parent_view', 'compare_methods_view'] as const;
+const clauseIndex = z.int().nonnegative();
+export const discussionRepairSchema = z.strictObject({
+  excerpts: z.array(z.strictObject({
+    speakerIndex: z.int().min(0).max(2),
+    firstClause: clauseIndex,
+    lastClause: clauseIndex,
+  })).max(3),
+  main: agentAnswerSchema,
+});
+
+export function discussionRepairClauses(paragraphs: ReadonlyArray<{ text: string }>, flagged: readonly number[]) {
+  return flagged.map(speakerIndex => ({
+    speakerIndex,
+    clauses: paragraphs[speakerIndex]!.text.split(/(?<=[，,。.!！?？；;：:\n])/u).filter(Boolean),
+  }));
+}
+
+export function assembleDiscussionRepair<T extends { text: string }>(
+  originalSpeakers: readonly T[], choices: ReturnType<typeof discussionRepairClauses>, wire: unknown,
+) {
+  const result = discussionRepairSchema.safeParse(wire);
+  if (!result.success) return null;
+  const speakers = originalSpeakers.map(speaker => ({ ...speaker }));
+  const remaining = new Map(choices.map(choice => [choice.speakerIndex, choice.clauses]));
+  for (const { speakerIndex, firstClause, lastClause } of result.data.excerpts) {
+    const clauses = remaining.get(speakerIndex);
+    if (!clauses || !speakers[speakerIndex] || firstClause > lastClause || lastClause >= clauses.length) return null;
+    const excerpt = clauses.slice(firstClause, lastClause + 1).join('').trim().replace(/[，,；;：:]$/u, '。');
+    if (!isContributionExcerpt(speakers[speakerIndex].text, excerpt)) return null;
+    speakers[speakerIndex] = { ...speakers[speakerIndex], text: excerpt };
+    remaining.delete(speakerIndex);
+  }
+  const main = result.data.main;
+  const mainParagraphs = main.paragraphs.map(paragraph => ({ ...paragraph, kind: paragraph.kind ?? main.kind }));
+  return { kind: 'mixed', paragraphs: [...speakers, ...mainParagraphs] };
+}
+
 export type DiscussionPresentationStage = 'speaker' | 'closing';
 export function closingDiscussionDeclaration(declaration: FunctionDeclaration): FunctionDeclaration {
   const fields = declaration.parameters?.properties;
@@ -41,7 +78,7 @@ export class DiscussionMainTooLong extends FamilyError {
   }
 }
 const viewpoints = [
-  '結合本題已有的知識來源和照顧情境，提出一個有依據的選擇，交代適用條件。你是 AI，不自稱專家或有親身經驗。',
+  '先讀 reusedOfficialEvidence 裏本輪已核對的教材及 selectedItem 裏的家庭情境。已有依據時，直接用首席工具提出一個選擇和適用條件，照護建議沿用該教材的 presentation。主答另段交代待辦內容。只有缺少題目所需原文時才補讀。你是 AI，不自稱專家或有親身經驗。',
   '從新手家長的負擔與需要出發，回應上一位提出的具體方法，用假設語氣提出一個切身疑問。勿自稱是家長，勿代使用者說出未有提及的經歷、感受或決定。',
   '回應前面家長的具體疑問，對比可行方法，說明甚麼條件下會改選另一種做法。交代哪些是教材支持的做法，哪些是你因應這個家庭提出的嘗試。若原文沒有驗證成效，可以建議家長觀察孩子的反應，再決定是否繼續。',
 ];
@@ -80,8 +117,7 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
         return { status: 'rejected', data: { code: 'discussion_turn_order', next: discussionToolNames[paragraphs.length] ?? 'present_answer' } };
       const { endDiscussion, ...view } = speakerParameters.parse(args);
       const paragraph = readView(view);
-      try { validate({ kind: paragraph.kind, paragraphs: [paragraph] }); }
-      catch (e) { if (e instanceof FamilyError) return { status: 'rejected', data: { code: e.code } }; throw e; }
+      validate({ kind: paragraph.kind, paragraphs: [paragraph] });
       paragraphs.push(paragraph);
       noTradeoff ||= endDiscussion === 'no_tradeoff';
       return { status: 'succeeded', data: { speaker: discussionLabels[role], contribution: paragraph,
@@ -112,7 +148,7 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
     instruction: (finishing: boolean) => noTradeoff ? '已交付的觀點指出這一題沒有可比較的選擇。現在用 present_answer 的 paragraphs 直接回答，不再加角色。' : discussionInstruction + ' 每位只講一兩句，直接回應上一位。用香港繁體中文，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
       ? ' 現在輪到「' + discussionLabels[discussionRoles[paragraphs.length]] + '」。' + viewpoints[paragraphs.length]
         + (finishing || paragraphs.length === 2
-          ? ' 現在單獨使用 present_answer。closingView 填 text 和 citationIds。paragraphs 另寫一段主回答，交代家長可以怎樣揀。'
+          ? ' 現在單獨使用 present_answer。closingView 只填當前角色的觀點及引用。paragraphs 另寫可獨立閱讀的主回答，逐項回答家長原題。所選項目的事實及官方教材的建議各自成段，填相應 kind 和 citationIds。'
           : ' 使用 ' + discussionToolNames[paragraphs.length] + ' 提交此觀點和適用引用。')
       : ' 三位已經發言。現在以主助手身份直接回答，交代建議及選擇條件，主回答最多 ' + maxMainParagraphs() + ' 段。')
       + ' 先前的發言已保留，毋須重複。',

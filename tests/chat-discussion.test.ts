@@ -6,7 +6,7 @@ import { FinishReason } from '@google/genai';
 import { createAgentRuntime } from '../server/agent-runtime.ts';
 import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
-import { createQuestionDiscussion, discussionToolNames } from '../server/chat-discussion.ts';
+import { assembleDiscussionRepair, createQuestionDiscussion, discussionRepairClauses, discussionToolNames } from '../server/chat-discussion.ts';
 import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
 import { chatDeliveryContentHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
@@ -59,6 +59,7 @@ test('a question binds three successive native turns, the main reply and one ind
       if (modelLimit !== 7) {
         if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"passage":' + JSON.stringify(chunk.text))),
           'a reused citation must carry the revalidated passage containing the activity choices');
+        if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"presentation":{"kind":"caregiving","citationIds":["' + chunkId + '"]}')));
         const review = inputs.find(p => p.text?.startsWith('Server evidence payload for chat-delivery-review.'))?.text;
         const previous = inputs.map(p => p.functionResponse?.response?.data as { contribution?: { text: string } } | undefined)
           .findLast(p => p?.contribution);
@@ -91,7 +92,9 @@ test('a question binds three successive native turns, the main reply and one ind
         const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
           {text:main[1] + ' [1]', citationIds:[chunkId]}],
           closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
-        return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP};
+        if (modelLimit === 6) await new Promise(resolve => setTimeout(resolve, 5));
+        return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP,
+          ...(modelLimit === 6 && i === 1 && {usageMetadata:{promptTokenCount:16500,totalTokenCount:16600}})};
       }
       if (inputs.some(p => p.text?.includes('Please summarize the interactions concisely'))) {
         return { content: { role: 'model', parts: [{ text: 'The three speakers have contributed.' }] }, finishReason: FinishReason.STOP };
@@ -100,6 +103,7 @@ test('a question binds three successive native turns, the main reply and one ind
         const context = inputs.map(p => p.text ?? '').join('');
         assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
         assert.ok(context.includes('Prepare the picture book') && context.includes('page-item'), 'selected task and its reviewable citation must reach the first model request');
+        assert.ok(context.includes('"excerptComplete":true'), 'a complete excerpt must not describe the task as completed');
       }
       if (followup && i === 1) {
         assert.ok(inputs.some(p => JSON.stringify(p.functionResponse?.response ?? {}).includes('Prepare the picture book')));
@@ -218,6 +222,11 @@ test('a question binds three successive native turns, the main reply and one ind
   assert.equal(capped.counts.modelCalls, 4);
   assert.deepEqual(await reply(), capped);
   assert.equal(calls, 4);
+  modelLimit = 6; claimed = false; calls = 0;
+  const compactable = await reply();
+  assert.deepEqual(compactable?.discussion, capped.discussion);
+  assert.equal(compactable?.deliveryReview?.decision, 'pass');
+  assert.equal(calls, 4, 'Optional compaction must leave the last two calls available for repair and re-review');
   for (const rejected of [false, true]) {
     invalidClosing = rejected; modelLimit = 3; claimed = false; calls = 0;
     const partial = await reply();
@@ -367,6 +376,13 @@ test('repairs the archived duration claim while preserving the original three sp
   const next = agentAnswerSchema.parse({ kind: draft.kind, paragraphs: draft.paragraphs });
   for (const { index, ...change } of corrected.paragraphChanges) Object.assign(next.paragraphs[index], change);
   const flagged = new Set<number>(originalWithOutcomeChecks.verdict.issues.map((issue: { paragraph: number }) => issue.paragraph));
+  const speakers = draft.paragraphs.slice(0,3);
+  const choices = discussionRepairClauses(draft.paragraphs, [...flagged]);
+  const main = {kind:'mixed', paragraphs:next.paragraphs.slice(3)};
+  const first = {speakerIndex:1,firstClause:6,lastClause:9};
+  for (const excerpts of [[{...first,speakerIndex:0}], [first,first], [{...first,lastClause:20}], [{...first,lastClause:4}]]) {
+    assert.equal(assembleDiscussionRepair(speakers,choices,{excerpts,main}), null);
+  }
   assert.equal(discussion.allowsRepair(next, flagged), true);
   assert.equal(discussion.allowsRepair(next), false);
   const fabricated = structuredClone(next);
@@ -388,7 +404,12 @@ test('repairs the archived duration claim while preserving the original three sp
       steps.push(purpose!);
       const payload = JSON.parse(user.slice(user.indexOf('{')));
       if (steps.length === 1) return JSON.stringify(originalWithOutcomeChecks.verdict);
-      if (purpose === 'delivery_repair') return JSON.stringify(next);
+      if (purpose === 'delivery_repair') {
+        assert.deepEqual(payload.speakerClauses.map((s: {speakerIndex:number}) => s.speakerIndex), [1,2]);
+        assert.equal(payload.speakerClauses[1].clauses[11], '參與他的探索，');
+        return JSON.stringify({excerpts:[{speakerIndex:1,firstClause:6,lastClause:9},{speakerIndex:2,firstClause:8,lastClause:11}],
+          main:{kind:'mixed',paragraphs:next.paragraphs.slice(3)}});
+      }
       assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
       assert.deepEqual(payload.previousDraft.paragraphs.map((p: { text: string }) => p.text), draft.paragraphs.map(p => p.text));
       assert.deepEqual(payload.repairIssues, originalWithOutcomeChecks.verdict.issues);

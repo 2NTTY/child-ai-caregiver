@@ -24,6 +24,7 @@ import { AgentStopped } from "./agent-budget.ts";
 import type { AgentRunContext, AgentScope } from "./agent-runtime.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { nativeResponseSchema } from "./structured-output-schema.ts";
+import { assembleDiscussionRepair, discussionRepairClauses, discussionRepairSchema } from "./chat-discussion.ts";
 
 export {
   detectHighRiskCareClaims,
@@ -1860,6 +1861,7 @@ function policyVersionForDraft(draft: ChatDeliveryDraft) {
     ? CHAT_DELIVERY_REVIEW_POLICY_VERSION + '/discussion-outcomes/1' : CHAT_DELIVERY_REVIEW_POLICY_VERSION;
 }
 const REPAIR_RESPONSE_JSON_SCHEMA = nativeResponseSchema(agentAnswerSchema);
+const DISCUSSION_REPAIR_RESPONSE_SCHEMA = nativeResponseSchema(discussionRepairSchema);
 
 async function spendText(context: AgentRunContext, attemptKey: string, system: string, user: string, images?: ChatDeliveryDraft['images'], voice?: ChatDeliveryDraft['voice'], purpose: "delivery_review" | "delivery_repair" = "delivery_review", onProviderStart?: () => void, responseJsonSchema?: Record<string, unknown>): Promise<string> {
   if (!context.completeText) throw new AgentStopped("unavailable");
@@ -1952,7 +1954,7 @@ export async function enforceChatDeliveryReview(input: {
     const draftHash = chatDeliveryDraftHash(current, repairContext);
     const contract = contractForDraft(current);
     const pageInstruction = current.sources.some(source => source.citationId === 'page-item')
-      ? '\n先判斷家長本輪要從所選項目知道甚麼，或是否明確要求引述舊話。核對正文有沒有回答那件事。問句裏的事實可以支持答案；只把同一個問題引述給家長時，要求修訂並指出欠了甚麼。' : '';
+      ? '\n先判斷家長本輪要從所選項目知道甚麼，或是否明確要求引述舊話。主回答須獨立答到所問。問句裏的事實可以支持答案；只重述同一問題時要指出欠了甚麼。核對每一席及主答提及的待辦狀態，依據原件的 occurrence.state。excerptComplete 只表示摘錄齊全。凡聲稱待辦已完成或改期而與原件不符，列出該段及實際狀態，要求修訂。' : '';
     const attribution = repairContext && current.discussionRoles?.length
       ? '\n重核節錄時亦對照 previousDraft 的完整發言。即使字句出自原文，若刪去了條件、否定或疑問而改變該角色的本意，仍須要求修訂。' : '';
     const raw = await spendText(input.context, `model:chat-delivery-${attempt}:${draftHash}`, system + contract.instruction + pageInstruction + attribution,
@@ -2004,27 +2006,30 @@ export async function enforceChatDeliveryReview(input: {
   let outcome = await judge(current, "review");
   if (outcome.decision.decision === "revise" && input.context.budget.remainingModelCalls >= 2) {
     const repairContext = { previousDraft: structuredClone(current), issues: structuredClone(outcome.decision.issues) };
-    const excerptableSpeakers = outcome.decision.outcomeChecks?.flatMap((check, index) =>
-      index < (current.discussionRoles?.length ?? 0) && check.basis === 'unsupported_outcome' ? [index] : []);
     const currentSources = input.tools.bindRepairEvidence?.();
     if ((current.sources.length && !currentSources) || (currentSources && !await input.context.budget.wait(currentSources)))
       throw new AgentStopped("delivery_review_incomplete");
-    const repaired = await spendText(input.context, `model:chat-delivery-repair:${outcome.draftHash}`, system,
+    const speakerCount = current.discussionRoles?.length ?? 0;
+    const flaggedSpeakers = new Set(outcome.decision.issues.map(issue => issue.paragraph).filter(index => index < speakerCount));
+    const choices = speakerCount ? discussionRepairClauses(current.paragraphs, [...flaggedSpeakers]) : undefined;
+    const repaired = await spendText(input.context, `model:chat-delivery-repair:${choices ? 'excerpts:' : ''}${outcome.draftHash}`, system,
       "Repair the draft using only the same evidence. This is a repair turn, not a review turn. "
-      + "Return one JSON object matching the product answer schema (kind and paragraphs) and no other text. "
-      + "Do not return a review decision object.\n"
-      + (current.discussionRoles?.length ? 'Keep all speakers in order, with their original kind and citation IDs. Copy each contribution exactly unless its index is in excerptableSpeakers. For those indices only, you may retain a contiguous excerpt of whole clauses that preserves the original meaning. The main answer may be revised using the original evidence.\n' : '')
+      + (choices
+        ? 'Return excerpts and main. The server keeps the original speakers, kinds and citations. For a flagged speaker, select a contiguous, meaning-preserving range in speakerClauses using zero-based inclusive indices. Omit a selection to keep the whole original turn. Keep questions and qualifications intact. In main, answer the parent’s entire original request independently, including relevant facts from the selected item and advice from the cited passages.\n'
+        : 'Return only the product answer (kind and paragraphs).\n')
       + JSON.stringify({ ...reviewPayload(current, outcome.draftHash), issues: outcome.decision.issues,
-        ...(current.discussionRoles?.length ? { excerptableSpeakers: excerptableSpeakers ?? [] } : {}),
-        outputContract: z.toJSONSchema(agentAnswerSchema) }), current.images, current.voice, "delivery_repair", undefined, REPAIR_RESPONSE_JSON_SCHEMA);
-    const parsed = agentAnswerSchema.safeParse(readJson(repaired));
+        ...(choices && { speakerClauses: choices }),
+        outputContract: z.toJSONSchema(choices ? discussionRepairSchema : agentAnswerSchema) }), current.images, current.voice,
+      "delivery_repair", undefined, choices ? DISCUSSION_REPAIR_RESPONSE_SCHEMA : REPAIR_RESPONSE_JSON_SCHEMA);
+    const wire = readJson(repaired);
+    const parsed = agentAnswerSchema.safeParse(choices ? assembleDiscussionRepair(current.paragraphs.slice(0,speakerCount), choices, wire) : wire);
     if (!parsed.success) throw new AgentStopped("delivery_review_incomplete");
     const boundIds = new Set(current.sources.map(source => source.citationId));
     if (parsed.data.paragraphs.some(paragraph => paragraph.citationIds.some(id => !boundIds.has(id))))
       throw new AgentStopped("delivery_review_incomplete");
     let nextPresentation: AgentPresentation | null = null;
     try {
-      input.tools.replaceDeliveryAnswer(parsed.data, new Set(excerptableSpeakers));
+      input.tools.replaceDeliveryAnswer(parsed.data, flaggedSpeakers);
       nextPresentation = await input.tools.presentation();
     } catch (error) {
       if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized"].includes(error.reason)) throw error;

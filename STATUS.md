@@ -12,7 +12,7 @@
 
 **2026-11-22 香港 04:58 查庫**　61 套官方劇本、1,695 段全部獲獨立批准並上架。隔離家長用正式版逐套查回 61 個片名，六個內容問題全部命中。《替寶寶換尿片》及《建立睡前常規》均首位命中、可展開全篇。已核對親子溝通完整版與 1 至 4 個月短片各自的首位結果。[逐套片名及內容收據](artifacts/verification/FHS_SCRIPT_FINAL_PARENT_LOOKUP_20261122.json) · [原審核及結算](artifacts/verification/FHS_SCRIPT_RECORDED_REVIEW_20261122.json)
 
-**2026-11-22 香港，回答後討論。** 01:00 正式發布收據確認 Web、API 及 worker 已包含 #749。隔離家庭從原答開討論，四次真模型呼叫完成三席及主答，收合重開用量維持不變。正式站獨立瀏覽器停在登入頁，指定測試帳號按當時預算發起及收合仍待點按。舊截圖可辨認單次模型呼叫上限，未能配對原單。08:17 的本機覆驗中，真模型已指出原第三席的成效推論欠據，並通過保留三席的對照稿；這項修正待發布。[正式站及舊單查核](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json) · [家長操作收據](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [成效覆驗](artifacts/verification/REQ009_DISCUSSION_OUTCOME_REVIEW_20261122.json)
+**2026-11-22 香港 09:43，回答後討論。** #806 已發布。本機修訂後，隔離家長從待辦重問原題，看到正確物品。點一次討論後，修訂稿在第八次模型呼叫被再審退回。新手家長席稱調整心態「能減少不少壓力」，教材未支持這項說法。畫面保留原答並顯示停止原因，三席及主答仍未交付。本次修訂未發布；正式測試帳號及手機仍待點按。[本題收據](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json) · [家長畫面](artifacts/verification/REQ009_DISCUSSION_PARENT_DELIVERY_20261122.png) · [既有成功個案](artifacts/verification/REQ009_PARENT_BUDGET_20261121.json) · [正式站及舊單查核](artifacts/verification/REQ009_PRODUCTION_PARENT_20261122.json)
 
 **2026-11-21 香港**　家長平台卡庫及本人參考資料以一張「衛生署 兒童健康」管理教材。已在本機 Edge 核對分類、原有固定及停用選擇、整卡採用與移除，以及移除後從聊天重開原版 PDF 第 3 頁。系列已發布，手機實際點按待驗。[操作收據](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.json) · [分類畫面](artifacts/verification/REQ006_FHS_CHILD_HEALTH_SERIES_20261121.png) · [正式發布](https://github.com/2NTTY/child-ai-caregiver/actions/runs/44882194026)
 

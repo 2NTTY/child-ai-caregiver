@@ -32,7 +32,7 @@ import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
 import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
-import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
+import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
 import { createQuestionDiscussion, DiscussionMainTooLong, viewpointParameters } from './chat-discussion.ts';
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -551,8 +551,11 @@ export function createProductAgentTools(options: {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
   }
-  async function guard<T>(operation: () => Promise<T>): Promise<import("./agent-runtime.ts").AgentToolResult> {
-    try { return { status: "succeeded", data: { result: await operation() } }; }
+  function guard<T>(operation: () => Promise<T>): Promise<AgentToolResult> {
+    return guardResult(async () => ({ status: "succeeded", data: { result: await operation() } }));
+  }
+  async function guardResult(operation: () => Promise<AgentToolResult>): Promise<AgentToolResult> {
+    try { return await operation(); }
     catch (error) {
       if (error instanceof DiscussionMainTooLong) return { status: 'rejected', data: {
         code: error.code, maxParagraphs: error.maxParagraphs,
@@ -775,7 +778,9 @@ export function createProductAgentTools(options: {
     if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
     return result;
   }
-  const tools: AgentTool[] = [...discussion?.tools ?? []];
+  const tools: AgentTool[] = (discussion?.tools ?? []).map(tool => ({
+    ...tool, execute: (args, context) => guardResult(() => tool.execute(args, context)),
+  }));
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;
     let requestedContext: ReturnType<typeof requestedAccountContext> | undefined;
@@ -847,7 +852,7 @@ export function createProductAgentTools(options: {
         const growth = options.growth ? await options.growth.list(scope.userId,scope.childId) : null;
         const selectedPage = options.pageEvidence;
         const metadata = { ...(selectedPage ? { selectedItem: await selectedPage.isCurrent()
-          ? { citationId: selectedPage.source.citationId, excerpt: selectedPage.source.excerpt, complete: selectedPage.source.excerptComplete }
+          ? { citationId: selectedPage.source.citationId, excerpt: selectedPage.source.excerpt, excerptComplete: selectedPage.source.excerptComplete }
           : { status: 'unavailable' } } : {}), operationPolicy: options.visibility !== "family" && options.actions ? await options.actions.policy(scope.userId, scope.childId) : null,
           growth: growth ? {items:growth.items.map(item=>({id:item.id,topicId:item.topicId,state:item.state,sourceAvailable:item.sourceAvailable,taskId:item.taskId,taskState:item.taskState})),disabledTopics:growth.topics.filter(topic=>topic.disabled).map(topic=>topic.id)} : null,
           profile: context.profileApplicable ? context.profile : null,
