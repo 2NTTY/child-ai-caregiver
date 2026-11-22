@@ -432,7 +432,8 @@ test('a conflicting sentence selection requires a fresh verdict on the fixed tex
   const { draft, presentation, scope } = await archivedDiscussion();
   const question = '如果他選了藍色，我應該跟着他找藍色的積木嗎？';
   draft.paragraphs[1] = { ...draft.paragraphs[1], text:'我想從綠色積木開始。' + question };
-  for (const decision of ['pass','insufficient_evidence'] as const) {
+  for (const scenario of ['selected', 'invented', 'refused', 'invalid_index'] as const) {
+    const selected = scenario === 'selected' || scenario === 'refused';
     const budget = new AgentBudget();
     budget.take('modelCalls', budget.remainingModelCalls - 2);
     let live = structuredClone(draft);
@@ -447,23 +448,28 @@ test('a conflicting sentence selection requires a fresh verdict on the fixed tex
           const data = JSON.parse(user.slice(user.indexOf('{')));
           const checks = adviceOnly(data.paragraphs);
           if (attempts.length === 1) {
-            checks[1].wording = '綠色積木';
+            checks[1].wording = selected ? '綠色積木' : '評核者自行加上的效果';
             return JSON.stringify({decision:'pass',issues:[],draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks,
-              approvedSentenceIds:[data.sentenceOptions.find((p: {text:string}) => p.text === question).id]});
+              ...(selected && { approvedSentenceIds:[data.sentenceOptions.find((p: {text:string}) => p.text === question).id] })});
           }
-          assert.equal(data.paragraphs[1].text,question);
-          assert.equal(data.unabridgedParagraphs[1].text,draft.paragraphs[1].text);
+          assert.equal(data.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
+          assert.equal(data.unabridgedParagraphs?.[1].text,selected ? draft.paragraphs[1].text : undefined);
+          assert.equal(data.outcomeClauses[1].join(''),data.paragraphs[1].text);
           assert.equal(data.sentenceOptions,undefined);
-          assert.equal(data.draftHash,chatDeliveryDraftHash({...draft,paragraphs:draft.paragraphs.map((p,i) => i === 1 ? {...p,text:question} : p)}));
+          assert.equal(data.draftHash,chatDeliveryDraftHash({...draft,paragraphs:draft.paragraphs.map((p,i) => i === 1 && selected ? {...p,text:question} : p)}));
+          const decision = scenario === 'refused' ? 'insufficient_evidence' : 'pass';
+          const indexed = checks.map(() => ({clauseIndex:-1,basis:'no_outcome_claim',sourceQuote:''}));
+          indexed[1] = {clauseIndex:scenario === 'invalid_index' ? 99 : data.outcomeClauses[1].length - 1,basis:'open_hypothesis',sourceQuote:''};
           return JSON.stringify({decision,issues:decision === 'pass' ? [] : [{paragraph:1,reason:'Missing context',support:'Preserve the original choice'}],
-            draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks});
+            draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:indexed});
         }} as AgentRunContext});
-      if (decision === 'pass') {
+      if (scenario === 'selected' || scenario === 'invented') {
         const {review} = await result;
         assert.ok(review && chatDeliveryReviewAllows(review,live,review.promptVersion));
-        assert.equal(live.paragraphs[1].text,question);
+        assert.equal(live.paragraphs[1].text,selected ? question : draft.paragraphs[1].text);
       } else {
-        await assert.rejects(result,(error: unknown) => error instanceof AgentStopped && error.reason === 'delivery_review_rejected');
+        const stopReason = scenario === 'invalid_index' ? 'delivery_review_incomplete' : 'delivery_review_rejected';
+        await assert.rejects(result,(error: unknown) => error instanceof AgentStopped && error.reason === stopReason);
         assert.deepEqual(live,draft);
       }
       assert.equal(new Set(attempts).size,2);

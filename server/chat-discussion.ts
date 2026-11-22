@@ -21,10 +21,14 @@ export const discussionRepairSchema = z.strictObject({
   main: agentAnswerSchema,
 });
 
+export function discussionTextClauses(text: string) {
+  return text.split(/(?<=[，,。.!！?？；;：:\n])/u).filter(Boolean);
+}
+
 export function discussionRepairClauses(paragraphs: ReadonlyArray<{ text: string }>, flagged: readonly number[]) {
   return flagged.map(speakerIndex => ({
     speakerIndex,
-    clauses: paragraphs[speakerIndex]!.text.split(/(?<=[，,。.!！?？；;：:\n])/u).filter(Boolean),
+    clauses: discussionTextClauses(paragraphs[speakerIndex]!.text),
   }));
 }
 
