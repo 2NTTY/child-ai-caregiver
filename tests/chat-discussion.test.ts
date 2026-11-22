@@ -433,6 +433,33 @@ test('a constraint in a role and evidence for an adjacent activity do not cover 
   }]}),undefined);
 });
 
+test('a main repair requests exactly the original paragraph fields and rejects surplus output before rereview', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const start = draft.discussionRoles!.length;
+  const keys = draft.paragraphs.slice(start).map((_, i) => 'paragraph' + (start + i));
+  const budget = new AgentBudget();
+  const calls: string[] = [];
+  try {
+    await assert.rejects(enforceChatDeliveryReview({ presentation,
+      provenance: { packVersion: 'test', model: 'controlled' },
+      tools: { deliveryDraft: () => draft, bindRepairEvidence: () => async () => true,
+        presentation: async () => presentation, replaceDeliveryAnswer: () => assert.fail('Unexpected publication') },
+      context: { budget, scope, completeText: async ({ user, purpose, responseJsonSchema }) => {
+        budget.take('modelCalls');
+        calls.push(purpose!);
+        const payload = JSON.parse(user.slice(user.indexOf('{')));
+        if (purpose === 'delivery_review') return JSON.stringify({ decision: 'pass', issues: [], draftHash: payload.draftHash,
+          claimedAppChanges: [], outcomeChecks: adviceOnly(draft.paragraphs) });
+        assert.deepEqual(payload.outputContract.required, keys);
+        assert.deepEqual(responseJsonSchema?.required, keys);
+        assert.equal(responseJsonSchema?.additionalProperties, false);
+        return JSON.stringify({ ...Object.fromEntries(keys.map(key => [key, 'A complete replacement.'])), extra: 'A surplus claim.' });
+      } } as AgentRunContext,
+    }), (error: unknown) => error instanceof AgentStopped && error.reason === 'delivery_review_incomplete');
+    assert.deepEqual(calls, ['delivery_review', 'delivery_repair']);
+  } finally { budget.close(); }
+});
+
 test('the last independent review can approve the original parent question without its unsupported stress claim', async () => {
   const { draft, presentation, scope } = await archivedDiscussion();
   const { corrected } = JSON.parse(await readFile(

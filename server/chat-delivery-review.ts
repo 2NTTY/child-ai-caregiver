@@ -1890,11 +1890,12 @@ function policyVersionForDraft(draft: ChatDeliveryDraft) {
 }
 const REPAIR_RESPONSE_JSON_SCHEMA = nativeResponseSchema(agentAnswerSchema);
 const DISCUSSION_REPAIR_RESPONSE_SCHEMA = nativeResponseSchema(discussionRepairSchema);
-const mainTextRepairSchema = z.strictObject({
-  mainTexts: z.array(agentAnswerSchema.shape.paragraphs.element.shape.text).min(1).max(6)
-    .describe('One complete parent-facing text for each original main paragraph, in order. Preserve its source and answer kind.'),
-});
-const mainTextRepairContract = reviewContract(mainTextRepairSchema);
+function mainParagraphRepair(paragraphs: ChatDeliveryDraft['paragraphs'], speakerCount: number) {
+  const keys = paragraphs.slice(speakerCount).map((_, i) => 'paragraph' + (speakerCount + i));
+  const text = agentAnswerSchema.shape.paragraphs.element.shape.text;
+  const schema = z.strictObject(Object.fromEntries(keys.map(key => [key, text])));
+  return { ...reviewContract(schema), keys };
+}
 
 async function spendText(context: AgentRunContext, attemptKey: string, system: string, user: string, images?: ChatDeliveryDraft['images'], voice?: ChatDeliveryDraft['voice'], purpose: "delivery_review" | "delivery_repair" = "delivery_review", onProviderStart?: () => void, responseJsonSchema?: Record<string, unknown>): Promise<string> {
   if (!context.completeText) throw new AgentStopped("unavailable");
@@ -2121,26 +2122,26 @@ export async function enforceChatDeliveryReview(input: {
       throw new AgentStopped("delivery_review_incomplete");
     const speakerCount = current.discussionRoles?.length ?? 0;
     const flaggedSpeakers = new Set(outcome.decision.issues.map(issue => issue.paragraph).filter(index => index < speakerCount));
-    const mainOnly = outcome.decision.mainReviewNeedsRepair;
-    const choices = speakerCount && !mainOnly ? discussionRepairClauses(current.paragraphs, [...flaggedSpeakers]) : undefined;
-    const repaired = await spendText(input.context, `model:chat-delivery-repair:${mainOnly ? 'main:' : choices ? 'excerpts:' : ''}${outcome.draftHash}`, system,
+    const mainRepair = outcome.decision.mainReviewNeedsRepair ? mainParagraphRepair(current.paragraphs, speakerCount) : undefined;
+    const choices = speakerCount && !mainRepair ? discussionRepairClauses(current.paragraphs, [...flaggedSpeakers]) : undefined;
+    const repaired = await spendText(input.context, `model:chat-delivery-repair:${mainRepair ? 'main:' : choices ? 'excerpts:' : ''}${outcome.draftHash}`, system,
       "Repair the draft using only the same evidence. This is a repair turn, not a review turn. "
-      + (mainOnly ? 'Return only mainTexts. For each original main paragraph after the speakers, return one plain text string in the same order. Keep correct facts and their sources. Use the parent’s distinctive words or values for the constraints in userRequest. Make each practical choice usable under those constraints; preserve these key phrases in the main text itself. Describe the practical choice under those constraints. Keep outcomes or comparisons only when this paragraph’s cited excerpt directly establishes them. Do not repeat the role contributions, source IDs or JSON inside the text.\n'
+      + (mainRepair ? 'Return the exact named fields in outputContract. Each paragraphN is the complete replacement text for the original paragraph with index N. Preserve its kind, correct facts and sources. Use the parent’s stated words or values to explain how each practical choice fits the constraints in userRequest. Keep outcome claims only when this paragraph’s cited excerpt directly supports them. A comparison requires evidence for both approaches and their relative outcome. Omit the role contributions and source IDs from the text.\n'
         : choices
         ? 'Return excerpts and main. The server keeps the original speakers, kinds and citations. For a flagged speaker, select a contiguous, meaning-preserving range in speakerClauses using zero-based inclusive indices. Omit a selection to keep the whole original turn. Keep questions and qualifications intact. In main, answer the entire request independently. State the parent’s material constraints and show how the choice fits them. Keep relevant item facts and cited advice. Remove claims of equivalent or superior outcomes unless the cited source directly compares those outcomes.\n'
         : 'Return only the product answer (kind and paragraphs).\n')
       + JSON.stringify({ ...reviewPayload(current, chatDeliveryDraftHash(current)), issues: outcome.decision.issues,
         ...(outcome.decision.selections.size ? { rejectedExcerptParagraphs: outcome.decision.draft.paragraphs } : {}),
         ...(choices && { speakerClauses: choices }),
-        outputContract: mainOnly ? mainTextRepairContract.outputContract : z.toJSONSchema(choices ? discussionRepairSchema : agentAnswerSchema) }), current.images, current.voice,
-      "delivery_repair", undefined, mainOnly ? mainTextRepairContract.responseJsonSchema : choices ? DISCUSSION_REPAIR_RESPONSE_SCHEMA : REPAIR_RESPONSE_JSON_SCHEMA);
+        outputContract: mainRepair?.outputContract ?? z.toJSONSchema(choices ? discussionRepairSchema : agentAnswerSchema) }), current.images, current.voice,
+      "delivery_repair", undefined, mainRepair?.responseJsonSchema ?? (choices ? DISCUSSION_REPAIR_RESPONSE_SCHEMA : REPAIR_RESPONSE_JSON_SCHEMA));
     const wire = readJson(repaired);
     let answer = choices ? assembleDiscussionRepair(current.paragraphs.slice(0,speakerCount), choices, wire) : wire;
-    if (mainOnly) {
-      const texts = mainTextRepairSchema.safeParse(wire);
-      if (!texts.success || texts.data.mainTexts.length !== current.paragraphs.length - speakerCount) throw new AgentStopped('delivery_review_incomplete');
+    if (mainRepair) {
+      const texts = mainRepair.schema.safeParse(wire);
+      if (!texts.success) throw new AgentStopped('delivery_review_incomplete');
       answer = { kind: current.kind, paragraphs: current.paragraphs.map((p,i) =>
-        i < speakerCount ? p : { ...p, text: texts.data.mainTexts[i - speakerCount] }) };
+        i < speakerCount ? p : { ...p, text: texts.data[mainRepair.keys[i - speakerCount]] }) };
     }
     const parsed = agentAnswerSchema.safeParse(answer);
     if (!parsed.success) throw new AgentStopped("delivery_review_incomplete");
