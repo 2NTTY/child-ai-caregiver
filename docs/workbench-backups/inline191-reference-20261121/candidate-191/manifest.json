@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-191-image-count",
+  "base": {
+    "artifact": "candidate-189/out",
+    "htmlSha256": "a175abb83f9cb8178dda5a11bd88b6a7dea458fa23d31bdb8aef3db3b770050b",
+    "rawRecordsSha256": "77f5d0f30789f1dbb47cd658f5161cea94903f34ec066680474b400c69732c50",
+    "rawArtworkSha256": "30c1a1399dce69cabce0c1df10f67fd4ff3750f16412e2c4d35fd73d84ee4d69",
+    "topics": 93,
+    "choices": 189,
+    "images": 189
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-chat-mode/assets.json",
+      "sha256": "75a441124d44bc3309743d9f5af27b93b9c224cb65f42e7438a4f2cfdebe7dbe"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "ca2db66eef525204d61734e3c2a5d8ba9502810fcf275c4efa7fa0507ecee7f7",
+    "PROVENANCE.md": "f49ce9258a8ae5b8925c748f15165603ee59d4285831fe7fd53f031f20259f2c"
+  },
+  "topics": [
+    {
+      "number": 94,
+      "title": "助手對話：切模式，只影響之後的訊息",
+      "choices": [
+        {
+          "name": "輸入區旁的模式開關",
+          "note": "Cline 在同一任務的輸入區放置 Plan／Act 開關：Plan 仍可讀取及搜尋資料，Act 可接續等候中的計劃。育伴港切換「只是聊天」只影響後續新訊息，保留對話及搜尋問答但不建立正式記錄、待辦、檔案或待確認卡片；已開始的助手處理仍按原模式繼續。",
+          "links": [
+            {
+              "label": "Cline v3.74.0：完整任務與固定輸入區",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/webview-ui/src/components/chat/ChatView.tsx#L327-L395"
+            },
+            {
+              "label": "同版：保留原任務的標題",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/webview-ui/src/components/chat/task-header/TaskHeader.tsx#L115-L180"
+            },
+            {
+              "label": "同版：Plan／Act 滑塊的樣式",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/webview-ui/src/components/chat/ChatTextArea.tsx#L94-L121"
+            },
+            {
+              "label": "同版：輸入區右端的 Plan／Act 開關",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/webview-ui/src/components/chat/ChatTextArea.tsx#L1592-L1618"
+            },
+            {
+              "label": "同版：計劃回覆的原生呈現",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/webview-ui/src/components/chat/PlanCompletionOutputRow.tsx#L13-L37"
+            },
+            {
+              "label": "同版：Plan 可蒐集資料及提問",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/src/core/prompts/responses.ts#L230-L245"
+            },
+            {
+              "label": "同版：等候回應時轉 Act 可接續原任務",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/src/core/controller/index.ts#L388-L423"
+            },
+            {
+              "label": "Cline 程式碼授權：Apache-2.0",
+              "url": "https://github.com/cline/cline/blob/bde7049c016352047f033cdfe513743ad0bf6ea9/LICENSE#L1-L13"
+            }
+          ],
+          "asset": {
+            "input": "draft-chat-mode/chat-mode-a.png",
+            "sha256": "56f6bcae5b6850992c0cf0d405308b952f05d2c0cc0847655305dce75aa3893d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Cline 桌面非官方重繪：同一虛構紙藝展任務保留較早對話及計劃回覆，底部輸入框仍空白；右下方小型 Plan／Act 開關選中 Plan，未切換或執行。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在同一段對話內確認",
+          "note": "Goose CLI v1.59.0 是歷史版本；切換後會在同一段終端機對話中顯示確認，v1.60.0 已移除這個聊天模式。育伴港只參考就地確認：切到「只是聊天」不會清除對話，仍可搜尋問答；新訊息才採用新模式，進行中的助手回覆不會被切換撤回。",
+          "links": [
+            {
+              "label": "Goose CLI v1.59.0（歷史版本）",
+              "url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/Cargo.toml#L7-L13"
+            },
+            {
+              "label": "歷史版本的互動模式切換",
+              "url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/goose-cli-commands.md#L815-L847"
+            },
+            {
+              "label": "在同一會話更新模式並確認",
+              "url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-cli/src/session/mod.rs#L892-L910"
+            },
+            {
+              "label": "終端機內的確認訊息",
+              "url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-cli/src/session/output.rs#L540-L542"
+            },
+            {
+              "label": "程式來源授權：Apache-2.0",
+              "url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/LICENSE#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-chat-mode/chat-mode-b.png",
+            "sha256": "810bf83ebb606c5e66a865fd2f65de4ea0be444207d131895d30d66cb0623a4a",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Goose CLI v1.59.0 的虛構終端機重繪。紙藝展的問答仍留在同一段記錄，中段有一行切換為聊天模式的確認，下方的新問答沿用原展板標題。沒有執行真實指令。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 94 題 · 同一對話切換模式的兩幅自製示意",
+      "input": "draft-chat-mode/DECLARATION.txt",
+      "sha256": "ca2db66eef525204d61734e3c2a5d8ba9502810fcf275c4efa7fa0507ecee7f7"
+    }
+  ]
+}
