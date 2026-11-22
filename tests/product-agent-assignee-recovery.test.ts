@@ -21,7 +21,7 @@ const messageText = "請新增純合成普通待辦，分派給我本人，2026�
 const recovery = { status: "rejected", data: { code: "invalid_assignee", nextAction: "read_context", field: "values.assigneeUserId",
   message: "請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。" } };
 const task = { title: "Synthetic task", details: privateValue, kind: "ordinary" as const,
-  assigneeUserId: privateValue, dueAt: "2026-10-12T11:30:00Z", timeZone: "Asia/Hong_Kong" };
+  assigneeUserId: privateValue, dueAt: "2026-10-12T19:30", timeZone: "Asia/Hong_Kong" };
 
 // Real proposal/task stores with a strictly bounded SQL double; no PostgreSQL or external services.
 function fixture() {

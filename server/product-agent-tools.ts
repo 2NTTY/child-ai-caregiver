@@ -1,4 +1,5 @@
 import { bindRepairSourceChecks, comparableCardPassages } from "./agent-evidence-reuse.ts";
+import { AgentTaskTimeError, agentTaskTime, resolveAgentTaskTime } from './agent-task-time.ts';
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
 import { mixedBatchActionSchema, type MixedBatchAction, type MixedTaskBatch } from '../src/shared/mixed-task-batch.ts';
@@ -604,6 +605,7 @@ export function createProductAgentTools(options: {
           nextAction: 'kind=mixed 時，主答 paragraphs 的每一段均須填 kind。育兒建議段用 caregiving，保留該段適用的官方 citationIds，再提交。',
         }),
       } };
+      if (error instanceof AgentTaskTimeError) return { status: 'rejected', data: { code: error.code, nextAction: error.nextAction } };
       if (error instanceof ChartReadRequired) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId,
         nextAction: '首次讀取只傳 anchorChunkId，省略 cursor。只有續讀才使用 Server 返回的 nextCursor。',
@@ -1096,10 +1098,12 @@ export function createProductAgentTools(options: {
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
-      parameters: z.object({ values: taskValuesSchema }), parameterErrorHints: taskParameterHints, authorize: permitted,
+      parameters: z.object({ values: taskValuesSchema.extend({ dueAt: agentTaskTime }) }), parameterErrorHints: taskParameterHints, authorize: permitted,
       execute: async (args, context) => {
         const response = await guard(async () => {
-          const proposal = await trackedStore.propose(scope, runId, context.callId, { kind: "task_create", values: taskValuesSchema.parse(args.values) });
+          const values = args.values as Record<string, unknown>;
+          const proposal = await trackedStore.propose(scope, runId, context.callId, { kind: "task_create",
+            values: taskValuesSchema.parse({ ...values, dueAt: resolveAgentTaskTime(values.dueAt, values.timeZone) }) });
           if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
         });
         if (response.status === "rejected" && response.data?.code === "invalid_assignee") return { ...response, data: { ...response.data,
@@ -1110,10 +1114,10 @@ export function createProductAgentTools(options: {
     { name: "propose_task_change", description: "只為使用者意圖已唯一指向的既有家庭任務提出改期、完成或取消候選；先讀 read_context 的原任務及版本。多個合理對象或未讀完而不能確定時先澄清，不任選清單首項再請批准。note 只記本人實際要求，不捏造已確認。候選仍待本人明確確認後才執行；「收到」不代表完成。",
       parameters: z.object({ taskId: z.uuid(), expectedVersion: z.number().int().min(1),
         action: z.enum(["complete", "cancel", "reschedule"]), note: z.string().max(1000),
-        dueAt: z.string().nullable(), timeZone: z.string().nullable(), assigneeUserId: z.string().nullable() }),
+        dueAt: agentTaskTime.nullable(), timeZone: z.string().nullable(), assigneeUserId: z.string().nullable() }),
       authorize: permitted, execute: (args, context) => guard(async () => {
         const change = taskChangeSchema.parse({ action: args.action, expectedVersion: args.expectedVersion, confirm: true, note: args.note,
-          ...(args.action === "reschedule" ? { dueAt: args.dueAt, timeZone: args.timeZone, assigneeUserId: args.assigneeUserId } : {}) });
+          ...(args.action === "reschedule" ? { dueAt: resolveAgentTaskTime(args.dueAt, args.timeZone), timeZone: args.timeZone, assigneeUserId: args.assigneeUserId } : {}) });
         const proposal = await trackedStore.propose(scope, runId, context.callId, { kind: "task_change", taskId: args.taskId as string, change });
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
       }) },
