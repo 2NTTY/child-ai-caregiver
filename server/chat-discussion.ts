@@ -43,9 +43,23 @@ export class DiscussionMainTooLong extends FamilyError {
 const viewpoints = [
   '結合本題已有的知識來源和照顧情境，提出一個有依據的選擇，交代適用條件。你是 AI，不自稱專家或有親身經驗。',
   '從新手家長的負擔與需要出發，回應上一位提出的具體方法，用假設語氣提出一個切身疑問。勿自稱是家長，勿代使用者說出未有提及的經歷、感受或決定。',
-  '回應前面家長的具體疑問，對比可行方法，說明甚麼條件下會改選另一種做法。不必刻意反對。',
+  '回應前面家長的具體疑問，對比可行方法，說明甚麼條件下會改選另一種做法。交代哪些是教材支持的做法，哪些是你因應這個家庭提出的嘗試。若原文沒有驗證成效，可以建議家長觀察孩子的反應，再決定是否繼續。',
 ];
 export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每位各用一個原生回合，直接回應上一位工具傳回的發言。最後一位在 present_answer 的 closingView 提交自己的發言，在 paragraphs 同時提交可獨立閱讀的主回答及引用。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
+
+// Keep whole clauses from one speaker. The subsequent review also receives the original wording and issues.
+function isContributionExcerpt(original: string, replacement: string): boolean {
+  const excerpt = replacement.replace(/。$/u, '');
+  if (!/[\p{L}\p{N}]/u.test(excerpt)) return false;
+  const boundary = /[，,。.!！?？；;：:\n]/u;
+  for (let at = original.indexOf(excerpt); at >= 0; at = original.indexOf(excerpt, at + 1)) {
+    const end = at + excerpt.length;
+    if (original[end] === '？' || original[end] === '?') continue;
+    if ((at === 0 || boundary.test(original[at - 1]!)) &&
+        (end === original.length || boundary.test(original[end]!) || boundary.test(excerpt.at(-1)!))) return true;
+  }
+  return false;
+}
 
 /** A native generator request admits only the speaker whose predecessor has already spoken. */
 export function createQuestionDiscussion(authorize: () => Promise<boolean>, validate: (answer: AgentAnswer) => void) {
@@ -114,10 +128,11 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
       return agentAnswerSchema.parse({ kind: 'mixed', paragraphs: [...speakers,
         ...main.paragraphs.map(p => ({ ...p, kind: p.kind ?? main.kind }))] });
     },
-    allowsRepair(next: AgentAnswer) {
+    allowsRepair(next: AgentAnswer, flaggedParagraphs?: ReadonlySet<number>) {
       return next.paragraphs.length > paragraphs.length && paragraphs.every((p, i) => {
         const other = next.paragraphs[i];
-        return other.text === p.text && other.kind === p.kind && JSON.stringify(other.citationIds) === JSON.stringify(p.citationIds);
+        return other.kind === p.kind && JSON.stringify(other.citationIds) === JSON.stringify(p.citationIds)
+          && (other.text === p.text || (flaggedParagraphs?.has(i) && isContributionExcerpt(p.text, other.text)));
       });
     },
     render(rendered: string[]) {

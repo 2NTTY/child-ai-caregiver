@@ -8,13 +8,17 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
 import { createQuestionDiscussion, discussionToolNames } from '../server/chat-discussion.ts';
 import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
-import { chatDeliveryContentHash, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
+import { chatDeliveryContentHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
-import type { ProductAgentResult } from '../src/shared/product-agent.ts';
+import { agentAnswerSchema, type ProductAgentResult } from '../src/shared/product-agent.ts';
 import { productAgentResultSchema } from '../src/shared/product-agent-result.ts';
 
 const base = { id: '7de5a0e8-e106-4485-b7d2-3b572741da39', childId: '1ebcb39d-a2db-4b8c-a432-7ffcb3de5808',
   authorUserId: 'parent', role: 'user', text: 'Which book should we start with?', inReplyTo: null, createdAt: '2026-11-19T00:00:00Z' };
+
+function adviceOnly(paragraphs: readonly unknown[]) {
+  return paragraphs.map(() => ({ basis: 'no_outcome_claim', wording: '', sourceQuote: '' }));
+}
 
 test('discussion opt-in belongs to the saved question and ordinary questions retain their wire shape', () => {
   assert.equal(originalChatMessageSchema.safeParse({ ...base, discussion: true }).success, true);
@@ -63,7 +67,7 @@ test('a question binds three successive native turns, the main reply and one ind
           const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (invalidClosing || truncateClosing ? 1 : 0);
           assert.deepEqual(payload.discussionRoles, ['knowledge','parent','methods'].slice(0, expected));
           assert.deepEqual(payload.paragraphs.slice(0,expected).map((p: { text: string }) => p.text), turns.slice(0,expected));
-          return { content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash:payload.draftHash, decision:'pass', issues:[], claimedAppChanges:[] }) }] }, finishReason:FinishReason.STOP };
+          return { content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash:payload.draftHash, decision:'pass', issues:[], claimedAppChanges:[], outcomeChecks:adviceOnly(payload.paragraphs) }) }] }, finishReason:FinishReason.STOP };
         }
         if (i > 0) assert.equal(previous?.contribution?.text, turns[i - 1]);
         const view = { text:turns[i], citationIds:[chunkId] };
@@ -119,7 +123,7 @@ test('a question binds three successive native turns, the main reply and one ind
         assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
         assert.ok(payload.outputContract.required.includes('claimedAppChanges'));
         return { content: { role: 'model', parts: [{ text: JSON.stringify({ decision: 'pass', issues: [],
-          claimedAppChanges: [], draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
+          claimedAppChanges: [], outcomeChecks: adviceOnly(payload.paragraphs), draftHash: payload.draftHash }) }] }, finishReason: FinishReason.STOP };
       }
       assert.ok(!('propose_fact' in request.toolsDict));
       if (i === 5) {
@@ -287,7 +291,7 @@ test('grounded discussions require speaker turns and may explicitly finish a sin
   assert.doesNotThrow(() => comparison.checkPresentation(true));
 });
 
-test('replays the reviewed Web discussion and rejects unsupported app changes in either a role or the main reply', async () => {
+async function archivedDiscussion() {
   const { reviewInput, reviewOutput } = JSON.parse(await readFile(
     new URL('../artifacts/verification/REQ009_DISCUSSION_REVIEW_REPLAY_20261120.json', import.meta.url), 'utf8'));
   const scope = { userId: 'parent', childId: base.childId, workspaceId: 'test-family', authorizationVersion: '1', dataVersion: 'epoch:1' };
@@ -298,8 +302,14 @@ test('replays the reviewed Web discussion and rejects unsupported app changes in
     sources: reviewInput.sources,
   };
   const presentation = { text: 'Test presentation', citations: [], retrievalMode: 'not_used' as const };
+  return { draft, presentation, reviewInput, reviewOutput, scope };
+}
+
+test('requires current paragraph checks and rejects unsupported app changes in a role or the main reply', async () => {
+  const { draft, presentation, reviewInput, reviewOutput, scope } = await archivedDiscussion();
   async function review(candidate: ChatDeliveryDraft, result: (payload: typeof reviewInput) => object) {
     const budget = new AgentBudget();
+    budget.take('modelCalls', budget.remainingModelCalls - 1);
     try {
       return await enforceChatDeliveryReview({ presentation,
         tools: { deliveryDraft: () => candidate, presentation: async () => presentation, replaceDeliveryAnswer: () => assert.fail('Unexpected discussion repair') },
@@ -307,13 +317,26 @@ test('replays the reviewed Web discussion and rejects unsupported app changes in
         provenance: { packVersion: 'test', model: 'recorded' } });
     } finally { budget.close(); }
   }
-  const replay = await review(draft, payload => { assert.deepEqual(payload, reviewInput); return reviewOutput; });
-  assert.equal(replay.review?.draftHash, reviewOutput.draftHash);
-
   const withClaim = (index: number, text: string) => ({ ...draft,
     paragraphs: draft.paragraphs.map((p, i) => i === index ? { ...p, text } : p) });
   const rejected = (reason: string) => (error: unknown) => error instanceof AgentStopped && error.reason === reason;
-  const pass = (draftHash: string, claimedAppChanges?: number[]) => ({ decision: 'pass', issues: [], draftHash, claimedAppChanges });
+  await assert.rejects(review(draft, payload => {
+    assert.deepEqual(payload.paragraphs, reviewInput.paragraphs);
+    assert.deepEqual(payload.sources, reviewInput.sources);
+    assert.equal(payload.draftHash, reviewOutput.draftHash);
+    return reviewOutput;
+  }), rejected('delivery_review_incomplete'));
+  const pass = (draftHash: string, claimedAppChanges?: number[]) => ({ decision: 'pass', issues: [], draftHash, claimedAppChanges, outcomeChecks: adviceOnly(draft.paragraphs) });
+  const wording = '這能延長共處時間而不構成對立';
+  const compare = (basis: string, sourceQuote: string) => review(draft, p => {
+    const verdict = pass(p.draftHash, []);
+    verdict.outcomeChecks[2] = { basis, wording, sourceQuote };
+    return verdict;
+  });
+  await assert.rejects(compare('unsupported_outcome', ''), rejected('delivery_review_budget'));
+  await assert.rejects(compare('source_supported', 'A result missing from the excerpt'), rejected('delivery_review_incomplete'));
+  await assert.rejects(compare('source_supported', '放工後只得十分鐘'), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), outcomeChecks: [] })), rejected('delivery_review_incomplete'));
   for (const index of [1, 4]) {
     // An implicit notification is still an external action; a citation cannot serve as its receipt.
     await assert.rejects(review(withClaim(index, '已經通知其他家庭成員。'), p => pass(p.draftHash, [index])), rejected('delivery_review_rejected'));
@@ -329,5 +352,64 @@ test('replays the reviewed Web discussion and rejects unsupported app changes in
     classification: 'private' as const, excerpt, excerptComplete: true };
   const workspace: ChatDeliveryDraft = { ...draft, kind: 'private_reference', sources: [workspaceSource], userRequest: '我登記了哪些孩子？',
     paragraphs: draft.paragraphs.map(() => ({ text: '你帳戶登記了小悠。', citationIds: [workspaceSource.citationId] })) };
-  await assert.rejects(review(workspace, p => ({ ...pass(p.draftHash, []), observedReadOnly: false })), rejected('delivery_review_rejected'));
+  await assert.rejects(review(workspace, p => ({ decision:'pass', issues:[], draftHash:p.draftHash, claimedAppChanges:[], observedReadOnly:false })), rejected('delivery_review_rejected'));
+});
+
+test('repairs the archived duration claim while preserving the original three speakers and the supported advice', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const { originalWithOutcomeChecks, corrected } = JSON.parse(await readFile(
+    new URL('../artifacts/verification/REQ009_DISCUSSION_OUTCOME_REVIEW_20261122.json', import.meta.url), 'utf8'));
+  const discussion = createQuestionDiscussion(async () => true, () => {});
+  for (const [index, tool] of discussion.tools.entries()) {
+    discussion.beginNativeTurn();
+    assert.equal((await tool.execute(draft.paragraphs[index], {} as never)).status, 'succeeded');
+  }
+  const next = agentAnswerSchema.parse({ kind: draft.kind, paragraphs: draft.paragraphs });
+  for (const { index, ...change } of corrected.paragraphChanges) Object.assign(next.paragraphs[index], change);
+  const flagged = new Set<number>(originalWithOutcomeChecks.verdict.issues.map((issue: { paragraph: number }) => issue.paragraph));
+  assert.equal(discussion.allowsRepair(next, flagged), true);
+  assert.equal(discussion.allowsRepair(next), false);
+  const fabricated = structuredClone(next);
+  fabricated.paragraphs[2].text = 'The reviewer invented this new contribution.';
+  assert.equal(discussion.allowsRepair(fabricated, flagged), false);
+  const reassigned = structuredClone(next);
+  [reassigned.paragraphs[1], reassigned.paragraphs[2]] = [reassigned.paragraphs[2], reassigned.paragraphs[1]];
+  assert.equal(discussion.allowsRepair(reassigned, flagged), false);
+  const recited = structuredClone(next);
+  recited.paragraphs[2].citationIds = ['page-item'];
+  assert.equal(discussion.allowsRepair(recited, flagged), false);
+
+  const budget = new AgentBudget();
+  let current = draft;
+  const steps: string[] = [];
+  try {
+    const result = await enforceChatDeliveryReview({ context: { budget, scope, completeText: async ({ user, purpose }) => {
+      budget.take('modelCalls');
+      steps.push(purpose!);
+      const payload = JSON.parse(user.slice(user.indexOf('{')));
+      if (steps.length === 1) return JSON.stringify(originalWithOutcomeChecks.verdict);
+      if (purpose === 'delivery_repair') return JSON.stringify(next);
+      assert.deepEqual(payload.discussionRoles, ['knowledge', 'parent', 'methods']);
+      assert.deepEqual(payload.previousDraft.paragraphs.map((p: { text: string }) => p.text), draft.paragraphs.map(p => p.text));
+      assert.deepEqual(payload.repairIssues, originalWithOutcomeChecks.verdict.issues);
+      // The paired live control used the same wording; the repair replay needs its own context-bound hash.
+      return JSON.stringify({ ...corrected.verdict, draftHash: payload.draftHash });
+    } } as AgentRunContext, presentation, provenance: { packVersion:'test', model:'recorded' },
+      tools: { deliveryDraft: () => current, presentation: async () => ({ ...presentation, ...discussion.render(current.paragraphs.map(p => p.text)) }),
+        bindRepairEvidence: () => async () => true,
+        replaceDeliveryAnswer(answer, flaggedIndices) {
+          assert.deepEqual(flaggedIndices, new Set([1, 2]));
+          assert.ok(discussion.allowsRepair(answer, flaggedIndices));
+          current = { ...draft, ...answer };
+        } } });
+    assert.deepEqual(steps, ['delivery_review','delivery_repair','delivery_review']);
+    assert.deepEqual(result.presentation.discussion?.map(p => p.text), next.paragraphs.slice(0,3).map(p => p.text));
+    assert.match(result.presentation.text, /一本藍色圖畫書和一個沙槌/u);
+    assert.equal(result.review?.decision, 'pass');
+    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/1');
+    assert.equal(chatDeliveryReviewAllows(result.review!, current, result.review!.promptVersion,
+      { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), true);
+    assert.equal(chatDeliveryReviewAllows({ ...result.review!, policyVersion:'p3-m01-chat-delivery-review/2' }, current, result.review!.promptVersion,
+      { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), false);
+  } finally { budget.close(); }
 });

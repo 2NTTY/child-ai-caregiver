@@ -1666,9 +1666,9 @@ export function createProductAgentTools(options: {
       // Confirmed memory may appear in sources as review evidence; it never sets a review skip.
       return draft;
     },
-    replaceDeliveryAnswer(next: unknown) {
+    replaceDeliveryAnswer(next: unknown, flaggedParagraphs?: ReadonlySet<number>) {
       const parsed = agentAnswerSchema.parse(next);
-      if (discussion && !discussion.allowsRepair(parsed)) throw new AgentStopped('delivery_review_incomplete');
+      if (discussion && !discussion.allowsRepair(parsed, flaggedParagraphs)) throw new AgentStopped('delivery_review_incomplete');
       acceptPresentedAnswer(parsed);
       answer = parsed;
       serverReceiptText = null;
