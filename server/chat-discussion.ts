@@ -49,16 +49,17 @@ export function assembleDiscussionRepair<T extends { text: string }>(
 }
 
 export type DiscussionPresentationStage = 'speaker' | 'closing';
-export function closingDiscussionDeclaration(declaration: FunctionDeclaration): FunctionDeclaration {
+export function closingDiscussionDeclaration(declaration: FunctionDeclaration, includeSpeaker: boolean): FunctionDeclaration {
   const fields = declaration.parameters?.properties;
   if (declaration.name !== 'present_answer' || !fields?.closingView) return declaration;
   const paragraphs = fields.paragraphs;
+  const { closingView, ...mainFields } = fields;
   // Text paragraphs in a mixed main answer need individual kinds. Verbatim history quotes keep their own shape.
   const forms = paragraphs?.items?.anyOf?.map(form => form.properties?.kind
     ? { ...form, required: [...new Set([...(form.required ?? []), 'kind'])] } : form);
   return { ...declaration, parameters: { ...declaration.parameters,
-    required: [...new Set([...(declaration.parameters?.required ?? []), 'closingView'])],
-    properties: { ...fields, ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
+    required: [...new Set([...(declaration.parameters?.required ?? []), ...(includeSpeaker ? ['closingView'] : [])])],
+    properties: { ...mainFields, ...(includeSpeaker && {closingView}), ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
   } };
 }
 const speakerParameters = viewpointParameters.extend({
@@ -78,11 +79,11 @@ export class DiscussionMainTooLong extends FamilyError {
   }
 }
 const viewpoints = [
-  '從已讀教材揀一個具體做法，用自己的完整一句說清楚你會在甚麼情況試。沿用 reusedOfficialEvidence 的 presentation 引用該教材；主答會交代 selectedItem 的家庭事實。只有缺少所需原文時才補讀。你是 AI，不自稱有親身經驗。',
+  '從已讀教材揀一個具體做法，用「我會……」的一句說清楚你會在甚麼情況試，讓下一席可以回應。沿用 reusedOfficialEvidence 的 presentation 引用該教材。教材只列舉做法時，發言可以在做法說完時結束，毋須另推斷孩子的狀態或保證成效。主答會交代 selectedItem 的家庭事實。你是 AI，不自稱有親身經驗。',
   '站在新手家長的位置，接住上一席的具體做法，直接用一句完整的問句提出實行時會遇到的選擇。可以問「如果……我該怎樣選？」保留假設語氣，把家長的感受和做法的成效分開。你是 AI，不虛構經驗或替家長認定感受。',
   '接住上一席的疑問，用一句完整的說話交代兩個選擇，以及看見甚麼時會改選。說清楚這是你會怎樣嘗試。若要補充研究或成效，另起完整一句，只說引用原文確實支持的結果。你是 AI，不冒稱有親身育兒經驗。',
 ];
-export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每位各用一個原生回合，直接回應上一位工具傳回的發言。最後一位在 present_answer 的 closingView 提交自己的發言，在 paragraphs 同時提交可獨立閱讀的主回答及引用。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
+export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每席按當前工具直接回應上一席。主助手另用 paragraphs 提交可獨立閱讀的主回答及引用。若本輪要求合併收尾，在 closingView 放當前角色的原話。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
 
 // Keep whole clauses from one speaker. The subsequent review also receives the original wording and issues.
 function isContributionExcerpt(original: string, replacement: string): boolean {
@@ -121,10 +122,10 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
       paragraphs.push(paragraph);
       noTradeoff ||= endDiscussion === 'no_tradeoff';
       return { status: 'succeeded', data: { speaker: discussionLabels[role], contribution: paragraph,
-        next: !noTradeoff && paragraphs.length < 2 ? discussionToolNames[paragraphs.length] : 'present_answer',
+        ...(!noTradeoff && paragraphs.length === 2 ? {} : { next: noTradeoff ? 'present_answer' : discussionToolNames[paragraphs.length] ?? 'present_answer' }),
         maxMainParagraphs: maxMainParagraphs() - (paragraphs.length === 2 ? 1 : 0),
         instruction: noTradeoff ? '已說明這題只有單一做法。用 paragraphs 提交主回答。'
-          : paragraphs.length === 2 ? viewpoints[2] + ' 用 closingView 發言，paragraphs 另寫主回答。'
+          : paragraphs.length === 2 ? viewpoints[2] + ' 按下一輪開放的工具提交這席發言。'
           : viewpoints[paragraphs.length] ?? '主助手直接回答家長，引用已讀證據，可保留條件和分歧。' } };
     },
   }));
@@ -147,10 +148,10 @@ export function createQuestionDiscussion(authorize: () => Promise<boolean>, vali
     roles: () => discussionRoles.slice(0, paragraphs.length),
     instruction: (finishing: boolean) => noTradeoff ? '已交付的觀點指出這一題沒有可比較的選擇。現在用 present_answer 的 paragraphs 直接回答，不再加角色。' : discussionInstruction + ' 每位只講一兩句，直接回應上一位。用香港繁體中文，只有來源直接比較成效，才可聲稱某種做法較有效。' + (paragraphs.length < discussionRoles.length
       ? ' 現在輪到「' + discussionLabels[discussionRoles[paragraphs.length]] + '」。' + viewpoints[paragraphs.length]
-        + (finishing || paragraphs.length === 2
+        + (finishing
           ? ' 現在單獨使用 present_answer。closingView 只填當前角色的觀點及引用。paragraphs 另寫可獨立閱讀的主回答，逐項回答家長原題。所選項目的事實及官方教材的建議各自成段，填相應 kind 和 citationIds。'
           : ' 使用 ' + discussionToolNames[paragraphs.length] + ' 提交此觀點和適用引用。')
-      : ' 三位已經發言。現在以主助手身份直接回答，交代建議及選擇條件，主回答最多 ' + maxMainParagraphs() + ' 段。')
+      : ' 三位已經發言。現在只填 present_answer 的主回答 paragraphs，逐項回答家長原題。待辦事實和官方建議各自成段，分別引用 selectedItem 和官方片段。主回答最多 ' + maxMainParagraphs() + ' 段。')
       + ' 先前的發言已保留，毋須重複。',
     closingParagraph(view: z.infer<typeof viewpointParameters>) {
       if (paragraphs.length >= discussionRoles.length || paragraphs.length !== speakerAtRequestStart) throw new FamilyError(400, 'discussion_turn_order');

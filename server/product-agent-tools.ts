@@ -1079,7 +1079,7 @@ export function createProductAgentTools(options: {
               const kind = paragraph.kind ?? wire.kind;
               const attachedId = options.pageEvidence?.source.citationId;
               // A read-only closing can restate the selected item. Keep action claims on the receipt path.
-              if (closing && wire.kind === 'mixed' && kind === 'operation' && attachedId
+              if ((closing || discussion?.remainingSpeakers() === 0) && wire.kind === 'mixed' && kind === 'operation' && attachedId
                 && paragraph.citationIds.length === 1 && paragraph.citationIds[0] === attachedId
                 && !hasOperationOrStateAssertion(paragraph.text)) {
                 return { ...paragraph, kind: 'private_reference' };

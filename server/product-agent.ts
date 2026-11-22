@@ -668,7 +668,11 @@ export function createProductAgent(options: {
           endedEarly: () => tools?.discussionEndedEarly() ?? false,
           instruction: (finishing: boolean) => tools?.discussionInstruction?.(finishing) ?? discussionInstruction,
           remainingSpeakers: () => tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length,
-          readyToClose: () => seededOfficialEvidence.length > 0 && (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) <= 1,
+          readyToClose: available => {
+            const speakers = tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length;
+            // A separate last speaker needs a main answer, review and room for one repair and re-review.
+            return seededOfficialEvidence.length > 0 && (speakers === 0 || speakers === 1 && available < 5);
+          },
           hasContributions: () => (tools?.remainingDiscussionSpeakers?.() ?? discussionToolNames.length) < discussionToolNames.length,
           toolAvailable: name => !discussionToolNames.some(tool => tool === name) || name === tools?.nextDiscussionTool?.(),
           isDraftRejection: isDiscussionDraftRejection,

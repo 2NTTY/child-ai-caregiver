@@ -57,6 +57,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const provider: import('../server/agent-model-gateway.ts').AgentModelProvider = { generate: async request => {
       const i = calls++, inputs = request.contents.flatMap(c => c.parts ?? []);
       if (modelLimit !== 7) {
+        const separateMain = (dailySlots ?? modelLimit) >= 7;
         if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"passage":' + JSON.stringify(chunk.text))),
           'a reused citation must carry the revalidated passage containing the activity choices');
         if (i === 0) assert.ok(inputs.some(p => p.text?.includes('"presentation":{"kind":"caregiving","citationIds":["' + chunkId + '"]}')));
@@ -65,20 +66,21 @@ test('a question binds three successive native turns, the main reply and one ind
           .findLast(p => p?.contribution);
         if (review) {
           const payload = JSON.parse(review.slice(review.indexOf('{')));
-          const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (invalidClosing || truncateClosing ? 1 : 0);
+          const expected = Math.min(3, (dailySlots ?? modelLimit) - 1) - (!separateMain && (invalidClosing || truncateClosing) ? 1 : 0);
           assert.deepEqual(payload.discussionRoles, ['knowledge','parent','methods'].slice(0, expected));
           assert.deepEqual(payload.paragraphs.slice(0,expected).map((p: { text: string }) => p.text), turns.slice(0,expected));
           return { content: { role: 'model', parts: [{ text: JSON.stringify({ draftHash:payload.draftHash, decision:'pass', issues:[], claimedAppChanges:[], outcomeChecks:adviceOnly(payload.paragraphs) }) }] }, finishReason:FinishReason.STOP };
         }
         if (i > 0) assert.equal(previous?.contribution?.text, turns[i - 1]);
         const view = { text:turns[i], citationIds:[chunkId] };
-        const finish = i === Math.min(2, (dailySlots ?? modelLimit) - 2);
+        const finish = i === (separateMain ? 3 : Math.min(2, (dailySlots ?? modelLimit) - 2));
         const name = finish ? 'present_answer' : discussionToolNames[i];
         const allowed = request.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames ?? [];
         if (finish) {
           assert.deepEqual(Object.keys(request.toolsDict), ['present_answer']);
           const declaration = request.config?.tools?.flatMap(t => 'functionDeclarations' in t ? t.functionDeclarations ?? [] : []).find(d=>d.name==='present_answer');
-          assert.ok(declaration?.parameters?.required?.includes('closingView'));
+          assert.equal(!!declaration?.parameters?.properties?.closingView,!separateMain);
+          assert.equal(!!declaration?.parameters?.required?.includes('closingView'),!separateMain);
           const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
           assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
           assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
@@ -91,7 +93,7 @@ test('a question binds three successive native turns, the main reply and one ind
         if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
         const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
           {text:main[1] + ' [1]', citationIds:[chunkId]}],
-          closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } } : view;
+          ...(!separateMain && { closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } }) } : view;
         if (modelLimit === 6) await new Promise(resolve => setTimeout(resolve, 5));
         return {content:{role:'model',parts:[{functionCall:{id:'discussion-'+i,name,args}}]},finishReason:FinishReason.STOP,
           ...(modelLimit === 6 && i === 1 && {usageMetadata:{promptTokenCount:16500,totalTokenCount:16600}})};
@@ -240,14 +242,21 @@ test('a question binds three successive native turns, the main reply and one ind
     assert.equal(calls, 3);
   }
   invalidClosing = false;
-  truncateClosing = true; modelLimit = 8; claimed = false; calls = 0;
+  modelLimit = 8; claimed = false; calls = 0;
+  const separate = await reply();
+  assert.equal(separate?.status,'completed',JSON.stringify(separate));
+  assert.deepEqual(separate.discussion,capped.discussion);
+  assert.equal(separate.text,capped.text);
+  assert.deepEqual(separate.tools.map(t => t.name),[...discussionToolNames,'present_answer']);
+  assert.equal(calls,5);
+  truncateClosing = true; claimed = false; calls = 0;
   const truncated = await reply();
   assert.equal(truncated?.status, 'completed', JSON.stringify(truncated));
-  assert.deepEqual(truncated.discussion, capped.discussion?.slice(0,2));
+  assert.deepEqual(truncated.discussion, capped.discussion);
   assert.equal(truncated.text, capped.discussion?.[0].text);
   assert.equal(truncated.deliveryReview?.decision, 'pass');
   assert.deepEqual(await reply(), truncated);
-  assert.equal(calls, 4);
+  assert.equal(calls, 5);
   truncateClosing = false;
   dailySlots = 3; claimed = false; calls = 0;
   const dailyLimited = await reply();
