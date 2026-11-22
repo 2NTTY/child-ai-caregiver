@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-217-image-count",
+  "base": {
+    "artifact": "candidate-215/out",
+    "htmlSha256": "0c81e6ea633b833c56e3d61c6b0f19284e307df9b2e1a4c526a2ad29b13683fd",
+    "rawRecordsSha256": "0d854f6e6333d4892c096da347e246884d7e983aa8b609b514bd0f5449989551",
+    "rawArtworkSha256": "e29bd8934730e59a8824df10044e54bb0d6c0726b33958aede19b8668aea5d9c",
+    "topics": 106,
+    "choices": 215,
+    "images": 215
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-task-day/assets.json",
+      "sha256": "5e01db80edaab512f7512bd9ea534fd610a8662837fc63f24e3de01fb3900c7f"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b72c91ee3abe524bd9c944261d1bd09afbb4ea96aca969f3a0c38b5593f3bd5e",
+    "PROVENANCE.md": "e195499c0cc156d16fbf0477b341d4fd155a595337d86d3e1bc753492cb0b196"
+  },
+  "topics": [
+    {
+      "number": 107,
+      "title": "待辦月曆：點一天，再回到原來範圍",
+      "choices": [
+        {
+          "name": "月曆在上，當日清單在下",
+          "note": "Fossify 把所選日的活動列在月曆下。育伴港則以所選日期暫代待處理範圍，保留原本的搜尋字；按「取消日期」回到原範圍。只篩選已載入的到期事項，包括待處理預約及待覆核，並非新增活動或完整日程。",
+          "links": [
+            {
+              "label": "Fossify Calendar 1.12.2：月曆及所選日列表",
+              "url": "https://github.com/FossifyOrg/Calendar/blob/0a936ec8c43b669ffb0a8c29b0d08347066a75ae/app/src/main/res/layout/fragment_month_day.xml#L6-L69"
+            },
+            {
+              "label": "選日後以事件日期重疊更新列表",
+              "url": "https://github.com/FossifyOrg/Calendar/blob/0a936ec8c43b669ffb0a8c29b0d08347066a75ae/app/src/main/kotlin/org/fossify/calendar/fragments/MonthDayFragment.kt#L97-L141"
+            },
+            {
+              "label": "原生日期外圈及其他日期的事件標記",
+              "url": "https://github.com/FossifyOrg/Calendar/blob/0a936ec8c43b669ffb0a8c29b0d08347066a75ae/app/src/main/kotlin/org/fossify/calendar/views/MonthView.kt#L190-L268"
+            },
+            {
+              "label": "Fossify Calendar 程式授權：GNU GPL v3 · GPL-3.0",
+              "url": "https://github.com/FossifyOrg/Calendar/blob/0a936ec8c43b669ffb0a8c29b0d08347066a75ae/LICENSE#L1-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-day/task-day-a.png",
+            "sha256": "d4e87316b95b0eba3b48420b206eaaf51784d02b5258ccc2addb792ae48e2183",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Fossify Calendar 橫向 Android 全頁重繪。上方月曆以綠色外圈選定十二月十七日，其他部分日期有小圓點；下方日期標題和五筆合成紙藝展活動對應。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "右側小月曆和當日議程",
+          "note": "Thunderbird 右側今日面板選了非今日的日期，清單只列當天事件，主月曆仍在旁邊。育伴港則以所選到期日取代待處理範圍，與目前搜尋文字同時套用；「取消日期」會回到原範圍並保留搜尋。只篩選已載入的待辦，不新增、修改或重新讀取。",
+          "links": [
+            {
+              "label": "Thunderbird 159.0：行事曆與右側今日面板同頁",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/messenger.xhtml#L554-L597"
+            },
+            {
+              "label": "同版：主行事曆的日期導覽及月份檢視",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/calendar-tab-panels.inc.xhtml#L265-L363"
+            },
+            {
+              "label": "同版：今日面板的小月曆",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/calendar-today-pane.inc.xhtml#L47-L63"
+            },
+            {
+              "label": "同版：小月曆日期用於今日面板",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/today-pane.js#L373-L402"
+            },
+            {
+              "label": "同版：選非今日時只列當日事件",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/today-pane-agenda.js#L168-L192"
+            },
+            {
+              "label": "Thunderbird 所列今日面板來源授權：MPL-2.0",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/calendar-today-pane.inc.xhtml#L1-L16"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-day/task-day-b.png",
+            "sha256": "a47b68078d03de1d8d41e9b0f7a88ba6e21ac9424f45b909dbb92bb03d7f75d1",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Thunderbird 行事曆的非官方全頁重繪。中央保留十一月月曆；右側今日面板的小月曆選中二十四日，下方只列出該日三項合成展板事件。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 107 題 · 由月曆讀當日清單的兩幅自製示意",
+      "input": "draft-task-day/DECLARATION.txt",
+      "sha256": "b72c91ee3abe524bd9c944261d1bd09afbb4ea96aca969f3a0c38b5593f3bd5e"
+    }
+  ]
+}
