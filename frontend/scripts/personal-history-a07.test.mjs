@@ -53,17 +53,7 @@ function harness() {
 }
 const deferred = () => { let resolve; const promise = new Promise(next => { resolve = next; }); return { promise, resolve }; };
 
-test("scoped personal reads reject late results and retain bounded scan and original-message coverage", async () => {
-  const h = harness(), requests = [], historyRequests = [], messageRequests = [];
-  let live = true;
-  const work = { id: randomUUID(), childId, version: 1, goal: "Synthetic goal", focus: "Synthetic focus", questions: ["Synthetic question"],
-    sourceMessageIds: [messageId], resources: [], pending: [], status: "waiting", followUp: null, createdAt: time, updatedAt: time };
-  const api = {
-    async getWork() { return { items: [work], nextCursor: "work-next", complete: false }; },
-    async getLibrary() { return { items: [], nextCursor: null, complete: true }; },
-    searchHistory(...args) { const result = deferred(); historyRequests.push({ args, ...result }); return result.promise; },
-    readHistory(...args) { const result = deferred(); messageRequests.push({ args, ...result }); return result.promise; },
-  };
+function mountPersonalReads(h, api, current = () => true) {
   const runtime = compile("../src/production/task-knowledge-runtime.ts", name => {
     if (name === "react") return h.react;
     if (name === "../../../src/client/online-refresh-events") return { subscribeOnlineRefresh: () => () => {} };
@@ -79,10 +69,50 @@ test("scoped personal reads reject late results and retain bounded scan and orig
     assert.fail("Unexpected owner dependency " + name);
   });
   const queryClient = { setQueryDefaults() {}, cancelQueries() {}, removeQueries() {},
-    fetchQuery: ({ queryFn }) => { const controller = new AbortController(); requests.push(controller); return queryFn({ signal: controller.signal }); } };
+    fetchQuery: ({ queryFn }) => queryFn({ signal: new AbortController().signal }) };
   const env = { owner: { fetcher: fetch }, identityKey: userId, scopeKey, childId, childName: "Synthetic child", userId, online: true, apiBaseUrl: "", queryClient,
-    current: () => live, accessError() {} };
-  let owner = h.mount(() => ownerModule.usePersonalHistory(env)); owner = await h.settle();
+    current, accessError() {} };
+  h.mount(() => ownerModule.usePersonalHistory(env));
+}
+
+test("the open catalog receives each additional page while a refresh keeps its existing snapshot", async () => {
+  const h = harness(), pending = [];
+  mountPersonalReads(h, {
+    async getWork() { return { items: [], nextCursor: null, complete: true }; },
+    getLibrary(_child, _signal, _user, cursor) { const read = deferred(); pending.push({ cursor, ...read }); return read.promise; },
+  });
+  const page = (title, nextCursor) => ({ items: [{ sourceId: title, title }], nextCursor, complete: nextCursor === null });
+  pending[0].resolve(page("Vision", "page-2"));
+  (await h.settle()).actions.allReferences();
+  pending[1].resolve(page("Learning through play", "page-3"));
+  let owner = await h.settle();
+  assert.equal(pending[2].cursor, "page-3");
+  assert.deepEqual(owner.references.data.catalog.map(item => item.title), ["Vision", "Learning through play"]);
+  assert.equal(owner.references.data.hasMore, true);
+  pending[2].resolve(page("School preparation", null));
+  owner = await h.settle();
+  assert.equal(owner.references.data.hasMore, false);
+  const complete = owner.references.data;
+  owner.actions.refresh();
+  pending[3].resolve(page("Updated vision", "new-2"));
+  assert.equal((await h.settle()).references.data, complete);
+  pending[4].resolve(page("Updated play", null));
+  assert.deepEqual((await h.settle()).references.data.catalog.map(item => item.title), ["Updated vision", "Updated play"]);
+  h.unmount();
+});
+
+test("scoped personal reads reject late results and retain bounded scan and original-message coverage", async () => {
+  const h = harness(), historyRequests = [], messageRequests = [];
+  let live = true;
+  const work = { id: randomUUID(), childId, version: 1, goal: "Synthetic goal", focus: "Synthetic focus", questions: ["Synthetic question"],
+    sourceMessageIds: [messageId], resources: [], pending: [], status: "waiting", followUp: null, createdAt: time, updatedAt: time };
+  mountPersonalReads(h, {
+    async getWork() { return { items: [work], nextCursor: "work-next", complete: false }; },
+    async getLibrary() { return { items: [], nextCursor: null, complete: true }; },
+    searchHistory(...args) { const result = deferred(); historyRequests.push({ args, ...result }); return result.promise; },
+    readHistory(...args) { const result = deferred(); messageRequests.push({ args, ...result }); return result.promise; },
+  }, () => live);
+  let owner = await h.settle();
   assert.equal(owner.shortTerm.data.works[0], work); assert.equal(owner.shortTerm.data.hasMoreWorks, true);
   assert.equal(projection.personalHistoryScopeMatches("different-child", owner), false);
   owner.actions.searchHistory(""); owner = h.render();

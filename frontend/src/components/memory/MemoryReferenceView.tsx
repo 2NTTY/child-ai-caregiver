@@ -292,6 +292,8 @@ function CatalogDetail({ items, workspace, initialSection, onClose, onJoin, main
         {managed && categories.length > 0 ? <CatalogChoice label="分類" value={category} onChange={setCategory}
           options={[{ value: 'all', label: '全部' }, ...categories.map(value => ({ value, label: value }))]}
           action={!onJoin && !busy && managed.adopted < managed.total ? <PlatformCardJoin seriesId={series.id} compact /> : undefined} /> : null}
+        {workspace.model.references.state === 'ready' && workspace.model.references.data?.hasMore
+          ? <Text accessibilityLiveRegion="polite" style={styles.meta}>正在載入其餘教材…</Text> : null}
         {originals.length ? <View style={styles.section}>
           <AppButton label={`待收錄的官方原文（${originals.length}）`} variant="quiet" density="compact" expanded={showOriginals} onPress={() => setShowOriginals(!showOriginals)} />
           {showOriginals ? originals.map(link => <View key={link.sourceId} style={styles.materialRow}>
