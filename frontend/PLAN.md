@@ -4,6 +4,8 @@
 
 <a id="active"></a>
 
+**角色指向已保存記錄及文件（2026-11-22，本機正式模式 Web）。** 同一位合成家長在照護詳情和準備單詳情各問「這個」，瀏覽器送出的選取、保存的訊息及伺服器讀回的原文均對上第 2 版，準備單亦對上該版快照。兩次從角色打開全文後都能在主聊天追問，下一輪收到原問題、原回答的訊息 ID 及回答全文。直接切換到另一則記錄後只讀到新選取；關閉兩種詳情後再問，兩則訊息都只帶頁面。照護清單的助手要求選回記錄；準備單清單的原運行達本機每日用量上限，已查回終態，這一問的澄清文字待驗。已修正把拓印上的「兩片葉」當成藥量的問題。使用本機測試提供者。[七則訊息、版本及原運行收據](verification/companion-record-document-2026-11-22/receipt.json)
+
 **角色切頁閃爍（2026-11-22，本機正式模式 Web）。** 窄屏從待辦進入助手頁，原版將舊工作區高度套到新工具列，角色先放大至 690 px。第 10 個合成畫格只餘腳下陰影，連續 8 格看不到角色，iframe 仍在。統一由頁面提供尺寸後比例恢復，但 WebGL 畫布改尺寸時仍有 6 格空白。現由同一組版面尺寸控制位置及命中區，Web 只縮放固定畫布。相同五次切頁在窄屏 212 格及桌面 131 格都保留可見角色和原 WebGL 實例。另實際保存兩則本機測試訊息，待辦帶原項目，關注頁沿用同一孩子並清除舊項目。正式站及 Android 發布交主聊天。[首個空白畫格](verification/companion-route-2026-11-22/first-missing.jpg) · [修正前慢放](verification/companion-route-2026-11-22/touch-before.webp) · [修正後慢放](verification/companion-route-2026-11-22/touch-after.webp) · [桌面慢放](verification/companion-route-2026-11-22/desktop-after.webp) · [逐格量度](verification/companion-route-2026-11-22/receipt.json)
 
 **Zundamon 對話表情及臉旁氣泡（2026-11-22）。** 送出時點頭，等候小點在臉頰旁原位換成短答或長答開首。空白輸入列和有字時的送出共用同一按鈕位置。桌面 1280 × 800 及觸控 390 × 844 各以連續 20 幀驗收，窄屏把可視區收至 510 px。兩端從等候到長答，輸入列及角色位置均無位移；角色靠左右兩邊、實際錄音時的聆聽、保留下一句及返回安靜助手頁均已核對。角色說話中途切換系統「減少動畫」時，實際嘴形參數回到零並停止更新。每端兩則文字及一段直接送出的語音保存到原孩子和原待辦，試聽後捨棄為零上傳。回覆來自本機合成資料，咪高峰及鍵盤可視區以 Edge 模擬，真機待驗。發布交主聊天。[桌面連續畫面](verification/zundamon-dialogue-2026-11-22/desktop.webp) · [窄屏連續畫面](verification/zundamon-dialogue-2026-11-22/touch.webp) · [桌面量度](verification/zundamon-dialogue-2026-11-22/desktop.json) · [窄屏量度](verification/zundamon-dialogue-2026-11-22/touch.json)
