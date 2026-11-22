@@ -1,4 +1,4 @@
-import { bindRepairSourceChecks } from "./agent-evidence-reuse.ts";
+import { bindRepairSourceChecks, comparableCardPassages } from "./agent-evidence-reuse.ts";
 import { AgentTaskTimeError, agentTaskTime, resolveAgentTaskTime } from './agent-task-time.ts';
 import { materialQuery, selectedMaterialCitations, type MaterialQuery, type MaterialRef, type MaterialCitationPage } from '../src/shared/assistant-material-citation.ts';
 import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-agent.ts';
@@ -241,6 +241,21 @@ export function createProductAgentTools(options: {
   const liveReader = options.background || options.mixedTasks || options.reviewedGrowthPresentation || options.visibility === 'family' ? undefined
     : typeof options.liveSourceReader === 'function' ? options.liveSourceReader(scope.userId) : options.liveSourceReader;
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
+  const comparisonPeers = new Map<string, Set<string>>();
+  const checkedSeedComparisons = new Set<string>();
+  function recordComparisons(chunks: readonly KnowledgeEvidence[]) {
+    const compared = [];
+    for (const chunk of chunks) {
+      const peers = chunks.filter(other => comparableCardPassages(chunk, other));
+      if (!peers.length) continue;
+      const known = comparisonPeers.get(chunk.chunkId) ?? new Set<string>();
+      for (const peer of peers) known.add(peer.chunkId);
+      comparisonPeers.set(chunk.chunkId, known);
+      compared.push({ chunkId: chunk.chunkId, title: chunk.title, section: chunk.section,
+        conditions: chunk.applicability.conditions, sourceExcerpt: chunk.sourceExcerpt });
+    }
+    return compared;
+  }
   const memoryGrounding = new Map<string, { fact: MemoryFact; source: ChatDeliverySource }>();
   let groundingLoaded = false;
   let recalledFactsValidUntil = Infinity;
@@ -500,12 +515,19 @@ export function createProductAgentTools(options: {
     for (const fact of facts) if (usableMemoryFact(fact) && fact.validUntil) noteRecallExpiry(fact.validUntil);
     noteConfirmedMemoryFacts(facts);
   }
-  function sourcesForDelivery(value: AgentAnswer, quotes: ReadonlyMap<string, string>) {
+  function sourcesForDelivery(value: AgentAnswer, quotes: ReadonlyMap<string, string>, boundComparisonIds?: ReadonlySet<string>) {
     const sources: ChatDeliverySource[] = [], facts: MemoryFact[] = [];
     const cited = value.paragraphs.flatMap(paragraph => paragraph.citationIds);
-    // The reviewer needs the actual preceding subject to interpret a subjectless reply.
-    // A chronological neighbour is context, never an automatic claim or a citation in the parent's answer.
-    for (const id of new Set(cited.flatMap(id => [id, ...(precedingHistoryMatch.has(id) ? [precedingHistoryMatch.get(id)!] : [])]))) {
+    // Context for review stays separate from the citations actually shown to the parent.
+    const reviewIds = new Set(cited);
+    for (const id of cited) {
+      const subject = precedingHistoryMatch.get(id);
+      if (subject) reviewIds.add(subject);
+      for (const peer of comparisonPeers.get(id) ?? []) {
+        if (!boundComparisonIds || boundComparisonIds.has(peer)) reviewIds.add(peer);
+      }
+    }
+    for (const id of reviewIds) {
       const source = deliverySource(id, quotes);
       if (source) sources.push(source);
     }
@@ -614,6 +636,10 @@ export function createProductAgentTools(options: {
             ? '本輪仍是育兒知識席。選一份已讀教材，從中提出你會試的一個做法及時機，交在 text；kind 填 caregiving，citationIds 只填該教材的 chunkId。待辦物品留到主答另一段交代。'
             : '回答家長選取的項目時，只把原文支持的內容寫入該段，再按 selectedItemCitation 填 kind 和 citationIds。其他記錄用相應工具的引用，照護建議另段引用已讀官方片段。' } };
       }
+      if (error instanceof FamilyError && error.code === 'knowledge_question_changed') return { status: 'rejected', data: {
+        code: error.code, nextAction: '先按本輪所問的活動或條件查找教材。用不含私人資料的本輪主題呼叫 find_official_material 或 search_knowledge，讀取相關原段後再回答。' } };
+      if (error instanceof FamilyError && error.code === 'knowledge_comparison_required') return { status: 'rejected', data: {
+        code: error.code, nextAction: '這次引用來自舊答，同卡還有你在本輪未讀的同範圍原段。用 find_official_material 或 search_knowledge 搜尋本輪所問活動及條件，對照兩份教材後才提交。若有明示取代，寫應跟哪份及具體做法，再引出版者原句說明適用範圍。' } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
         nextAction: !hasOfficialEvidence && selectedOfficialHelp.size > 0
@@ -644,7 +670,7 @@ export function createProductAgentTools(options: {
     }
   }
   const permitted = async () => authorize();
-  function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes) {
+  function acceptPresentedAnswer(parsed: AgentAnswer, quotes: ReadonlyMap<string, string> = originalQuotes, boundComparisonIds?: ReadonlySet<string>) {
     if (parsed.paragraphs.some(paragraph => [CHILD_PROFILES_CHAT_TEXT, ACCOUNT_DIRECTORY_ANSWER].includes(paragraph.text.trim()))) {
       throw new FamilyError(400, 'invalid_input');
     }
@@ -727,7 +753,7 @@ export function createProductAgentTools(options: {
     }
     if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
     // Give a text-only history answer a chance to repair its own citation before the terminal tool exits.
-    const selected = sourcesForDelivery(parsed, quotes);
+    const selected = sourcesForDelivery(parsed, quotes, boundComparisonIds);
     const boundDraft = { ...candidateDraft, sources: selected.sources };
     if (options.pageEvidence && requiresChatDeliveryReview(boundDraft) && chatDeliveryPassNeedsSources(boundDraft, deliveryReview)) {
       const missing = parsed.paragraphs.flatMap((paragraph, index) => chatDeliveryPassNeedsSources({
@@ -767,13 +793,19 @@ export function createProductAgentTools(options: {
     const chart = item.chunk.readCoverage?.kind === 'reviewed_visual_page' && isReviewedChartPage(item.chunk)
       ? {sourceId:item.chunk.sourceId,versionHash:item.chunk.versionHash,pdfHash:item.chunk.extraction!.contentHash,
         physicalPage:item.chunk.excerptPage!,purpose:'original_lookup' as const,fields:item.chunk.chartFields ?? []} : undefined;
-    const body = quote ? quote + '\n\n' + item.chunk.text : item.chunk.text ?? "";
+    const text = item.chunk.text ?? "";
+    const comparisonQuote = !chart && comparisonPeers.has(id) && !text.includes(item.chunk.sourceExcerpt)
+      ? item.chunk.sourceExcerpt : undefined;
+    const excerptToReview = quote || comparisonQuote;
+    const body = excerptToReview ? excerptToReview + '\n\n' + text : text;
     const excerpt = item.chunk.readCoverage ? chatDeliveryReviewSourceExcerpt(body) : chatDeliveryExcerpt(body);
     const supplied = item.chunk.contentHash ?? "";
     return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
       contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
       classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
-      ...(chart && {chart}), excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
+      ...(chart && { chart }),
+      libraryPassage: { title: item.chunk.title, section: item.chunk.section, conditions: item.chunk.applicability.conditions },
+      excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
   }
   function registerWorkspaceEvidence(id: string, data: Record<string, unknown>) {
     const json = JSON.stringify(data);
@@ -806,6 +838,8 @@ export function createProductAgentTools(options: {
     }
     if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
     for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+    // Keep both already-read materials available to the reviewer even if the draft cites only one.
+    const compare = options.background || options.reviewedGrowthPresentation ? [] : recordComparisons(result.chunks);
     if (result.chunks.length > 0) {
       deliveryReview.require("review");
       if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.text?.trim()).length);
@@ -815,7 +849,8 @@ export function createProductAgentTools(options: {
       .filter((item): item is AgentProgressSource => item !== null)
       .slice(0, 6);
     if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
-    return result;
+    const comparisonResult = { comparePassages: compare, ...result };
+    return compare.length && JSON.stringify({ status: 'succeeded', data: { result: comparisonResult } }).length <= allowance ? comparisonResult : result;
   }
   const tools: AgentTool[] = (discussion?.tools ?? []).map(tool => ({
     ...tool, execute: (args, context) => guardResult(() => tool.execute(args, context), tool.name),
@@ -1189,6 +1224,33 @@ export function createProductAgentTools(options: {
           await refreshVerifiedOperations(false);
         }
         if (parsed.kind !== "no_action") {
+          // An earlier reply may have cited only one document. Check the current parent's enabled library
+          // when that passage is actually used again. This read uses its public section and no embedding.
+          const cited = new Set(parsed.paragraphs.flatMap(p => p.citationIds));
+          for (const { chunk, filter } of seeded) {
+            if (!cited.has(chunk.chunkId) || !chunk.series || chunk.series.id === chunk.sourceId
+              || checkedSeedComparisons.has(chunk.chunkId) || (mode !== 'not_used' && comparisonPeers.has(chunk.chunkId))
+              || !retrieval.readComparablePassages) continue;
+            const peers = await retrieval.readComparablePassages(chunk, filter);
+            for (const peer of peers) if (!evidence.has(peer.chunkId)) evidence.set(peer.chunkId, { chunk: peer, filter });
+            recordComparisons([chunk, ...peers]);
+            checkedSeedComparisons.add(chunk.chunkId);
+          }
+          if (mode === 'not_used' && options.trustedUserMessage && !discussion) {
+            const request = options.trustedUserMessage;
+            const citedChunks = [...cited].flatMap(id => evidence.get(id)?.chunk ?? []);
+            const peerIds = [...cited].flatMap(id => [...(comparisonPeers.get(id) ?? [])]);
+            const namedConditionMissing = peerIds.some(id => evidence.get(id)?.chunk.applicability.conditions.some(condition =>
+              condition.length > 1 && request.includes(condition)
+              && !citedChunks.some(chunk => chunk.applicability.conditions.includes(condition) || chunk.section.includes(condition))));
+            if (namedConditionMissing) throw new FamilyError(400, 'knowledge_question_changed');
+            const unseenSameSection = peerIds.some(id => {
+              const peer = evidence.get(id)?.chunk;
+              return peer && !cited.has(id) && !seeded.some(item => item.chunk.chunkId === id)
+                && citedChunks.some(chunk => chunk.section === peer.section);
+            });
+            if (unseenSameSection) throw new FamilyError(400, 'knowledge_comparison_required');
+          }
           acceptPresentedAnswer({ ...parsed, kind: parsed.kind }, quotes);
           if (closing) discussion!.acceptClosing(closing);
           originalQuotes = quotes;
@@ -1550,6 +1612,8 @@ export function createProductAgentTools(options: {
       }
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
       for (const id of new Set([...ids, ...selectedSources.map(source => source.citationId)])) {
+        const peer = !ids.includes(id) && evidence.get(id);
+        if (peer && !await retrieval.revalidateCitations([peer.chunk], peer.filter)) throw new AgentStopped('invalid_response');
         const household = householdEvidence.get(id);
         if (household && !await household.isCurrent()) throw new AgentStopped("delivery_review_incomplete");
       }
@@ -1674,9 +1738,7 @@ export function createProductAgentTools(options: {
         const bound = previous.get(id)!;
         const grounded = [...memoryGrounding.values()].find(value => value.source.citationId === id);
         const staged = grounded?.source ?? deliverySource(id, originalQuotes);
-        if (!staged || staged.version !== bound.version || staged.contentHash !== bound.contentHash
-          || staged.classification !== bound.classification || staged.excerpt !== bound.excerpt
-          || staged.excerptComplete !== bound.excerptComplete) return undefined;
+        if (!staged || !repairSourcesRemainBound([bound], [staged])) return undefined;
         const household = householdEvidence.get(id);
         if (household) return household.isCurrent;
         const personal = privateSources?.evidence.get(id);
@@ -1738,7 +1800,7 @@ export function createProductAgentTools(options: {
     replaceDeliveryAnswer(next: unknown, flaggedParagraphs?: ReadonlySet<number>) {
       const parsed = agentAnswerSchema.parse(next);
       if (discussion && !discussion.allowsRepair(parsed, flaggedParagraphs)) throw new AgentStopped('delivery_review_incomplete');
-      acceptPresentedAnswer(parsed);
+      acceptPresentedAnswer(parsed, originalQuotes, new Set(selectedSources.map(source => source.citationId)));
       answer = parsed;
       serverReceiptText = null;
     },

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import type { ChatMode } from "../src/shared/chat.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
@@ -94,6 +95,7 @@ export interface ChatDeliverySource extends ChatDeliverySourceVersion {
   classification: "official_guidance" | "recent_information" | "private";
   excerpt: string;
   excerptComplete: boolean;
+  libraryPassage?: { title: string; section: string; conditions: string[] };
 }
 export interface ChatDeliveryVerifiedOperation {
   kind: "action_receipt" | "pending_confirmation";
@@ -1838,7 +1840,8 @@ export function chatDeliveryDraftHash(draft: ChatDeliveryDraft, repairContext?: 
     paragraphs: draft.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
     sources: draft.sources.map(source => ({ citationId: source.citationId, version: source.version, contentHash: source.contentHash,
       classification: source.classification, excerptHash: chatDeliveryContentHash(source.excerpt), excerptComplete: source.excerptComplete,
-      ...(source.chart && {chart:source.chart}) }))
+      ...(source.chart && { chart: source.chart }),
+      ...(source.libraryPassage ? { libraryPassage: source.libraryPassage } : {}) }))
       .sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0),
   });
 }
@@ -1876,6 +1879,7 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
       citationId: source.citationId, version: source.version, contentHash: source.contentHash,
       classification: source.classification, excerptComplete: source.excerptComplete, excerpt: source.excerpt,
       ...(source.chart && {chart:source.chart}),
+      ...(source.libraryPassage ? { libraryPassage: source.libraryPassage } : {}),
     })),
   };
 }
@@ -1887,7 +1891,8 @@ export function repairSourcesRemainBound(original: readonly ChatDeliverySource[]
       const previous = allowed.get(item.citationId);
       return previous !== undefined && previous.version === item.version && previous.contentHash === item.contentHash
         && previous.classification === item.classification && previous.excerpt === item.excerpt && previous.excerptComplete === item.excerptComplete
-        && JSON.stringify(previous.chart) === JSON.stringify(item.chart);
+        && JSON.stringify(previous.chart) === JSON.stringify(item.chart)
+        && isDeepStrictEqual(previous.libraryPassage, item.libraryPassage);
     });
 }
 function repairContextPayload(context: ChatDeliveryRepairContext) {
@@ -2060,7 +2065,10 @@ export async function enforceChatDeliveryReview(input: {
   if (!input.provenance?.packVersion || !input.provenance.model) throw new AgentStopped("delivery_review_incomplete");
   const prompt = await loadAgentPrompt("chat-delivery-review", "structured",
     ["run", "scope", "context", "evidence", "capabilities", "outputContract"]);
-  const system = prompt.text;
+  const comparePassages = draft.sources.filter(source => source.libraryPassage).length > 1;
+  const system = prompt.text + (comparePassages
+    ? '\n先從 userRequest 辨認今次要問的活動、對象及時段，再逐項核對回答所指是否相同。用另一活動代答，即使引文支持該活動也須 revise。漏答所問條件或帶入無關規定亦須 revise。交叉核對草稿漏引的同卡原段。同一條件的兩份規定有分歧時，須說清分歧並分別引用雙方。只有出版者明示取代所問規定時才可選一方；日期、排名或另一活動的通告不足以裁定。修訂這類答案，先寫應跟哪份及家長應做甚麼，再引出版者原句交代取代範圍。不同條件按各自原段回答。'
+    : '');
   const judgeFixed = async (candidate: ChatDeliveryDraft, original: ChatDeliveryDraft, attemptKey: string, instruction: string,
     repairContext?: ChatDeliveryRepairContext) => {
     const hash = chatDeliveryDraftHash(candidate, repairContext);
