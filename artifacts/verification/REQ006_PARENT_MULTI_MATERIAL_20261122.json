@@ -1,0 +1,380 @@
+{
+  "observedAt": "2026-11-22T09:38:29.173Z",
+  "implementation": "57ffed9e71f8bb1b97b9bb5eb1fd334a96efb07c",
+  "predecessor": "FHS_SOURCE_FORMS_20261121.json",
+  "proofScope": "同一隔離 Firestore emulator、同一帳戶及孩子、同一張已加入的合成卡。家長從本機正式 Web 聊天撰寫問題，重新打開保存的回覆，逐個按引用及「版本與核對資料」。",
+  "fixture": {
+    "name": "親子活動名牌手冊（合成）",
+    "joinedFixtureSeriesId": "entry-badges",
+    "savedCitationSeries": {
+      "id": "fhs-child-health",
+      "name": "衛生署 兒童健康"
+    },
+    "editions": [
+      {
+        "sourceId": "fhs-12566",
+        "versionId": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0"
+      },
+      {
+        "sourceId": "fhs-13035",
+        "versionId": "4c311405-37a3-5519-9ef3-6e464a3f3a50"
+      }
+    ],
+    "expected": [
+      {
+        "activity": "親子體驗日",
+        "originals": [
+          "上午掛藍色名牌。",
+          "上午掛綠色名牌。"
+        ]
+      },
+      {
+        "activity": "親子開放日",
+        "originals": [
+          "親子開放日上午入場掛藍色名牌。",
+          "親子開放日下午入場掛綠色名牌。"
+        ]
+      },
+      {
+        "activity": "親子同樂日",
+        "originals": [
+          "親子同樂日上午入場掛藍色名牌。",
+          "主辦方通告：本段取代《合成識別名牌 0》的親子同樂日入場規定；親子同樂日上午入場改掛綠色名牌。"
+        ]
+      }
+    ],
+    "provenance": "復用原收據的名牌材料。下載及啟用的兩個來源 ID 只在 emulator 內承載合成原文。文件向量為固定測試值，查詢用真正 Vertex 向量，答覆及獨立覆核用真正 Gemini。隔離家長帳戶另有本機管理權以設置材料。",
+    "productionWrites": 0
+  },
+  "cases": [
+    {
+      "scenario": "同條件分歧",
+      "question": "我睇緊親子活動名牌手冊。小朋友去親子體驗日朝早入場，到底要掛咩色名牌？",
+      "savedAnswer": "關於親子體驗日活動的上午入場名牌顏色，目前持有的兩份指引規定不一致：根據「合成識別名牌 1」，上午應佩戴綠色名牌；而「合成識別名牌 0」則指出上午應佩戴藍色名牌。 [1][2]",
+      "answeringBuild": "b315850518721a9dc5bf60ee17940f751c264e1a",
+      "messageId": "e17b65ea-5cfe-4ae5-91b7-a6cd802aa88d",
+      "replyId": "aa1c6144-a9d3-471c-8a94-a66c37dbd2cd",
+      "runId": "ce2e91f8-cc5d-4c77-806a-f46c0c512412",
+      "model": "gemini-3.1-flash-lite",
+      "promptPack": "0.1.69",
+      "status": "completed",
+      "reviewDecision": "pass",
+      "reviewSteps": [
+        {
+          "decision": "revise",
+          "issues": [
+            {
+              "paragraph": 0,
+              "reason": "草稿未提及指導原則存在分歧。根據所附來源，『合成識別名牌 1』顯示上午掛綠色名牌，而『合成識別名牌 0』顯示上午掛藍色名牌，兩者條件相同，草稿只引用了其中一項。",
+              "support": "『合成識別名牌 1』摘錄：上午掛綠色名牌。『合成識別名牌 0』摘錄：上午掛藍色名牌。"
+            }
+          ]
+        },
+        {
+          "decision": "pass",
+          "issues": []
+        }
+      ],
+      "reviewDraftHash": "97266ceff3777683ee3edd5561b177c51e1f6bd62bec16d6cbe9552768973949",
+      "reviewedSources": [
+        {
+          "citationId": "2d416633-9409-5c72-bef0-08d9d3843b20",
+          "version": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "contentHash": "d489422403a7d6f5baaa6d29d4e81b5ef5dc15418d21e373a54cb90350999090"
+        },
+        {
+          "citationId": "50c17e14-f938-51ad-8f11-b35100e0f328",
+          "version": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "contentHash": "13b8f9d98e77fb1606d4877c4d1bfbce7aa7f2a0dc7bb5484e84f42aaf06169e"
+        }
+      ],
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "browser": "158.0.4370.33",
+      "openedSavedReplyDetailsFirst": true,
+      "referenceClicks": [
+        {
+          "number": 1,
+          "title": "合成識別名牌 1",
+          "versionId": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "versionHash": "4811684fc4c07d3a3c53ad41d3e083ac591ee9ae80388bcc556b1e6ec1e06bf5",
+          "chunkId": "2d416633-9409-5c72-bef0-08d9d3843b20",
+          "section": "親子體驗日・上午入場",
+          "excerpt": "上午掛綠色名牌。"
+        },
+        {
+          "number": 2,
+          "title": "合成識別名牌 0",
+          "versionId": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "versionHash": "3a3400e26125046b5de09cc9fbbd1b97dc988b35f23e06ea1489e7c971175791",
+          "chunkId": "50c17e14-f938-51ad-8f11-b35100e0f328",
+          "section": "親子體驗日・上午入場",
+          "excerpt": "上午掛藍色名牌。"
+        }
+      ],
+      "reopenProviderRequests": 0
+    },
+    {
+      "scenario": "時段不同",
+      "question": "親子開放日呢？如果我哋朝早去，同下晝去，名牌顏色有咩分別？",
+      "savedAnswer": "親子開放日如於上午入場，需佩戴藍色名牌；下午入場則需佩戴綠色名牌。 [1][2]",
+      "answeringBuild": "ee3f90659dae563f750c22e6f8fecd6207e14965 加上同活動不同時段的覆核修正",
+      "messageId": "7d230ade-c61a-4a29-846a-94e48d685989",
+      "replyId": "c5ef719e-eea0-4764-8f11-528e3b69f0b3",
+      "runId": "81e98fe1-1781-4d2b-96fe-cc80a294f097",
+      "model": "gemini-3.1-flash-lite",
+      "promptPack": "0.1.69",
+      "status": "completed",
+      "reviewDecision": "pass",
+      "reviewSteps": [
+        {
+          "decision": "revise",
+          "issues": [
+            {
+              "paragraph": 0,
+              "reason": "Draft claims no information is available for morning session tag color, but official guidance explicitly states it is blue.",
+              "support": "親子開放日上午入場掛藍色名牌 (Synthetic Identification Tag 0)"
+            }
+          ]
+        },
+        {
+          "decision": "pass",
+          "issues": []
+        }
+      ],
+      "reviewDraftHash": "73b96bbbf38c40159ede182075db8668ee8eddbd83536756afcd4924368ffccb",
+      "reviewedSources": [
+        {
+          "citationId": "0a99a976-e7a7-53f1-9bc1-a2a808afb307",
+          "version": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "contentHash": "b5625d8f440ca29b492c8f55cd44e5cc9d9fc0ad43b95bec58adca371c5c0387"
+        },
+        {
+          "citationId": "a0f2bef3-1253-590e-90f6-f13ab85fd00b",
+          "version": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "contentHash": "96efa2f9b21eec5766fa6935eef13d5ff0f2b5283f5081e2737530d5bc9f3e0d"
+        }
+      ],
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "browser": "158.0.4370.33",
+      "openedSavedReplyDetailsFirst": true,
+      "referenceClicks": [
+        {
+          "number": 1,
+          "title": "合成識別名牌 1",
+          "versionId": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "versionHash": "4811684fc4c07d3a3c53ad41d3e083ac591ee9ae80388bcc556b1e6ec1e06bf5",
+          "chunkId": "0a99a976-e7a7-53f1-9bc1-a2a808afb307",
+          "section": "親子開放日・下午入場",
+          "excerpt": "親子開放日下午入場掛綠色名牌。"
+        },
+        {
+          "number": 2,
+          "title": "合成識別名牌 0",
+          "versionId": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "versionHash": "3a3400e26125046b5de09cc9fbbd1b97dc988b35f23e06ea1489e7c971175791",
+          "chunkId": "a0f2bef3-1253-590e-90f6-f13ab85fd00b",
+          "section": "親子開放日・上午入場",
+          "excerpt": "親子開放日上午入場掛藍色名牌。"
+        }
+      ],
+      "reopenProviderRequests": 0
+    },
+    {
+      "scenario": "出版者明示取代",
+      "question": "到親子同樂日，朝早去應該跟邊份入場規定、掛咩色名牌？",
+      "savedAnswer": "根據衞生署家庭健康服務最新的主辦方通告，《合成識別名牌 1》已取代《合成識別名牌 0》中有關「親子同樂日」的規定。因此，參加親子同樂日上午場次，請佩戴綠色名牌。 [1]",
+      "answeringBuild": "57ffed9e71f8bb1b97b9bb5eb1fd334a96efb07c",
+      "messageId": "5ad99613-2d0b-4b71-82a1-2967af22f88f",
+      "replyId": "c97980ba-b507-47ed-8c1c-357d533f09a0",
+      "runId": "5e2b789e-8fa5-4dfd-8e36-0228b841b103",
+      "model": "gemini-3.1-flash-lite",
+      "promptPack": "0.1.69",
+      "status": "completed",
+      "reviewDecision": "pass",
+      "reviewSteps": [
+        {
+          "decision": "pass",
+          "issues": []
+        }
+      ],
+      "reviewDraftHash": "a5deed037536c46cbc3771706fab5248d472a3578a7bbd68a327a35bedc548c2",
+      "reviewedSources": [
+        {
+          "citationId": "1da31c22-8a1a-5f78-83a8-be769d2d6a93",
+          "version": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "contentHash": "85b7f8ccd192ed674a4e2c0c39e0184d49d09cf00e7c7e3809e9f83a76a1ebf3"
+        },
+        {
+          "citationId": "50c17e14-f938-51ad-8f11-b35100e0f328",
+          "version": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "contentHash": "13b8f9d98e77fb1606d4877c4d1bfbce7aa7f2a0dc7bb5484e84f42aaf06169e"
+        },
+        {
+          "citationId": "77f25bc6-fa21-596a-b526-efec8fd68516",
+          "version": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "contentHash": "a1b1ccbdd11160eccf8c05adc8222f64013fbd3592b8e893ebd84a12513a98ac"
+        },
+        {
+          "citationId": "a0f2bef3-1253-590e-90f6-f13ab85fd00b",
+          "version": "f2ecf99b-6bd3-5ccc-a325-b7171eeb22d0",
+          "contentHash": "96efa2f9b21eec5766fa6935eef13d5ff0f2b5283f5081e2737530d5bc9f3e0d"
+        }
+      ],
+      "counts": {
+        "modelCalls": 5,
+        "toolCalls": 3,
+        "queryEmbeddings": 1
+      },
+      "tools": [
+        [
+          "present_answer",
+          "rejected"
+        ],
+        [
+          "search_knowledge",
+          "succeeded"
+        ],
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "browser": "158.0.4370.33",
+      "openedSavedReplyDetailsFirst": false,
+      "referenceClicks": [
+        {
+          "number": 1,
+          "title": "合成識別名牌 1",
+          "versionId": "4c311405-37a3-5519-9ef3-6e464a3f3a50",
+          "versionHash": "4811684fc4c07d3a3c53ad41d3e083ac591ee9ae80388bcc556b1e6ec1e06bf5",
+          "chunkId": "77f25bc6-fa21-596a-b526-efec8fd68516",
+          "section": "親子同樂日・上午入場",
+          "excerpt": "主辦方通告：本段取代《合成識別名牌 0》的親子同樂日入場規定；親子同樂日上午入場改掛綠色名牌。"
+        }
+      ],
+      "reopenProviderRequests": 0
+    }
+  ],
+  "earlierUnsuccessfulRuns": [
+    {
+      "runId": "fceca09e-8ae0-4a47-bf5d-d0ea1caae46b",
+      "status": "stopped",
+      "stopReason": "delivery_review_rejected",
+      "observed": "審核拒絕交付。最初草稿把另一個活動的片段用於體驗日。"
+    },
+    {
+      "runId": "3983ba5d-aea1-4c26-be46-65ccc0d72f22",
+      "status": "completed",
+      "stopReason": null,
+      "observed": "綠色單方說法獲通過。獨立覆核沒有看見另一份同條件的材料。"
+    },
+    {
+      "runId": "b4ac5371-f477-49db-a401-68fdd2e19278",
+      "status": "completed",
+      "stopReason": null,
+      "observed": "沿用上一輪的單一引用，沒有重新搜尋，仍只答綠色。"
+    },
+    {
+      "runId": "4ecdb313-8e07-4e27-8b5d-688a7267a6c3",
+      "status": "completed",
+      "stopReason": null,
+      "observed": "交付包含其他活動的條件，漏了開放日上午的正確規定。"
+    },
+    {
+      "runId": "cc9703ee-9431-40d1-bf54-0b5149bb6080",
+      "status": "completed",
+      "stopReason": null,
+      "observed": "答成上一題開放日的規定。"
+    },
+    {
+      "runId": "47e4e479-8485-48cd-82c2-5f0d95279e54",
+      "status": "completed",
+      "stopReason": null,
+      "observed": "覆核發現活動錯誤，修訂只引用同樂日舊規定，漏了取代通告。"
+    },
+    {
+      "runId": "71bc01b3-1df0-47e8-95d1-bc69ff4a7591",
+      "status": "stopped",
+      "stopReason": "delivery_review_rejected",
+      "observed": "獨立覆核指出取代通告，修訂後的模型覆核通過；Server 最終拒絕交付。"
+    }
+  ],
+  "screenshot": "REQ006_PARENT_MULTI_MATERIAL_20261122.png",
+  "cost": {
+    "currency": "USD",
+    "grossLimit": 0.5,
+    "providerRequests": 54,
+    "accountedEstimate": 0.136342,
+    "unknownReserve": 0.01256525,
+    "totalIncludingUnknown": 0.14890725,
+    "unknownRequests": [
+      {
+        "kind": "generation",
+        "at": "2026-11-22T09:20:26.000Z",
+        "reserveUSD": 0.01256525
+      }
+    ],
+    "byKind": [
+      {
+        "kind": "generation",
+        "requests": 50,
+        "knownRequests": 49,
+        "inputTokens": 510478,
+        "outputTokens": 5812,
+        "estimatedUSD": 0.1363375
+      },
+      {
+        "kind": "embedding",
+        "requests": 4,
+        "knownRequests": 4,
+        "inputTokens": 30,
+        "outputTokens": 0,
+        "estimatedUSD": 0.0000045
+      }
+    ],
+    "basis": "按已回報 token 及每百萬輸入／輸出 US$0.25／1.50、向量 US$0.15 毛額估算，未扣快取或抵免。未有回應的請求保留發出前全額。包含失敗、修訂、重核及同環境內的背景請求。",
+    "isolatedDailyLimits": [
+      20,
+      35,
+      52,
+      60,
+      20
+    ],
+    "isolatedPolicyAfter": {
+      "daily": 20,
+      "modelCallsPerRun": 8,
+      "retainedAttempts": 54,
+      "fullOriginalPolicyVerified": true
+    }
+  },
+  "localChecks": {
+    "node": "24.22.1",
+    "serverTypeCheck": "pass",
+    "targetedTests": 48
+  },
+  "limits": [
+    "三個代表例在同一聊天按修正次序實測，早兩題的保存答案亦在最終本機版本重開。",
+    "仍待在 Android 實機重開已保存的分歧答案、逐個點按兩個引用，核對原段並返回原答。",
+    "未將這批合成原文加入公共卡庫或在正式站發布本項改動。"
+  ]
+}
