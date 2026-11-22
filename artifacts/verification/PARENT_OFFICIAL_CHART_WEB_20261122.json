@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-22",
+  "environment": "isolated Firebase emulators and production Web components; real Vertex, no production household",
+  "model": "gemini-3.1-flash-lite",
+  "browser": "158.0.4370.33",
+  "parentIntent": "Look up the number of stickers needed for a park visit in the named official reward chart and open that page.",
+  "sourceId": "pdf-0964fd47800bc6931d69b130",
+  "versionHash": "46495f9fc127a1c362e7f9b84be35fb4565377d313efd87ece5acafae5d172b6",
+  "originalPdfSha256": "002ad01d48b6fa971cb2a89393c1b2c2fcded24338b954150afa192d693ed53c",
+  "physicalPage": 5,
+  "reportedStickers": 3,
+  "modelCalls": 3,
+  "toolCalls": [
+    {
+      "name": "find_official_material",
+      "status": "succeeded"
+    },
+    {
+      "name": "present_answer",
+      "status": "succeeded"
+    }
+  ],
+  "queryEmbeddings": 1,
+  "review": "pass",
+  "savedReplyVerified": true,
+  "originalButtonClicked": true,
+  "popupFragment": "#page=5",
+  "downloadDigestMatches": true,
+  "earlierStops": [
+    "HTTP 400",
+    "invalid_tool",
+    "delivery_review_budget",
+    "quota_exceeded",
+    "invalid_response"
+  ],
+  "finalUserDailySetting": 20,
+  "ledger": {
+    "currency": "USD",
+    "settledUsageEstimate": 0.090702,
+    "unknownReserved": 0.026979,
+    "cumulativeLimit": 0.35
+  }
+}
