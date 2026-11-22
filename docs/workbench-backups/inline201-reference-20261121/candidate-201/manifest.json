@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-201-image-count",
+  "base": {
+    "artifact": "candidate-199/out",
+    "htmlSha256": "1ff7a63d4beb897416e86d8fd525c33e463bef800b2a155b639ec207c08d1f46",
+    "rawRecordsSha256": "2f085df262ada30c25810c041869a38b3619e64b0421fb943acbb63d2c7c0634",
+    "rawArtworkSha256": "2636a8216b46c9b33d34e6021ce7947d36b19a98fff616ff8aea0c7bab5167b5",
+    "topics": 98,
+    "choices": 199,
+    "images": 199
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-settings-nav/assets.json",
+      "sha256": "2671d4b285ebd9c2ccf73a521b1a2e10378d72102eaf5c3ce227c6b948dfb3d8"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "755f700f1df9b9961e4a39d3c2fc5e174dd93ea6435055760e0296be76a0c316",
+    "PROVENANCE.md": "8627ca1d4acfe62e8946a9fc8709d6de32d5a1ad666487ee19e008ec159b56be"
+  },
+  "topics": [
+    {
+      "number": 99,
+      "title": "設定分類：在左欄或頂部切換",
+      "choices": [
+        {
+          "name": "左側常駐分類欄",
+          "note": "GNOME 的寬視窗在左側標示目前分類，右側顯示對應內容。育伴港從「通知」點到「孩子」只切換分類，不會改設定、換孩子或改權限。育伴港內容寬度小於 720 時改用橫向分類列，與 GNOME 折疊側欄不同。",
+          "links": [
+            {
+              "label": "GNOME Settings 50.0：寬視窗的分類及內容雙欄",
+              "url": "https://github.com/GNOME/gnome-control-center/blob/1cc97e799d7aa0591e2fc41cb606e74040eaf9cd/shell/cc-window.blp#L4-L65"
+            },
+            {
+              "label": "在同一視窗顯示選定分類",
+              "url": "https://github.com/GNOME/gnome-control-center/blob/1cc97e799d7aa0591e2fc41cb606e74040eaf9cd/shell/cc-window.c#L335-L342"
+            },
+            {
+              "label": "目前分類與側欄選中項同步",
+              "url": "https://github.com/GNOME/gnome-control-center/blob/1cc97e799d7aa0591e2fc41cb606e74040eaf9cd/shell/cc-window.c#L404-L416"
+            },
+            {
+              "label": "「系統」入口頁只展示下層分類",
+              "url": "https://github.com/GNOME/gnome-control-center/blob/1cc97e799d7aa0591e2fc41cb606e74040eaf9cd/panels/system/cc-system-panel.blp#L4-L68"
+            },
+            {
+              "label": "GNOME Settings 視窗外殼授權：GPL-2.0-or-later",
+              "url": "https://github.com/GNOME/gnome-control-center/blob/1cc97e799d7aa0591e2fc41cb606e74040eaf9cd/shell/cc-window.c#L1-L17"
+            }
+          ],
+          "asset": {
+            "input": "draft-settings-nav/settings-nav-a.png",
+            "sha256": "a49322376054202d542d09c93e6168a66000160921ac2912b19341d7ed4ee4b1",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 GNOME Settings 桌面重繪。左欄分類中「系統」被選中，右欄列出「地區與語言」、「日期與時間」到「關於」等六個入口，沒有任何設定值被更改。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "分類橫排在內容上方",
+          "note": "Syncthing 把五個分類放在設定視窗頂部；此例切到「已忽略的資料夾」，未按儲存。育伴港在窄版可橫向查看設定分類，例如由「通知」切到「孩子」。這只切換畫面，不更改設定、目前孩子或存取權限。",
+          "links": [
+            {
+              "label": "Syncthing v2.0.0：設定視窗頂部的五個分類",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/syncthing/settings/settingsModalView.html#L1-L40"
+            },
+            {
+              "label": "同版：在儀表板掛載設定視窗",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/index.html#L1009-L1018"
+            },
+            {
+              "label": "同版：背景儀表板的資料夾清單",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/index.html#L377-L407"
+            },
+            {
+              "label": "同版：背景儀表板的本機概覽",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/index.html#L664-L684"
+            },
+            {
+              "label": "同版：切換至已忽略資料夾的清單",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/syncthing/settings/settingsModalView.html#L309-L340"
+            },
+            {
+              "label": "同版：儲存與關閉是獨立操作",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/gui/default/syncthing/settings/settingsModalView.html#L342-L355"
+            },
+            {
+              "label": "Syncthing 程式授權：MPL-2.0",
+              "url": "https://github.com/syncthing/syncthing/blob/5d8033343fd31963286395b009fa7ff0b18ee461/LICENSE#L1-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-settings-nav/settings-nav-b.png",
+            "sha256": "4e8e8c9c0cdfe271194b813a8caaab4a48b1a6f151571bcb6952673af4158231",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Syncthing 非官方全頁重繪。儀表板顯示資料夾及本機、遠端裝置；前方設定視窗有五個橫排分類，選中「已忽略的資料夾」。下方是虛構清單，右下「儲存」及「關閉」均未操作。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 99 題 · 不同寬度的設定分類的兩幅自製示意",
+      "input": "draft-settings-nav/DECLARATION.txt",
+      "sha256": "755f700f1df9b9961e4a39d3c2fc5e174dd93ea6435055760e0296be76a0c316"
+    }
+  ]
+}
