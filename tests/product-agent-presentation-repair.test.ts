@@ -33,7 +33,7 @@ for (const { kind, proposal } of [
         assert.equal(request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "task-capability")?.functionResponse?.response?.status, "succeeded");
         return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{
         functionCall: { id: "synthetic-proposal", name: "propose_task", args: { values: { title: "Synthetic task", details: "Synthetic details",
-          kind: "ordinary", assigneeUserId: userId, dueAt: proposal === "invalid" ? "2026-10-12" : "2026-10-12T11:30:00Z", timeZone: "Asia/Hong_Kong" } } },
+          kind: "ordinary", assigneeUserId: userId, dueAt: proposal === "invalid" ? "2026-10-12" : "2026-10-12T19:30", timeZone: "Asia/Hong_Kong" } } },
         thoughtSignature: "synthetic-proposal-signature",
       }] } };
       }

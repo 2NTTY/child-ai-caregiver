@@ -9,7 +9,7 @@ const taskFields = {
   details: { path: "values.details", expected: "string, at most 2000 characters" },
   kind: { path: "values.kind", expected: "ordinary or appointment" },
   assigneeUserId: { path: "values.assigneeUserId", expected: "string, 1 to 128 characters" },
-  dueAt: { path: "values.dueAt", expected: "ISO datetime with Z or offset, from 2000-01-01 inclusive to 2101-01-01 exclusive" },
+  dueAt: { path: "values.dueAt", expected: "parent's local date and time YYYY-MM-DDTHH:mm in timeZone, years 2000 to 2100" },
   timeZone: { path: "values.timeZone", expected: "valid Intl time zone, at most 100 characters" },
 } as const;
 const root = { path: "$", expected: "object with only values" };

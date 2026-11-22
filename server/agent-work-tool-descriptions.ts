@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon';
+
 export const AGENT_CONFIRMATION_PENDING_TEXT = "已準備待確認事項，所列操作尚未執行。請核對下方確認問題；如仍有其他問題，本輪尚未完成回答。";
 export const AGENT_CONFIRMATION_SAVED_TEXT = "已按你確認的事項保存操作結果；本輪後續文字整理未完成。請查看下方實際收據，不需重做已成功的操作。";
 
@@ -63,12 +65,16 @@ export function buildAgentConfirmationQuestion(
   const value = proposal.value as Record<string, unknown>;
   const operation = operationNames[String(value.kind)];
   if (!operation) throw new Error("Unsupported confirmation kind");
+  const task = value.kind === 'task_create' || value.kind === 'task_change';
   const lines: string[] = [];
   const walk = (item: unknown, prefix: string) => {
     if (item && typeof item === "object") {
       for (const [key, child] of Object.entries(item)) {
         if (key === "confirm" || key === "confirmShared" || key === "kind" && !prefix) continue;
-        walk(child, prefix ? prefix + "／" + (fieldNames[key] ?? key) : fieldNames[key] ?? key);
+        const zone = (item as Record<string, unknown>).timeZone;
+        const local = task && key === 'dueAt' && typeof child === 'string' && typeof zone === 'string'
+          ? DateTime.fromISO(child, { setZone: true }).setZone(zone) : null;
+        walk(local?.isValid ? local.toFormat('yyyy-MM-dd HH:mm:ss ZZ') : child, prefix ? prefix + "／" + (fieldNames[key] ?? key) : fieldNames[key] ?? key);
       }
     } else {
       const shown = item === null ? "未指定／保持空白" : item === true ? "是" : item === false ? "否" :
