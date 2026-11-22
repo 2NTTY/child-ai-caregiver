@@ -9,8 +9,7 @@ export function comparableCardPassages(a: KnowledgeEvidence, b: KnowledgeEvidenc
     || a.sourceId === b.sourceId || a.classification !== b.classification || !a.sourceExcerpt || !b.sourceExcerpt
     || a.sourceExcerpt === b.sourceExcerpt) return false;
   const conditions = a.applicability.conditions, other = b.applicability.conditions;
-  return a.section === b.section || (conditions.length > 0 && conditions.length === other.length
-    && conditions.every(condition => other.includes(condition)));
+  return a.section === b.section || conditions.some(condition => other.includes(condition));
 }
 
 export function isKnowledgeEvidenceFresh(chunk: Pick<KnowledgeEvidence, "reviewState" | "validUntil">, now = Date.now()): boolean {

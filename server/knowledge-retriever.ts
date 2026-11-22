@@ -270,8 +270,11 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           const query = [anchor.section, ...anchor.applicability.conditions].join(' ').slice(0, 2000);
           const rows = await budget.wait(() => readCandidates(filter, null, { query, preferDistinctSources: true, limit: 6 }));
           if (!await budget.wait(authorize)) throw new EmbeddingFailure('unauthorized');
-          return rankKnowledge(query, rows).filter(row => isKnowledgeEvidenceFresh(row) && comparableCardPassages(anchor, row)
-            && includeLeafletInSearch(query, row.url, row.extraction)).map(({originalText: _original, citedExcerpt: _quote, ...row}) =>
+          return rankKnowledge(query, rows)
+            .filter(row => isKnowledgeEvidenceFresh(row) && includeLeafletInSearch(query, row.url, row.extraction))
+            .map(row => procedureReadingPreview(row, filter))
+            .filter(row => comparableCardPassages(anchor, row))
+            .map(({ originalText: _original, citedExcerpt: _quote, chartFields: _fields, ...row }) =>
               ({ ...row, readCoverage: { kind: 'reviewed_text_and_excerpt', complete: false } }));
         },
         async revalidateAndSeedEvidence(

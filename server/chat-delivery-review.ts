@@ -1860,9 +1860,6 @@ export function chatDeliveryReviewAllows(record: ChatDeliveryReviewBinding, draf
 
 function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
   return {
-    ...(draft.sources.filter(source => source.libraryPassage).length > 1 ? {
-      comparisonPolicy: '按家長所問的對象、活動、條件和時段核對每份教材。交叉核對已提供但草稿漏引的同卡原段。相同條件有實質分歧，且出版者沒有明示就該規定取代舊說時，答案須說清未一致之處，分別引用雙方。僅憑較新日期、檢索排名或另一活動的通告選一方，要求修訂。若只有條件不同、互補或明示取代，按其實際範圍判斷。'
-    } : {}),
     ...(draft.discussionRoles?.length ? { discussionRoles: draft.discussionRoles,
       discussionReviewPolicy: 'The first paragraphs are visible AI viewpoints in this order. The rest is the assistant answer. Check every speaker independently against the bound evidence. Reject invented firsthand parenting experience and comparative efficacy claims unsupported by a direct comparison in the sources. Another speaker is never independent evidence.' } : {}),
     ...(draft.userRequest !== undefined ? { userRequest: draft.userRequest } : {}),
@@ -2068,7 +2065,10 @@ export async function enforceChatDeliveryReview(input: {
   if (!input.provenance?.packVersion || !input.provenance.model) throw new AgentStopped("delivery_review_incomplete");
   const prompt = await loadAgentPrompt("chat-delivery-review", "structured",
     ["run", "scope", "context", "evidence", "capabilities", "outputContract"]);
-  const system = prompt.text;
+  const comparePassages = draft.sources.filter(source => source.libraryPassage).length > 1;
+  const system = prompt.text + (comparePassages
+    ? '\n先從 userRequest 辨認今次要問的活動、對象及時段，再逐項核對回答所指是否相同。用另一活動代答，即使引文支持該活動也須 revise。漏答所問條件或帶入無關規定亦須 revise。交叉核對草稿漏引的同卡原段。同一條件的兩份規定有分歧時，須說清分歧並分別引用雙方。只有出版者明示取代所問規定時才可選一方；日期、排名或另一活動的通告不足以裁定。不同條件按各自原段回答。'
+    : '');
   const judgeFixed = async (candidate: ChatDeliveryDraft, original: ChatDeliveryDraft, attemptKey: string, instruction: string,
     repairContext?: ChatDeliveryRepairContext) => {
     const hash = chatDeliveryDraftHash(candidate, repairContext);
