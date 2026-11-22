@@ -3,7 +3,9 @@ import { FamilyError } from "./family-access.ts";
 
 /** Persist only the original ranges actually returned in this run; never fill an unread gap. */
 export function accumulateKnowledgeRead(previous: KnowledgeEvidence | undefined, current: KnowledgeContextChunk): KnowledgeEvidence {
-  const { original, ...metadata } = current;
+  const { original, reviewedChart, ...metadata } = current;
+  if (reviewedChart && current.readCoverage?.kind === 'reviewed_visual_page')
+    return { ...metadata, text: reviewedChart.reading, chartFields:reviewedChart.fields };
   const segments: { offset: number; text: string }[] = [];
   if (previous?.versionId === current.versionId && previous.contentHash === current.contentHash && previous.readCoverage?.kind === "original_segment") {
     const ranges = previous.readCoverage.ranges ?? [{ start: previous.readCoverage.offset ?? 0,

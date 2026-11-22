@@ -23,6 +23,7 @@ import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor, Knowle
 import { groundedRecordTime } from "./agent-record-time.ts";
 import { agentActionToolNames, type AgentActionReceipt, type AgentDirectAction } from "../src/shared/agent-actions.ts";
 import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
+import { isReviewedChartPage, readReviewedChart } from "./knowledge-pdf-layout.ts";
 import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
 import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowledge-query-context.ts";
@@ -84,6 +85,13 @@ class OriginalQuoteMismatch extends FamilyError {
     super(400, 'original_quote_mismatch');
     this.chunkId = chunkId;
     this.originalExcerpt = originalExcerpt;
+  }
+}
+class ChartReadRequired extends FamilyError {
+  readonly chunkId: string;
+  constructor(chunkId: string) {
+    super(400, 'chart_read_required');
+    this.chunkId = chunkId;
   }
 }
 class AttachedClaimNeedsEvidence extends FamilyError {
@@ -574,6 +582,10 @@ export function createProductAgentTools(options: {
           nextAction: 'kind=mixed 時，主答 paragraphs 的每一段均須填 kind。育兒建議段用 caregiving，保留該段適用的官方 citationIds，再提交。',
         }),
       } };
+      if (error instanceof ChartReadRequired) return { status: 'rejected', data: {
+        code: error.code, chunkId: error.chunkId,
+        nextAction: '以這個 chunkId 呼叫 read_knowledge_context，查看該印本實頁的已審圖表和欄值。',
+      } };
       if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId, ...(error.originalExcerpt && { originalExcerpt: error.originalExcerpt }),
         nextAction: '這個片段 ID 有效，但所填引句與已讀原文不符。若主回答是改述，省略 originalQuotes，保留各段的 citationIds。若要逐字引用，只選已讀原句。請刪去原件未支持的推論，再單獨呼叫 present_answer。',
@@ -672,12 +684,18 @@ export function createProductAgentTools(options: {
         const chunk = evidence.get(id)?.chunk;
         return chunk?.classification === 'official_guidance' && chunk.treatment?.kind !== 'overview' || liveEvidence.get(id)?.classification === 'official_guidance';
       })) throw new FamilyError(400, "citation_required");
+      const unread = paragraph.citationIds.find(id => {
+        const chunk = evidence.get(id)?.chunk;
+        return chunk && isReviewedChartPage(chunk) && chunk.readCoverage?.kind !== 'reviewed_visual_page';
+      });
+      if (unread) throw new ChartReadRequired(unread);
       if (kind === 'public_information') {
         const quantitative = /\p{Decimal_Number}|[零〇一二兩三四五六七八九十百千萬半]+(?:個月|小時|分鐘|毫升|毫克|公斤|克|歲|日|次|度|年|月)/u.test(paragraph.text);
         if (!paragraph.citationIds.some(id => {
           if (liveEvidence.has(id)) return true;
           const source = evidence.get(id)?.chunk;
           if (!source) return false;
+          if (source.readCoverage?.kind === 'reviewed_visual_page' && isReviewedChartPage(source)) return true;
           if (!quantitative) return true;
           if (source.applicability?.use !== 'original_lookup') return source.treatment?.kind !== 'overview';
           const quote = quotes.get(id);
@@ -744,13 +762,16 @@ export function createProductAgentTools(options: {
     if (!item) return null;
     // accumulateKnowledgeRead may hold up to 4000 chars; do not hide support past the old 800-char head truncate.
     const quote = quotes.get(id);
+    const chart = item.chunk.readCoverage?.kind === 'reviewed_visual_page' && isReviewedChartPage(item.chunk)
+      ? {sourceId:item.chunk.sourceId,versionHash:item.chunk.versionHash,pdfHash:item.chunk.extraction!.contentHash,
+        physicalPage:item.chunk.excerptPage!,purpose:'original_lookup' as const,fields:item.chunk.chartFields ?? []} : undefined;
     const body = quote ? quote + '\n\n' + item.chunk.text : item.chunk.text ?? "";
     const excerpt = item.chunk.readCoverage ? chatDeliveryReviewSourceExcerpt(body) : chatDeliveryExcerpt(body);
     const supplied = item.chunk.contentHash ?? "";
     return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
       contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
       classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
-      excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
+      ...(chart && {chart}), excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
   }
   function registerWorkspaceEvidence(id: string, data: Record<string, unknown>) {
     const json = JSON.stringify(data);
@@ -1010,7 +1031,7 @@ export function createProductAgentTools(options: {
         }
         if (result.chunks.length > 0) {
           deliveryReview.require("review");
-          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.original.text.trim()).length);
+          if (run.trace && !budget.signal.aborted) run.trace.markUsableSource(result.chunks.filter(chunk => chunk.original.text.trim() || chunk.reviewedChart).length);
         }
         const progressSources = result.chunks
           .map(chunk => toAgentProgressSource(evidence.get(chunk.chunkId)?.chunk ?? chunk, "read"))
@@ -1540,6 +1561,11 @@ export function createProductAgentTools(options: {
           const text = current?.[0]?.text;
           if (typeof text !== "string" || !text.trim()) throw new AgentStopped("invalid_response");
           reviewedText.set(chunk.chunkId, text);
+        } else if (chunk.readCoverage?.kind === 'reviewed_visual_page') {
+          const live = (await retrieval.readReviewedCitations([chunk], filter))?.[0];
+          const chart = live && readReviewedChart(live);
+          if (!chart || chart.reading !== chunk.text || JSON.stringify(chart.fields) !== JSON.stringify(chunk.chartFields ?? []))
+            throw new AgentStopped('invalid_response');
         } else if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
       if (!await authorize()) throw new AgentStopped("unauthorized");

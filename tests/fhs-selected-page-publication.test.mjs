@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import {resolve} from 'node:path';
 import { syncBuiltinESMExports } from 'node:module';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { resolveObjectURL } from 'node:buffer';
 import React from 'react';
-import { Document, Page, Text, renderToBuffer } from '@react-pdf/renderer';
+import { Document, Page, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { campaignMaterialWatches, platformMaterials } from '../server/platform-materials.ts';
@@ -19,14 +20,17 @@ import { readAiConfig } from '../server/ai-config.ts';
 const lanes = JSON.parse(fs.readFileSync(new URL('../knowledge/fhs-initial-publication-lanes.json', import.meta.url), 'utf8'));
 const { sourceId: id } = lanes.lanes.find(lane => lane.id === 'C1').sources.find(source => source.pages === 8);
 const definition = campaignMaterialWatches.find(row => row.id === id);
-const scope = {physicalPage:5,question:'Which room and materials are listed for the workshop?',
-  fields:[{key:'room',label:'Room'},{key:'materials',label:'Materials'}]};
+const scope = {physicalPage:5,question:'Which materials and sticker rewards are listed in the workshop chart?',
+  fields:[{key:'room',label:'Room'},{key:'materials',label:'Materials'},{key:'park',label:'去公園所需的貼紙張數'},
+    {key:'museum',label:'去博物館所需的貼紙張數'}]};
 const checksum = bytes => createHash('sha256').update(bytes).digest('hex');
 
 test('commissioned first page passes the lane, two readings, gross ledger, family citation and duplicate run', async t => {
-  const facts = {room:'Amber Hall',materials:'Blue card and a pencil'};
+  const facts = {room:'Amber Hall',materials:'Blue card and a pencil',park:'6',museum:'9'};
+  const rows = [['Room',facts.room],['Materials',facts.materials],['Stickers for a park visit',facts.park],['Stickers for a museum visit',facts.museum]];
   const bytes = await renderToBuffer(React.createElement(Document,{},...Array.from({length:8},(_,i)=>
-    React.createElement(Page,{key:i},React.createElement(Text,{},i === 4 ? Object.values(facts).join(' / ') : 'Another physical page ' + (i+1))))));
+    React.createElement(Page,{key:i},i === 4 ? rows.map(([label,value])=>React.createElement(View,{key:label,style:{flexDirection:'row'}},
+      React.createElement(Text,{style:{width:250}},label),React.createElement(Text,{},value))) : React.createElement(Text,{},'Another physical page ' + (i+1))))));
   const hash = checksum(bytes);
   const revision = randomUUID(), generation = randomUUID();
   const original = knowledgeReviewHash([campaignCredentials,id,revision,generation]);
@@ -114,11 +118,16 @@ test('commissioned first page passes the lane, two readings, gross ledger, famil
   const providers=()=>({agent:{async generate(request) {
     const [instruction,part]=request.contents[0].parts, input=JSON.parse(instruction.text), slice=Buffer.from(part.inlineData.data,'base64');
     assert.deepEqual(input.readScope,{parentHash:hash,sliceHash:checksum(slice),firstPhysicalPage:5,lastPhysicalPage:5,firstCorePage:5,lastCorePage:5});
-    assert.equal((await extractKnowledgePdf(slice,{startPage:1,pageLimit:1})).totalPages,1);
+    const sheet=await extractKnowledgePdf(slice,{startPage:1,pageLimit:1});
+    assert.equal(sheet.totalPages,1);
+    const printed=sheet.pages[0].text.replace(/\s+/gu,' ').trim();
+    const match=/Room\s*(.+?)\s*Materials\s*(.+?)\s*Stickers for a park visit\s*(\d+)\s*Stickers for a museum visit\s*(\d+)$/u.exec(printed);
+    assert.ok(match,printed);
+    const [,room,materials,park,museum]=match;
     assert.equal(part.mediaResolution.level,'MEDIA_RESOLUTION_HIGH');
-    assert.ok(Object.values(facts).every(value=>!instruction.text.includes(value)));
+    assert.ok(Object.values(facts).every(value=>!instruction.text.includes(JSON.stringify(value))));
     calls.push(checksum(slice));
-    const output={decision:'approve',finding:'The chart identifies all requested fields.',facts,...(calls.length===2?{checks}:{})};
+    const output={decision:'approve',finding:'The chart identifies all requested fields.',facts:{room,materials,park,museum},...(calls.length===2?{checks}:{})};
     return {content:{role:'model',parts:[{text:JSON.stringify(output)}]},finishReason:'STOP',
       usageMetadata:{promptTokenCount:50,candidatesTokenCount:50,totalTokenCount:100}};
   }},embedding:{async embed(){embeddings++;return {values:[1,...Array(1023).fill(0)],inputTokens:10,billableCharacters:30};}}});
@@ -179,22 +188,34 @@ test('commissioned first page passes the lane, two readings, gross ledger, famil
   assert.equal(receipt.vectors.exported,1);
   assert.equal((await readFhsDelivery(selection,{...ports,confirmOriginalGenerations:async()=>false})).readback,'citation_incomplete');
   await import('./helpers/frontend-source-loader.mjs');
-  const {projectAgentCitation}=await import('../frontend/src/production/agent-projection.ts');
+  const {projectAgentRun}=await import('../frontend/src/production/agent-projection.ts');
+  const {askAboutChart}=await import('./helpers/selected-page-parent.mjs');
+  const {openCitedPdf}=await import('../server/knowledge-cited-pdf.ts');
   const {openCitationPdf}=await import('../frontend/src/platform/file-export.ts');
   const {readCitationPdf}=await import('../src/client/citation-original.ts');
   const active=await ports.active(), identity=active.chunkIdentities[0];
-  const evidence={...active.source,...active.source.chunks[0],...identity,versionId:active.versionId,versionHash:active.versionHash};
-  const citation=projectAgentCitation(evidence);
+  // Old C1 versions carry the same immutable rendering, before field metadata was saved on review.
+  const version=database.collection(namespace+'_knowledge_versions').doc(active.versionId);
+  await database.runTransaction(async tx=>{
+    const saved=(await tx.get(version)).data();
+    const {chartFieldBounds,...legacyReview}=saved.review;
+    assert.deepEqual(chartFieldBounds,scope.fields.map(({key,label})=>({label:label.length,value:facts[key].length})));
+    tx.set(version,{...saved,review:legacyReview});
+  });
+  const knowledgeOriginal={resolve:knowledge.citedPdf,read:target=>refresh.originals.readPdf(target.sourceId,target.sha256)};
+  const {reply,comparison,readRun,childId,userId,removeDownload}=await askAboutChart({domain,knowledge,config,active,identity,knowledgeOriginal});
+  t.diagnostic(JSON.stringify({fixture:'synthetic sticker chart',answers:[reply,comparison].map(r=>({
+    runId:r.runId,text:r.text,decision:r.deliveryReview.decision,versionHash:r.citations[0].versionHash,
+  }))}));
+  const citation=projectAgentRun(reply,childId,null).citations[0];
   assert.match(citation.excerpt,/Materials：Blue card and a pencil/u);
   assert.equal(citation.savedPdf,true);
-  const childId=randomUUID(),runId=randomUUID(),userId=randomUUID(),current=()=>true;
+  const runId=reply.runId,current=()=>true;
   const load=()=>readCitationPdf({apiBaseUrl:'https://fixture.invalid',childId,runId,userId,chunkId:identity.chunkId,current,
     async fetcher(url,init) {
       assert.equal(new URL(url).pathname,'/api/children/'+childId+'/agent/runs/'+runId+'/citations/'+identity.chunkId+'/original');
       assert.equal(init.headers['x-expected-user-id'],userId);
-      const resolved=await knowledge.citedPdf(evidence);
-      const originalBytes=await refresh.originals.readPdf(resolved.sourceId,resolved.sha256);
-      return new Response(originalBytes,{headers:{'content-type':'application/pdf','content-length':String(originalBytes.length)}});
+      return openCitedPdf(new Request(url,init),identity.chunkId,readRun,knowledgeOriginal);
     }});
   let destination;
   globalThis.window={open:()=>({location:{replace:url=>{destination=new URL(url);}}})};
@@ -206,4 +227,16 @@ test('commissioned first page passes the lane, two readings, gross ledger, famil
   const opened=resolveObjectURL(destination.href);
   assert.equal(checksum(Buffer.from(await opened.arrayBuffer())),hash);
   URL.revokeObjectURL(destination.href);
+  await removeDownload();
+  assert.equal(checksum(Buffer.from(await (await load()).arrayBuffer())),hash);
+  await knowledge.disable(id,'Synthetic publisher withdrawal');
+  await assert.rejects(load,/當時版本的 PDF 現時未能取得/u);
+  if (process.env.CHART_PARENT_WEB_DIST) {
+    const receipt={checkedAt:new Date().toISOString(),fixture:'Synthetic workshop reward chart',browser:'Headless Microsoft Edge',
+      provider:'Local scripted provider',retrieval:reply.retrievalMode,runId,tools:reply.tools.map(tool=>tool.name),
+      answer:reply.text,review:reply.deliveryReview.decision,versionId:active.versionId,versionHash:active.versionHash,
+      chunkId:identity.chunkId,contentHash:identity.contentHash,pdfSha256:hash,page:5,totalPages:8,openedFragment:'#page=5',
+      originalQuote:null,undownloadedMatches:0,removedMatches:0,historicalPdfAfterRemoval:true,publisherDisabledPdfAvailable:false};
+    fs.writeFileSync(resolve(process.env.CHART_PARENT_WEB_DIST,'../receipt.json'),JSON.stringify(receipt,null,2)+'\n');
+  }
 });

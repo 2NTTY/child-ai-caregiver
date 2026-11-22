@@ -76,6 +76,8 @@ export interface KnowledgeSourceInput {
   extraction?: KnowledgeExtraction;
 }
 export interface KnowledgeEvidence extends KnowledgeChunkInput {
+  /** Fields bound to this edition's reviewed physical page. */
+  chartFields?: {label:string;value:string}[];
   series?: import('./source-series.ts').SourceSeries;
   citedExcerpt?: string;
   termsUrl?: string;
@@ -102,7 +104,7 @@ export interface KnowledgeEvidence extends KnowledgeChunkInput {
   extraction?: KnowledgeExtraction;
   applicabilityStatus?: "applicable" | "conditional" | "requires_clarification";
   originalCoverage?: "chunk_original" | "excerpt_only";
-  readCoverage?: { kind: "reviewed_text_and_excerpt" | "original_segment"; complete: boolean;
+  readCoverage?: { kind: "reviewed_text_and_excerpt" | "original_segment" | "reviewed_visual_page"; complete: boolean;
     offset?: number; nextOffset?: number | null; totalCharacters?: number; ranges?: { start: number; end: number }[] };
 }
 /** Restore the original spans returned to the model without inventing text across unread gaps. */
@@ -138,7 +140,9 @@ export interface KnowledgeResult {
 export interface KnowledgeContextCursor {
   versionId: string; anchorChunkId: string; afterKey: string | null; chunkId: string | null; offset: number;
 }
-export interface KnowledgeContextChunk extends Omit<KnowledgeEvidence, "text" | "originalText"> {
+export interface KnowledgeContextChunk extends Omit<KnowledgeEvidence, "text" | "originalText" | "chartFields"> {
+  /** A reviewed interpretation of the chart, kept separate from any publisher text. */
+  reviewedChart?: { reading: string; fields: {label:string;value:string}[] };
   original: { text: string; offset: number; nextOffset: number | null; totalCharacters: number; coverage: "chunk_original" | "excerpt_only" };
 }
 export interface KnowledgeContextResult {

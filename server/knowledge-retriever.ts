@@ -8,6 +8,7 @@ import { assertPublicKnowledgeQuery } from "./knowledge-query-minimization.ts";
 import { firstHitPerSource, rankKnowledge } from "./knowledge-ranking.ts";
 import { includeLeafletInSearch } from './fhs-leaflet-editions.ts';
 import { procedureReadingPreview } from './knowledge-procedure-reading.ts';
+import { readReviewedChart } from './knowledge-pdf-layout.ts';
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
 import { isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
@@ -154,7 +155,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             // Keep evidence from each matched material ahead of further passages from the same one.
             ranked = firstHitPerSource(ranked, row => row.sourceId);
           }
-          const chunks = ranked.map(chunk=>procedureReadingPreview(chunk,filter)).map(({ originalText: _originalText, ...chunk }) => ({
+          const chunks = ranked.map(chunk=>procedureReadingPreview(chunk,filter)).map(({ originalText: _originalText, chartFields: _fields, ...chunk }) => ({
             ...chunk, ...(videoList ? { text: chunk.sourceExcerpt.slice(0, 48).toWellFormed() } : {}),
             readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false },
           }));
@@ -211,17 +212,20 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
               nextCursor = { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: output.at(-1)?.key ?? afterKey, chunkId: candidate.chunkId, offset: 0 };
               break;
             }
-            const { distance: _distance, rankScore: _rankScore, text: _text, originalText, ...metadata } = candidate;
+            const { distance: _distance, rankScore: _rankScore, text: _text, chartFields: _fields, originalText, ...metadata } = candidate;
             const original = originalText ?? candidate.sourceExcerpt, offset = processed === 0 ? cursor?.offset ?? 0 : 0;
             if (offset > original.length) throw new FamilyError(400, "knowledge_context_offset_invalid");
             const maxLength = Math.min(original.length - offset, 6000 - characters);
-            const entry: KnowledgeContextChunk = { ...metadata, original: { text: "", offset, nextOffset: offset, totalCharacters: original.length,
+            const reviewedChart = filter.purpose === 'read_originals' ? readReviewedChart(candidate) : undefined;
+            const entry: KnowledgeContextChunk = { ...metadata,
+              ...(reviewedChart && {reviewedChart}),
+              original: { text: "", offset, nextOffset: offset, totalCharacters: original.length,
               coverage: originalText && !candidate.originalKind ? "chunk_original" : "excerpt_only" } };
             output.push(entry);
             const select = (length: number) => {
               entry.original.text = original.slice(offset, offset + length);
               entry.original.nextOffset = offset + length < original.length ? offset + length : null;
-              entry.readCoverage = candidate.originalKind
+              entry.readCoverage = entry.reviewedChart ? { kind: 'reviewed_visual_page', complete: false } : candidate.originalKind
                 ? { kind: "reviewed_text_and_excerpt", complete: false }
                 : { kind: "original_segment", complete: offset === 0 && entry.original.nextOffset === null,
                   offset, nextOffset: entry.original.nextOffset, totalCharacters: original.length };
@@ -232,7 +236,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
             let low = 0, high = maxLength;
             while (low < high) { const middle = Math.ceil((low + high) / 2); select(middle); if (fits()) low = middle; else high = middle - 1; }
             select(low);
-            if (low === 0 && original.length > offset) {
+            if (low === 0 && (original.length > offset || !fits())) {
               output.pop(); nextCursor = { versionId: anchor.versionId, anchorChunkId: anchor.chunkId, afterKey: candidate.key, chunkId: candidate.chunkId, offset };
               if (!output.length) throw new FamilyError(400, "knowledge_context_response_capacity");
               break;

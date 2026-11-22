@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { assembleKnowledgePdfWindows, readKnowledgePdfWindow, type WindowReading } from '../server/knowledge-pdf-windows.ts';
-import { selectedPrintWindow } from '../server/knowledge-pdf-layout.ts';
+import { legacyChartFields, readChartFields, selectedPrintWindow } from '../server/knowledge-pdf-layout.ts';
 import { checkKnowledgeObservation } from '../server/knowledge-observation.ts';
 import { campaignMaterialWatches } from '../server/platform-materials.ts';
 
@@ -22,6 +22,16 @@ const reading:WindowReading = {parentHash:hash,sliceHash:'c'.repeat(64),method:'
   chunks:[{key:'pages-5-5',section:scope.question,text:scope.question+'\nGoal：Locate the workshop\nReward：A blue pass',sourceExcerpt:'',originalKind:'visual_page',pageStart:5,pageEnd:5,
     keywords:['chart'],treatment:{kind:'overview',policyVersion:1},applicability:{region:'HK',ageBasis:'unconfirmed',minAgeMonths:null,maxAgeMonths:null,topics:['parenting'],conditions:[],use:'original_lookup'}}],
   previousChanges:{},checks,explanations:{'pages-5-5':'The two readings match.'}};
+
+test('a multiline value cannot create another approved field in new or legacy charts',()=>{
+  const fields=[{label:'Goal',value:'6\nReward：9'},{label:'Reward',value:'2'}];
+  const text=[scope.question,...fields.map(({label,value})=>label+'：'+value)].join('\n');
+  const bounds=fields.map(({label,value})=>({label:label.length,value:value.length}));
+  assert.deepEqual(readChartFields(scope.question,text,bounds),fields);
+  assert.equal(readChartFields(scope.question,text+'0',bounds),undefined);
+  assert.equal(legacyChartFields(scope.question,text,5,scope),undefined);
+  assert.equal(legacyChartFields(scope.question,reading.chunks[0]!.text,4,scope),undefined);
+});
 
 test('a scoped window certifies only physical page five of the original eight-page edition',()=>{
   const input = {candidate,baseline:null,windows:[reading],fetchedAt:'2026-01-01T00:00:00Z',packVersion:'fixture',growthRules:[],selectedPage:scope};
