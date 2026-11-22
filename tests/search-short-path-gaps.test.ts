@@ -518,9 +518,9 @@ test('R4: unverified completion wording and ungrounded dose amounts never become
     ['BB發燒點算？', '每餐一小匙，連續三日。'],
     ['BB發燒點算？', 'Give two teaspoons once daily.'],
   ] as const) {
-    const bare = { kind: 'clarification', visibility: 'private', serverSubstitutedSourceText: false, paragraphs: [{ text: dose, citationIds: [] }], scope: r4Scope };
-    assert.equal(looksLikeCare(bare as any), true, `R5 F3 care advice: ${dose}`);
-    assert.equal(needsReview(bare as any), true, `R5 F3 bare review: ${dose}`);
+    const bare = { ...makeDraft(dose), scope: r4Scope };
+    assert.equal(looksLikeCare(bare), true, `R5 F3 care advice: ${dose}`);
+    assert.equal(needsReview(bare), true, `R5 F3 bare review: ${dose}`);
     assert.equal(needsReview(draftOf(userMsg, dose) as any), true, `R5 F3 review: ${dose}`);
     const { result } = await presentOnly(userMsg, dose);
     assert.equal(result.status, 'stopped');

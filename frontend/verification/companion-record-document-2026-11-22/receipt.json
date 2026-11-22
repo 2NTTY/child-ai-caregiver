@@ -1,0 +1,147 @@
+{
+  "verifiedAt": "2026-11-22T07:56:24.929Z",
+  "baseCommit": "fc96f5f5f0f651060f5cdda5cd30b4808ef71345",
+  "testedBlobs": {
+    "server/chat-delivery-review.ts": "98b5a8d461433d4a7aec8df57cf0e7abff69bf66",
+    "tests/search-review-boundaries.test.ts": "cd539106367306dc99ae85bb010c197512f4b195"
+  },
+  "browser": "Edge 158.0.4370.33",
+  "timezone": "Asia/Hong_Kong",
+  "viewportCssPixels": [
+    1280,
+    850
+  ],
+  "environment": "Normal signed-in local Web and Firebase emulators with a deterministic test provider.",
+  "scope": {
+    "parentIdSha256": "498fd010f8a4b33f5d131296a18f11835686b962e1e6dfd6ffbfa7257ea83371",
+    "childIdSha256": "f68b93fd8edc7349b4f6ba7bcd858394f7caedb032e99ba3a6f89ebf2710c31c",
+    "session": "Same synthetic signed-in parent and child across isolated browser contexts."
+  },
+  "method": {
+    "selection": "Compared the browser online-submit pageContext to the saved user message and the expected selected resource ID, version and document snapshot ID.",
+    "versions": "Record A was revised from 1 to 2, record B remained at 1, and the preparation document had both its original snapshot and a distinct revision 2.",
+    "original": "Message writes used the running local Web API. The browser reply POST was routed to the production product-agent handler in the test process, with the same local Firebase data and a live session check. A local AI availability response and a deterministic inference/review provider enabled the no-model scenario. Compared read_context.selectedItem to the complete projection of the independently loaded record or document snapshot.",
+    "handoff": "Opened the full reply from the character, checked the message row IDs, then sent a new question in the main composer. The provider received both original IDs and the full previous answer.",
+    "clearing": "Switched directly from A to B with the care detail open. Closed the care and preparation readers and sent a new question from each list. Both saved messages had a page and no item. The care-list read_context had no selectedItem. The document-list follow-on answer reached the local daily limit; no successful tool response or clarification is claimed for that turn."
+  },
+  "priorFailure": {
+    "userFacing": "A grounded leaf count from record A was rejected as an unsupported dose claim.",
+    "serverCode": "attached_claim_needs_evidence",
+    "originalOutcome": "The first test-provider attempt was interrupted after the rejection. A later read of the original run returned unknown/interrupted with no saved reply. Its outcome was not counted as a pass.",
+    "regression": "The leaf count passes with private page evidence. Bare tablet counts, folic-acid tablets, explicit administration instructions and a separate tablet count in the same paragraph still require official evidence."
+  },
+  "focusedTests": {
+    "passed": 17,
+    "files": [
+      "tests/chat-page-evidence.test.ts",
+      "tests/search-review-boundaries.test.ts"
+    ]
+  },
+  "turns": [
+    {
+      "label": "record A",
+      "page": "/care",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "reconciledAfterBrowserReturn": true,
+      "questionIdSha256": "e31c3761f0ba52f63b548be3766307a2794b66a376c64b8987184ff3896594d7",
+      "replyIdSha256": "660c5415a0883bf3ff30597da60fcf7bcde837746f73b971b458463e48d4467a",
+      "selection": {
+        "kind": "record",
+        "idSha256": "4690fa2f76d446fd06daa5a530dfb30413f4a63e5d2191763ea6c76c63e99991",
+        "version": 2
+      },
+      "serverSelectedItem": "matched authorized original",
+      "sourceProjectionSha256": "34ac50150115989e90120286cab1b674ec593a13dd71339d98516e807cc3e94a",
+      "minimumAuthorizedItemReads": 2
+    },
+    {
+      "label": "record A in main chat",
+      "page": "/chat",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "previousQuestionAndReplySeen": true,
+      "reconciledAfterBrowserReturn": true,
+      "questionIdSha256": "469352fc4ebf4cf647cf94b36bbaf22dec1ac9ce58026d5ec7709262b4573701",
+      "replyIdSha256": "95d0ae4b72544c15913b7b921507dd30f44a2854f28cedc44b6efaeaf6047aea",
+      "selection": null,
+      "serverSelectedItem": "absent",
+      "previousQuestionIdSha256": "e31c3761f0ba52f63b548be3766307a2794b66a376c64b8987184ff3896594d7",
+      "previousReplyIdSha256": "660c5415a0883bf3ff30597da60fcf7bcde837746f73b971b458463e48d4467a"
+    },
+    {
+      "label": "switch to record B",
+      "page": "/care",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "versionBoundAtReview": true,
+      "questionIdSha256": "711f1a8b17d3e7302984aef6f9dda9acc39f15a65f77644737206f49ca7facd1",
+      "replyIdSha256": "6ed11c59b8a81a254e0a431d5c6c5d4eae6fe0af6d736f64968e5943e8709bc4",
+      "selection": {
+        "kind": "record",
+        "idSha256": "1d0cded98111aea41c242bd8e7760baf327e74cd22cccd5f868be36d5e410350",
+        "version": 1
+      },
+      "serverSelectedItem": "matched authorized original",
+      "sourceProjectionSha256": "b47427557638bd5f277067e49dea9ecbac48406cd55c3fc42eea95295f85cd59",
+      "authorizedItemReads": 4
+    },
+    {
+      "label": "care list after closing",
+      "page": "/care",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "questionIdSha256": "af88b9b8cc52973a052a269daaf811aee95b58e7fb696c34a643b9549f78a654",
+      "replyIdSha256": "b824b63e7c388f018cfa4b3dee1289739bae64a06c6152316bc569c62dd95852",
+      "selection": null,
+      "serverSelectedItem": "absent"
+    },
+    {
+      "label": "document revision",
+      "page": "/growth",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "versionBoundAtReview": true,
+      "questionIdSha256": "ee4c8ce7e0f80b2b7fe3ca0520bbb1cc8f3b153ae85d919db32924ccf94432f8",
+      "replyIdSha256": "8568e2d194c32ac261eb1ca40a21dae441989eb6717be4cd7f28824b4763a083",
+      "selection": {
+        "kind": "document",
+        "idSha256": "df39e500437e1bbc6112ed7043684737cc5850ce2d0841d404cbf23a7a7e9ae8",
+        "version": 2,
+        "snapshotIdSha256": "1172c06125c3170d82ee418e02d56d01906845057545701977001a1964d09f61",
+        "snapshotVersion": 2
+      },
+      "serverSelectedItem": "matched authorized original",
+      "sourceProjectionSha256": "0bf8b72cdf9cb88f2e996a293f74bf78efe2434e40188772e8525b1a5f2db3db",
+      "authorizedItemReads": 4
+    },
+    {
+      "label": "document in main chat",
+      "page": "/chat",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "previousQuestionAndReplySeen": true,
+      "questionIdSha256": "e738c417c259520469992f16510f273faba72ea6f9ff82f514088734d55b9c55",
+      "replyIdSha256": "463a851730fac90dbd302370600d2cfff897c70b580608db6708a1f3dbc06cf9",
+      "selection": null,
+      "serverSelectedItem": "absent",
+      "previousQuestionIdSha256": "ee4c8ce7e0f80b2b7fe3ca0520bbb1cc8f3b153ae85d919db32924ccf94432f8",
+      "previousReplyIdSha256": "8568e2d194c32ac261eb1ca40a21dae441989eb6717be4cd7f28824b4763a083"
+    },
+    {
+      "label": "document list after closing",
+      "page": "/growth",
+      "replyLinked": true,
+      "selectionMatchesStoredMessage": true,
+      "selectionAbsentFromSavedMessage": true,
+      "runIdSha256": "a641f3cc4bb1fa136f807f03f57953bb5340e08705d282dd9e15556dd86f52b4",
+      "runStatus": "stopped",
+      "stopReason": "quota_exceeded",
+      "expectedClarifyingAnswerDelivered": false,
+      "questionIdSha256": "d87a8ee3b94d990e5db3b2560ec8df22ebaecfa50ebb5532500b36171587592a",
+      "replyIdSha256": "e6530d304d84b42119181c6d14df8b1c4180fa23fdf9288fc5af8303b163205e",
+      "selection": null,
+      "serverSelectedItem": "saved page context had no item; tool result unverified"
+    }
+  ]
+}

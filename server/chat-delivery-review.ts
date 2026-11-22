@@ -243,11 +243,10 @@ const EN_NUMBER_WORD = String.raw`(?:zero|one|two|three|four|five|six|seven|eigh
 const EN_COMPOUND_NUMBER = String.raw`${EN_NUMBER_WORD}(?:[\s-]+(?:and[\s-]+)?${EN_NUMBER_WORD})*`;
 const EN_DOSE_QUANTITY = String.raw`(?:half\s+a|a\s+half|a\s+quarter|one\s+half|one\s+quarter|${EN_COMPOUND_NUMBER}|an?|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?)`;
 const EN_DOSE_UNIT = String.raw`(?:tablets?|pills?|capsules?|tsps?|teaspoons?|tbsps?|tablespoons?|spoonfuls?|drops?|sachets?|packets?|pouches?|puffs?|sprays?|suppositor(?:y|ies)|syringes?|ml|mg|mcg|ug|cc|iu|grams?)`;
-const DOSE_AMOUNT_SOURCE = [
+const EXPLICIT_DOSE_AMOUNT_SOURCE = [
   String.raw`(?:每(?:次|餐|晚|日|天|朝|早|隔?\s*${DOSE_QUANTITY}\s*(?:小時|個?鐘))|一日|一天|日[\d一二三四五六七八九十百千萬億兩两]+次|早晚|睡前|臨睡前|飯前|飯後|餐前|餐後)\s*(?:各|都)?\s*(?:餵|食|吃|服|飲|用|畀|給|塗|搽|滴|吸)?\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`(?:餵|食|吃|服|飲|畀|給)\s*(?:約|大約|大概)?\s*${DOSE_QUANTITY}\s*${DOSE_UNIT}`,
   String.raw`${DOSE_FRACTION_OR_HALF}\s*${DOSE_UNIT}`,
-  String.raw`(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千萬億兩两零〇]+)\s*${MED_ONLY_UNIT}`,
   String.raw`(?:一日|一天|每日|每天)\s*[\d一二三四五六七八九十百千萬億兩两]+\s*次`,
   String.raw`(?:連續|連服|連飲|連食)\s*[\d一二三四五六七八九十百千萬億兩两幾]+\s*(?:日|天|週|周|星期|次)`,
   String.raw`\b${EN_DOSE_QUANTITY}\s+${EN_DOSE_UNIT}\b`,
@@ -255,6 +254,8 @@ const DOSE_AMOUNT_SOURCE = [
   String.raw`\bevery\s+(?:\d+|${EN_COMPOUND_NUMBER})\s+hours?\b`,
   String.raw`\b(?:at\s+bedtime|before\s+bed|after\s+meals?|before\s+meals?|per\s+meal)\b.{0,30}\b(?:${EN_DOSE_UNIT}|for\s+(?:\d+|${EN_COMPOUND_NUMBER})\s+days?)\b`,
 ].join("|");
+const DOSE_AMOUNT_SOURCE = EXPLICIT_DOSE_AMOUNT_SOURCE + String.raw`|(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千萬億兩两零〇]+)\s*${MED_ONLY_UNIT}`;
+const EXPLICIT_DOSE_PATTERN = new RegExp(EXPLICIT_DOSE_AMOUNT_SOURCE, "iu");
 const CLINICAL_CARE_DIRECTIVE_PATTERN = new RegExp([
   String.raw`(?:停止|暫停|禁止|切勿|勿|不可|不要|唔好|唔可以|唔准|不准|戒|忌)\s*(?:飲水|喝水|補水|飲奶|喝奶|餵奶|進食|飲食|食嘢|吃東西|餵食|服藥|食藥|吃藥|用藥|飲|喝|食|吃|服|餵)`,
   String.raw`(?:禁食|禁飲|禁水|禁飲食|禁飲禁食|禁止飲食|禁止進食及飲水|保持禁食|保持禁飲|保持禁飲食|整晚禁食|通宵禁食|通宵禁飲食|停食|停水|停奶|停飲|停餵|戒口|戒奶)`,
@@ -977,7 +978,7 @@ export function isPureGreetingOrSmallTalk(text: string): boolean {
 }
 
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
-  const text = joinedDraftText(draft);
+  const text = clinicalClaimText(draft);
   if (!text) return false;
   // Pure clarifies may mention domain child words without being advice.
   if (isPureClarifyingQuestion(text)) return false;
@@ -994,7 +995,7 @@ export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): b
  * Still fails closed for directive advice markers. Does not grant a review skip.
  */
 export function draftLooksLikeDirectiveCareAdvice(draft: ChatDeliveryDraft): boolean {
-  const text = joinedDraftText(draft);
+  const text = clinicalClaimText(draft);
   if (!text) return false;
   if (isPureClarifyingQuestion(text)) return false;
   return CARE_ADVISORY_PATTERN.test(text)
@@ -1338,11 +1339,13 @@ function classifyParagraphPrivateSupport(
     // The independent reviewer receives the exact attached page. Allow natural restatement
     // of that page while keeping other claims, actions and care advice on their own paths.
     const kind = paragraph.kind ?? draft.kind;
+    const clinicalText = textForDoseCheck(draft, paragraph);
     if (paragraph.citationIds.length === 1 && citedPrivateIds[0] === 'page-item'
       && (kind === 'private_reference' || kind === 'record_restatement') && draft.visibility === 'private'
-      && !CARE_ADVISORY_PATTERN.test(text) && !MEDICAL_CLAIM_PATTERN.test(text)
+      && !CARE_ADVISORY_PATTERN.test(clinicalText) && !MEDICAL_CLAIM_PATTERN.test(clinicalText)
       && !detectHighRiskCareClaims(text).matched && !UNSAFE_OPERATION_CLAIM_PATTERN.test(text)) return 'backed';
-    return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), text, true) ? "backed" : "missing";
+    // The count and its object are already bound to the cited original. Check the remaining wording too.
+    return privateSourcesSupportParagraph(citedPrivateIds.map(id => sourceById.get(id)!), clinicalText, true) ? "backed" : "missing";
   }
   if (paragraph.citationIds.length > 0) return "missing";
   if (paragraphIsExemptWithoutCitation(draft, paragraph)) return "exempt";
@@ -1399,10 +1402,56 @@ function isGroundedHistoricalMilkRestatement(draft: ChatDeliveryDraft): boolean 
   });
 }
 
+// Distinguish material counts by how the source describes the activity or the relation
+// between the objects. The independent reviewer receives the full paragraph and original.
+const MATERIAL_COUNT = /(?<![\d./／-])(?:\d+|[一二三四五六七八九十百千萬兩两零〇]+)\s*[片粒顆](?!(?:就|便|即|才|足夠|夠|左右|已|先|再|以上|以下))(?=(\p{Script=Han}+))/gu;
+const MATERIAL_ACTION = /(?:[印畫繪拼砌摺剪貼排疊]|拾起|撿起|收集|清點|組裝|排列|堆疊)(?:有|了|咗|到|好|出|成|上|着|著)?\s*$/u;
+const COUNT_IN_ACTIVITY = /(?:拓印|[繪畫拼砌摺剪]|組裝|排列|堆疊)(?:(?!之後|然後|另外|但)\p{Script=Han}){0,8}(?:有|差|欠|缺|剩|餘|共)\s*$/u;
+const MATERIAL_RELATION = /(?:互相|彼此)?(?:相連|相扣|扣合|拼合|嵌合|重疊)/u;
+
+function hasMedicationContext(text: string): boolean {
+  const withoutNamedCountQuestion = text.replace(/幾多(?=\s*[片粒顆]\p{Script=Han})/gu, "");
+  return USER_DOSING_REQUEST_PATTERN.test(withoutNamedCountQuestion) || MEDICAL_CLAIM_BASE_PATTERN.test(text)
+    || EXPLICIT_DOSE_PATTERN.test(text) || detectHighRiskCareClaims(text).matched
+    || /葉酸|維他命|維生素|口服|服用|服食|吞服|處方/u.test(text);
+}
+
+function textForDoseCheck(draft: ChatDeliveryDraft, paragraph: ChatDeliveryDraft["paragraphs"][number]): string {
+  const { text, citationIds } = paragraph;
+  const kind = paragraph.kind ?? draft.kind;
+  if (!/[片粒顆]/u.test(text) || !citationIds.length || draft.visibility !== "private"
+    || (kind !== "private_reference" && kind !== "record_restatement")
+    || hasMedicationContext(text) || hasMedicationContext(draft.userRequest ?? "")) return text;
+  const grounded = new Set<string>();
+  for (const source of draft.sources) {
+    if (source.classification !== "private" || !citationIds.includes(source.citationId)) continue;
+    const original = readablePrivateSourceText(source);
+    if (hasMedicationContext(original)) continue;
+    for (const clause of splitPrivateAssertionClauses(original)) {
+      for (const match of clause.matchAll(MATERIAL_COUNT)) {
+        const before = clause.slice(0, match.index);
+        const description = match[1]!;
+        const [object] = description.split(MATERIAL_RELATION, 1);
+        if (object && (object !== description || MATERIAL_ACTION.test(before) || COUNT_IN_ACTIVITY.test(before))) {
+          grounded.add(match[0] + object);
+        }
+      }
+    }
+  }
+  return text.replace(MATERIAL_COUNT, (quantity, description: string) => {
+    const [object] = description.split(MATERIAL_RELATION, 1);
+    return grounded.has(quantity + object) ? " " : quantity;
+  });
+}
+
+function clinicalClaimText(draft: ChatDeliveryDraft): string {
+  return draft.paragraphs.map(paragraph => textForDoseCheck(draft, paragraph)).join("\n").trim();
+}
+
 function draftHasClinicalOrDirectiveCareClaim(draft: ChatDeliveryDraft): boolean {
   if (isGroundedHistoricalMilkRestatement(draft)) return false;
   if (isPureVerifiedOperationSummary(draft)) return false;
-  const text = joinedDraftText(draft);
+  const text = clinicalClaimText(draft);
   if (!text || isPureClarifyingQuestion(text)) return false;
   if (CARE_ADVISORY_PATTERN.test(text) || detectHighRiskCareClaims(text).matched) return true;
   const kinds = draft.paragraphs.map(paragraph => paragraph.kind ?? draft.kind);
