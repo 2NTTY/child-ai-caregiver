@@ -5,6 +5,7 @@ import { FieldValue, VectorValue, type Firestore, type VectorQueryOptions } from
 import { FinishReason } from "@google/genai";
 import type { Pool } from "pg";
 import { AgentBudget, AgentStopped } from "../server/agent-budget.ts";
+import { comparableCardPassages } from "../server/agent-evidence-reuse.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { createEmbeddingGateway } from "../server/embedding-gateway.ts";
 import type { EmbeddingActor, EmbeddingUsage } from "../server/embedding-gateway.ts";
@@ -30,6 +31,7 @@ import {
   isPureClarifyingQuestion,
   isPureScopeRefusalOrLimitation,
   isPureVerifiedOperationSummary,
+  repairSourcesRemainBound,
   requiresChatDeliveryReview,
 } from "../server/chat-delivery-review.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT } from "../src/shared/chat-delivery-review.ts";
@@ -689,6 +691,84 @@ test('overview evidence supports a public introduction but cannot be the sole so
   assert.equal((await answer('public_information', '計劃每月有 12 次活動。')).status, 'rejected');
   assert.equal((await answer('caregiving', '按此概覽安排孩子照護。')).status, 'rejected');
   assert.equal((await answer('public_information', '機構提供計劃概覽。')).status, 'succeeded');
+});
+
+test('same-card citations retain each passage and its conditions for independent review in either search order', async t => {
+  const conditions = ['親子體驗日', '上午入場'];
+  const rows = [chunkFeverId, chunkVomitId].map((id, index) => {
+    const excerpt = index ? '上午掛綠色名牌。' : '上午掛藍色名牌。';
+    return mockChunk(id, { title: '合成識別名牌 ' + index, section: conditions.join('・'),
+      series: { id: 'entry-badges', institutionId: 'www.fhs.gov.hk', name: '親子活動名牌手冊' },
+      sourceId: 'badge-' + index, text: index ? excerpt : '手冊列出上午的名牌顏色。', sourceExcerpt: excerpt, keywords: ['名牌'],
+      applicability: { region: 'HK', ageBasis: 'any', minAgeMonths: null, maxAgeMonths: null, conditions, topics: ['material'] } });
+  });
+  for (const ordered of [rows, [...rows].reverse()]) {
+    const budget = new AgentBudget();
+    t.after(() => budget.close());
+    const ranked = ordered.map((row, index) => ({ ...row, rankScore: 1 / (index + 1) }));
+    const configuration = { authorize: async () => true, run: { scope, budget, runId, authorize: async () => true },
+      memory: { context: async () => emptyMemoryContext() } as any, tasks: {} as any, store: {} as any,
+      knowledge: createKnowledgeRetriever({ enforcesPersonalLibrarySelection: true, candidates: async () => ranked }, fakeEmbeddingGateway()) };
+    const followup = createProductAgentTools({ ...configuration, seededOfficialEvidence: [
+      { chunk: rows[1]!, filter: { region: 'HK', classification: 'official_guidance', age: null, topics: [] } },
+    ] });
+    const single = {kind: 'public_information', paragraphs: [{text: rows[1]!.text, citationIds: [rows[1]!.chunkId]}]};
+    assert.equal((await followup.tools.find(tool => tool.name === 'present_answer')!.execute(single, {callId: 'prior'} as any)).status, 'succeeded');
+    assert.deepEqual(followup.deliveryDraft()!.sources.map(s => s.citationId).sort(), rows.map(row => row.chunkId).sort());
+    const parentFollowup = createProductAgentTools({ ...configuration, trustedUserMessage: '親子體驗日朝早要跟哪份？',
+      seededOfficialEvidence: [{ chunk: rows[1]!, filter: { region: 'HK', classification: 'official_guidance', age: null, topics: [] } }] });
+    assert.equal((await parentFollowup.tools.find(tool => tool.name === 'present_answer')!.execute(single, {callId: 'prior-only'} as any)).data?.code,
+      'knowledge_comparison_required');
+    const otherSession = { ...rows[0]!, section: '另一場活動・上午入場',
+      applicability: { ...rows[0]!.applicability, conditions: ['另一場活動', '上午入場'] } };
+    const changedTopic = createProductAgentTools({ ...configuration, trustedUserMessage: '另一場活動朝早呢？',
+      knowledge: createKnowledgeRetriever({ enforcesPersonalLibrarySelection: true, candidates: async () => [rows[1]!, otherSession] }, fakeEmbeddingGateway()),
+      seededOfficialEvidence: [{ chunk: rows[1]!, filter: { region: 'HK', classification: 'official_guidance', age: null, topics: [] } }] });
+    const changedAnswer = await changedTopic.tools.find(tool => tool.name === 'present_answer')!.execute(single, {callId: 'old-event'} as any);
+    assert.equal(changedAnswer.data?.code, 'knowledge_question_changed');
+    const tools = createProductAgentTools(configuration);
+    const found = await tools.tools.find(tool => tool.name === 'find_official_material')!.execute({ query: '體驗日名牌' }, { callId: 'find', queryEmbeddingAttemptKey: 'find' } as any);
+    assert.equal(found.status, 'succeeded');
+    assert.deepEqual((found.data?.result as { chunks: {chunkId: string}[] }).chunks.map(c => c.chunkId), ranked.map(c => c.chunkId));
+    const present = tools.tools.find(tool => tool.name === 'present_answer')!;
+    const oneSided = await present.execute(single, {callId: 'one-side'} as any);
+    assert.equal(oneSided.status, 'succeeded');
+    assert.deepEqual(tools.deliveryDraft()!.sources.map(source => source.citationId).sort(), rows.map(row => row.chunkId).sort());
+    assert.deepEqual((await tools.presentation())!.citations.map(c => c.chunkId), [rows[1]!.chunkId]);
+    const paragraphs = rows.map(row => ({text: row.text, citationIds: [row.chunkId]}));
+    const presented = await present.execute({kind: 'public_information', paragraphs}, {callId: 'present'} as any);
+    assert.equal(presented.status, 'succeeded');
+    const result = (await tools.presentation())!;
+    assert.deepEqual(result.citations.map(c => c.chunkId), rows.map(c => c.chunkId));
+    const draft = tools.deliveryDraft()!;
+    const otherEvent = structuredClone(draft);
+    otherEvent.sources[0]!.libraryPassage!.conditions = ['其他活動'];
+    assert.notEqual(chatDeliveryDraftHash(draft), chatDeliveryDraftHash(otherEvent));
+    assert.equal(repairSourcesRemainBound(draft.sources, otherEvent.sources), false);
+    await enforceChatDeliveryReview({ presentation: result, tools, context: { scope, budget, runId, authorize: async () => true,
+      completeText: async ({user, system}) => {
+        const payload = JSON.parse(user.slice(user.indexOf('{')));
+        assert.match(system, /先從 userRequest 辨認/u);
+        for (const row of rows) {
+          const source = payload.sources.find((s: {citationId: string}) => s.citationId === row.chunkId);
+          assert.ok(source.excerpt.includes(row.sourceExcerpt));
+          assert.deepEqual(source.libraryPassage, { title: row.title, section: row.section, conditions });
+        }
+        return JSON.stringify({ draftHash: payload.draftHash, decision: 'pass', issues: [] });
+      } }, provenance: { packVersion: 'test', model: 'test' } });
+  }
+});
+
+test('different session conditions within one event remain comparable across documents on the same card', () => {
+  const series = { id: 'entry-badges', institutionId: 'www.fhs.gov.hk', name: '親子活動名牌手冊' };
+  const passage = (id: string, session: string, color: string) => mockChunk(id, { sourceId: id, series, section: '開放日・' + session,
+    sourceExcerpt: session + '掛' + color + '色名牌。', applicability: { region: 'HK', ageBasis: 'any', minAgeMonths: null,
+      maxAgeMonths: null, conditions: ['開放日', session], topics: ['material'] } });
+  const morning = passage(chunkFeverId, '上午入場', '藍');
+  const afternoon = passage(chunkVomitId, '下午入場', '綠');
+  assert.equal(comparableCardPassages(morning, afternoon), true);
+  assert.equal(comparableCardPassages(morning, { ...afternoon, series: { ...series, id: 'another-card' } }), false);
+  assert.equal(comparableCardPassages(morning, { ...afternoon, applicability: { ...afternoon.applicability, conditions: ['另一活動'] } }), false);
 });
 
 test('a transcript restricted to original lookup can quote a number without endorsing a recommendation', async t => {

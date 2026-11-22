@@ -3,6 +3,15 @@ import type { KnowledgeCandidate, KnowledgeEvidence, KnowledgeFilter } from "../
 type Identity = Pick<KnowledgeEvidence, "chunkId" | "versionId" | "contentHash">
   & Partial<Pick<KnowledgeEvidence, "sourceId" | "versionHash" | "classification">>;
 
+/** Comparable passages can agree or differ. Only their reviewed text establishes the relationship. */
+export function comparableCardPassages(a: KnowledgeEvidence, b: KnowledgeEvidence): boolean {
+  if (!a.series || !b.series || a.series.id !== b.series.id || a.series.institutionId !== b.series.institutionId
+    || a.sourceId === b.sourceId || a.classification !== b.classification || !a.sourceExcerpt || !b.sourceExcerpt
+    || a.sourceExcerpt === b.sourceExcerpt) return false;
+  const conditions = a.applicability.conditions, other = b.applicability.conditions;
+  return a.section === b.section || conditions.some(condition => other.includes(condition));
+}
+
 export function isKnowledgeEvidenceFresh(chunk: Pick<KnowledgeEvidence, "reviewState" | "validUntil">, now = Date.now()): boolean {
   if (chunk.reviewState !== "reviewed") return false;
   if (chunk.validUntil === undefined || chunk.validUntil === null) return true;
