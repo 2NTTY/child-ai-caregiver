@@ -29,7 +29,7 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
     authorUserId: message.role === "user" ? userId : null, inReplyTo: null, createdAt: `2026-10-07T07:00:0${index}Z` }));
   const messageId = messages.at(-1)!.id;
   const task = { title: "[合成驗收 T7] 整理繪本袋", details: "純合成驗收：把繪本放入交接袋", kind: "ordinary",
-    assigneeUserId: userId, dueAt: "2026-10-12T11:30:00Z", timeZone: "Asia/Hong_Kong" };
+    assigneeUserId: userId, dueAt: "2026-10-12T19:30", timeZone: "Asia/Hong_Kong" };
   let calls = 0, reviews = 0, proposalsWritten = 0, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [], sizes: number[] = [], responseSizes: number[] = [];
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: String(inputLimit) }),

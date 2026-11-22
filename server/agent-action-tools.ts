@@ -11,6 +11,7 @@ import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { AgentStopped } from "./agent-budget.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
+import { AgentTaskTimeError, agentTaskTime, resolveAgentTaskTime } from './agent-task-time.ts';
 
 export type AgentActionReaders = Pick<AgentActionsStore, "records" | "notes" | "notesByKeys" | "recordById" | "noteById">;
 
@@ -185,10 +186,13 @@ export function createAgentActionTools(
         change_self_task: "完成、取消或改期指定本人普通提醒；先查原 ID 與版本，收到不等於完成。" }[actionKind])
         + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者文字訊息；本次附有原錄音時可填 sourceBasis=voice_interpretation，sourceQuote 寫清楚聽到的片語（AI 辨識，非文字原文），聽不清不能猜；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策；若目前政策為先確認或未涵蓋該動作，Server 會先建立待確認草稿，不會直接正式保存。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 或 proposal 回報，未授權外發不能稱已通知。",
       // Each native tool has one concrete shape; the shared business union retains all refinements.
-      parameters: z.object(shape), authorize,
+      parameters: z.object({ ...shape, ...(actionKind === 'create_self_task' ? { dueAt: agentTaskTime }
+        : actionKind === 'change_self_task' ? { dueAt: agentTaskTime.nullable() } : {}) }), authorize,
       execute: async (args, call) => {
         try {
-          const action = agentDirectActionSchema.parse({ ...args, kind: actionKind });
+          const timed = actionKind === 'create_self_task' || (actionKind === 'change_self_task' && args.action === 'reschedule');
+          const action = agentDirectActionSchema.parse({ ...args, kind: actionKind,
+            ...(timed && { dueAt: resolveAgentTaskTime(args.dueAt, args.timeZone) }) });
           if (typeof proposals?.propose === "function" && typeof actions.policy === "function") {
             const currentPolicy = await actions.policy(run.scope.userId, run.scope.childId);
             if (!currentPolicy) throw new AgentStopped("unauthorized");
@@ -237,6 +241,7 @@ export function createAgentActionTools(
           return { status: "succeeded", reference: receipt.id, data: { mode: "auto_saved", formalSave: true, receipt,
             ...(action.kind === "save_record" ? { savedEventTime: groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime } : {}) } };
         } catch (error) {
+          if (error instanceof AgentTaskTimeError) return { status: 'rejected', data: { code: error.code, formalSave: false, nextAction: error.nextAction } };
           if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
           if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected",
             data: { code: error.code, formalSave: false, nextAction: "重新核對目前授權及原操作；不要換 ID 重複執行，不把拒絕寫成成功。" } };
