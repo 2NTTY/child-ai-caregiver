@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-225-image-count",
+  "base": {
+    "artifact": "candidate-223/out",
+    "htmlSha256": "3234c8314d8ea9919b0d839fab2adf9825100fa5c70d9fe5bd7b20df9ea01921",
+    "rawRecordsSha256": "95fe07b61e18682faaea53367bc8c3b1af9fb98936e2d3648d3a2214cc23daae",
+    "rawArtworkSha256": "5172c5ddfd0002d99fa1d7409965a4ec2129f875364e2940223d2c59afc74326",
+    "topics": 110,
+    "choices": 223,
+    "images": 223
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-concern-append/assets.json",
+      "sha256": "192f0fafca9ed1d882d7579482f0fff738823abefd51d66f0a18da5033fe68fa"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "ef6a192fb8bc415cc7918b10c91f48564659a21d8ecf0fe82d5bdb64af908867",
+    "PROVENANCE.md": "3ad84f9cf39e0b74d4c39f97b30d423c2f46e95348c27b1d9cd834f2dd5849f3"
+  },
+  "topics": [
+    {
+      "number": 111,
+      "title": "關注鏈：在原有關注追加一次觀察",
+      "choices": [
+        {
+          "name": "在歷史下方另寫新觀察",
+          "note": "Trac 保留原問題與變更歷史，留言另填後再提交。育伴港可在同一項持續關注下追加觀察，須選觀察時間並確認家庭共享；原有事件保留，追加觀察不等於安排站內跟進或另建提醒、待辦。",
+          "links": [
+            {
+              "label": "Trac 1.6：原問題及變更歷史",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/ticket/templates/ticket.html#L157-L217"
+            },
+            {
+              "label": "完整桌面頁首、工具列與內容外框",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/templates/theme.html#L73-L125"
+            },
+            {
+              "label": "原問題的屬性和說明",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/ticket/templates/ticket_box.html#L42-L162"
+            },
+            {
+              "label": "現有留言的編號、作者與時間",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/ticket/templates/ticket_change.html#L46-L91"
+            },
+            {
+              "label": "獨立的「新增留言」欄",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/ticket/templates/ticket.html#L491-L539"
+            },
+            {
+              "label": "各自獨立的預覽及提交按鈕",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/ticket/templates/ticket.html#L581-L594"
+            },
+            {
+              "label": "置中的原生淡黃色問題卡",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/trac/htdocs/css/ticket.css#L3-L28"
+            },
+            {
+              "label": "BSD-3-Clause：參考 Trac 程式碼的授權",
+              "url": "https://github.com/edgewall/trac/blob/717da8621d32bc0b50cda2acb77fcc4ae59d82b2/COPYING#L1-L16"
+            }
+          ],
+          "asset": {
+            "input": "draft-concern-append/concern-append-a.png",
+            "sha256": "fc826c9da7f96101f8674f39dc55e3802f19ad22c18a9a824a3532e5bcd57337",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Trac 問題單非官方重繪：上方是虛構紙藝展問題的原有說明和兩則既有留言，下方另有已填但未提交的新增留言欄，預覽及提交變更按鈕均未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "工作區保留舊內容和新稿",
+          "note": "Zammad 在同一張工單下另寫支援人員可見的內部備註，先前內容仍可查看。育伴港則在同一項已跟隨的關注追加觀察，須填寫觀察時間並確認家庭共享；原有事件保留，這一步不會新增任務、提醒或站內跟進。",
+          "links": [
+            {
+              "label": "Zammad 7.0.0：固定版本",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/VERSION#L1"
+            },
+            {
+              "label": "完整工單、先前內容及獨立編輯區",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/app/assets/javascripts/app/views/ticket_zoom.jst.eco#L12-L39"
+            },
+            {
+              "label": "先前內容與新備註分開載入",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/app/assets/javascripts/app/controllers/ticket_zoom.coffee#L567-L626"
+            },
+            {
+              "label": "備註類型與內部可見設定",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/app/assets/javascripts/app/controllers/ticket_zoom.coffee#L748-L768"
+            },
+            {
+              "label": "內部備註鎖圖示",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/app/assets/javascripts/app/views/ticket_zoom/article_new.jst.eco#L15-L47"
+            },
+            {
+              "label": "頁底另設更新按鈕",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/app/assets/javascripts/app/views/ticket_zoom/attribute_bar.jst.eco#L64-L74"
+            },
+            {
+              "label": "Zammad 程式碼授權：GNU AGPL v3 · AGPL-3.0",
+              "url": "https://github.com/zammad/zammad/blob/f3228274c4feefac470d7efad12f240debd678bc/README.md#L10-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-concern-append/concern-append-b.png",
+            "sha256": "f0304255a8b06975a63707e96d09ba71a3f395c1bd5b0d92a958380372cf1d88",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Zammad 7.0.0 工單全頁重繪。左側選中紙藝展板工單，中央兩則已存在的虛構備註下方有一則帶鎖圖示和淺紅斜紋框的內部備註草稿；右側是工單屬性，底部的更新尚未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 111 題 · 原有記錄與新的觀察區的兩幅自製示意",
+      "input": "draft-concern-append/DECLARATION.txt",
+      "sha256": "ef6a192fb8bc415cc7918b10c91f48564659a21d8ecf0fe82d5bdb64af908867"
+    }
+  ]
+}
