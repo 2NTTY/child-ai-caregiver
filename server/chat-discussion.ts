@@ -93,7 +93,7 @@ const viewpoints = [
   '站在新手家長的位置，接住上一席的具體做法，直接用一句完整的問句提出實行時會遇到的選擇。可以問「如果……我該怎樣選？」保留假設語氣，把家長的感受和做法的成效分開。你是 AI，不虛構經驗或替家長認定感受。',
   '直接回答上一席的疑問。用一句「我會先……；如果見到……，我就……」交代你的選擇及改選條件。在選擇說清楚時結束發言，讓主助手說明教材。你是 AI，不冒稱有親身育兒經驗。',
 ];
-export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每席按當前工具直接回應上一席。主助手另用 paragraphs 提交可獨立閱讀的主回答及引用。若本輪要求合併收尾，在 closingView 放當前角色的原話。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
+export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每席按當前工具直接回應上一席。主助手另用 paragraphs 提交可獨立閱讀的主回答及引用。交代家長明說、會左右選擇的限制，並說清在該限制下可先怎做及何時改選。若本輪要求合併收尾，在 closingView 放當前角色的原話。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
 
 // Keep whole clauses from one speaker. The subsequent review also receives the original wording and issues.
 function isContributionExcerpt(original: string, replacement: string): boolean {

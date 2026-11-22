@@ -365,6 +365,8 @@ test("2. chat_only mode stays strictly orthogonal to REQ-009 three-role discussi
         assert.deepEqual(payload.discussionRoles, ["knowledge", "parent", "methods"]);
         return {
           content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [], claimedAppChanges: [],
+            mainReview: { requestChecks: payload.requestClauses.map(() => ({ status:"addressed", mainQuote:"少量多次飲水" })),
+              clauseChecks: payload.mainClauses.map(() => ({ basis:"no_outcome_claim", sourceQuote:"" })) },
             outcomeChecks: payload.paragraphs.map((_: unknown, index: number) => index === 0
               ? { basis: "source_supported", wording: "有助補水", sourceQuote: "少量多次補充水分" }
               : { basis: "no_outcome_claim", wording: "", sourceQuote: "" }) }) }] },

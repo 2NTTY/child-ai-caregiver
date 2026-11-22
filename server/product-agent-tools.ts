@@ -65,7 +65,7 @@ const discussionPresentationInput = chatPresentationInput.extend({
 });
 const sourcePairInput = z.strictObject({
   selectedItemText: agentAnswerSchema.shape.paragraphs.element.shape.text.describe('One complete parent-facing sentence answering the question about the selected item.'),
-  officialAdviceText: agentAnswerSchema.shape.paragraphs.element.shape.text.describe('A short parent-facing answer to the rest of the question using the one supplied official passage. Include the practical choice and its condition.'),
+  officialAdviceText: agentAnswerSchema.shape.paragraphs.element.shape.text.describe('A short parent-facing answer to the rest of the question using the one supplied official passage. State the constraints that change the choice and give a practical action fitting them.'),
 });
 const discussionToolInput = discussionPresentationInput.partial({kind:true, paragraphs:true}).extend({
   selectedItemText:sourcePairInput.shape.selectedItemText.optional(), officialAdviceText:sourcePairInput.shape.officialAdviceText.optional(),
@@ -1486,7 +1486,7 @@ export function createProductAgentTools(options: {
     discussionInstruction: discussion && ((finishing: boolean) => selectedOfficialHelp.size
       ? '已選取正式求助入口，現在用 present_answer 直接提交所需的求助回覆。'
       : canPresentSourcePair()
-        ? '三席已各自發言。現在用 present_answer 的 selectedItemText 回答原題所問的項目事實，只依 selectedItem 的實際內容。officialAdviceText 則寫給家長一個可以嘗試的做法及轉換條件，清楚分辨你的建議與教材的原話。兩欄都直接填家長會看到的文字。家長尚未選擇任何一席的做法。Server 會分別連結所選項目及唯一已讀的官方片段。'
+        ? '三席已各自發言。現在用 present_answer 的 selectedItemText 回答原題所問的項目事實，只依 selectedItem 的實際內容。officialAdviceText 要清楚回應原題中影響選擇的具體限制，寫出可嘗試的做法及轉換條件，清楚分辨你的建議與教材的原話。兩欄都直接填家長會看到的文字。家長尚未選擇任何一席的做法。Server 會分別連結所選項目及唯一已讀的官方片段。'
         : discussion.instruction(finishing)),
     beginDiscussionTurn: discussion?.beginNativeTurn,
     discussionEndedEarly: () => !!discussion?.noTradeoff() || selectedOfficialHelp.size > 0,
