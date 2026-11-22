@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-197-image-count",
+  "base": {
+    "artifact": "candidate-195/out",
+    "htmlSha256": "39fbaa35119779eeab4da98fe6ee38b6e19da3e536b5be3de341cd2c3b557ea5",
+    "rawRecordsSha256": "84f143de26e2c427d339d18da4112bfdba002d8e6c6f3d344290e63d05dd0bbc",
+    "rawArtworkSha256": "2a2317cab9ca8d2d65e2b5028f63c1e81922c932dbfecce7414a3c6732c29f42",
+    "topics": 96,
+    "choices": 195,
+    "images": 195
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-time/assets.json",
+      "sha256": "6df80061f8941e79a5e096877dce968ff8c522712caf33d12a1bd952310f6e8c"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "bb48a7c5e760f02381cd9c1c30477928f1bd1d179f8c90792fd40d0beaa3c001",
+    "PROVENANCE.md": "597da46ffcee9122f6641497cd7723cd867b8a25f85d5f892f93cf7ef0d8c0d9"
+  },
+  "topics": [
+    {
+      "number": 97,
+      "title": "日常觀察：保留「午飯後」，不猜日期",
+      "choices": [
+        {
+          "name": "時間原文和日期分開",
+          "note": "AtoM 的日期顯示保留「約在紙藝展開幕前」，起迄日期留空。育伴港的「日常觀察」只有可留空的時間原文；填「午飯後」不會推算日期或時刻。「預覽共享內容」後仍未保存。",
+          "links": [
+            {
+              "label": "AtoM v2.10.0：檔案描述編輯頁及識別區",
+              "url": "https://github.com/artefactual/atom/blob/db256d11177d81000d269da625e4fec162c426a3/plugins/sfIsadPlugin/modules/sfIsadPlugin/templates/editSuccess.php#L20-L73"
+            },
+            {
+              "label": "日期欄、起始欄和結束欄各自獨立",
+              "url": "https://github.com/artefactual/atom/blob/db256d11177d81000d269da625e4fec162c426a3/plugins/sfIsadPlugin/modules/sfIsadPlugin/templates/_event.php#L85-L119"
+            },
+            {
+              "label": "自由文字與結構化日期的不同提示",
+              "url": "https://github.com/artefactual/atom/blob/db256d11177d81000d269da625e4fec162c426a3/apps/qubit/modules/event/actions/editComponent.class.php#L104-L131"
+            },
+            {
+              "label": "AtoM 程式授權：AGPL-3.0-or-later",
+              "url": "https://github.com/artefactual/atom/blob/db256d11177d81000d269da625e4fec162c426a3/apps/qubit/modules/event/actions/editComponent.class.php#L3-L10"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-time/care-time-a.png",
+            "sha256": "b58452100818d452f622373749b619fa3da4552a26d146dc7100625d0732c811",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 AtoM 檔案描述編輯頁，展開識別區。日期顯示欄填上「約在紙藝展開幕前」，右側開始和結束欄都是空白，頁底的儲存操作尚未執行。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "用獨立視窗保留純文字",
+          "note": "Gramps 的「純文字」會停用結構化日期欄，保留「午飯後」。此圖未確認或保存。育伴港在「日常觀察」的表單直接保留事件時間原文；預覽不會推算日期或保存記錄，也沒有這個類型選單。",
+          "links": [
+            {
+              "label": "Gramps v6.0.8：事件編輯器及獨立日期入口",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/glade/editevent.glade#L97-L182"
+            },
+            {
+              "label": "同版：事件編輯器的底層分頁",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/editors/editevent.py#L209-L266"
+            },
+            {
+              "label": "同版：日期類型包含「純文字」",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/editors/editdate.py#L75-L85"
+            },
+            {
+              "label": "同版：獨立選擇日期視窗中的類型欄",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/glade/editdate.glade#L247-L321"
+            },
+            {
+              "label": "同版：純文字保留原句，結構化日期留空",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/editors/editdate.py#L311-L322"
+            },
+            {
+              "label": "同版：純文字模式停用結構化日期欄",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/editors/editdate.py#L355-L374"
+            },
+            {
+              "label": "Gramps 所列日期編輯檔授權：GPL-2.0-or-later",
+              "url": "https://github.com/gramps-project/gramps/blob/13fdd22bf573fdf58ad519515c6ed90eb54dbc83/gramps/gui/editors/editdate.py#L2-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-time/care-time-b.png",
+            "sha256": "2f9e98681e4a98538fbd799ee7cfef748880f2c39c202e752c78767da7b7c29c",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Gramps 的非官方全頁示例。新增事件視窗上另開「選擇日期」，類型為「純文字」。上方曆法選單仍可用，精度和兩組年月日欄呈灰色；灰色的 0 不代表已指定日期。「文字備註」保留「午飯後」，尚未按下確定。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 97 題 · 保留時間原話的兩幅自製示意",
+      "input": "draft-care-time/DECLARATION.txt",
+      "sha256": "bb48a7c5e760f02381cd9c1c30477928f1bd1d179f8c90792fd40d0beaa3c001"
+    }
+  ]
+}
