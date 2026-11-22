@@ -102,6 +102,8 @@ test('a question binds three successive native turns, the main reply and one ind
       if (followup && i === 0) {
         const context = inputs.map(p => p.text ?? '').join('');
         assert.ok(context.includes(base.text) && context.includes(previousAnswer.text) && context.includes(task.id));
+        assert.ok(inputs.some(p => p.text === linkedQuestion.text), 'the follow-up button must be the actual user turn');
+        assert.ok(context.includes('"originalQuestion":' + JSON.stringify(base.text)));
         assert.ok(context.includes('Prepare the picture book') && context.includes('page-item'), 'selected task and its reviewable citation must reach the first model request');
         assert.ok(context.includes('"excerptComplete":true'), 'a complete excerpt must not describe the task as completed');
       }
@@ -346,6 +348,18 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   await assert.rejects(compare('source_supported', 'A result missing from the excerpt'), rejected('delivery_review_incomplete'));
   await assert.rejects(compare('source_supported', '放工後只得十分鐘'), rejected('delivery_review_incomplete'));
   await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), outcomeChecks: [] })), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(draft, p => ({ ...pass(p.draftHash, []), approvedSentenceIds: [99999] })), rejected('delivery_review_incomplete'));
+  const twoSentences = withClaim(1, '從家長的角度，時間很緊。孩子想走開時可以停下來嗎？');
+  await assert.rejects(review(twoSentences, p => {
+    const option = p.sentenceOptions.find((s: { paragraph: number }) => s.paragraph === 1);
+    return { ...pass(p.draftHash, []), approvedSentenceIds: [option.id, option.id] };
+  }), rejected('delivery_review_incomplete'));
+  await assert.rejects(review(twoSentences, p => {
+    const option = p.sentenceOptions.find((s: { text: string }) => s.text === '孩子想走開時可以停下來嗎？');
+    const verdict = pass(p.draftHash, []);
+    verdict.outcomeChecks[1].wording = '時間很緊';
+    return { ...verdict, approvedSentenceIds: [option.id] };
+  }), rejected('delivery_review_incomplete'));
   for (const index of [1, 4]) {
     // An implicit notification is still an external action; a citation cannot serve as its receipt.
     await assert.rejects(review(withClaim(index, '已經通知其他家庭成員。'), p => pass(p.draftHash, [index])), rejected('delivery_review_rejected'));
@@ -362,6 +376,41 @@ test('requires current paragraph checks and rejects unsupported app changes in a
   const workspace: ChatDeliveryDraft = { ...draft, kind: 'private_reference', sources: [workspaceSource], userRequest: '我登記了哪些孩子？',
     paragraphs: draft.paragraphs.map(() => ({ text: '你帳戶登記了小悠。', citationIds: [workspaceSource.citationId] })) };
   await assert.rejects(review(workspace, p => ({ decision:'pass', issues:[], draftHash:p.draftHash, claimedAppChanges:[], observedReadOnly:false })), rejected('delivery_review_rejected'));
+});
+
+test('the last independent review can approve the original parent question without its unsupported stress claim', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const { corrected } = JSON.parse(await readFile(
+    new URL('../artifacts/verification/REQ009_DISCUSSION_OUTCOME_REVIEW_20261122.json', import.meta.url), 'utf8'));
+  for (const { index, ...change } of corrected.paragraphChanges) Object.assign(draft.paragraphs[index], change);
+  const question = '如果不介意多問一個細節，如果他因為當時情緒不太好，直接把準備好的沙槌推開，這時候是否應該嘗試轉移注意力，還是乾脆讓他自己平靜一下會比較好？';
+  draft.paragraphs[1] = { ...draft.paragraphs[1], text: '確實，將十分鐘視為陪伴而非任務，能減少不少壓力。' + question };
+  const budget = new AgentBudget();
+  budget.take('modelCalls', budget.remainingModelCalls - 1);
+  let live = structuredClone(draft);
+  const seen: string[] = [];
+  try {
+    const result = await enforceChatDeliveryReview({ presentation, provenance: { packVersion:'test', model:'controlled' },
+      tools: { deliveryDraft: () => live, bindRepairEvidence: () => async () => true, presentation: async () => presentation,
+        replaceDeliveryAnswer(next, approved) {
+          assert.deepEqual(approved, new Set([1]));
+          live = { ...live, paragraphs: next.paragraphs };
+        } },
+      context: { budget, scope, completeText: async ({ user, purpose }) => {
+        budget.take('modelCalls');
+        seen.push(purpose!);
+        const payload = JSON.parse(user.slice(user.indexOf('{')));
+        const option = payload.sentenceOptions?.find((s: { text: string; paragraph: number }) => s.paragraph === 1 && s.text === question);
+        assert.ok(option, 'The review must receive the exact independent question as a complete deliverable sentence');
+        return JSON.stringify({ draftHash: payload.draftHash, decision:'pass', issues:[], approvedSentenceIds:[option.id],
+          claimedAppChanges:[], outcomeChecks:adviceOnly(live.paragraphs) });
+      } } as AgentRunContext });
+    assert.deepEqual(seen, ['delivery_review']);
+    assert.equal(live.paragraphs[1].text, question);
+    assert.deepEqual(live.paragraphs[1].citationIds, draft.paragraphs[1].citationIds);
+    assert.equal(chatDeliveryReviewAllows(result.review!, live, result.review!.promptVersion), true);
+    assert.equal(chatDeliveryReviewAllows(result.review!, draft, result.review!.promptVersion), false);
+  } finally { budget.close(); }
 });
 
 test('repairs the archived duration claim while preserving the original three speakers and the supported advice', async () => {
@@ -427,7 +476,7 @@ test('repairs the archived duration claim while preserving the original three sp
     assert.deepEqual(result.presentation.discussion?.map(p => p.text), next.paragraphs.slice(0,3).map(p => p.text));
     assert.match(result.presentation.text, /一本藍色圖畫書和一個沙槌/u);
     assert.equal(result.review?.decision, 'pass');
-    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/1');
+    assert.equal(result.review?.policyVersion, 'p3-m01-chat-delivery-review/2/discussion-outcomes/2');
     assert.equal(chatDeliveryReviewAllows(result.review!, current, result.review!.promptVersion,
       { previousDraft:draft, issues:originalWithOutcomeChecks.verdict.issues }), true);
     assert.equal(chatDeliveryReviewAllows({ ...result.review!, policyVersion:'p3-m01-chat-delivery-review/2' }, current, result.review!.promptVersion,

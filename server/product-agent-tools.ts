@@ -554,7 +554,7 @@ export function createProductAgentTools(options: {
   function guard<T>(operation: () => Promise<T>): Promise<AgentToolResult> {
     return guardResult(async () => ({ status: "succeeded", data: { result: await operation() } }));
   }
-  async function guardResult(operation: () => Promise<AgentToolResult>): Promise<AgentToolResult> {
+  async function guardResult(operation: () => Promise<AgentToolResult>, speakerTool?: string): Promise<AgentToolResult> {
     try { return await operation(); }
     catch (error) {
       if (error instanceof DiscussionMainTooLong) return { status: 'rejected', data: {
@@ -588,7 +588,9 @@ export function createProductAgentTools(options: {
         return { status: 'rejected', data: { code: error.code,
           selectedItemCitation: { kind: 'private_reference', citationIds: [options.pageEvidence.source.citationId] },
           availableOfficialCitationIds,
-          nextAction: '回答家長選取的項目時，只把原文支持的內容寫入該段，再按 selectedItemCitation 填 kind 和 citationIds。其他記錄用相應工具的引用，照護建議另段引用已讀官方片段。' } };
+          nextAction: speakerTool === 'share_knowledge_view' && availableOfficialCitationIds.length
+            ? '本輪仍是育兒知識席。選一份已讀教材，從中提出你會試的一個做法及時機，交在 text；kind 填 caregiving，citationIds 只填該教材的 chunkId。待辦物品留到主答另一段交代。'
+            : '回答家長選取的項目時，只把原文支持的內容寫入該段，再按 selectedItemCitation 填 kind 和 citationIds。其他記錄用相應工具的引用，照護建議另段引用已讀官方片段。' } };
       }
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code,
         ...(availableOfficialCitationIds.length ? { availableOfficialCitationIds } : {}),
@@ -779,7 +781,7 @@ export function createProductAgentTools(options: {
     return result;
   }
   const tools: AgentTool[] = (discussion?.tools ?? []).map(tool => ({
-    ...tool, execute: (args, context) => guardResult(() => tool.execute(args, context)),
+    ...tool, execute: (args, context) => guardResult(() => tool.execute(args, context), tool.name),
   }));
   if (privateConversation && options.accountChildren) {
     const directory = options.accountChildren;

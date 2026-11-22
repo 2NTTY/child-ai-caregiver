@@ -1,0 +1,393 @@
+{
+  "case": "REQ-009",
+  "testedBase": "a2e176dbee2eac62b18eb3eed65060bcd3666705",
+  "observedAt": "2026-11-22T02:16:53.754Z",
+  "previousReceipt": "REQ009_DISCUSSION_PARENT_DELIVERY_20261122.json",
+  "environment": {
+    "client": "Edge 158, local Web and Firebase Emulator; synthetic parent only",
+    "provider": "Vertex ADC, gemini-3.1-flash-lite",
+    "perRun": 8,
+    "globalDaily": 100,
+    "finalSyntheticDaily": 20,
+    "finalUsage": 55
+  },
+  "parentAcceptance": "awaiting_successful_discussion",
+  "operations": [
+    {
+      "openedAt": "2026-11-22T01:58:13.269Z",
+      "question": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+      "task": {
+        "page": "/tasks",
+        "item": {
+          "kind": "task",
+          "id": "637cf99a-7b68-4808-8838-d1a9f2382b7f",
+          "version": 1
+        }
+      },
+      "ordinary": {
+        "questionId": "e7b61b21-02a4-4dd8-aef0-9b6066f880e8",
+        "runId": "84843739-f5f1-48de-a11a-74d7f22a0fb8",
+        "status": "completed",
+        "stopReason": null,
+        "reviewDecision": "pass",
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 1,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "present_answer",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": null
+      },
+      "discussion": {
+        "questionId": "d3926d50-7cd4-8966-8180-f9d5b229b20f",
+        "runId": "bfbf560c-9ed4-4be5-a34e-3fc5fffa2728",
+        "status": "stopped",
+        "stopReason": "tool_limit",
+        "reviewDecision": null,
+        "counts": {
+          "modelCalls": 5,
+          "toolCalls": 5,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "share_knowledge_view",
+            "rejected"
+          ],
+          [
+            "share_knowledge_view",
+            "rejected"
+          ],
+          [
+            "share_knowledge_view",
+            "rejected"
+          ],
+          [
+            "share_knowledge_view",
+            "rejected"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": ""
+      },
+      "dayLimit": {
+        "open": {
+          "at": "2026-11-22T01:57:51.918Z",
+          "before": 20,
+          "after": 61,
+          "used": 37,
+          "effectiveVersion": 14,
+          "soleSyntheticAccount": true
+        },
+        "restore": {
+          "at": "2026-11-22T02:01:54.371Z",
+          "before": 61,
+          "after": 20,
+          "used": 44,
+          "effectiveVersion": 15,
+          "soleSyntheticAccount": true
+        }
+      },
+      "providerRejection": null,
+      "generationEstimateUsd": 0.02708475
+    },
+    {
+      "openedAt": "2026-11-22T02:05:17.631Z",
+      "question": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+      "task": {
+        "page": "/tasks",
+        "item": {
+          "kind": "task",
+          "id": "637cf99a-7b68-4808-8838-d1a9f2382b7f",
+          "version": 1
+        }
+      },
+      "ordinary": {
+        "questionId": "5132cba4-5a3f-4891-8e9f-2c3c32314d45",
+        "runId": "b81e03d4-fad9-41f6-b5d2-d36b5236b6a6",
+        "status": "completed",
+        "stopReason": null,
+        "reviewDecision": "pass",
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 1,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "present_answer",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": null
+      },
+      "discussion": {
+        "questionId": "548bf7a8-dc24-884e-88dc-2782130d900b",
+        "runId": "cf9a3187-9828-487a-a953-3a3cb93c4eeb",
+        "status": "stopped",
+        "stopReason": "model_http_429",
+        "reviewDecision": null,
+        "counts": {
+          "modelCalls": 3,
+          "toolCalls": 2,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "share_knowledge_view",
+            "succeeded"
+          ],
+          [
+            "ask_parent_view",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": ""
+      },
+      "dayLimit": {
+        "open": {
+          "at": "2026-11-22T02:04:46.739Z",
+          "before": 20,
+          "after": 68,
+          "used": 44,
+          "effectiveVersion": 16,
+          "soleSyntheticAccount": true
+        },
+        "restore": {
+          "at": "2026-11-22T02:08:26.555Z",
+          "before": 68,
+          "after": 20,
+          "used": 49,
+          "effectiveVersion": 17,
+          "soleSyntheticAccount": true
+        }
+      },
+      "providerRejection": {
+        "id": "b28af66a-d395-48f3-9fa4-301bcbaa89ce",
+        "stage": "http_rejected",
+        "at": "2026-11-22T02:09:17.558Z",
+        "usd": 0,
+        "httpStatus": 429,
+        "runId": "cf9a3187-9828-487a-a953-3a3cb93c4eeb",
+        "basis": "https://cloud.google.com/model-garden/pricing",
+        "failedLaunchKept": true
+      },
+      "generationEstimateUsd": 0.0147515
+    },
+    {
+      "openedAt": "2026-11-22T02:09:47.187Z",
+      "question": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+      "task": {
+        "page": "/tasks",
+        "item": {
+          "kind": "task",
+          "id": "637cf99a-7b68-4808-8838-d1a9f2382b7f",
+          "version": 1
+        }
+      },
+      "ordinary": {
+        "questionId": "a9b73e5e-4b72-4a88-9e24-5121e119d51e",
+        "runId": "a5a11887-d962-4d8c-8a49-28c57c93e420",
+        "status": "stopped",
+        "stopReason": "delivery_review_incomplete",
+        "reviewDecision": null,
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 1,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "present_answer",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": "這則內容尚未通過獨立核對，未成為正式回覆。已保存的操作仍以收據為準。"
+      },
+      "discussion": null,
+      "dayLimit": {
+        "open": {
+          "at": "2026-11-22T02:09:29.690Z",
+          "before": 20,
+          "after": 73,
+          "used": 49,
+          "effectiveVersion": 18,
+          "soleSyntheticAccount": true
+        },
+        "restore": {
+          "at": "2026-11-22T02:11:07.735Z",
+          "before": 73,
+          "after": 20,
+          "used": 51,
+          "effectiveVersion": 19,
+          "soleSyntheticAccount": true
+        }
+      },
+      "providerRejection": {
+        "id": "d37f9268-bab2-428a-8ba0-829ac4c03b70",
+        "stage": "http_rejected",
+        "at": "2026-11-22T02:11:45.695Z",
+        "usd": 0,
+        "httpStatus": 429,
+        "runId": "a5a11887-d962-4d8c-8a49-28c57c93e420",
+        "basis": "https://cloud.google.com/model-garden/pricing",
+        "failedLaunchKept": true
+      },
+      "generationEstimateUsd": 0.0048195
+    },
+    {
+      "openedAt": "2026-11-22T02:14:24.629Z",
+      "question": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+      "task": {
+        "page": "/tasks",
+        "item": {
+          "kind": "task",
+          "id": "637cf99a-7b68-4808-8838-d1a9f2382b7f",
+          "version": 1
+        }
+      },
+      "ordinary": {
+        "questionId": "b04c7038-28f2-4fbc-8118-ab6899ccf7f0",
+        "runId": "a572f1f0-5063-454c-a52f-2bbdcb0184bb",
+        "status": "completed",
+        "stopReason": null,
+        "reviewDecision": "pass",
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 1,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "present_answer",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": null
+      },
+      "discussion": {
+        "questionId": "64c23c79-f2c7-8492-aa56-515b4a133b83",
+        "runId": "a5713f51-5622-4bd5-81e1-3e8dec4c480f",
+        "status": "stopped",
+        "stopReason": "model_http_429",
+        "reviewDecision": null,
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 1,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          [
+            "share_knowledge_view",
+            "succeeded"
+          ]
+        ],
+        "deliveredSpeakers": [],
+        "stopNotice": ""
+      },
+      "dayLimit": {
+        "open": {
+          "at": "2026-11-22T02:14:08.463Z",
+          "before": 20,
+          "after": 75,
+          "used": 51,
+          "effectiveVersion": 20,
+          "soleSyntheticAccount": true
+        },
+        "restore": {
+          "at": "2026-11-22T02:16:53.754Z",
+          "before": 75,
+          "after": 20,
+          "used": 55,
+          "effectiveVersion": 21,
+          "soleSyntheticAccount": true
+        }
+      },
+      "providerRejection": {
+        "id": "e7a8d538-cd74-4ad6-a0ba-f7a69218ab7f",
+        "stage": "http_rejected",
+        "at": "2026-11-22T02:17:30.393Z",
+        "usd": 0,
+        "httpStatus": 429,
+        "runId": "a5713f51-5622-4bd5-81e1-3e8dec4c480f",
+        "basis": "https://cloud.google.com/model-garden/pricing",
+        "failedLaunchKept": true
+      },
+      "generationEstimateUsd": 0.01051325
+    }
+  ],
+  "remaining": "兩宗討論在已收到一席或兩席後遇 Vertex 429；另一宗在普通答核對遇 429。沒有三席及可交付的主答。",
+  "offline": {
+    "historicalFirstRun": "8febc374-1882-4c4e-9908-af664a00f5d8",
+    "historicalFirstHash": "e4d21d0dc9ea7e0d74c07808423ba0b0535f98c36b3dabfed2162cfab455e2bf",
+    "historicalSecondRun": "c903aed5-719b-40dd-a8ec-6ef19f18b41f",
+    "historicalSecondHash": "1c21f793d3366696a1e4b644b24274c5c5a26a3b126173343a4492df56ec9811",
+    "historicalDecision": "revise",
+    "issue": {
+      "paragraph": 1,
+      "reason": "對調整視角的效果作出無依據的斷言。",
+      "support": "所附官方指引僅說明幼童發展需要，並未提及調整心態對家長壓力之影響。"
+    },
+    "original": "確實，將十分鐘視為陪伴而非任務，能減少不少壓力。如果不介意多問一個細節，如果他因為當時情緒不太好，直接把準備好的沙槌推開，這時候是否應該嘗試轉移注意力，還是乾脆讓他自己平靜一下會比較好？",
+    "selected": "如果不介意多問一個細節，如果他因為當時情緒不太好，直接把準備好的沙槌推開，這時候是否應該嘗試轉移注意力，還是乾脆讓他自己平靜一下會比較好？",
+    "controlledSelectionHash": "2b102d3b3acfef7d552e151295a20feebb9c9d9ceebcc23b30feafa3e05a274d",
+    "role": "parent",
+    "sourceVersions": [
+      {
+        "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+        "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+        "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313"
+      },
+      {
+        "citationId": "page-item",
+        "version": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+        "contentHash": "86af4b2532cdd1697e4446bc991b2ed717a8e6a89c289366781528a96d88a706"
+      }
+    ],
+    "unmodifiedOtherParagraphs": true,
+    "externalCalls": 0,
+    "scope": "Recorded original draft and independent rejection. Sentence selection and approval are an offline controlled reviewer response, not a new Vertex verdict."
+  },
+  "checks": {
+    "focusedTests": 62,
+    "serverTypecheck": "passed"
+  },
+  "metering": {
+    "newGenerationEstimateUsd": 0.057169,
+    "newModelAttempts": 18,
+    "newQueryEmbeddings": 0,
+    "allMeteredFixtureGenerationsUsd": 0.1739,
+    "priorReserveOutsideFixtureUsd": 0.089,
+    "aLineGenerationEstimateIncludingPriorReserveUsd": 0.2629,
+    "aLineCapUsd": 0.3,
+    "pricingSource": "https://cloud.google.com/model-garden/pricing",
+    "basis": "Global Gemini 3.1 Flash-Lite. Input/output estimates only. Explicit HTTP 429 rejections retained as attempts, no input/output charges."
+  },
+  "retryTiming": {
+    "at": "2026-11-22T02:18:56.988Z",
+    "interval": [
+      "02:06:50Z",
+      "02:16:40Z"
+    ],
+    "localObservations": 3,
+    "localFields": [
+      "httpStatus",
+      "category"
+    ],
+    "lastStoppedAt": "2026-11-22T02:16:31.054Z",
+    "earliestNewParentOperation": "2026-11-22T02:36:32Z",
+    "matchedCloudEntries": 0,
+    "more": false,
+    "observedHints": []
+  }
+}
