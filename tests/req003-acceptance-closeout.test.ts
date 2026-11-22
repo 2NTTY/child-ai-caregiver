@@ -363,11 +363,19 @@ test("2. chat_only mode stays strictly orthogonal to REQ-009 three-role discussi
       if (promptText.includes("chat-delivery-review")) {
         const payload = JSON.parse(promptText.slice(promptText.indexOf("{")));
         assert.deepEqual(payload.discussionRoles, ["knowledge", "parent", "methods"]);
+        const source = payload.sourceSegments.find((s: {text: string}) => s.text.includes("少量多次補充水分"));
+        const main = payload.mainClauses.find((c: {text: string}) => c.text.includes("少量多次飲水"));
+        const requestLinks = payload.requestClauses.map(({id}: {id: number}) => ({requestId:id,role:"answers"}));
+        assert(source && main);
         return {
           content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [], claimedAppChanges: [],
+            mainReview: {sourceReadings:[{first:source.id,last:source.id,meaning:"outcome"}],
+              requestChecks: payload.requestClauses.map(({id}: {id:number}) => ({requestId:id,status:"addressed",mainId:main.id})),
+              clauseChecks: payload.mainClauses.map(({id}: {id:number}) => ({mainId:id,basis:"no_outcome_claim",...(id === main.id && {requestLinks})}))},
             outcomeChecks: payload.paragraphs.map((_: unknown, index: number) => index === 0
-              ? { basis: "source_supported", wording: "有助補水", sourceQuote: "少量多次補充水分" }
-              : { basis: "no_outcome_claim", wording: "", sourceQuote: "" }) }) }] },
+              ? { basis: "supported_outcome", clauseIndex:payload.outcomeClauses[0].findIndex((s: string) => s.includes("有助補水")),
+                support:{sourceId:source.id,match:"same_result_and_conditions"} }
+              : { basis: "no_outcome_claim", clauseIndex:-1 }) }) }] },
           finishReason: FinishReason.STOP,
         };
       }
