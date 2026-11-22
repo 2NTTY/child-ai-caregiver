@@ -364,7 +364,10 @@ test("2. chat_only mode stays strictly orthogonal to REQ-009 three-role discussi
         const payload = JSON.parse(promptText.slice(promptText.indexOf("{")));
         assert.deepEqual(payload.discussionRoles, ["knowledge", "parent", "methods"]);
         return {
-          content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [], claimedAppChanges: [] }) }] },
+          content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: "pass", issues: [], claimedAppChanges: [],
+            outcomeChecks: payload.paragraphs.map((_: unknown, index: number) => index === 0
+              ? { basis: "source_supported", wording: "有助補水", sourceQuote: "少量多次補充水分" }
+              : { basis: "no_outcome_claim", wording: "", sourceQuote: "" }) }) }] },
           finishReason: FinishReason.STOP,
         };
       }
