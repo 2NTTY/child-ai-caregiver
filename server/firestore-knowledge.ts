@@ -1248,12 +1248,13 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         const eligible = new Map<string, { edition: Edition; manifest: Version["chunks"][number] }>();
         for (const edition of current.editions) {
           if (edition.document.classification !== filter.classification || selection.versionId && edition.version.versionId !== selection.versionId) continue;
-          if (query && !includeLeafletInSearch(query, edition.document.url, edition.document.extraction)) continue;
+          const preferPublisherWebText = query && !includeLeafletInSearch(query, edition.document.url, edition.document.extraction);
           if (edition.version.search?.completed !== KNOWLEDGE_LEXICAL_BUCKETS) reject("knowledge_search_rebuild_required", 503);
           const after = selection.afterKey ? edition.version.chunks.findIndex(chunk => chunk.key === selection.afterKey) : -1;
           if (selection.afterKey && after < 0) continue;
           for (const manifest of edition.version.chunks) {
             if (!manifest.applicability || !manifest.contentHash || !manifest.embeddingHash) reject("knowledge_search_rebuild_required", 503);
+            if (preferPublisherWebText && !(filter.purpose === 'read_originals' && manifest.applicability.use === 'original_lookup')) continue;
             if (manifest.mediaClipHash && !edition.permittedClips?.includes(manifest.mediaClipHash)) continue;
             if (!manifest.excluded && manifest.order > after + 1 && applies(manifest.applicability, filter)
               && (!selection.chunkIds || selection.chunkIds.includes(manifest.chunkId))) eligible.set(manifest.chunkId, { edition, manifest });

@@ -608,7 +608,8 @@ export function createProductAgentTools(options: {
       if (error instanceof AgentTaskTimeError) return { status: 'rejected', data: { code: error.code, nextAction: error.nextAction } };
       if (error instanceof ChartReadRequired) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId,
-        nextAction: '以這個 chunkId 呼叫 read_knowledge_context，查看該印本實頁的已審圖表和欄值。',
+        nextAction: '首次讀取只傳 anchorChunkId，省略 cursor。只有續讀才使用 Server 返回的 nextCursor。',
+        arguments: { anchorChunkId: error.chunkId },
       } };
       if (error instanceof OriginalQuoteMismatch) return { status: 'rejected', data: {
         code: error.code, chunkId: error.chunkId, ...(error.originalExcerpt && { originalExcerpt: error.originalExcerpt }),
@@ -849,6 +850,25 @@ export function createProductAgentTools(options: {
       .filter((item): item is AgentProgressSource => item !== null)
       .slice(0, 6);
     if (progressSources.length > 0) options.onKnowledgeSources?.(progressSources, "found");
+    const only = result.chunks.length === 1 ? result.chunks[0] : undefined;
+    if (purpose === 'read_originals' && only?.originalKind === 'visual_page' && only.applicability.use === 'original_lookup') {
+      const context = await retrieval.readContext(only, filter, null, allowance).catch(error => {
+        if (error instanceof FamilyError && error.code === 'knowledge_context_response_capacity') return null;
+        throw error;
+      });
+      const page = context?.chunks.find(chunk => chunk.chunkId === only.chunkId && chunk.reviewedChart);
+      if (page?.reviewedChart) {
+        const opened = { ...result, chunks: [{ ...only, readCoverage: page.readCoverage, reviewedChart: page.reviewedChart,
+          presentation: { kind: 'public_information', citationIds: [only.chunkId] } }] };
+        if (JSON.stringify({ status: 'succeeded', data: { result: opened } }).length <= allowance) {
+          const read = accumulateKnowledgeRead(only, page);
+          evidence.set(only.chunkId, { chunk: read, filter });
+          const source = toAgentProgressSource(read, 'read');
+          if (source) options.onKnowledgeSources?.([source], 'read');
+          return opened;
+        }
+      }
+    }
     const comparisonResult = { comparePassages: compare, ...result };
     return compare.length && JSON.stringify({ status: 'succeeded', data: { result: comparisonResult } }).length <= allowance ? comparisonResult : result;
   }

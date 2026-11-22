@@ -74,10 +74,13 @@ export async function askAboutChart({domain,knowledge,config,active,identity,kno
     const result=last.response.data.result;
     if(last.name==='find_official_material') {
       assert.deepEqual(result.chunks.map(c=>c.chunkId),[identity.chunkId]);
-      return tool('read_knowledge_context',{anchorChunkId:result.chunks[0].chunkId});
+      assert.deepEqual(result.chunks[0].presentation,{kind:'public_information',citationIds:[identity.chunkId]});
+      if(comparing) return tool('read_knowledge_context',{anchorChunkId:result.chunks[0].chunkId});
+    } else {
+      assert.equal(last.name,'read_knowledge_context');
+      assert.equal(result.chunks[0].original.text,'');
     }
-    assert.equal(last.name,'read_knowledge_context');
-    const page=result.chunks[0];assert.equal(page.original.text,'');assert.equal(page.excerptPage,5);
+    const page=result.chunks[0];assert.equal(page.excerptPage,5);
     const value=page.reviewedChart.fields.find(f=>f.label.includes('去公園')).value;
     const museum=page.reviewedChart.fields.find(f=>f.label.includes('去博物館')).value;
     const text=`去公園只需儲夠 ${value} 張貼紙。`+(comparing ? `博物館要 ${museum} 張，比公園多 ${Number(museum)-Number(value)} 張。` : '');
@@ -104,7 +107,7 @@ export async function askAboutChart({domain,knowledge,config,active,identity,kno
   }
   assert.equal(result?.status,'completed',JSON.stringify({result,rejection}));
   assert.equal(reviewCount,1);
-  assert.deepEqual(result.tools.map(t=>[t.name,t.status]),[['find_official_material','succeeded'],['read_knowledge_context','succeeded'],['present_answer','succeeded']]);
+  assert.deepEqual(result.tools.map(t=>[t.name,t.status]),[['find_official_material','succeeded'],['present_answer','succeeded']]);
   assert.equal(result.text,expectedText+' [1]');
   assert.equal(result.deliveryReview.decision,'pass');
   assert.equal(result.retrievalMode,'keyword_degraded');
