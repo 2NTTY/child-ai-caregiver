@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-199-image-count",
+  "base": {
+    "artifact": "candidate-197/out",
+    "htmlSha256": "23c6606cbad6bf3a65274cbe17be46466d0f2c135eea907e549f4b2df7ee8753",
+    "rawRecordsSha256": "eb2660d38ce3473d3489335ca20f6f79da2c3b4a062496bcda2add5750bbffe6",
+    "rawArtworkSha256": "82e18106b99cdbde4490d9ecd741a2bd93acd6551386effb9bc10b54b2514494",
+    "topics": 97,
+    "choices": 197,
+    "images": 197
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-handoff/assets.json",
+      "sha256": "bdbe7eea72db0e99d7893ea58c02235c560e14ac419fcde7622c159be80bb836"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "236bbf8d493f5aaafb154d9569dcab8fbd8224356ad334e61c6eead770fe81e1",
+    "PROVENANCE.md": "f0b7b2035410f08b87f12f490b3dd1c13296a1a5742e7277291ad875a2ee1404"
+  },
+  "topics": [
+    {
+      "number": 98,
+      "title": "照顧交接：只用已共享資料整理準備單",
+      "choices": [
+        {
+          "name": "完整表單先訂資料範圍",
+          "note": "CiviCRM 可以先設定期間、選看結果，再從「動作」另行建立可重用的報告。育伴港的「照顧交接」先填名稱、用途及來源期間（使用日期可選），再勾選家庭共享及按「整理這份準備單」；建立前不顯示結果，亦不使用私人對話或逐項揀選來源。",
+          "links": [
+            {
+              "label": "CiviCRM 6.7.0：整頁報告條件、動作和結果",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/templates/CRM/Report/Form.tpl#L23-L50"
+            },
+            {
+              "label": "同版：活動摘要的日期及類型條件",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/CRM/Report/Form/Event/Summary.php#L59-L80"
+            },
+            {
+              "label": "同版：報告頁籤和結果按鈕",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/templates/CRM/Report/Form/Fields.tpl#L11-L46"
+            },
+            {
+              "label": "同版：日期範圍分開輸入起訖日",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/templates/CRM/Core/DatePickerRange.tpl#L11-L31"
+            },
+            {
+              "label": "同版：查看結果及儲存報告是不同動作",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/CRM/Report/Form.php#L5117-L5136"
+            },
+            {
+              "label": "同版：從動作選單另行建立報告",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/CRM/Report/Form.php#L1765-L1779"
+            },
+            {
+              "label": "同版：原生空結果樣式",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/templates/CRM/Report/Form/Layout/Table.tpl#L10-L18"
+            },
+            {
+              "label": "CiviCRM 報告範本授權：AGPLv3 with permitted exceptions（附許可例外）",
+              "url": "https://github.com/civicrm/civicrm-core/blob/d11cbdf3b09d5824e27c9a2f19b2a144cc70e835/templates/CRM/Report/Form.tpl#L1-L9"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-handoff/care-handoff-a.png",
+            "sha256": "ab1f632a2d1c0cd390709f14142f71af22ba730fb54d362b895f786421073c0b",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "CiviCRM 桌面非官方重繪：活動摘要的篩選條件包含工作坊和虛構起訖日，示意結果區沒有項目；「動作」選單已展開，列出尚未選取的「建立報告」。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "另開視窗選擇來源",
+          "note": "ERPNext 在新送貨單內先列出符合條件的訂單，確認後才會帶入品項。育伴港的「照顧交接」只參考先定來源：填好用途與期間，核對家庭共享範圍，再整理準備單；不逐項揀記錄、不讀私人對話，也不會預先產出結果。",
+          "links": [
+            {
+              "label": "ERPNext v15.90.0 版本",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/__init__.py#L7"
+            },
+            {
+              "label": "新送貨單的完整表單",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/stock/doctype/delivery_note/delivery_note.json#L1-L84"
+            },
+            {
+              "label": "先界定可揀選的來源訂單",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/stock/doctype/delivery_note/delivery_note.js#L150-L193"
+            },
+            {
+              "label": "開啟來源選擇，再確認取用品項",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/public/js/utils.js#L992-L1016"
+            },
+            {
+              "label": "確認後才把品項帶入尚未保存的單據",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/public/js/utils.js#L944-L964"
+            },
+            {
+              "label": "程式來源授權：GNU GPLv3",
+              "url": "https://github.com/frappe/erpnext/blob/a66ce02520f421f13c350fc5fb8252c5f450e08e/erpnext/stock/doctype/delivery_note/delivery_note.js#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-handoff/care-handoff-b.png",
+            "sha256": "d9abe31254d0e2a0fcbbce76a8f628eed8e3116f758f34f3cedf69f3ed50bee6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "ERPNext v15.90.0 完整送貨單畫面重繪。尚未保存的送貨單上方開着「選擇銷售訂單」視窗，三筆虛構來源均未勾選，「取得品項」仍未按下，後方品項表保持空白。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 98 題 · 整理前核對來源範圍的兩幅自製示意",
+      "input": "draft-care-handoff/DECLARATION.txt",
+      "sha256": "236bbf8d493f5aaafb154d9569dcab8fbd8224356ad334e61c6eead770fe81e1"
+    }
+  ]
+}
