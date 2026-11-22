@@ -44,6 +44,24 @@ function makeDraft(text: string, kind: ChatDeliveryDraft["kind"] = "clarificatio
   };
 }
 
+test("a selected drawing can count leaves while a tablet count still requires official evidence", () => {
+  const draft = makeDraft("", "private_reference");
+  const drawing = "畫簿內的拓印有兩片葉。";
+  draft.userRequest = "這個記錄寫了甚麼？";
+  draft.sources = [{ citationId: "page-item", version: "drawing/2", contentHash: "a".repeat(64),
+    classification: "private", excerptComplete: true, excerpt: JSON.stringify({ kind: "record", text: drawing }) }];
+  for (const [text, needsOfficial] of [
+    [drawing, false],
+    ["兩片。", true],
+    ["兩片葉酸。", true],
+    ["每次服兩片葉。", true],
+    [drawing + "另有兩片藥。", true],
+  ] as const) {
+    draft.paragraphs = [{ text, citationIds: ["page-item"] }];
+    assert.equal(chatDeliveryPassNeedsSources(draft), needsOfficial, text);
+  }
+});
+
 const chunk = {
   chunkId: CHUNK_ID,
   versionId: VERSION_ID,
@@ -696,9 +714,9 @@ test('R4: unverified completion wording and ungrounded dose amounts never become
     ['BB發燒點算？', '每餐一小匙，連續三日。'],
     ['BB發燒點算？', 'Give two teaspoons once daily.'],
   ] as const) {
-    const bare = { kind: 'clarification', visibility: 'private', serverSubstitutedSourceText: false, paragraphs: [{ text: dose, citationIds: [] }], scope: r4Scope };
-    assert.equal(looksLikeCare(bare as any), true, `R5 F3 care advice: ${dose}`);
-    assert.equal(needsReview(bare as any), true, `R5 F3 bare review: ${dose}`);
+    const bare = { ...makeDraft(dose), scope: r4Scope };
+    assert.equal(looksLikeCare(bare), true, `R5 F3 care advice: ${dose}`);
+    assert.equal(needsReview(bare), true, `R5 F3 bare review: ${dose}`);
     assert.equal(needsReview(draftOf(userMsg, dose) as any), true, `R5 F3 review: ${dose}`);
     const { result } = await presentOnly(userMsg, dose);
     assert.equal(result.status, 'stopped');

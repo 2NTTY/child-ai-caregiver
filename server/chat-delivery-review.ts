@@ -238,7 +238,8 @@ function draftMatchesUserDosingContext(draft: ChatDeliveryDraft, text: string): 
 const DOSE_QUANTITY = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|\d+(?:\.\d+)?|[¼½¾]|半|[\d一二三四五六七八九十百千萬億兩两零〇]+\s*分之?\s*[\d一二三四五六七八九十百千萬億兩两零〇]+|[一二三四五六七八九十百千萬億兩两零〇幾]+)`;
 const DOSE_FRACTION_OR_HALF = String.raw`(?:\d+(?:\.\d+)?\s*\/\s*\d+|[¼½¾]|半|[\d一二三四五六七八九十百千萬億兩两零〇]+\s*分之?\s*[\d一二三四五六七八九十百千萬億兩两零〇]+)`;
 const DOSE_UNIT = String.raw`(?:粒|片|包|滴|茶?匙|小?匙|大?匙|平?匙|湯?匙|藥匙|匙羹|勺|顆|丸|支|劑|管|噴|吸|貼|枚|微克|毫克|毫升|公克|克|cc|ml|mg|mcg|ug|iu)`;
-const MED_ONLY_UNIT = String.raw`(?:粒|片|顆|丸|劑|藥匙|微克|毫克|毫升|公克|小?匙|大?匙|茶?匙|湯?匙|匙羹|cc|ml|mg|mcg|ug|iu)`;
+// A leaf count has an explicit noun. Bare tablets, medicine names and dosing instructions still match.
+const MED_ONLY_UNIT = String.raw`(?:粒|片(?!\s*(?:葉|葉子|樹葉)\s*(?:[。！？，、；：,.!?;:」』）)]|$))|顆|丸|劑|藥匙|微克|毫克|毫升|公克|小?匙|大?匙|茶?匙|湯?匙|匙羹|cc|ml|mg|mcg|ug|iu)`;
 const EN_NUMBER_WORD = String.raw`(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)`;
 const EN_COMPOUND_NUMBER = String.raw`${EN_NUMBER_WORD}(?:[\s-]+(?:and[\s-]+)?${EN_NUMBER_WORD})*`;
 const EN_DOSE_QUANTITY = String.raw`(?:half\s+a|a\s+half|a\s+quarter|one\s+half|one\s+quarter|${EN_COMPOUND_NUMBER}|an?|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?)`;
