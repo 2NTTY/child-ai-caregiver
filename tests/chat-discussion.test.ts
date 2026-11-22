@@ -8,7 +8,7 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createProductAgent } from '../server/product-agent.ts';
 import { assembleDiscussionRepair, createQuestionDiscussion, discussionRepairClauses, discussionToolNames } from '../server/chat-discussion.ts';
 import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
-import { chatDeliveryContentHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
+import { chatDeliveryContentHash, chatDeliveryDraftHash, chatDeliveryReviewAllows, enforceChatDeliveryReview, type ChatDeliveryDraft } from '../server/chat-delivery-review.ts';
 import type { AgentRunContext } from '../server/agent-runtime.ts';
 import { agentAnswerSchema, type ProductAgentResult } from '../src/shared/product-agent.ts';
 import { productAgentResultSchema } from '../src/shared/product-agent-result.ts';
@@ -411,6 +411,49 @@ test('the last independent review can approve the original parent question witho
     assert.equal(chatDeliveryReviewAllows(result.review!, live, result.review!.promptVersion), true);
     assert.equal(chatDeliveryReviewAllows(result.review!, draft, result.review!.promptVersion), false);
   } finally { budget.close(); }
+});
+
+test('a conflicting sentence selection requires a fresh verdict on the fixed text before delivery', async () => {
+  const { draft, presentation, scope } = await archivedDiscussion();
+  const question = '如果他選了藍色，我應該跟着他找藍色的積木嗎？';
+  draft.paragraphs[1] = { ...draft.paragraphs[1], text:'我想從綠色積木開始。' + question };
+  for (const decision of ['pass','insufficient_evidence'] as const) {
+    const budget = new AgentBudget();
+    budget.take('modelCalls', budget.remainingModelCalls - 2);
+    let live = structuredClone(draft);
+    const attempts: string[] = [];
+    try {
+      const result = enforceChatDeliveryReview({presentation, provenance:{model:'controlled',packVersion:'test'},
+        tools:{deliveryDraft:() => live, bindRepairEvidence:() => async () => true, presentation:async () => presentation,
+          replaceDeliveryAnswer(next) { assert.equal(attempts.length,2); live = {...live,paragraphs:next.paragraphs}; }},
+        context:{budget,scope,completeText:async ({user,attemptKey}) => {
+          budget.take('modelCalls');
+          attempts.push(attemptKey);
+          const data = JSON.parse(user.slice(user.indexOf('{')));
+          const checks = adviceOnly(data.paragraphs);
+          if (attempts.length === 1) {
+            checks[1].wording = '綠色積木';
+            return JSON.stringify({decision:'pass',issues:[],draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks,
+              approvedSentenceIds:[data.sentenceOptions.find((p: {text:string}) => p.text === question).id]});
+          }
+          assert.equal(data.paragraphs[1].text,question);
+          assert.equal(data.unabridgedParagraphs[1].text,draft.paragraphs[1].text);
+          assert.equal(data.sentenceOptions,undefined);
+          assert.equal(data.draftHash,chatDeliveryDraftHash({...draft,paragraphs:draft.paragraphs.map((p,i) => i === 1 ? {...p,text:question} : p)}));
+          return JSON.stringify({decision,issues:decision === 'pass' ? [] : [{paragraph:1,reason:'Missing context',support:'Preserve the original choice'}],
+            draftHash:data.draftHash,claimedAppChanges:[],outcomeChecks:checks});
+        }} as AgentRunContext});
+      if (decision === 'pass') {
+        const {review} = await result;
+        assert.ok(review && chatDeliveryReviewAllows(review,live,review.promptVersion));
+        assert.equal(live.paragraphs[1].text,question);
+      } else {
+        await assert.rejects(result,(error: unknown) => error instanceof AgentStopped && error.reason === 'delivery_review_rejected');
+        assert.deepEqual(live,draft);
+      }
+      assert.equal(new Set(attempts).size,2);
+    } finally { budget.close(); }
+  }
 });
 
 test('repairs the archived duration claim while preserving the original three speakers and the supported advice', async () => {
