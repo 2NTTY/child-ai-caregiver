@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-195-image-count",
+  "base": {
+    "artifact": "candidate-193/out",
+    "htmlSha256": "267b653d2cc1de50f29ff29b3727687417b5497084443aa8b2d77b10c2024396",
+    "rawRecordsSha256": "b409e1bc11b1c4a661b6282eef7618d20ff00a8f5dc304ccce4e92a06753470c",
+    "rawArtworkSha256": "f328c57cdd20eb20f3e54b7140930ac7af786540314faaeba4bd63ee7ddad2b4",
+    "topics": 95,
+    "choices": 193,
+    "images": 193
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-task-outcome/assets.json",
+      "sha256": "abe2b13439c3d2cb9aabf2da99176dd6c8ce7ce7b8447f5f11f08ad984515f18"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "b1f02e37954c144f5436e3d3d0850ee52f55e2379f02e6e45bd2a6c95a3a9897",
+    "PROVENANCE.md": "894e73e9bf60a340b5f7b7c4b88617365ea4f990504aed6862ad60b0f5039363"
+  },
+  "topics": [
+    {
+      "number": 96,
+      "title": "待辦：回報完成，還是取消？",
+      "choices": [
+        {
+          "name": "編輯器先選狀態，再儲存",
+          "note": "Evolution 可在同一編輯器選擇「已完成」或「已取消」，再另行儲存；圖中只選了「已取消」，未儲存。育伴港的完成備註可選、取消原因必填，兩者都要先預覽、勾選確認，再按「確認保存更改」。",
+          "links": [
+            {
+              "label": "GNOME Evolution 3.58.2：桌面工作編輯器格局",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor-task.c#L906-L950"
+            },
+            {
+              "label": "同版：其餘欄位及頁籤",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor-task.c#L952-L1011"
+            },
+            {
+              "label": "同版：已完成及已取消的原生狀態選項",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor-property-parts.c#L1970-L2007"
+            },
+            {
+              "label": "同版：編輯器內變更狀態",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor-task.c#L445-L484"
+            },
+            {
+              "label": "同版：頁首的兩個儲存入口",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/data/ui/e-comp-editor.eui#L1-L10"
+            },
+            {
+              "label": "同版：分開的儲存、儲存並關閉動作",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor.c#L2380-L2394"
+            },
+            {
+              "label": "同版：項目所列程式碼 GPL-2.0+",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/data/org.gnome.Evolution.metainfo.xml.in.in#L1-L8"
+            },
+            {
+              "label": "Evolution 工作編輯器源碼授權：GPL-2.0-or-later",
+              "url": "https://github.com/GNOME/evolution/blob/9d5e61fc03417b48dcbf5cafa244cce64cd03d8f/src/calendar/gui/e-comp-editor-task.c#L1-L14"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-outcome/task-outcome-a.png",
+            "sha256": "5c2f0e68cb722c67e8ad1de5a24fcfb9d979d39b1c2842f05333c8f1e5ca9d3d",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "GNOME Evolution 桌面非官方重繪：紙藝展的虛構工作仍在一般頁籤，狀態欄選了「已取消」，沒有完成日期，左上角的儲存及儲存並關閉尚未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "對照歷史和擬改結果",
+          "note": "Bugzilla 把「已修正」和「不修正」分成不同結果，補充留言和結果要另按保存才會寫入。育伴港的「回報已完成」可加備註，「取消事項」則必須填原因，兩者均須預覽、勾選確認後再保存；這不等於 Bugzilla 的留言或重開規則。",
+          "links": [
+            {
+              "label": "Bugzilla 5.2 版本",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/Bugzilla/Constants.pm#L203"
+            },
+            {
+              "label": "現有問題的完整頁面",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/show.html.tmpl#L9-L36"
+            },
+            {
+              "label": "上方顯示已保存的問題狀態",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/edit.html.tmpl#L299-L319"
+            },
+            {
+              "label": "選擇狀態與處理結果",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/knob.html.tmpl#L9-L31"
+            },
+            {
+              "label": "補充留言與頁底編輯控制",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/edit.html.tmpl#L1120-L1167"
+            },
+            {
+              "label": "另外按「保存更改」",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/edit.html.tmpl#L1245-L1251"
+            },
+            {
+              "label": "模板來源授權：MPL-2.0",
+              "url": "https://github.com/bugzilla/bugzilla/blob/276673ab67562bd27676d8c3a3770ec9897637b8/template/en/default/bug/knob.html.tmpl#L1-L7"
+            }
+          ],
+          "asset": {
+            "input": "draft-task-outcome/task-outcome-b.png",
+            "sha256": "3cc78f366dc1b8adc29631c93b5d30b34e4914fed29f42e4b9b841012267b1f5",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Bugzilla 5.2 的完整問題頁重繪。上方仍顯示紙藝展問題為「已確認」；下方的補充留言是草稿，已選「已解決／不修正」，尚未按「保存更改」。原有問題描述仍在下方。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 96 題 · 核對待辦的兩種結果的兩幅自製示意",
+      "input": "draft-task-outcome/DECLARATION.txt",
+      "sha256": "b1f02e37954c144f5436e3d3d0850ee52f55e2379f02e6e45bd2a6c95a3a9897"
+    }
+  ]
+}
