@@ -31,7 +31,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { factIsApplicable, looksLikeDurableMemoryFactStatement, memoryFactReferencedByParagraph, preserveMemoryFactUserWording, requireMemoryFactSource, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
+import { attributedChatQuote, chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewSourceExcerpt, createChatDeliveryReviewObligation, hasOperationOrStateAssertion, isPureClarifyingQuestion, isPureGreetingOrSmallTalk, repairSourcesRemainBound, requiresChatDeliveryReview, type ChatDeliveryDraft, type ChatDeliverySource, type ChatDeliveryVerifiedOperation } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
 import { createQuestionDiscussion, DiscussionMainTooLong, viewpointParameters } from './chat-discussion.ts';
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
@@ -1078,6 +1078,12 @@ export function createProductAgentTools(options: {
             if (!('quoteHistory' in paragraph)) {
               const kind = paragraph.kind ?? wire.kind;
               const attachedId = options.pageEvidence?.source.citationId;
+              // A read-only closing can restate the selected item. Keep action claims on the receipt path.
+              if (closing && wire.kind === 'mixed' && kind === 'operation' && attachedId
+                && paragraph.citationIds.length === 1 && paragraph.citationIds[0] === attachedId
+                && !hasOperationOrStateAssertion(paragraph.text)) {
+                return { ...paragraph, kind: 'private_reference' };
+              }
               if (attachedId && !paragraph.citationIds.length && (kind === 'private_reference' || kind === 'record_restatement')
                 && selectedEvidence.size === 1 && !privateSources?.evidence.size && !memoryGrounding.size) {
                 return { ...paragraph, citationIds: [attachedId] };

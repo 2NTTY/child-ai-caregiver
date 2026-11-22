@@ -303,7 +303,7 @@ function clauseIsResultOrStateAssertion(clause: string): boolean {
   return MUTABLE_ENTITY_PATTERN.test(clause) && MUTABLE_STATE_COPULA_OR_ACTION.test(stateText);
 }
 
-function hasOperationOrStateAssertion(text: string): boolean {
+export function hasOperationOrStateAssertion(text: string): boolean {
   if (!text) return false;
   if (OPERATION_CLAIM_PATTERN.test(text) || OPERATION_STATE_ASSERTION.test(text)) return true;
   return splitOperationClauses(text).some(clauseIsResultOrStateAssertion);
