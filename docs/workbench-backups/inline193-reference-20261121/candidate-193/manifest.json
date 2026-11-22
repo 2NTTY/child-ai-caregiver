@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-193-image-count",
+  "base": {
+    "artifact": "candidate-191/out",
+    "htmlSha256": "a0acc7ed5196b1ffc0827dd2eccd852d81fb43b12be792e78e3078670e69e81f",
+    "rawRecordsSha256": "b51a0edc08d82b22b459069af45db05bee37583463fbbd504b15b8da9c1aaee6",
+    "rawArtworkSha256": "9b8153195a563294b29c7e439c19abe1b2795010ddbbf53e322abdea0509688f",
+    "topics": 94,
+    "choices": 191,
+    "images": 191
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-history-quote/assets.json",
+      "sha256": "5880323bf7c7d3eafede4e82a0c695008ce11989c3a75f46f8ed141b3a0b67f6"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "98a3735d8915312bdc4024899f0a5dcbfd6f7878f5dcca21be39e976ae08aa72",
+    "PROVENANCE.md": "6ca1b1d78f0a33902c30401044ecb4efcf03a5aab3c10cd8dc1c8eff14587bd1"
+  },
+  "topics": [
+    {
+      "number": 95,
+      "title": "歷史對話：把原話帶回未送出的草稿",
+      "choices": [
+        {
+          "name": "可編輯的框內引文",
+          "note": "Zulip 把引文放進訊息串下方的撰寫欄，仍可修改，並不立即傳送。育伴港點「帶回助手」只在草稿內未有文字時帶入純文字；已有文字則原樣保留，不追加引文，也不會自動送出或呼叫模型。",
+          "links": [
+            {
+              "label": "Zulip 12.3：訊息串與下方的撰寫區",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/templates/zerver/app/index.html#L243-L275"
+            },
+            {
+              "label": "引用加入可編輯欄位而非立即送出",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/web/src/compose_reply.ts#L306-L322"
+            },
+            {
+              "label": "桌面操作：引用和傳送是分開的步驟",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/starlight_help/src/content/docs/quote-or-forward-a-message.mdx#L31-L46"
+            },
+            {
+              "label": "獨立文字欄位與傳送按鈕",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/web/templates/compose.hbs#L85-L132"
+            },
+            {
+              "label": "原始文字欄使用單一預設字色",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/web/styles/compose.css#L453-L463"
+            },
+            {
+              "label": "Zulip 程式授權：Apache-2.0",
+              "url": "https://github.com/zulip/zulip/blob/b31982251ff82d0b02e59f63ad21f19204e37aea/LICENSE#L2-L6"
+            }
+          ],
+          "asset": {
+            "input": "draft-history-quote/history-quote-a.png",
+            "sha256": "8f9308862f17b9807e5e30530d4d45c2c9bcf461ae1eadae2888933574982a28",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 Zulip 桌面重繪。中央訊息串中的舊展覽訊息呈淺紫色，下方撰寫欄保留其文字引用，另有一行正在編輯的回覆。全部是合成資料，草稿尚未送出。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "獨立的回覆預覽列",
+          "note": "Element Web 從同一房間的搜尋結果選擇回覆，會回到原房間，在輸入框上方保留可移除的回覆預覽。育伴港只在草稿內未有文字時帶入純文字引文，不會覆寫或在已有文字後追加引文，也不會自動送出。",
+          "links": [
+            {
+              "label": "Element Web v1.12.12：從同房間搜尋結果選擇回覆",
+              "url": "https://github.com/element-hq/element-web/blob/074a69aa1ed50e01408f560feee43852b930f71f/apps/web/src/components/structures/RoomView.tsx#L1222-L1231"
+            },
+            {
+              "label": "同版：返回房間訊息，回覆對象交給撰寫框",
+              "url": "https://github.com/element-hq/element-web/blob/074a69aa1ed50e01408f560feee43852b930f71f/apps/web/src/components/structures/RoomView.tsx#L2528-L2569"
+            },
+            {
+              "label": "同版：可關閉的獨立回覆預覽",
+              "url": "https://github.com/element-hq/element-web/blob/074a69aa1ed50e01408f560feee43852b930f71f/apps/web/src/components/views/rooms/ReplyPreview.tsx#L33-L55"
+            },
+            {
+              "label": "同版：回覆預覽在訊息輸入框上方",
+              "url": "https://github.com/element-hq/element-web/blob/074a69aa1ed50e01408f560feee43852b930f71f/apps/web/src/components/views/rooms/MessageComposer.tsx#L675-L688"
+            },
+            {
+              "label": "Element Web 所列元件授權選項：AGPL-3.0-only",
+              "url": "https://github.com/element-hq/element-web/blob/074a69aa1ed50e01408f560feee43852b930f71f/apps/web/src/components/views/rooms/ReplyPreview.tsx#L1-L7"
+            }
+          ],
+          "asset": {
+            "input": "draft-history-quote/history-quote-b.png",
+            "sha256": "71dc58d0bea500acbbfc4d696ddc09e74e0ac8fb3e5641dfbc471a49f9aeaac1",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Element Web 的非官方全頁示例。左側有房間清單，主區已回到紙舟展板房間的時間線。輸入框上方另有「正在回覆」、白帆編輯的原文及關閉鍵；下方是一句未送出的新問題。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 95 題 · 把原話帶回草稿的兩幅自製示意",
+      "input": "draft-history-quote/DECLARATION.txt",
+      "sha256": "98a3735d8915312bdc4024899f0a5dcbfd6f7878f5dcca21be39e976ae08aa72"
+    }
+  ]
+}
