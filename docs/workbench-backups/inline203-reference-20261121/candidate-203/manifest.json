@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-203-image-count",
+  "base": {
+    "artifact": "candidate-201/out",
+    "htmlSha256": "2ed641fcf89d366ad93fcbbf436aa9bdeaacd3fd6ae8e708e5e36e418cf08ac8",
+    "rawRecordsSha256": "1e974832a1d8ff3da04d5ab858b8e5bb6abf32372c04d26efe29488cdfef568d",
+    "rawArtworkSha256": "2728c74ee2eabd9c84cfabeb96e4378c30cff36b0fcd956f6391f6455232d482",
+    "topics": 99,
+    "choices": 201,
+    "images": 201
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-memory-inactive/assets.json",
+      "sha256": "ad135784ff7c7991dcdd3a4824b37e9ed51dbcb556275e9f8515496b018b100d"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "d09f302cc00bc19da46d28870324474852947bb1c9b78cd52c865733e68bc943",
+    "PROVENANCE.md": "773a98a51478ab75b13661f52f52249c06e7b6c7609ab6d7158bda08164a7a7a"
+  },
+  "topics": [
+    {
+      "number": 100,
+      "title": "長期記憶：停用過時資料，保留原文和版本",
+      "choices": [
+        {
+          "name": "分組顯示仍保留的停用項目",
+          "note": "Firefox 把停用的擴充套件留在列表，關閉開關不等於移除。育伴港的「標記停用」另須填原因、勾選確認再提交；會保留該項事實及歷史並新增版本。",
+          "links": [
+            {
+              "label": "Firefox 154.0：完整附加元件管理員",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/aboutaddons.html#L226-L244"
+            },
+            {
+              "label": "左欄的附加元件分類",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/components/categories-box.mjs#L36-L69"
+            },
+            {
+              "label": "搜尋、頁面標題及設定選單",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/components/addon-page-header.mjs#L11-L44"
+            },
+            {
+              "label": "將已安裝項目分為啟用及停用",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/aboutaddons.mjs#L45-L71"
+            },
+            {
+              "label": "停用標記及開關的狀態",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/components/addon-card.mjs#L544-L571"
+            },
+            {
+              "label": "Firefox 原有開關行為",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/components/addon-card.mjs#L306-L320"
+            },
+            {
+              "label": "停用卡片的視覺樣式",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/aboutaddons.css#L161-L193"
+            },
+            {
+              "label": "MPL-2.0：此介面檔案的原始碼授權",
+              "url": "https://github.com/mozilla-firefox/firefox/blob/032a9fc1ac0cc3209f7c142744ba2e40847c8086/toolkit/mozapps/extensions/content/aboutaddons.html#L1-L4"
+            }
+          ],
+          "asset": {
+            "input": "draft-memory-inactive/memory-inactive-a.png",
+            "sha256": "bc0496b228ab80f6bcb02ccac7b15f86f5c8fb95b5b799c85e97092061370de6",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Firefox 附加元件管理員非官方重繪：擴充套件頁分開列出已啟用及已停用的虛構項目；「紙樣尺寸標記」仍在列表，開關維持關閉。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "用篩選找回暫停項目",
+          "note": "Anki 的卡片暫停複習後，仍可在「已暫停」篩選中找回。育伴港只參考「停用不等於刪除」：標記停用須填原因並明確確認；保存後保留原記憶與歷史，另存一個停用版本。",
+          "links": [
+            {
+              "label": "Anki 25.09.2 版本",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/.version#L1"
+            },
+            {
+              "label": "全幅瀏覽視窗、搜尋列與卡片表",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/qt/aqt/forms/browser.ui#L4-L132"
+            },
+            {
+              "label": "側欄「已暫停」篩選",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/qt/aqt/browser/sidebar/tree.py#L690-L701"
+            },
+            {
+              "label": "暫停卡仍列於瀏覽結果",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/rslib/src/browser_table.rs#L658-L685"
+            },
+            {
+              "label": "暫停／解除暫停是卡片狀態",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/qt/aqt/browser/browser.py#L990-L1007"
+            },
+            {
+              "label": "瀏覽器程式來源授權：AGPL-3.0-or-later",
+              "url": "https://github.com/ankitects/anki/blob/3890e12c9e48c028c3f12aa58cb64bd9f8895e30/qt/aqt/browser/browser.py#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-memory-inactive/memory-inactive-b.png",
+            "sha256": "b3d5e4285ea30b55c6c1acc654a5e5c6091d02e7b42dcf597e524c668d2cbc68",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Anki 25.09.2 全幅瀏覽視窗重繪。左側選中「已暫停」，中間仍列出五張虛構紙藝卡片，右側顯示其中一張原有的正面、背面及標籤。沒有執行新的暫停或刪除操作。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 100 題 · 停用後仍可查閱的兩幅自製示意",
+      "input": "draft-memory-inactive/DECLARATION.txt",
+      "sha256": "d09f302cc00bc19da46d28870324474852947bb1c9b78cd52c865733e68bc943"
+    }
+  ]
+}
