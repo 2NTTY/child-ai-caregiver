@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-189-image-count",
+  "base": {
+    "artifact": "candidate-187/out",
+    "htmlSha256": "835cf793ed6025edcbe05771e1936f2a777ccbdf171b6b15ce15997467529c9a",
+    "rawRecordsSha256": "cd315dbc3e6ac0a1370f933a6cf0f33c9545cdd2dfa8876d1e8eea57ba6d190f",
+    "rawArtworkSha256": "40cb45f83a0093d14fc902b0b68cb591d6e94b3bc0578d367b39e935286d70b7",
+    "topics": 92,
+    "choices": 187,
+    "images": 187
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-rail/assets.json",
+      "sha256": "4b47de7a14358c0825830d3a43f60347da3f958c0a15f0ed616b2dd705294807"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "7a9df58b6a0bdde14811d31b59077a41e8db8b6959fcffe5c140a7de3b262b7b",
+    "PROVENANCE.md": "c2bb36db0c3b6372c35bd64b7597fc2ac613b6a0b9df16ee5f5e1faeac04e118"
+  },
+  "topics": [
+    {
+      "number": 93,
+      "title": "關注與準備：留在原頁查看待辦",
+      "choices": [
+        {
+          "name": "右側停靠的資訊欄",
+          "note": "看「關注與準備」時，右側保留目前所選孩子的「待辦與提醒」。「查看事項」開啟待辦清單，不會在欄內完成事項或發送提醒；下方的「概況」是另一個入口。",
+          "links": [
+            {
+              "label": "Thunderbird 159.0：主視窗並排的今日窗格",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/base/content/messenger.xhtml#L557-L598"
+            },
+            {
+              "label": "窗格分隔線與獨立區域",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/calendar-today-pane.inc.xhtml#L5-L17"
+            },
+            {
+              "label": "獨立開合及同步分隔線",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/today-pane.js#L494-L507"
+            },
+            {
+              "label": "Thunderbird 原檔授權：MPL-2.0",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/calendar/base/content/today-pane.js#L1-L3"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-rail/care-rail-a.png",
+            "sha256": "e6ee0c58bdcd28134f634efb281e44ad017566c20a3548f25521c543586345d9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方桌面重繪：中央仍顯示小紙鳶的關注鏈；右側獨立停靠的照顧資訊欄列出兩項合成待辦和「查看事項」，分隔線下另有「概況」連結。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "較窄畫面的臨時浮層",
+          "note": "在「關注與準備」從右上角打開浮層，查看已選孩子待處理或待覆核的事項。「查看事項」前往待辦與預約清單；下方「概況」是另一個入口。浮層不是收件匣，也不會完成待辦或發送提醒。",
+          "links": [
+            {
+              "label": "GNOME Shell 51.0：從頁首展開、保留後方畫面的浮層",
+              "url": "https://github.com/GNOME/gnome-shell/blob/2177bdf9624b2d285de7c1d34274073d3769d6b8/js/ui/dateMenu.js#L887-L952"
+            },
+            {
+              "label": "同版：面板登記日期選單入口",
+              "url": "https://github.com/GNOME/gnome-shell/blob/2177bdf9624b2d285de7c1d34274073d3769d6b8/js/ui/panel.js#L434-L438"
+            },
+            {
+              "label": "同版：開啟及關閉選單",
+              "url": "https://github.com/GNOME/gnome-shell/blob/2177bdf9624b2d285de7c1d34274073d3769d6b8/js/ui/panel.js#L621-L631"
+            },
+            {
+              "label": "GNOME Shell 51.0 程式授權：GPL-2.0-or-later",
+              "url": "https://github.com/GNOME/gnome-shell/blob/2177bdf9624b2d285de7c1d34274073d3769d6b8/meson.build#L1-L5"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-rail/care-rail-b.png",
+            "sha256": "0b2ea5d0535ce7c892848ef7a26e717bb908a5804462d8eee1d0f05de17d0313",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "育伴港的非官方全頁示例。背景仍顯示小帆的關注與準備；右上浮層列出一項待處理及一項待覆核、已停催的待辦，有「查看事項」及獨立的「概況」連結。底欄為今日、助手、待辦、關注和核對，核對附「上拉更多」提示。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 93 題 · 資訊側欄的停靠與浮層的兩幅自製示意",
+      "input": "draft-care-rail/DECLARATION.txt",
+      "sha256": "7a9df58b6a0bdde14811d31b59077a41e8db8b6959fcffe5c140a7de3b262b7b"
+    }
+  ]
+}
