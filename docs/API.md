@@ -184,6 +184,8 @@ v5 的 `media.pages?: {url:string,title:string,transcriptUrl?:string}[]` 每項�
 
 家長想找教材、讀原文或核對引用時，助手可按本輪意思以片名、內容描述或同義問法呼叫 `find_official_material`。結果沿用本人卡庫選擇、版本和引用位置。`search_knowledge` 的一般照護結果及其同版擴讀會排除標記為 `original_lookup` 的片段。主動提醒沒有原文查找工具。
 
+同卡多份教材的章節或適用條件重疊時，獨立覆核可對照草稿所引原段及一同查回的相關原段。家長轉題後，助手按本輪問題查找適用教材。沿用舊回答的片段時，可從本人已啟用的材料補查對照原段。時段或條件不同便分別交代；出版者明示取代才採用該範圍的新規定。同一條件仍有分歧，回答列明雙方說法，兩個引用各自連回當時的版本及段落。
+
 家長查閱已審單頁圖表時，`read_knowledge_context` 傳回該版的圖表整理 `reviewedChart.reading`、可確認的欄名與欄值 `fields`、片段身份及印本頁碼。`original.text` 保留空白。助手按本輪問題以 `public_information` 自然回答，可比較多欄、計算差額及一併引用其他已讀片段。獨立覆核取得同一份版本、PDF 雜湊、頁碼、欄位及查閱用途，按段核對所指對象、數值、單位、比較方向與適用範圍。舊版未能可靠還原欄界時，覆核須從該版整理指出支持說法的字句。個人照護建議仍須另有適用來源。
 
 整卡操作向同一個人目錄端點提交 `{action:"manage", seriesId:"fhs-child-health", operation, expectedState}`。Server 在本人及孩子授權交易內核對成員、已發布版本及個人選擇。首次 `join` 跟隨已展示範圍，再次明確採用只加入缺少的教材；全數已選時回傳現況。`fixed` 明確選取已採用教材的目前版本，`follow` 跟隨已選範圍，`enable`、`disable` 和 `remove` 操作已選教材。選擇衝突回傳 `409 library_selection_changed`。版本參照及合法分享 ZIP 繼續逐份核查原件、版本與權利，每包最多 100 份。

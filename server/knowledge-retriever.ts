@@ -11,7 +11,7 @@ import { procedureReadingPreview } from './knowledge-procedure-reading.ts';
 import { readReviewedChart } from './knowledge-pdf-layout.ts';
 import type { KnowledgeStore } from "./knowledge-store.ts";
 
-import { isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
+import { comparableCardPassages, isKnowledgeEvidenceFresh, readReusableEvidence, sameReviewedEdition } from "./agent-evidence-reuse.ts";
 export { isKnowledgeEvidenceFresh } from "./agent-evidence-reuse.ts";
 
 function canonicalFilterKey(filter: KnowledgeFilter): string {
@@ -264,6 +264,20 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           return finalResult;
         },
         readReviewedCitations,
+        async readComparablePassages(anchor: KnowledgeEvidence, applicability: KnowledgeFilter): Promise<KnowledgeEvidence[]> {
+          if (!anchor.series || store.enforcesPersonalLibrarySelection !== true) return [];
+          if (!await budget.wait(authorize)) throw new EmbeddingFailure('unauthorized');
+          const filter = parseKnowledgeFilter(applicability);
+          const query = [anchor.section, ...anchor.applicability.conditions].join(' ').slice(0, 2000);
+          const rows = await budget.wait(() => readCandidates(filter, null, { query, preferDistinctSources: true, limit: 6 }));
+          if (!await budget.wait(authorize)) throw new EmbeddingFailure('unauthorized');
+          return rankKnowledge(query, rows)
+            .filter(row => isKnowledgeEvidenceFresh(row) && includeLeafletInSearch(query, row.url, row.extraction))
+            .map(row => procedureReadingPreview(row, filter))
+            .filter(row => comparableCardPassages(anchor, row))
+            .map(({ originalText: _original, citedExcerpt: _quote, chartFields: _fields, ...row }) =>
+              ({ ...row, readCoverage: { kind: 'reviewed_text_and_excerpt', complete: false } }));
+        },
         async revalidateAndSeedEvidence(
           priorCitations: readonly KnowledgeEvidence[],
           applicability: KnowledgeFilter,

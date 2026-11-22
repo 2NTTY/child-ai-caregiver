@@ -713,9 +713,12 @@ export function createProductAgent(options: {
           operationPolicy: isChatOnly || conversationMode === "chat_only" ? null : operationPolicy,
           workspaceViews: '問本人帳戶有哪些孩子或想看名單，直接用 present_answer({kind:"operation", paragraphs:[{showView:"child_profiles"}]}) 打開已授權名單。問助手的短期記憶、能看到多少對話，或未說清是指助手還是孩子，用 showView:"conversation_memory" 顯示本輪範圍並釐清。這兩種介面查詢毋須找孩子事實。若已指明要找回某件事，照常查原話；涉及孩子健康時沿照護流程。',
           ...(seededOfficialEvidence.length ? {
+            ...(!discussion ? { currentSourceQuestion: currentUserMessage.text,
+              reusedEvidencePolicy: '先讀 currentSourceQuestion。reusedOfficialEvidence 是較早問題用過的材料。所問活動、主題或時段已轉而舊段未有涵蓋，先按本輪意思用 find_official_material 或 search_knowledge 找適用原段，才可提交答案。' } : {}),
             reusedOfficialEvidence: seededOfficialEvidence.map(({ chunk }) => ({
               chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId,
               title: chunk.title, section: chunk.section, sourceExcerpt: chunk.sourceExcerpt,
+              conditions: chunk.applicability.conditions,
               passage: chatDeliveryExcerpt(chunk.text).excerpt,
               ...(discussion && { presentation: { kind: 'caregiving', citationIds: [chunk.chunkId] } }),
               sourceDateText: chunk.sourceDateText ?? null,
