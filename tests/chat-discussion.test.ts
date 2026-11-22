@@ -81,6 +81,7 @@ test('a question binds three successive native turns, the main reply and one ind
           const declaration = request.config?.tools?.flatMap(t => 'functionDeclarations' in t ? t.functionDeclarations ?? [] : []).find(d=>d.name==='present_answer');
           assert.equal(!!declaration?.parameters?.properties?.closingView,!separateMain);
           assert.equal(!!declaration?.parameters?.required?.includes('closingView'),!separateMain);
+          assert.equal(!!declaration?.parameters?.properties?.selectedItemText,separateMain);
           const forms = declaration?.parameters?.properties?.paragraphs?.items?.anyOf;
           assert.ok(forms?.find(form => form.properties?.text)?.required?.includes('kind'));
           assert.deepEqual(forms?.find(form => form.properties?.quoteHistory)?.required, ['quoteHistory']);
@@ -91,7 +92,7 @@ test('a question binds three successive native turns, the main reply and one ind
         }
         if (finish && truncateClosing) return { content: { role: 'model', parts: [{text:'truncated output'}] }, finishReason: FinishReason.MAX_TOKENS };
         if (!finish) assert.deepEqual(discussionToolNames.filter(n => n in request.toolsDict), [name]);
-        const args = finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
+        const args = finish && separateMain ? {selectedItemText:taskRestatement,officialAdviceText:main[0]} : finish ? { kind:'caregiving', paragraphs:[{text:main[0] + ' [' + chunkId + ']',citationIds:[chunkId]},
           {text:main[1] + ' [1]', citationIds:[chunkId]}],
           ...(!separateMain && { closingView: { ...view, citationIds: invalidClosing ? ['missing-source'] : view.citationIds } }) } : view;
         if (modelLimit === 6) await new Promise(resolve => setTimeout(resolve, 5));
@@ -246,7 +247,7 @@ test('a question binds three successive native turns, the main reply and one ind
   const separate = await reply();
   assert.equal(separate?.status,'completed',JSON.stringify(separate));
   assert.deepEqual(separate.discussion,capped.discussion);
-  assert.equal(separate.text,capped.text);
+  assert.equal(separate.text,taskRestatement + '\n\n' + main[0] + ' [1]');
   assert.deepEqual(separate.tools.map(t => t.name),[...discussionToolNames,'present_answer']);
   assert.equal(calls,5);
   truncateClosing = true; claimed = false; calls = 0;

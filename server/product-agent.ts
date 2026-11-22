@@ -664,6 +664,7 @@ export function createProductAgent(options: {
         } } : {}),
         ...(discussion ? { discussion: {
           groundedFollowup: !!priorAnswer && seededOfficialEvidence.length > 0,
+          canPresentSourcePair: () => tools?.canPresentSourcePair() ?? false,
           beginTurn: stage => tools?.beginDiscussionTurn?.(stage),
           endedEarly: () => tools?.discussionEndedEarly() ?? false,
           instruction: (finishing: boolean) => tools?.discussionInstruction?.(finishing) ?? discussionInstruction,

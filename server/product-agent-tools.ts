@@ -63,6 +63,13 @@ const chatPresentationInput = z.strictObject({ kind: agentAnswerSchema.shape.kin
 const discussionPresentationInput = chatPresentationInput.extend({
   closingView: viewpointParameters.optional().describe('Submit the current speaker’s short contribution here alongside the separate main answer. The server assigns the speaker.'),
 });
+const sourcePairInput = z.strictObject({
+  selectedItemText: agentAnswerSchema.shape.paragraphs.element.shape.text.describe('One complete parent-facing sentence answering the question about the selected item.'),
+  officialAdviceText: agentAnswerSchema.shape.paragraphs.element.shape.text.describe('A short parent-facing answer to the rest of the question using the one supplied official passage. Include the practical choice and its condition.'),
+});
+const discussionToolInput = discussionPresentationInput.partial({kind:true, paragraphs:true}).extend({
+  selectedItemText:sourcePairInput.shape.selectedItemText.optional(), officialAdviceText:sourcePairInput.shape.officialAdviceText.optional(),
+});
 class HistoryExcerptMismatch extends FamilyError {
   readonly quotes: { text: string; citationIds: string[] }[];
   constructor(quotes: HistoryExcerptMismatch['quotes']) {
@@ -753,6 +760,11 @@ export function createProductAgentTools(options: {
       presentation: { kind: 'private_reference', citationIds: [id] } };
   }
   const discussion = options.discussion ? createQuestionDiscussion(permitted, acceptPresentedAnswer) : undefined;
+  function canPresentSourcePair() {
+    return discussion?.remainingSpeakers() === 0 && options.pageEvidence?.source.citationId === 'page-item'
+      && seeded.length === 1 && evidence.size === 1 && evidence.has(seeded[0]!.chunk.chunkId)
+      && !liveEvidence.size && !privateSources?.evidence.size && !selectedOfficialHelp.size;
+  }
   async function searchLibrary(query: string, classification: KnowledgeFilter['classification'], queryAge: KnowledgeQueryAge | undefined,
     attemptKey: string | undefined, purpose?: KnowledgeFilter['purpose']) {
     const resolved = await resolveKnowledgeQueryContext(options.mixedTasks ? {profileApplicable:false} : await current(), queryAge,
@@ -1054,7 +1066,8 @@ export function createProductAgentTools(options: {
 { name: "present_answer", description: "提交顯示文字；必須於其他工具完成後的獨立下一輪單獨呼叫，勿與其他工具並列。kind=mixed 時每段必填 kind；citationIds 只接受本 run 有效 chunkId UUID 或私人 citationId，勿填求助卡 ID、URL 或記憶鍵。caregiving／safety_help 每段須帶真正相關的官方 chunkId（勿塞無關片段）；帳戶名冊或對話範圍的讀取結果會帶 presentation.kind 和 citationIds，用它們配上你自己撰寫的正文。回覆舊對話時，kind=private_reference，原樣選句只需 paragraphs=[{quoteHistory: 歷史工具傳回的 H 編號}]；家長要求引用已確認記憶原句時，直接提交事實工具傳回的 quoteAnswer。一般記憶覆述可用 record_restatement（citationIds=[]）；需要家長補資料時，直接用 kind=clarification、citationIds=[] 問具體缺項。若只說要填寫資料，對象及欄位都未指定，一句問齊兩項；不以能力介紹或待辦狀態作答。純操作用 operation，兼答指引用 mixed；純澄清、拒答及限制說明可無公共引用；明顯危險無片段時用 kind=operation、citationIds=[] 輸出「請先使用畫面上的緊急求助入口。」。acceptedForValidation 僅表程式受理；實質育兒安全內容仍經 Server 獨立審核。" + (options.background ? " 沒有有用回饋且未聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 成長關注只選支持此關注的 chunkId，Server 只呈已核對原文，無可用片段時呈固定限制。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, public_information, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs.' + (discussion ? ' Optional closingView takes {text,citationIds,kind?} for the current speaker.' : '') }],
-      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema : discussion ? discussionPresentationInput : chatPresentationInput, authorize: permitted, terminal: true,
+      parameters: options.background ? agentBackgroundAnswerSchema : options.visibility === 'family' || options.mixedTasks ? agentAnswerSchema
+        : discussion ? options.pageEvidence && seeded.length === 1 ? discussionToolInput : discussionPresentationInput : chatPresentationInput, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
         // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
         // and generator fields such as approved or skipReview are not in this schema.
@@ -1062,7 +1075,15 @@ export function createProductAgentTools(options: {
         let closing: AgentAnswer['paragraphs'][number] | undefined;
         const quotes = new Map<string, string>();
         if (!options.background && options.visibility !== 'family' && !options.mixedTasks) {
-          const wire = discussion ? discussionPresentationInput.parse(args) : { ...chatPresentationInput.parse(args), closingView: undefined };
+          if (discussion && ('selectedItemText' in args || 'officialAdviceText' in args)) {
+            if (!canPresentSourcePair()) throw new FamilyError(400,'invalid_citation');
+            const pair = sourcePairInput.parse(args);
+            raw = { kind:'mixed', paragraphs:[
+              { kind:'private_reference', text:pair.selectedItemText, citationIds:[options.pageEvidence!.source.citationId] },
+              { kind:'caregiving', text:pair.officialAdviceText, citationIds:[seeded[0]!.chunk.chunkId] },
+            ] };
+          }
+          const wire = discussion ? discussionPresentationInput.parse(raw) : { ...chatPresentationInput.parse(raw), closingView: undefined };
           discussion?.checkPresentation(!!wire.closingView);
           if (wire.closingView) closing = discussion!.closingParagraph(wire.closingView);
           for (const quote of wire.originalQuotes ?? []) {
@@ -1459,9 +1480,12 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
+    canPresentSourcePair,
     discussionInstruction: discussion && ((finishing: boolean) => selectedOfficialHelp.size
       ? '已選取正式求助入口，現在用 present_answer 直接提交所需的求助回覆。'
-      : discussion.instruction(finishing)),
+      : canPresentSourcePair()
+        ? '三席已各自發言。現在用 present_answer 的 selectedItemText 回答所選項目的事實，再用 officialAdviceText 回答家長的實際選擇。兩欄直接填家長會看到的完整說話。Server 會分別連結所選項目及唯一已讀的官方片段。若需要不同引文組合，仍可用 kind 和 paragraphs。忠於原文所列的活動，清楚說明你會如何嘗試及何時轉換做法。'
+        : discussion.instruction(finishing)),
     beginDiscussionTurn: discussion?.beginNativeTurn,
     discussionEndedEarly: () => !!discussion?.noTradeoff() || selectedOfficialHelp.size > 0,
     nextDiscussionTool: discussion?.nextTool,

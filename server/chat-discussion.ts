@@ -49,17 +49,18 @@ export function assembleDiscussionRepair<T extends { text: string }>(
 }
 
 export type DiscussionPresentationStage = 'speaker' | 'closing';
-export function closingDiscussionDeclaration(declaration: FunctionDeclaration, includeSpeaker: boolean): FunctionDeclaration {
+export function closingDiscussionDeclaration(declaration: FunctionDeclaration, includeSpeaker: boolean, sourcePair = false): FunctionDeclaration {
   const fields = declaration.parameters?.properties;
   if (declaration.name !== 'present_answer' || !fields?.closingView) return declaration;
   const paragraphs = fields.paragraphs;
-  const { closingView, ...mainFields } = fields;
+  const { closingView, selectedItemText, officialAdviceText, ...mainFields } = fields;
   // Text paragraphs in a mixed main answer need individual kinds. Verbatim history quotes keep their own shape.
   const forms = paragraphs?.items?.anyOf?.map(form => form.properties?.kind
     ? { ...form, required: [...new Set([...(form.required ?? []), 'kind'])] } : form);
-  return { ...declaration, parameters: { ...declaration.parameters,
-    required: [...new Set([...(declaration.parameters?.required ?? []), ...(includeSpeaker ? ['closingView'] : [])])],
-    properties: { ...mainFields, ...(includeSpeaker && {closingView}), ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
+  return { ...declaration, ...(sourcePair && { description: 'Finish the main answer after the three speakers. For the selected item and the single official passage, give the parent two plain text answers in selectedItemText and officialAdviceText. The server binds each to its source. Use kind and paragraphs only if a different citation arrangement is needed.' }), parameters: { ...declaration.parameters,
+    required: sourcePair ? [] : ['kind','paragraphs', ...(includeSpeaker ? ['closingView'] : [])],
+    properties: { ...(sourcePair && {selectedItemText, officialAdviceText}), ...mainFields, ...(includeSpeaker && {closingView}),
+      ...(forms && { paragraphs: { ...paragraphs, items: { ...paragraphs.items, anyOf: forms } } }) },
   } };
 }
 const speakerParameters = viewpointParameters.extend({
@@ -81,7 +82,7 @@ export class DiscussionMainTooLong extends FamilyError {
 const viewpoints = [
   '從已讀教材揀一個具體做法，用「我會……」的一句說清楚你會在甚麼情況試，讓下一席可以回應。沿用 reusedOfficialEvidence 的 presentation 引用該教材。教材只列舉做法時，發言可以在做法說完時結束，毋須另推斷孩子的狀態或保證成效。主答會交代 selectedItem 的家庭事實。你是 AI，不自稱有親身經驗。',
   '站在新手家長的位置，接住上一席的具體做法，直接用一句完整的問句提出實行時會遇到的選擇。可以問「如果……我該怎樣選？」保留假設語氣，把家長的感受和做法的成效分開。你是 AI，不虛構經驗或替家長認定感受。',
-  '接住上一席的疑問，用一句完整的說話交代兩個選擇，以及看見甚麼時會改選。說清楚這是你會怎樣嘗試。若要補充研究或成效，另起完整一句，只說引用原文確實支持的結果。你是 AI，不冒稱有親身育兒經驗。',
+  '直接回答上一席的疑問。用一句「我會先……；如果見到……，我就……」交代你的選擇及改選條件。在選擇說清楚時結束發言，讓主助手說明教材。你是 AI，不冒稱有親身育兒經驗。',
 ];
 export const discussionInstruction = '家長已選這一題討論。三個 AI 觀點共用本輪背景及已讀來源。先用本輪已有的有效片段，只為實際缺少的依據補讀。每席按當前工具直接回應上一席。主助手另用 paragraphs 提交可獨立閱讀的主回答及引用。若本輪要求合併收尾，在 closingView 放當前角色的原話。遇急切求助或沒有可比較之處，優先給主回答。發言與原回答不能當成家庭事實、操作同意或獨立來源。';
 

@@ -220,7 +220,7 @@ export interface AgentRunInput {
   presentationRepair?: "present_answer";
   /** Server-authored current speaker, only for an explicitly requested question discussion. */
   discussion?: { dailyAttemptsAtStart?: number; groundedFollowup?: boolean; beginTurn: (stage?: DiscussionPresentationStage) => void; endedEarly: () => boolean; instruction: (finishing: boolean) => string; remainingSpeakers: () => number; readyToClose: (availableModelCalls: number) => boolean;
-    hasContributions: () => boolean; toolAvailable: (name: string) => boolean; isDraftRejection: (tool: string, code: unknown) => boolean };
+    canPresentSourcePair?: () => boolean; hasContributions: () => boolean; toolAvailable: (name: string) => boolean; isDraftRejection: (tool: string, code: unknown) => boolean };
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
@@ -833,7 +833,7 @@ export function createAgentRuntime(options: {
                     .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
                   const stage = discussionStage(true);
                   input.discussion?.beginTurn(stage);
-                  const declarations = input.discussion?.groundedFollowup ? terminal.map(d => closingDiscussionDeclaration(d, stage === 'closing')) : terminal;
+                  const declarations = input.discussion?.groundedFollowup ? terminal.map(d => closingDiscussionDeclaration(d, stage === 'closing', input.discussion?.canPresentSourcePair?.())) : terminal;
                   const names = declarations.map(declaration => declaration.name!);
                   if (names.length && names.every(name => Object.hasOwn(request.toolsDict, name))) {
                     config = {
@@ -964,7 +964,7 @@ export function createAgentRuntime(options: {
                 const terminal = (config.tools ?? []).flatMap(tool =>
                   "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
                   .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
-                const declarations = input.discussion?.groundedFollowup ? terminal.map(d => closingDiscussionDeclaration(d, stage === 'closing')) : terminal;
+                const declarations = input.discussion?.groundedFollowup ? terminal.map(d => closingDiscussionDeclaration(d, stage === 'closing', input.discussion?.canPresentSourcePair?.())) : terminal;
                 const names = declarations.map(declaration => declaration.name!);
                 if (!names.length || names.some(name => !Object.hasOwn(request.toolsDict, name))) throw new AgentStopped("invalid_tool");
                 return { ...config, tools: [{ functionDeclarations: declarations }],
