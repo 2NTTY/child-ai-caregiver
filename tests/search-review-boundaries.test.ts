@@ -44,22 +44,51 @@ function makeDraft(text: string, kind: ChatDeliveryDraft["kind"] = "clarificatio
   };
 }
 
-test("a selected drawing can count leaves while a tablet count still requires official evidence", () => {
+test("grounded object counts in private observations reach review while ambiguous and medical counts require official evidence", () => {
   const draft = makeDraft("", "private_reference");
-  const drawing = "畫簿內的拓印有兩片葉。";
-  draft.userRequest = "這個記錄寫了甚麼？";
-  draft.sources = [{ citationId: "page-item", version: "drawing/2", contentHash: "a".repeat(64),
-    classification: "private", excerptComplete: true, excerpt: JSON.stringify({ kind: "record", text: drawing }) }];
-  for (const [text, needsOfficial] of [
+  const drawing = "拓印上有兩片葉相連。";
+  const puzzle = "拼圖還差兩片拼板。";
+  for (const [text, needsOfficial, source = text, question = "這個記錄寫了甚麼？"] of [
+    ["畫簿內的拓印有兩片葉。", false],
+    ["畫簿內夾着三張樹葉拓印，最上面的一張印有兩片葉。", false],
     [drawing, false],
+    ["兩片葉。", false, drawing],
+    [puzzle, false],
+    ["仲差兩片拼板。", false, puzzle, "拼圖還差幾多片拼板？"],
+    ["兩片拼板。", false, puzzle],
+    ["小朋友拾起三片貝殼。", false],
+    ["孩子收集了三粒種子。", false],
+    ["兩片圓板互相扣合。", false],
+    [puzzle, true, "拼圖還差三片拼板。"],
+    [puzzle, true, drawing],
+    ["兩片木板。", true, puzzle],
+    ["0.5片圓板。", true, "小朋友拾起5片圓板。"],
     ["兩片。", true],
+    ["兩片就夠。", true],
     ["兩片葉酸。", true],
+    ["盒內剩兩片地西泮。", true],
+    ["服用兩片拼板。", true, puzzle],
+    ["藥袋上印有兩片白色圓片。", true],
     ["每次服兩片葉。", true],
     [drawing + "另有兩片藥。", true],
+    ["兩片白色圓片。", true, "藥袋上印有兩片白色圓片。"],
+    [puzzle, true, puzzle, "這種藥每次要服多少？"],
   ] as const) {
+    draft.userRequest = question;
+    draft.sources = [{ citationId: "page-item", version: "record/2", contentHash: "a".repeat(64),
+      classification: "private", excerptComplete: true, excerpt: JSON.stringify({ kind: "record", text: source }) }];
     draft.paragraphs = [{ text, citationIds: ["page-item"] }];
     assert.equal(chatDeliveryPassNeedsSources(draft), needsOfficial, text);
+    const obligation = createChatDeliveryReviewObligation();
+    assert.equal(requiresChatDeliveryReview(draft, obligation), true, text);
+    assert.equal(obligation.officialEvidenceRequired, needsOfficial, text);
   }
+  draft.userRequest = "記錄說拼圖還欠甚麼？";
+  draft.sources = [{ ...draft.sources[0]!, citationId: "care:records", excerpt: JSON.stringify({ text: puzzle }) }];
+  draft.paragraphs = [{ text: "兩片拼板。", citationIds: ["care:records"] }];
+  assert.equal(chatDeliveryPassNeedsSources(draft), false);
+  draft.paragraphs[0]!.citationIds = [];
+  assert.equal(chatDeliveryPassNeedsSources(draft), true);
 });
 
 const chunk = {
