@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-223-image-count",
+  "base": {
+    "artifact": "candidate-221/out",
+    "htmlSha256": "ae8a2d051ae0449c79cd43ec9ed0f900909f8f49291d912664ecabebc7ba0ed1",
+    "rawRecordsSha256": "1eff9dfa4c3570ad4efc758dfd92a7d257d4d9cea1479174d93fe9a9329174c8",
+    "rawArtworkSha256": "6bd86cf80e59cdc58fb1273e03ec4bf0b4a079c9fb6f392075392a1a073a28bd",
+    "topics": 109,
+    "choices": 221,
+    "images": 221
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-help-dock/assets.json",
+      "sha256": "8cf269052b191944835beeee62f5032fb4ecfe34869e2be1308edb1525901f32"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "807630e949e3fca34bf85f492f9f44be9468859a0391ded9eb922cab96bfe637",
+    "PROVENANCE.md": "e855e04ea77b754b2919adb14a62ea1e04bfc39dc41c84bdc8df7ff7340cae2f"
+  },
+  "topics": [
+    {
+      "number": 110,
+      "title": "未送出草稿：先看到官方求助入口",
+      "choices": [
+        {
+          "name": "在草稿旁另列可參考內容",
+          "note": "Discourse 會用未發帖的草稿搜尋類似論壇主題，把結果放在編輯器右方。育伴港則在本機草稿符合提示條件時，於送出前顯示固定的香港官方求助資源；草稿仍可編輯，外部連結由用戶另行開啟。",
+          "links": [
+            {
+              "label": "Discourse v2026.10.0：完整論壇頁及編輯器位置",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/templates/application.gjs#L111-L153"
+            },
+            {
+              "label": "桌面可用的分類主題卡片",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/components/discovery/categories-display.gjs#L16-L63"
+            },
+            {
+              "label": "開啟的桌面編輯器保留原稿並顯示提示",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/components/composer-container.gjs#L296-L336"
+            },
+            {
+              "label": "以草稿搜尋類似論壇主題",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/components/composer-messages.gjs#L291-L347"
+            },
+            {
+              "label": "「類似主題」及連結的原生介面",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/components/composer-messages/similar-topics.gjs#L6-L19"
+            },
+            {
+              "label": "提示浮層在預覽右側的實際樣式",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/app/assets/stylesheets/common/base/compose.scss#L881-L908"
+            },
+            {
+              "label": "另外按建立主題才發帖",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/frontend/discourse/app/components/composer-container.gjs#L658-L683"
+            },
+            {
+              "label": "GPL-2.0-or-later：參考 Discourse 程式碼的授權",
+              "url": "https://github.com/discourse/discourse/blob/05445c3bf999c5502ccbe1e13539a15e88d9c9a9/README.md#L115-L123"
+            }
+          ],
+          "asset": {
+            "input": "draft-help-dock/help-dock-a.png",
+            "sha256": "8b5a8c887f93ce509b1e937cda9eac3d038aad261a3f740ba49b286a42d81350",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Discourse 桌面論壇非官方重繪：上方是虛構紙藝展討論區，底部編輯器保留未發帖的文字，右側浮層列出類似主題，建立主題按鈕未按下。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "在草稿下方顯示獨立提示",
+          "note": "Thunderbird 的附件提醒在撰寫時出現，正文仍可編輯。這封合成草稿沒有加入附件或寄送。對照育伴港：送出前可另列香港官方求助入口，由本人手動開啟；草稿不會自動送出，提示不作診斷或保證。",
+          "links": [
+            {
+              "label": "Thunderbird 159.0：完整撰寫視窗中的可編輯正文",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/messengercompose.xhtml#L2442-L2457"
+            },
+            {
+              "label": "同版：撰寫工具列與附件入口",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/messengercompose.xhtml#L2043-L2055"
+            },
+            {
+              "label": "同版：正文下方的通知位置",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/messengercompose.xhtml#L2518-L2528"
+            },
+            {
+              "label": "同版：寄送前，撰寫時更新附件提醒",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/MsgComposeCommands.js#L10955-L11010"
+            },
+            {
+              "label": "同版：加入附件與稍後提醒是分開的動作",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/MsgComposeCommands.js#L3375-L3445"
+            },
+            {
+              "label": "Thunderbird 所列撰寫程式授權：MPL-2.0",
+              "url": "https://github.com/thunderbird/thunderbird-desktop/blob/f88f34886f667703f55095f2ede6f31b15b42116/mail/components/compose/content/MsgComposeCommands.js#L1-L4"
+            }
+          ],
+          "asset": {
+            "input": "draft-help-dock/help-dock-b.png",
+            "sha256": "e1867af22c74514ab07d2af9322ab3a6abca36072ebbe4783419ef02ec10d9af",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Thunderbird 撰寫視窗的非官方全頁重繪。展板校樣草稿仍可編輯；下方有一條淡黃色附件提醒，含「加入附件」和「稍後提醒我」。兩個按鈕均未操作，沒有寄送。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 110 題 · 在送出草稿前顯示提示的兩幅自製示意",
+      "input": "draft-help-dock/DECLARATION.txt",
+      "sha256": "807630e949e3fca34bf85f492f9f44be9468859a0391ded9eb922cab96bfe637"
+    }
+  ]
+}
