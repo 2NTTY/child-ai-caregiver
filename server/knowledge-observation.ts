@@ -26,9 +26,11 @@ export function definitionHash(definition: SourceWatchDefinition): string {
 }
 
 /** Shared semantic-review boundary; storage adapters supply their transaction-bound observation. */
+export type PdfReviewProof = boolean | {physicalPage:number};
 export function checkKnowledgeObservation(document: KnowledgeSourceInput,
   watch: { enabled: boolean; definition: SourceWatchDefinition } | undefined,
-  observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null, windowedReview = false) {
+  observed: { content_hash: string; unavailable: boolean; document: ObservedContent; url: string } | undefined, expectedHash: string | null, windowedReview:PdfReviewProof = false) {
+  if (typeof windowedReview === 'object' && watch?.definition.kind !== 'pdf') throw Error('knowledge_window_review_required');
   if (document.chunks.some(chunk => chunk.originalKind && !(chunk.originalKind === "page_excerpt"
     && watch?.definition.kind === "pdf" && observed?.document.pages?.length))
     && !windowedReview) throw Error("knowledge_window_review_required");
@@ -52,6 +54,15 @@ export function checkKnowledgeObservation(document: KnowledgeSourceInput,
     if (document.chunks.some(chunk => !chunk.mediaClip && damagedPdfText.test(chunk.sourceExcerpt)))
       throw Error("knowledge_pdf_no_reliable_quote");
     const expected = document.extraction, actual = observed.document.extraction;
+    if (typeof windowedReview === 'object') {
+      const page = windowedReview.physicalPage, chunk = document.chunks[0];
+      if (!watch.definition.leafletPage || watch.definition.id !== document.sourceId || !actual || !expected || !actual.totalPages
+        || !Number.isSafeInteger(page) || page < 1 || page > actual.totalPages || actual.pageStart !== 1 || actual.pageEnd !== actual.totalPages
+        || knowledgeReviewHash(expected) !== knowledgeReviewHash({...actual,pageStart:page,pageEnd:page,complete:false})
+        || document.chunks.length !== 1 || chunk?.originalKind !== 'visual_page' || chunk.applicability.use !== 'original_lookup'
+        || chunk.pageStart !== page || chunk.pageEnd !== page || chunk.excerptPage !== page) throw Error('knowledge_window_review_required');
+      return;
+    }
     if (observed.document.nativeWindowMethod) {
       if (!windowedReview || !actual || actual.complete || !expected?.complete || expected.pageStart !== 1
         || expected.pageEnd !== actual.totalPages || expected.totalPages !== actual.totalPages

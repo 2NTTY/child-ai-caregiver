@@ -8,6 +8,29 @@ import publication
 
 
 class PublicationTests(unittest.TestCase):
+    def test_selected_page_requires_one_frozen_original(self):
+        manifest = {"lanes": [{"id": "C1", "sources": [{"sourceId": "sample", "pages": 8}]}]}
+        args = SimpleNamespace(action="lane", lane="C1", mode="prepare", source="sample", page=5)
+        self.assertEqual(list(publication.commands(args, manifest)), [
+            ["scripts/fhs-catalog-batch.mjs", "--lane", "C1", "prepare", "sample"]])
+        for source, page in ((None, 5), ("sample", 0), ("sample", 9)):
+            args.source, args.page = source, page
+            with self.assertRaisesRegex(ValueError, "physical page"):
+                list(publication.commands(args, manifest))
+
+    def test_selected_page_reaches_preparation_and_the_bound_worker(self):
+        args = SimpleNamespace(action="lane", lane="C1", mode="run", page=5, reads=None)
+        original = "a" * 64
+        with patch("publication.Path.read_text", return_value=f"MemAvailable: {900 * 1024} kB\n"), patch("publication.subprocess.Popen") as run:
+            proc = run.return_value.__enter__.return_value
+            proc.wait.return_value = 0
+            for command, binding in ((["scripts/fhs-catalog-batch.mjs", "--lane", "C1", "prepare", "sample"], None),
+                                     (["scripts/fhs-initial-campaign.mjs", "resume-approved", "sample", original], original)):
+                publication.compose_job(self.host, args, command, original=binding)
+                env = json.loads(proc.stdin.write.call_args.args[0])["services"]["worker"]["environment"]
+                self.assertEqual(env["FHS_CAMPAIGN_PRINT_PAGE"], "5")
+                self.assertEqual(env.get("FHS_CAMPAIGN_ORIGINAL_OPERATION"), binding)
+
     def test_web_chapters_require_their_own_registered_operation(self):
         path = Path(__file__).resolve().parents[2] / "knowledge/fhs-initial-recovery.json"
         manifest = json.loads(path.read_text(encoding="utf8"))

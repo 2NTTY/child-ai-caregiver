@@ -16,7 +16,7 @@ import { knowledgeReviewHash } from '../server/knowledge-review-assessment.ts';
 import { observationHash } from '../server/knowledge-observation.ts';
 import { bindReviewedWindow } from '../server/fhs-reviewed-window.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
-import { bindFirstDispatch, firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
+import { bindFirstDispatch, firstDispatchScopeHash, firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
 import { retainedDraftWorkId } from '../server/knowledge-retained-draft.ts';
 
 export function classifyLaneOperation(source, check, saved, active, tickets) {
@@ -48,7 +48,7 @@ export function classifyLaneOperation(source, check, saved, active, tickets) {
   return { state: 'ready', started: Boolean(saved), observationHash: hash, quotaDay: saved?.waitingForQuotaDay ?? null };
 }
 
-export function createLaneOperations(persistence, fetchSource, lane) {
+export function createLaneOperations(persistence, fetchSource, lane, physicalPage) {
   const { database, config, cipher, authority } = persistence;
   const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace, readControl: tx => authority.readControl(tx) };
   const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: platformSourceWatches,
@@ -69,6 +69,7 @@ export function createLaneOperations(persistence, fetchSource, lane) {
       operationFingerprint: doc.get('operationFingerprint') ?? null, cost: doc.get('cost') ?? null }));
     const pin = bound.data();
     if (!job) {
+      if (physicalPage) throw Error('knowledge_print_page_not_commissioned');
       const registered = await database.runTransaction(tx => refresh.gate.read(tx, id), { readOnly: true });
       const state = registered || tickets.length || active || pin ? 'reconciliation_required' : 'unregistered';
       return { state, operationFingerprint: pin?.operationFingerprint ?? null, tickets, ...(state === 'unregistered' ? {} : { code: 'fhs_lane_registration_unavailable' }) };
@@ -85,16 +86,21 @@ export function createLaneOperations(persistence, fetchSource, lane) {
     const revision = pin && matchesFhsPdfObservation(source, check)
       && bindReviewedWindow(manualPublicationPin(id),operationFingerprint,saved);
     let repair;
-    const firstDispatch = pin && matchesFhsPdfObservation(source,check) && bindFirstDispatch(manualPublicationPin(id),operationFingerprint,saved);
+    const firstDispatch = pin && matchesFhsPdfObservation(source,check) && bindFirstDispatch(manualPublicationPin(id),operationFingerprint,saved,physicalPage);
+    if (physicalPage && (!firstDispatch || firstDispatch.observation !== observationHash(check.items[0])))
+      throw Error('knowledge_print_page_not_commissioned');
     if (firstDispatch && firstDispatch.observation===observationHash(check.items[0])) {
       const deliveryOperation=firstDispatchWorkId(operationFingerprint);
       const child=await work.inspect({...request,operationFingerprint:deliveryOperation});
-      repair={deliveryOperation,originalCode:saved.result.code,deliveryModelCalls:child?.budget.modelCalls ?? 0};
-      if (child?.firstDispatchFrom===operationFingerprint) operation=classifyLaneOperation(source,check,child,active,tickets);
+      repair={deliveryOperation,originalCode:saved.result.code,deliveryModelCalls:child?.budget.modelCalls ?? 0,...(physicalPage ? {physicalPage} : {})};
+      if (child?.firstDispatchFrom===operationFingerprint && child.firstDispatchScopeHash===firstDispatchScopeHash(firstDispatch))
+        operation=physicalPage && tickets.some(t=>t.state!=='settled')
+          ? {state:'source_blocked',code:'fhs_lane_dispatch_reserved',observationHash:firstDispatch.observation}
+          : classifyLaneOperation(source,check,child,active,tickets);
       else if (!child && !active && !tickets.length) operation={state:'ready',started:true,observationHash:firstDispatch.observation};
       else operation={state:'reconciliation_required',code:'fhs_lane_unbound_or_unsettled_charge'};
     }
-    if (revision && observationHash(check.items[0]) === revision.observationHash) {
+    if (!physicalPage && revision && observationHash(check.items[0]) === revision.observationHash) {
       const deliveryOperation = retainedDraftWorkId(operationFingerprint);
       const child = await work.inspect({...request,operationFingerprint:deliveryOperation});
       repair = {deliveryOperation, originalCode:saved.result.code, deliveryModelCalls:child?.budget.modelCalls ?? 0};
@@ -150,7 +156,7 @@ export function createLaneOperations(persistence, fetchSource, lane) {
   return { inspect, prepare };
 }
 
-export async function openLaneRuntime(lane, action) {
+export async function openLaneRuntime(lane, action, physicalPage) {
   const p = await openFirebasePersistence(process.env);
   try {
     if (p.config.projectId !== 'ai-caregivers-for-children') throw Error('knowledge_campaign_environment_mismatch');
@@ -159,7 +165,7 @@ export async function openLaneRuntime(lane, action) {
     const fetch = createKnowledgeSourceFetcher({ ...(dir && action !== 'status' ? { pdfReader: await openFhsPdfReads(dir, index) } : {}) });
     const child = fileURLToPath(new URL('./fhs-initial-campaign.mjs', import.meta.url));
     return {
-      ...createLaneOperations(p, fetch, lane),
+      ...createLaneOperations(p, fetch, lane, physicalPage),
       report(source, receipt) { console.log(JSON.stringify({ lane, sourceId: source.sourceId, sha256: source.sha256, pages: source.pages, ...receipt })); },
       dispatch(source, original, started) {
         const command = started ? ['resume-approved', source.sourceId, original] : ['publish-approved', source.sourceId];

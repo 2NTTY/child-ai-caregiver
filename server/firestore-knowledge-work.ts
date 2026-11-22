@@ -1,4 +1,4 @@
-import { windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
+import { matchesSelectedReading, windowReadingSchema, type WindowReading } from "./knowledge-pdf-windows.ts";
 import { recordedCommunicationComparison, recordedComparisonRequestHash } from './fhs-script-comparison-stage.ts';
 import { extractKnowledgePdf, type KnowledgePdfOptions, type KnowledgePdfResult } from "./knowledge-pdf.ts";
 import type { createFirestoreKnowledgeOriginals } from "./firestore-knowledge-originals.ts";
@@ -18,7 +18,7 @@ import type { FirestoreKnowledgePublicationFence } from "./firestore-knowledge.t
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { matchesRegisteredRetainedDraft, retainedDraftProvenanceSchema, type RetainedDraftRevision } from './knowledge-retained-draft.ts';
 import { reviewedParentCode, type BoundReviewedWindow } from './fhs-reviewed-window.ts';
-import { firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
+import { firstDispatchScopeHash, firstDispatchWorkId, isUndispatchedParent, type FirstDispatch } from './fhs-undispatched-original.ts';
 import { campaign, campaignRecoverySchemas, campaignTicketId } from './knowledge-campaign-budget.ts';
 import { recordedWebReviewStage } from './fhs-web-reading.ts';
 import { recordedScriptReviewStage } from './fhs-script-edition.ts';
@@ -31,6 +31,7 @@ const workSchema = z.strictObject({
   request: backgroundKnowledgeRunRequestSchema, configHash: hash, publicationConfigHash:hash.optional(), reusedOrganizationFrom: hash.optional(), deadlineAtMs: time,
   windowed: z.literal(true).optional(),
   firstDispatchFrom: hash.optional(),
+  firstDispatchScopeHash: hash.optional(),
   windowRangeLimit: z.literal(8).optional(),
   quotaPhase:z.literal('model').optional(), waitingForQuotaDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u).optional(),
   lease: z.strictObject({ token: z.uuid(), untilMs: time }).nullable(),
@@ -232,7 +233,8 @@ export function createFirestoreKnowledgeWork(options: Options) {
         } else {
           result = await reader(await originals.readPdf(sourceId, parentHash), windowOptions);
         }
-        if (!result.pagePdf || result.pages.length !== count) reject("knowledge_window_range_invalid");
+        if (!result.pagePdf || result.fileHash !== parentHash || result.startPage !== first || result.pages.length !== count
+          || result.pages.some((page,index) => page.page !== first + index)) reject("knowledge_window_range_invalid");
         const contentHash = await originals.save(sourceId, "application/pdf", Buffer.from(result.pagePdf));
         const proposed = schema.parse({ ...identity, total: result.totalPages, contentHash });
         descriptor = await database.runTransaction(async tx => {
@@ -282,6 +284,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
       const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
       function verify(row: Work) {
         if (knowledgeReviewHash(row.request) !== knowledgeReviewHash(request) || row.configHash !== configHash || row.reusedOrganizationFrom !== reusedOrganizationFrom || row.firstDispatchFrom !== firstDispatch?.original || row.windowed !== limits.windowed
+          || row.firstDispatchScopeHash !== firstDispatchScopeHash(firstDispatch)
           || row.windowRangeLimit !== limits.windowRangeLimit || row.publicationConfigHash && row.publicationConfigHash !== limits.publicationConfigHash)
           reject("knowledge_work_binding_changed");
         return row;
@@ -353,6 +356,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
         }
         const row: Work = { request, configHash, ...(limits.publicationConfigHash ? {publicationConfigHash:limits.publicationConfigHash} : {}),
           ...(firstDispatch ? {firstDispatchFrom:firstDispatch.original} : {}),
+          ...(firstDispatch?.scope ? {firstDispatchScopeHash:firstDispatchScopeHash(firstDispatch)} : {}),
           ...(limits.windowed ? {windowed:true as const} : {}), ...(limits.windowRangeLimit ? {windowRangeLimit:limits.windowRangeLimit} : {}),
           ...(reusedOrganizationFrom ? {reusedOrganizationFrom} : {}), deadlineAtMs: Date.now() + limits.deadlineMs, lease: null,
           budget: priorBudget ?? { usedUnits: 0, maxUnits: limits.maxUnits ?? 8, modelCalls: 0, maxModelCalls: limits.modelCalls }, result: null, receipt: null, preparedHash: null };
@@ -441,9 +445,15 @@ export function createFirestoreKnowledgeWork(options: Options) {
           const row = await current(tx), snapshot = await tx.get(preparedRef);
           if (!row.windowed || !snapshot.exists) return false;
           const value = open(preparedRef, snapshot.data(), preparedSchema);
-          return row.preparedHash === knowledgeReviewHash(value) && value.prepared.versionHash === versionHash
+          const valid = row.preparedHash === knowledgeReviewHash(value) && value.prepared.versionHash === versionHash
             && value.prepared.review.modelReviewCompleted && value.prepared.review.decision === "approve_candidate"
             && Boolean(value.prepared.provenance.windows?.length);
+          const windows = value.prepared.provenance.windows;
+          if (!valid || !windows) return false;
+          if (!firstDispatch?.scope) return windows.every(w => !w.selectedPage);
+          await firstDispatch.verify(tx);
+          return row.firstDispatchFrom === firstDispatch.original && windows.length === 1 && matchesSelectedReading(windows[0]!,firstDispatch.scope)
+            ? {physicalPage:firstDispatch.scope.physicalPage} : false;
         },
         async waitForQuota() {
           await database.runTransaction(async tx => {
@@ -560,6 +570,7 @@ export function createFirestoreKnowledgeWork(options: Options) {
         publicationFence(candidate: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance): FirestoreKnowledgePublicationFence {
           return {
             async prepare(tx, publication) {
+              if (firstDispatch?.scope) await firstDispatch.verify(tx);
               const row = await current(tx), snapshot = await tx.get(preparedRef);
               const saved = snapshot.exists ? open(preparedRef, snapshot.data(), preparedSchema) : null;
               if (request.publishMode !== "live" || !saved || row.preparedHash !== knowledgeReviewHash(saved)

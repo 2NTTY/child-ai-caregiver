@@ -5,7 +5,7 @@ import { readAiConfig } from '../server/ai-config.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { FirestoreAiUsage, KNOWLEDGE_MAINTENANCE_PAYER, KNOWLEDGE_PUBLICATION_PAYER } from '../server/firestore-ai-usage.ts';
 import { manualPublicationPin } from '../server/fhs-manual-publication.ts';
-import { bindFirstDispatch, firstDispatchWorkId } from '../server/fhs-undispatched-original.ts';
+import { bindFirstDispatch, firstDispatchWorkId, firstDispatchScopeHash, requestedPrintPage } from '../server/fhs-undispatched-original.ts';
 import { bindReviewedWindow } from '../server/fhs-reviewed-window.ts';
 import { createKnowledgeCampaignBudget, campaign, campaignModel, campaignCredentials, retainedCampaignReceipts, selectCampaignDayAdmission } from '../server/knowledge-campaign-budget.ts';
 import { cloudKnowledgeOriginalBucket } from '../server/firestore-knowledge-originals.ts';
@@ -65,6 +65,9 @@ const explicitAgeScope = scriptCommand || command === 'process-age-checked' || c
 const firstPass = ['process', 'process-sized', 'process-age-checked'].includes(command);
 const handlesSource = recovering || resuming || repairing || firstPass || inspecting;
 const lane = process.env.FHS_CAMPAIGN_LANE;
+const physicalPage = requestedPrintPage(process.env.FHS_CAMPAIGN_PRINT_PAGE);
+if (physicalPage && (invocation !== 'resume-approved' || !manual || !lane || physicalPage > manual.pages))
+  throw Error('knowledge_print_page_not_commissioned');
 const originalPin = process.env.FHS_CAMPAIGN_ORIGINAL_OPERATION;
 const assigned = handlesSource && !inspecting ? [...publicationAssignments()].find(([, rows]) => rows.some(row => row.sourceId === id)) : undefined;
 const laneSource = assigned?.[1].find(row => row.sourceId === id);
@@ -158,8 +161,9 @@ try {
     if (resuming && !prior) throw Error('knowledge_campaign_resume_binding_changed');
     if (repairing && (prior?.result?.status !== 'candidate_held' || prior.result.code !== 'model_output_limit'
       || !prior.result.observationHash || prior.prepared || prior.receipt)) throw Error('knowledge_campaign_truncation_not_confirmed');
-    const reviewedWindow = invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
-    const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior) : undefined;
+    const reviewedWindow = !physicalPage && invocation === 'resume-approved' ? bindReviewedWindow(manual,original,prior) : undefined;
+    const firstDispatch = invocation === 'resume-approved' && lane ? bindFirstDispatch(manual,original,prior,physicalPage) : undefined;
+    if (physicalPage && !firstDispatch) throw Error('knowledge_print_page_not_commissioned');
     const operationFingerprint = chapter ? webChapterPublicationWorkId(chapter) : scriptEdition ? (reviseHeldScript ? currentScriptReadingWork(scriptEdition) : scriptEditionWorkId(scriptEdition)) : firstDispatch ? firstDispatchWorkId(original) : reviewedWindow ? retainedDraftWorkId(original)
       : draftRevision ? retainedDraftWorkId(draftRevision.operationFingerprint) : repairing ? knowledgeTruncatedOutputRepairId(original) : original;
     const request = { ...originalRequest, operationFingerprint };
@@ -227,6 +231,8 @@ try {
     } else {
       const signal = new AbortController().signal;
       const saved = resuming && !reviewedWindow && !firstDispatch ? prior : await work.inspect(request);
+      if (firstDispatch && saved && (saved.firstDispatchFrom !== original || saved.firstDispatchScopeHash !== firstDispatchScopeHash(firstDispatch)))
+        throw Error('knowledge_first_dispatch_binding');
       let result = canResumeRetainedPromptFailure(saved, draftRevision) ? null : saved?.result;
       if (result?.published && saved.receipt?.state !== 'committed') throw Error('knowledge_campaign_publication_receipt_missing');
       if (!result) {

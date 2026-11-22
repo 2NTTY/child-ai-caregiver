@@ -13,6 +13,7 @@ import { nativeResponseSchema } from "./knowledge-pdf-output.ts";
 import { knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment } from "./knowledge-review-assessment.ts";
 import type { RetainedTranscription } from './knowledge-retained-draft.ts';
 import { retainWindowPassage, reviseWindowRegion, type ReviewedWindow } from './fhs-reviewed-window.ts';
+import { layoutFactContract, layoutFactsSchema, printPageScopeSchema, selectedPrintWindow, type PrintPageScope, type LayoutFacts } from './knowledge-pdf-layout.ts';
 export const PDF_WINDOW_METHOD = "native-pdf-window/1";
 export const PDF_WINDOW_RANGE_LIMIT = 8;
 export type PdfWindowRangeLimit = typeof PDF_WINDOW_RANGE_LIMIT | 14;
@@ -27,6 +28,7 @@ export const windowReadingSchema = z.strictObject({
   parentHash: digest, sliceHash: digest, first: location, last: location, firstRead: location, lastRead: location,
   method: z.literal(PDF_WINDOW_METHOD), organizeKey: z.string().max(150), reviewKey: z.string().max(150),
   registeredRequests: z.strictObject({organizerRequestHash:digest, reviewerRequestHash:digest}).optional(),
+  selectedPage: z.strictObject({scope:printPageScopeSchema, organize:layoutFactsSchema, review:layoutFactsSchema}).optional(),
   pages: z.array(pageFinding).min(1).max(14), organizePages: z.array(pageFinding).min(1).max(14),
   originalLocations: z.record(z.string(), z.strictObject({ physicalPage: location, kind: z.enum(["text_layer", "page_transcription", "visual_page"]) })), chunks: z.array(chunk).max(14),
   previousChanges: z.record(z.string(), z.strictObject({ meaning: z.enum(["changed", "unchanged", "removed"]), reason: z.string().trim().min(1).max(600) })),
@@ -71,7 +73,26 @@ export function manualPdfWindowBudget(totalPages: number, rangeLimit: PdfWindowR
 }
 
 const keyOf = (range: Range) => "pages-" + range.first + "-" + range.last;
+function printPageText(scope:PrintPageScope, facts:LayoutFacts) {
+  return [scope.question, ...scope.fields.map(({key,label}) => label + '：' + facts[key])].join('\n');
+}
+
+export function matchesSelectedReading(reading:WindowReading, scope:PrintPageScope) {
+  const page = scope.physicalPage, evidence = reading.selectedPage, key = keyOf({first:page,last:page});
+  if (!evidence || knowledgeReviewHash(evidence.scope) !== knowledgeReviewHash(scope)) return false;
+  const contract = layoutFactContract(scope.fields.map(f=>f.key)), chunk = reading.chunks[0];
+  return contract.safeParse(evidence.organize).success && contract.safeParse(evidence.review).success
+    && scope.fields.every(({key}) => evidence.organize[key] === evidence.review[key])
+    && [reading.first,reading.last,reading.firstRead,reading.lastRead].every(p => p === page)
+    && [reading.pages,reading.organizePages].every(rows => rows.length === 1 && rows[0]?.page === page && rows[0].status === 'content')
+    && reading.chunks.length === 1 && chunk?.key === key && chunk.originalKind === 'visual_page'
+    && chunk.pageStart === page && chunk.pageEnd === page && chunk.applicability.use === 'original_lookup'
+    && chunk.section === scope.question && chunk.text === printPageText(scope,evidence.review)
+    && reading.originalLocations[key]?.physicalPage === page && reading.originalLocations[key]?.kind === 'visual_page';
+}
+
 export async function readKnowledgePdfWindow(input: {
+  selectedPage?: PrintPageScope;
   explicitAgeScope?: boolean;
   range: PdfReadingWindow;
   candidate: BackgroundKnowledgeCandidate;
@@ -140,6 +161,31 @@ export async function readKnowledgePdfWindow(input: {
     if (raw.length > 128000)
       reject("knowledge_maintenance_output_limit");
     return { raw: JSON.parse(raw), attemptKey, requestHash:revision ? knowledgeReviewHash({system:prompt.text,user,attemptKey}) : undefined };
+  }
+  if (input.selectedPage) {
+    const scope = input.selectedPage, page = scope.physicalPage;
+    if (baseline || retained || revision || knowledgeReviewHash(range) !== knowledgeReviewHash(selectedPrintWindow(scope,candidate.observed.extraction!.totalPages!)))
+      reject('knowledge_window_binding_changed');
+    const facts = layoutFactContract(scope.fields.map(f=>f.key));
+    const shape = z.strictObject({decision:z.enum(['approve','hold']), finding:pageFinding.shape.reason, facts});
+    const reviewShape = shape.extend({checks:knowledgeReviewAssessmentSchema.shape.checks});
+    const task = {...common, question:scope.question, fields:scope.fields,
+      instruction:'Read the chart on the supplied physical page independently. Return literal values in the printed language, preserving units and relationships. Hold if any requested field is absent, ambiguous or unreadable.'};
+    const organized = await call('organize',task,shape);
+    const draft = shape.parse(organized.raw);
+    if (draft.decision !== 'approve') reject('knowledge_window_review_held');
+    const reviewed = await call('review',task,reviewShape);
+    const checked = reviewShape.parse(reviewed.raw);
+    if (checked.decision !== 'approve' || scope.fields.some(({key}) => draft.facts[key] !== checked.facts[key]))
+      reject('knowledge_window_review_held');
+    const key = keyOf(range);
+    return windowReadingSchema.parse({parentHash,sliceHash,method:PDF_WINDOW_METHOD,first:page,last:page,firstRead:page,lastRead:page,
+      organizeKey:organized.attemptKey,reviewKey:reviewed.attemptKey,selectedPage:{scope,organize:draft.facts,review:checked.facts},
+      pages:[{page,status:'content',reason:checked.finding}],organizePages:[{page,status:'content',reason:draft.finding}],
+      chunks:[{key,section:scope.question,text:printPageText(scope,checked.facts),sourceExcerpt:'',originalKind:'visual_page',
+        pageStart:page,pageEnd:page,keywords:[scope.question],treatment:{kind:'overview',policyVersion:1},applicability:{region:'HK',ageBasis:'unconfirmed',use:'original_lookup',
+          minAgeMonths:null,maxAgeMonths:null,topics:['parenting'],conditions:[]}}],
+      originalLocations:{[key]:{physicalPage:page,kind:'visual_page'}},previousChanges:{},explanations:{[key]:checked.finding},checks:checked.checks});
   }
   const organized = await call("organize", { ...common, role: "organize", sourceTitle: candidate.observed.title,
     ...(input.explicitAgeScope ? { ageScope: ageScopeInstruction } : {}) }, organizeShape);
@@ -224,6 +270,7 @@ export async function readKnowledgePdfWindow(input: {
   });
 }
 export function assembleKnowledgePdfWindows(input: {
+  selectedPage?: PrintPageScope;
   windowRangeLimit?: PdfWindowRangeLimit;
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
@@ -236,14 +283,18 @@ export function assembleKnowledgePdfWindows(input: {
   }[];
 }): PreparedKnowledgeMaintenance {
   const { candidate, baseline, windows } = input, doc = candidate.observed, extraction = doc.extraction!;
-  const expected = planKnowledgePdfWindows(extraction.totalPages!, windows.length * 2, input.windowRangeLimit);
+  const scope = input.selectedPage;
+  const expected = scope ? [selectedPrintWindow(scope,extraction.totalPages!)] : planKnowledgePdfWindows(extraction.totalPages!, windows.length * 2, input.windowRangeLimit);
+  if (scope ? baseline || !windows[0] || !matchesSelectedReading(windows[0],scope) : windows.some(w => w.selectedPage))
+    reject("knowledge_window_coverage_disputed");
   if (windows.length !== expected.length || windows.some((w, i) => w.parentHash !== extraction.contentHash || w.first !== expected[i]!.first || w.last !== expected[i]!.last
     || w.firstRead !== expected[i]!.firstRead || w.lastRead !== expected[i]!.lastRead || w.pages.length !== w.last - w.first + 1 || w.pages.some((p, j) => p.page !== w.first + j || p.status === "unreadable")))
     reject("knowledge_window_coverage_disputed");
   const source = parseKnowledgeSource({
     sourceId: candidate.watchId, url: doc.url, title: doc.title, publisher: candidate.definition.publisher,
     classification: candidate.definition.classification, sourcePublishedAt: doc.sourcePublishedAt, sourceUpdatedAt: doc.sourceUpdatedAt,
-    sourceDateText: doc.sourceDateText, fetchedAt: input.fetchedAt, termsUrl: candidate.definition.termsUrl, extraction: { ...extraction, complete: true },
+    sourceDateText: doc.sourceDateText, fetchedAt: input.fetchedAt, termsUrl: candidate.definition.termsUrl,
+    extraction: scope ? {...extraction, pageStart:scope.physicalPage, pageEnd:scope.physicalPage, complete:false} : { ...extraction, complete: true },
     chunks: windows.flatMap(w => w.chunks.map(chunk => {
       const location = w.originalLocations[chunk.key];
       if (!location) reject("knowledge_window_range_invalid");
@@ -281,7 +332,9 @@ export function assembleKnowledgePdfWindows(input: {
   const review = {
     watchId: candidate.watchId, observationHash: candidate.observationHash, previousObservationHash: candidate.previousObservationHash,
     decision: changedRule ? "hold_candidate" as const : "approve_candidate" as const, reviewKind: "model_review" as const, modelReviewCompleted: true,
-    growthRuleImpact: changedRule ? "requires_review" as const : "none" as const, policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION, notes: ["Every physical core page has two source-bound reading receipts."]
+    growthRuleImpact: changedRule ? "requires_review" as const : "none" as const, policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
+    notes: [scope ? `Independent readings matched the commissioned fields on physical page ${scope.physicalPage} of ${extraction.totalPages}.`
+      : "Every physical core page has two source-bound reading receipts."]
   };
   return {
     source, assessment, versionHash: sourceVersionHash(source), review, provenance: {
