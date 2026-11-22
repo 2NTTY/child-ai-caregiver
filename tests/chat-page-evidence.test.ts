@@ -35,6 +35,30 @@ test('a companion restatement preserves the original while an unsupported siblin
   } finally { budget.close(); }
 });
 
+test('a rejected speaker can recover the already registered references without a second search', async () => {
+  const budget = new AgentBudget(), runId = randomUUID(), chunkId = randomUUID();
+  const scope = {userId:'parent', workspaceId:randomUUID(), childId:randomUUID(), authorizationVersion:'1', dataVersion:'1'};
+  const page = {citationId:'page-item', classification:'private', version:'task/1', contentHash:'a'.repeat(64),
+    excerptComplete:true, excerpt:JSON.stringify({details:'藍色圖畫書和沙槌'})};
+  const chunk = {chunkId, title:'幼兒遊戲', section:'親子共讀', text:'一起看圖畫書。', classification:'official_guidance'};
+  try {
+    const surface = createProductAgentTools({discussion:true, run:{runId,scope,budget}, authorize:async () => true,
+      pageEvidence:{source:page,isCurrent:async () => true}, seededOfficialEvidence:[{chunk,filter:{classification:'official_guidance'}}],
+      knowledge:{createRun:() => ({seedEvidence() {}})}, memory:{}, tasks:{}, store:{},
+    } as unknown as Parameters<typeof createProductAgentTools>[0]);
+    surface.beginDiscussionTurn!('speaker');
+    const speaker = surface.tools.find(t => t.name === 'share_knowledge_view')!;
+    const call = {scope,runId,callId:randomUUID(),signal:budget.signal};
+    const view = {kind:'caregiving',text:'可以一起看圖畫書。',citationIds:[chunkId, page.citationId]};
+    const rejected = await speaker.execute(view,call);
+    assert.partialDeepStrictEqual(rejected,{status:'rejected',data:{code:'invalid_citation',
+      selectedItemCitation:{kind:'private_reference',citationIds:['page-item']},availableOfficialCitationIds:[{chunkId}]}});
+    assert.equal(surface.nextDiscussionTool!(),'share_knowledge_view');
+    assert.equal((await speaker.execute({...view,citationIds:[chunkId]},call)).status,'succeeded');
+    assert.equal(surface.nextDiscussionTool!(),'ask_parent_view');
+  } finally { budget.close(); }
+});
+
 test('a history quote may supply a fact but repeating the current page question cannot answer it', async () => {
   const budget = new AgentBudget(), runId = randomUUID();
   const scope = { userId: 'actor', workspaceId: randomUUID(), childId: randomUUID(), authorizationVersion: '1', dataVersion: '1' };

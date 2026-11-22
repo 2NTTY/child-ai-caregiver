@@ -916,9 +916,11 @@ export function createAgentRuntime(options: {
                   canCompact: () => {
                     if (!terminalToolNames.size) return true;
                     const plan = budget.planningSnapshot(true, { reserveDeliveryReview });
-                    // Even a retried compaction must leave room for presentation and its independent review.
+                    // Optional summarization must leave the discussion room for a revision and its independent re-review.
                     const separateSpeakerTurns = Math.max(0, (input.discussion?.remainingSpeakers() ?? 0) - 1);
-                    return Math.min(budget.remainingModelCalls, dailySlots(plan)) - plan.reserveForFinish.modelCalls - separateSpeakerTurns >= 1 + (selected.config.agentMaxRetries ?? 0);
+                    const repairAndReReview = input.discussion ? 2 : 0;
+                    const slots = Math.min(budget.remainingModelCalls, dailySlots(plan));
+                    return slots - plan.reserveForFinish.modelCalls - separateSpeakerTurns - repairAndReReview >= 1 + (selected.config.agentMaxRetries ?? 0);
                   },
                   tokenThreshold: typeof input.contextCompaction === "object" ? input.contextCompaction.tokenThreshold : undefined,
                   eventRetentionSize: typeof input.contextCompaction === "object" ? input.contextCompaction.eventRetentionSize : undefined,

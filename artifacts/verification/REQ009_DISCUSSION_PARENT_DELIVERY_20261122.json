@@ -1,0 +1,687 @@
+{
+  "case": "REQ-009",
+  "testedBase": "7286b87b279486a997310ef511760bd482926085",
+  "priorDeployment": "https://github.com/2NTTY/child-ai-caregiver/actions/runs/44968305896",
+  "observedAt": "2026-11-22T01:42:46.181Z",
+  "environment": {
+    "client": "本機獨立無頭 Edge 158.0.4370.33",
+    "server": "正式 Web、Firebase 互動 Agent 及交付審核；合成家庭快照及 Firebase Emulator，實際 Vertex ADC",
+    "model": "gemini-3.1-flash-lite",
+    "originalPromptPack": "0.1.69",
+    "platform": {
+      "modelCalls": 8,
+      "toolCalls": 16,
+      "queryEmbeddings": 4,
+      "modelRetries": 0,
+      "ownerDaily": 20,
+      "globalDaily": 100,
+      "day": "2026-11-22"
+    },
+    "fixturePolicyHistory": {
+      "imported": [
+        185,
+        185
+      ],
+      "duringWalk": [
+        20,
+        100
+      ],
+      "userAttemptsAtOrdinaryStart": 3,
+      "userAttemptsAtFixedOrdinaryStart": 14,
+      "userAttemptsAtReadback": 20,
+      "windows": [
+        {
+          "open": {
+            "at": "2026-11-22T01:27:02.389Z",
+            "before": 20,
+            "after": 32,
+            "used": 20,
+            "effectiveVersion": 10,
+            "soleSyntheticAccount": true
+          },
+          "restore": {
+            "at": "2026-11-22T01:30:20.600Z",
+            "before": 32,
+            "after": 20,
+            "used": 27,
+            "effectiveVersion": 11,
+            "soleSyntheticAccount": true
+          }
+        },
+        {
+          "open": {
+            "at": "2026-11-22T01:38:03.297Z",
+            "before": 20,
+            "after": 51,
+            "used": 27,
+            "effectiveVersion": 12,
+            "soleSyntheticAccount": true
+          },
+          "restore": {
+            "at": "2026-11-22T01:42:46.181Z",
+            "before": 51,
+            "after": 20,
+            "used": 37,
+            "effectiveVersion": 13,
+            "soleSyntheticAccount": true
+          }
+        }
+      ],
+      "finalUsed": 37
+    }
+  },
+  "question": "我個小朋友歲半。照呢項待辦，今晚準備咗邊兩樣嘢？參考我下載嘅兒童發展教材，如果得十分鐘，佢又想行開，點樣陪佢玩好？",
+  "task": {
+    "page": "/tasks",
+    "item": {
+      "kind": "task",
+      "id": "637cf99a-7b68-4808-8838-d1a9f2382b7f",
+      "version": 1
+    }
+  },
+  "source": {
+    "sourceId": "fhs-toddler-development",
+    "chunkId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+    "versionId": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+    "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313",
+    "versionHash": "91365018235f8e28d39d5cce6f191cdd927b0da61a16e85be9b2f0b647974479"
+  },
+  "baseline": {
+    "ordinary": {
+      "questionId": "fea3be2b-0132-403f-8f3b-f24dfa9ed549",
+      "answerId": "09f26871-d275-4d9b-a06f-60f26fddb6ab",
+      "runId": "3b84eb3d-9de6-45e5-b1d1-c42df496ec52",
+      "status": "completed",
+      "stopReason": null,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "review": {
+        "decision": "pass",
+        "policyVersion": "p3-m01-chat-delivery-review/2",
+        "draftHash": "6bec36fe3b7ef23a1516e661c5f15e04b79888a421696f8ac27c454915de9d2e",
+        "sourceVersions": [
+          {
+            "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+            "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+            "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313"
+          },
+          {
+            "citationId": "page-item",
+            "version": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+            "contentHash": "86af4b2532cdd1697e4446bc991b2ed717a8e6a89c289366781528a96d88a706"
+          }
+        ]
+      },
+      "visibleItems": [
+        "藍色圖畫書",
+        "沙槌"
+      ]
+    },
+    "discussion": {
+      "questionId": "4ec175b3-72f8-8483-a39d-31446cc9cbaa",
+      "answerId": "6214ab00-099d-4381-9fb2-f0a0d586d1f7",
+      "runId": "c59047a6-0c24-4201-91be-dcf1ad462032",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 8,
+        "toolCalls": 6,
+        "queryEmbeddings": 1
+      },
+      "tools": [
+        [
+          "load_capabilities",
+          "succeeded"
+        ],
+        [
+          "share_knowledge_view",
+          "rejected"
+        ],
+        [
+          "search_knowledge",
+          "succeeded"
+        ],
+        [
+          "share_knowledge_view",
+          "succeeded"
+        ],
+        [
+          "ask_parent_view",
+          "succeeded"
+        ],
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "review": null,
+      "originalAnswerId": "09f26871-d275-4d9b-a06f-60f26fddb6ab",
+      "firstBusinessRejection": {
+        "tool": "share_knowledge_view",
+        "code": "invalid_citation"
+      },
+      "visibleTurns": [],
+      "visibleStop": "尚未通過獨立核對，未成為正式回覆",
+      "providerSequence": [
+        {
+          "at": "2026-11-22T01:10:11.973Z",
+          "tools": [
+            "load_capabilities"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:10:27.581Z",
+          "tools": [
+            "share_knowledge_view"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:10:43.564Z",
+          "tools": [],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:10:56.362Z",
+          "tools": [
+            "search_knowledge"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:11:17.804Z",
+          "tools": [
+            "share_knowledge_view"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:11:34.422Z",
+          "tools": [
+            "ask_parent_view"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:11:51.285Z",
+          "tools": [
+            "present_answer"
+          ],
+          "finish": "STOP"
+        },
+        {
+          "at": "2026-11-22T01:12:13.018Z",
+          "tools": [],
+          "finish": "STOP"
+        }
+      ],
+      "limitation": "未保存該輪被拒的引數及原始審核判詞。終態不能確定是哪項審核欄位失配。"
+    }
+  },
+  "metering": {
+    "originalTaskReply": {
+      "modelCalls": 2,
+      "inputTokens": 23672,
+      "outputTokens": 336,
+      "estimatedModelUsd": 0.006422
+    },
+    "firstDiscussion": {
+      "modelCalls": 8,
+      "inputTokens": 99979,
+      "outputTokens": 1709,
+      "estimatedModelUsd": 0.02755825
+    },
+    "fixedTaskReply": {
+      "modelCalls": 6,
+      "inputTokens": 60973,
+      "outputTokens": 1498,
+      "estimatedModelUsd": 0.01749025
+    },
+    "incidentalImportedBackground": {
+      "modelCalls": 3,
+      "inputTokens": 21544,
+      "outputTokens": 420,
+      "estimatedModelUsd": 0.006016
+    },
+    "queryEmbeddings": 1,
+    "modelPricing": "USD/1M tokens: 0.25 input, 1.50 output; model estimates only, excluding embedding and final invoice.",
+    "intermediateDiscussion": {
+      "modelCalls": 7,
+      "inputTokens": 94658,
+      "outputTokens": 2662,
+      "estimatedModelUsd": 0.0276575,
+      "sequence": [
+        {
+          "utc": "2026-11-22T01:27:50.230Z",
+          "tools": [
+            "share_knowledge_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:28:06.154Z",
+          "tools": [
+            "share_knowledge_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:28:22.804Z",
+          "tools": [
+            "share_knowledge_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:28:38.976Z",
+          "tools": [
+            "ask_parent_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:28:55.568Z",
+          "tools": [
+            "present_answer"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:29:17.290Z",
+          "tools": []
+        },
+        {
+          "utc": "2026-11-22T01:29:44.638Z",
+          "tools": []
+        }
+      ]
+    },
+    "finalOrdinary": {
+      "modelCalls": 2,
+      "inputTokens": 23972,
+      "outputTokens": 329,
+      "estimatedModelUsd": 0.0064865,
+      "sequence": [
+        {
+          "utc": "2026-11-22T01:38:49.034Z",
+          "tools": [
+            "present_answer"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:39:04.972Z",
+          "tools": []
+        }
+      ]
+    },
+    "finalDiscussion": {
+      "modelCalls": 8,
+      "inputTokens": 85576,
+      "outputTokens": 2471,
+      "estimatedModelUsd": 0.0251005,
+      "sequence": [
+        {
+          "utc": "2026-11-22T01:39:46.036Z",
+          "tools": [
+            "share_knowledge_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:40:01.778Z",
+          "tools": [
+            "share_knowledge_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:40:17.398Z",
+          "tools": [
+            "ask_parent_view"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:40:33.534Z",
+          "tools": []
+        },
+        {
+          "utc": "2026-11-22T01:40:47.958Z",
+          "tools": [
+            "present_answer"
+          ]
+        },
+        {
+          "utc": "2026-11-22T01:41:10.794Z",
+          "tools": []
+        },
+        {
+          "utc": "2026-11-22T01:41:38.072Z",
+          "tools": []
+        },
+        {
+          "utc": "2026-11-22T01:42:09.602Z",
+          "tools": []
+        }
+      ]
+    },
+    "total": {
+      "modelCalls": 36,
+      "inputTokens": 410374,
+      "outputTokens": 9425,
+      "estimatedModelUsd": 0.116731,
+      "queryEmbeddings": 1
+    }
+  },
+  "verification": {
+    "focusedTests": 61,
+    "serverTypecheck": "passed",
+    "citationRegression": "修正前首席只返回錯誤碼；修正後同一席可沿錯誤回傳的原引用重提。",
+    "compactionRegression": "六次模型額度的高 token 回合，修正後用四次交付三席及主答；保留修訂及再審所需兩次。這項回歸測試使用受控模型。",
+    "realParentPhone": false,
+    "offlineReplay": {
+      "draftHash": "e4d21d0dc9ea7e0d74c07808423ba0b0535f98c36b3dabfed2162cfab455e2bf",
+      "vertexRecordedDecision": "revise",
+      "issueIndices": [
+        1,
+        2,
+        3
+      ],
+      "replayedDecision": "delivery_review_budget",
+      "newProviderCalls": 0,
+      "sourceCount": 2,
+      "roles": [
+        "knowledge",
+        "parent",
+        "methods"
+      ],
+      "scope": "Rechecked the decision parser and source binding against the exact captured draft with insufficient remaining repair budget."
+    },
+    "repairContract": "只准選獨立判詞點名的原席、同一段連續原句及原引用；主答可按原證據重寫，完整稿必須另經獨立再審。"
+  },
+  "intermediate": {
+    "ordinary": {
+      "questionId": "4a8defaa-73bc-4519-acc5-97a3e521c667",
+      "answerId": "4eb3dbbd-aecc-4c7b-86b4-67b656837f88",
+      "runId": "38bc8bd5-3e5b-4d02-bb53-232a4a47a707",
+      "status": "completed",
+      "stopReason": null,
+      "counts": {
+        "modelCalls": 6,
+        "toolCalls": 3,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "present_answer",
+          "rejected"
+        ],
+        [
+          "present_answer",
+          "rejected"
+        ],
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "review": {
+        "decision": "pass",
+        "policyVersion": "p3-m01-chat-delivery-review/2",
+        "draftHash": "4129fb276c3d0c83050c729ea7a2f58d0e674b8ef49e40bf4a48c63bd827d7b3",
+        "sourceVersions": [
+          {
+            "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+            "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+            "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313"
+          },
+          {
+            "citationId": "page-item",
+            "version": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+            "contentHash": "86af4b2532cdd1697e4446bc991b2ed717a8e6a89c289366781528a96d88a706"
+          }
+        ]
+      },
+      "visibleItems": [
+        "藍色圖畫書",
+        "沙槌"
+      ],
+      "text": "根據您選取的「親子活動準備」待辦，今晚為小朋友準備了藍色圖畫書和一個沙槌。\n\n面對歲半（18個月）的孩子，十分鐘的短暫時光已經足夠。如果他想「行開」，這是孩子正在主動探索環境的表現。您可以順應他的興趣，不必強求他一直留在同一個位置：\n\n‧ 如果他想離開：可以讓他在安全範圍內活動，您在一旁輕聲講述圖畫書內容，或配合沙槌的節奏唱歌，用聲音吸引他的注意力。\n‧ 互動建議：家長可透過日常談話、一起看圖畫書、唱童謠等方式，支持孩子的探索和學習。\n\n每個孩子的發展節奏都是獨一無二的，請保持輕鬆的心態，視遊戲為探索過程而非任務。若您對孩子的發展有任何具體疑慮，可向母嬰健康院或家庭醫生諮詢。 [1]"
+    },
+    "discussion": {
+      "questionId": "6e2356b4-6cf2-8750-b7a6-88f391b29ea3",
+      "answerId": "077c58c4-e6e5-400d-acaa-e172f63ffb75",
+      "runId": "8febc374-1882-4c4e-9908-af664a00f5d8",
+      "status": "stopped",
+      "reason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 7,
+        "toolCalls": 5,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "share_knowledge_view",
+          "rejected"
+        ],
+        [
+          "share_knowledge_view",
+          "rejected"
+        ],
+        [
+          "share_knowledge_view",
+          "succeeded"
+        ],
+        [
+          "ask_parent_view",
+          "succeeded"
+        ],
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "binding": null,
+      "previousAnswerId": "4eb3dbbd-aecc-4c7b-86b4-67b656837f88",
+      "visibleTurns": [],
+      "issue": "首席兩次在照護發言混用 page-item 及官方片段。其後使用原片段，沒有重搜。第六次獨立核對要求修訂三段成效說法。第七次返回後修訂未獲接收，未進再審。沒有保存該次修訂的原始輸出，確切失敗欄位未知。",
+      "recordedVerdict": {
+        "draftHash": "e4d21d0dc9ea7e0d74c07808423ba0b0535f98c36b3dabfed2162cfab455e2bf",
+        "vertexRecordedDecision": "revise",
+        "issueIndices": [
+          1,
+          2,
+          3
+        ],
+        "replayedDecision": "delivery_review_budget",
+        "newProviderCalls": 0,
+        "sourceCount": 2,
+        "roles": [
+          "knowledge",
+          "parent",
+          "methods"
+        ],
+        "scope": "Rechecked the decision parser and source binding against the exact captured draft with insufficient remaining repair budget."
+      },
+      "taskStatusEvidence": {
+        "sourceState": "scheduled",
+        "coverageWasLabeled": "complete",
+        "generatedClaim": "待辦說明：您目前的「親子活動準備」事項顯示為「已完成」。",
+        "delivered": false
+      }
+    }
+  },
+  "final": {
+    "ordinary": {
+      "questionId": "8f866167-cebd-4783-8e47-3d5c87cb96c8",
+      "answerId": "b3c26d4b-4e40-436c-957e-89b8f8007187",
+      "runId": "c7aa2de4-0e98-4a20-b2d7-6e700c345a6f",
+      "status": "completed",
+      "reason": null,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "binding": {
+        "draftHash": "ebb8e85e4d62dbc56eb85d426accdb263c7d1515564583bbb64f352ca5985255",
+        "decision": "pass",
+        "policyVersion": "p3-m01-chat-delivery-review/2",
+        "sourceVersions": [
+          {
+            "citationId": "33019a89-46bb-5238-9a4b-f56c5e649571",
+            "version": "1ff0430c-0d63-5f6d-a90f-a8c525ab25a4",
+            "contentHash": "06ebaf8bc8b863b62d05e6730f83b5da2befb30b897eef3da1b3ff9bbd7e5313"
+          },
+          {
+            "citationId": "page-item",
+            "version": "637cf99a-7b68-4808-8838-d1a9f2382b7f/1",
+            "contentHash": "86af4b2532cdd1697e4446bc991b2ed717a8e6a89c289366781528a96d88a706"
+          }
+        ]
+      },
+      "text": "根據您當前選取的「親子活動準備」待辦，今晚準備了藍色圖畫書和一個沙槌。\n\n面對歲半（18個月）的孩子，十分鐘的短暫時光已經足夠。若他在遊戲期間想「行開」，這是孩子主動探索環境的表現，這是正常的成長過程。您可以順應他的興趣，不必強求他保持靜態：例如讓他隨意走動，您可在旁透過圖畫書的內容進行講述，或配合沙槌的節奏與他互動，用聲音吸引他的注意力。家長可透過日常談話、一起看圖畫書及唱童謠等方式，支持他的探索和學習。每個孩子的發展節奏都是獨一無二的，遊戲過程比任務目標更重要。 [1]"
+    },
+    "discussion": {
+      "questionId": "d2232da8-6d9e-81be-aab5-689f612cb726",
+      "answerId": null,
+      "runId": "c903aed5-719b-40dd-a8ec-6ef19f18b41f",
+      "status": "stopped",
+      "reason": "delivery_review_rejected",
+      "counts": {
+        "modelCalls": 8,
+        "toolCalls": 4,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        [
+          "share_knowledge_view",
+          "rejected"
+        ],
+        [
+          "share_knowledge_view",
+          "succeeded"
+        ],
+        [
+          "ask_parent_view",
+          "succeeded"
+        ],
+        [
+          "present_answer",
+          "succeeded"
+        ]
+      ],
+      "binding": null,
+      "previousAnswerId": "b3c26d4b-4e40-436c-957e-89b8f8007187",
+      "deliveredRoles": [],
+      "main": null
+    },
+    "visible": {
+      "at": "2026-11-22T01:43:25.705Z",
+      "browser": "158.0.4370.33",
+      "originalAnswerRetained": true,
+      "items": [
+        "藍色圖畫書",
+        "沙槌"
+      ],
+      "discussionPanel": "獨立核對未接納這次整理，未成為正式回覆",
+      "deliveredRoles": [],
+      "deliveredMain": false,
+      "readOnlyReopenChangedUsage": false,
+      "screenshot": "REQ009_DISCUSSION_PARENT_DELIVERY_20261122.png",
+      "screenshotSha256": "91e471e6e7b972eb277443359e9be3f40a2537c0893a4c7738826592ffba8492"
+    },
+    "reviewChecks": [
+      {
+        "draftHash": "80dd0044ec6c368e1e7fef1700134b272e22d456d9977b407bd892ec96663b07",
+        "decision": "revise",
+        "issues": [
+          {
+            "paragraph": 2,
+            "reason": "虛構個人育兒經驗，並對策略效果作出無依據的斷言（比單一應對有效）。",
+            "support": "所附官方指引僅說明幼兒需要安全環境及家長可透過談話或遊戲支持探索，並無比較不同應對策略之有效性。"
+          },
+          {
+            "paragraph": 3,
+            "reason": "對建議方案的效果（學會調適情緒、避免挫折感）作出無依據的斷言，且與官方指引內容不符。",
+            "support": "官方指引內容僅建議家長透過日常活動支持幼兒學習，並未提到強制或靈活互動會帶來的具體心理或學習結果。"
+          }
+        ],
+        "outcomeChecks": [
+          {
+            "wording": "過程比任務目標更重要",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "將十分鐘視為陪伴而非任務，能減少不少壓力",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "這樣的靈活切換通常比單一應對有效",
+            "sourceQuote": "",
+            "basis": "unsupported_outcome"
+          },
+          {
+            "wording": "這能讓他學會調適情緒，同時避免家長在強迫互動中產生不必要的挫折感",
+            "sourceQuote": "",
+            "basis": "unsupported_outcome"
+          }
+        ]
+      },
+      {
+        "draftHash": "1c21f793d3366696a1e4b644b24274c5c5a26a3b126173343a4492df56ec9811",
+        "decision": "revise",
+        "issues": [
+          {
+            "paragraph": 1,
+            "reason": "對調整視角的效果作出無依據的斷言。",
+            "support": "所附官方指引僅說明幼童發展需要，並未提及調整心態對家長壓力之影響。"
+          }
+        ],
+        "outcomeChecks": [
+          {
+            "wording": "過程比任務目標更重要",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "能減少不少壓力",
+            "sourceQuote": "",
+            "basis": "unsupported_outcome"
+          },
+          {
+            "wording": "",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "過程比任務目標更為重要",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          },
+          {
+            "wording": "",
+            "sourceQuote": "",
+            "basis": "no_outcome_claim"
+          }
+        ]
+      }
+    ],
+    "assessment": "正常入口未交付三席及主答。第六次首審只點名第三席及主答；第七次修訂成功保留原話範圍並重寫主答，第八次再審才指出原樣保留的新手家長席「能減少不少壓力」欠據。按單次上限及一次修訂契約停止。"
+  }
+}
