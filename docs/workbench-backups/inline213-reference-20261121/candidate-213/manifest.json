@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "candidate": "local-candidate-213-image-count",
+  "base": {
+    "artifact": "candidate-211/out",
+    "htmlSha256": "aa1a9204ad4402b17a4d718ade26f310cf8d9e44fb8deb236be786bf8db7d01e",
+    "rawRecordsSha256": "2d947fa582682b93755b7b3376aac2efdae71af1fc3064c81cf95ef116422b85",
+    "rawArtworkSha256": "573e2772cb8bf534ec8c250f9028fce86a4e5b981aeaa9aed3c7191c9092239b",
+    "topics": 104,
+    "choices": 211,
+    "images": 211
+  },
+  "draftLedgers": [
+    {
+      "input": "draft-care-search/assets.json",
+      "sha256": "7d3abd13c8808ac564cbd2498239df0f3a2ce9d1839bd394e1b0fa9db7abd9bc"
+    }
+  ],
+  "sourceDeclarations": {
+    "DECLARATION.txt": "864c400cc6a662c5bfdc1883ad8f791a010833285820fe178e545ca9be9a6896",
+    "PROVENANCE.md": "544512d8b75857bcb340e5147a99c15485ae0b010b85c02672298af84ed2828a"
+  },
+  "topics": [
+    {
+      "number": 105,
+      "title": "照顧記錄：按文字和種類搜尋",
+      "choices": [
+        {
+          "name": "左側篩選，右側看結果",
+          "note": "BookStack 把搜尋詞及內容類型跟結果分開呈現。育伴港按「搜尋」後，以文字及一個種類一併篩選；目前這頁沒有符合的記錄，仍可能有「下一頁」。圖中的總數和其他篩選只屬 BookStack。",
+          "links": [
+            {
+              "label": "BookStack v26.09.3：關鍵字及內容類型",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/resources/views/search/all.blade.php#L1-L30"
+            },
+            {
+              "label": "明確提交搜尋表單，並列結果",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/resources/views/search/all.blade.php#L67-L96"
+            },
+            {
+              "label": "BookStack 的類型限制、結果數及分頁",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/app/Search/SearchRunner.php#L43-L62"
+            },
+            {
+              "label": "BookStack 程式授權：MIT",
+              "url": "https://github.com/BookStackApp/BookStack/blob/bf680915b6dbaf93eee5234ec72dc33bc5abafbf/LICENSE#L1-L9"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-search/care-search-a.png",
+            "sha256": "fba8feafaba3c0f122b9fdf09c5b47444a8eef89f68d285ff54d821b3ac094d9",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "非官方 BookStack 桌面重繪。左邊「進階搜尋」輸入「摺紙」，內容類型只勾選「頁面」，下方有「更新搜尋結果」；右邊列出六篇虛構紙藝展文件。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        },
+        {
+          "name": "條件和結果上下排列",
+          "note": "Zotero 以「比對全部」套用兩列條件：標題含有「展板」，同時項目類型是「報告」。下方是合成示例，不是實際查詢。育伴港只在照顧歷史用文字加一種記錄類別搜尋；本頁即使沒有符合項目，也可能還有下一頁。不提供這個條件編輯器或結果總數。",
+          "links": [
+            {
+              "label": "Zotero 7.0.32：獨立進階搜尋及下方結果表",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/advancedSearch.xhtml#L15-L53"
+            },
+            {
+              "label": "同版：比對全部或任一條件",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/elements/zoteroSearch.js#L38-L60"
+            },
+            {
+              "label": "同版：欄位、運算及內容分開顯示",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/elements/zoteroSearch.js#L227-L249"
+            },
+            {
+              "label": "同版：項目類型條件使用選單",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/elements/zoteroSearch.js#L464-L475"
+            },
+            {
+              "label": "同版：結果表預設欄位",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/advancedSearch.js#L58-L71"
+            },
+            {
+              "label": "Zotero 所列搜尋元件授權：AGPL-3.0-or-later",
+              "url": "https://github.com/zotero/zotero/blob/188c54c186fbbaa6889145986d43ba64160a44fa/chrome/content/zotero/elements/zoteroSearch.js#L4-L18"
+            }
+          ],
+          "asset": {
+            "input": "draft-care-search/care-search-b.png",
+            "sha256": "2408f389e5686230af457a4d02dc00a044f6be18517d974bccf0dfe25da90999",
+            "dimensions": [
+              1280,
+              880
+            ],
+            "alt": "Zotero 進階搜尋的非官方全頁重繪。上半部顯示比對全部，以及「標題／含有／展板」和「項目類型／是／報告」。下半部是有標題、創作者和年份欄的合成結果表。",
+            "credit": "依所列開源版本獨立重繪，非官方截圖；只供完整頁版式比較。",
+            "previewLabel": "依開源實作重繪 · 非官方截圖"
+          }
+        }
+      ]
+    }
+  ],
+  "notices": [
+    {
+      "heading": "第 105 題 · 照顧記錄的搜尋條件與分頁的兩幅自製示意",
+      "input": "draft-care-search/DECLARATION.txt",
+      "sha256": "864c400cc6a662c5bfdc1883ad8f791a010833285820fe178e545ca9be9a6896"
+    }
+  ]
+}
